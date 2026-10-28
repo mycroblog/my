@@ -861,6 +861,33 @@
         ]
       }
     },
+    // G5, P4: a feature's components build their regions from the pattern components of @my/ui and leave the look of
+    // a region's heading to them (web-client/16-look-states-and-wording.md, 21-experience-principles.md). The
+    // pattern rules that later checks of ADR-0110 §6 add go into this rule's options.
+    {
+      "files": [
+        "web/src/features/*/components/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/*.test.tsx"
+      ],
+      "jsPlugins": [
+        "./oxlint/restrictions.js"
+      ],
+      "rules": {
+        "restrict/pattern": [
+          "error",
+          {
+            "selector": "JSXOpeningElement[name.name='Heading']:has(> JSXAttribute[name.name='level'][value.expression.value=2]) > JSXAttribute[name.name='size']",
+            "message": "Do not give a region's heading (Heading level={2}) a size; every h2 has the look of a region title (web-client/16-look-states-and-wording.md G5)."
+          },
+          {
+            "selector": "JSXElement:matches(:has(> JSXOpeningElement[name.name='section']), :has(> JSXOpeningElement:has(> JSXAttribute[name.name='as'][value.value='section']))) JSXOpeningElement:matches([name.name='h2'], [name.name='Heading']:has(> JSXAttribute[name.name='level'][value.expression.value=2]))",
+            "message": "Do not build a titled region in a feature; use Section of @my/ui, which takes the heading as its title (web-client/16-look-states-and-wording.md G5)."
+          }
+        ]
+      }
+    },
     // D2: components use container queries; viewport breakpoints belong to the app shell, whose look is in the kit's
     // AppShell and AppNavigation, and ToastProvider's region, which stands clear of the tab bar they draw.
     {

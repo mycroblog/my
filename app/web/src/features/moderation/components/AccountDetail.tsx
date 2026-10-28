@@ -18,7 +18,7 @@ import {
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
-  DetailSection,
+  Section,
   EmptyState,
   Heading,
   Hint,
@@ -90,10 +90,10 @@ function AccountPage({ id }: { id: string }) {
   const canRecoverSignIn = useHasPermission("manage_login_recovery");
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.account.summary.title")}>
+      <Section surface="card" title={t("client:admin.account.summary.title")}>
         <AccountSummary account={account} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.account.restrictions.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.account.restrictions.title")}>
         {account.restrictions.length === 0 ? (
           <p>{t("client:admin.account.restrictions.none")}</p>
         ) : (
@@ -103,7 +103,7 @@ function AccountPage({ id }: { id: string }) {
             ))}
           </Stack>
         )}
-      </DetailSection>
+      </Section>
       {!account.local && account.state !== "deleted" && canRefetch && (
         <RefetchStatusesSection target={{ kind: "account", id: account.id }} />
       )}
@@ -119,10 +119,10 @@ function AccountPage({ id }: { id: string }) {
       )}
       {account.local && <PrivateDataSection id={account.id} />}
       <ActionHistory account={account} />
-      <DetailSection title={t("client:admin.account.reports.title")}>
+      <Section surface="card" title={t("client:admin.account.reports.title")}>
         <AccountReports reports={account.reports} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.account.action.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.account.action.title")}>
         <StatusMessage tone="success">{issued}</StatusMessage>
         {account.state === "deleted" ? (
           <p>{t("client:admin.account.action.deleted")}</p>
@@ -145,7 +145,7 @@ function AccountPage({ id }: { id: string }) {
             />
           </>
         )}
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }
@@ -277,7 +277,7 @@ function EmailSuppressionSection({
   const canLift = useHasPermission("manage_accounts");
   if (suppression === undefined && lift.status === undefined) return null;
   return (
-    <DetailSection title={t("client:admin.account.email_suppression.title")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.account.email_suppression.title")} headingRef={headingRef}>
       <StatusMessage tone="success">{lift.status}</StatusMessage>
       {suppression !== undefined && (
         <Stack align="start" gap="3">
@@ -318,7 +318,7 @@ function EmailSuppressionSection({
           ? {}
           : { errorMessage: t("client:admin.account.email_suppression.failed", { reason: lift.error }) })}
       />
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -335,7 +335,7 @@ function TwoFactorSection({ id, enabled, handle }: { id: string; enabled: boolea
   // Removing it is server administration (ADR-0058): moderators see the state but not the button.
   const canRemove = useHasPermission("manage_login_recovery");
   return (
-    <DetailSection title={t("client:admin.account.two_factor.title")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.account.two_factor.title")} headingRef={headingRef}>
       <StatusMessage tone="success">{remove.status}</StatusMessage>
       <p>{enabled ? t("client:admin.account.two_factor.on") : t("client:admin.account.two_factor.off")}</p>
       {enabled && canRemove && (
@@ -363,7 +363,7 @@ function TwoFactorSection({ id, enabled, handle }: { id: string; enabled: boolea
           ? {}
           : { errorMessage: t("client:admin.account.two_factor.failed", { reason: remove.error }) })}
       />
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -381,7 +381,7 @@ function PasswordResetSection({ id, handle }: { id: string; handle: string }) {
   const linkLabelId = useId();
   const { link } = issue;
   return (
-    <DetailSection title={t("client:admin.account.password_reset.title")}>
+    <Section surface="card" title={t("client:admin.account.password_reset.title")}>
       <StatusMessage tone="success">{issue.status}</StatusMessage>
       {link !== undefined && (
         <Stack gap="2" border="md" padding="3">
@@ -433,7 +433,7 @@ function PasswordResetSection({ id, handle }: { id: string; handle: string }) {
           ? {}
           : { errorMessage: t("client:admin.account.password_reset.failed", { reason: issue.error }) })}
       />
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -447,7 +447,7 @@ function PrivateDataSection({ id }: { id: string }) {
     focusHeading();
   });
   return (
-    <DetailSection title={t("client:admin.account.private.title")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.account.private.title")} headingRef={headingRef}>
       <StatusMessage>
         {privateData.data === undefined ? undefined : t("client:admin.account.private.shown")}
       </StatusMessage>
@@ -461,7 +461,7 @@ function PrivateDataSection({ id }: { id: string }) {
       ) : (
         <PrivateData data={privateData.data} />
       )}
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -600,7 +600,7 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
   const { confirmation } = lift;
   const handle = isolate(handleOf(account.account));
   return (
-    <DetailSection title={t("client:admin.account.actions.title")}>
+    <Section surface="card" title={t("client:admin.account.actions.title")}>
       <StatusMessage tone="success">{lifted}</StatusMessage>
       {actions.isLoading ? (
         <Spinner size="sm" label={t("client:admin.report.history.loading")} />
@@ -656,7 +656,7 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
           errorMessage={t("client:admin.account_actions.too_long", { max: accountActionTextLimit })}
         />
       </ConfirmDialog>
-    </DetailSection>
+    </Section>
   );
 }
 

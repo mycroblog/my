@@ -10,7 +10,7 @@ import {
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
-  DetailSection,
+  Section,
   EmptyState,
   Heading,
   Hint,
@@ -56,12 +56,12 @@ export function AccountRoles({ accountId, handle }: { accountId: string; handle:
   const focusHeading = useFocusAfterChange(headingRef, held);
   const changes = useRoleChanges(accountId, handle, focusHeading);
   return (
-    <DetailSection title={t("client:admin.account.roles.title")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.account.roles.title")} headingRef={headingRef}>
       <StatusMessage tone="success">{changes.status}</StatusMessage>
       <Hint>{t("client:admin.account.roles.description")}</Hint>
       <RoleList roles={roles} changes={changes} />
       <RoleChangeDialog changes={changes} handle={handle} />
-    </DetailSection>
+    </Section>
   );
 }
 

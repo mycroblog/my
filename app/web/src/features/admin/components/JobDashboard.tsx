@@ -40,7 +40,7 @@ import {
   jobStates,
 } from "../api/jobs";
 import { type RetryJob, useJobAttempts, useJobQueue, useJobs, useRetryJob } from "../hooks/useJobs";
-import { DateTime, DetailSection, RecordList, RequirePermission } from "../../moderation";
+import { DateTime, Section, RecordList, RequirePermission } from "../../moderation";
 
 const filterLabels: Readonly<Record<JobFilter, ClientMessageKey>> = {
   pending: "client:admin.jobs.filter.pending",
@@ -86,12 +86,12 @@ function Dashboard({ filter, onFilterChange }: JobDashboardProps) {
   const queue = useJobQueue();
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.jobs.queue.heading")}>
+      <Section surface="card" title={t("client:admin.jobs.queue.heading")}>
         <Card>
           <QueueSummary queue={queue} />
         </Card>
-      </DetailSection>
-      <DetailSection title={t("client:admin.jobs.list.heading")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.jobs.list.heading")}>
         <Tabs
           selectedKey={filter}
           onSelectionChange={(key) => {
@@ -122,7 +122,7 @@ function Dashboard({ filter, onFilterChange }: JobDashboardProps) {
             </TabPanel>
           ))}
         </Tabs>
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }

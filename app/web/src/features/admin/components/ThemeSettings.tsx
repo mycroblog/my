@@ -7,7 +7,7 @@
 import { Button, Grid, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField, ThemePreview } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type ColorField, useThemeSettings, type ValueField } from "../hooks/useThemeSettings";
-import { DetailSection, RequirePermission } from "../../moderation";
+import { Section, RequirePermission } from "../../moderation";
 
 export function ThemeSettings() {
   return (
@@ -23,15 +23,15 @@ function ThemeSettingsForm() {
   return (
     <Stack as="form" gap="6" onSubmit={form.submit}>
       <Hint size="inherit">{t("client:admin.theme.description")}</Hint>
-      <DetailSection title={t("client:admin.theme.colors.title")}>
+      <Section surface="card" title={t("client:admin.theme.colors.title")}>
         <Hint size="inherit">{t("client:admin.theme.colors.description")}</Hint>
         <Stack as="ul" gap="4">
           {form.colorFields.map((field) => (
             <ColorInputs key={field.token} field={field} />
           ))}
         </Stack>
-      </DetailSection>
-      <DetailSection title={t("client:admin.theme.contrast.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.theme.contrast.title")}>
         {form.failingPairs.length === 0 && form.malformedColors.length === 0 ? (
           <p>{t("client:admin.theme.contrast.ok")}</p>
         ) : (
@@ -44,14 +44,14 @@ function ThemeSettingsForm() {
             ))}
           </Stack>
         )}
-      </DetailSection>
-      <DetailSection title={t("client:admin.theme.tokens.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.theme.tokens.title")}>
         <Hint size="inherit">{t("client:admin.theme.tokens.description")}</Hint>
         {form.valueFields.map((field) => (
           <ValueInput key={field.token.name} field={field} />
         ))}
-      </DetailSection>
-      <DetailSection title={t("client:admin.theme.css.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.theme.css.title")}>
         <Hint size="inherit">{t("client:admin.theme.css.description")}</Hint>
         <TextArea
           label={t("client:admin.theme.css.label")}
@@ -60,11 +60,11 @@ function ThemeSettingsForm() {
           rows={8}
           {...(form.customCss.error === undefined ? {} : { isInvalid: true, errorMessage: form.customCss.error })}
         />
-      </DetailSection>
-      <DetailSection title={t("client:admin.theme.preview.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.theme.preview.title")}>
         <Hint size="inherit">{t("client:admin.theme.preview.description")}</Hint>
         <Preview style={form.previewStyle} />
-      </DetailSection>
+      </Section>
       {form.saveErrors !== undefined && (
         <Stack gap="1" tone="danger" role="alert">
           <p>{t("client:admin.theme.save_refused")}</p>

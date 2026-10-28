@@ -36,7 +36,7 @@ import {
 import { type SubmitEvent, useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, DetailSection, DomainName, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, Section, DomainName, RecordTable, RequirePermission } from "../../moderation";
 import {
   acceptedEmojiTypes,
   type AdminCustomEmoji,
@@ -134,19 +134,19 @@ function ScreenTabs({ tab, onTabChange, requestState, onRequestStateChange, ...l
         </Tab>
       </TabList>
       <TabPanel id="emoji" gap="8" offset="4">
-        <DetailSection title={t("client:admin.custom_emojis.new.title")}>
+        <Section surface="card" title={t("client:admin.custom_emojis.new.title")}>
           <Card>
             <NewCustomEmojiForm />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.custom_emojis.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.custom_emojis.list.title")}>
           <CustomEmojiTabs {...list} />
-        </DetailSection>
+        </Section>
       </TabPanel>
       <TabPanel id="requests" gap="8" offset="4">
-        <DetailSection title={t("client:admin.custom_emoji_requests.title")}>
+        <Section surface="card" title={t("client:admin.custom_emoji_requests.title")}>
           <CustomEmojiRequests state={requestState} onStateChange={onRequestStateChange} />
-        </DetailSection>
+        </Section>
       </TabPanel>
     </Tabs>
   );

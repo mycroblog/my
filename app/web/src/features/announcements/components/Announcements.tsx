@@ -12,6 +12,7 @@ import {
   Hint,
   InlineError,
   PostContent,
+  Section,
   serverSanitizedHtml,
   Stack,
   Tag,
@@ -26,14 +27,14 @@ import { type Announcements as AnnouncementsState, useAnnouncements } from "../h
 
 export function Announcements() {
   const t = useT();
-  const headingId = useId();
   const announcements = useAnnouncements();
   const listRef = useRef<HTMLUListElement>(null);
   const read = useFocusHeadingAfterLift(listRef);
   if (announcements.items.length === 0) return null;
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3" border="bottom" padding="4">
-      <Heading level={2} id={headingId}>
+    <Section
+      surface="band"
+      title={
         <Cluster as="span" wrap={false} align="center" gap="2">
           {t("client:announcements.title")}
           {announcements.unread > 0 && (
@@ -43,7 +44,8 @@ export function Announcements() {
             />
           )}
         </Cluster>
-      </Heading>
+      }
+    >
       {announcements.error !== undefined && (
         <InlineError alert size="inherit">
           {t("client:announcements.mark_read_failed", { reason: announcements.error })}
@@ -56,7 +58,7 @@ export function Announcements() {
           </li>
         ))}
       </Stack>
-    </Stack>
+    </Section>
   );
 }
 

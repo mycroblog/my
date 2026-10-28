@@ -21,7 +21,7 @@ import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { AvailabilityEvent } from "../api/staff";
 import { useInstance } from "../hooks/useInstances";
-import { Day, DateTime, DetailSection, InstanceStateLabel, RecordTable, RequirePermission } from "./parts";
+import { Day, DateTime, Section, InstanceStateLabel, RecordTable, RequirePermission } from "./parts";
 import { RefetchStatusesSection } from "./RefetchStatuses";
 
 const eventLabels: Readonly<Record<AvailabilityEvent["kind"], ClientMessageKey>> = {
@@ -100,7 +100,7 @@ function InstanceView({ domain }: InstanceDetailProps) {
           )}
         </Stack>
       </Card>
-      <DetailSection title={t("client:admin.instance.moderation.title")}>
+      <Section surface="card" title={t("client:admin.instance.moderation.title")}>
         <Stack align="start" gap="1">
           <Link
             href={`/moderation/domain-actions?domain=${encodeURIComponent(domain)}`}
@@ -111,7 +111,7 @@ function InstanceView({ domain }: InstanceDetailProps) {
           </Link>
           <Hint id={moderationId}>{t("client:admin.instance.moderation.description")}</Hint>
         </Stack>
-      </DetailSection>
+      </Section>
       <RefetchStatusesSection target={{ kind: "domain", domain }} />
       <Stack gap="3">
         <Heading level={2}>{t("client:admin.instance.history.title")}</Heading>

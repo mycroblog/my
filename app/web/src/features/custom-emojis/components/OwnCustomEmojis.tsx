@@ -38,7 +38,7 @@ import {
   requestStateLabels,
   shortcodePattern,
 } from "../../admin";
-import { DateTime, DetailSection, RecordList, RequirePermission } from "../../moderation";
+import { DateTime, Section, RecordList, RequirePermission } from "../../moderation";
 import type { CustomEmojiRequest, OwnCustomEmoji } from "../api/ownEmojis";
 import {
   type CustomEmojiRequestActions,
@@ -63,16 +63,16 @@ export function OwnCustomEmojis() {
     <RequirePermission permission="create_custom_emojis">
       <Stack gap="8">
         <Hint size="inherit">{t("client:custom_emojis.description")}</Hint>
-        <DetailSection title={t("client:custom_emojis.new.title")}>
+        <Section surface="card" title={t("client:custom_emojis.new.title")}>
           <Usage />
           <RequestForm />
-        </DetailSection>
-        <DetailSection title={t("client:custom_emojis.requests.title")}>
+        </Section>
+        <Section surface="card" title={t("client:custom_emojis.requests.title")}>
           <RequestList />
-        </DetailSection>
-        <DetailSection title={t("client:custom_emojis.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:custom_emojis.list.title")}>
           <EmojiList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

@@ -16,18 +16,18 @@ import {
   DialogActions,
   DialogTrigger,
   EmptyState,
-  Heading,
   Hint,
   InlineError,
   Radio,
   RadioGroup,
+  Section,
   Stack,
   StatusMessage,
   Text,
   TextArea,
   TextField,
 } from "@my/ui";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
@@ -68,19 +68,6 @@ export function OAuthAppSettings() {
   );
 }
 
-/** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
-    </Stack>
-  );
-}
-
 /** A value to copy: its label, the value on its own line as the user reads it, and the button that copies it. */
 function CopyValue({ label, value }: { label: string; value: string }) {
   const t = useT();
@@ -115,26 +102,27 @@ function CopyValue({ label, value }: { label: string; value: string }) {
  */
 function SecretNotice({ shown }: { shown: ShownSecret }) {
   const t = useT();
-  const headingId = useId();
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     ref.current?.focus();
   }, [shown]);
   return (
-    <Stack as="section" ref={ref} tabIndex={-1} aria-labelledby={headingId} gap="3" border="md" padding="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.apps.secret.title", { name: shown.app.name })}
-      </Heading>
-      <Hint>
-        {shown.secret === undefined
+    <Section
+      ref={ref}
+      focusable
+      surface="card"
+      title={t("client:settings.apps.secret.title", { name: shown.app.name })}
+      description={
+        shown.secret === undefined
           ? t("client:settings.apps.secret.public", { name: shown.app.name })
-          : t("client:settings.apps.secret.notice")}
-      </Hint>
+          : t("client:settings.apps.secret.notice")
+      }
+    >
       <CopyValue label={t("client:settings.apps.client_id")} value={shown.app.client_id} />
       {shown.secret !== undefined && (
         <CopyValue label={t("client:settings.apps.secret.client_secret")} value={shown.secret} />
       )}
-    </Stack>
+    </Section>
   );
 }
 

@@ -30,7 +30,7 @@ import {
 } from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { DateTime, DetailSection, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, Section, RecordTable, RequirePermission } from "../../moderation";
 import {
   hostLimit,
   type HostDenial,
@@ -92,14 +92,14 @@ export function OAuthAppSettings({ tab, onTabChange, filter, onFilterChange }: O
           <Tab id="hosts">{t("client:admin.oauth_apps.tabs.hosts")}</Tab>
         </TabList>
         <TabPanel id="apps" gap="4" offset="4">
-          <DetailSection title={t("client:admin.oauth_apps.list.title")}>
+          <Section surface="card" title={t("client:admin.oauth_apps.list.title")}>
             <ClientsTab filter={filter} onFilterChange={onFilterChange} />
-          </DetailSection>
+          </Section>
         </TabPanel>
         <TabPanel id="hosts" gap="4" offset="4">
-          <DetailSection title={t("client:admin.oauth_apps.hosts.title")}>
+          <Section surface="card" title={t("client:admin.oauth_apps.hosts.title")}>
             <HostsTab />
-          </DetailSection>
+          </Section>
         </TabPanel>
       </Tabs>
     </RequirePermission>

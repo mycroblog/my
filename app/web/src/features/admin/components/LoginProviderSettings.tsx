@@ -27,7 +27,7 @@ import {
 import { type SubmitEvent, useRef, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DetailSection, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import { type LoginProvider, loginProviderKinds } from "../api/loginProviders";
 import {
   draftOf,
@@ -46,14 +46,14 @@ export function LoginProviderSettings() {
   return (
     <RequirePermission permission="manage_login_providers">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.login_providers.new.title")}>
+        <Section surface="card" title={t("client:admin.login_providers.new.title")}>
           <Card>
             <NewLoginProviderForm />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.login_providers.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.login_providers.list.title")}>
           <LoginProviderList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

@@ -26,7 +26,7 @@ export { useModerationEntry } from "./hooks/useModerationCounts";
 export { isMissingPermission, pageQuery, type Permission, refreshAuditLog } from "./api/staff";
 export {
   DateTime,
-  DetailSection,
+  Section,
   DomainName,
   MissingPermission,
   RecordList,

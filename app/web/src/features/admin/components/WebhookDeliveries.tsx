@@ -19,7 +19,7 @@ import {
   Text,
 } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { DateTime, DetailSection, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, Section, RecordTable, RequirePermission } from "../../moderation";
 import type { WebhookAttemptOutcome, WebhookDelivery, WebhookDeliveryStatus } from "../api/webhooks";
 import { useRedeliver, useWebhook, useWebhookDeliveries } from "../hooks/useWebhooks";
 import { webhookEventLabels } from "./webhookParts";
@@ -44,12 +44,12 @@ export function WebhookDeliveries({ id }: { id: string }) {
   return (
     <RequirePermission permission="manage_webhooks">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.webhooks.details.title")}>
+        <Section surface="card" title={t("client:admin.webhooks.details.title")}>
           <Facts id={id} />
-        </DetailSection>
-        <DetailSection title={t("client:admin.webhooks.deliveries.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.webhooks.deliveries.title")}>
           <DeliveryList id={id} />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

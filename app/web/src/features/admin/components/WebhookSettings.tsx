@@ -28,7 +28,7 @@ import {
 import { type SubmitEvent, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, DetailSection, RecordTable, RequirePermission, wholeList } from "../../moderation";
+import { DateTime, Section, RecordTable, RequirePermission, wholeList } from "../../moderation";
 import type { Webhook, WebhookStateReason } from "../api/webhooks";
 import {
   draftOf,
@@ -54,14 +54,14 @@ export function WebhookSettings() {
   return (
     <RequirePermission permission="manage_webhooks">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.webhooks.new.title")}>
+        <Section surface="card" title={t("client:admin.webhooks.new.title")}>
           <Card>
             <NewWebhookForm />
           </Card>
-        </DetailSection>
-        <DetailSection title={t("client:admin.webhooks.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.webhooks.list.title")}>
           <WebhookList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );
