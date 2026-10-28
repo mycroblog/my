@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -35,6 +36,8 @@ type Deps struct {
 	ClosureCounts ClosureCounts
 	// ClosureDeliveries reads the progress of the closure's Deletes; nil reads none.
 	ClosureDeliveries ClosureDeliveries
+	// Blobs stores the files of the brand images (ADR-0116); nil saves none and serves none.
+	Blobs blob.Store
 }
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to

@@ -9,6 +9,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/interface/clientapi"
@@ -35,9 +36,11 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 	api := clientapi.New(clientapi.Options{
 		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: cfg.SourceURL, StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
 		// The health endpoint of the uptime monitors (ADR-0085 §1).
-		ServerHealth:  newHealthCache(a.readyCheck, a.Clock),
+		ServerHealth: newHealthCache(a.readyCheck, a.Clock),
+		// The counts and the operators of the landing page, read again every few minutes.
+		Overview:      instance.NewOverview(overviewSources{a}, a.Clock),
 		SendsEmail:    sendsEmail(cfg),
-		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
+		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, PostCounts: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, InstanceThumbnail: a.instanceThumbnail,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,
@@ -71,7 +74,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The instance settings, and the invites with the registration page they open (#624).
 		Settings: a.Instance, Invites: a.Identity, OwnInvites: a.Identity, OAuthClients: a.Identity, LoginProviders: a.Identity, SignUpPath: authpages.PathSignUp,
 		// The instance theme (ADR-0059) and the URLs of its stylesheets, which the web handler serves.
-		Themes: a.Instance, Closures: a.Instance, ClosureEvents: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
+		Themes: a.Instance, BrandImages: a.Instance, Closures: a.Instance, ClosureEvents: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
 		// The custom emoji of the picker and their administration (ADR-0051).
 		CustomEmojis:        a.CustomEmojis,
 		CustomEmojiRequests: a.CustomEmojis,

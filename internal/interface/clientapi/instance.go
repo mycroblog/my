@@ -118,6 +118,10 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.Theme, err = s.instanceTheme(ctx); err != nil {
 		return nil, err
 	}
+	// The instance's own icon and logos (ADR-0116), which clients show instead of the built-in ones.
+	if err := s.instanceBrands(ctx, &out); err != nil {
+		return nil, err
+	}
 	if out.Contact, err = s.instanceContact(ctx, settings); err != nil {
 		return nil, err
 	}

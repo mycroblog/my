@@ -32,7 +32,7 @@ Anthropic は、GitHub Actions のジョブが GitHub の発行する OIDC の�
 - **Anthropic の側**（決定者が Claude Console の Workload identity で設定する）:
   - 発行者は `https://token.actions.githubusercontent.com` を discovery の方式で登録する。
   - CI 専用のワークスペースとサービスアカウントを作り、ワークスペースに使用額の上限を設ける。上限が、ADR-0114 の費用の上限になる。
-  - フェデレーションの規則は、`subject_prefix` を `repo:mycroblog/my:environment:ux-nightly`、`audience` を `https://api.anthropic.com` にし、
+  - フェデレーションの規則は、`subject_prefix` を `repo:mycroblog@346242925/my@1421587381:environment:ux-nightly`（GitHub がこのリポジトリに発行する `sub` は、所有者とリポジトリの数値 ID を含む形である）、`audience` を `https://api.anthropic.com` にし、
     `claims` で `repository_owner: mycroblog` と `ref: refs/heads/main` も確かめる。トークンの有効期間は短く（例 600 秒）する。
 - **GitHub の側**: 規則・組織・サービスアカウント・ワークスペースの ID は秘密ではないので、environment の variable に置く
   （`ANTHROPIC_FEDERATION_RULE_ID`・`ANTHROPIC_ORGANIZATION_ID`・`ANTHROPIC_SERVICE_ACCOUNT_ID`・`ANTHROPIC_WORKSPACE_ID`）。

@@ -82,3 +82,8 @@ export const Disabled: Story = {
     await expect(canvas.getByRole("radio", { name: "md · 2 columns" })).toBeDisabled();
   },
 };
+
+/** Forced colors fill the selected segment with Highlight and its text with HighlightText; captured so. */
+export const ForcedColors: Story = {
+  tags: ["forced-colors"],
+};

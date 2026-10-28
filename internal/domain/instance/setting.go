@@ -112,6 +112,11 @@ const (
 	SettingMemberInviteMaxActive    SettingKey = "member_invite_max_active"
 	SettingMemberInviteMaxUses      SettingKey = "member_invite_max_uses"
 	SettingMemberInviteMaxExpiresIn SettingKey = "member_invite_max_expires_in"
+	// SettingPublicCounts decides whether GET /instance/overview, and so the landing page, shows
+	// the number of members, the public posts of the last days, and when the instance started;
+	// SettingPublicOperators whether it shows the accounts that show the badge of a staff role.
+	SettingPublicCounts    SettingKey = "public_counts"
+	SettingPublicOperators SettingKey = "public_operators"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -545,6 +550,14 @@ var definitions = []Definition{
 		Key: SettingMemberInviteMaxExpiresIn, Kind: KindInt, Default: strconv.Itoa(int(DefaultMemberInviteMaxExpiresIn / time.Second)),
 		Min: int(MinMemberInviteMaxExpiresIn / time.Second), Max: int(MaxMemberInviteMaxExpiresIn / time.Second),
 		Doc: "How long, in seconds, an invite that a member creates may work at most (ADR-0108 §2).",
+	},
+	{
+		Key: SettingPublicCounts, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page and GET /instance/overview show the number of members, the public posts of local accounts on each of the last 7 days, and when the instance started.",
+	},
+	{
+		Key: SettingPublicOperators, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page and GET /instance/overview list the local accounts that show the badge of a staff role (an administrator or moderator role) on their profile, with their badges.",
 	},
 }
 
@@ -996,6 +1009,12 @@ func (s Settings) MemberInviteCaps() MemberInviteCaps {
 		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxExpiresIn)) * time.Second,
 	}
 }
+
+// PublicCounts returns the value of SettingPublicCounts.
+func (s Settings) PublicCounts() bool { return s.boolValue(SettingPublicCounts) }
+
+// PublicOperators returns the value of SettingPublicOperators.
+func (s Settings) PublicOperators() bool { return s.boolValue(SettingPublicOperators) }
 
 // VoicePublicSummary returns the value of SettingVoicePublicSummary.
 func (s Settings) VoicePublicSummary() bool { return s.boolValue(SettingVoicePublicSummary) }

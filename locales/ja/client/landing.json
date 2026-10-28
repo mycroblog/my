@@ -1,47 +1,51 @@
 {
-  "landing.title": {
-    "defaultMessage": "{instance} へようこそ",
-    "description": "Heading and document title of the landing page that people who are not signed in see at the root address. {instance} is the name of this server."
-  },
   "landing.sign_in": {
     "defaultMessage": "ログイン",
-    "description": "Button on the landing page that opens the server's sign-in screen."
+    "description": "Button at the top end of the landing page's calling card that opens the server's sign-in screen."
   },
-  "landing.sign_up.open": {
-    "defaultMessage": "アカウントを作成",
-    "description": "Link on the landing page to the server's registration page, when anyone may sign up."
+  "landing.join": {
+    "defaultMessage": "参加する",
+    "description": "Link in the landing page's calling card that moves down to the section on how to join; the primary action of the page while the server takes new accounts."
   },
-  "landing.sign_up.approval": {
-    "defaultMessage": "アカウントを申し込む",
-    "description": "Link on the landing page to the server's registration page, when moderators approve each sign-up."
-  },
-  "landing.sign_up.invite": {
-    "defaultMessage": "招待でアカウントを作成",
-    "description": "Link on the landing page to the server's registration page, when only people with an invite may sign up."
-  },
-  "landing.registrations.approval": {
-    "defaultMessage": "新しいアカウントは、モデレーターが承認してから使えるようになります。",
-    "description": "Note next to the landing page's registration link, when moderators approve each sign-up."
-  },
-  "landing.registrations.invite": {
-    "defaultMessage": "招待を受けた人だけがアカウントを作成できます。",
-    "description": "Note next to the landing page's registration link, when only people with an invite may sign up."
+  "landing.elsewhere.link": {
+    "defaultMessage": "ほかのサーバーのアカウントでフォローする",
+    "description": "Link in the landing page's calling card that moves down to the steps for following people of this server from an account on another server (Mastodon, Misskey, …)."
   },
   "landing.registrations.closed": {
     "defaultMessage": "このサーバーは新しいアカウントを受け付けていません。",
-    "description": "Text on the landing page, in place of the registration link, when nobody may sign up."
+    "description": "Text on the landing page, in the calling card and in the section on how to join, when nobody may sign up."
   },
-  "landing.about.title": {
-    "defaultMessage": "このサーバーについて",
-    "description": "Heading of the landing page's section with the server's description."
+  "landing.members": {
+    "defaultMessage": "{count, plural, other {# 人の利用者}}",
+    "description": "Count in the landing page's calling card: how many accounts this server has."
   },
-  "landing.rules.title": {
-    "defaultMessage": "ルール",
-    "description": "Heading of the landing page's section with the server's rules."
+  "landing.since": {
+    "defaultMessage": "{date} から",
+    "description": "In the landing page's calling card: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
   },
-  "landing.posts.title": {
-    "defaultMessage": "最近の投稿",
-    "description": "Heading of the landing page's section with a few recent public posts of this server's accounts."
+  "landing.run_by": {
+    "defaultMessage": "{others, plural, =0 {{name} が運営} other {{name} ほか # 人が運営}}",
+    "description": "Link in the landing page's calling card to the list of the people who run the server. {name} is the display name of the first of them; {others} is how many more there are."
+  },
+  "landing.progress.label": {
+    "defaultMessage": "このページの区画",
+    "description": "Accessible name of the landing page's progress line, which links to its three sections."
+  },
+  "landing.place.title": {
+    "defaultMessage": "どんな場所？",
+    "description": "Heading of the first section of the landing page: the server's description, who runs it, and what people post."
+  },
+  "landing.operators.title": {
+    "defaultMessage": "運営している人",
+    "description": "Heading of the list of the people who run the server, on the landing page."
+  },
+  "landing.activity.title": {
+    "defaultMessage": "投稿の様子",
+    "description": "Heading of the part of the landing page with the number of recent public posts and a few of them."
+  },
+  "landing.activity.week": {
+    "defaultMessage": "この 7 日の公開の投稿",
+    "description": "Label of the number of public posts that this server's users made in the last 7 days, on the landing page."
   },
   "landing.posts.more": {
     "defaultMessage": "ローカルタイムラインを見る",
@@ -51,40 +55,92 @@
     "defaultMessage": "最近の投稿を読み込めませんでした",
     "description": "Heading shown in place of the recent posts of the landing page when they could not be loaded."
   },
-  "landing.posts.empty": {
-    "defaultMessage": "まだ投稿はありません",
-    "description": "Heading shown in place of the recent posts of the landing page when there are none."
+  "landing.promise.title": {
+    "defaultMessage": "どんな約束？",
+    "description": "Heading of the second section of the landing page: the server's rules."
   },
-  "landing.hero.eyebrow": {
-    "defaultMessage": "Welcome to my",
-    "description": "Small line above the landing page's heading; uppercase Latin letters in both languages (the product's name is not translated)."
+  "landing.rules.none": {
+    "defaultMessage": "このサーバーはルールを載せていません。",
+    "description": "Text in the section of the landing page on the rules, when the server has none."
   },
-  "landing.features.title": {
-    "defaultMessage": "my でできること",
-    "description": "Heading of the landing page's section with three cards about the software's features."
+  "landing.join.title": {
+    "defaultMessage": "参加するには？",
+    "description": "Heading of the third section of the landing page: what happens after joining, in the way the server allows, and how to follow from another server."
   },
-  "landing.features.federation.title": {
-    "defaultMessage": "このサーバーの外ともつながる",
-    "description": "Title of the landing page's card about federation."
+  "landing.sign_up.open": {
+    "defaultMessage": "アカウントを作成",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when anyone may sign up."
   },
-  "landing.features.federation.body": {
-    "defaultMessage": "Mastodon や Misskey など、ActivityPub に対応したサーバーの人をフォローして、話せます。",
-    "description": "Text of the landing page's card about federation."
+  "landing.sign_up.approval": {
+    "defaultMessage": "アカウントを申し込む",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when moderators approve each sign-up."
   },
-  "landing.features.emoji.title": {
-    "defaultMessage": "絵文字で気持ちを伝える",
-    "description": "Title of the landing page's card about custom emoji and reactions."
+  "landing.sign_up.invite": {
+    "defaultMessage": "招待でアカウントを作成",
+    "description": "Link at the end of the steps of joining, to the server's registration page, when only people with an invite may sign up."
   },
-  "landing.features.emoji.body": {
-    "defaultMessage": "ほかのサーバーのものも含め、カスタム絵文字で投稿にリアクションできます。",
-    "description": "Text of the landing page's card about custom emoji and reactions."
+  "landing.steps.form": {
+    "defaultMessage": "ユーザー名・メールアドレス・パスワードを入れる",
+    "description": "Step of joining a server that anyone may join."
   },
-  "landing.features.language.title": {
-    "defaultMessage": "あなたの言葉で",
-    "description": "Title of the landing page's card about languages."
+  "landing.steps.confirm_email": {
+    "defaultMessage": "届いたメールでメールアドレスを確かめる",
+    "description": "Step of joining, on a server that sends email."
   },
-  "landing.features.language.body": {
-    "defaultMessage": "画面は日本語と英語で使え、投稿には言語を付けられます。",
-    "description": "Text of the landing page's card about languages."
+  "landing.steps.review": {
+    "defaultMessage": "モデレーターがアカウントを確かめる",
+    "description": "Step of joining: a moderator approves the new account before it can be used."
+  },
+  "landing.steps.start": {
+    "defaultMessage": "ログインして投稿を始める",
+    "description": "Last step of joining."
+  },
+  "landing.steps.apply": {
+    "defaultMessage": "参加したい理由を添えて申し込む",
+    "description": "First step of joining a server where moderators approve each sign-up."
+  },
+  "landing.steps.approved_email": {
+    "defaultMessage": "承認されるとメールが届く",
+    "description": "Last step of joining a server where moderators approve each sign-up, when the server sends email."
+  },
+  "landing.steps.approved_sign_in": {
+    "defaultMessage": "ログインすると承認されたかが分かる",
+    "description": "Last step of joining a server where moderators approve each sign-up, when the server sends no email."
+  },
+  "landing.steps.invite_get": {
+    "defaultMessage": "このサーバーの人から招待のリンクをもらう",
+    "description": "First step of joining a server where only people with an invite may sign up."
+  },
+  "landing.steps.invite_open": {
+    "defaultMessage": "リンクを開いてアカウントを作成",
+    "description": "Second step of joining a server where only people with an invite may sign up."
+  },
+  "landing.elsewhere.title": {
+    "defaultMessage": "ほかのサーバーのアカウントで",
+    "description": "Heading of the steps for following people of this server from an account on another server, on the landing page."
+  },
+  "landing.elsewhere.find": {
+    "defaultMessage": "フォローしたい人をここで見つける",
+    "description": "Step of following from another server."
+  },
+  "landing.elsewhere.copy": {
+    "defaultMessage": "その人のハンドル（{handle} など）を写す",
+    "description": "Step of following from another server. {handle} is an example handle of this server, such as '@alice@example.social'."
+  },
+  "landing.elsewhere.copy_plain": {
+    "defaultMessage": "その人の名前の下にあるハンドル（@名前@ドメイン）を写す",
+    "description": "Step of following from another server, when the page has no example handle to show."
+  },
+  "landing.elsewhere.search": {
+    "defaultMessage": "自分のサーバーの検索に入れてフォローする",
+    "description": "Step of following from another server."
+  },
+  "landing.elsewhere.search.detail": {
+    "defaultMessage": "Mastodon・Misskey など、ActivityPub に対応したサーバーからフォローできます。",
+    "description": "Note under the step of searching on one's own server."
+  },
+  "landing.powered_by": {
+    "defaultMessage": "my で動いています（AGPL-3.0 のフリーソフトウェア）",
+    "description": "Line in the footer of the landing page that names the software the server runs and its license, before the link to its source code."
   }
 }

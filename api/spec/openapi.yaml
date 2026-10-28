@@ -131,6 +131,8 @@ paths:
     $ref: ./paths/custom_emoji_requests.yaml
   /custom_emoji_requests/{id}/withdraw:
     $ref: ./paths/custom_emoji_requests_{id}_withdraw.yaml
+  /instance/overview:
+    $ref: ./paths/instance_overview.yaml
   /instance/health:
     $ref: ./paths/instance_health.yaml
   /instance/documents/{kind}:
@@ -487,6 +489,12 @@ paths:
     $ref: ./paths/admin_announcements_{id}_withdraw.yaml
   /admin/theme:
     $ref: ./paths/admin_theme.yaml
+  /admin/instance/brand:
+    $ref: ./paths/admin_instance_brand.yaml
+  /admin/instance/brand/sanitize:
+    $ref: ./paths/admin_instance_brand_sanitize.yaml
+  /admin/instance/brand/{kind}:
+    $ref: ./paths/admin_instance_brand_{kind}.yaml
   /admin/custom_emojis:
     $ref: ./paths/admin_custom_emojis.yaml
   /admin/custom_emojis/{id}:
@@ -720,6 +728,8 @@ components:
       $ref: ./components/parameters/AppealId.yaml
     BadgeRoleId:
       $ref: ./components/parameters/BadgeRoleId.yaml
+    BrandKind:
+      $ref: ./components/parameters/BrandKind.yaml
     CostItemId:
       $ref: ./components/parameters/CostItemId.yaml
     Cursor:
@@ -799,6 +809,8 @@ components:
       $ref: ./components/responses/AdminCustomEmojiRequest.yaml
     AdminLoginProvider:
       $ref: ./components/responses/AdminLoginProvider.yaml
+    BrandProblem:
+      $ref: ./components/responses/BrandProblem.yaml
     ErrorGroup:
       $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
@@ -872,6 +884,10 @@ components:
     WebhookProblem:
       $ref: ./components/responses/WebhookProblem.yaml
   schemas:
+    AdminBrandImage:
+      $ref: ./components/schemas/AdminBrandImage.yaml
+    AdminBrands:
+      $ref: ./components/schemas/AdminBrands.yaml
     AIUsage:
       $ref: ./components/schemas/AIUsage.yaml
     Account:
@@ -922,6 +938,22 @@ components:
       $ref: ./components/schemas/AdminLoginProviderList.yaml
     AdminLoginProviderState:
       $ref: ./components/schemas/AdminLoginProviderState.yaml
+    BrandDropped:
+      $ref: ./components/schemas/BrandDropped.yaml
+    BrandError:
+      $ref: ./components/schemas/BrandError.yaml
+    BrandFile:
+      $ref: ./components/schemas/BrandFile.yaml
+    BrandKind:
+      $ref: ./components/schemas/BrandKind.yaml
+    BrandProblem:
+      $ref: ./components/schemas/BrandProblem.yaml
+    BrandRendition:
+      $ref: ./components/schemas/BrandRendition.yaml
+    BrandRenditionSize:
+      $ref: ./components/schemas/BrandRenditionSize.yaml
+    BrandSanitized:
+      $ref: ./components/schemas/BrandSanitized.yaml
     CreateLoginProviderRequest:
       $ref: ./components/schemas/CreateLoginProviderRequest.yaml
     EmailSuppression:
@@ -1008,6 +1040,8 @@ components:
       $ref: ./components/schemas/AdminOAuthClientPage.yaml
     DenyOAuthClientHostRequest:
       $ref: ./components/schemas/DenyOAuthClientHostRequest.yaml
+    InstanceBrandImage:
+      $ref: ./components/schemas/InstanceBrandImage.yaml
     LoginProviderClaimCondition:
       $ref: ./components/schemas/LoginProviderClaimCondition.yaml
     LoginProviderKind:
@@ -1138,6 +1172,8 @@ components:
       $ref: ./components/schemas/AnnounceServiceClosureRequest.yaml
     RotateLoginProviderSecretRequest:
       $ref: ./components/schemas/RotateLoginProviderSecretRequest.yaml
+    SanitizeBrandRequest:
+      $ref: ./components/schemas/SanitizeBrandRequest.yaml
     ServiceClosureState:
       $ref: ./components/schemas/ServiceClosureState.yaml
     ServiceClosureNotice:
@@ -1394,6 +1430,10 @@ components:
       $ref: ./components/schemas/Instance.yaml
     InstanceContact:
       $ref: ./components/schemas/InstanceContact.yaml
+    InstanceCounts:
+      $ref: ./components/schemas/InstanceCounts.yaml
+    InstanceOverview:
+      $ref: ./components/schemas/InstanceOverview.yaml
     InstanceDomainAction:
       $ref: ./components/schemas/InstanceDomainAction.yaml
     InstanceDomainActionPage:
@@ -1628,6 +1668,8 @@ components:
       $ref: ./components/schemas/SearchIndexing.yaml
     ServerHealth:
       $ref: ./components/schemas/ServerHealth.yaml
+    SetBrandRequest:
+      $ref: ./components/schemas/SetBrandRequest.yaml
     SetInstanceTextRequest:
       $ref: ./components/schemas/SetInstanceTextRequest.yaml
     SetQuotePolicyRequest:

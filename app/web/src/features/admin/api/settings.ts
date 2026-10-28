@@ -108,6 +108,8 @@ export async function cacheSavedSettings(
     queryClient.invalidateQueries({ queryKey: ["get", "/finance/income_totals"] }),
     // Who may read the supporter list (ADR-0071 §4).
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/supporters"] }),
+    // What the landing page shows of the counts and the operators (public_counts, public_operators).
+    queryClient.invalidateQueries({ queryKey: ["get", "/instance/overview"] }),
     refreshAuditLog(queryClient),
   ]);
 }

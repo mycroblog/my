@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: A PNG rendition of a brand image, served at a URL whose content never changes.
+type: object
+required: [rendition, url, width, height]
+properties:
+  rendition:
+    $ref: ./BrandRendition.yaml
+  url:
+    type: string
+    format: uri
+  width:
+    type: integer
+    minimum: 1
+  height:
+    type: integer
+    minimum: 1

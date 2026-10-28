@@ -168,6 +168,9 @@ type Options struct {
 	Logger *slog.Logger
 	// Errors receives the errors behind a 500 answer (ADR-0103 §2); nil reports nothing.
 	Errors kernel.ErrorReporter
+	// Clock tells the time the status page counts the days left of an action from, the clock
+	// that dated the action; nil is the system clock.
+	Clock kernel.Clock
 	// Moderation lists the actions that keep a signed-in user out of the app on the status
 	// page; nil lists none. UserLocales words the status page in the user's saved locale; nil
 	// words it in the request's.
@@ -232,6 +235,9 @@ func New(o Options) *Handler {
 	}
 	if o.Errors == nil {
 		o.Errors = kernel.NopErrorReporter{}
+	}
+	if o.Clock == nil {
+		o.Clock = systemClock{}
 	}
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,

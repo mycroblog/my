@@ -344,3 +344,16 @@ SELECT account_id, posts_count FROM local_post_counters ORDER BY account_id;
 SELECT e.booster_account_id FROM boost_edges e JOIN boosts b ON b.id = e.boost_id
 WHERE e.status_id = sqlc.arg(status_id) AND b.is_local = 1
 ORDER BY e.booster_account_id;
+
+-- CountLocalPublicPostsByDay counts the public local statuses that are not deleted, published in
+-- [from_ms, to_ms), by the day of 24 hours from from_ms that they fall in (0 the first). The
+-- statuses' IDs are UUIDv7 stamped at their creation, so from_id (the floor of from_ms) bounds
+-- the scan of local_statuses by its primary key.
+-- name: CountLocalPublicPostsByDay :many
+SELECT CAST((s.published_at - sqlc.arg(from_ms)) / 86400000 AS INTEGER) AS day, COUNT(*) AS posts
+FROM local_statuses ls
+JOIN statuses s ON s.id = ls.status_id
+JOIN status_heads h ON h.status_id = ls.status_id
+WHERE ls.status_id >= sqlc.arg(from_id) AND s.visibility = 'public'
+  AND s.published_at >= sqlc.arg(from_ms) AND s.published_at < sqlc.arg(to_ms)
+GROUP BY day ORDER BY day;

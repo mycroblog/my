@@ -170,6 +170,42 @@ func TestCredentialAccountHasThePostingLimits(t *testing.T) {
 	}
 }
 
+// fakePostCounts answers the post count of alice, or err.
+type fakePostCounts struct {
+	n   int64
+	err error
+}
+
+func (f fakePostCounts) PostCount(_ context.Context, accountID string) (int64, error) {
+	if f.err != nil {
+		return 0, f.err
+	}
+	if accountID != aliceAccountID {
+		return 0, errors.New("unexpected account " + accountID)
+	}
+	return f.n, nil
+}
+
+func TestCredentialAccountHasThePostCount(t *testing.T) {
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.PostCounts = fakePostCounts{n: 3} })
+	res := e.get(t, "/accounts/verify_credentials", map[string]string{"Authorization": "Bearer read"})
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", res.StatusCode)
+	}
+	var got clientapi.CredentialAccount
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got.StatusesCount != 3 {
+		t.Errorf("statuses_count = %d, want 3", got.StatusesCount)
+	}
+
+	failing := newAuthEnv(t, func(o *clientapi.Options) { o.PostCounts = fakePostCounts{err: errors.New("store down")} })
+	if res := failing.get(t, "/accounts/verify_credentials", map[string]string{"Authorization": "Bearer read"}); res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("status with a failing count = %d, want 500", res.StatusCode)
+	}
+}
+
 func TestUpdateAccountCredentials(t *testing.T) {
 	profiles := &fakeProfiles{}
 	e := newAuthEnv(t, func(o *clientapi.Options) {

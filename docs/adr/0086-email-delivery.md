@@ -1,6 +1,6 @@
 # ADR-0086: メール送信のジョブ化・テンプレート・配信停止
 
-- Status: Accepted
+- Status: Accepted（§2 の「外部の画像を読まない」に、サーバーのロゴの例外を ADR-0116（サーバーのロゴとアイコンを SVG で設定する）が加える）
 - Date: 2026-10-23
 - Deciders: @rosylilly
 - Issue: #1025

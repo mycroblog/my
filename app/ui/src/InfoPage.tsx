@@ -3,6 +3,7 @@
 // of contents built from the column's own `h2` headings.
 import { type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { tv } from "tailwind-variants";
+import { goToSection, useCurrentSection } from "./currentSection";
 
 const infoPage = tv({
   slots: {
@@ -57,7 +58,6 @@ export function InfoPage({ heading, children, contentsLabel, placement = "inline
   const slots = infoPage();
   const columnRef = useRef<HTMLDivElement>(null);
   const [sections, setSections] = useState<Section[]>([]);
-  const [currentId, setCurrentId] = useState<string>();
 
   useEffect(() => {
     const column = columnRef.current;
@@ -74,35 +74,10 @@ export function InfoPage({ heading, children, contentsLabel, placement = "inline
     };
   }, []);
 
-  useEffect(() => {
-    const column = columnRef.current;
-    // Without the observer (a test environment) no section is marked current.
-    if (column === null || sections.length === 0 || typeof IntersectionObserver === "undefined") return;
-    const headings = sections.flatMap((section) => document.getElementById(section.id) ?? []);
-    // The current section is the last heading that has passed the top fifth of the screen. A heading crossing that line
-    // (the observer's root margin) is the moment to look again.
-    const observer = new IntersectionObserver(
-      () => {
-        const above = headings.filter((heading) => heading.getBoundingClientRect().top <= window.innerHeight * 0.2);
-        setCurrentId(above.at(-1)?.id ?? headings[0]?.id);
-      },
-      { rootMargin: "0px 0px -80% 0px", threshold: [0, 1] },
-    );
-    for (const heading of headings) observer.observe(heading);
-    return () => {
-      observer.disconnect();
-    };
-  }, [sections]);
+  const [currentId, setCurrentId] = useCurrentSection(sections.map((section) => section.id));
 
   const go = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
-    const heading = document.getElementById(id);
-    if (heading === null) return;
-    event.preventDefault();
-    const smooth = window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
-    heading.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-    heading.tabIndex = -1;
-    heading.focus({ preventScroll: true });
-    setCurrentId(id);
+    if (goToSection(event, id)) setCurrentId(id);
   };
 
   const list = (

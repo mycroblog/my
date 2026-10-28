@@ -83,6 +83,17 @@ func removeSQLiteTemplate() {
 	}
 }
 
+// steadyClock tells the wall time at its start plus the time since on the monotonic clock, so
+// that it never goes back. The wall clock does go back when the host steps it (WSL 2 steps it
+// back by half a second every 30 seconds under load), which breaks a test that issues something
+// that ends at a time and then waits with the monotonic clock until that time has passed, or
+// that counts the time left from a later reading of the clock.
+type steadyClock struct{ start time.Time }
+
+func newSteadyClock() steadyClock { return steadyClock{start: time.Now()} }
+
+func (c steadyClock) Now() time.Time { return c.start.Round(0).Add(time.Since(c.start)) }
+
 // newDatabase returns the path of a new SQLite database file, a copy of the template with the
 // schema applied when applied is true, and a path to no file yet otherwise.
 func newDatabase(t *testing.T, applied bool) string {

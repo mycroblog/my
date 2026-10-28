@@ -23,7 +23,8 @@ CREATE TABLE instance_setting_revisions (
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
-    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in'
+    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in',
+    'public_counts', 'public_operators'
   )),
   value TEXT NOT NULL,
   revised_by_user_id TEXT,
@@ -91,7 +92,7 @@ CREATE TABLE instance_theme_tokens (
    'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
    'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',
    'spacing', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-2xl', 'elevation-card',
-   'elevation-sm', 'elevation-md', 'elevation-lg', 'ease-standard', 'ease-enter', 'ease-exit',
+   'elevation-sm', 'elevation-md', 'elevation-lg', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
    'transition-duration-fast', 'transition-duration-normal', 'transition-duration-slow',
    'default-transition-duration', 'default-transition-timing-function'
   )),
@@ -103,6 +104,50 @@ CREATE TABLE instance_theme_tokens (
 -- Projection: the current theme revision, one row once a theme has been saved.
 CREATE TABLE instance_theme (
   id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  revision_id TEXT NOT NULL
+) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: brand images (data-model §4.9, ADR-0116). Owned by internal/app/instance.
+-- The files live in the BlobStore under keys the server makes from the revision ID.
+-- ---------------------------------------------------------------------------------------------
+
+-- Event (revision): one change of the icon, the logo, or the dark logo. A set revision has its
+-- files in instance_brand_files; a clear revision has none and brings back the built-in images.
+-- background_color is the #rrggbb color behind the opaque renditions of a set icon, NULL
+-- otherwise. revised_by_user_id is NULL for a change from the CLI.
+CREATE TABLE instance_brand_revisions (
+  id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('icon', 'logo', 'logo_dark')),
+  action TEXT NOT NULL CHECK (action IN ('set', 'clear')),
+  background_color TEXT CHECK (background_color IS NULL OR background_color GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'),
+  revised_by_user_id TEXT,
+  revised_at INTEGER NOT NULL,
+  CHECK ((kind = 'icon' AND action = 'set') = (background_color IS NOT NULL))
+) STRICT;
+CREATE INDEX instance_brand_revisions_kind_id ON instance_brand_revisions (kind, id DESC);
+
+-- Event (child of a set revision): one stored file, the sanitized SVG or one of its PNG
+-- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
+-- sha256 is the hex SHA-256 of the content.
+CREATE TABLE instance_brand_files (
+  brand_revision_id TEXT NOT NULL,
+  rendition TEXT NOT NULL CHECK (rendition IN (
+    'svg', 'favicon-32', 'favicon-48', 'apple-touch-180', 'pwa-192', 'pwa-512', 'maskable-512',
+    'logo-mail', 'logo-dark-mail', 'preview-1200x630'
+  )),
+  blob_key TEXT NOT NULL,
+  content_type TEXT NOT NULL CHECK (content_type IN ('image/svg+xml', 'image/png')),
+  width INTEGER NOT NULL CHECK (width > 0),
+  height INTEGER NOT NULL CHECK (height > 0),
+  byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  PRIMARY KEY (brand_revision_id, rendition)
+) STRICT;
+
+-- Projection: the current set revision of each kind; a clear revision deletes the row.
+CREATE TABLE instance_brands (
+  kind TEXT NOT NULL PRIMARY KEY,
   revision_id TEXT NOT NULL
 ) STRICT;
 

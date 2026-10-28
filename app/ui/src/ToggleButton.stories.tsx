@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, fn } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import { StarIcon } from "./Icons";
 import { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 
@@ -52,6 +52,45 @@ export const Default: Story = {
 };
 
 export const Selected: Story = { args: { defaultSelected: true } };
+
+/**
+ * A celebrated moment (web-client §21.5): turning it on makes the star grow in with the overshoot of `ease-celebrate`
+ * (the `soft` fill instead with reduced motion), for a moment only. Turning it off stays quiet.
+ */
+export const Celebrate: Story = {
+  args: { celebrate: true },
+  play: async ({ canvas, userEvent, step }) => {
+    const button = canvas.getByRole("button", { name: "Favourite" });
+    await step("turning it on celebrates", async () => {
+      await userEvent.click(button);
+      await expect(button).toHaveAttribute("data-celebrating");
+      const animations = button.querySelector("svg")?.getAnimations() ?? [];
+      await expect(animations.map((a) => (a instanceof CSSAnimation ? a.animationName : ""))).toContain("celebrate");
+    });
+    await step("the moment ends by itself", async () => {
+      await waitFor(() => expect(button).not.toHaveAttribute("data-celebrating"), { timeout: 2000 });
+      await expect(button).toHaveAttribute("aria-pressed", "true");
+    });
+    await step("turning it off stays quiet", async () => {
+      await userEvent.click(button);
+      await expect(button).not.toHaveAttribute("data-celebrating");
+      await expect(button).toHaveAttribute("aria-pressed", "false");
+      // End on, as the moment leaves it; the screenshot follows, with no hover state behind.
+      await userEvent.click(button);
+      await waitFor(() => expect(button).not.toHaveAttribute("data-celebrating"), { timeout: 2000 });
+      await userEvent.unhover(button);
+    });
+  },
+};
+
+/** A toggle that is already on when it appears does not celebrate (it looks like Selected, which has the screenshots). */
+export const CelebrateAlreadySelected: Story = {
+  tags: ["no-screenshot"],
+  args: { celebrate: true, defaultSelected: true },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("button", { name: "Favourite" })).not.toHaveAttribute("data-celebrating");
+  },
+};
 
 /** Every tone, off and on, with a count, and disabled. */
 export const Matrix: Story = {

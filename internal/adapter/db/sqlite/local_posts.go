@@ -4,8 +4,10 @@ package sqlite
 
 import (
 	"context"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
@@ -57,6 +59,22 @@ func (r *StatusRepository) ListLocalPostCounters(ctx context.Context) ([]content
 func (r *StatusRepository) LocalPostsTotal(ctx context.Context) (int64, error) {
 	n, err := r.db.reader().SumLocalPosts(ctx)
 	return n, wrap(err, "sum local posts")
+}
+
+// DailyLocalPublicPosts implements content.Repository.
+func (r *StatusRepository) DailyLocalPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error) {
+	out := make([]int, days)
+	from := to.Add(-time.Duration(days) * 24 * time.Hour)
+	rows, err := r.db.reader().CountLocalPublicPostsByDay(ctx, sqlitegen.CountLocalPublicPostsByDayParams{FromMs: toMillis(from), FromID: kernel.UUIDv7Floor(from), ToMs: toMillis(to)})
+	if err != nil {
+		return nil, wrap(err, "count local public posts by day")
+	}
+	for _, row := range rows {
+		if row.Day >= 0 && row.Day < int64(days) {
+			out[row.Day] = int(row.Posts)
+		}
+	}
+	return out, nil
 }
 
 // AddLocalPosts implements content.InteractionRepository.

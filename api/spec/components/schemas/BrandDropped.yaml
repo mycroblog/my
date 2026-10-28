@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Something the server removed from an uploaded SVG: an `element` with everything in it, or an
+  `attribute`, by its local name.
+type: object
+required: [kind, name]
+properties:
+  kind:
+    type: string
+    enum: [element, attribute]
+  name:
+    type: string

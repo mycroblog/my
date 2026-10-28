@@ -108,7 +108,7 @@ function Rules({ rules }: { rules: ReturnType<typeof useAbout>["rules"] }) {
  * The image that represents the instance, at the width of the page. Its alt text is the administrator's; without
  * one, the image is decorative, as the page names the server in its heading.
  */
-export function ServerThumbnail({ thumbnail }: { thumbnail: NonNullable<Instance["thumbnail"]> }) {
+function ServerThumbnail({ thumbnail }: { thumbnail: NonNullable<Instance["thumbnail"]> }) {
   return (
     <BannerImage src={thumbnail.url} alt={thumbnail.alt ?? ""} width={thumbnail.width} height={thumbnail.height} />
   );

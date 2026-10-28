@@ -68,6 +68,8 @@ default locale, who can see the timelines, the instance name, description, terms
 | `user_app_registration` | `true` / `false` | `true` | Whether signed-in users can register their own OAuth apps (public or confidential) with the client API (`POST /api/v1/oauth_apps`). When `false`, registering answers 403. Listing, changing, and deleting registered apps, reissuing secrets, issuing a token to yourself, and authorization by other users keep working |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Who can open voice chat rooms, while the configuration `voice` is not `off` ([configuration](../reference/configuration.md#voice)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `start_voice_rooms`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
+| `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
+| `public_operators` | `true` / `false` | `true` | Whether the landing page and `GET /api/v1/instance/overview` list the people who run the server: the accounts of this server that show the badge of a staff role (the built-in `admin` or `moderator` role, or a role with a moderation or server permission) on their profile, with their badges. A staff member who does not show their badge is never listed. When `false`, the API leaves the list out |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Who can create invites of their own besides the staff with `manage_invites` ([member invites](registration.md#member-invites)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_invites`, which only the built-in `admin` role has by default and which a role of a supporter plan may have. In `approval` mode, a usable invite approves the new user at once, so `everyone` lets every user skip the review |
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
 | `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
@@ -225,6 +227,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
   | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
   | Supporter list | `supporter_list_visibility` |
+  | Landing page | `public_counts`, `public_operators` |
   | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
   | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |
 
@@ -312,6 +315,59 @@ echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the def
   ],
   "custom_css": ".brand { letter-spacing: 0.02em; }"
 }
+```
+
+## Logo and icon
+
+Besides the thumbnail and the preview image, the instance can have its own icon, logo, and dark logo, each uploaded as one SVG.
+Until one is set, the built-in images of my are used, and clearing one brings the built-in image back.
+
+| Image | Shape | Where it appears |
+| --- | --- | --- |
+| `icon` | Square (within 1%) | The favicon, the home screen icon of iOS (`apple-touch-icon`), the icons of the installed app (Web App Manifest), and wherever a client shows the server as a square picture |
+| `logo` | 1 to 8 times as wide as it is high | The header of the web client instead of the server name (the logo should contain the name), the HTML version of every email, and the link preview image when `preview_image` is not set |
+| `logo_dark` | As `logo` | Dark backgrounds; without it, `logo` is used there too |
+
+- **The server sanitizes the SVG.** It reads it as XML and writes a new document from the allowed elements (shapes, groups,
+  `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`, `title`, `desc`) and attributes (geometry,
+  transforms, presentation attributes, `id`, `class`, `style`) only. Scripts, `foreignObject`, embedded images, links,
+  animations, filters (shadows and blurs), event handlers, references to anything outside the file, and `data:` URLs are removed,
+  and the answer lists what was removed. Only the sanitized SVG is stored.
+- An SVG is refused (nothing is saved) when it is not well-formed XML in UTF-8, has a `DOCTYPE` or entity declarations, has no
+  `viewBox`, is over 256 KiB (128 KiB after sanitizing), has over 5,000 elements, nests over 32 deep, has over 200 `use`
+  elements, has the wrong shape for its kind, contains `text` (convert text to outlines in your editor first), or has CSS that
+  could load something (`@import`, `@font-face`, `url()` other than `url(#id)`, escapes). `@media (prefers-color-scheme: dark)`
+  in a `<style>` is allowed, so an icon can change in dark mode.
+- Some places take no SVG (the iOS home screen, older Safari favicons, link previews, email). For them the client that uploads the
+  SVG also draws PNG versions from the sanitized SVG and sends them with it: 32, 48, 180, 192, and 512 px and a 512 px maskable
+  icon for `icon`; a 96 px high email logo and a 1200 × 630 link preview image for `logo`; a 96 px high email logo for
+  `logo_dark`. The server checks that each is a PNG of the right size (at most 1 MiB; the 180 px icon, the maskable icon, and the
+  link preview must be opaque) and writes it again without metadata. If any file is wrong, nothing is saved. The icon's opaque
+  versions are drawn on a background color, `#rrggbb`, which defaults to the theme's light `color-surface`. The server does
+  not check that the PNG versions show the same picture as the SVG.
+- The files are stored in the blob store under `instance/brand/<revision>/` and served at
+  `https://<host>/brand/<revision>/<version>.svg|.png` with `Cache-Control: public, max-age=31536000, immutable`, since the
+  content of a revision never changes. An SVG is served with `Content-Security-Policy: default-src 'none'; style-src
+  'unsafe-inline'; sandbox` and `X-Content-Type-Options: nosniff`, so even opened on its own it runs nothing and loads nothing.
+  The files of earlier revisions stay, so emails already sent keep their logo.
+- With an icon set, the HTML shell links its PNG favicons, its SVG, and its 180 px `apple-touch-icon`, the Web App Manifest lists
+  its 512 px, 192 px, maskable, and SVG icons in that order (other fediverse servers take the first one as this server's icon),
+  and `/apple-touch-icon.png` returns the 180 px version. The shell's ETag changes with the images, and the shell's shared cache
+  lasts a few minutes as with the theme. An installed app picks up a new icon on Android when Chrome next checks the manifest;
+  on desktops the app keeps its old icon until it is installed again.
+- `GET /api/v1/instance` returns `icon`, `logo`, and `logo_dark` with the URL of the SVG, the URL and size of each PNG version,
+  and the revision; each is left out while the built-in image is in use.
+- Set and clear them with the client API, which needs the role permission `manage_settings`:
+  `POST /api/v1/admin/instance/brand/sanitize` checks an SVG and returns the sanitized SVG with the PNG versions to draw (it
+  saves nothing), `PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` saves the SVG with every PNG version
+  (`multipart/form-data`, one part per version), `DELETE` on the same path clears one, and `GET /api/v1/admin/instance/brand` returns the current
+  images with the icon's background color. Every change is kept as a revision (`instance_brand_revisions`) and recorded in the
+  audit log (`setting_changed`, target `brand_icon`, `brand_logo`, or `brand_logo_dark`).
+- The CLI cannot set them, since the PNG versions are drawn by the client, but it can show them and clear a broken one:
+
+```sh
+my instance brand show          # each image with its revision, when and by whom it was set, and the URL of its SVG
+my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
 ## Custom emoji

@@ -1589,6 +1589,13 @@ func (l *Localizer) ServerErrorsInternal() string {
 	return l.format("server:errors.internal", nil)
 }
 
+// ServerErrorsInvalidBrand formats "server:errors.invalid_brand". API error title for HTTP 422 when an administrator sets a brand image (the instance's icon or logo) that breaks a rule (an unsafe or malformed SVG, text not converted to outlines, or a PNG rendition of the wrong size); brand_error says why.
+//
+//	en: The image cannot be saved.
+func (l *Localizer) ServerErrorsInvalidBrand() string {
+	return l.format("server:errors.invalid_brand", nil)
+}
+
 // ServerErrorsInvalidCustomEmoji formats "server:errors.invalid_custom_emoji". API error title for HTTP 422 when a custom emoji, or a request for one, breaks a rule; the detail and the reason property say which.
 //
 //	en: The custom emoji cannot be saved.

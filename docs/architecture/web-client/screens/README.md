@@ -39,6 +39,7 @@
 ## 画面の一覧
 
 - [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
+- [ランディングページ（`/`、サインインしていない人）](landing.md)
 - [設定のメニュー（`/settings` と各画面の横）](settings-menu.md)
 - [設定のトップ（`/settings`）](settings.md)
 - [表示・投稿・タイムライン（`/settings/preferences`）](settings-preferences.md)

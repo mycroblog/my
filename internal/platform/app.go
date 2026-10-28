@@ -326,6 +326,9 @@ type AppOptions struct {
 	// DataUpgrades, when set, replaces the data upgrade steps and prerequisites of this release.
 	// Tests only, to run test steps through `my db upgrade` and the readiness check.
 	DataUpgrades *DataUpgrades
+	// Clock, when set, tells the time instead of the system clock. Tests only, to give the App a
+	// clock that never goes back, as the wall clock does when the host steps it.
+	Clock kernel.Clock
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -347,11 +350,14 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err != nil {
 		return nil, err
 	}
+	if opts.Clock == nil {
+		opts.Clock = system.Clock{}
+	}
 	a := &App{
 		Config:     cfg,
 		Logger:     opts.Logger,
 		Messages:   messages,
-		Clock:      system.Clock{},
+		Clock:      opts.Clock,
 		IDs:        system.IDGenerator{},
 		Projectors: &uow.Projectors{},
 		Handlers:   &queue.JobHandlerRegistry{},

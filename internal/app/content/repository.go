@@ -162,6 +162,9 @@ type Repository interface {
 	FindPostCounter(ctx context.Context, accountID string) (content.PostCounter, error)
 	// LocalPostsTotal returns the sum of the local post counters.
 	LocalPostsTotal(ctx context.Context) (int64, error)
+	// DailyLocalPublicPosts counts the public local statuses that are not deleted in each of the
+	// days periods of 24 hours before to, oldest first, by their publication time.
+	DailyLocalPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error)
 
 	// Remote statuses: custom emoji, poll tallies, and the scope of ingestion (ADR-0034).
 	// InsertRevision also writes a revision's Poll and Remote, and FindRevision reads them.

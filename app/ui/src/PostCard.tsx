@@ -19,11 +19,11 @@ const postCard = tv({
     // Narrow: the avatar sits beside the header and the body spans the card. Wide: the avatar has its own column.
     // Positioned, so that the avatar is drawn over the thread's line.
     avatar: "relative row-span-1 @md:row-span-5",
-    // One row: the author takes the room the time leaves. Below `@sm` a PostCardAuthor puts its handle on a
-    // second line and the author fills the row, so the time stays at the end of the name's line. A long time
-    // (a full date) wraps inside at most half of the row instead of pushing the card wider.
+    // One row: the author takes the room the time leaves. The author fills the row at every width (a
+    // PostCardAuthor puts its handle on a second line below `@sm`), so the time stays at the row's end. A long
+    // time (a full date) wraps inside at most half of the row instead of pushing the card wider.
     header: "flex min-w-0 items-baseline gap-x-2 self-center",
-    author: "min-w-0 flex-1 wrap-anywhere @sm:flex-initial",
+    author: "min-w-0 flex-1 wrap-anywhere",
     // The time, and under it the visibility, both at the end of the row.
     time: "flex max-w-1/2 shrink-0 flex-col items-end text-sm text-fg-muted",
     body: "col-span-2 min-w-0 @md:col-span-1 @md:col-start-2",

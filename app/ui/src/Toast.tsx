@@ -11,6 +11,7 @@ import { createContext, type ReactNode, use, useEffect, useRef, useState } from 
 import { Button } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { useAnnouncer } from "./Announcer";
+import { celebrationClasses, useCelebration } from "./celebration";
 import { AboutIcon, CheckIcon, CloseIcon, WarningIcon } from "./Icons";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
 
@@ -25,6 +26,12 @@ export type ToastOptions = {
   action?: { label: string; onAction: () => void };
   /** Milliseconds before the toast closes by itself; `null` keeps it until dismissed. */
   timeout?: number | null;
+  /**
+   * The toast tells of a celebrated moment (web-client/21-experience-principles.md §21.5, such as the first post): its
+   * icon grows in with the small overshoot of `ease-celebrate` as it appears, or, with reduced motion, takes the `soft`
+   * fill for a moment. Only for the moments listed there; the message says the same in words.
+   */
+  celebrate?: boolean;
 };
 
 export type ToastApi = {
@@ -75,7 +82,7 @@ const toast = tv({
       "py-2 ps-4 pe-2 text-sm text-toast-fg shadow-lg dark:border dark:border-border",
     ],
     // The tone shows by this icon and not by a colored edge (WCAG 1.4.1).
-    icon: "shrink-0 text-toast-muted [&>svg]:size-5",
+    icon: "shrink-0 rounded-full text-toast-muted [&>svg]:size-5",
     message: "flex-1 py-1",
     action: [
       "shrink-0 rounded-md px-2 py-1.5 font-extrabold text-toast-action outline-none data-focus-visible:focus-ring",
@@ -98,6 +105,7 @@ const toast = tv({
       success: { icon: "text-toast-success" },
       danger: { icon: "text-toast-danger" },
     },
+    celebrate: { true: { icon: celebrationClasses } },
   },
 });
 
@@ -233,9 +241,7 @@ export function ToastProvider({
           <ol className="contents">
             {toasts.map((t) => (
               <li key={t.id} data-toast-id={t.id} className={styles.item({ tone: t.tone ?? "neutral" })}>
-                <span className={styles.icon({ tone: t.tone ?? "neutral" })}>
-                  {t.tone === "success" ? <CheckIcon /> : t.tone === "danger" ? <WarningIcon filled /> : <AboutIcon />}
-                </span>
+                <ToastIcon tone={t.tone ?? "neutral"} celebrate={t.celebrate === true} />
                 <p className={styles.message()}>{t.message}</p>
                 {t.action !== undefined && (
                   <Button
@@ -266,6 +272,16 @@ export function ToastProvider({
         </section>
       )}
     </ToastContext>
+  );
+}
+
+/** The icon of a toast's tone; a celebrating toast's icon carries the moment from when it appears. */
+function ToastIcon({ tone, celebrate }: { tone: ToastTone; celebrate: boolean }) {
+  const celebration = useCelebration(celebrate);
+  return (
+    <span className={toast().icon({ tone, celebrate })} {...celebration.celebrationProps}>
+      {tone === "success" ? <CheckIcon /> : tone === "danger" ? <WarningIcon filled /> : <AboutIcon />}
+    </span>
   );
 }
 

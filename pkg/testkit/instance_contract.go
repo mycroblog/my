@@ -34,7 +34,8 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // canonical values, rejection of invalid input without writing, texts (one value for every
 // locale) with their history, cleared texts, the media files that media settings
 // refer to, the property that the synchronous projections equal a rebuild from the
-// revisions, the instance rules (instanceRuleCases), the theme (instanceThemeCases), the
+// revisions, the instance rules (instanceRuleCases), the theme (instanceThemeCases), the brand
+// images (instanceBrandCases), the
 // announcements (instanceAnnouncementCases), and the service closure (instanceClosureCases).
 func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
@@ -56,6 +57,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	}
 	cases = append(cases, instanceRuleCases...)
 	cases = append(cases, instanceThemeCases...)
+	cases = append(cases, instanceBrandCases...)
 	cases = append(cases, instanceAnnouncementCases...)
 	cases = append(cases, instanceClosureCases...)
 	for _, tc := range cases {
@@ -64,9 +66,11 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 }
 
 type instanceEnv struct {
-	h       InstanceHarness
-	clock   *Clock
-	service *appinstance.Service
+	h          InstanceHarness
+	projectors *uow.Projectors
+	blobs      *MemoryBlobStore
+	clock      *Clock
+	service    *appinstance.Service
 }
 
 func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
@@ -75,11 +79,15 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 	h := newHarness(t, uow.Options{Retry: uow.RetryPolicy{MaxAttempts: 20}, Projectors: projectors})
 	appinstance.RegisterProjectors(projectors, h.Instance)
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
+	blobs := NewMemoryBlobStore(clock)
 	return &instanceEnv{
-		h:     h,
-		clock: clock,
+		h:          h,
+		projectors: projectors,
+		blobs:      blobs,
+		clock:      clock,
 		service: appinstance.NewService(appinstance.Deps{
 			UnitOfWork: h.UnitOfWork, Repository: h.Instance, Clock: clock, IDs: NewIDGenerator(clock),
+			Blobs: blobs,
 		}),
 	}
 }

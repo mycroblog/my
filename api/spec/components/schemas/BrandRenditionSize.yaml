@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: A rendition that a brand image needs, and its size in pixels.
+type: object
+required: [rendition, width, height]
+properties:
+  rendition:
+    $ref: ./BrandRendition.yaml
+  width:
+    type: integer
+    minimum: 1
+  height:
+    type: integer
+    minimum: 1

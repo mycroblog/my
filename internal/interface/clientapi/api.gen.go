@@ -1306,6 +1306,147 @@ func (e BillingSourceName) Valid() bool {
 	}
 }
 
+// Defines values for BrandDroppedKind.
+const (
+	BrandDroppedKindAttribute BrandDroppedKind = "attribute"
+	BrandDroppedKindElement   BrandDroppedKind = "element"
+)
+
+// Valid indicates whether the value is a known member of the BrandDroppedKind enum.
+func (e BrandDroppedKind) Valid() bool {
+	switch e {
+	case BrandDroppedKindAttribute:
+		return true
+	case BrandDroppedKindElement:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandErrorCode.
+const (
+	BrandErrorCodeAspectRatio         BrandErrorCode = "aspect_ratio"
+	BrandErrorCodeDimensions          BrandErrorCode = "dimensions"
+	BrandErrorCodeDoctype             BrandErrorCode = "doctype"
+	BrandErrorCodeInvalidColor        BrandErrorCode = "invalid_color"
+	BrandErrorCodeInvalidPng          BrandErrorCode = "invalid_png"
+	BrandErrorCodeMalformed           BrandErrorCode = "malformed"
+	BrandErrorCodeMissingRendition    BrandErrorCode = "missing_rendition"
+	BrandErrorCodeNoViewbox           BrandErrorCode = "no_viewbox"
+	BrandErrorCodeNotOpaque           BrandErrorCode = "not_opaque"
+	BrandErrorCodeNotSvg              BrandErrorCode = "not_svg"
+	BrandErrorCodeText                BrandErrorCode = "text"
+	BrandErrorCodeTooDeep             BrandErrorCode = "too_deep"
+	BrandErrorCodeTooLarge            BrandErrorCode = "too_large"
+	BrandErrorCodeTooManyElements     BrandErrorCode = "too_many_elements"
+	BrandErrorCodeTooManyUses         BrandErrorCode = "too_many_uses"
+	BrandErrorCodeUnexpectedRendition BrandErrorCode = "unexpected_rendition"
+	BrandErrorCodeUnsafeCss           BrandErrorCode = "unsafe_css"
+)
+
+// Valid indicates whether the value is a known member of the BrandErrorCode enum.
+func (e BrandErrorCode) Valid() bool {
+	switch e {
+	case BrandErrorCodeAspectRatio:
+		return true
+	case BrandErrorCodeDimensions:
+		return true
+	case BrandErrorCodeDoctype:
+		return true
+	case BrandErrorCodeInvalidColor:
+		return true
+	case BrandErrorCodeInvalidPng:
+		return true
+	case BrandErrorCodeMalformed:
+		return true
+	case BrandErrorCodeMissingRendition:
+		return true
+	case BrandErrorCodeNoViewbox:
+		return true
+	case BrandErrorCodeNotOpaque:
+		return true
+	case BrandErrorCodeNotSvg:
+		return true
+	case BrandErrorCodeText:
+		return true
+	case BrandErrorCodeTooDeep:
+		return true
+	case BrandErrorCodeTooLarge:
+		return true
+	case BrandErrorCodeTooManyElements:
+		return true
+	case BrandErrorCodeTooManyUses:
+		return true
+	case BrandErrorCodeUnexpectedRendition:
+		return true
+	case BrandErrorCodeUnsafeCss:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandKind.
+const (
+	BrandKindIcon     BrandKind = "icon"
+	BrandKindLogo     BrandKind = "logo"
+	BrandKindLogoDark BrandKind = "logo_dark"
+)
+
+// Valid indicates whether the value is a known member of the BrandKind enum.
+func (e BrandKind) Valid() bool {
+	switch e {
+	case BrandKindIcon:
+		return true
+	case BrandKindLogo:
+		return true
+	case BrandKindLogoDark:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandRendition.
+const (
+	BrandRenditionAppleTouch180   BrandRendition = "apple-touch-180"
+	BrandRenditionFavicon32       BrandRendition = "favicon-32"
+	BrandRenditionFavicon48       BrandRendition = "favicon-48"
+	BrandRenditionLogoDarkMail    BrandRendition = "logo-dark-mail"
+	BrandRenditionLogoMail        BrandRendition = "logo-mail"
+	BrandRenditionMaskable512     BrandRendition = "maskable-512"
+	BrandRenditionPreview1200x630 BrandRendition = "preview-1200x630"
+	BrandRenditionPwa192          BrandRendition = "pwa-192"
+	BrandRenditionPwa512          BrandRendition = "pwa-512"
+)
+
+// Valid indicates whether the value is a known member of the BrandRendition enum.
+func (e BrandRendition) Valid() bool {
+	switch e {
+	case BrandRenditionAppleTouch180:
+		return true
+	case BrandRenditionFavicon32:
+		return true
+	case BrandRenditionFavicon48:
+		return true
+	case BrandRenditionLogoDarkMail:
+		return true
+	case BrandRenditionLogoMail:
+		return true
+	case BrandRenditionMaskable512:
+		return true
+	case BrandRenditionPreview1200x630:
+		return true
+	case BrandRenditionPwa192:
+		return true
+	case BrandRenditionPwa512:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ClientErrorReportKind.
 const (
 	ClientErrorReportKindBoundaryError      ClientErrorReportKind = "boundary_error"
@@ -2102,6 +2243,8 @@ const (
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
+	InstanceSettingKeyPublicOperators                  InstanceSettingKey = "public_operators"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
 	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
@@ -2175,6 +2318,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
 	case InstanceSettingKeyPreviewImage:
+		return true
+	case InstanceSettingKeyPublicCounts:
+		return true
+	case InstanceSettingKeyPublicOperators:
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
@@ -4720,6 +4867,43 @@ type AdminAvailabilityEventPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// AdminBrandImage A brand image as the administrators see it: the image of `Instance` with the background color
+// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+// removed from the upload.
+type AdminBrandImage struct {
+	// Background The `#rrggbb` color behind the opaque renditions of the icon; omitted for a logo.
+	Background *string         `json:"background,omitempty"`
+	Dropped    *[]BrandDropped `json:"dropped,omitempty"`
+
+	// Height The height of the SVG's viewBox, rounded.
+	Height     int         `json:"height"`
+	Renditions []BrandFile `json:"renditions"`
+	RevisedAt  time.Time   `json:"revised_at"`
+	Revision   string      `json:"revision"`
+	SvgUrl     string      `json:"svg_url"`
+
+	// Width The width of the SVG's viewBox, rounded.
+	Width int `json:"width"`
+}
+
+// AdminBrands The brand images of the instance; a kind that uses the built-in images is omitted.
+type AdminBrands struct {
+	// Icon A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	Icon *AdminBrandImage `json:"icon,omitempty"`
+
+	// Logo A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	Logo *AdminBrandImage `json:"logo,omitempty"`
+
+	// LogoDark A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	LogoDark *AdminBrandImage `json:"logo_dark,omitempty"`
+}
+
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
 	// OpenReports The reports that are open. Needs `manage_reports`.
@@ -6595,6 +6779,135 @@ type BillingImportRunOutcome string
 // BillingSourceName A cloud provider of the billing imports (`billing_sources`).
 type BillingSourceName string
 
+// BrandDropped Something the server removed from an uploaded SVG: an `element` with everything in it, or an
+// `attribute`, by its local name.
+type BrandDropped struct {
+	Kind BrandDroppedKind `json:"kind"`
+	Name string           `json:"name"`
+}
+
+// BrandDroppedKind defines model for BrandDropped.Kind.
+type BrandDroppedKind string
+
+// BrandError Why a brand image cannot be saved. `code` is `malformed` (not well-formed XML in UTF-8),
+// `doctype` (a DOCTYPE or an entity declaration), `not_svg` (the root is not `svg`),
+// `no_viewbox` (no `viewBox` of four numbers with a positive size), `too_large` (the SVG is
+// over 262,144 bytes, or 131,072 once sanitized, or a PNG is over 1,048,576), `too_many_elements`
+// (over 5,000), `too_deep` (elements nested over 32 deep), `too_many_uses` (over 200 `use`
+// elements, references that expand to too many elements, or a reference cycle),
+// `aspect_ratio` (an icon that is not square within 1%, a logo not 1 to 8 times as wide as
+// it is high), `text` (`text` or `tspan`: convert the text to outlines), `unsafe_css` (CSS with
+// `@import`, `@font-face`, `@namespace`, a `url()` other than `url(#id)`, `expression(`, an
+// escape, or `<`), `missing_rendition`, `unexpected_rendition` (a rendition of another
+// kind), `invalid_png`, `dimensions` (a PNG of the wrong size), `not_opaque` (a rendition that
+// must be opaque has transparent pixels), or `invalid_color` (the background is not `#rrggbb`,
+// or a logo has one). `rendition` names the file, `svg` for the SVG.
+type BrandError struct {
+	Code BrandErrorCode `json:"code"`
+
+	// Detail More about the problem, in English.
+	Detail    *string `json:"detail,omitempty"`
+	Rendition *string `json:"rendition,omitempty"`
+}
+
+// BrandErrorCode defines model for BrandError.Code.
+type BrandErrorCode string
+
+// BrandFile A PNG rendition of a brand image, served at a URL whose content never changes.
+type BrandFile struct {
+	Height int `json:"height"`
+
+	// Rendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+	// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+	// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+	// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+	// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+	// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+	// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+	// instance has no `preview_image`.
+	Rendition BrandRendition `json:"rendition"`
+	Url       string         `json:"url"`
+	Width     int            `json:"width"`
+}
+
+// BrandKind A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+// instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+// `logo_dark` for dark backgrounds (the `logo` is used there without it).
+type BrandKind string
+
+// BrandProblem A 422 of the brand image operations. For the type `/api/v1/problems/invalid-brand`,
+// `brand_error` says why the image cannot be saved; another 422 (a malformed request) has none.
+type BrandProblem struct {
+	// BrandError Why a brand image cannot be saved. `code` is `malformed` (not well-formed XML in UTF-8),
+	// `doctype` (a DOCTYPE or an entity declaration), `not_svg` (the root is not `svg`),
+	// `no_viewbox` (no `viewBox` of four numbers with a positive size), `too_large` (the SVG is
+	// over 262,144 bytes, or 131,072 once sanitized, or a PNG is over 1,048,576), `too_many_elements`
+	// (over 5,000), `too_deep` (elements nested over 32 deep), `too_many_uses` (over 200 `use`
+	// elements, references that expand to too many elements, or a reference cycle),
+	// `aspect_ratio` (an icon that is not square within 1%, a logo not 1 to 8 times as wide as
+	// it is high), `text` (`text` or `tspan`: convert the text to outlines), `unsafe_css` (CSS with
+	// `@import`, `@font-face`, `@namespace`, a `url()` other than `url(#id)`, `expression(`, an
+	// escape, or `<`), `missing_rendition`, `unexpected_rendition` (a rendition of another
+	// kind), `invalid_png`, `dimensions` (a PNG of the wrong size), `not_opaque` (a rendition that
+	// must be opaque has transparent pixels), or `invalid_color` (the background is not `#rrggbb`,
+	// or a logo has one). `rendition` names the file, `svg` for the SVG.
+	BrandError *BrandError `json:"brand_error,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
+}
+
+// BrandRendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+// instance has no `preview_image`.
+type BrandRendition string
+
+// BrandRenditionSize A rendition that a brand image needs, and its size in pixels.
+type BrandRenditionSize struct {
+	Height int `json:"height"`
+
+	// Rendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+	// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+	// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+	// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+	// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+	// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+	// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+	// instance has no `preview_image`.
+	Rendition BrandRendition `json:"rendition"`
+	Width     int            `json:"width"`
+}
+
+// BrandSanitized An SVG as the server would save it: the sanitized document, the size of its viewBox, the
+// renditions to draw from it with their sizes, and what was removed.
+type BrandSanitized struct {
+	Dropped    []BrandDropped       `json:"dropped"`
+	Renditions []BrandRenditionSize `json:"renditions"`
+
+	// Svg The sanitized SVG document.
+	Svg           string  `json:"svg"`
+	ViewBoxHeight float32 `json:"view_box_height"`
+	ViewBoxWidth  float32 `json:"view_box_width"`
+}
+
 // CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
@@ -7301,6 +7614,11 @@ type CredentialAccount struct {
 
 	// Source The profile as the user typed it, for editing.
 	Source AccountSource `json:"source"`
+
+	// StatusesCount The number of the account's own posts that are not deleted, of every visibility.
+	// Only the owner sees it; other accounts do not carry it. A client that creates a post
+	// adds one to it, so a count of 1 after the create is the account's first post.
+	StatusesCount int64 `json:"statuses_count"`
 
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
@@ -8353,6 +8671,15 @@ type Instance struct {
 	// the names, memos, or individual payments of the cost items.
 	FinanceVisibility FinanceVisibility `json:"finance_visibility"`
 
+	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	Icon *InstanceBrandImage `json:"icon,omitempty"`
+
 	// IncomeVisibility How much of the instance's income everyone may read (the instance setting
 	// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
 	// nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
@@ -8363,6 +8690,24 @@ type Instance struct {
 
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
+
+	// Logo A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	Logo *InstanceBrandImage `json:"logo,omitempty"`
+
+	// LogoDark A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	LogoDark *InstanceBrandImage `json:"logo_dark,omitempty"`
 
 	// Name The display name of the instance; the domain when the instance has none.
 	Name string `json:"name"`
@@ -8450,6 +8795,24 @@ type Instance struct {
 // voice chat is off.
 type InstanceVoiceRoomStarters string
 
+// InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+// under `/brand/` on the server that name the revision, so their content never changes and
+// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+// (`logo` is used there without it); each is omitted while the instance uses the built-in
+// image.
+type InstanceBrandImage struct {
+	// Height The height of the SVG's viewBox, rounded.
+	Height     int         `json:"height"`
+	Renditions []BrandFile `json:"renditions"`
+	Revision   string      `json:"revision"`
+	SvgUrl     string      `json:"svg_url"`
+
+	// Width The width of the SVG's viewBox, rounded.
+	Width int `json:"width"`
+}
+
 // InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the
 // way to export the data and to move the account.
@@ -8482,6 +8845,24 @@ type InstanceContact struct {
 
 	// Email The email address to contact; omitted when there is none.
 	Email *string `json:"email,omitempty"`
+}
+
+// InstanceCounts How many members the instance has, how many public posts they made lately, and since when it
+// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+type InstanceCounts struct {
+	// CountedAt When the counts were taken.
+	CountedAt time.Time `json:"counted_at"`
+
+	// DailyPosts The public posts of local accounts that are not deleted, in each of the 7 periods of 24
+	// hours before `counted_at`, oldest first: the last item counts the posts of the 24 hours
+	// up to `counted_at`.
+	DailyPosts []int `json:"daily_posts"`
+
+	// Members The local accounts that are not deleted, the instance's own actor aside.
+	Members int `json:"members"`
+
+	// StartedAt When the instance was set up.
+	StartedAt time.Time `json:"started_at"`
 }
 
 // InstanceDocument A document that the instance has published, rendered for reading. The administrators write
@@ -8579,6 +8960,21 @@ type InstanceLimits struct {
 	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
+}
+
+// InstanceOverview The counts and the operators of the instance (`GET /instance/overview`). Each part is
+// omitted while the instance setting that shows it is off.
+type InstanceOverview struct {
+	// Counts How many members the instance has, how many public posts they made lately, and since when it
+	// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+	Counts *InstanceCounts `json:"counts,omitempty"`
+
+	// Operators The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
+	// role, or a role with a moderation or server permission) on their profile, highest role
+	// first; each has the badges it shows in `badges`. A staff member who shows no such badge,
+	// and an account that is suspended or deleted, is not listed. Omitted while the instance
+	// setting `public_operators` is off; empty when nobody shows such a badge.
+	Operators *[]Account `json:"operators,omitempty"`
 }
 
 // InstanceRegistrations How people sign up on the instance.
@@ -10240,6 +10636,8 @@ type PreviewDomainBlockImportRequest struct {
 //     deleted; `reason` says why.
 //   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
 //     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
+//     why (`/admin/instance/brand/...`).
 //   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
 //     allow the operation: withdrawing an announcement when none is in effect, announcing the
 //     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
@@ -10724,6 +11122,17 @@ type RotateLoginProviderSecretRequest struct {
 	ClientSecret string `json:"client_secret"`
 }
 
+// SanitizeBrandRequest An SVG to check before setting it as a brand image.
+type SanitizeBrandRequest struct {
+	// Kind A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+	// instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+	// `logo_dark` for dark backgrounds (the `logo` is used there without it).
+	Kind BrandKind `json:"kind"`
+
+	// Svg The SVG file, at most 262,144 bytes.
+	Svg openapi_types.File `json:"svg"`
+}
+
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
 // `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
@@ -10772,6 +11181,29 @@ type ServiceClosureNoticeChange string
 //     other servers. The users can still sign in and export their data until `export_until`.
 //   - `delivery_completed`: the server is closed and those deliveries have ended.
 type ServiceClosureState string
+
+// SetBrandRequest A brand image: the SVG and every PNG rendition of its kind, each in the part named after the
+// rendition with `_` for `-` (`BrandRendition`). The icon takes `favicon_32`, `favicon_48`,
+// `apple_touch_180`, `pwa_192`, `pwa_512`, and `maskable_512`; the logo `logo_mail` and
+// `preview_1200x630`; the dark logo `logo_dark_mail`. Other parts are ignored.
+type SetBrandRequest struct {
+	AppleTouch180 *openapi_types.File `json:"apple_touch_180,omitempty"`
+
+	// Background The `#rrggbb` color behind the opaque renditions of the icon; the theme's light surface
+	// color when it is left out. A logo takes none.
+	Background      *string             `json:"background,omitempty"`
+	Favicon32       *openapi_types.File `json:"favicon_32,omitempty"`
+	Favicon48       *openapi_types.File `json:"favicon_48,omitempty"`
+	LogoDarkMail    *openapi_types.File `json:"logo_dark_mail,omitempty"`
+	LogoMail        *openapi_types.File `json:"logo_mail,omitempty"`
+	Maskable512     *openapi_types.File `json:"maskable_512,omitempty"`
+	Preview1200x630 *openapi_types.File `json:"preview_1200x630,omitempty"`
+	Pwa192          *openapi_types.File `json:"pwa_192,omitempty"`
+	Pwa512          *openapi_types.File `json:"pwa_512,omitempty"`
+
+	// Svg The SVG file, at most 262,144 bytes.
+	Svg openapi_types.File `json:"svg"`
+}
 
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
@@ -13254,6 +13686,12 @@ type ImportDomainBlocksJSONRequestBody = ImportDomainBlocksRequest
 // PreviewDomainBlockImportJSONRequestBody defines body for PreviewDomainBlockImport for application/json ContentType.
 type PreviewDomainBlockImportJSONRequestBody = PreviewDomainBlockImportRequest
 
+// SanitizeAdminBrandMultipartRequestBody defines body for SanitizeAdminBrand for multipart/form-data ContentType.
+type SanitizeAdminBrandMultipartRequestBody = SanitizeBrandRequest
+
+// SetAdminBrandMultipartRequestBody defines body for SetAdminBrand for multipart/form-data ContentType.
+type SetAdminBrandMultipartRequestBody = SetBrandRequest
+
 // SetInstanceTextJSONRequestBody defines body for SetInstanceText for application/json ContentType.
 type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 
@@ -13733,6 +14171,18 @@ type ServerInterface interface {
 	// GetIncomeTotals Total the income by period
 	// (GET /admin/income_totals)
 	GetIncomeTotals(w http.ResponseWriter, r *http.Request, params GetIncomeTotalsParams)
+	// GetAdminBrands Read the brand images
+	// (GET /admin/instance/brand)
+	GetAdminBrands(w http.ResponseWriter, r *http.Request)
+	// SanitizeAdminBrand Check an SVG for a brand image
+	// (POST /admin/instance/brand/sanitize)
+	SanitizeAdminBrand(w http.ResponseWriter, r *http.Request)
+	// ClearAdminBrand Clear a brand image
+	// (DELETE /admin/instance/brand/{kind})
+	ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind)
+	// SetAdminBrand Set a brand image
+	// (PUT /admin/instance/brand/{kind})
+	SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind)
 	// ListInstanceTexts List the instance texts
 	// (GET /admin/instance_texts)
 	ListInstanceTexts(w http.ResponseWriter, r *http.Request)
@@ -14090,6 +14540,9 @@ type ServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(w http.ResponseWriter, r *http.Request, params GetInstanceIncomeTotalsParams)
+	// GetInstanceOverview Get the counts and the operators of the instance
+	// (GET /instance/overview)
+	GetInstanceOverview(w http.ResponseWriter, r *http.Request)
 	// ListSupporterPlans List the supporter plans
 	// (GET /instance/supporter_plans)
 	ListSupporterPlans(w http.ResponseWriter, r *http.Request)
@@ -17269,6 +17722,86 @@ func (siw *ServerInterfaceWrapper) GetIncomeTotals(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetIncomeTotals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminBrands operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminBrands(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminBrands(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SanitizeAdminBrand operation middleware
+func (siw *ServerInterfaceWrapper) SanitizeAdminBrand(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SanitizeAdminBrand(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ClearAdminBrand operation middleware
+func (siw *ServerInterfaceWrapper) ClearAdminBrand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "kind" -------------
+	var kind BrandKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "kind", r.PathValue("kind"), &kind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ClearAdminBrand(w, r, kind)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAdminBrand operation middleware
+func (siw *ServerInterfaceWrapper) SetAdminBrand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "kind" -------------
+	var kind BrandKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "kind", r.PathValue("kind"), &kind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAdminBrand(w, r, kind)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20652,6 +21185,20 @@ func (siw *ServerInterfaceWrapper) GetInstanceIncomeTotals(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetInstanceOverview operation middleware
+func (siw *ServerInterfaceWrapper) GetInstanceOverview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstanceOverview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSupporterPlans operation middleware
 func (siw *ServerInterfaceWrapper) ListSupporterPlans(w http.ResponseWriter, r *http.Request) {
 
@@ -23824,6 +24371,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/custom_emoji_requests", wrapper.ListCustomEmojiRequests)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests", wrapper.CreateCustomEmojiRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests/{id}/withdraw", wrapper.WithdrawCustomEmojiRequest)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/overview", wrapper.GetInstanceOverview)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/health", wrapper.GetServerHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/documents/{kind}", wrapper.GetInstanceDocument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/domain_actions", wrapper.ListInstanceDomainActions)
@@ -24043,6 +24591,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/announcements/{id}/withdraw", wrapper.WithdrawAdminAnnouncement)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/theme", wrapper.GetAdminTheme)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/theme", wrapper.SetAdminTheme)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instance/brand", wrapper.GetAdminBrands)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instance/brand/sanitize", wrapper.SanitizeAdminBrand)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/instance/brand/{kind}", wrapper.ClearAdminBrand)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/instance/brand/{kind}", wrapper.SetAdminBrand)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/custom_emojis", wrapper.ListAdminCustomEmojis)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/custom_emojis", wrapper.CreateCustomEmoji)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/custom_emojis/{id}", wrapper.DeleteCustomEmoji)
@@ -24403,6 +24955,16 @@ type AdminWebhookDeliveryJSONResponse struct {
 	Body AdminWebhookDelivery
 
 	Headers AdminWebhookDeliveryResponseHeaders
+}
+
+type BrandProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type BrandProblemApplicationProblemPlusJSONResponse struct {
+	Body BrandProblem
+
+	Headers BrandProblemResponseHeaders
 }
 
 type CostItemResponseHeaders struct {
@@ -29814,6 +30376,282 @@ type GetIncomeTotalsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetIncomeTotalsdefaultApplicationProblemPlusJSONResponse) VisitGetIncomeTotalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminBrandsRequestObject struct {
+}
+
+type GetAdminBrandsResponseObject interface {
+	VisitGetAdminBrandsResponse(w http.ResponseWriter) error
+}
+
+type GetAdminBrands200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAdminBrands200JSONResponse struct {
+	Body    AdminBrands
+	Headers GetAdminBrands200ResponseHeaders
+}
+
+func (response GetAdminBrands200JSONResponse) VisitGetAdminBrandsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminBrandsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminBrandsdefaultApplicationProblemPlusJSONResponse) VisitGetAdminBrandsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SanitizeAdminBrandRequestObject struct {
+	Body *multipart.Reader
+}
+
+type SanitizeAdminBrandResponseObject interface {
+	VisitSanitizeAdminBrandResponse(w http.ResponseWriter) error
+}
+
+type SanitizeAdminBrand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type SanitizeAdminBrand200JSONResponse struct {
+	Body    BrandSanitized
+	Headers SanitizeAdminBrand200ResponseHeaders
+}
+
+func (response SanitizeAdminBrand200JSONResponse) VisitSanitizeAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SanitizeAdminBrand422ApplicationProblemPlusJSONResponse struct {
+	BrandProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SanitizeAdminBrand422ApplicationProblemPlusJSONResponse) VisitSanitizeAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SanitizeAdminBranddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SanitizeAdminBranddefaultApplicationProblemPlusJSONResponse) VisitSanitizeAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ClearAdminBrandRequestObject struct {
+	Kind BrandKind `json:"kind"`
+}
+
+type ClearAdminBrandResponseObject interface {
+	VisitClearAdminBrandResponse(w http.ResponseWriter) error
+}
+
+type ClearAdminBrand204Response struct {
+}
+
+func (response ClearAdminBrand204Response) VisitClearAdminBrandResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ClearAdminBranddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ClearAdminBranddefaultApplicationProblemPlusJSONResponse) VisitClearAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAdminBrandRequestObject struct {
+	Kind BrandKind `json:"kind"`
+	Body *multipart.Reader
+}
+
+type SetAdminBrandResponseObject interface {
+	VisitSetAdminBrandResponse(w http.ResponseWriter) error
+}
+
+type SetAdminBrand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type SetAdminBrand200JSONResponse struct {
+	Body    AdminBrandImage
+	Headers SetAdminBrand200ResponseHeaders
+}
+
+func (response SetAdminBrand200JSONResponse) VisitSetAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAdminBrand422ApplicationProblemPlusJSONResponse struct {
+	BrandProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetAdminBrand422ApplicationProblemPlusJSONResponse) VisitSetAdminBrandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAdminBranddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetAdminBranddefaultApplicationProblemPlusJSONResponse) VisitSetAdminBrandResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -37030,6 +37868,67 @@ func (response GetInstanceIncomeTotalsdefaultApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type GetInstanceOverviewRequestObject struct {
+}
+
+type GetInstanceOverviewResponseObject interface {
+	VisitGetInstanceOverviewResponse(w http.ResponseWriter) error
+}
+
+type GetInstanceOverview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetInstanceOverview200JSONResponse struct {
+	Body    InstanceOverview
+	Headers GetInstanceOverview200ResponseHeaders
+}
+
+func (response GetInstanceOverview200JSONResponse) VisitGetInstanceOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceOverviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetInstanceOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetInstanceOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSupporterPlansRequestObject struct {
 }
 
@@ -44034,6 +44933,18 @@ type StrictServerInterface interface {
 	// GetIncomeTotals Total the income by period
 	// (GET /admin/income_totals)
 	GetIncomeTotals(ctx context.Context, request GetIncomeTotalsRequestObject) (GetIncomeTotalsResponseObject, error)
+	// GetAdminBrands Read the brand images
+	// (GET /admin/instance/brand)
+	GetAdminBrands(ctx context.Context, request GetAdminBrandsRequestObject) (GetAdminBrandsResponseObject, error)
+	// SanitizeAdminBrand Check an SVG for a brand image
+	// (POST /admin/instance/brand/sanitize)
+	SanitizeAdminBrand(ctx context.Context, request SanitizeAdminBrandRequestObject) (SanitizeAdminBrandResponseObject, error)
+	// ClearAdminBrand Clear a brand image
+	// (DELETE /admin/instance/brand/{kind})
+	ClearAdminBrand(ctx context.Context, request ClearAdminBrandRequestObject) (ClearAdminBrandResponseObject, error)
+	// SetAdminBrand Set a brand image
+	// (PUT /admin/instance/brand/{kind})
+	SetAdminBrand(ctx context.Context, request SetAdminBrandRequestObject) (SetAdminBrandResponseObject, error)
 	// ListInstanceTexts List the instance texts
 	// (GET /admin/instance_texts)
 	ListInstanceTexts(ctx context.Context, request ListInstanceTextsRequestObject) (ListInstanceTextsResponseObject, error)
@@ -44391,6 +45302,9 @@ type StrictServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(ctx context.Context, request GetInstanceIncomeTotalsRequestObject) (GetInstanceIncomeTotalsResponseObject, error)
+	// GetInstanceOverview Get the counts and the operators of the instance
+	// (GET /instance/overview)
+	GetInstanceOverview(ctx context.Context, request GetInstanceOverviewRequestObject) (GetInstanceOverviewResponseObject, error)
 	// ListSupporterPlans List the supporter plans
 	// (GET /instance/supporter_plans)
 	ListSupporterPlans(ctx context.Context, request ListSupporterPlansRequestObject) (ListSupporterPlansResponseObject, error)
@@ -47288,6 +48202,120 @@ func (sh *strictHandler) GetIncomeTotals(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetIncomeTotalsResponseObject); ok {
 		if err := validResponse.VisitGetIncomeTotalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminBrands operation middleware
+func (sh *strictHandler) GetAdminBrands(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminBrandsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminBrands(ctx, request.(GetAdminBrandsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminBrands")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminBrandsResponseObject); ok {
+		if err := validResponse.VisitGetAdminBrandsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SanitizeAdminBrand operation middleware
+func (sh *strictHandler) SanitizeAdminBrand(w http.ResponseWriter, r *http.Request) {
+	var request SanitizeAdminBrandRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SanitizeAdminBrand(ctx, request.(SanitizeAdminBrandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SanitizeAdminBrand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SanitizeAdminBrandResponseObject); ok {
+		if err := validResponse.VisitSanitizeAdminBrandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ClearAdminBrand operation middleware
+func (sh *strictHandler) ClearAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind) {
+	var request ClearAdminBrandRequestObject
+
+	request.Kind = kind
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ClearAdminBrand(ctx, request.(ClearAdminBrandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ClearAdminBrand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ClearAdminBrandResponseObject); ok {
+		if err := validResponse.VisitClearAdminBrandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetAdminBrand operation middleware
+func (sh *strictHandler) SetAdminBrand(w http.ResponseWriter, r *http.Request, kind BrandKind) {
+	var request SetAdminBrandRequestObject
+
+	request.Kind = kind
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAdminBrand(ctx, request.(SetAdminBrandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAdminBrand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAdminBrandResponseObject); ok {
+		if err := validResponse.VisitSetAdminBrandResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -50538,6 +51566,30 @@ func (sh *strictHandler) GetInstanceIncomeTotals(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetInstanceIncomeTotalsResponseObject); ok {
 		if err := validResponse.VisitGetInstanceIncomeTotalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstanceOverview operation middleware
+func (sh *strictHandler) GetInstanceOverview(w http.ResponseWriter, r *http.Request) {
+	var request GetInstanceOverviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstanceOverview(ctx, request.(GetInstanceOverviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstanceOverview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstanceOverviewResponseObject); ok {
+		if err := validResponse.VisitGetInstanceOverviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
