@@ -75,6 +75,13 @@ tasks:
     cmds:
       - go test -count=1 -run Mailpit ./internal/adapter/mail/smtp/ ./internal/platform/
 
+  test-blob:
+    desc: Run the BlobStore contract of blob = s3 on a Garage container (pkg/testkit/s3test), an S3-compatible server, instead of only the in-memory fake (needs Docker; CI in the slow suite)
+    env:
+      TEST_S3: container
+    cmds:
+      - go test -count=1 -run S3Server ./internal/adapter/blob/s3/
+
   test-voice:
     desc: Run the voice.Transport contract of voice = livekit on a livekit-server --dev container (pkg/testkit/livekittest) (needs Docker; CI in the slow suite)
     env:

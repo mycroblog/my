@@ -143,6 +143,7 @@ async function moderatorServer(page: Page) {
     }
     if (key === "GET /admin/counts") return json(route, { open_reports: 2, pending_registrations: 1 });
     if (key === "GET /admin/registrations") return json(route, { items: [] });
+    if (key === "GET /admin/reports") return json(route, { items: [] });
     if (key === "GET /notifications") return json(route, { items: notifications });
     if (key === "GET /notifications/marker" || key === "PUT /notifications/marker")
       return json(route, { last_read_id: notifications[0]?.id, unread_count: 0 });
@@ -198,28 +199,28 @@ test.describe("the moderation entry", () => {
     await expect(page).toHaveURL(/\/moderation$/);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toBeFocused();
-    // The reports' and the registrations' links carry their own counts in their names; the others have none.
+    // The overview, not a copy of the menu: a tile for each counted queue, a link to it with the number that waits
+    // there, then the reports to handle first (none open here) and the way to the whole queue.
     await expect(main).toMatchAriaSnapshot(`
       - heading [level=1]
-      - list:
-        - listitem:
-          - link /2|٢/:
-            - /url: /moderation/reports
-        - listitem:
-          - link:
-            - /url: /moderation/appeals
-        - listitem:
-          - link:
-            - /url: /moderation/accounts
-        - listitem:
-          - link /1|١/:
-            - /url: /moderation/registrations
-        - listitem:
-          - link:
-            - /url: /moderation/signup-blocks
-        - listitem:
-          - link:
-            - /url: /moderation/audit-log
+      - region:
+        - heading [level=2]
+        - list:
+          - listitem:
+            - paragraph:
+              - link:
+                - /url: /moderation/reports
+            - paragraph: /2|٢/
+          - listitem:
+            - paragraph:
+              - link:
+                - /url: /moderation/registrations
+            - paragraph: /1|١/
+      - region:
+        - heading [level=2]
+        - heading [level=3]
+        - link:
+          - /url: /moderation/reports
     `);
     // On a phone the sheet fades out as the page opens.
     await expect(page.locator("[data-exiting]")).toHaveCount(0);

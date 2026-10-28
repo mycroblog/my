@@ -115,6 +115,17 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
       チェックリストを閉じる: firstRunUnavailable,
     },
   },
+  // The staff overviews start from the app, whose navigation has the entries into the mode.
+  moderation: { start: "/home", persona: "marco" },
+  admin: { start: "/home", persona: "hana" },
+  "moderation-reports": {
+    start: "/moderation",
+    persona: "marco",
+    unavailable: {
+      違法な内容の通報を開く: "the demo scenario has no report of the legal category",
+    },
+  },
+  "moderation-report": { start: "/moderation/reports", persona: "marco" },
 };
 
 /** The setup of `screen`: its entry, or a start at `/home` as yuki. */
