@@ -109,7 +109,7 @@ export function RailItem({ href, icon, label, current = false, badge, form, prom
     <Link
       href={href}
       {...(badge !== undefined && { "aria-label": badge.name })}
-      aria-current={current ? "page" : undefined}
+      {...(current && { "aria-current": "page" as const })}
       variant="navigation"
       className={slots.item({ className: classNames?.item })}
     >
