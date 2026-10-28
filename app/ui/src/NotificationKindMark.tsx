@@ -20,16 +20,7 @@ import {
 
 /** The kinds of notification that have a mark of their own; the rest are `notice`. */
 export type NotificationKind =
-  | "favourite"
-  | "boost"
-  | "follow"
-  | "mention"
-  | "reaction"
-  | "quote"
-  | "poll"
-  | "voice"
-  | "staff"
-  | "notice";
+  "favourite" | "boost" | "follow" | "mention" | "reaction" | "quote" | "poll" | "voice" | "staff" | "notice";
 
 const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   favourite: () => <StarIcon filled />,

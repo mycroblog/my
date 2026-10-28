@@ -68,6 +68,23 @@ describe("the unread badge", () => {
 });
 
 describe("the notifications page", () => {
+  // The kind shows by shape before the sentence is read (C6), and a mention is answered from its row.
+  test("marks each row's avatar with its kind, and replies to a mention from its row", async () => {
+    server.use(resumableSession());
+    const { user } = await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const [mention, follow] = within(feed).getAllByRole("article");
+    expect(mention?.querySelector("[data-notification-kind]")).toHaveAttribute("data-notification-kind", "mention");
+    expect(follow?.querySelector("[data-notification-kind]")).toHaveAttribute("data-notification-kind", "follow");
+    // Only the mention has the reply; the follow has its follow back instead.
+    expect(within(follow ?? feed).queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
+
+    await user.click(await within(mention ?? feed).findByRole("button", { name: "Reply" }));
+    const sheet = await screen.findByRole("dialog", { name: "New post" });
+    expect(within(sheet).getByText(/^Replying to /)).toBeInTheDocument();
+  });
+
   test("shows each type, marks the newest read, and clears the badge", async () => {
     server.use(resumableSession());
     const marker = markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 1 });

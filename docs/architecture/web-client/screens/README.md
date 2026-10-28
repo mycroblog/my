@@ -41,6 +41,7 @@
 - [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
 - [サーバーの設定（`/admin/settings`）](admin-settings.md)
 - [ホームタイムライン（`/home`）](home.md)
+- [通知（`/notifications`）](notifications.md)
 - [投稿のフォーム（シート）](compose.md)
 - [投稿の詳細（`/@{acct}/status/{id}`）](status.md)
 - [ランディングページ（`/`、サインインしていない人）](landing.md)
