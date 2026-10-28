@@ -79,6 +79,8 @@ const appNavTop = tv({
   slots: {
     // The bar's call to action and its menu button: phones only.
     action: "flex-none lg:hidden",
+    // The bar's own controls after the items (`AppNav` `topTools`): a row of the panel below lg, set apart by a line.
+    tools: "mt-1 border-t border-border px-3 pt-3 pb-1 lg:mt-0 lg:border-t-0 lg:p-0 lg:ps-2",
     menuButton: "min-h-11 min-w-11 flex-none lg:hidden [&_svg]:size-6",
   },
 });
@@ -115,6 +117,11 @@ export type AppNavProps = {
    * Its item in the list shows from lg only (`shows="rail"`), so that it is not in the menu twice.
    */
   topAction?: ReactNode;
+  /**
+   * The top bar with `topMenu`: a control of this browser (the color theme) after the items. It is the last row of the
+   * menu's panel below lg and stays in the bar's row from lg, so it is reachable at every width.
+   */
+  topTools?: ReactNode;
 };
 
 const PlacementContext = createContext<"side" | "top">("side");
@@ -137,6 +144,7 @@ export function AppNav({
   placement = "side",
   topMenu,
   topAction,
+  topTools,
 }: AppNavProps) {
   const top = placement === "top";
   const menu = top ? topMenu : undefined;
@@ -208,6 +216,7 @@ export function AppNav({
           })}
         >
           {children}
+          {menu !== undefined && topTools !== undefined && <li className={topSlots.tools()}>{topTools}</li>}
         </ul>
         {action !== undefined && <div className={slots.action()}>{action}</div>}
         {footer}
