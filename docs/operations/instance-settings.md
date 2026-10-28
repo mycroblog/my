@@ -70,6 +70,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
 | `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
 | `public_operators` | `true` / `false` | `true` | Whether the landing page and `GET /api/v1/instance/overview` list the people who run the server: the accounts of this server that show the badge of a staff role (the built-in `admin` or `moderator` role, or a role with a moderation or server permission) on their profile, with their badges. A staff member who does not show their badge is never listed. When `false`, the API leaves the list out |
+| `featured_accounts` | usernames of up to 20 local accounts, separated by spaces or commas (empty = none) | empty | The accounts that the suggestions of people to follow show first, in this order, before the people of this server who posted recently. An account whose owner turned off "Suggest my account and find it by part of its name" is not suggested. See [suggestions](#suggestions-of-accounts) |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Who can create invites of their own besides the staff with `manage_invites` ([member invites](registration.md#member-invites)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_invites`, which only the built-in `admin` role has by default and which a role of a supporter plan may have. In `approval` mode, a usable invite approves the new user at once, so `everyone` lets every user skip the review |
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
 | `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
@@ -83,6 +84,20 @@ default locale, who can see the timelines, the instance name, description, terms
   Once a media has been set in any revision, the cleanup of unattached uploads does not delete it.
 - `contact_account` accepts only the username of a local user who is not deleted (stored in lowercase). `contact_email`
   accepts only an address of the form `alice@example.com`.
+- `featured_accounts` accepts only the usernames of local users who are not deleted; a leading `@` is dropped, the names
+  are lowercased, a repeated name is kept once, and they are stored separated by single spaces.
+
+### Suggestions of accounts
+
+Signed-in users see suggestions of people to follow (on the empty home timeline after sign-up, and with
+`GET /api/v1/accounts/suggestions`). The suggestions are the accounts of `featured_accounts` in their order, then the
+accounts of this server that published a public or local post in the last 30 days, the one that posted last first. The
+user's own account, the accounts the user follows, blocks, mutes, or is blocked by, and accounts that are suspended or
+deactivated are left out.
+
+New accounts are suggested and can be found by part of their name in the account search. A user who turns off "Suggest my
+account and find it by part of its name" in the profile settings leaves both: the search then finds the account only by its
+whole username, or for the people who follow it.
 
 ### Texts (one key, one value)
 

@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Start Mailpit
+description: >-
+  Start the development Mailpit of deploy/docker/mailpit (its pinned image, STARTTLS with the certificate of
+  scripts/mailpit-cert.sh) for a job that runs in a container, on the container's own 127.0.0.1:1025 (SMTP) and
+  127.0.0.1:8025 (web UI and REST API), as `scripts/task.sh docker:mailpit` does on a workstation. A `services:`
+  container would start before the checkout, without the certificate. Run it after actions/checkout; the tasks that
+  would start Mailpit themselves take MAILPIT_RUNNING=1.
+
+inputs:
+  container-id:
+    description: The ID of the job's container (`job.container.id`), whose network Mailpit shares.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # The runner gives the job's container the host's Docker socket; the image has no Docker client.
+    - name: Install the Docker client
+      shell: bash
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends docker.io docker-compose-v2
+    # The Docker daemon is the host's: Mailpit joins the network namespace of the job's container instead of
+    # publishing ports on the host, and it mounts the certificate by its path on the host, which the daemon resolves.
+    - name: Start Mailpit
+      shell: bash
+      env:
+        JOB_CONTAINER: ${{ inputs.container-id }}
+      run: |
+        scripts/mailpit-cert.sh
+        certs="$PWD/.tmp/mailpit"
+        # The mount with the longest destination that holds the certificate's directory.
+        host_certs=""
+        longest=0
+        while read -r destination source; do
+          case "$certs/" in
+            "$destination"/*)
+              if [ "${#destination}" -gt "$longest" ]; then
+                longest="${#destination}"
+                host_certs="$source${certs#"$destination"}"
+              fi
+              ;;
+          esac
+        done < <(docker inspect --format '{{range .Mounts}}{{println .Destination .Source}}{{end}}' "$JOB_CONTAINER")
+        if [ -z "$host_certs" ]; then
+          echo "::error::$certs is on no mount of the job's container"
+          exit 1
+        fi
+        MAILPIT_CERTS="$host_certs" docker compose -f deploy/docker/mailpit/compose.yaml -f - up -d --wait <<EOF
+        services:
+          mailpit:
+            network_mode: "container:$JOB_CONTAINER"
+            ports: !reset []
+        EOF
+        curl -sSf --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8025/readyz

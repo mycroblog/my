@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/compose/**"]
+---
+
 ## 投稿のフォーム（シート。どの画面からも開く）
 
 新しい投稿・返信・引用を書いて送るフォーム（FR-101〜FR-114。[§12](../12-compose.md)）。ルートを持たず、外枠のシート（`lg` から画面の中央のパネル）に出る。

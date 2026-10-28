@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminPages } from "../features/admin";
+import { AdminOverview } from "../features/admin";
 import { viewerQueryOptions } from "../features/session";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";
 
 /**
- * The server administration page that the navigation's Administration entry opens (ADR-0058): the links to the
- * server administration screens that the viewer's roles allow. The loader reads the viewer's account, whose
- * permissions decide the links.
+ * The server administration overview that the navigation's Administration entry opens (ADR-0058,
+ * screens/admin.md): how the server runs. The loader reads the viewer's account, whose permissions decide what it
+ * shows.
  */
 export const Route = createFileRoute("/admin/")({
   staticData: { title: "client:admin.menu.title" },
@@ -25,7 +25,7 @@ function AdminPage() {
   return (
     <>
       <PageHeading>{t("client:admin.menu.title")}</PageHeading>
-      <AdminPages />
+      <AdminOverview />
     </>
   );
 }

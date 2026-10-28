@@ -13,7 +13,7 @@
 | `status_revision_mentions` | イベント（版の子） | `revision_id`, `account_id` | PK `(revision_id, account_id)` |
 | `status_revision_tags` | イベント（版の子） | `revision_id`, `tag_id` | PK `(revision_id, tag_id)` |
 | `status_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去） |
-| `remote_status_revisions` | イベント（部分型） | `revision_id`（PK）, `activity_uri`（NULL 可。版を運んだ `Create` / `Update`。取得で作った版は NULL）, `html_policy_version`（`int`） | リモートのみ。本文をサニタイズしたポリシーの版（ADR-0019 §2）。版の `revised_at` は AP の `updated`（無ければ `published`） |
+| `remote_status_revisions` | イベント（部分型） | `revision_id`（PK）, `activity_uri`（NULL 可。版を運んだ `Create` / `Update`。取得で作った版は NULL）, `html_policy_version`（`int`）, `omitted_attachment_count`（`int`、既定 0） | リモートのみ。本文をサニタイズしたポリシーの版（ADR-0019 §2）。`omitted_attachment_count` は 4 件を超えて記録しなかった添付の数。版の `revised_at` は AP の `updated`（無ければ `published`） |
 | `status_deletions` | イベント | `status_id`（PK）, `uri`, `author_account_id`, `origin`（`enum(author, moderation, remote, account_deletion, retention, auto_delete)`）, `moderation_action_id`（NULL 可）, `deleted_at` | 部分一意 `(uri) WHERE origin <> 'retention'`、インデックス `(uri)`。tombstone を兼ねる（遅れて届いた `Create` / `Update` で復活させない。GET には `410 Gone`） |
 
 - **公開範囲・作者・返信先・公開日時は投稿の不変の事実** です。変わり得る本文・CW・言語・添付・メンション・タグは版に置きます（FR-109）。
@@ -89,7 +89,7 @@
 - **投稿の行**: `id` は `published` の時刻の UUIDv7（§1.3）、`is_local` は偽です。公開範囲は宛先から決め（`local` にはならない）、`url` は表示用 URL が `id` と異なるときだけ持ちます。
   `conversation_uri` は、返信でなければ自分の `uri`、既知の親への返信なら親の `conversation_uri`、親が未知の返信なら NULL（スレッドが分からない）です。
 - **版**: 本文は言語ごとにサニタイズして `status_revision_bodies` に保存し、版の `language` は文書の最初の言語です（`contentMap` も `content` も無ければ `und` の空の本文 1 行）。CW はプレーンテキスト、`remote_status_revisions` に版を運んだアクティビティとサニタイザのポリシーの版を記録します。
-  メンションは `Mention` のタグと宛先のローカルの Actor で、未知のリモートの Actor は 1 つの投稿につき 5 件・合計 10 秒まで取得します。ハッシュタグは `tags` を正規化した名前で引き（無ければ作り）、添付は 4 件まで `remote_media` に宣言値を記録します。
+  メンションは `Mention` のタグと宛先のローカルの Actor で、未知のリモートの Actor は 1 つの投稿につき 5 件・合計 10 秒まで取得します。ハッシュタグは `tags` を正規化した名前で引き（無ければ作り）、添付は 4 件まで `remote_media` に宣言値を記録し、それを超えた添付の数を `remote_status_revisions.omitted_attachment_count` に記録します（クライアントは「+N」と元の投稿へのリンクを出す）。
 - **編集**: `updated`（無ければ `published`）が現在版の `revised_at` より新しいときだけ、`seq + 1` の版を作ります。古い `Update` と同じ `Update` の再処理は版を作りません。
 - **削除**: `status_deletions`（`origin = remote`）を記録します。削除済みの投稿の `Delete` は何もしません。
 - **カスタム絵文字**: リモートの絵文字は `(shortcode, domain)` で引き、`domain` は作者のホスト、`uri` は `Emoji` の `id` が `domain` と同じホストのときだけ記録します（ほかのサーバーの絵文字の行を奪わせないため。ADR-0051 §1）。

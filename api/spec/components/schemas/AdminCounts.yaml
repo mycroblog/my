@@ -17,3 +17,9 @@ properties:
     type: integer
     format: int64
     minimum: 0
+  oldest_open_report_filed_at:
+    description: |
+      When the open report that has waited longest was filed; omitted when no report is open.
+      Needs `manage_reports`.
+    type: string
+    format: date-time

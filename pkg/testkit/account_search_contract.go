@@ -32,12 +32,14 @@ type AccountSearchHarness struct {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type AccountSearchFactory func(t *testing.T, opts uow.Options) AccountSearchHarness
 
-// AccountSearchContract verifies the prefix search of accounts (ADR-0092 §1) on a database
+// AccountSearchContract verifies the search of accounts (ADR-0092 §1, FR-307) on a database
 // adapter, through appaccount.PrefixSearch wired to the graph and moderation modules as the
 // composition root wires them: the account_search_terms projection matches the username,
 // username@domain, and the display name whole and word by word (NFKC and lowercase, without
-// :shortcode:s, a CJK name from its start); the results come exact match first, then followed,
-// then local, then by followers; blocks in both directions, mutes in effect, deactivated,
+// :shortcode:s, a CJK name from its start), and the middle of a discoverable local account's
+// username and display name; a local account that is not discoverable matches only its whole
+// username, or a viewer that follows it; the results come exact match first, then matches from
+// the start of a name, then followed, then local, then by followers; blocks in both directions, mutes in effect, deactivated,
 // deleted, and suspended accounts, and accounts of a suspended domain are left out, but not
 // accounts that are not indexable; profile revisions, handle checks, and a suspension and its
 // lift update the projection; and a rebuild derives the same rows.
@@ -49,6 +51,7 @@ func AccountSearchContract(t *testing.T, newHarness AccountSearchFactory) {
 	}{
 		{"MatchesUsernamesHandlesAndDisplayNames", accountSearchMatches},
 		{"OrdersExactFollowedLocalFollowers", accountSearchOrders},
+		{"MatchesInfixesAndDiscoverability", accountSearchInfixes},
 		{"LeavesOutHiddenAccounts", accountSearchLeavesOut},
 		{"FollowsProfilesHandlesAndSuspensions", accountSearchFollowsChanges},
 		{"RebuildEqualsIncremental", accountSearchRebuilds},
@@ -122,11 +125,17 @@ func (e *accountSearchEnv) local(t *testing.T, username, displayName string) str
 	return id
 }
 
-// rename revises a local profile's display name and indexable.
+// rename revises a local profile's display name and indexable; the profile stays discoverable.
 func (e *accountSearchEnv) rename(t *testing.T, id, displayName string, indexable bool) {
 	t.Helper()
+	e.revise(t, id, appaccount.ProfileInput{DisplayName: displayName, Indexable: indexable, Discoverable: true})
+}
+
+// revise records a new revision of a local profile.
+func (e *accountSearchEnv) revise(t *testing.T, id string, in appaccount.ProfileInput) {
+	t.Helper()
 	e.clock.Advance(time.Second)
-	if _, err := e.accounts.ReviseProfile(t.Context(), id, appaccount.ProfileInput{DisplayName: displayName, Indexable: indexable}); err != nil {
+	if _, err := e.accounts.ReviseProfile(t.Context(), id, in); err != nil {
 		t.Fatalf("ReviseProfile(%s) = %v", id, err)
 	}
 }
@@ -203,7 +212,7 @@ func accountSearchMatches(t *testing.T, e *accountSearchEnv) {
 	e.want(t, "liddell", 20, alice)
 	e.want(t, "alice lid", 20, alice)
 	e.want(t, "アリ", 20, alicia)
-	e.want(t, "リデル", 20)
+	e.want(t, "リデル", 20, alicia)
 	e.want(t, "alf", 20, alfred)
 	e.want(t, "@alfred@remote", 20, alfred)
 	e.want(t, "alfred@remote.example", 20, alfred)
@@ -245,6 +254,30 @@ func accountSearchOrders(t *testing.T, e *accountSearchEnv) {
 	e.want(t, "al", 20, al, alma, alice, alicia, alfred)
 	e.want(t, "al", 2, al, alma)
 	e.want(t, "al", 0, al, alma, alice, alicia, alfred)
+}
+
+func accountSearchInfixes(t *testing.T, e *accountSearchEnv) {
+	alice := e.local(t, "alice", "Alice Liddell")
+	licorice := e.local(t, "licorice", "Licorice")
+	e.remoteActor(t, "https://remote.example/users/alfred", "remote.example", "alfred", "Alfred", account.HandleVerified)
+	hidden := e.local(t, "hidden", "Hidden One")
+	e.revise(t, hidden, appaccount.ProfileInput{DisplayName: "Hidden One"})
+
+	// The middle of a local username and display name; a remote name only from its start.
+	e.want(t, "iddel", 20, alice)
+	e.want(t, "ce lid", 20, alice)
+	e.want(t, "lfred", 20)
+	// licorice matches from the start, alice in the middle.
+	e.want(t, "lic", 20, licorice, alice)
+
+	// hidden is not discoverable: only its whole username finds it, until the viewer follows it.
+	e.want(t, "hid", 20)
+	e.want(t, "one", 20)
+	e.want(t, "idden", 20)
+	e.want(t, "@hidden", 20, hidden)
+	e.follow(t, e.viewer, hidden)
+	e.want(t, "hid", 20, hidden)
+	e.want(t, "one", 20)
 }
 
 func accountSearchLeavesOut(t *testing.T, e *accountSearchEnv) {

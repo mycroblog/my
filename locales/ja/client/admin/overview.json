@@ -1,0 +1,126 @@
+{
+  "admin.overview.awaiting.open_reports": {
+    "defaultMessage": "未解決の通報",
+    "description": "Name of the tile of the moderation overview with how many reports are open; the tile links to the report queue."
+  },
+  "admin.overview.awaiting.pending_appeals": {
+    "defaultMessage": "審査待ちの異議申し立て",
+    "description": "Name of the tile of the moderation overview with how many appeals of moderation actions await a decision; the tile links to the appeals."
+  },
+  "admin.overview.awaiting.pending_registrations": {
+    "defaultMessage": "承認待ちの登録",
+    "description": "Name of the tile of the moderation overview with how many registrations await approval; the tile links to the registrations."
+  },
+  "admin.overview.awaiting.report_wait": {
+    "defaultMessage": "通報の最長の待ち時間",
+    "description": "Name of the tile of the moderation overview with how long the oldest open report has waited; the tile links to the report queue, oldest first."
+  },
+  "admin.overview.awaiting.report_wait.days": {
+    "defaultMessage": "{count, plural, other {# 日}}",
+    "description": "Value of the longest report wait tile: whole days."
+  },
+  "admin.overview.awaiting.report_wait.hours": {
+    "defaultMessage": "{count, plural, other {# 時間}}",
+    "description": "Value of the longest report wait tile: whole hours."
+  },
+  "admin.overview.awaiting.report_wait.minutes": {
+    "defaultMessage": "{count, plural, other {# 分}}",
+    "description": "Value of the longest report wait tile: whole minutes."
+  },
+  "admin.overview.awaiting.report_wait.none": {
+    "defaultMessage": "待ちなし",
+    "description": "Value of the longest report wait tile when no report is open."
+  },
+  "admin.overview.awaiting.report_wait.status": {
+    "defaultMessage": "長く待っている",
+    "description": "Word beside a warning icon on the longest report wait tile when the oldest open report has waited a day or more."
+  },
+  "admin.overview.awaiting.status": {
+    "defaultMessage": "対応待ち",
+    "description": "Word beside a warning icon on a tile of the moderation overview whose queue has items waiting."
+  },
+  "admin.overview.awaiting.title": {
+    "defaultMessage": "待っているもの",
+    "description": "Heading of the region of the moderation overview with a tile for each queue: open reports, registrations, appeals."
+  },
+  "admin.overview.awaiting.unavailable": {
+    "defaultMessage": "件数を読み込めませんでした。メニューから画面を開いてください。",
+    "description": "Shown in the region of the moderation overview when the counts of the queues could not be loaded."
+  },
+  "admin.overview.first_reports.all": {
+    "defaultMessage": "通報の一覧を開く",
+    "description": "Link under the reports to handle first on the moderation overview, to the whole report queue."
+  },
+  "admin.overview.first_reports.description": {
+    "defaultMessage": "法的な通報を先に、次に長く待っている順に並べます。",
+    "description": "Note under the heading of the reports to handle first on the moderation overview: how they are ordered."
+  },
+  "admin.overview.first_reports.title": {
+    "defaultMessage": "先に対応する通報",
+    "description": "Heading of the region of the moderation overview with the open reports to handle first, each with its category, its wait and who handles it."
+  },
+  "admin.overview.first_reports.unavailable": {
+    "defaultMessage": "通報を読み込めませんでした。",
+    "description": "Shown in the reports to handle first on the moderation overview when the reports could not be loaded."
+  },
+  "admin.overview.health.failed_jobs": {
+    "defaultMessage": "失敗したジョブ",
+    "description": "Name of the tile of the administration overview with how many jobs failed for good; the tile links to the failed jobs."
+  },
+  "admin.overview.health.failed_jobs.status": {
+    "defaultMessage": "再実行が必要",
+    "description": "Word beside a warning icon on the failed jobs tile when some jobs failed."
+  },
+  "admin.overview.health.job_wait": {
+    "defaultMessage": "ジョブの最長の待ち時間",
+    "description": "Name of the tile of the administration overview with how long the job queue has kept its oldest due job waiting."
+  },
+  "admin.overview.health.job_wait.days": {
+    "defaultMessage": "{count, plural, other {# 日}}",
+    "description": "Value of the longest job wait tile: whole days."
+  },
+  "admin.overview.health.job_wait.hours": {
+    "defaultMessage": "{count, plural, other {# 時間}}",
+    "description": "Value of the longest job wait tile: whole hours."
+  },
+  "admin.overview.health.job_wait.minutes": {
+    "defaultMessage": "{count, plural, other {# 分}}",
+    "description": "Value of the longest job wait tile: whole minutes."
+  },
+  "admin.overview.health.job_wait.none": {
+    "defaultMessage": "待ちなし",
+    "description": "Value of the longest job wait tile when no due job waits."
+  },
+  "admin.overview.health.job_wait.status": {
+    "defaultMessage": "滞留",
+    "description": "Word beside a warning icon on the longest job wait tile when jobs wait 15 minutes or more."
+  },
+  "admin.overview.health.none": {
+    "defaultMessage": "あなたのロールで見られる状態は、この画面にはありません。メニューから画面を開いてください。",
+    "description": "Shown on the administration overview to a user whose roles allow administration screens but neither the job queue nor the errors."
+  },
+  "admin.overview.health.open_errors": {
+    "defaultMessage": "未解決のエラー",
+    "description": "Name of the tile of the administration overview with how many error groups are open; the tile links to the errors."
+  },
+  "admin.overview.health.open_errors.more": {
+    "defaultMessage": "{count, number}+",
+    "description": "Value of the open errors tile when there are more groups than the first page: the page's count and a plus."
+  },
+  "admin.overview.health.open_errors.status": {
+    "defaultMessage": "確認が必要",
+    "description": "Word beside a warning icon on the open errors tile when some groups are open."
+  },
+  "admin.overview.health.title": {
+    "defaultMessage": "サーバーの状態",
+    "description": "Heading of the region of the administration overview with tiles for the failed jobs, the job wait and the open errors."
+  },
+  "admin.overview.value.loading": {
+    "defaultMessage": "読み込み中",
+    "description": "Value of a tile of an overview while its number loads."
+  },
+  "admin.overview.value.unavailable": {
+    "defaultMessage": "読み込めませんでした",
+    "description": "Value of a tile of an overview whose number could not be loaded."
+  }
+}

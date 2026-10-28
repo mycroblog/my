@@ -261,7 +261,20 @@ func TestNormalizeAttachmentsAndURL(t *testing.T) {
 		Name: "alt", Blurhash: "UABC", FocalPoint: &[2]float64{0.5, -0.25}, Width: 640, Height: 480})
 	equal(t, "Attachments[1]", o.Attachments[1], federation.Attachment{Type: "Image", URL: "https://a.example/m/2.jpg", MediaType: "image/jpeg"})
 	equal(t, "Attachments[3].URL", o.Attachments[3].URL, federation.IRI("https://a.example/m/4.mp3"))
+	equal(t, "OmittedAttachments", o.OmittedAttachments, 1)
 	equal(t, "string url", object(t, `{"type":"Note","id":"https://a.example/n/1","url":"https://a.example/@a/1"}`).URL, federation.IRI("https://a.example/@a/1"))
+}
+
+func TestNormalizeOmittedAttachments(t *testing.T) {
+	o := object(t, `{"type":"Note","id":"https://a.example/n/1","attachment":[
+		{"type":"Image","url":"https://a.example/m/1.png"},{"type":"Image","url":"https://a.example/m/2.png"},
+		{"type":"Image","url":"https://a.example/m/3.png"},{"type":"Image","url":"https://a.example/m/4.png"},
+		{"type":"Link","href":"https://a.example/link"},{"type":"Image"},
+		{"type":"Image","url":"https://a.example/m/5.png"},{"type":"Video","url":"https://a.example/m/6.mp4"}]}`)
+	equal(t, "len(Attachments)", len(o.Attachments), 4)
+	equal(t, "Attachments[3].URL", o.Attachments[3].URL, federation.IRI("https://a.example/m/4.png"))
+	equal(t, "OmittedAttachments", o.OmittedAttachments, 2)
+	equal(t, "none omitted", object(t, `{"type":"Note","id":"https://a.example/n/1","attachment":[{"type":"Image","url":"https://a.example/m/1.png"}]}`).OmittedAttachments, 0)
 }
 
 func TestNormalizeTimes(t *testing.T) {

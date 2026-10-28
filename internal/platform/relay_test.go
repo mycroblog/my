@@ -88,6 +88,12 @@ type remoteActor struct {
 
 func newRemoteActor(t *testing.T, n *relayNet, id, typ, inbox string) remoteActor {
 	t.Helper()
+	return newRemoteActorWith(t, n, id, typ, func(doc map[string]any) { doc["inbox"] = inbox })
+}
+
+// newRemoteActorWith serves an actor whose document edit completes, and returns it with its key.
+func newRemoteActorWith(t *testing.T, n *relayNet, id, typ string, edit func(doc map[string]any)) remoteActor {
+	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
@@ -96,15 +102,17 @@ func newRemoteActor(t *testing.T, n *relayNet, id, typ, inbox string) remoteActo
 	if err != nil {
 		t.Fatal(err)
 	}
-	n.serve(t, id, map[string]any{
+	doc := map[string]any{
 		"@context": []string{"https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1"},
-		"id":       id, "type": typ, "preferredUsername": "relay", "inbox": inbox,
+		"id":       id, "type": typ, "preferredUsername": "relay",
 		"followers": id + "/followers", "following": id + "/following",
 		"publicKey": map[string]any{
 			"id": id + "#main-key", "owner": id,
 			"publicKeyPem": string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})),
 		},
-	})
+	}
+	edit(doc)
+	n.serve(t, id, doc)
 	return remoteActor{id: id, key: key}
 }
 
@@ -261,8 +269,12 @@ func TestRelays(t *testing.T) {
 	}
 
 	// A LitePub relay: its actor is fetched for its inbox, and its Announce brings the post in
-	// without a boost.
-	lite := newRemoteActor(t, network, "https://litepub.example/relay", "Application", "https://litepub.example/inbox")
+	// without a boost. Its actor has a shared inbox and no inbox of its own, as Akkoma's relay
+	// actor has, and its signatures verify with its key all the same.
+	lite := newRemoteActorWith(t, network, "https://litepub.example/relay", "Application", func(doc map[string]any) {
+		doc["inbox"] = nil
+		doc["endpoints"] = map[string]any{"sharedInbox": "https://litepub.example/inbox"}
+	})
 	var lr clientapi.AdminRelay
 	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": lite.id}, &lr); res.StatusCode != http.StatusOK {
 		t.Fatalf("POST /admin/relays (litepub) = %d", res.StatusCode)
