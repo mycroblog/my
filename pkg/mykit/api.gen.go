@@ -10424,7 +10424,7 @@ type PushSubscriptionKeys struct {
 
 // PushSubscriptionRequest A browser's push subscription and the notification types to push to it.
 type PushSubscriptionRequest struct {
-	// Alerts The notification types to push; empty pushes none.
+	// Alerts The notification types to push, each at most once; empty pushes none.
 	Alerts []NotificationType `json:"alerts"`
 
 	// Endpoint The push service URL (`PushSubscription.endpoint`), an `https` URL.
