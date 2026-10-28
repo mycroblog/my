@@ -175,8 +175,8 @@ describe("the report queue", () => {
     const first = within(rows()[0] as HTMLElement);
     expect(first.getByText("Spam")).toBeInTheDocument();
     expect(first.getByText("@carol@remote.example")).toBeInTheDocument();
-    expect(first.getByText("Oct 16, 2026, 9:00 AM")).toBeInTheDocument();
-    expect(first.getByText("Nobody")).toBeInTheDocument();
+    expect(first.getByText(/^Waiting \d+ (days?|hr\.|min\.)$/u)).toBeInTheDocument();
+    expect(first.getByText("Unassigned")).toBeInTheDocument();
     expect(first.getByText("1 post")).toBeInTheDocument();
     // The reporter's comment, in its own direction.
     expect(first.getByText("Posts the same link again and again.")).toHaveAttribute("dir", "auto");
@@ -293,8 +293,23 @@ describe("a report's page", () => {
     await renderApp({ path: `/moderation/reports/${report.id}` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Report" })).toBeInTheDocument();
+    // The summary, then the decision (who handles it, and handling it), then the evidence (screens/moderation-report.md).
+    expect(
+      within(screen.getByRole("main"))
+        .getAllByRole("heading", { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      "Report",
+      "Assignee",
+      "Handling",
+      "Reported posts",
+      "Reported account",
+      "Actions on the account",
+      "Notes",
+    ]);
     const summary = region("Report");
     expect(within(summary).getByText("Open")).toBeInTheDocument();
+    expect(within(summary).getByText(/^Waiting \d+ (days?|hr\.|min\.)$/u)).toBeInTheDocument();
     expect(within(summary).getByText("Breaks the server rules")).toBeInTheDocument();
     expect(within(summary).getByText("Another server")).toBeInTheDocument();
     expect(within(summary).getByText("To the account's server")).toBeInTheDocument();
@@ -456,7 +471,7 @@ describe("a report's page", () => {
         await delay(300);
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Resolve without action" }));
+    await user.click(await screen.findByRole("button", { name: "Dismiss the report" }));
     expect(await within(region("Handling")).findByText("The report is resolved: No action.")).toBeInTheDocument();
 
     const staleQueue = watchAppearances(
@@ -588,7 +603,7 @@ describe("a report's page", () => {
     const api = reportsServer([spam]);
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
 
-    await user.click(await screen.findByRole("button", { name: "Resolve without action" }));
+    await user.click(await screen.findByRole("button", { name: "Dismiss the report" }));
     const handling = region("Handling");
     expect(await within(handling).findByText("The report is resolved: No action.")).toBeInTheDocument();
     await waitFor(() => {
@@ -598,7 +613,7 @@ describe("a report's page", () => {
 
     await user.click(within(handling).getByRole("button", { name: "Reopen" }));
     expect(await within(handling).findByText("The report is open again.")).toBeInTheDocument();
-    expect(within(handling).getByRole("button", { name: "Resolve without action" })).toBeInTheDocument();
+    expect(within(handling).getByRole("button", { name: "Dismiss the report" })).toBeInTheDocument();
     expect(api.changes).toEqual(["resolve dismissed", "reopen"]);
   });
 
@@ -609,10 +624,10 @@ describe("a report's page", () => {
     );
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
 
-    await user.click(await screen.findByRole("button", { name: "Resolve as actioned" }));
+    await user.click(await screen.findByRole("button", { name: "Mark as acted on elsewhere" }));
 
     expect(await screen.findByText("Could not resolve the report: Service Unavailable")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Resolve as actioned" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mark as acted on elsewhere" })).toBeInTheDocument();
   });
 
   test("a moderator without manage_accounts resolves without the action form", async () => {
@@ -626,7 +641,7 @@ describe("a report's page", () => {
     expect(screen.queryByRole("radiogroup", { name: "Action" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Actions on the account" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open the account's admin page" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Resolve without action" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dismiss the report" })).toBeInTheDocument();
   });
 
   test("an unknown report is not found", async () => {

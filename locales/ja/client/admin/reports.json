@@ -70,5 +70,9 @@
   "admin.reports.wait.minutes": {
     "defaultMessage": "{count, plural, other {# 分待ち}}",
     "description": "Badge of an item of a queue (a report): how long it has waited, in whole minutes."
+  },
+  "admin.reports.column.waiting": {
+    "defaultMessage": "待ち時間",
+    "description": "Header of the column of the open reports' queue with how long each report has waited since it was filed."
   }
 }
