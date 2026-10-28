@@ -41,7 +41,7 @@ export const readTools: readonly string[] = ["browser_snapshot", "browser_wait_f
 export const tabTool = "browser_tabs";
 
 /** The action of the path that stands for one run of steps in the mailbox. */
-export const mailAction = "mail";
+const mailAction = "mail";
 
 /** One step of the path the agent took. */
 export type Step = {
