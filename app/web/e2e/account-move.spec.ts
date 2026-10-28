@@ -73,6 +73,9 @@ async function userServer(page: Page) {
       return json(route, { aliases: [{ uri: "https://old.example/users/alice", acct: "alice@old.example", created_at: "2026-10-01T09:00:00Z" }] });
     }
     if (key === "GET /accounts/password") return json(route, { has_password: true });
+    // The page also loads the passkeys and the linked accounts, which decide how the move is confirmed.
+    if (key === "GET /passkeys") return json(route, { items: [] });
+    if (key === "GET /linked_identities") return json(route, { items: [], providers: [] });
     if (key === "GET /accounts/lookup") return json(route, target);
     if (key === "POST /accounts/move") {
       const body = (request.postDataJSON() ?? {}) as { target_account_id?: string; password?: string };
