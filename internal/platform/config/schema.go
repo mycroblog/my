@@ -588,6 +588,14 @@ var schema = []field{
 		},
 	},
 	{
+		key:   "push_allowed_destinations",
+		doc:   "For development only: destinations on loopback or a private network that the Web Push sends may reach, such as a fake push service on the same host: comma-separated host names, IP addresses, and CIDRs such as `localhost, 127.0.0.0/8`. The SSRF guard of outbound HTTP refuses them otherwise; for these destinations alone, and for the Web Push sends alone, it also allows any port, still over `https` and without following a redirect. A host name is allowed whatever it resolves to; an address range allows the URLs that name an address in it and the host names that resolve into it only when they are listed too. Every other outbound request keeps the guard. The `production` profile refuses it, and the server logs a warning at start when it is set. Empty allows none.",
+		check: checkDestinations,
+		set: func(c *Config, v string) {
+			c.PushAllowedHosts, c.PushAllowedPrefixes = parseDestinations(v)
+		},
+	},
+	{
 		key:   "remote_status_retention",
 		doc:   "How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).",
 		def:   "2160h",
@@ -1238,6 +1246,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})
+	}
+	if vals["push_allowed_destinations"] != "" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "push_allowed_destinations", Message: "is refused in the production profile; set profile = development"})
 	}
 	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == vals["listen"] {
 		issues = append(issues, Issue{Key: "metrics_listen", Message: "must differ from listen: the metrics are never served on the public listener"})

@@ -217,6 +217,22 @@ listen = "127.0.0.1:9000"
 			},
 		},
 		{
+			name: "push destinations in the development profile",
+			env:  with(minimal(), "MY_PROFILE", "development", "MY_PUSH_ALLOWED_DESTINATIONS", "localhost, 127.0.0.0/8"),
+			want: Config{
+				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
+				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
+				KeyManager: "local", KEK: kek, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "development", TrustedProxyHeader: "x-forwarded-for",
+				PushAllowedHosts:    []string{"localhost"},
+				PushAllowedPrefixes: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")},
+				MetricsExporter:     "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
+				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
+			},
+		},
+		{
 			name: "billing imports",
 			env: with(minimal(), "MY_BILLING_SOURCES", "gcp, aws", "MY_BILLING_AWS_MAX_REQUESTS_PER_DAY", "2",
 				"MY_BILLING_AWS_MAX_REQUESTS_PER_MONTH", "40",
@@ -690,6 +706,21 @@ func TestLoadInvalid(t *testing.T) {
 			name: "private networks in the production profile",
 			env:  with(minimal(), "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "true"),
 			want: []string{"http_allow_private_networks (MY_HTTP_ALLOW_PRIVATE_NETWORKS): true is refused in the production profile; set profile = development"},
+		},
+		{
+			name: "push destinations in the production profile",
+			env:  with(minimal(), "MY_PUSH_ALLOWED_DESTINATIONS", "localhost"),
+			want: []string{"push_allowed_destinations (MY_PUSH_ALLOWED_DESTINATIONS): is refused in the production profile; set profile = development"},
+		},
+		{
+			name: "push destinations in the explicit production profile",
+			env:  with(minimal(), "MY_PROFILE", "production", "MY_PUSH_ALLOWED_DESTINATIONS", "127.0.0.0/8"),
+			want: []string{"push_allowed_destinations (MY_PUSH_ALLOWED_DESTINATIONS): is refused in the production profile; set profile = development"},
+		},
+		{
+			name: "push destinations malformed",
+			env:  with(minimal(), "MY_PROFILE", "development", "MY_PUSH_ALLOWED_DESTINATIONS", "https://localhost"),
+			want: []string{`push_allowed_destinations (MY_PUSH_ALLOWED_DESTINATIONS): entry #1 "https://localhost" must be a lower-case host name, an IP address, or a CIDR such as 10.0.0.0/8`},
 		},
 		{
 			name: "secret sources",

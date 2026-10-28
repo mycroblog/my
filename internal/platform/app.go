@@ -514,7 +514,9 @@ func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (ke
 }
 
 // newHTTPClient returns the SSRF-guarded HTTPClient. http_allow_private_networks, which the
-// configuration accepts only in the development profile, turns the guard off with a warning.
+// configuration accepts only in the development profile, turns the guard off with a warning;
+// push_allowed_destinations, likewise development only, opens it for the Web Push sends to the
+// listed destinations with a warning.
 func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, meter kernel.Meter, tracer kernel.Tracer) kernel.HTTPClient {
 	opts := httpclient.Options{
 		UserAgent: fmt.Sprintf("my/%s (+https://%s/)", version, cfg.Host), Meter: meter, Tracer: tracer,
@@ -522,6 +524,11 @@ func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, mete
 		Webhook: httpclient.Destinations{Hosts: cfg.WebhookAllowedHosts, Prefixes: cfg.WebhookAllowedPrefixes},
 		// So may the requests to the external identity providers (ADR-0106 §5).
 		LoginProvider: httpclient.Destinations{Hosts: cfg.LoginProviderAllowedHosts, Prefixes: cfg.LoginProviderAllowedPrefixes},
+		// And, in the development profile alone, the Web Push sends to a fake push service (ADR-0118 §3).
+		WebPush: httpclient.Destinations{Hosts: cfg.PushAllowedHosts, Prefixes: cfg.PushAllowedPrefixes},
+	}
+	if len(cfg.PushAllowedHosts) > 0 || len(cfg.PushAllowedPrefixes) > 0 {
+		logger.Warn("push_allowed_destinations is set: Web Push sends can reach the listed loopback and private destinations; never use it in production")
 	}
 	if cfg.HTTPAllowPrivateNetworks {
 		logger.Warn("http_allow_private_networks is on: outbound HTTP can reach loopback and private networks; never use it in production")
