@@ -15,7 +15,7 @@ export default mergeConfig(
         ? { reporters: ["minimal", ...(process.env["GITHUB_ACTIONS"] === "true" ? ["github-actions"] : [])] }
         : {}),
       environment: "jsdom",
-      include: ["src/**/*.test.{ts,tsx}", "sw/**/*.test.ts", "vite-plugins/**/*.test.ts"],
+      include: ["src/**/*.test.{ts,tsx}", "sw/**/*.test.ts", "vite-plugins/**/*.test.ts", "l4/**/*.test.ts"],
       setupFiles: ["./src/test/setup.ts"],
       restoreMocks: true,
       unstubGlobals: true,
