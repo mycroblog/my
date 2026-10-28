@@ -2,7 +2,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useId } from "react";
 import { z } from "zod";
-import { type NotificationFilter, notificationFilters, notificationMarkerQueryOptions, notificationsQueryOptions, NotificationsSkeleton, NotificationsView } from "../features/notifications";
+import {
+  type NotificationFilter,
+  notificationFilters,
+  notificationMarkerQueryOptions,
+  notificationsQueryOptions,
+  NotificationsSkeleton,
+  NotificationsView,
+} from "../features/notifications";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";

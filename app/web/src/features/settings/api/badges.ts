@@ -21,7 +21,10 @@ export function updateBadgeChoiceMutation(api: Api) {
   return {
     mutationKey: ["put", "/preferences/badges/{role_id}"] as const,
     mutationFn: async ({ roleId, displayed }: { roleId: string; displayed: boolean }): Promise<BadgeChoice> => {
-      const { data, error } = await api.fetch.PUT("/preferences/badges/{role_id}", { params: { path: { role_id: roleId } }, body: { displayed } });
+      const { data, error } = await api.fetch.PUT("/preferences/badges/{role_id}", {
+        params: { path: { role_id: roleId } },
+        body: { displayed },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;

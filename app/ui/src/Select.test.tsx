@@ -110,7 +110,13 @@ describe("Select", () => {
 
   it("in a toolbar, shows the chosen option after its icon and names the button by the option and the aria-label", () => {
     render(
-      <Select variant="toolbar" aria-label="Language" icon={<span aria-hidden="true">★</span>} items={languages} defaultValue="ja">
+      <Select
+        variant="toolbar"
+        aria-label="Language"
+        icon={<span aria-hidden="true">★</span>}
+        items={languages}
+        defaultValue="ja"
+      >
         {(language) => <SelectItem id={language.id}>{language.name}</SelectItem>}
       </Select>,
     );

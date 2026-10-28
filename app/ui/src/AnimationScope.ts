@@ -107,14 +107,21 @@ export function useAnimationScope<T extends HTMLElement>(): { playing: boolean; 
       if (event.pointerType !== "touch") setHovered(false);
     },
     onPointerDown: (event) => {
-      pressRef.current = !autoplay && event.pointerType === "touch" && event.isPrimary ? { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp } : undefined;
+      pressRef.current =
+        !autoplay && event.pointerType === "touch" && event.isPrimary
+          ? { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp }
+          : undefined;
     },
     onPointerUp: (event) => {
       const start = pressRef.current;
       pressRef.current = undefined;
       if (start === undefined || start.id !== event.pointerId) return;
       // A drag, a scroll that the browser did not take, or a long press (which opens the system's menu) is not a tap.
-      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > tapSlop || event.timeStamp - start.time >= longPress) return;
+      if (
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) > tapSlop ||
+        event.timeStamp - start.time >= longPress
+      )
+        return;
       if (onControl(event.target, event.currentTarget)) return;
       setTapped((on) => !on);
     },
@@ -126,7 +133,8 @@ export function useAnimationScope<T extends HTMLElement>(): { playing: boolean; 
       if (!autoplay && focusVisible(event.target)) setFocused(true);
     },
     onBlur: (event) => {
-      if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setFocused(false);
+      if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)))
+        setFocused(false);
     },
   };
   return { playing: outer || (!autoplay && (hovered || focused || tapped)), props };

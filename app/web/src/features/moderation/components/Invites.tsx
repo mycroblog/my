@@ -3,13 +3,40 @@
 // first, in the admin mode's table form (one page at a time, previous / next). An invite lets people sign up only while the registration mode is `invite` (a server setting, /admin/settings),
 // which the screen says when it is not. A new invite's code and link stay under the form in a StatusMessage; each
 // usable invite can be copied as its sign-up link or revoked, which takes effect at once and asks nothing first.
-import { Box, Button, Cluster, DurationSelect, EmptyState, Heading, InlineError, Select, SelectItem, Stack, StatusMessage, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text, VisuallyHidden } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  DurationSelect,
+  EmptyState,
+  Heading,
+  InlineError,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+  VisuallyHidden,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterLift } from "../../../lib/useFocusAfterRemoval";
 import type { Invite, InviteState } from "../api/invites";
-import { inviteExpiries, inviteMaxUses, type RevokeInvite, useCopyInviteLink, useInviteForm, useInvites, useInvitesWork, useRevokeInvite } from "../hooks/useInvites";
+import {
+  inviteExpiries,
+  inviteMaxUses,
+  type RevokeInvite,
+  useCopyInviteLink,
+  useInviteForm,
+  useInvites,
+  useInvitesWork,
+  useRevokeInvite,
+} from "../hooks/useInvites";
 import { DateTime, DetailSection, RecordTable, RequirePermission } from "./parts";
 
 const stateLabels: Readonly<Record<InviteState, ClientMessageKey>> = {
@@ -66,7 +93,10 @@ function NewInviteForm() {
           if (key === unlimited) form.change({ maxUses: null });
           else if (typeof key === "string") form.change({ maxUses: Number(key) });
         }}
-        items={[...inviteMaxUses.map((uses) => ({ id: String(uses), name: t("client:admin.invites.uses", { count: uses }) })), { id: unlimited, name: t("client:admin.invites.unlimited") }]}
+        items={[
+          ...inviteMaxUses.map((uses) => ({ id: String(uses), name: t("client:admin.invites.uses", { count: uses }) })),
+          { id: unlimited, name: t("client:admin.invites.unlimited") },
+        ]}
       >
         {(item) => (
           <SelectItem id={item.id} textValue={item.name}>
@@ -127,7 +157,13 @@ function InviteList() {
           list={list}
           caption={t("client:admin.invites.list.title")}
           getId={(invite) => invite.id}
-          empty={<EmptyState headingLevel={3} heading={t("client:admin.invites.empty")} description={t("client:admin.invites.empty.description")} />}
+          empty={
+            <EmptyState
+              headingLevel={3}
+              heading={t("client:admin.invites.empty")}
+              description={t("client:admin.invites.empty.description")}
+            />
+          }
           head={
             <>
               <TableColumnHeader>{t("client:admin.invites.column.invite")}</TableColumnHeader>
@@ -162,14 +198,18 @@ function InviteRow({ invite, revoke }: { invite: Invite; revoke: RevokeInvite })
         </Text>
       </TableRowHeader>
       <TableCell>
-        <Text {...(invite.state === "usable" ? { weight: "semibold" as const } : {})}>{t(stateLabels[invite.state])}</Text>
+        <Text {...(invite.state === "usable" ? { weight: "semibold" as const } : {})}>
+          {t(stateLabels[invite.state])}
+        </Text>
       </TableCell>
       <TableCell>
         {invite.max_uses === undefined
           ? t("client:admin.invites.used.unlimited", { uses: invite.uses })
           : t("client:admin.invites.used.limited", { uses: invite.uses, max: invite.max_uses })}
       </TableCell>
-      <TableCell>{invite.expires_at === undefined ? t("client:admin.invites.never") : <DateTime value={invite.expires_at} />}</TableCell>
+      <TableCell>
+        {invite.expires_at === undefined ? t("client:admin.invites.never") : <DateTime value={invite.expires_at} />}
+      </TableCell>
       <TableCell>
         <DateTime value={invite.created_at} />
       </TableCell>

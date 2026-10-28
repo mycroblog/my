@@ -37,7 +37,12 @@ export const loginProviderLimits = {
 } as const;
 
 /** The kinds of provider, in the order of the form (LoginProviderKind). */
-export const loginProviderKinds = ["oidc", "github", "discord", "mastodon"] as const satisfies readonly LoginProviderKind[];
+export const loginProviderKinds = [
+  "oidc",
+  "github",
+  "discord",
+  "mastodon",
+] as const satisfies readonly LoginProviderKind[];
 
 /** The login providers that are not deleted, newest first. */
 export function loginProvidersQueryOptions(api: Api) {
@@ -68,7 +73,10 @@ export function updateLoginProviderMutation(api: Api) {
   return {
     mutationKey: ["patch", "/admin/login_providers/{id}"] as const,
     mutationFn: async ({ id, change }: { id: string; change: LoginProviderChange }): Promise<LoginProvider> => {
-      const { data, error } = await api.fetch.PATCH("/admin/login_providers/{id}", { params: { path: { id } }, body: change });
+      const { data, error } = await api.fetch.PATCH("/admin/login_providers/{id}", {
+        params: { path: { id } },
+        body: change,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -120,5 +128,8 @@ export function rotateLoginProviderSecretMutation(api: Api) {
  * log; the queries shown now are fetched again and awaited.
  */
 export async function refreshLoginProviders(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/admin/login_providers"] }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/login_providers"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }

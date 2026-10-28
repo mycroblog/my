@@ -4,7 +4,12 @@ import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
-import { type AutoDeletePolicy, autoDeletePolicyQueryOptions, cacheSavedAutoDeletePolicy, updateAutoDeletePolicyMutation } from "../api/autoDelete";
+import {
+  type AutoDeletePolicy,
+  autoDeletePolicyQueryOptions,
+  cacheSavedAutoDeletePolicy,
+  updateAutoDeletePolicyMutation,
+} from "../api/autoDelete";
 import type { Visibility } from "../api/me";
 
 /** The ages after which posts may be deleted, in days: a week to two years. */
@@ -61,7 +66,11 @@ export function useAutoDeleteForm() {
     onSuccess: (answered) => {
       cacheSavedAutoDeletePolicy(api, queryClient, answered);
       setDraft(undefined);
-      setStatus(answered.enabled ? t("client:settings.auto_delete.saved_on", { days: answered.min_age_days }) : t("client:settings.auto_delete.saved_off"));
+      setStatus(
+        answered.enabled
+          ? t("client:settings.auto_delete.saved_on", { days: answered.min_age_days })
+          : t("client:settings.auto_delete.saved_off"),
+      );
     },
   });
 

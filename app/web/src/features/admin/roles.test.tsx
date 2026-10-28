@@ -27,26 +27,36 @@ const everyPermission: Schemas["Permission"][] = [
   "manage_webhooks",
   "view_finance",
 ];
-const admin: Schemas["AdminRole"] = { id: "0199f0e0-0000-7000-8000-0000000000a1", key: "admin", position: 1000, permissions: everyPermission };
+const admin: Schemas["AdminRole"] = {
+  id: "0199f0e0-0000-7000-8000-0000000000a1",
+  key: "admin",
+  position: 1000,
+  permissions: everyPermission,
+};
 const moderator: Schemas["AdminRole"] = {
   id: "0199f0e0-0000-7000-8000-0000000000a2",
   key: "moderator",
   position: 100,
   permissions: ["manage_reports", "manage_accounts", "view_audit"],
 };
-const helper: Schemas["AdminRole"] = { id: "0199f0e0-0000-7000-8000-0000000000a3", key: "helper", position: 50, permissions: ["manage_reports", "manage_jobs"] };
+const helper: Schemas["AdminRole"] = {
+  id: "0199f0e0-0000-7000-8000-0000000000a3",
+  key: "helper",
+  position: 50,
+  permissions: ["manage_reports", "manage_jobs"],
+};
 
 function problem(reason: Schemas["RoleProblemReason"], detail: string, missing?: Schemas["Permission"][]) {
   return HttpResponse.json(
-  {
-    type: "/api/v1/problems/invalid-role",
-    title: "The role cannot be saved.",
-    status: 422,
-    detail,
-    reason,
-    ...(missing === undefined ? {} : { missing_permissions: missing }),
-  },
-  { status: 422, headers: { "Content-Type": "application/problem+json" } },
+    {
+      type: "/api/v1/problems/invalid-role",
+      title: "The role cannot be saved.",
+      status: 422,
+      detail,
+      reason,
+      ...(missing === undefined ? {} : { missing_permissions: missing }),
+    },
+    { status: 422, headers: { "Content-Type": "application/problem+json" } },
   );
 }
 
@@ -86,7 +96,11 @@ describe("the roles screen", () => {
     expect(within(adminRow).getByRole("heading", { level: 3, name: "admin" })).toBeInTheDocument();
     expect(within(adminRow).getByText(/Only its badge can be changed/)).toBeInTheDocument();
     // Admin changes only its badge (ADR-0071).
-    expect(within(adminRow).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Change the badge of ⁦admin⁩"]);
+    expect(
+      within(adminRow)
+        .getAllByRole("button")
+        .map((b) => b.getAttribute("aria-label")),
+    ).toEqual(["Change the badge of ⁦admin⁩"]);
     expect(within(moderatorRow).getByText("Reports, Accounts and registrations, Audit log")).toBeInTheDocument();
     // No server administration permission and no member permission.
     expect(within(moderatorRow).getAllByText("None")).toHaveLength(2);
@@ -106,7 +120,9 @@ describe("the roles screen", () => {
     const list = await screen.findByRole("region", { name: "Roles of this server" });
 
     const adminRow = within(list).getAllByRole("listitem")[0] as HTMLElement;
-    expect(within(adminRow).getByText("Above your highest role, ⁦moderator⁩, so you cannot change it.")).toBeInTheDocument();
+    expect(
+      within(adminRow).getByText("Above your highest role, ⁦moderator⁩, so you cannot change it."),
+    ).toBeInTheDocument();
     const form = screen.getByRole("region", { name: "Create a role" });
     expect(within(form).getByRole("checkbox", { name: "Reports" })).toBeEnabled();
     expect(within(form).getByRole("checkbox", { name: "Failed jobs" })).toBeDisabled();
@@ -116,7 +132,9 @@ describe("the roles screen", () => {
   test("creates a role and lists it", async () => {
     let sent: Schemas["CreateRoleRequest"] | undefined;
     server.use(
-      ...rolesHandlers(() => (sent === undefined ? [admin, moderator] : [admin, moderator, { id: createdRoleId, ...sent }])),
+      ...rolesHandlers(() =>
+        sent === undefined ? [admin, moderator] : [admin, moderator, { id: createdRoleId, ...sent }],
+      ),
       http.post(`${apiBase}/admin/roles`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateRoleRequest"];
         return HttpResponse.json({ id: createdRoleId, ...sent });
@@ -131,11 +149,19 @@ describe("the roles screen", () => {
     await user.click(within(moderation).getByRole("checkbox", { name: "Audit log" }));
     await user.click(within(moderation).getByRole("checkbox", { name: "Reports" }));
     // A member permission is a group of its own, outside the staff's areas (ADR-0070).
-    await user.click(within(within(form).getByRole("group", { name: "Member features" })).getByRole("checkbox", { name: "Read the finances" }));
+    await user.click(
+      within(within(form).getByRole("group", { name: "Member features" })).getByRole("checkbox", {
+        name: "Read the finances",
+      }),
+    );
     await user.click(within(form).getByRole("button", { name: "Create role" }));
 
     expect(await within(form).findByRole("status")).toHaveTextContent("Created the role ⁦triage⁩.");
-    expect(sent).toEqual({ key: "triage", position: 40, permissions: ["manage_reports", "view_audit", "view_finance"] });
+    expect(sent).toEqual({
+      key: "triage",
+      position: 40,
+      permissions: ["manage_reports", "view_audit", "view_finance"],
+    });
     expect(within(form).getByRole("textbox", { name: "Key" })).toHaveValue("");
     const list = screen.getByRole("region", { name: "Roles of this server" });
     expect(await within(list).findByRole("heading", { level: 3, name: "triage" })).toBeInTheDocument();
@@ -186,7 +212,11 @@ describe("the roles screen", () => {
       ...rolesHandlers(() => [admin, current]),
       http.patch(`${apiBase}/admin/roles/:role`, async ({ request }) => {
         sent = (await request.json()) as Schemas["UpdateRoleRequest"];
-        current = { ...moderator, position: sent.position ?? moderator.position, permissions: sent.permissions ?? moderator.permissions };
+        current = {
+          ...moderator,
+          position: sent.position ?? moderator.position,
+          permissions: sent.permissions ?? moderator.permissions,
+        };
         return HttpResponse.json(current);
       }),
     );
@@ -213,7 +243,9 @@ describe("the roles screen", () => {
   test("keeps a refused change in the dialog", async () => {
     server.use(
       ...rolesHandlers(() => [admin, moderator]),
-      http.patch(`${apiBase}/admin/roles/:role`, () => problem("missing_permission", "You can give or take only the permissions you hold.", ["manage_jobs"])),
+      http.patch(`${apiBase}/admin/roles/:role`, () =>
+        problem("missing_permission", "You can give or take only the permissions you hold.", ["manage_jobs"]),
+      ),
     );
     const { user } = await renderApp({ path: "/admin/roles" });
     await user.click(await screen.findByRole("button", { name: "Edit ⁦moderator⁩" }));
@@ -221,7 +253,9 @@ describe("the roles screen", () => {
     await user.click(within(dialog).getByRole("checkbox", { name: "Failed jobs" }));
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^You can give or take only the permissions you hold\./);
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      /^You can give or take only the permissions you hold\./,
+    );
     expect(within(dialog).getByText("Permissions your roles do not grant: ⁦manage_jobs⁩")).toBeInTheDocument();
   });
 
@@ -272,7 +306,10 @@ describe("the badge of a role", () => {
         const change = (await request.json()) as Schemas["UpdateRoleRequest"];
         sent.push(change);
         const { badge: _, ...rest } = current;
-        current = change.remove_badge === true ? rest : { ...current, ...(change.badge === undefined ? {} : { badge: change.badge }) };
+        current =
+          change.remove_badge === true
+            ? rest
+            : { ...current, ...(change.badge === undefined ? {} : { badge: change.badge }) };
         return HttpResponse.json(current);
       }),
     );
@@ -317,7 +354,9 @@ describe("the badge of a role", () => {
   test("keeps a refusal of the server on the name", async () => {
     server.use(
       ...rolesHandlers(() => [admin, moderator, helper]),
-      http.patch(`${apiBase}/admin/roles/:role`, () => problem("badge_label", "The badge name must be 1 to 32 characters on one line.")),
+      http.patch(`${apiBase}/admin/roles/:role`, () =>
+        problem("badge_label", "The badge name must be 1 to 32 characters on one line."),
+      ),
     );
     const { user } = await renderApp({ path: "/admin/roles" });
     await user.click(await screen.findByRole("button", { name: "Change the badge of ⁦helper⁩" }));

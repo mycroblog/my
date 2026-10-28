@@ -4,7 +4,12 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { shellQueryRetry } from "../../../lib/query";
 import { useViewerPermissions } from "../../moderation";
-import { type CostBasis, type CostGranularity, type FinanceCostTotals, financeCostTotalsQueryOptions } from "../api/costs";
+import {
+  type CostBasis,
+  type CostGranularity,
+  type FinanceCostTotals,
+  financeCostTotalsQueryOptions,
+} from "../api/costs";
 
 /** The totals of the finances page as it shows them; `ready` says whether the lines of the items are shown. */
 export type FinanceCosts =
@@ -27,13 +32,23 @@ export function useFinanceCosts(granularity: CostGranularity, basis: CostBasis, 
   const api = useApi();
   const { allowed, manage } = useFinanceAccess();
   // A viewer without the permission is told why and sends nothing (the server would answer 403).
-  const query = useQuery({ ...financeCostTotalsQueryOptions(api, granularity, basis, today), enabled: allowed, retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...financeCostTotalsQueryOptions(api, granularity, basis, today),
+    enabled: allowed,
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) {
     const { viewer } = query.data;
     return { status: "ready", totals: query.data, items: manage || viewer.item_names || viewer.item_memos };
   }
   if (query.error !== null) {
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }

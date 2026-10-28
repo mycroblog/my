@@ -22,8 +22,22 @@
 //   the provider announces.
 // The requests and the audio are given to it, so that the tests give fakes.
 import { connectVoice, UnsupportedVoiceMethodError } from "../rtc/connect";
-import type { OutgoingVoiceSignal, VoiceConnection, VoiceConnectionOptions, VoiceEnvironment, VoiceGrant, VoiceMember } from "../rtc/types";
-import { isSessionGone, signalRetryDelay, type VoiceGrantData, type VoiceSignalData, type VoiceStreamEvent, type VoiceStreamOptions } from "../api/call";
+import type {
+  OutgoingVoiceSignal,
+  VoiceConnection,
+  VoiceConnectionOptions,
+  VoiceEnvironment,
+  VoiceGrant,
+  VoiceMember,
+} from "../rtc/types";
+import {
+  isSessionGone,
+  signalRetryDelay,
+  type VoiceGrantData,
+  type VoiceSignalData,
+  type VoiceStreamEvent,
+  type VoiceStreamOptions,
+} from "../api/call";
 import type { VoiceRoom, VoiceRoomParticipant } from "../api/voice";
 
 /** How often the session sends its heartbeat (ADR-0100 §6). */
@@ -103,7 +117,18 @@ export type VoiceCallSnapshot = {
 
 /** A change for the user that the page announces. */
 export type VoiceCallNotice =
-  | { kind: "speaker" | "listener" | "muted" | "hand-down" | "cohost" | "cohost-removed" | "host" | "reconnecting" | "reconnected" }
+  | {
+      kind:
+        | "speaker"
+        | "listener"
+        | "muted"
+        | "hand-down"
+        | "cohost"
+        | "cohost-removed"
+        | "host"
+        | "reconnecting"
+        | "reconnected";
+    }
   | { kind: "hand-raised"; participant: VoiceRoomParticipant };
 
 export type VoiceCallOptions = {
@@ -288,7 +313,12 @@ export class VoiceCall {
 
   /** Sends a signal after the ones before it, under the server's rate, trying again after a 429 or a network failure. */
   #sendSignal(session: string, { to, kind, sdp, candidate }: OutgoingVoiceSignal): Promise<void> {
-    const body: VoiceSignalData = { to, kind, ...(sdp === undefined ? {} : { sdp }), ...(candidate === undefined ? {} : { candidate }) };
+    const body: VoiceSignalData = {
+      to,
+      kind,
+      ...(sdp === undefined ? {} : { sdp }),
+      ...(candidate === undefined ? {} : { candidate }),
+    };
     const send = this.#signals.then(async () => {
       for (let attempt = 1; ; attempt++) {
         if (this.#isStopped() || session !== this.#session) return;
@@ -310,7 +340,10 @@ export class VoiceCall {
   }
 
   #self(room: VoiceRoom = this.#snapshot.room): VoiceRoomParticipant | undefined {
-    return room.participants.find((p) => p.session === this.#session) ?? room.participants.find((p) => p.account.id === this.#options.accountId);
+    return (
+      room.participants.find((p) => p.session === this.#session) ??
+      room.participants.find((p) => p.account.id === this.#options.accountId)
+    );
   }
 
   /** Whether the user speaks in the room as the call knows it. */
@@ -321,7 +354,9 @@ export class VoiceCall {
   #applyRoster(): void {
     const room = this.#snapshot.room;
     const members: VoiceMember[] = room.participants.flatMap((p) =>
-      p.session === undefined || p.session === this.#session ? [] : [{ session: p.session, account: p.account.id, speaker: p.role === "speaker" }],
+      p.session === undefined || p.session === this.#session
+        ? []
+        : [{ session: p.session, account: p.account.id, speaker: p.role === "speaker" }],
     );
     this.#connection?.update({ speaker: this.#speaks(), members });
   }
@@ -455,7 +490,11 @@ export class VoiceCall {
     if (wasManager && manages(after)) {
       const raised = new Set(previous.participants.filter((p) => p.hand_raised).map((p) => p.account.id));
       for (const participant of room.participants) {
-        if (participant.hand_raised && !raised.has(participant.account.id) && participant.account.id !== this.#options.accountId) {
+        if (
+          participant.hand_raised &&
+          !raised.has(participant.account.id) &&
+          participant.account.id !== this.#options.accountId
+        ) {
           this.#options.onNotice({ kind: "hand-raised", participant });
         }
       }

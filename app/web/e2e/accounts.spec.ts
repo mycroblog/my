@@ -77,7 +77,13 @@ const localAccount: Schemas["AdminAccount"] = {
   restrictions: ["visibility_ceiling_private", "public_discovery"],
   registration_state: "approved",
 };
-const remoteAccount: Schemas["AdminAccount"] = { id: remote.id, account: remote, local: false, state: "active", restrictions: [] };
+const remoteAccount: Schemas["AdminAccount"] = {
+  id: remote.id,
+  account: remote,
+  local: false,
+  state: "active",
+  restrictions: [],
+};
 
 const limit: Schemas["AdminAccountAction"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000d0001",
@@ -92,7 +98,8 @@ const limit: Schemas["AdminAccountAction"] = {
   issued_at: "2026-10-10T08:00:00Z",
 };
 
-const userAgent = "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/AP2A.240805.005) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36";
+const userAgent =
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/AP2A.240805.005) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36";
 const privateData: Schemas["AdminAccountPrivateData"] = {
   email: "maximiliana.theodora.wolfharte@a-very-long-mail-provider.example.com",
   email_verified: true,
@@ -106,7 +113,12 @@ const privateData: Schemas["AdminAccountPrivateData"] = {
 const emailHash = "5d41402abc4b2a76b9719d911017c592ae0b4f1c7ad8e2c6f5a1b0e9d8c7b6a5";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /**
@@ -122,12 +134,18 @@ const resetLink = "https://my.example/auth/reset_password?token=rst_3q2Ybq7mJXkQ
  * Plays the API of a signed-in moderator with `permissions`; returns the requests to the account operations. With
  * manage_login_recovery, the local account's user shows without two-factor authentication.
  */
-async function moderatorServer(page: Page, permissions: readonly string[] = moderator.permissions, { suppressed = false }: { suppressed?: boolean } = {}) {
+async function moderatorServer(
+  page: Page,
+  permissions: readonly string[] = moderator.permissions,
+  { suppressed = false }: { suppressed?: boolean } = {},
+) {
   const viewer = { ...moderator, permissions };
   const recovers = permissions.includes("manage_login_recovery");
   const locale = test.info().project.use.locale ?? "en";
   let actions = [limit];
-  let suppression: Schemas["EmailSuppression"] | undefined = suppressed ? { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } : undefined;
+  let suppression: Schemas["EmailSuppression"] | undefined = suppressed
+    ? { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" }
+    : undefined;
   let blocks: Schemas["AdminSignupBlock"][] = [];
   let slowSearch = false;
   const requests: string[] = [];
@@ -139,27 +157,58 @@ async function moderatorServer(page: Page, permissions: readonly string[] = mode
   });
   const detail = (account: Schemas["AdminAccount"]): Schemas["AdminAccountDetail"] => ({
     ...current(account),
-    ...(account.local ? { registration: { submitted_at: "2026-10-01T00:00:00Z", state_changed_at: "2026-10-01T01:00:00Z" }, email_verified: true } : {}),
+    ...(account.local
+      ? {
+          registration: { submitted_at: "2026-10-01T00:00:00Z", state_changed_at: "2026-10-01T01:00:00Z" },
+          email_verified: true,
+        }
+      : {}),
     ...(account.local && suppression !== undefined ? { email_suppression: suppression } : {}),
     ...(account.local && recovers ? { two_factor_enabled: false } : {}),
     roles: [],
     actions: [],
     reports: [],
   });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (path.startsWith("/admin/account")) requests.push(key);
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
-    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`) return json(route, viewer);
+    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`)
+      return json(route, viewer);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/counts") return json(route, {});
     if (key === "GET /admin/accounts") {
@@ -175,14 +224,30 @@ async function moderatorServer(page: Page, permissions: readonly string[] = mode
       suppression = undefined;
       return route.fulfill({ status: 204 });
     }
-    if (key === `POST /admin/accounts/${local.id}/password_reset_link`) return json(route, { url: resetLink, expires_at: "2026-10-17T01:00:00Z" }, 201);
+    if (key === `POST /admin/accounts/${local.id}/password_reset_link`)
+      return json(route, { url: resetLink, expires_at: "2026-10-17T01:00:00Z" }, 201);
     if (key === `POST /admin/accounts/${local.id}/actions`) {
       const body = request.postDataJSON() as Schemas["CreateAccountActionRequest"];
       requests.push(`${key} ${body.kind}${body.block_email === true ? " block_email" : ""}`);
-      const action: Schemas["AdminAccountAction"] = { ...limit, id: "0192f0c4-7a8e-7000-8000-0000000d00a0", kind: body.kind, issued_at: "2026-10-17T00:00:00Z" };
+      const action: Schemas["AdminAccountAction"] = {
+        ...limit,
+        id: "0192f0c4-7a8e-7000-8000-0000000d00a0",
+        kind: body.kind,
+        issued_at: "2026-10-17T00:00:00Z",
+      };
       actions = [action, ...actions];
       if (body.block_email === true) {
-        blocks = [{ id: "0192f0c4-7a8e-7000-8000-0000000001a1", kind: "email_hash", value: emailHash, severity: "reject", moderation_action_id: action.id, state: "active", created_at: "2026-10-17T00:00:00Z" }];
+        blocks = [
+          {
+            id: "0192f0c4-7a8e-7000-8000-0000000001a1",
+            kind: "email_hash",
+            value: emailHash,
+            severity: "reject",
+            moderation_action_id: action.id,
+            state: "active",
+            created_at: "2026-10-17T00:00:00Z",
+          },
+        ];
       }
       return json(route, action);
     }
@@ -200,7 +265,12 @@ async function moderatorServer(page: Page, permissions: readonly string[] = mode
 
 /** The rows of the results table: its rows with a link, which leaves out the header row. */
 function rows(page: Page) {
-  return page.getByRole("main").getByRole("region").last().getByRole("row").filter({ has: page.getByRole("link") });
+  return page
+    .getByRole("main")
+    .getByRole("region")
+    .last()
+    .getByRole("row")
+    .filter({ has: page.getByRole("link") });
 }
 
 test.describe("page /moderation/accounts", () => {
@@ -236,13 +306,18 @@ test.describe("page /moderation/accounts/{id}", () => {
 });
 
 test.describe("accounts", () => {
-  test("opens an account from the search, shows its email and IP addresses only when asked, and lifts an action after its confirmation", async ({ page, makeAxeBuilder }) => {
+  test("opens an account from the search, shows its email and IP addresses only when asked, and lifts an action after its confirmation", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await moderatorServer(page);
     await page.goto("/moderation/accounts");
     await expect(rows(page)).toHaveCount(2);
     const limitedRow = await rows(page).first().textContent();
 
-    await expect(rows(page).first().getByRole("rowheader").getByRole("link")).toHaveAccessibleName(/Maximiliana Theodora Wolfharte.*@maximiliana/);
+    await expect(rows(page).first().getByRole("rowheader").getByRole("link")).toHaveAccessibleName(
+      /Maximiliana Theodora Wolfharte.*@maximiliana/,
+    );
     await expect(rows(page).first().getByRole("cell")).toHaveCount(3);
     await expect(rows(page).first().getByRole("cell").last().getByRole("time")).toBeVisible();
     await expect(rows(page).last().getByText(`@carol@${longDomain}`)).toBeVisible();
@@ -264,8 +339,13 @@ test.describe("accounts", () => {
     await expect(privateRegion.getByText(privateData.email ?? "")).toBeVisible();
     await expect(privateRegion.getByRole("heading", { level: 2 })).toBeFocused();
     await expect(privateRegion.getByText(userAgent)).toBeVisible();
-    await expect(privateRegion.getByRole("link", { name: /Carol/ })).toHaveAttribute("href", `/moderation/accounts/${remote.id}`);
-    expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([`POST /admin/accounts/${local.id}/reveal`]);
+    await expect(privateRegion.getByRole("link", { name: /Carol/ })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${remote.id}`,
+    );
+    expect(requests.filter((request) => request.endsWith("/reveal"))).toEqual([
+      `POST /admin/accounts/${local.id}/reveal`,
+    ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -305,7 +385,10 @@ test.describe("accounts", () => {
     expect(await rows(page).first().textContent()).not.toBe(limitedRow);
   });
 
-  test("offers a remote account only the kinds of action it takes, and no email or IP addresses", async ({ page, makeAxeBuilder }) => {
+  test("offers a remote account only the kinds of action it takes, and no email or IP addresses", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await moderatorServer(page);
     await page.goto(`/moderation/accounts/${remote.id}`);
     const main = page.getByRole("main");
@@ -321,7 +404,10 @@ test.describe("accounts", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("bans a local account with a block on sign-ups with its email address, which the sign-up blocks list", async ({ page, makeAxeBuilder }) => {
+  test("bans a local account with a block on sign-ups with its email address, which the sign-up blocks list", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await moderatorServer(page);
     await page.goto(`/moderation/accounts/${local.id}`);
     const form = page.getByRole("main").locator("form");
@@ -352,7 +438,10 @@ test.describe("accounts", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("shows the email suppression of a local account and lifts it after its confirmation", async ({ page, makeAxeBuilder }) => {
+  test("shows the email suppression of a local account and lifts it after its confirmation", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await moderatorServer(page, moderator.permissions, { suppressed: true });
     await page.goto(`/moderation/accounts/${local.id}`);
     const main = page.getByRole("main");
@@ -372,17 +461,24 @@ test.describe("accounts", () => {
     await expect(dialog).toBeHidden();
     await expect(region.getByRole("button")).toHaveCount(0);
     await expect(region.getByRole("heading", { level: 2 })).toBeFocused();
-    expect(requests.filter((request) => request.endsWith("/email_suppression/lift"))).toEqual([`POST /admin/accounts/${local.id}/email_suppression/lift`]);
+    expect(requests.filter((request) => request.endsWith("/email_suppression/lift"))).toEqual([
+      `POST /admin/accounts/${local.id}/email_suppression/lift`,
+    ]);
     await expect(page.locator("[data-exiting]")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
 
     // Lifted: the page opened again shows no such region.
     await page.reload();
     await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
-    await expect(main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true })).toHaveCount(0);
+    await expect(
+      main.getByRole("region", { name: message("admin.account.email_suppression.title"), exact: true }),
+    ).toHaveCount(0);
   });
 
-  test("an administrator issues a password reset link for a local account after its confirmation, shown once", async ({ page, makeAxeBuilder }) => {
+  test("an administrator issues a password reset link for a local account after its confirmation, shown once", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await moderatorServer(page, [...moderator.permissions, "manage_login_recovery"]);
     await page.goto(`/moderation/accounts/${local.id}`);
     const main = page.getByRole("main");
@@ -405,7 +501,9 @@ test.describe("accounts", () => {
     await expect(dialog).toBeHidden();
     await expect(reset.getByText(resetLink)).toBeVisible();
     await expect(reset.getByRole("status").filter({ hasText: /\S/ })).toBeVisible();
-    expect(requests.filter((request) => request.endsWith("/password_reset_link"))).toEqual([`POST /admin/accounts/${local.id}/password_reset_link`]);
+    expect(requests.filter((request) => request.endsWith("/password_reset_link"))).toEqual([
+      `POST /admin/accounts/${local.id}/password_reset_link`,
+    ]);
     await expect(page.locator("[data-exiting]")).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

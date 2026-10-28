@@ -44,7 +44,9 @@ describe("the federated timeline", () => {
     expect(remote).toHaveAttribute("aria-posinset", "2");
     expect(remote).toHaveAttribute("aria-setsize", "2");
     // The post of another server links to its page there.
-    expect(within(remote).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" })).toHaveAttribute("href", "https://remote.example/@carol/1");
+    expect(
+      within(remote).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
+    ).toHaveAttribute("href", "https://remote.example/@carol/1");
   });
 
   test("shows the skeleton while the first page loads after a navigation", async () => {
@@ -78,7 +80,9 @@ describe("the federated timeline", () => {
     await renderApp({ path: "/public" });
 
     expect(await screen.findByRole("heading", { level: 2, name: "No posts yet" })).toBeInTheDocument();
-    expect(screen.getByText("Public posts of people here and on the servers this one knows will appear here.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Public posts of people here and on the servers this one knows will appear here."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("feed")).not.toBeInTheDocument();
   });
 
@@ -86,7 +90,9 @@ describe("the federated timeline", () => {
     let fail = true;
     server.use(
       http.get(`${apiBase}/timelines/public`, () =>
-        fail ? problem(503, "about:blank", "Service Unavailable") : HttpResponse.json(statusPage([timelineStatusFixture])),
+        fail
+          ? problem(503, "about:blank", "Service Unavailable")
+          : HttpResponse.json(statusPage([timelineStatusFixture])),
       ),
     );
     const { user } = await renderApp({ path: "/public" });
@@ -115,13 +121,18 @@ describe("the federated timeline", () => {
   test("asks a visitor to sign in when the server keeps it for signed-in users", async () => {
     server.use(
       instanceWith({ local: "everyone", federated: "logged_in" }),
-      http.get(`${apiBase}/timelines/public`, () => problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated")),
+      http.get(`${apiBase}/timelines/public`, () =>
+        problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
+      ),
     );
     await renderApp({ path: "/public" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "The federated timeline is for signed-in users" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "The federated timeline is for signed-in users" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Sign in to read the public posts that reach this server.")).toBeInTheDocument();
-    for (const link of screen.getAllByRole("link", { name: "Sign in" })) expect(link).toHaveAttribute("href", "/login?return_to=%2Fpublic");
+    for (const link of screen.getAllByRole("link", { name: "Sign in" }))
+      expect(link).toHaveAttribute("href", "/login?return_to=%2Fpublic");
     expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
   });
 
@@ -129,10 +140,9 @@ describe("the federated timeline", () => {
     await renderApp({ path: "/public", locale: "ja" });
 
     expect(await screen.findByRole("feed", { name: "連合タイムライン" })).toBeInTheDocument();
-    expect(await within(screen.getByRole("navigation", { name: "メイン" })).findByRole("link", { name: "連合" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(
+      await within(screen.getByRole("navigation", { name: "メイン" })).findByRole("link", { name: "連合" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -149,16 +159,11 @@ describe("the navigation's timelines", () => {
     const federated = await within(navigation()).findByRole("link", { name: "Federated" });
     // jsdom applies no styles, so the items of the rail only are here too. Local and Federated are items of
     // their own at every width.
-    expect(within(within(navigation()).getByRole("list")).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/home",
-      "/local",
-      "/public",
-      "/notifications",
-      "/search",
-      "/profile",
-      "/bookmarks",
-      "/settings",
-    ]);
+    expect(
+      within(within(navigation()).getByRole("list"))
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/home", "/local", "/public", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
 
     await user.click(federated);
 

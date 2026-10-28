@@ -50,7 +50,9 @@ const server: Schemas["CostItem"] = {
   provider: "a-very-long-cloud-provider-name-that-does-not-wrap-on-its-own.example",
   category: "compute",
   memo: "الخادم الرئيسي",
-  prices: [{ effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" }],
+  prices: [
+    { effective_on: "2026-01-31", price: { amount: "12.34", currency: "USD" }, revised_at: "2026-01-31T00:00:00Z" },
+  ],
   created_at: "2026-01-31T00:00:00Z",
 };
 
@@ -97,8 +99,18 @@ function incomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
       net: index === cost.periods.length - 1 ? [{ amount: "11568", currency: "JPY" }] : [],
       balance: index === cost.periods.length - 1 ? [{ amount: "11428", currency: "JPY" }] : [],
     })),
-    plans: [{ plan_id: "0192f0c4-7a8e-7000-8000-0000000000c1", name: "A plan with a rather long name that has to wrap on the narrowest screens", members: 1 }],
-    rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+    plans: [
+      {
+        plan_id: "0192f0c4-7a8e-7000-8000-0000000000c1",
+        name: "A plan with a rather long name that has to wrap on the narrowest screens",
+        members: 1,
+      },
+    ],
+    rules: {
+      week_start: "monday",
+      providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+      amortize_after_days: 31,
+    },
   };
 }
 
@@ -140,7 +152,13 @@ const awsImport: Schemas["BillingImport"] = {
   provider: "AWS",
   time_zone: "UTC",
   method: "cost_explorer",
-  last_run: { outcome: "succeeded", error_kind: "none", requests: 1, bytes_billed: 0, occurred_at: "2026-10-21T01:00:00Z" },
+  last_run: {
+    outcome: "succeeded",
+    error_kind: "none",
+    requests: 1,
+    bytes_billed: 0,
+    occurred_at: "2026-10-21T01:00:00Z",
+  },
   last_success_at: "2026-10-21T01:00:00Z",
   requests_today: 1,
   requests_this_month: 21,
@@ -151,7 +169,12 @@ const awsImport: Schemas["BillingImport"] = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of the administrator: the costs change with each write, which `sent` records. */
@@ -159,7 +182,14 @@ async function serveApi(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   let items = [server];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -171,7 +201,8 @@ async function serveApi(page: Page) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -179,10 +210,18 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/cost_totals") {
       sent.push(`totals ${url.searchParams.get("granularity") ?? ""} ${url.searchParams.get("basis") ?? ""}`);
@@ -190,7 +229,11 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /finance/cost_totals") {
       const viewer: Schemas["FinanceViewerSettings"] = { item_names: true, item_memos: false, income: "totals" };
-      return json(route, { ...totals(url), periods: totals(url).periods.map((period) => ({ ...period, items: [] })), viewer });
+      return json(route, {
+        ...totals(url),
+        periods: totals(url).periods.map((period) => ({ ...period, items: [] })),
+        viewer,
+      });
     }
     if (key === "GET /admin/cost_items") return json(route, { items });
     if (key === "GET /admin/billing_imports") return json(route, { items: [awsImport] });
@@ -224,7 +267,10 @@ async function serveApi(page: Page) {
 }
 
 test.describe("costs", () => {
-  test("switches the totals, records a yearly cost and deletes one after its dialog", async ({ page, makeAxeBuilder }) => {
+  test("switches the totals, records a yearly cost and deletes one after its dialog", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent = await serveApi(page);
     await page.goto("/admin/finance");
     const main = page.getByRole("main");
@@ -242,8 +288,15 @@ test.describe("costs", () => {
     // The tabs follow the APG with automatic activation: the arrow key selects the weeks.
     await totalsRegion.getByRole("tab", { name: message("costs.granularity.month"), exact: true }).focus();
     await page.keyboard.press(test.info().project.use.locale === "ar-XB" ? "ArrowRight" : "ArrowLeft");
-    await expect(totalsRegion.getByRole("tab", { name: message("costs.granularity.week"), exact: true })).toHaveAttribute("aria-selected", "true");
-    await expect(totalsRegion.getByRole("table").first().getByRole("row", { name: /2026-W43/u })).toBeVisible();
+    await expect(
+      totalsRegion.getByRole("tab", { name: message("costs.granularity.week"), exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(
+      totalsRegion
+        .getByRole("table")
+        .first()
+        .getByRole("row", { name: /2026-W43/u }),
+    ).toBeVisible();
     // React Aria hides the native radio under its drawing; the label is what the user presses.
     await basis.getByText(message("costs.basis.cash"), { exact: true }).click();
     await expect(basis.getByRole("radio", { name: message("costs.basis.cash"), exact: true })).toBeChecked();
@@ -259,7 +312,9 @@ test.describe("costs", () => {
     await form.getByRole("textbox", { name: message("admin.finance.provider"), exact: true }).fill("Registrar");
     const schedule = form.getByRole("radiogroup", { name: message("admin.finance.schedule"), exact: true });
     await schedule.getByText(message("admin.finance.schedule.years"), { exact: true }).click();
-    await expect(schedule.getByRole("radio", { name: message("admin.finance.schedule.years"), exact: true })).toBeChecked();
+    await expect(
+      schedule.getByRole("radio", { name: message("admin.finance.schedule.years"), exact: true }),
+    ).toBeChecked();
     await form.getByLabel(message("admin.finance.starts_on"), { exact: true }).fill("2026-04-10");
     await form.getByRole("textbox", { name: message("admin.finance.amount"), exact: true }).fill("1650");
     await form.getByRole("textbox", { name: message("admin.finance.currency"), exact: true }).fill("JPY");
@@ -270,7 +325,9 @@ test.describe("costs", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("button", { name: message("admin.finance.cancel_one", { name: "example.com" }), exact: true }).click();
+    await list
+      .getByRole("button", { name: message("admin.finance.cancel_one", { name: "example.com" }), exact: true })
+      .click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
@@ -293,11 +350,18 @@ test("the income on the costs screen, with its money movements", async ({ page, 
   const income = totalsRegion.getByRole("region", { name: message("income.title"), exact: true });
   // The period, the gross, the fees, the income after fees and the balance.
   await expect(income.getByRole("table").getByRole("columnheader")).toHaveCount(5);
-  await expect(income.getByText("A plan with a rather long name that has to wrap on the narrowest screens")).toHaveAttribute("dir", "auto");
+  await expect(
+    income.getByText("A plan with a rather long name that has to wrap on the narrowest screens"),
+  ).toHaveAttribute("dir", "auto");
   const movementsRegion = main.getByRole("region", { name: message("admin.finance.movements.title"), exact: true });
   await expect(movementsRegion.getByRole("row")).toHaveCount(3);
-  await expect(movementsRegion.getByText("txn_1PaymentWithARatherLongIdentifierThatDoesNotWrap")).toHaveAttribute("dir", "ltr");
-  await expect(movementsRegion.getByText("@a_supporter_with_a_rather_long_username_that_does_not_wrap")).toHaveAttribute("dir", "ltr");
+  await expect(movementsRegion.getByText("txn_1PaymentWithARatherLongIdentifierThatDoesNotWrap")).toHaveAttribute(
+    "dir",
+    "ltr",
+  );
+  await expect(
+    movementsRegion.getByText("@a_supporter_with_a_rather_long_username_that_does_not_wrap"),
+  ).toHaveAttribute("dir", "ltr");
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 
@@ -307,7 +371,9 @@ test("the income on the costs screen, with its money movements", async ({ page, 
   await page.getByRole("option", { name: message("admin.finance.movements.kind.fee"), exact: true }).press("Enter");
   await expect(page).toHaveURL(/kind=fee/u);
   await expect(movementsRegion.getByRole("row")).toHaveCount(2);
-  await expect(movementsRegion.getByRole("button", { name: message("admin.finance.movements.filter.clear"), exact: true })).toBeVisible();
+  await expect(
+    movementsRegion.getByRole("button", { name: message("admin.finance.movements.filter.clear"), exact: true }),
+  ).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });

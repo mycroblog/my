@@ -13,7 +13,6 @@ function Demo({ onUndo, timeout }: { onUndo: () => void; timeout?: number | null
   return (
     <div className="flex flex-wrap gap-2">
       <Button
-       
         onPress={() => {
           toast.show({ message: "Draft saved", tone: "success", ...timing });
         }}
@@ -21,7 +20,6 @@ function Demo({ onUndo, timeout }: { onUndo: () => void; timeout?: number | null
         Save draft
       </Button>
       <Button
-       
         onPress={() => {
           toast.show({ message: "Post deleted", action: { label: "Undo", onAction: onUndo }, ...timing });
         }}
@@ -29,7 +27,6 @@ function Demo({ onUndo, timeout }: { onUndo: () => void; timeout?: number | null
         Delete post
       </Button>
       <Button
-       
         onPress={() => {
           toast.show({ message: "Could not send the post", tone: "danger", ...timing });
         }}
@@ -55,7 +52,11 @@ const meta = {
   args: { onUndo: fn(), timeout: null },
   render: ({ defaultTimeout, ...args }) => (
     <AnnouncerProvider>
-      <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss" {...(defaultTimeout === undefined ? {} : { defaultTimeout })}>
+      <ToastProvider
+        regionLabel="Notifications"
+        dismissLabel="Dismiss"
+        {...(defaultTimeout === undefined ? {} : { defaultTimeout })}
+      >
         <Demo {...args} />
       </ToastProvider>
     </AnnouncerProvider>

@@ -49,7 +49,9 @@ export function appealTitle(t: Translate, appeal: Appeal): string {
 /** What a decision did, in words: an overturn says whether it lifted the action, or found it ended already. */
 function decidedMessage(t: Translate, appeal: Appeal): string {
   if (appeal.state === "upheld") return t("client:admin.appeal.upheld");
-  return appeal.action.state === "lifted" ? t("client:admin.appeal.overturned") : t("client:admin.appeal.overturned_ended");
+  return appeal.action.state === "lifted"
+    ? t("client:admin.appeal.overturned")
+    : t("client:admin.appeal.overturned_ended");
 }
 
 /** The decision being confirmed and the explanation typed so far. */

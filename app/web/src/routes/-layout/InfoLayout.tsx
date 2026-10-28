@@ -25,7 +25,11 @@ export function InfoLayout({ heading, children }: InfoLayoutProps) {
   const signedOut = useSignedOut();
   const roomy = useMediaQuery(besideQuery);
   return (
-    <InfoPage heading={heading} contentsLabel={t("client:info.contents")} placement={signedOut && roomy ? "beside" : "inline"}>
+    <InfoPage
+      heading={heading}
+      contentsLabel={t("client:info.contents")}
+      placement={signedOut && roomy ? "beside" : "inline"}
+    >
       {children}
     </InfoPage>
   );

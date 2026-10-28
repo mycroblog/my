@@ -29,7 +29,11 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
   return (
     <Stack gap="4">
       <Stack gap="1">
-        {renderHeading(list === "followers" ? t("client:profile.followers.title", { name: isolated }) : t("client:profile.following.title", { name: isolated }))}
+        {renderHeading(
+          list === "followers"
+            ? t("client:profile.followers.title", { name: isolated })
+            : t("client:profile.following.title", { name: isolated }),
+        )}
         <p>
           <Link href={profilePath(profile.account.acct)} variant="standalone" gap={1}>
             <BackIcon />
@@ -38,18 +42,30 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
         </p>
       </Stack>
       {items.length === 0 ? (
-        <EmptyState heading={list === "followers" ? t("client:profile.followers.empty") : t("client:profile.following.empty")} />
+        <EmptyState
+          heading={list === "followers" ? t("client:profile.followers.empty") : t("client:profile.following.empty")}
+        />
       ) : (
         <Stack as="ul" divided border="y">
           {items.map((item) => (
             <Box as="li" key={item.id}>
               {/* A right-to-left name lines up with the other rows; only its text runs right to left (web-client/16-look-states-and-wording.md G9). */}
-              <AccountItem name={item.name} avatarSeed={item.id} handle={item.handle} href={item.href} layout="padded" />
+              <AccountItem
+                name={item.name}
+                avatarSeed={item.id}
+                handle={item.handle}
+                href={item.href}
+                layout="padded"
+              />
             </Box>
           ))}
         </Stack>
       )}
-      {loadMoreError !== null && <Text as="p" align="center">{t("client:profile.list.load_more_failed", { reason: loadMoreError })}</Text>}
+      {loadMoreError !== null && (
+        <Text as="p" align="center">
+          {t("client:profile.list.load_more_failed", { reason: loadMoreError })}
+        </Text>
+      )}
       {hasMore && (
         <Cluster justify="center">
           {/* A pending button keeps its focus while the page loads (React Aria Button, isPending). */}

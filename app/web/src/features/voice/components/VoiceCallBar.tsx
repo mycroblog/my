@@ -12,7 +12,14 @@ import { voiceRoomPath } from "../api/voice";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
 import { useVoiceCallBar } from "../hooks/useVoiceCallControls";
 import { participantName } from "../hooks/voiceCall";
-import { CallErrors, callStatusText, hasCallErrors, LeaveCallButton, MicrophoneControl, PlaybackButton } from "./VoiceCallParts";
+import {
+  CallErrors,
+  callStatusText,
+  hasCallErrors,
+  LeaveCallButton,
+  MicrophoneControl,
+  PlaybackButton,
+} from "./VoiceCallParts";
 
 export type VoiceCallBarProps = {
   /** Whether the page has the bottom tab bar below md (the app's frame), not the admin frame. */

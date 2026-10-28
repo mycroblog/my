@@ -31,7 +31,15 @@ const moderator = {
   permissions: ["manage_reports", "manage_accounts", "view_audit"],
 };
 
-const bob = { ...moderator, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob", url: "https://my.example/@bob", permissions: [] };
+const bob = {
+  ...moderator,
+  id: "0192f0c4-7a8e-7000-8000-000000000002",
+  username: "bob",
+  acct: "bob",
+  display_name: "Bob",
+  url: "https://my.example/@bob",
+  permissions: [],
+};
 
 const reportId = "0192f0c4-7a8e-7000-8000-0000000000e9";
 const at = "2026-10-16T09:00:00Z";
@@ -60,7 +68,17 @@ const notifications = [
     id: "0192f0c4-7a8e-7000-8000-0000000000a4",
     type: "report_resolved",
     created_at: at,
-    report: { id: "0192f0c4-7a8e-7000-8000-0000000000f2", category: "spam", comment: "", forwarded: false, filed_at: at, target_account: bob, status_ids: [], rule_ids: [], state: "resolved" },
+    report: {
+      id: "0192f0c4-7a8e-7000-8000-0000000000f2",
+      category: "spam",
+      comment: "",
+      forwarded: false,
+      filed_at: at,
+      target_account: bob,
+      status_ids: [],
+      rule_ids: [],
+      state: "resolved",
+    },
   },
   { id: "0192f0c4-7a8e-7000-8000-0000000000a3", type: "admin_report", created_at: at, report_id: reportId },
   { id: "0192f0c4-7a8e-7000-8000-0000000000a2", type: "admin_sign_up", created_at: at, account: bob },
@@ -73,29 +91,62 @@ const notifications = [
 ];
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the client API of a signed-in moderator, with 2 open reports and 1 registration awaiting approval. */
 async function moderatorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "approval" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, email_moderator_notifications: false, timeline_auto_insert: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        email_moderator_notifications: false,
+        timeline_auto_insert: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/counts") return json(route, { open_reports: 2, pending_registrations: 1 });
     if (key === "GET /admin/registrations") return json(route, { items: [] });
     if (key === "GET /notifications") return json(route, { items: notifications });
-    if (key === "GET /notifications/marker" || key === "PUT /notifications/marker") return json(route, { last_read_id: notifications[0]?.id, unread_count: 0 });
+    if (key === "GET /notifications/marker" || key === "PUT /notifications/marker")
+      return json(route, { last_read_id: notifications[0]?.id, unread_count: 0 });
     if (key === "GET /timelines/home") return json(route, { items: [] });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -114,7 +165,10 @@ test.describe("the moderation entry", () => {
     await moderatorServer(page);
   });
 
-  test("names the pending count where the width shows the entry, has no Administration, and opens the moderation page", async ({ page, makeAxeBuilder }) => {
+  test("names the pending count where the width shows the entry, has no Administration, and opens the moderation page", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.goto("/home");
     const nav = page.getByRole("navigation").first();
     const entry = nav.locator('a[href="/moderation"]');
@@ -180,7 +234,10 @@ test.describe("the notifications from the instance", () => {
     await moderatorServer(page);
   });
 
-  test("say what happened, lead to the screens that follow them up, pass axe, and do not scroll sideways", async ({ page, makeAxeBuilder }) => {
+  test("say what happened, lead to the screens that follow them up, pass axe, and do not scroll sideways", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await page.goto("/notifications");
     const feed = page.getByRole("feed");
     await expect(feed.getByRole("article")).toHaveCount(5);
@@ -220,7 +277,12 @@ test.describe("the notifications from the instance", () => {
           - link:
             - /url: /@alice/following
     `);
-    await expect(feed.getByRole("article").first().getByText(/Repeated promotional posts/)).toHaveAttribute("dir", "auto");
+    await expect(
+      feed
+        .getByRole("article")
+        .first()
+        .getByText(/Repeated promotional posts/),
+    ).toHaveAttribute("dir", "auto");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 

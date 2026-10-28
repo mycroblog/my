@@ -24,7 +24,8 @@ const sample = {
 };
 
 /** The one project that runs the spec; the others neither run it nor change the server's theme. */
-const runs = (browserName: string, projectName: string) => ownsServer && browserName === "chromium" && projectName === "en-1440";
+const runs = (browserName: string, projectName: string) =>
+  ownsServer && browserName === "chromium" && projectName === "en-1440";
 
 test.beforeEach(({ browserName }, testInfo) => {
   test.skip(!ownsServer, "the theme is saved with bin/my, which needs the database of the server e2e/server.ts starts");
@@ -36,7 +37,8 @@ test.beforeAll(({ browserName }, testInfo) => {
 });
 
 test.afterAll(({ browserName }, testInfo) => {
-  if (runs(browserName, testInfo.project.name)) runMy(["instance", "theme", "set"], JSON.stringify({ tokens: [], custom_css: "" }));
+  if (runs(browserName, testInfo.project.name))
+    runMy(["instance", "theme", "set"], JSON.stringify({ tokens: [], custom_css: "" }));
 });
 
 /** The page's background color, the radius of an element with the `rounded-md` utility, and the custom CSS's property. */
@@ -78,6 +80,12 @@ for (const { path, radius } of [
 
 test("the shell's theme-color follows the theme's surface", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: light)"]')).toHaveAttribute("content", "#fdfdf6");
-  await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]')).toHaveAttribute("content", "#05070d");
+  await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: light)"]')).toHaveAttribute(
+    "content",
+    "#fdfdf6",
+  );
+  await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]')).toHaveAttribute(
+    "content",
+    "#05070d",
+  );
 });

@@ -13,7 +13,12 @@ import type { Status } from "./api/status";
 
 const postId = "0192f0c4-7a8e-7000-8000-0000000000f0";
 
-const quoted: Status = { ...remoteStatusFixture, content: "<p>The sun rose again.</p>", spoiler_text: "", media_attachments: [] };
+const quoted: Status = {
+  ...remoteStatusFixture,
+  content: "<p>The sun rose again.</p>",
+  spoiler_text: "",
+  media_attachments: [],
+};
 
 /** Answers GET /statuses/{id} with a post that has `quote`, and returns the path of its page. */
 function serveQuote(quote: Schemas["StatusQuote"]) {
@@ -34,7 +39,9 @@ describe("the quote of a post", () => {
     expect(group).toHaveTextContent("The sun rose again.");
     expect(within(group).getByRole("link", { name: /Carol/ })).toHaveAttribute("href", `/@${quoted.account.acct}`);
     const links = within(group).getAllByRole("link");
-    expect(links.some((link) => link.getAttribute("href") === `/@${quoted.account.acct}/status/${quoted.id}`)).toBe(true);
+    expect(links.some((link) => link.getAttribute("href") === `/@${quoted.account.acct}/status/${quoted.id}`)).toBe(
+      true,
+    );
   });
 
   test("tells why the quoted post is not shown", async () => {
@@ -44,7 +51,9 @@ describe("the quote of a post", () => {
 
   test("tells that a quote awaits its approval", async () => {
     await renderApp({ path: serveQuote({ state: "pending" }) });
-    expect(await screen.findByRole("group", { name: "Quoted post" })).toHaveTextContent("The quoted post is not available yet.");
+    expect(await screen.findByRole("group", { name: "Quoted post" })).toHaveTextContent(
+      "The quoted post is not available yet.",
+    );
   });
 
   test("keeps the post of a muted author behind the notice until it is shown", async () => {

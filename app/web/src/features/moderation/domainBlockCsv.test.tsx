@@ -69,13 +69,17 @@ describe("an import of a domain block CSV", () => {
     await user.paste(csv);
     await user.click(section.getByRole("button", { name: "Preview" }));
 
-    expect(await section.findByText("2 of 4 rows can be imported. Clear the rows you do not want.")).toBeInTheDocument();
+    expect(
+      await section.findByText("2 of 4 rows can be imported. Clear the rows you do not want."),
+    ).toBeInTheDocument();
     expect(api.previews).toEqual([csv]);
     const rows = section.getByRole("list", { name: "Rows of the CSV" });
     const noisy = within(rows).getByRole("checkbox", { name: "noisy.example" });
     expect(noisy).toBeChecked();
     expect(noisy).toHaveAccessibleDescription("Line 2. Takes: Limit and Reject media");
-    expect(within(rows).getByRole("checkbox", { name: "media.example" })).toHaveAccessibleDescription("Line 4. Takes: Reject media and Reject reports");
+    expect(within(rows).getByRole("checkbox", { name: "media.example" })).toHaveAccessibleDescription(
+      "Line 4. Takes: Reject media and Reject reports",
+    );
     expect(within(rows).getByText("Line 3. No action")).toBeInTheDocument();
     expect(within(rows).getByText("Line 5. Not a valid row")).toBeInTheDocument();
     // The domain of a row that takes no action is as written in the CSV.
@@ -89,7 +93,16 @@ describe("an import of a domain block CSV", () => {
     expect(await section.findByText("2 actions were taken. No row was skipped.")).toBeInTheDocument();
     expect(api.imports).toEqual([
       {
-        blocks: [{ domain: "noisy.example", severity: "silence", reject_media: true, reject_reports: false, obfuscate: false, public_comment: "Harassment" }],
+        blocks: [
+          {
+            domain: "noisy.example",
+            severity: "silence",
+            reject_media: true,
+            reject_reports: false,
+            obfuscate: false,
+            public_comment: "Harassment",
+          },
+        ],
         private_note: "From mastodon.example.",
       },
     ]);
@@ -108,7 +121,11 @@ describe("an import of a domain block CSV", () => {
     const { user, section } = await openSection();
 
     await user.click(section.getByRole("textbox", { name: "CSV" }));
-    await user.paste([domainBlockCsvHeader, "spam.example,suspend,false,false,,false", "bad.example,suspend,false,true,,false"].join("\n"));
+    await user.paste(
+      [domainBlockCsvHeader, "spam.example,suspend,false,false,,false", "bad.example,suspend,false,true,,false"].join(
+        "\n",
+      ),
+    );
     await user.click(section.getByRole("button", { name: "Preview" }));
     await user.click(await section.findByRole("button", { name: "Import 2 rows" }));
 
@@ -118,10 +135,14 @@ describe("an import of a domain block CSV", () => {
     expect(api.imports).toEqual([]);
 
     await user.click(section.getByRole("button", { name: "Import 2 rows" }));
-    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Import and suspend" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Import and suspend" }),
+    );
 
     expect(await section.findByText("3 actions were taken. No row was skipped.")).toBeInTheDocument();
-    expect(api.imports.map((request) => request.blocks.map((block) => block.domain))).toEqual([["spam.example", "bad.example"]]);
+    expect(api.imports.map((request) => request.blocks.map((block) => block.domain))).toEqual([
+      ["spam.example", "bad.example"],
+    ]);
   });
 
   test("reads the CSV from a file", async () => {
@@ -138,7 +159,9 @@ describe("an import of a domain block CSV", () => {
     expect(await section.findByText("Read domain_blocks.csv.")).toBeInTheDocument();
     expect(section.getByRole("textbox", { name: "CSV" })).toHaveValue("spam.example\n");
     await user.click(section.getByRole("button", { name: "Preview" }));
-    expect(await section.findByRole("checkbox", { name: "spam.example" })).toHaveAccessibleDescription("Line 1. Takes: Suspend");
+    expect(await section.findByRole("checkbox", { name: "spam.example" })).toHaveAccessibleDescription(
+      "Line 1. Takes: Suspend",
+    );
     expect(api.previews).toEqual(["spam.example\n"]);
   });
 
@@ -161,7 +184,11 @@ describe("an import of a domain block CSV", () => {
 
   test("a CSV the server refuses says why under the form, and keeps it", async () => {
     csvServer();
-    server.use(http.post(`${apiBase}/admin/domain_actions/import/preview`, () => problem(422, "about:blank", "Unprocessable Entity")));
+    server.use(
+      http.post(`${apiBase}/admin/domain_actions/import/preview`, () =>
+        problem(422, "about:blank", "Unprocessable Entity"),
+      ),
+    );
     const { user, section } = await openSection();
 
     await user.click(section.getByRole("textbox", { name: "CSV" }));
@@ -193,7 +220,9 @@ describe("the export of the domain actions", () => {
   });
 
   test("a failed export says why", async () => {
-    server.use(http.get(`${apiBase}/admin/domain_actions/export`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.get(`${apiBase}/admin/domain_actions/export`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user, section } = await openSection();
 
     await user.click(section.getByRole("button", { name: "Export CSV" }));

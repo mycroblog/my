@@ -40,10 +40,19 @@ import {
   signupBlockKinds,
   signupBlockSeverities,
 } from "../api/signupBlocks";
-import { type SignupBlockImportOutcome, useSignupBlockImportForm, validateSignupBlockList } from "../hooks/useSignupBlockImport";
+import {
+  type SignupBlockImportOutcome,
+  useSignupBlockImportForm,
+  validateSignupBlockList,
+} from "../hooks/useSignupBlockImport";
 import { signupBlockKindLabels, signupBlockSeverityLabels } from "../hooks/useSignupBlocks";
 import { useFocusAfterChange } from "./parts";
-import { day, signupBlockDurations, signupBlockKindDescriptions, signupBlockSeverityDescriptions } from "./signupBlockFields";
+import {
+  day,
+  signupBlockDurations,
+  signupBlockKindDescriptions,
+  signupBlockSeverityDescriptions,
+} from "./signupBlockFields";
 
 /** The file types the file button offers: plain text and CSV, the forms of the public lists. */
 const listFileTypes = ["text/plain", "text/csv", ".txt", ".csv"];
@@ -150,7 +159,9 @@ export function SignupBlockImportForm() {
           }}
           characterLimit={signupBlockCommentLimit}
           formatRemaining={(remaining) =>
-            remaining < 0 ? t("client:admin.signup_blocks.characters_over", { count: -remaining }) : t("client:admin.signup_blocks.characters_left", { count: remaining })
+            remaining < 0
+              ? t("client:admin.signup_blocks.characters_over", { count: -remaining })
+              : t("client:admin.signup_blocks.characters_left", { count: remaining })
           }
           errorMessage={t("client:admin.signup_blocks.too_long", { max: signupBlockCommentLimit })}
         />
@@ -176,7 +187,9 @@ export function SignupBlockImportForm() {
         </StatusMessage>
       </Stack>
       {/* A new import starts the table afresh, with its first rows only (R10). */}
-      {form.outcome !== undefined && form.outcome.skipped.length > 0 && <SkippedLines key={form.outcome.id} outcome={form.outcome} />}
+      {form.outcome !== undefined && form.outcome.skipped.length > 0 && (
+        <SkippedLines key={form.outcome.id} outcome={form.outcome} />
+      )}
     </Stack>
   );
 }
@@ -199,7 +212,11 @@ function SkippedLines({ outcome }: { outcome: SignupBlockImportOutcome }) {
       <DescriptionList columns={3}>
         {signupBlockImportSkipReasons.map((reason) => (
           <DescriptionItem key={reason} term={t(skipReasonLabels[reason])}>
-            <Text numeric>{t("client:admin.signup_blocks.import.skipped.lines", { count: skipped.filter((line) => line.reason === reason).length })}</Text>
+            <Text numeric>
+              {t("client:admin.signup_blocks.import.skipped.lines", {
+                count: skipped.filter((line) => line.reason === reason).length,
+              })}
+            </Text>
           </DescriptionItem>
         ))}
       </DescriptionList>
@@ -212,7 +229,9 @@ function SkippedLines({ outcome }: { outcome: SignupBlockImportOutcome }) {
         <TableBody>
           {shown.map((line) => (
             <TableRow key={line.line}>
-              <TableCell numeric>{t("client:admin.signup_blocks.import.skipped.line_number", { line: line.line })}</TableCell>
+              <TableCell numeric>
+                {t("client:admin.signup_blocks.import.skipped.line_number", { line: line.line })}
+              </TableCell>
               {/* As written in the list, which may be in any script. */}
               <TableCell dir="auto" wrap="anywhere" align="matchParent">
                 {line.value}
@@ -224,7 +243,12 @@ function SkippedLines({ outcome }: { outcome: SignupBlockImportOutcome }) {
       </Table>
       {!showAll && skipped.length > skippedShownAtFirst && (
         <Stack align="start" gap="2">
-          <Hint>{t("client:admin.signup_blocks.import.skipped.shown", { shown: skippedShownAtFirst, count: skipped.length })}</Hint>
+          <Hint>
+            {t("client:admin.signup_blocks.import.skipped.shown", {
+              shown: skippedShownAtFirst,
+              count: skipped.length,
+            })}
+          </Hint>
           <Button
             size="sm"
             onPress={() => {

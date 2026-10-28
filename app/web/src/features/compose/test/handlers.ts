@@ -51,6 +51,8 @@ export const handlers = [
   http.post(`${apiBase}/media`, () => HttpResponse.json(mediaFixture(uploadedMediaId, "processing"), { status: 202 })),
   http.get(`${apiBase}/media/:id`, ({ params }) => HttpResponse.json(mediaFixture(String(params["id"])))),
   http.patch(`${apiBase}/media/:id`, async ({ params, request }) =>
-    HttpResponse.json(mediaFixture(String(params["id"]), "ready", ((await request.json()) as Schemas["MediaUpdate"]).description)),
+    HttpResponse.json(
+      mediaFixture(String(params["id"]), "ready", ((await request.json()) as Schemas["MediaUpdate"]).description),
+    ),
   ),
 ];

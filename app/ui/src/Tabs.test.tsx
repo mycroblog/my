@@ -5,10 +5,21 @@ import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { Tab, TabList, TabPanel, Tabs } from "./Tabs";
 
-function Timelines({ locale, selectedKey, onSelectionChange }: { locale: string; selectedKey?: string; onSelectionChange?: (key: unknown) => void }) {
+function Timelines({
+  locale,
+  selectedKey,
+  onSelectionChange,
+}: {
+  locale: string;
+  selectedKey?: string;
+  onSelectionChange?: (key: unknown) => void;
+}) {
   return (
     <I18nProvider locale={locale}>
-      <Tabs {...(selectedKey === undefined ? {} : { selectedKey })} {...(onSelectionChange === undefined ? {} : { onSelectionChange })}>
+      <Tabs
+        {...(selectedKey === undefined ? {} : { selectedKey })}
+        {...(onSelectionChange === undefined ? {} : { onSelectionChange })}
+      >
         <TabList aria-label="Timelines">
           <Tab id="home">Home</Tab>
           <Tab id="local">Local</Tab>

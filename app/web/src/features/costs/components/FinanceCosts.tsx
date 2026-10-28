@@ -40,9 +40,7 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
     <Stack gap="6">
       <p>{t("client:finance.description")}</p>
       {costs.status === "ready" && !access.manage && (
-        <Hint size="inherit">
-          {t("client:finance.items_shown", { shown: shownOfItems(costs.totals.viewer) })}
-        </Hint>
+        <Hint size="inherit">{t("client:finance.items_shown", { shown: shownOfItems(costs.totals.viewer) })}</Hint>
       )}
       <CostTotalsPanel {...panel}>
         <Stack gap="8">

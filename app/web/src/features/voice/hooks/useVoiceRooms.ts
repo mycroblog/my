@@ -37,7 +37,12 @@ export function useCanStartVoiceRoom(): boolean {
 export function useVoiceRail(): readonly VoiceRoom[] {
   const api = useApi();
   const available = useVoiceAvailable();
-  const query = useQuery({ ...voiceRailQueryOptions(api), enabled: available, retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...voiceRailQueryOptions(api),
+    enabled: available,
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   return available ? (query.data?.items ?? []) : [];
 }
 
@@ -62,7 +67,12 @@ export type VoiceRoomList =
  */
 export function useVoiceRooms({ tag, enabled = true }: { tag?: string; enabled?: boolean } = {}): VoiceRoomList {
   const api = useApi();
-  const query = useInfiniteQuery({ ...voiceRoomsQueryOptions(api, tag), enabled, retry: shellQueryRetry, retryOnMount: false });
+  const query = useInfiniteQuery({
+    ...voiceRoomsQueryOptions(api, tag),
+    enabled,
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) {
     return {
       status: "ready",
@@ -78,7 +88,12 @@ export function useVoiceRooms({ tag, enabled = true }: { tag?: string; enabled?:
   }
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "unavailable" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }

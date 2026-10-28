@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/relays")({
   staticData: { title: "client:admin.relays.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_settings", () => context.queryClient.query({ ...relaysQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_settings", () =>
+      context.queryClient.query({ ...relaysQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: RelaysPage,
   errorComponent: RelaysError,
 });

@@ -27,7 +27,16 @@ const hour = 60 * minute;
 const day = 24 * hour;
 
 /** The durations the form offers, in seconds, within the server's 5 minutes to 30 days (PollInput.expires_in). */
-export const pollDurations: readonly number[] = [5 * minute, 30 * minute, hour, 6 * hour, 12 * hour, day, 3 * day, 7 * day];
+export const pollDurations: readonly number[] = [
+  5 * minute,
+  30 * minute,
+  hour,
+  6 * hour,
+  12 * hour,
+  day,
+  3 * day,
+  7 * day,
+];
 
 /** A duration as a count of its largest whole unit, for its label. */
 export function durationParts(seconds: number): { unit: "minutes" | "hours" | "days"; count: number } {

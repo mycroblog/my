@@ -23,7 +23,9 @@ export const totpSetupFixture: Schemas["TotpSetup"] = {
 };
 
 /** The recovery codes that turning two-factor authentication on, or replacing them, answers by default. */
-export const recoveryCodesFixture: Schemas["RecoveryCodes"] = { recovery_codes: ["abcd-efgh-ijkl-mnop", "qrst-uvwx-yz23-4567"] };
+export const recoveryCodesFixture: Schemas["RecoveryCodes"] = {
+  recovery_codes: ["abcd-efgh-ijkl-mnop", "qrst-uvwx-yz23-4567"],
+};
 
 /** The viewer's automatic deletion of old posts by default: the server's default policy, disabled. */
 export const autoDeletePolicyFixture: Schemas["AutoDeletePolicy"] = {
@@ -52,9 +54,13 @@ export const handlers = [
   http.get(`${apiBase}/preferences/badges`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["BadgeChoiceList"])),
   ),
-  http.put(`${apiBase}/preferences/badges/:roleId`, ({ request }) => withViewer(request, () => problem(404, "about:blank", "Not Found"))),
+  http.put(`${apiBase}/preferences/badges/:roleId`, ({ request }) =>
+    withViewer(request, () => problem(404, "about:blank", "Not Found")),
+  ),
   // operationIds getAutoDeletePolicy, updateAutoDeletePolicy: the server answers the policy it saved.
-  http.get(`${apiBase}/preferences/auto_delete`, ({ request }) => withViewer(request, () => HttpResponse.json(autoDeletePolicyFixture))),
+  http.get(`${apiBase}/preferences/auto_delete`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(autoDeletePolicyFixture)),
+  ),
   http.put(`${apiBase}/preferences/auto_delete`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
     return withViewer(request, () => HttpResponse.json(body));
@@ -76,38 +82,66 @@ export const handlers = [
   ),
   // operationIds getTwoFactor, setUpTotp, enableTotp, regenerateRecoveryCodes, disableTotp.
   http.get(`${apiBase}/two_factor`, ({ request }) => withViewer(request, () => HttpResponse.json(twoFactorOffFixture))),
-  http.post(`${apiBase}/two_factor/totp/setup`, ({ request }) => withViewer(request, () => HttpResponse.json(totpSetupFixture))),
-  http.post(`${apiBase}/two_factor/totp`, ({ request }) => withViewer(request, () => HttpResponse.json(recoveryCodesFixture))),
-  http.post(`${apiBase}/two_factor/recovery_codes`, ({ request }) => withViewer(request, () => HttpResponse.json(recoveryCodesFixture))),
-  http.post(`${apiBase}/two_factor/totp/disable`, ({ request }) => withViewer(request, () => HttpResponse.json(twoFactorOffFixture))),
+  http.post(`${apiBase}/two_factor/totp/setup`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(totpSetupFixture)),
+  ),
+  http.post(`${apiBase}/two_factor/totp`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(recoveryCodesFixture)),
+  ),
+  http.post(`${apiBase}/two_factor/recovery_codes`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(recoveryCodesFixture)),
+  ),
+  http.post(`${apiBase}/two_factor/totp/disable`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(twoFactorOffFixture)),
+  ),
   // operationIds updateAccountCredentials, updatePreferences; getPreferences is with the compose handlers.
-  http.patch(`${apiBase}/accounts/update_credentials`, ({ request }) => withViewer(request, () => HttpResponse.json(viewerFixture))),
+  http.patch(`${apiBase}/accounts/update_credentials`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(viewerFixture)),
+  ),
   http.patch(`${apiBase}/preferences`, async ({ request }) => {
     const change = (await request.clone().json()) as Schemas["UpdatePreferencesRequest"];
     return withViewer(request, () => HttpResponse.json({ ...preferencesFixture, ...change }));
   }),
   // operationIds getPushSubscription, putPushSubscription, deletePushSubscription: the grant has no subscription by default.
-  http.get(`${apiBase}/push/subscription`, ({ request }) => withViewer(request, () => problem(404, "about:blank", "Not Found"))),
+  http.get(`${apiBase}/push/subscription`, ({ request }) =>
+    withViewer(request, () => problem(404, "about:blank", "Not Found")),
+  ),
   http.put(`${apiBase}/push/subscription`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["PushSubscriptionRequest"];
     return withViewer(request, () =>
-      HttpResponse.json({ id: "01900000-0000-7000-8000-0000000000f1", endpoint: body.endpoint, alerts: body.alerts, server_key: pushServerKey }),
+      HttpResponse.json({
+        id: "01900000-0000-7000-8000-0000000000f1",
+        endpoint: body.endpoint,
+        alerts: body.alerts,
+        server_key: pushServerKey,
+      }),
     );
   }),
-  http.delete(`${apiBase}/push/subscription`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/push/subscription`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds listBlocks, listMutes, listFollowRequests, acceptFollowRequest, rejectFollowRequest: empty lists by default.
   http.get(`${apiBase}/blocks`, ({ request }) => withViewer(request, () => HttpResponse.json({ accounts: [] }))),
   http.get(`${apiBase}/mutes`, ({ request }) => withViewer(request, () => HttpResponse.json({ mutes: [] }))),
   // operationIds listDomainMutes, muteDomain, unmuteDomain: no muted domains by default; muting answers the domain in lower case.
-  http.get(`${apiBase}/domain_mutes`, ({ request }) => withViewer(request, () => HttpResponse.json({ domain_mutes: [] }))),
+  http.get(`${apiBase}/domain_mutes`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ domain_mutes: [] })),
+  ),
   http.post(`${apiBase}/domain_mutes`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["MuteDomainRequest"];
     return withViewer(request, () =>
-      HttpResponse.json({ domain: body.domain.toLowerCase(), created_at: "2026-10-21T09:30:00Z" } satisfies Schemas["DomainMute"]),
+      HttpResponse.json({
+        domain: body.domain.toLowerCase(),
+        created_at: "2026-10-21T09:30:00Z",
+      } satisfies Schemas["DomainMute"]),
     );
   }),
-  http.delete(`${apiBase}/domain_mutes/:domain`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.get(`${apiBase}/follow_requests`, ({ request }) => withViewer(request, () => HttpResponse.json({ accounts: [] }))),
+  http.delete(`${apiBase}/domain_mutes/:domain`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.get(`${apiBase}/follow_requests`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ accounts: [] })),
+  ),
   http.post(`${apiBase}/follow_requests/:id/authorize`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json({ ...relationshipFixture(String(params["id"])), followed_by: true })),
   ),
@@ -116,17 +150,31 @@ export const handlers = [
   ),
   // operationIds listDataExports, requestDataExport, downloadDataExport, deleteOwnAccount: no archives by default.
   http.get(`${apiBase}/exports`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-  http.post(`${apiBase}/exports`, ({ request }) => withViewer(request, () => HttpResponse.json(dataExportFixture(), { status: 202 }))),
-  http.get(`${apiBase}/exports/:id/archive`, ({ request }) =>
-    withViewer(request, () => new HttpResponse(new Blob(["PK"], { type: "application/zip" }), { headers: { "Content-Type": "application/zip" } })),
+  http.post(`${apiBase}/exports`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(dataExportFixture(), { status: 202 })),
   ),
-  http.post(`${apiBase}/accounts/delete`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.get(`${apiBase}/exports/:id/archive`, ({ request }) =>
+    withViewer(
+      request,
+      () =>
+        new HttpResponse(new Blob(["PK"], { type: "application/zip" }), {
+          headers: { "Content-Type": "application/zip" },
+        }),
+    ),
+  ),
+  http.post(`${apiBase}/accounts/delete`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds getPasswordStatus, changePassword, removePassword: the user has a password, which changes and goes.
   http.get(`${apiBase}/accounts/password`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ has_password: true } satisfies Schemas["PasswordStatus"])),
   ),
-  http.post(`${apiBase}/accounts/password`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.post(`${apiBase}/accounts/password/remove`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/accounts/password`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.post(`${apiBase}/accounts/password/remove`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds exportCsv, listDataImports, previewDataImport, startDataImport: one blocked account, no imports, and a file of
   // one entry.
   http.get(`${apiBase}/csv_exports/:kind`, ({ request }) =>
@@ -134,9 +182,13 @@ export const handlers = [
   ),
   http.get(`${apiBase}/imports`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.post(`${apiBase}/imports/preview`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ entries: 1, present: 0, removals: 0, skipped: [] } satisfies Schemas["DataImportPreview"])),
+    withViewer(request, () =>
+      HttpResponse.json({ entries: 1, present: 0, removals: 0, skipped: [] } satisfies Schemas["DataImportPreview"]),
+    ),
   ),
-  http.post(`${apiBase}/imports`, ({ request }) => withViewer(request, () => HttpResponse.json(dataImportFixture(), { status: 202 }))),
+  http.post(`${apiBase}/imports`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(dataImportFixture(), { status: 202 })),
+  ),
 ];
 
 /** An import of a CSV file; following, merged, and in progress unless `change` says otherwise. */
@@ -156,5 +208,10 @@ export function dataImportFixture(change: Partial<Schemas["DataImport"]> = {}): 
 
 /** An archive of the user's data; pending unless `change` says otherwise. */
 export function dataExportFixture(change: Partial<Schemas["DataExport"]> = {}): Schemas["DataExport"] {
-  return { id: "0192f0c4-7a8e-7000-8000-0000000008e1", state: "pending", requested_at: "2026-10-16T09:30:00Z", ...change };
+  return {
+    id: "0192f0c4-7a8e-7000-8000-0000000008e1",
+    state: "pending",
+    requested_at: "2026-10-16T09:30:00Z",
+    ...change,
+  };
 }

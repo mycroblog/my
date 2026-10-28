@@ -95,8 +95,16 @@ describe("importing", () => {
 
     const preview = await within(section).findByRole("region", { name: "What the import does" });
     // The entries, those already on the list, and what the overwrite removes.
-    expect(within(preview).getAllByRole("term").map((term) => term.textContent)).toEqual(["Entries in the file", "Already on your list", "To be removed"]);
-    expect(within(preview).getAllByRole("definition").map((value) => value.textContent)).toEqual(["2", "1", "3"]);
+    expect(
+      within(preview)
+        .getAllByRole("term")
+        .map((term) => term.textContent),
+    ).toEqual(["Entries in the file", "Already on your list", "To be removed"]);
+    expect(
+      within(preview)
+        .getAllByRole("definition")
+        .map((value) => value.textContent),
+    ).toEqual(["2", "1", "3"]);
     expect(within(preview).getByText("Line 3: not an address")).toBeInTheDocument();
     expect(within(preview).getByText("Not an account address or a post URL")).toBeInTheDocument();
     expect(previews).toEqual([{ kind: "mutes", mode: "overwrite", text: csv }]);
@@ -104,7 +112,9 @@ describe("importing", () => {
     await user.click(within(preview).getByRole("button", { name: "Start the import" }));
 
     await waitFor(() => {
-      expect(within(section).getByRole("status")).toHaveTextContent("The import has started with 5 entries. Its progress appears below.");
+      expect(within(section).getByRole("status")).toHaveTextContent(
+        "The import has started with 5 entries. Its progress appears below.",
+      );
     });
     expect(starts).toEqual([{ kind: "mutes", mode: "overwrite", text: csv }]);
     // The form is ready for another file.
@@ -117,7 +127,9 @@ describe("importing", () => {
 
   test("changing the kind asks for another check, and a refused import says why", async () => {
     server.use(
-      http.post(`${apiBase}/imports`, () => problem(409, "/api/v1/problems/import-in-progress", "Another import is in progress. Wait until it finishes.")),
+      http.post(`${apiBase}/imports`, () =>
+        problem(409, "/api/v1/problems/import-in-progress", "Another import is in progress. Wait until it finishes."),
+      ),
     );
     const { user } = await renderApp({ path: "/settings/import-export" });
     const section = await screen.findByRole("region", { name: "Import" });
@@ -134,19 +146,27 @@ describe("importing", () => {
     const preview = await within(section).findByRole("region", { name: "What the import does" });
     await user.click(within(preview).getByRole("button", { name: "Start the import" }));
 
-    expect(await within(section).findByRole("alert")).toHaveTextContent("Another import is in progress. Wait until it finishes.");
+    expect(await within(section).findByRole("alert")).toHaveTextContent(
+      "Another import is in progress. Wait until it finishes.",
+    );
   });
 
   test("lists the finished imports with what could not be imported", async () => {
     server.use(
       http.get(`${apiBase}/imports`, () =>
-        HttpResponse.json({ items: [dataImportFixture({ state: "finished", total: 1200, processed: 1200, failed: 3 })] }),
+        HttpResponse.json({
+          items: [dataImportFixture({ state: "finished", total: 1200, processed: 1200, failed: 3 })],
+        }),
       ),
     );
     await renderApp({ path: "/settings/import-export" });
 
     const item = await screen.findByRole("article", { name: "Follows, Oct 21, 2026, 9:30 AM" });
-    expect(within(item).getAllByRole("definition").map((value) => value.textContent)).toEqual(["Finished", "Merge", "1,200 of 1,200", "3"]);
+    expect(
+      within(item)
+        .getAllByRole("definition")
+        .map((value) => value.textContent),
+    ).toEqual(["Finished", "Merge", "1,200 of 1,200", "3"]);
     expect(within(item).getAllByRole("term").at(-1)).toHaveTextContent("Could not be imported");
   });
 });

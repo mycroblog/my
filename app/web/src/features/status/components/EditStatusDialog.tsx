@@ -3,7 +3,23 @@
 // modal dialog (WAI-ARIA APG, dialog pattern) holding the compose form's fields for what an edit may change:
 // the content warning, the text with its counter and the emoji picker in its corner, the images' descriptions, the
 // sensitivity of the media, and the language. The visibility and the reply target stay as they were.
-import { Button, Checkbox, Cluster, Dialog, Hint, InlineError, LanguageIcon, Select, SelectItem, Spinner, Stack, ToggleButton, Tooltip, TooltipTrigger, WarningIcon } from "@my/ui";
+import {
+  Button,
+  Checkbox,
+  Cluster,
+  Dialog,
+  Hint,
+  InlineError,
+  LanguageIcon,
+  Select,
+  SelectItem,
+  Spinner,
+  Stack,
+  ToggleButton,
+  Tooltip,
+  TooltipTrigger,
+  WarningIcon,
+} from "@my/ui";
 import { type SubmitEvent, useId } from "react";
 import { useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
@@ -23,7 +39,14 @@ export type EditStatusDialogProps = {
 export function EditStatusDialog({ status, isOpen, onOpenChange }: EditStatusDialogProps) {
   const t = useT();
   return (
-    <Dialog title={t("client:status.edit.title")} closeLabel={t("client:status.edit.close")} isDismissable={false} isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
+    <Dialog
+      title={t("client:status.edit.title")}
+      closeLabel={t("client:status.edit.close")}
+      isDismissable={false}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      size="lg"
+    >
       {({ close }) => <EditStatusContent status={status} close={close} />}
     </Dialog>
   );
@@ -117,7 +140,12 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
           />
         }
       />
-      <AttachmentList items={form.attachments} onDescribe={form.describe} requireDescriptions={false} isDescriptionRequired={isDescriptionRequired} />
+      <AttachmentList
+        items={form.attachments}
+        onDescribe={form.describe}
+        requireDescriptions={false}
+        isDescriptionRequired={isDescriptionRequired}
+      />
       {form.attachments.length > 0 && (
         <Checkbox
           isSelected={form.sensitive}
@@ -163,7 +191,9 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
           <Select
             variant="toolbar"
             aria-label={t("client:compose.language.label")}
-            tooltip={t("client:compose.language.tooltip", { value: form.languages.find((option) => option.id === form.language)?.name ?? form.language })}
+            tooltip={t("client:compose.language.tooltip", {
+              value: form.languages.find((option) => option.id === form.language)?.name ?? form.language,
+            })}
             icon={<LanguageIcon />}
             items={form.languages}
             value={form.language}

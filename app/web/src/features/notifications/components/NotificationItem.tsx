@@ -96,7 +96,10 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
                   ),
                 count: view.others.length,
                 // The server's name is no running text, isolated from the sentence around it (Y10).
-                domain: view.severance === null || view.severance.domain === null ? null : <bdi key="domain">{view.severance.domain}</bdi>,
+                domain:
+                  view.severance === null || view.severance.domain === null ? null : (
+                    <bdi key="domain">{view.severance.domain}</bdi>
+                  ),
                 followers: view.severance?.followers ?? 0,
                 following: view.severance?.following ?? 0,
                 // The emoji is the reacting user's choice, isolated from the sentence around it (Y10).
@@ -200,9 +203,7 @@ function PostQuote({ post }: { post: NonNullable<NotificationView["post"]> }) {
     ) : (
       <PostExcerptText lang={post.lang}>{post.text}</PostExcerptText>
     );
-  return (
-    <PostExcerpt href={post.href}>{label}</PostExcerpt>
-  );
+  return <PostExcerpt href={post.href}>{label}</PostExcerpt>;
 }
 
 /**
@@ -214,13 +215,19 @@ function ModerationNotice({ notice }: { notice: ModerationNoticeView }) {
   const intl = useIntl();
   return (
     <QuoteBlock>
-      <Text as="p" weight="semibold">{t("client:notifications.moderation.action", { kind: notice.kind, category: notice.category })}</Text>
+      <Text as="p" weight="semibold">
+        {t("client:notifications.moderation.action", { kind: notice.kind, category: notice.category })}
+      </Text>
       {notice.reason !== null && (
         <Text as="p" dir="auto" whitespace="preLine" wrap="anywhere" align="matchParent">
           {notice.reason}
         </Text>
       )}
-      {notice.decision !== null && <Text as="p" weight="semibold">{t(notice.decision.sentence)}</Text>}
+      {notice.decision !== null && (
+        <Text as="p" weight="semibold">
+          {t(notice.decision.sentence)}
+        </Text>
+      )}
       {notice.decision !== null && notice.decision.reason !== null && (
         <Text as="p" dir="auto" whitespace="preLine" wrap="anywhere" align="matchParent">
           {notice.decision.reason}
@@ -285,7 +292,9 @@ function SupporterNotice({ supporter }: { supporter: SupporterNoticeView }) {
           )}
         </Hint>
       )}
-      {detail?.kind === "ended" && <Hint as="p">{t("client:notifications.supporter.ended", { reason: detail.reason })}</Hint>}
+      {detail?.kind === "ended" && (
+        <Hint as="p">{t("client:notifications.supporter.ended", { reason: detail.reason })}</Hint>
+      )}
       {detail?.kind === "retired" && <Hint as="p">{t("client:notifications.supporter.retired")}</Hint>}
     </QuoteBlock>
   );
@@ -307,5 +316,12 @@ function MoveOutcome({ move, outcome }: { move: NonNullable<NotificationView["mo
 /** Follow back from a follow notification: the profile's follow button, without its menu. */
 function FollowBack({ account }: { account: NotificationAccount }) {
   const relationship = useRelationship(account);
-  return <RelationshipActions account={account} name={account.display_name || account.username} state={relationship} showMenu={false} />;
+  return (
+    <RelationshipActions
+      account={account}
+      name={account.display_name || account.username}
+      state={relationship}
+      showMenu={false}
+    />
+  );
 }

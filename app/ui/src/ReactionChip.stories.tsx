@@ -4,7 +4,8 @@ import { expect, fn, userEvent } from "storybook/test";
 import { ReactionChip, ReactionRow } from "./ReactionChip";
 
 // A plain orange square stands in for a custom emoji image.
-const orange = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
+const orange =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
 const blobcat = { shortcode: "blobcat", url: orange, static_url: orange };
 
 const meta = {
@@ -61,9 +62,23 @@ const row = (dir: "ltr" | "rtl", width?: number) => (
   <div dir={dir} style={{ width }}>
     <ReactionRow label="Reactions" listLabel="Who reacted" onOpenList={fn()}>
       {["👍", "❤️", "😂", "🎉", "🙏", "👀", "🔥", "✨"].map((emoji, i) => (
-        <ReactionChip key={emoji} text={emoji} count={String(i * 7 + 1)} label={`React with ${emoji}`} isSelected={i % 3 === 0} onChange={fn()} />
+        <ReactionChip
+          key={emoji}
+          text={emoji}
+          count={String(i * 7 + 1)}
+          label={`React with ${emoji}`}
+          isSelected={i % 3 === 0}
+          onChange={fn()}
+        />
       ))}
-      <ReactionChip image={blobcat} text=":blobcat:" count="12K" label="React with :blobcat:" isSelected={false} onChange={null} />
+      <ReactionChip
+        image={blobcat}
+        text=":blobcat:"
+        count="12K"
+        label="React with :blobcat:"
+        isSelected={false}
+        onChange={null}
+      />
     </ReactionRow>
   </div>
 );

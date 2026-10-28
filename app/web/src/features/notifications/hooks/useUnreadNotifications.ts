@@ -12,6 +12,10 @@ import { notificationMarkerQueryOptions } from "../api/notifications";
 export function useUnreadNotificationCount(): number {
   const api = useApi();
   const status = useSessionStatus();
-  const marker = useQuery({ ...notificationMarkerQueryOptions(api), enabled: status === "signed-in", retry: shellQueryRetry });
+  const marker = useQuery({
+    ...notificationMarkerQueryOptions(api),
+    enabled: status === "signed-in",
+    retry: shellQueryRetry,
+  });
   return status === "signed-in" ? (marker.data?.unread_count ?? 0) : 0;
 }

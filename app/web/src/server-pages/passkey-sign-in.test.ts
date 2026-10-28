@@ -61,7 +61,11 @@ test("asks the browser for a passkey and sends its answer", async () => {
   const options = credentials.get.mock.calls[0]?.[0].publicKey;
   expect(options?.rpId).toBe("social.example");
   expect(options?.userVerification).toBe("required");
-  expect(sentCredential()).toMatchObject({ id: "AQID", type: "public-key", response: { userHandle: "dTE", signature: "CQ" } });
+  expect(sentCredential()).toMatchObject({
+    id: "AQID",
+    type: "public-key",
+    response: { userHandle: "dTE", signature: "CQ" },
+  });
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 

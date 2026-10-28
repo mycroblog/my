@@ -14,20 +14,30 @@ export const notificationsFixture: Schemas["Notification"][] = [
     account: otherAccountFixture,
     status: statusFixture("0192f0c4-7a8e-7000-8000-0000000000b1"),
   },
-  { id: "0192f0c4-7a8e-7000-8000-0000000000a1", type: "follow", created_at: "2026-10-15T09:00:00Z", account: otherAccountFixture },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+    type: "follow",
+    created_at: "2026-10-15T09:00:00Z",
+    account: otherAccountFixture,
+  },
 ];
 
 export const handlers = [
   http.get(`${apiBase}/notifications`, ({ request }) =>
     withViewer(request, () => {
       const types = new URL(request.url).searchParams.getAll("types");
-      const body: Schemas["NotificationPage"] = { items: notificationsFixture.filter((n) => types.length === 0 || types.includes(n.type)) };
+      const body: Schemas["NotificationPage"] = {
+        items: notificationsFixture.filter((n) => types.length === 0 || types.includes(n.type)),
+      };
       return HttpResponse.json(body);
     }),
   ),
   http.get(`${apiBase}/notifications/marker`, ({ request }) =>
     withViewer(request, () => {
-      const body: Schemas["NotificationMarker"] = { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 1 };
+      const body: Schemas["NotificationMarker"] = {
+        last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+        unread_count: 1,
+      };
       return HttpResponse.json(body);
     }),
   ),
@@ -38,5 +48,7 @@ export const handlers = [
       return HttpResponse.json(body);
     });
   }),
-  http.post(`${apiBase}/notifications/:id/dismiss`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/notifications/:id/dismiss`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
 ];

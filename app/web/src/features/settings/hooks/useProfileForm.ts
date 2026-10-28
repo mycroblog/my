@@ -66,7 +66,9 @@ export function useProfileForm() {
 
   const [displayName, setDisplayName] = useState(account.display_name);
   const [note, setNote] = useState(account.source.note);
-  const [fields, setFields] = useState<FieldDraft[]>(() => account.source.fields.map((field, key) => ({ key, ...field })));
+  const [fields, setFields] = useState<FieldDraft[]>(() =>
+    account.source.fields.map((field, key) => ({ key, ...field })),
+  );
   const [nextFieldKey, setNextFieldKey] = useState(account.source.fields.length);
   const [locked, setLocked] = useState(account.locked);
   const [bot, setBot] = useState(account.bot);
@@ -74,7 +76,8 @@ export function useProfileForm() {
   const [aiOptOut, setAiOptOut] = useState(account.ai_opt_out);
   // The shell reads the instance on every page; the form shows its notes once it is there.
   const { data: instance } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
-  const serverPolicy: ServerCrawlerPolicy = instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage };
+  const serverPolicy: ServerCrawlerPolicy =
+    instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage };
   const avatar = useImageControl(account.avatar, "avatar");
   const header = useImageControl(account.header, "header");
 
@@ -95,7 +98,9 @@ export function useProfileForm() {
     display_name: displayName,
     note,
     // A row left empty is not a field.
-    fields: fields.filter((field) => field.name !== "" || field.value !== "").map(({ name, value }) => ({ name, value })),
+    fields: fields
+      .filter((field) => field.name !== "" || field.value !== "")
+      .map(({ name, value }) => ({ name, value })),
     locked,
     bot,
     indexable,
@@ -173,8 +178,12 @@ function useImageControl(saved: CredentialAccount["avatar"], purpose: ImagePurpo
     },
   });
   // The medium rendition fills the form's preview at twice its CSS size.
-  const url = image.kind === "new" ? image.media.variants?.medium.url : image.kind === "keep" ? saved?.medium.url : undefined;
-  const uploadError = upload.error instanceof MediaProcessingError ? t("client:settings.profile.image.failed") : errorMessage(upload.error);
+  const url =
+    image.kind === "new" ? image.media.variants?.medium.url : image.kind === "keep" ? saved?.medium.url : undefined;
+  const uploadError =
+    upload.error instanceof MediaProcessingError
+      ? t("client:settings.profile.image.failed")
+      : errorMessage(upload.error);
   const control: ImageControl = {
     url,
     hasImage: url !== undefined,

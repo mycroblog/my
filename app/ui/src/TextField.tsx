@@ -130,14 +130,20 @@ export function TextFieldControl({
         ...(onChange === undefined ? {} : { onChange }),
       };
   return (
-    <RACTextField {...props} {...valueProps} className={composeRenderProps(className, (className) => root({ className }))}>
+    <RACTextField
+      {...props}
+      {...valueProps}
+      className={composeRenderProps(className, (className) => root({ className }))}
+    >
       {label !== undefined && <FieldLabel>{label}</FieldLabel>}
       {endAction === undefined && !layered ? (
         field
       ) : (
         <div className={control()}>
           {layers?.behind}
-          {ownMirror && <TextAreaMirror textareaRef={inputRef} text={text} caret={null} highlights={highlights} singleLine />}
+          {ownMirror && (
+            <TextAreaMirror textareaRef={inputRef} text={text} caret={null} highlights={highlights} singleLine />
+          )}
           {field}
           {layers?.after}
           {endAction !== undefined && <div className={action()}>{endAction}</div>}

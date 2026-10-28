@@ -109,6 +109,8 @@ jobs:
     # tokens, the CSS 100vh check, the types of the email layout's compiler (tools/mail), and the Documentation section
     # of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
     # requests in the merge queue cannot break them and the queue does not run them again.
+    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's repo job, because two pull requests
+    # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     # docs:pr-impact reads the pull request's description.
@@ -140,6 +142,8 @@ jobs:
             run: scripts/task.sh shell:test
           - name: go:fmt-check
             run: scripts/task.sh go:fmt-check
+          - name: web:fmt-check
+            run: scripts/task.sh web:fmt-check
           - name: go:licenses
             run: scripts/task.sh go:licenses
           - name: web:licenses
@@ -440,7 +444,7 @@ jobs:
 
   repo:
     # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
-    # files) and inventories (the names each document must mention), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # files) and inventories (the names each document must mention), the ADR numbers, the bun fmt check of the TS packages, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight).
     needs: changes
@@ -460,10 +464,12 @@ jobs:
       - name: Build pkg/mykit and pkg/mybot once
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:warm
-      # The TypeScript checks of @mycroblog/mykit run with the client workspace's packages (tsc and Oxlint on Node.js).
+      # web:fmt-check needs only Bun. The TypeScript checks of @mycroblog/mykit run with the client workspace's packages
+      # (tsc and Oxlint on Node.js).
       - name: Set up Bun
-        if: needs.changes.outputs.mykit == 'true'
         uses: ./.github/actions/setup-bun
+        with:
+          node: ${{ needs.changes.outputs.mykit }}
       - name: Install the Bun packages
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh web:install
@@ -487,6 +493,9 @@ jobs:
             run: scripts/task.sh docs:adr-numbers
           - name: docs:ci-coverage
             run: scripts/task.sh docs:ci-coverage
+          # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet.
+          - name: web:fmt-check
+            run: scripts/task.sh web:fmt-check
           - name: mykit:test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:test

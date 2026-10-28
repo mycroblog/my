@@ -51,7 +51,8 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 3. Before every commit, run the checks of the contexts you touched (`scripts/task.sh go:check`, `scripts/task.sh web:check`, ...) or
    `scripts/task.sh check:changed`; the PR's CI runs only a preflight, and the compile, type, lint, and test checks run in the
    merge queue, so this local run keeps a broken PR out of the queue. Run the full `scripts/task.sh check`
-   when the change touches shared configuration.
+   when the change touches shared configuration. When the change touches TypeScript or JavaScript, run
+   `scripts/task.sh web:fmt` (`bun fmt`) first; after resolving a conflict in such a file, run it again.
 4. Open a PR using the template, with `Closes #N` and the acceptance criteria checked, and wait for its CI to pass.
    Pull requests run the `check` gate as a preflight of under 2 minutes ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md);
    the label `ci:full` runs the merge queue's full check on the PR too) but not the web E2E: in single-issue work, for a

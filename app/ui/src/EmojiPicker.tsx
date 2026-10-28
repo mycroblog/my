@@ -30,7 +30,14 @@
 // A search ranks the emoji of every section by `searchEmojis` (exported for the completion of ADR-0092) into one
 // section of results, disables the section buttons, and announces the count in a role="status" region once typing
 // pauses.
-import { defaultRangeExtractor, observeElementRect, type Range, type Virtualizer, type VirtualItem, useVirtualizer } from "@tanstack/react-virtual";
+import {
+  defaultRangeExtractor,
+  observeElementRect,
+  type Range,
+  type Virtualizer,
+  type VirtualItem,
+  useVirtualizer,
+} from "@tanstack/react-virtual";
 import { type JSX, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { mergeProps, type PressEvent, useFocusRing, useHover, useLocale, usePress } from "react-aria";
 import { type Selection, Toolbar } from "react-aria-components";
@@ -55,7 +62,6 @@ import { Menu, MenuItem, MenuTrigger } from "./Menu";
 import { countAnnounceDelay } from "./TextArea";
 import { TextField } from "./TextField";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
-
 
 /** A custom emoji the picker offers: its image and `:shortcode:`, and other names that the search finds it by. */
 export type PickerCustomEmoji = CustomEmojiImage & {
@@ -204,7 +210,6 @@ export type EmojiPickerProps = {
   autoFocus?: boolean | undefined;
 };
 
-
 const picker = tv({
   slots: {
     root: "relative flex min-w-0 flex-col gap-2",
@@ -258,8 +263,16 @@ function searchFormsOf(emoji: PickerEmoji): SearchForms {
   if (forms === undefined) {
     forms =
       "unicode" in emoji
-        ? { emoji: normalizeEmojiSearch(emoji.unicode), name: normalizeEmojiSearch(emoji.name), keywords: (emoji.keywords ?? []).map(normalizeEmojiSearch) }
-        : { emoji: undefined, name: normalizeEmojiSearch(emoji.shortcode), keywords: (emoji.aliases ?? []).map(normalizeEmojiSearch) };
+        ? {
+            emoji: normalizeEmojiSearch(emoji.unicode),
+            name: normalizeEmojiSearch(emoji.name),
+            keywords: (emoji.keywords ?? []).map(normalizeEmojiSearch),
+          }
+        : {
+            emoji: undefined,
+            name: normalizeEmojiSearch(emoji.shortcode),
+            keywords: (emoji.aliases ?? []).map(normalizeEmojiSearch),
+          };
     searchForms.set(emoji, forms);
   }
   return forms;
@@ -346,7 +359,12 @@ function toneOf(keys: Selection): SkinTone | undefined {
   return skinTones.find((tone) => keys.has(tone));
 }
 
-type SkinToneButtonProps = { value: SkinTone; onChange: (tone: SkinTone) => void; label: string; names: Readonly<Record<SkinTone, string>> };
+type SkinToneButtonProps = {
+  value: SkinTone;
+  onChange: (tone: SkinTone) => void;
+  label: string;
+  names: Readonly<Record<SkinTone, string>>;
+};
 
 /**
  * The menu button of the skin tone (WAI-ARIA APG, menu button pattern): the raised hand in the tone chosen, and a menu
@@ -432,7 +450,10 @@ function measure(grid: HTMLElement, probe: HTMLElement): Metrics {
     width: laidOut(grid.clientWidth, fallbackMetrics.width),
     cell: laidOut(first?.offsetWidth, fallbackMetrics.cell),
     cellBlock: laidOut(first?.offsetHeight, fallbackMetrics.cellBlock),
-    pitch: laidOut(first === undefined || second === undefined ? undefined : Math.abs(second.offsetLeft - first.offsetLeft), fallbackMetrics.pitch),
+    pitch: laidOut(
+      first === undefined || second === undefined ? undefined : Math.abs(second.offsetLeft - first.offsetLeft),
+      fallbackMetrics.pitch,
+    ),
     header: laidOut(heading?.offsetHeight, fallbackMetrics.header),
   };
 }
@@ -448,7 +469,9 @@ function sameMetrics(first: Metrics, second: Metrics): boolean {
 }
 
 /** A heading row of a section, or a row of its emoji: the cells `first` to `last` of the layout, inclusive. */
-type GridRow = { kind: "header"; key: string; group: Group } | { kind: "emoji"; key: string; group: Group; first: number; last: number };
+type GridRow =
+  | { kind: "header"; key: string; group: Group }
+  | { kind: "emoji"; key: string; group: Group; first: number; last: number };
 
 /** One emoji of the layout: its row (an index of `rows`) and its column, from 0. */
 type Cell = { item: Item; row: number; column: number };
@@ -469,7 +492,16 @@ type Layout = {
 
 /** The rows of `groups` (ADR-0097 §1): per group a heading row, then its emoji in rows of `columns`. */
 function layOut(groups: readonly Group[], columns: number, rowSize: number, headerSize: number): Layout {
-  const layout: Layout = { rows: [], cells: [], sizes: [], starts: [], total: 0, headerRows: [], headerRowOf: new Map(), firstCellOf: new Map() };
+  const layout: Layout = {
+    rows: [],
+    cells: [],
+    sizes: [],
+    starts: [],
+    total: 0,
+    headerRows: [],
+    headerRowOf: new Map(),
+    firstCellOf: new Map(),
+  };
   const add = (row: GridRow, size: number) => {
     layout.rows.push(row);
     layout.sizes.push(size);
@@ -484,8 +516,12 @@ function layOut(groups: readonly Group[], columns: number, rowSize: number, head
     for (let start = 0; start < group.items.length; start += columns) {
       const row = layout.rows.length;
       const first = layout.cells.length;
-      for (const [column, item] of group.items.slice(start, start + columns).entries()) layout.cells.push({ item, row, column });
-      add({ kind: "emoji", key: `${group.id}\n${String(start / columns)}`, group, first, last: layout.cells.length - 1 }, rowSize);
+      for (const [column, item] of group.items.slice(start, start + columns).entries())
+        layout.cells.push({ item, row, column });
+      add(
+        { kind: "emoji", key: `${group.id}\n${String(start / columns)}`, group, first, last: layout.cells.length - 1 },
+        rowSize,
+      );
     }
   }
   return layout;
@@ -497,7 +533,8 @@ function layOut(groups: readonly Group[], columns: number, rowSize: number, head
  */
 function cellInRow(layout: Layout, from: Cell, toRow: number, step: 1 | -1): number | undefined {
   let index = Math.max(0, Math.min(toRow, layout.rows.length - 1));
-  if (layout.rows[index]?.kind === "header") index = layout.rows[index + step] === undefined ? index - step : index + step;
+  if (layout.rows[index]?.kind === "header")
+    index = layout.rows[index + step] === undefined ? index - step : index + step;
   const row = layout.rows[index];
   if (row?.kind !== "emoji") return undefined;
   return Math.min(row.first + from.column, row.last);
@@ -559,7 +596,9 @@ function useVirtualRows(options: VirtualRowsOptions): VirtualRows {
 
 /** Whether the user allows motion, read when a section button is pressed. */
 function allowsMotion(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+  return (
+    typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: no-preference)").matches
+  );
 }
 
 type EmojiCellProps = {
@@ -605,7 +644,11 @@ function EmojiCell({ item, column, isActive, skinTone, allowMotion, onPick, onFo
       data-pressed={isPressed || undefined}
       className={styles.item()}
     >
-      {"unicode" in emoji ? (variant?.unicode ?? emoji.unicode) : <CustomEmoji emoji={emoji} allowMotion={allowMotion} />}
+      {"unicode" in emoji ? (
+        (variant?.unicode ?? emoji.unicode)
+      ) : (
+        <CustomEmoji emoji={emoji} allowMotion={allowMotion} />
+      )}
     </div>
   );
 }
@@ -617,7 +660,15 @@ type Jump = { section: string; offset: number };
  * A search field, a skin tone menu, a toolbar of section buttons and a grid of the emoji of `sections`; picking one
  * calls `onSelect`. See `EmojiPickerProps` for the props, and the comment at the top of this file for the keyboard.
  */
-export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneChange, labels, allowMotion, autoFocus = false }: EmojiPickerProps) {
+export function EmojiPicker({
+  sections,
+  onSelect,
+  skinTone = "none",
+  onSkinToneChange,
+  labels,
+  allowMotion,
+  autoFocus = false,
+}: EmojiPickerProps) {
   const styles = picker();
   const { direction } = useLocale();
   const [search, setSearch] = useState("");
@@ -638,7 +689,13 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
   const results = searching ? searchEmojis(emojisOf(shown), search) : [];
   const groups: Group[] = searching
     ? results.length > 0
-      ? [{ id: "search", heading: labels.results, items: results.map((emoji) => ({ id: `search\n${emojiKey(emoji)}`, emoji })) }]
+      ? [
+          {
+            id: "search",
+            heading: labels.results,
+            items: results.map((emoji) => ({ id: `search\n${emojiKey(emoji)}`, emoji })),
+          },
+        ]
       : []
     : shown.map((section) => ({
         id: section.id,
@@ -678,7 +735,11 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
     if ((layout.starts[row] ?? 0) > scrollOffset + viewportHeight * topBand) break;
     topSection = layout.rows[row]?.group.id;
   }
-  const currentSection = searching ? undefined : jump !== null && Math.abs(scrollOffset - jump.offset) < 1 ? jump.section : topSection;
+  const currentSection = searching
+    ? undefined
+    : jump !== null && Math.abs(scrollOffset - jump.offset) < 1
+      ? jump.section
+      : topSection;
 
   // Announce the number of results once typing pauses (web-client/README.md Y7, like TextArea's count).
   useEffect(() => {
@@ -790,7 +851,8 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
     // Shift keeps the picker open for the keyboard and the mouse; a touch has no Shift to hold (ADR-0091 §5).
     const keepOpen = event.shiftKey && (event.pointerType === "keyboard" || event.pointerType === "mouse");
     const { emoji } = item;
-    if ("unicode" in emoji) onSelect({ kind: "unicode", emoji, text: skinToneVariant(emoji, skinTone)?.unicode ?? emoji.unicode, keepOpen });
+    if ("unicode" in emoji)
+      onSelect({ kind: "unicode", emoji, text: skinToneVariant(emoji, skinTone)?.unicode ?? emoji.unicode, keepOpen });
     else onSelect({ kind: "custom", emoji, keepOpen });
   }
 
@@ -799,7 +861,10 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
     const first = layout.firstCellOf.get(section.id);
     if (headerRow === undefined || first === undefined) return;
     // The heading goes to the top of the grid, or as far as the grid scrolls.
-    setJump({ section: section.id, offset: Math.min(layout.starts[headerRow] ?? 0, Math.max(0, layout.total - viewportHeight)) });
+    setJump({
+      section: section.id,
+      offset: Math.min(layout.starts[headerRow] ?? 0, Math.max(0, layout.total - viewportHeight)),
+    });
     focusCell(first, headerRow, "start", allowsMotion());
   }
 
@@ -833,7 +898,12 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
           shrink
         />
         {onSkinToneChange !== undefined && labels.skinTone !== undefined && labels.skinTones !== undefined && (
-          <SkinToneButton value={skinTone} onChange={onSkinToneChange} label={labels.skinTone} names={labels.skinTones} />
+          <SkinToneButton
+            value={skinTone}
+            onChange={onSkinToneChange}
+            label={labels.skinTone}
+            names={labels.skinTones}
+          />
         )}
       </div>
       {shown.length > 1 && (
@@ -897,7 +967,13 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
                   } as const;
                   if (row.kind === "header") {
                     return (
-                      <div key={row.key} role="row" aria-rowindex={virtualItem.index + 1} style={style} className={styles.header()}>
+                      <div
+                        key={row.key}
+                        role="row"
+                        aria-rowindex={virtualItem.index + 1}
+                        style={style}
+                        className={styles.header()}
+                      >
                         <div role="rowheader" aria-colspan={columns}>
                           {row.group.heading}
                         </div>
@@ -905,7 +981,13 @@ export function EmojiPicker({ sections, onSelect, skinTone = "none", onSkinToneC
                     );
                   }
                   return (
-                    <div key={row.key} role="row" aria-rowindex={virtualItem.index + 1} style={style} className={styles.row()}>
+                    <div
+                      key={row.key}
+                      role="row"
+                      aria-rowindex={virtualItem.index + 1}
+                      style={style}
+                      className={styles.row()}
+                    >
                       {layout.cells.slice(row.first, row.last + 1).map((cell, offset) => (
                         <EmojiCell
                           key={cell.item.id}

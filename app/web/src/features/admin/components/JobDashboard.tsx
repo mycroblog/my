@@ -6,12 +6,39 @@
 // the list and focus moves to the next job's button. A queue that cannot list its pending jobs (Cloud Tasks, SQS)
 // says so, and still lists the dead jobs. The tabs follow the WAI-ARIA APG tabs pattern with automatic activation
 // (React Aria Tabs); only the selected panel is mounted.
-import { Box, Button, Card, CodeBlock, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, RegionError, SectionHeader, Spinner, Stack, Tab, TabList, TabPanel, Tabs, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Card,
+  CodeBlock,
+  DescriptionItem,
+  DescriptionList,
+  EmptyState,
+  Heading,
+  Hint,
+  RegionError,
+  SectionHeader,
+  Spinner,
+  Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Text,
+} from "@my/ui";
 import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { type Job, type JobAttempt, type JobFilter, jobFilters, type JobQueue, type JobState, jobStates } from "../api/jobs";
+import {
+  type Job,
+  type JobAttempt,
+  type JobFilter,
+  jobFilters,
+  type JobQueue,
+  type JobState,
+  jobStates,
+} from "../api/jobs";
 import { type RetryJob, useJobAttempts, useJobQueue, useJobs, useRetryJob } from "../hooks/useJobs";
 import { DateTime, DetailSection, RecordList, RequirePermission } from "../../moderation";
 
@@ -82,7 +109,11 @@ function Dashboard({ filter, onFilterChange }: JobDashboardProps) {
           {jobFilters.map((item) => (
             <TabPanel key={item} id={item}>
               {filter !== "dead" && !queue.pending_listing ? (
-                <EmptyState headingLevel={3} heading={t("client:admin.jobs.unlisted")} description={t("client:admin.jobs.unlisted.description")} />
+                <EmptyState
+                  headingLevel={3}
+                  heading={t("client:admin.jobs.unlisted")}
+                  description={t("client:admin.jobs.unlisted.description")}
+                />
               ) : (
                 <Card>
                   <Jobs filter={filter} />
@@ -102,7 +133,9 @@ function QueueSummary({ queue }: { queue: JobQueue }) {
   const intl = useIntl();
   const types = [...new Set(queue.counts.map((count) => count.type))];
   const count = (state: JobState, type?: string) =>
-    queue.counts.filter((item) => item.state === state && (type === undefined || item.type === type)).reduce((sum, item) => sum + item.count, 0);
+    queue.counts
+      .filter((item) => item.state === state && (type === undefined || item.type === type))
+      .reduce((sum, item) => sum + item.count, 0);
   return (
     <Stack gap="4">
       <DescriptionList columns={2}>
@@ -111,7 +144,11 @@ function QueueSummary({ queue }: { queue: JobQueue }) {
         </DescriptionItem>
         {queue.pending_listing && (
           <DescriptionItem term={t("client:admin.jobs.queue.oldest_ready")}>
-            {queue.oldest_ready_at === undefined ? t("client:admin.jobs.queue.none_waiting") : <DateTime value={queue.oldest_ready_at} />}
+            {queue.oldest_ready_at === undefined ? (
+              t("client:admin.jobs.queue.none_waiting")
+            ) : (
+              <DateTime value={queue.oldest_ready_at} />
+            )}
           </DescriptionItem>
         )}
       </DescriptionList>
@@ -165,7 +202,12 @@ function Jobs({ filter }: { filter: JobFilter }) {
       list={list}
       getId={(job) => job.id}
       listRef={listRef}
-      empty={<EmptyState headingLevel={3} heading={t(filter === "dead" ? "client:admin.jobs.empty.dead" : "client:admin.jobs.empty")} />}
+      empty={
+        <EmptyState
+          headingLevel={3}
+          heading={t(filter === "dead" ? "client:admin.jobs.empty.dead" : "client:admin.jobs.empty")}
+        />
+      }
     >
       {(job) => <JobRow job={job} retry={retry} />}
     </RecordList>
@@ -179,17 +221,21 @@ function JobRow({ job, retry }: { job: Job; retry: RetryJob }) {
     <Stack gap="3">
       <SectionHeader
         actions={
-          job.state === "dead" && job.failed_at !== undefined && (
-          <Button
-            size="sm"
-            isPending={retry.pendingIds.includes(job.id)}
-            aria-label={t("client:admin.jobs.retry_job", { type: job.type, date: intl.formatDate(job.failed_at, { dateStyle: "medium", timeStyle: "short" }) })}
-            onPress={() => {
-              retry.retry(job);
-            }}
-          >
-            {t("client:admin.jobs.retry")}
-          </Button>
+          job.state === "dead" &&
+          job.failed_at !== undefined && (
+            <Button
+              size="sm"
+              isPending={retry.pendingIds.includes(job.id)}
+              aria-label={t("client:admin.jobs.retry_job", {
+                type: job.type,
+                date: intl.formatDate(job.failed_at, { dateStyle: "medium", timeStyle: "short" }),
+              })}
+              onPress={() => {
+                retry.retry(job);
+              }}
+            >
+              {t("client:admin.jobs.retry")}
+            </Button>
           )
         }
       >
@@ -304,18 +350,33 @@ function JobAttempts({ id }: { id: string }) {
       );
     case "ready":
       if (attempts.items.length === 0) {
-        return <EmptyState headingLevel={4} heading={t("client:admin.jobs.history.empty")} description={t("client:admin.jobs.history.empty.description")} />;
+        return (
+          <EmptyState
+            headingLevel={4}
+            heading={t("client:admin.jobs.history.empty")}
+            description={t("client:admin.jobs.history.empty.description")}
+          />
+        );
       }
       return (
         <Stack gap="3">
           <Stack as="ol" divided border="md">
             {attempts.items.map((attempt) => (
-              <Stack as="li" container gap="2" paddingX="3" paddingY="2" key={`${attempt.finished_at} ${String(attempt.attempt)}`}>
+              <Stack
+                as="li"
+                container
+                gap="2"
+                paddingX="3"
+                paddingY="2"
+                key={`${attempt.finished_at} ${String(attempt.attempt)}`}
+              >
                 <AttemptRecord attempt={attempt} />
               </Stack>
             ))}
           </Stack>
-          {attempts.moreError !== undefined && <RegionError heading={t("client:admin.jobs.history.more_failed")} reason={attempts.moreError} />}
+          {attempts.moreError !== undefined && (
+            <RegionError heading={t("client:admin.jobs.history.more_failed")} reason={attempts.moreError} />
+          )}
           {attempts.hasMore && (
             <div>
               <Button size="sm" onPress={attempts.loadMore} isPending={attempts.isLoadingMore}>
@@ -332,7 +393,12 @@ function AttemptRecord({ attempt }: { attempt: JobAttempt }) {
   const t = useT();
   return (
     <>
-      <Heading level={4}>{t("client:admin.jobs.history.attempt", { number: attempt.attempt, outcome: t(outcomeLabels[attempt.outcome]) })}</Heading>
+      <Heading level={4}>
+        {t("client:admin.jobs.history.attempt", {
+          number: attempt.attempt,
+          outcome: t(outcomeLabels[attempt.outcome]),
+        })}
+      </Heading>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.jobs.history.started_at")}>
           <DateTime value={attempt.started_at} />

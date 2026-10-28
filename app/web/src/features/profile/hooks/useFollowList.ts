@@ -46,7 +46,12 @@ export function useFollowList(id: string, list: FollowList): FollowListState {
   return {
     items: query.data.pages
       .flatMap((page) => page.accounts)
-      .map((account) => ({ id: account.id, name: nameOf(account), handle: handleOf(account.acct), href: profilePath(account.acct) })),
+      .map((account) => ({
+        id: account.id,
+        name: nameOf(account),
+        handle: handleOf(account.acct),
+        href: profilePath(account.acct),
+      })),
     hasMore: query.hasNextPage,
     isLoadingMore: query.isFetchingNextPage,
     loadMore,

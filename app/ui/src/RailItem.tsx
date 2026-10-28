@@ -115,7 +115,9 @@ export function RailItem({ href, icon, label, current = false, badge, form, prom
     >
       <span className={slots.pill({ className: classNames?.pill })}>
         {icon}
-        {badge !== undefined && <Badge count={badge.count} label={badge.label} className={slots.badge({ className: classNames?.badge })} />}
+        {badge !== undefined && (
+          <Badge count={badge.count} label={badge.label} className={slots.badge({ className: classNames?.badge })} />
+        )}
       </span>
       <span className={slots.label({ className: classNames?.label })}>{label}</span>
     </Link>

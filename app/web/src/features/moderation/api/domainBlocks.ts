@@ -67,7 +67,11 @@ export function importDomainBlocksMutation(api: Api) {
  * What an import changes: what each action it issued changes (the lists of domain actions, the audit log and,
  * for a limit or a suspension, the lists of posts). Resolves once those on screen are fetched again.
  */
-export async function cacheImportedDomainBlocks(queryClient: QueryClient, result: DomainBlockImportResult): Promise<void> {
-  const heaviest = result.issued.find((action) => action.kind === "suspend" || action.kind === "limit") ?? result.issued[0];
+export async function cacheImportedDomainBlocks(
+  queryClient: QueryClient,
+  result: DomainBlockImportResult,
+): Promise<void> {
+  const heaviest =
+    result.issued.find((action) => action.kind === "suspend" || action.kind === "limit") ?? result.issued[0];
   if (heaviest !== undefined) await cacheIssuedDomainAction(queryClient, heaviest);
 }

@@ -27,7 +27,11 @@ Element.prototype.scrollTo = function scrollTo(this: Element, options?: ScrollTo
 };
 // Nor does jsdom draw: without the canvas package, getContext logs "Not implemented". A canvas without a context
 // is what a browser without a 2D canvas gives, and Blurhash then draws nothing.
-Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { configurable: true, writable: true, value: () => null });
+Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+  configurable: true,
+  writable: true,
+  value: () => null,
+});
 
 afterEach(() => {
   cleanup();

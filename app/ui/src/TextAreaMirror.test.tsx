@@ -17,10 +17,14 @@ describe("highlightRuns", () => {
 
   it("keeps text over the limit `over` where it overlaps a token, and clamps ranges to the text", () => {
     expect(
-      highlightRuns(10, [
-        { kind: "over", start: 6, end: 10 },
-        { kind: "url", start: 4, end: 20 },
-      ], null),
+      highlightRuns(
+        10,
+        [
+          { kind: "over", start: 6, end: 10 },
+          { kind: "url", start: 4, end: 20 },
+        ],
+        null,
+      ),
     ).toEqual([
       { start: 0, end: 4, kind: null },
       { start: 4, end: 6, kind: "url" },
@@ -37,7 +41,11 @@ describe("highlightRuns", () => {
 function marks() {
   return screen
     .queryAllByText((_, element) => element?.getAttribute("data-highlight") != null)
-    .map((mark) => ({ kind: mark.getAttribute("data-highlight"), text: mark.textContent, hidden: isInaccessible(mark) }));
+    .map((mark) => ({
+      kind: mark.getAttribute("data-highlight"),
+      text: mark.textContent,
+      hidden: isInaccessible(mark),
+    }));
 }
 
 describe("the highlight layer", () => {
@@ -74,4 +82,3 @@ describe("the highlight layer", () => {
     expect(screen.getByRole("textbox", { name: "Bio" })).not.toHaveAttribute("dir");
   });
 });
-

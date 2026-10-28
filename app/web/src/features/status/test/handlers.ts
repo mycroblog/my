@@ -56,7 +56,9 @@ export function votedPoll(poll: Schemas["Poll"], choices: readonly number[]): Sc
     ...poll,
     votes_count: poll.votes_count + choices.length,
     ...(poll.voters_count !== undefined && { voters_count: poll.voters_count + 1 }),
-    options: poll.options.map((option, index) => (choices.includes(index) ? { ...option, votes_count: (option.votes_count ?? 0) + 1 } : option)),
+    options: poll.options.map((option, index) =>
+      choices.includes(index) ? { ...option, votes_count: (option.votes_count ?? 0) + 1 } : option,
+    ),
     voted: true,
     own_votes: [...choices],
   };
@@ -65,9 +67,18 @@ export function votedPoll(poll: Schemas["Poll"], choices: readonly number[]): Sc
 export const handlers = [
   http.get(`${apiBase}/statuses/:id`, ({ params }) => HttpResponse.json(statusFixture(String(params["id"])))),
   http.get(`${apiBase}/statuses/:id/context`, () => HttpResponse.json(context)),
-  http.get(`${apiBase}/statuses/:id/history`, ({ params }) => HttpResponse.json(historyOf(statusFixture(String(params["id"]))))),
+  http.get(`${apiBase}/statuses/:id/history`, ({ params }) =>
+    HttpResponse.json(historyOf(statusFixture(String(params["id"])))),
+  ),
   http.get(`${apiBase}/statuses/:id/source`, ({ params, request }) =>
-    withViewer(request, () => HttpResponse.json({ id: String(params["id"]), text: "@alice hello", spoiler_text: "", language: "en" } satisfies Schemas["StatusSource"])),
+    withViewer(request, () =>
+      HttpResponse.json({
+        id: String(params["id"]),
+        text: "@alice hello",
+        spoiler_text: "",
+        language: "en",
+      } satisfies Schemas["StatusSource"]),
+    ),
   ),
   http.put(`${apiBase}/statuses/:id`, async ({ params, request }) => {
     const body = (await request.clone().json()) as Schemas["EditStatusRequest"];
@@ -88,18 +99,28 @@ export const handlers = [
       withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), pinned: on })),
     ),
   ),
-  http.delete(`${apiBase}/statuses/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/statuses/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   http.put(`${apiBase}/statuses/:id/reaction`, async ({ params, request }) => {
     const body = (await request.clone().json()) as Schemas["ReactToStatusRequest"];
     return withViewer(request, () =>
-      HttpResponse.json({ ...statusFixture(String(params["id"])), reactions: [{ name: body.emoji, count: 1, me: true }] } satisfies Schemas["Status"]),
+      HttpResponse.json({
+        ...statusFixture(String(params["id"])),
+        reactions: [{ name: body.emoji, count: 1, me: true }],
+      } satisfies Schemas["Status"]),
     );
   }),
-  http.delete(`${apiBase}/statuses/:id/reaction`, ({ params, request }) => withViewer(request, () => HttpResponse.json(statusFixture(String(params["id"]))))),
+  http.delete(`${apiBase}/statuses/:id/reaction`, ({ params, request }) =>
+    withViewer(request, () => HttpResponse.json(statusFixture(String(params["id"])))),
+  ),
   http.post(`${apiBase}/statuses/:id/poll/votes`, async ({ params, request }) => {
     const body = (await request.clone().json()) as Schemas["VoteInPollRequest"];
     return withViewer(request, () =>
-      HttpResponse.json({ ...statusFixture(String(params["id"])), poll: votedPoll(pollFixture, body.choices) } satisfies Schemas["Status"]),
+      HttpResponse.json({
+        ...statusFixture(String(params["id"])),
+        poll: votedPoll(pollFixture, body.choices),
+      } satisfies Schemas["Status"]),
     );
   }),
   http.get(`${apiBase}/statuses/:id/reactions`, () =>
@@ -109,8 +130,14 @@ export const handlers = [
   ),
   http.put(`${apiBase}/statuses/:id/quote_policy`, async ({ params, request }) => {
     const body = (await request.json()) as Schemas["SetQuotePolicyRequest"];
-    return withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), quote_policy: body.quote_policy }));
+    return withViewer(request, () =>
+      HttpResponse.json({ ...statusFixture(String(params["id"])), quote_policy: body.quote_policy }),
+    );
   }),
-  http.get(`${apiBase}/statuses/:id/quotes`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["StatusPage"]))),
-  http.post(`${apiBase}/statuses/:id/quotes/:quoteId/revoke`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.get(`${apiBase}/statuses/:id/quotes`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["StatusPage"])),
+  ),
+  http.post(`${apiBase}/statuses/:id/quotes/:quoteId/revoke`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
 ];

@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Checkbox, Cluster, Heading, Hint, IconLabel, MoveDownIcon, MoveUpIcon, Stack, Tooltip, TooltipTrigger } from "@my/ui";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Cluster,
+  Heading,
+  Hint,
+  IconLabel,
+  MoveDownIcon,
+  MoveUpIcon,
+  Stack,
+  Tooltip,
+  TooltipTrigger,
+} from "@my/ui";
 import { useEffect, useId, useRef } from "react";
 import { useT } from "../../../lib/i18n";
 import { useTimelineAvailability } from "../../timeline";
@@ -55,7 +68,9 @@ export function NavigationSettings() {
     if (timeline !== undefined && !timelines[timeline]) return t("client:settings.navigation.unavailable");
     const position = shownIds.indexOf(id);
     if (position < 0) return t("client:settings.navigation.hidden");
-    return position < tabBarLimit ? t("client:settings.navigation.in_tab_bar") : t("client:settings.navigation.in_menu");
+    return position < tabBarLimit
+      ? t("client:settings.navigation.in_tab_bar")
+      : t("client:settings.navigation.in_menu");
   };
   return (
     <Stack as="section" aria-labelledby={headingId} aria-describedby={descriptionId} gap="3">

@@ -1,7 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automatic deletion of the user's own old posts (FR-118): turning it on, the age after which posts go, and the
 // exceptions that keep them. The form saves the whole policy at once; the server deletes the posts in its hourly job.
-import { Button, Checkbox, ConfirmDialog, Grid, Hint, InlineError, Select, SelectItem, Stack, StatusMessage, Switch, Text } from "@my/ui";
+import {
+  Button,
+  Checkbox,
+  ConfirmDialog,
+  Grid,
+  Hint,
+  InlineError,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  Switch,
+  Text,
+} from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { Visibility } from "../api/me";
@@ -31,7 +44,10 @@ export function AutoDeleteSettings() {
   const form = useAutoDeleteForm();
   const keepId = useId();
   const visibilityId = useId();
-  const thresholdLabel = (count: number) => (count === 0 ? t("client:settings.auto_delete.threshold.off") : t("client:settings.auto_delete.threshold.count", { count }));
+  const thresholdLabel = (count: number) =>
+    count === 0
+      ? t("client:settings.auto_delete.threshold.off")
+      : t("client:settings.auto_delete.threshold.count", { count });
   return (
     <>
       <Stack as="form" onSubmit={form.submit} gap="6">
@@ -50,7 +66,10 @@ export function AutoDeleteSettings() {
           onChange={(key) => {
             if (typeof key === "string") form.setMinAgeDays(Number(key));
           }}
-          items={form.ageChoices.map((days) => ({ id: String(days), name: t("client:settings.auto_delete.age.days", { count: days }) }))}
+          items={form.ageChoices.map((days) => ({
+            id: String(days),
+            name: t("client:settings.auto_delete.age.days", { count: days }),
+          }))}
         >
           {(choice) => (
             <SelectItem id={choice.id} textValue={choice.name}>

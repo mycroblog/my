@@ -59,13 +59,29 @@ const read: Schemas["Announcement"] = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in user with `permissions`; `extra` answers the other operations, or null for a 404. */
-async function serveApi(page: Page, permissions: Schemas["Permission"][], extra: (key: string, route: Route) => Promise<void> | null) {
+async function serveApi(
+  page: Page,
+  permissions: Schemas["Permission"][],
+  extra: (key: string, route: Route) => Promise<void> | null,
+) {
   const locale = test.info().project.use.locale ?? "en";
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
@@ -76,7 +92,8 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][], extra:
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -84,11 +101,19 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][], extra:
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account(permissions));
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /timelines/home") return json(route, { items: [] });
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     const answered = extra(key, route);
     if (answered !== null) return answered;
@@ -97,7 +122,10 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][], extra:
 }
 
 test.describe("announcements", () => {
-  test("shows the announcements above the home timeline and marks the unread one read", async ({ page, makeAxeBuilder }) => {
+  test("shows the announcements above the home timeline and marks the unread one read", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     let announcements = [unread, read];
     await serveApi(page, [], (key, route) => {
       if (key === "GET /announcements") return json(route, { items: announcements });
@@ -162,10 +190,15 @@ test.describe("announcements", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form.getByRole("textbox", { name: message("admin.announcements.text"), exact: true }).fill("Maintenance tonight");
+    await form
+      .getByRole("textbox", { name: message("admin.announcements.text"), exact: true })
+      .fill("Maintenance tonight");
     await form.getByRole("button", { name: message("admin.announcements.create_published"), exact: true }).click();
     const list = main.getByRole("region", { name: message("admin.announcements.list.title"), exact: true });
-    const withdraw = list.getByRole("button", { name: message("admin.announcements.withdraw_one", { announcement: "Maintenance tonight" }), exact: true });
+    const withdraw = list.getByRole("button", {
+      name: message("admin.announcements.withdraw_one", { announcement: "Maintenance tonight" }),
+      exact: true,
+    });
     await expect(withdraw).toBeVisible();
     expect(sent).toEqual(["create true"]);
     await expectNoAxeViolations(makeAxeBuilder);

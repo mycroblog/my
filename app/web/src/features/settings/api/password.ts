@@ -25,7 +25,13 @@ export function passwordStatusQueryOptions(api: Api) {
 export function changePasswordMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/password"] as const,
-    mutationFn: async ({ confirmation, newPassword }: { confirmation: Confirmation; newPassword: string }): Promise<void> => {
+    mutationFn: async ({
+      confirmation,
+      newPassword,
+    }: {
+      confirmation: Confirmation;
+      newPassword: string;
+    }): Promise<void> => {
       const body =
         confirmation.kind === "password"
           ? { current_password: confirmation.password, new_password: newPassword }
@@ -43,7 +49,10 @@ export function removePasswordMutation(api: Api) {
   return {
     mutationKey: ["post", "/accounts/password/remove"] as const,
     mutationFn: async (confirmation: Exclude<Confirmation, { kind: "password" }>): Promise<void> => {
-      const body = confirmation.kind === "external" ? { external_confirmation: confirmation.token } : { passkey: await confirmWithPasskey(api) };
+      const body =
+        confirmation.kind === "external"
+          ? { external_confirmation: confirmation.token }
+          : { passkey: await confirmWithPasskey(api) };
       await api.fetch.POST("/accounts/password/remove", { body });
     },
   };
@@ -64,13 +73,7 @@ const confirmationExpiredType = "/api/v1/problems/passkey-confirmation-expired";
 
 /** Why a change, a removal, or another confirmed operation failed, by what the user can do about it. */
 export type ConfirmationFailure =
-  | "wrong-password"
-  | "cancelled"
-  | "unavailable"
-  | "invalid-passkey"
-  | "expired"
-  | "rate-limited"
-  | "other";
+  "wrong-password" | "cancelled" | "unavailable" | "invalid-passkey" | "expired" | "rate-limited" | "other";
 
 /** Classifies an error of an operation confirmed with the password or a passkey (web-client/README.md E2). */
 export function confirmationFailure(error: unknown): ConfirmationFailure {

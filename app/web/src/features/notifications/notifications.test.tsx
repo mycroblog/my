@@ -13,7 +13,6 @@ import { renderApp } from "../../test/render";
 import { expectSelectedTabControlsPanel } from "../../test/tabs";
 import type { Notification, NotificationMarker, NotificationType } from "./api/notifications";
 
-
 /** The server's read marker as a variable, with the updates it received. */
 function markerServer(initial: NotificationMarker) {
   let marker = initial;
@@ -89,7 +88,10 @@ describe("the notifications page", () => {
     expect(articles[0]).toHaveAccessibleName(/^Unread: Bob mentioned you/);
     expect(articles[1]).toHaveAccessibleName(/^Bob followed you/);
     // The post the mention is about is quoted as its text, in one link to its page.
-    expect(within(articles[0] ?? feed).getByRole("link", { name: "@alice hello" })).toHaveAttribute("href", "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b1");
+    expect(within(articles[0] ?? feed).getByRole("link", { name: "@alice hello" })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b1",
+    );
     // The time is relative as in the timelines, with the full date and time as its tooltip.
     const time = within(articles[0] ?? feed).getByRole("time");
     expect(time).toHaveAttribute("datetime", "2026-10-16T09:00:00Z");
@@ -220,7 +222,10 @@ describe("the notifications page", () => {
   });
 
   test("says when there is nothing to show", async () => {
-    server.use(resumableSession(), http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items: [] })));
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items: [] })),
+    );
 
     await renderApp({ path: "/notifications" });
 
@@ -243,20 +248,33 @@ describe("the notifications page", () => {
     const decided = within(feed).getByRole("article", { name: /The moderators decided your appeal/ });
     expect(within(feed).getByRole("article", { name: /A new appeal awaits the moderators/ })).toBeInTheDocument();
     // Without the action, the decision still leads to the account status.
-    expect(within(decided).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/settings/account-status"]);
+    expect(
+      within(decided)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/settings/account-status"]);
   });
 
   test("tells an administrator of a webhook that the server disabled, and leads to the webhooks", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
-    const items: Notification[] = [{ id: "0192f0c4-7a8e-7000-8000-0000000000d9", type: "admin_webhook_disabled", created_at: "2026-10-16T09:00:00Z" }];
+    const items: Notification[] = [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d9",
+        type: "admin_webhook_disabled",
+        created_at: "2026-10-16T09:00:00Z",
+      },
+    ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
     await renderApp({ path: "/notifications" });
 
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     const disabled = within(feed).getByRole("article", { name: /The server disabled a webhook that kept failing/ });
-    expect(within(disabled).getByRole("link", { name: "Open the webhooks" })).toHaveAttribute("href", "/admin/webhooks");
+    expect(within(disabled).getByRole("link", { name: "Open the webhooks" })).toHaveAttribute(
+      "href",
+      "/admin/webhooks",
+    );
   });
 
   test("tells of a voice chat room that a followed account started, and leads to the room's page", async () => {
@@ -264,7 +282,13 @@ describe("the notifications page", () => {
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
     const roomId = "0192f0c4-7a8e-7000-8000-0000000000f1";
     const items: Notification[] = [
-      { id: "0192f0c4-7a8e-7000-8000-0000000000da", type: "voice_room_started", created_at: "2026-10-16T09:00:00Z", account: otherAccountFixture, voice_room_id: roomId },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000da",
+        type: "voice_room_started",
+        created_at: "2026-10-16T09:00:00Z",
+        account: otherAccountFixture,
+        voice_room_id: roomId,
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -278,16 +302,38 @@ describe("the notifications page", () => {
   test("tells of custom emoji requests: a new one to an administrator, and a decision with its reason to the requester", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
-    const request = { id: "0192f0c4-7a8e-7000-8000-0000000000e1", kind: "create", state: "pending", shortcode: "blobcat", created_at: "2026-10-16T08:00:00Z" } as const;
+    const request = {
+      id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+      kind: "create",
+      state: "pending",
+      shortcode: "blobcat",
+      created_at: "2026-10-16T08:00:00Z",
+    } as const;
     const items: Notification[] = [
-      { id: "0192f0c4-7a8e-7000-8000-0000000000da", type: "admin_custom_emoji_request", created_at: "2026-10-16T09:00:00Z", custom_emoji_request: request },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000da",
+        type: "admin_custom_emoji_request",
+        created_at: "2026-10-16T09:00:00Z",
+        custom_emoji_request: request,
+      },
       {
         id: "0192f0c4-7a8e-7000-8000-0000000000db",
         type: "custom_emoji_request_decided",
         created_at: "2026-10-16T10:00:00Z",
-        custom_emoji_request: { ...request, kind: "image", state: "rejected", reason: "Too close to :blob:.", decided_at: "2026-10-16T10:00:00Z" },
+        custom_emoji_request: {
+          ...request,
+          kind: "image",
+          state: "rejected",
+          reason: "Too close to :blob:.",
+          decided_at: "2026-10-16T10:00:00Z",
+        },
       },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000dc", type: "custom_emoji_request_decided", created_at: "2026-10-16T11:00:00Z", custom_emoji_request: { ...request, state: "approved" } },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000dc",
+        type: "custom_emoji_request_decided",
+        created_at: "2026-10-16T11:00:00Z",
+        custom_emoji_request: { ...request, state: "approved" },
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -295,10 +341,18 @@ describe("the notifications page", () => {
 
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     const submitted = within(feed).getByRole("article", { name: /A user requested the custom emoji :blobcat:/ });
-    expect(within(submitted).getByRole("link", { name: "Review the requests" })).toHaveAttribute("href", "/admin/custom-emojis?tab=requests");
-    const rejected = within(feed).getByRole("article", { name: /Your request for a new image of :blobcat: was rejected/ });
+    expect(within(submitted).getByRole("link", { name: "Review the requests" })).toHaveAttribute(
+      "href",
+      "/admin/custom-emojis?tab=requests",
+    );
+    const rejected = within(feed).getByRole("article", {
+      name: /Your request for a new image of :blobcat: was rejected/,
+    });
     expect(within(rejected).getByText("Too close to :blob:.")).toBeInTheDocument();
-    expect(within(rejected).getByRole("link", { name: "Open your custom emoji" })).toHaveAttribute("href", "/settings/custom-emojis");
+    expect(within(rejected).getByRole("link", { name: "Open your custom emoji" })).toHaveAttribute(
+      "href",
+      "/settings/custom-emojis",
+    );
     expect(within(feed).getByRole("article", { name: /Your custom emoji :blobcat: was approved/ })).toBeInTheDocument();
   });
 
@@ -347,10 +401,16 @@ describe("the notifications page", () => {
       const failed = within(feed).getByRole("article", { name: /A payment for your supporter plan failed/ });
       expect(within(failed).getByText("Gold")).toHaveAttribute("dir", "auto");
       expect(within(failed).getByText(/You keep the plan's benefits until/)).toBeInTheDocument();
-      expect(within(failed).getByRole("link", { name: "Update the payment method" })).toHaveAttribute("href", "/settings/supporter");
+      expect(within(failed).getByRole("link", { name: "Update the payment method" })).toHaveAttribute(
+        "href",
+        "/settings/supporter",
+      );
       const retired = within(feed).getByRole("article", { name: /The administrators retired your supporter plan/ });
       expect(within(retired).getByText(/Your subscription will not renew/)).toBeInTheDocument();
-      expect(within(retired).getByRole("link", { name: "Open your supporter plan" })).toHaveAttribute("href", "/settings/supporter");
+      expect(within(retired).getByRole("link", { name: "Open your supporter plan" })).toHaveAttribute(
+        "href",
+        "/settings/supporter",
+      );
       const ended = within(feed).getByRole("article", { name: /Your supporter plan ended/ });
       expect(within(ended).getByText("A payment was refunded in full or charged back.")).toBeInTheDocument();
     });
@@ -364,7 +424,9 @@ describe("the notifications page", () => {
       await renderApp({ path: "/notifications" });
 
       const feed = await screen.findByRole("feed", { name: "Notifications" });
-      expect(within(feed).getByRole("article", { name: /A payment for your supporter plan failed/ })).toBeInTheDocument();
+      expect(
+        within(feed).getByRole("article", { name: /A payment for your supporter plan failed/ }),
+      ).toBeInTheDocument();
       expect(within(feed).queryByRole("link", { name: "Update the payment method" })).not.toBeInTheDocument();
       expect(within(feed).queryByRole("link", { name: "Open your supporter plan" })).not.toBeInTheDocument();
     });
@@ -392,7 +454,13 @@ describe("the notifications page", () => {
         ? {}
         : { account: { ...otherAccountFixture, display_name: "" } }),
       ...(type === "boost"
-        ? { status: { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b2"), spoiler_text: "spoilers", content: "<p>the ending</p>" } }
+        ? {
+            status: {
+              ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b2"),
+              spoiler_text: "spoilers",
+              content: "<p>the ending</p>",
+            },
+          }
         : {}),
     }));
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
@@ -401,22 +469,37 @@ describe("the notifications page", () => {
 
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     // Without a display name, the username stands in.
-    expect(within(feed).getAllByRole("article").map((article) => article.getAttribute("aria-posinset"))).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+    expect(
+      within(feed)
+        .getAllByRole("article")
+        .map((article) => article.getAttribute("aria-posinset")),
+    ).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     expect(within(feed).getByRole("article", { name: /bob requested to follow you/ })).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /bob accepted your follow request/ })).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /bob favourited your post/ })).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /A poll you took part in has ended/ })).toBeInTheDocument();
-    expect(within(feed).getByRole("article", { name: /The moderators of this server sent you a notice/ })).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", { name: /The moderators of this server sent you a notice/ }),
+    ).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /A report you filed has been resolved/ })).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /A new report awaits the moderators/ })).toBeInTheDocument();
     expect(within(feed).getByRole("article", { name: /bob signed up and awaits approval/ })).toBeInTheDocument();
     // A post behind a content warning shows the warning only; its page asks to open it.
     const boost = within(feed).getByRole("article", { name: /bob boosted your post/ });
-    expect(within(boost).getByRole("link", { name: "Content warning: spoilers" })).toHaveAttribute("href", "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b2");
+    expect(within(boost).getByRole("link", { name: "Content warning: spoilers" })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b2",
+    );
     expect(within(boost).queryByText("the ending", { exact: false })).not.toBeInTheDocument();
     // The types without an actor link to no profile, only to where the user follows them up.
-    expect(within(within(feed).getByRole("article", { name: /The moderators/ })).getAllByRole("link").map((link) => link.textContent)).toEqual(["View your account status"]);
-    expect(within(within(feed).getByRole("article", { name: /A poll you took part in/ })).queryAllByRole("link")).toEqual([]);
+    expect(
+      within(within(feed).getByRole("article", { name: /The moderators/ }))
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["View your account status"]);
+    expect(
+      within(within(feed).getByRole("article", { name: /A poll you took part in/ })).queryAllByRole("link"),
+    ).toEqual([]);
   });
 
   test("says which emoji an account reacted with", async () => {
@@ -437,7 +520,11 @@ describe("the notifications page", () => {
         name: "blobcat@misskey.example",
         shortcode: "blobcat",
         domain: "misskey.example",
-        emoji: { shortcode: "blobcat", url: "https://my.example/media/proxy/blobcat", static_url: "https://my.example/media/proxy/blobcat" },
+        emoji: {
+          shortcode: "blobcat",
+          url: "https://my.example/media/proxy/blobcat",
+          static_url: "https://my.example/media/proxy/blobcat",
+        },
       }),
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
@@ -455,13 +542,43 @@ describe("the notifications page", () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
     const at = "2026-10-16T09:00:00Z";
-    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example", display_name: "Carol" };
+    const carol = {
+      ...otherAccountFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000c9",
+      username: "carol",
+      acct: "carol@new.example",
+      display_name: "Carol",
+    };
     const items: Notification[] = [
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e1", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "followed" } },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e2", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "requested" } },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e3", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { target: carol, outcome: "blocking" } },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+        type: "account_moved",
+        created_at: at,
+        account: otherAccountFixture,
+        account_move: { target: carol, outcome: "followed" },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e2",
+        type: "account_moved",
+        created_at: at,
+        account: otherAccountFixture,
+        account_move: { target: carol, outcome: "requested" },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e3",
+        type: "account_moved",
+        created_at: at,
+        account: otherAccountFixture,
+        account_move: { target: carol, outcome: "blocking" },
+      },
       // The new account is gone: the row says only that the account moved.
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e4", type: "account_moved", created_at: at, account: otherAccountFixture, account_move: { outcome: "followed" } },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e4",
+        type: "account_moved",
+        created_at: at,
+        account: otherAccountFixture,
+        account_move: { outcome: "followed" },
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -471,7 +588,10 @@ describe("the notifications page", () => {
     const rows = within(feed).getAllByRole("article");
     expect(rows).toHaveLength(4);
     expect(rows[0]).toHaveTextContent("You follow ⁨@carol@new.example⁩ now.");
-    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "Open ⁨@carol@new.example⁩" })).toHaveAttribute("href", "/@carol@new.example");
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "Open ⁨@carol@new.example⁩" })).toHaveAttribute(
+      "href",
+      "/@carol@new.example",
+    );
     expect(rows[1]).toHaveTextContent("Your request to follow ⁨@carol@new.example⁩ awaits its approval.");
     expect(rows[2]).toHaveTextContent("You did not follow ⁨@carol@new.example⁩, because you block it.");
     expect(rows[3]).toHaveTextContent("Bob moved to another account");
@@ -487,7 +607,12 @@ describe("the notifications page", () => {
         id: "0192f0c4-7a8e-7000-8000-0000000000d1",
         type: "relationships_severed",
         created_at: at,
-        relationship_severance: { kind: "domain_suspension", domain: "bad.example", followers_lost: 2, following_lost: 1 },
+        relationship_severance: {
+          kind: "domain_suspension",
+          domain: "bad.example",
+          followers_lost: 2,
+          following_lost: 1,
+        },
       },
       {
         id: "0192f0c4-7a8e-7000-8000-0000000000d2",
@@ -508,7 +633,9 @@ describe("the notifications page", () => {
       name: /The moderators suspended bad\.example\. You lost 2 followers and 1 account you followed there\./,
     });
     // A server has no profile to link to: the row leads to the user's follow lists.
-    expect((await within(domain).findAllByRole("link")).map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    expect(
+      (await within(domain).findAllByRole("link")).map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
       ["View your followers", "/@alice/followers"],
       ["View the accounts you follow", "/@alice/following"],
     ]);
@@ -516,7 +643,9 @@ describe("the notifications page", () => {
       name: /The moderators suspended Bob\. You lost 1 follower and 0 accounts you followed\./,
     });
     expect(within(account).getByRole("link", { name: "Bob" })).toHaveAttribute("href", "/@bob");
-    expect(within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ })).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ }),
+    ).toBeInTheDocument();
   });
 
   test("tells what a moderation notice, a resolved report and a decided appeal are about, and leads to the screens that follow them up", async () => {
@@ -560,7 +689,12 @@ describe("the notifications page", () => {
         },
       },
       { id: "0192f0c4-7a8e-7000-8000-0000000000e3", type: "admin_report", created_at: at, report_id: reportId },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e4", type: "admin_sign_up", created_at: at, account: otherAccountFixture },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e4",
+        type: "admin_sign_up",
+        created_at: at,
+        account: otherAccountFixture,
+      },
       {
         id: "0192f0c4-7a8e-7000-8000-0000000000e5",
         type: "appeal_decided",
@@ -576,10 +710,22 @@ describe("the notifications page", () => {
           issued_at: at,
           lifted_at: at,
           appealable: false,
-          appeal: { id: "0192f0c4-7a8e-7000-8000-0000000000f4", text: "I am not a bot.", state: "overturned", submitted_at: at, decided_at: at, decision_reason: "We were wrong." },
+          appeal: {
+            id: "0192f0c4-7a8e-7000-8000-0000000000f4",
+            text: "I am not a bot.",
+            state: "overturned",
+            submitted_at: at,
+            decided_at: at,
+            decision_reason: "We were wrong.",
+          },
         },
       },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e6", type: "admin_appeal", created_at: at, appeal_id: "0192f0c4-7a8e-7000-8000-0000000000f4" },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e6",
+        type: "admin_appeal",
+        created_at: at,
+        appeal_id: "0192f0c4-7a8e-7000-8000-0000000000f4",
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -590,19 +736,37 @@ describe("the notifications page", () => {
     const notice = within(feed).getByRole("article", { name: /The moderators of this server sent you a notice/ });
     expect(notice).toHaveAccessibleDescription(/Limit: Spam.*Repeated promotional posts\..*Until Oct 23, 2026/);
     expect(within(notice).getByText("Repeated promotional posts.")).toHaveAttribute("dir", "auto");
-    expect(within(notice).getByRole("link", { name: "View your account status" })).toHaveAttribute("href", "/settings/account-status");
+    expect(within(notice).getByRole("link", { name: "View your account status" })).toHaveAttribute(
+      "href",
+      "/settings/account-status",
+    );
     // A resolved report names the reported account, a link to its profile, without its avatar.
     const resolved = within(feed).getByRole("article", { name: /Your report on Bob has been resolved/ });
-    expect(within(resolved).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/@bob"]);
+    expect(
+      within(resolved)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/@bob"]);
     // A moderator's notifications lead to the report and to the registrations.
     const report = within(feed).getByRole("article", { name: /A new report awaits the moderators/ });
-    expect(within(report).getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `/moderation/reports/${reportId}`);
+    expect(within(report).getByRole("link", { name: "Open the report" })).toHaveAttribute(
+      "href",
+      `/moderation/reports/${reportId}`,
+    );
     // The decision on an appeal says what was decided and why, and leads to the account status.
     const decided = within(feed).getByRole("article", { name: /The moderators decided your appeal/ });
-    expect(decided).toHaveAccessibleDescription(/Limit: Spam.*Your appeal was granted, and the action was lifted\..*We were wrong\./);
-    expect(within(decided).getByRole("link", { name: "View your account status" })).toHaveAttribute("href", "/settings/account-status");
+    expect(decided).toHaveAccessibleDescription(
+      /Limit: Spam.*Your appeal was granted, and the action was lifted\..*We were wrong\./,
+    );
+    expect(within(decided).getByRole("link", { name: "View your account status" })).toHaveAttribute(
+      "href",
+      "/settings/account-status",
+    );
     const appeal = within(feed).getByRole("article", { name: /A new appeal awaits the moderators/ });
-    expect(within(appeal).getByRole("link", { name: "Open the appeal" })).toHaveAttribute("href", "/moderation/appeals/0192f0c4-7a8e-7000-8000-0000000000f4");
+    expect(within(appeal).getByRole("link", { name: "Open the appeal" })).toHaveAttribute(
+      "href",
+      "/moderation/appeals/0192f0c4-7a8e-7000-8000-0000000000f4",
+    );
     const signUp = within(feed).getByRole("article", { name: /Bob signed up and awaits approval/ });
     await user.click(within(signUp).getByRole("link", { name: "Review registrations" }));
     await waitFor(() => {
@@ -615,7 +779,9 @@ describe("the notifications page", () => {
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a2", unread_count: 0 });
     server.use(
       http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-        HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { followed_by: true }))),
+        HttpResponse.json(
+          new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { followed_by: true })),
+        ),
       ),
     );
     const { user, router } = await renderApp({ path: "/notifications?filter=follows" });
@@ -691,12 +857,21 @@ describe("the favourites and the boosts of one post", () => {
     favourite("0192f0c4-7a8e-7000-8000-0000000000d5", carol),
     { id: "0192f0c4-7a8e-7000-8000-0000000000d4", type: "follow", created_at: "2026-10-16T08:00:00Z", account: dave },
     favourite("0192f0c4-7a8e-7000-8000-0000000000d3", otherAccountFixture),
-    { id: "0192f0c4-7a8e-7000-8000-0000000000d2", type: "boost", created_at: "2026-10-16T06:00:00Z", account: otherAccountFixture, status: post },
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000d2",
+      type: "boost",
+      created_at: "2026-10-16T06:00:00Z",
+      account: otherAccountFixture,
+      status: post,
+    },
     favourite("0192f0c4-7a8e-7000-8000-0000000000d1", dave),
   ];
 
   test("are one row each that counts the people, and the marker still moves to the newest notification", async () => {
-    server.use(resumableSession(), http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })),
+    );
     const marker = markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000d4", unread_count: 1 });
 
     await renderApp({ path: "/notifications" });
@@ -710,8 +885,14 @@ describe("the favourites and the boosts of one post", () => {
     expect(articles[2]).toHaveAccessibleName(/^Bob boosted your post/);
     // The others' avatars are links for the pointer only: the row's links are the newest actor's name and the post.
     const favourites = articles[0] ?? feed;
-    expect(within(favourites).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/@carol@remote.example", postPath]);
-    const hiddenLinks = within(favourites).getAllByRole("link", { hidden: true }).map((link) => link.getAttribute("href"));
+    expect(
+      within(favourites)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/@carol@remote.example", postPath]);
+    const hiddenLinks = within(favourites)
+      .getAllByRole("link", { hidden: true })
+      .map((link) => link.getAttribute("href"));
     expect(hiddenLinks).toEqual(expect.arrayContaining(["/@bob", "/@dave@remote.example"]));
 
     await waitFor(() => {
@@ -726,7 +907,9 @@ describe("the favourites and the boosts of one post", () => {
       resumableSession(),
       http.get(`${apiBase}/notifications`, ({ request }) => {
         const cursor = new URL(request.url).searchParams.get("cursor");
-        return HttpResponse.json(cursor === null ? { items: items.slice(0, 2), next_cursor: "page-2" } : { items: items.slice(2) });
+        return HttpResponse.json(
+          cursor === null ? { items: items.slice(0, 2), next_cursor: "page-2" } : { items: items.slice(2) },
+        );
       }),
     );
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000d5", unread_count: 0 });
@@ -736,13 +919,21 @@ describe("the favourites and the boosts of one post", () => {
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleName(/^Carol favourited your post/);
     await user.click(screen.getByRole("button", { name: "Load more notifications" }));
-    expect(await within(feed).findByRole("article", { name: /^Carol and 2 others favourited your post/ })).toBeInTheDocument();
+    expect(
+      await within(feed).findByRole("article", { name: /^Carol and 2 others favourited your post/ }),
+    ).toBeInTheDocument();
     expect(within(feed).getAllByRole("article")).toHaveLength(3);
   });
 
   test("count a person who favourited the post again once", async () => {
-    const again = [favourite("0192f0c4-7a8e-7000-8000-0000000000d5", carol), favourite("0192f0c4-7a8e-7000-8000-0000000000d0", carol)];
-    server.use(resumableSession(), http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items: again })));
+    const again = [
+      favourite("0192f0c4-7a8e-7000-8000-0000000000d5", carol),
+      favourite("0192f0c4-7a8e-7000-8000-0000000000d0", carol),
+    ];
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items: again })),
+    );
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000d5", unread_count: 0 });
 
     await renderApp({ path: "/notifications" });

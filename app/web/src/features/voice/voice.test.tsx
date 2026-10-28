@@ -13,15 +13,26 @@ import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { ownRoomFixture, participantFixture, roomId, voiceRoomFixture } from "./test/handlers";
 
-const carol: Schemas["Account"] = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-000000000033", username: "carol", acct: "carol", display_name: "Carol" };
+const carol: Schemas["Account"] = {
+  ...otherAccountFixture,
+  id: "0192f0c4-7a8e-7000-8000-000000000033",
+  username: "carol",
+  acct: "carol",
+  display_name: "Carol",
+};
 
 /**
  * The server with voice chat on, where `starters` open rooms, and `rooms` open, answering the list (also by hashtag)
  * and each room.
  */
-function voiceOn(rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()], starters: Schemas["Instance"]["voice_room_starters"] = "everyone") {
+function voiceOn(
+  rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()],
+  starters: Schemas["Instance"]["voice_room_starters"] = "everyone",
+) {
   server.use(
-    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: starters })),
+    http.get(`${apiBase}/instance`, () =>
+      HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: starters }),
+    ),
     http.get(`${apiBase}/voice/rooms`, ({ request }) =>
       withViewer(request, () => {
         const tag = new URL(request.url).searchParams.get("tag");
@@ -31,7 +42,9 @@ function voiceOn(rooms: Schemas["VoiceRoom"][] = [voiceRoomFixture()], starters:
     http.get(`${apiBase}/voice/rooms/:id`, ({ request, params }) =>
       withViewer(request, () => {
         const room = rooms.find((r) => r.id === params["id"]);
-        return room === undefined ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 }) : HttpResponse.json(room);
+        return room === undefined
+          ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 })
+          : HttpResponse.json(room);
       }),
     ),
   );
@@ -82,7 +95,16 @@ describe("the list of the open rooms", () => {
   });
 
   test("opens from the navigation and shows each room with the Live pill, its count and time open, host, description, and hashtags", async () => {
-    voiceOn([voiceRoomFixture(), voiceRoomFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f2", name: "Quiet study", description: "", hashtags: [], participants_count: 1 })]);
+    voiceOn([
+      voiceRoomFixture(),
+      voiceRoomFixture({
+        id: "0192f0c4-7a8e-7000-8000-0000000000f2",
+        name: "Quiet study",
+        description: "",
+        hashtags: [],
+        participants_count: 1,
+      }),
+    ]);
     const { user } = await renderApp({ path: "/home" });
     await user.click(await screen.findByRole("link", { name: "Voice chat" }));
 
@@ -112,9 +134,22 @@ describe("the list of the open rooms", () => {
       http.post(`${apiBase}/voice/rooms`, async ({ request }) => {
         const body = (await request.json()) as Schemas["VoiceRoomSettings"];
         bodies.push(body);
-        const room = ownRoomFixture({ name: body.name, hashtags: body.hashtags ?? [], visibility: body.visibility ?? "local" });
+        const room = ownRoomFixture({
+          name: body.name,
+          hashtags: body.hashtags ?? [],
+          visibility: body.visibility ?? "local",
+        });
         voiceOn([room]);
-        return withViewer(request, () => HttpResponse.json({ room, session: "s1", grant: { kind: "p2p", ice_servers: [], relay_only: false, expires_at: "2026-10-26T18:00:00Z" } }, { status: 201 }));
+        return withViewer(request, () =>
+          HttpResponse.json(
+            {
+              room,
+              session: "s1",
+              grant: { kind: "p2p", ice_servers: [], relay_only: false, expires_at: "2026-10-26T18:00:00Z" },
+            },
+            { status: 201 },
+          ),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/voice" });
@@ -122,9 +157,15 @@ describe("the list of the open rooms", () => {
     const dialog = await screen.findByRole("dialog", { name: "Start a room" });
     await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Late show");
     await user.type(within(dialog).getByRole("textbox", { name: /Hashtags/u }), "#music talk");
-    await user.click(within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", { name: "Followers of the host" }));
+    await user.click(
+      within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", {
+        name: "Followers of the host",
+      }),
+    );
     expect(within(dialog).getByRole("switch", { name: "Post about the room" })).toBeChecked();
-    expect(within(dialog).getByRole("switch", { name: "Post about the room" })).toHaveAccessibleDescription("A post for your followers only.");
+    expect(within(dialog).getByRole("switch", { name: "Post about the room" })).toHaveAccessibleDescription(
+      "A post for your followers only.",
+    );
     const text = within(dialog).getByRole("textbox", { name: "Post text" });
     expect(text).toHaveValue("I opened a voice chat room: Late show");
     await user.type(text, " — come by");
@@ -149,7 +190,11 @@ describe("the list of the open rooms", () => {
     const { user } = await renderApp({ path: "/voice" });
     await user.click(await screen.findByRole("button", { name: "Start a room" }));
     const dialog = await screen.findByRole("dialog", { name: "Start a room" });
-    await user.click(within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", { name: "Mutual follows of the host" }));
+    await user.click(
+      within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", {
+        name: "Mutual follows of the host",
+      }),
+    );
     expect(within(dialog).queryByRole("switch", { name: "Post about the room" })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
     expect(await within(dialog).findByText("Enter a name of up to 100 characters on one line.")).toBeInTheDocument();
@@ -175,13 +220,19 @@ describe("starting a room", () => {
 
   test("says why the server refused the room, and keeps the form", async () => {
     voiceOn([]);
-    server.use(http.post(`${apiBase}/voice/rooms`, () => problem(403, "/api/v1/problems/voice-not-eligible", "You may not start voice chat rooms")));
+    server.use(
+      http.post(`${apiBase}/voice/rooms`, () =>
+        problem(403, "/api/v1/problems/voice-not-eligible", "You may not start voice chat rooms"),
+      ),
+    );
     const { user } = await renderApp({ path: "/voice" });
     await user.click(await screen.findByRole("button", { name: "Start a room" }));
     const dialog = await screen.findByRole("dialog", { name: "Start a room" });
     await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Late show");
     await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Couldn't start the room: You may not start voice chat rooms");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Couldn't start the room: You may not start voice chat rooms",
+    );
     expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveValue("Late show");
   });
 
@@ -216,7 +267,14 @@ describe("starting a room", () => {
 describe("the page of a room", () => {
   test("shows the stage: the room's head, the speakers and the listeners with their roles, and that this browser cannot join without WebRTC", async () => {
     server.use(signedInHandler);
-    voiceOn([voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(carol, { cohost: true, hand_raised: true })] })]);
+    voiceOn([
+      voiceRoomFixture({
+        participants: [
+          participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+          participantFixture(carol, { cohost: true, hand_raised: true }),
+        ],
+      }),
+    ]);
     await renderApp({ path: `/voice/${roomId}` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();
@@ -225,13 +283,25 @@ describe("the page of a room", () => {
     expect(screen.getByText("Talking about the week's music.")).toHaveAttribute("dir", "auto");
     expect(screen.getByRole("link", { name: "#music" })).toBeInTheDocument();
     const speakers = screen.getByRole("list", { name: "Speakers · 1" });
-    expect(within(speakers).getAllByRole("listitem").map((item) => item.textContent)).toEqual([expect.stringMatching(/Bob.*Host/u)]);
+    expect(
+      within(speakers)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([expect.stringMatching(/Bob.*Host/u)]);
     const listeners = screen.getByRole("list", { name: "Listeners · 1" });
-    expect(within(listeners).getAllByRole("listitem").map((item) => item.textContent)).toEqual([expect.stringMatching(/Carol.*Co-host.*Hand raised/u)]);
+    expect(
+      within(listeners)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([expect.stringMatching(/Carol.*Co-host.*Hand raised/u)]);
     expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Room settings" })).not.toBeInTheDocument();
     // jsdom has no RTCPeerConnection: the call (call.test.tsx) needs one.
-    expect(screen.getByText("This browser can't join voice chat. Open the room in a browser that supports calls, over HTTPS.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This browser can't join voice chat. Open the room in a browser that supports calls, over HTTPS.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
   });
 
@@ -307,7 +377,15 @@ describe("the page of a room", () => {
     await user.click(within(dialog).getByRole("button", { name: "Send report" }));
 
     expect(await within(dialog).findByRole("heading", { name: "Report sent" })).toBeInTheDocument();
-    expect(reports).toEqual([{ account_id: otherAccountFixture.id, category: "spam", voice_room_id: roomId, comment: "Shouting ads", forward: false }]);
+    expect(reports).toEqual([
+      {
+        account_id: otherAccountFixture.id,
+        category: "spam",
+        voice_room_id: roomId,
+        comment: "Shouting ads",
+        forward: false,
+      },
+    ]);
   });
 
   test("offers the host no report of their own room", async () => {
@@ -321,14 +399,25 @@ describe("the page of a room", () => {
   test("tells a visitor who is not signed in that only this server's users join, with the summary the server shows", async () => {
     server.use(
       http.get(`${apiBase}/voice/rooms/:id/summary`, () =>
-        HttpResponse.json({ id: roomId, state: "open", name: "Friday night radio", description: "Talking about music.", host: otherAccountFixture }),
+        HttpResponse.json({
+          id: roomId,
+          state: "open",
+          name: "Friday night radio",
+          description: "Talking about music.",
+          host: otherAccountFixture,
+        }),
       ),
     );
     await renderApp({ path: `/voice/${roomId}` });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Friday night radio" })).toBeInTheDocument();
-    expect(screen.getByText("Only people with an account on this server can join its voice chat rooms.")).toBeInTheDocument();
-    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" })).toHaveAttribute("href", `/login?return_to=%2Fvoice%2F${roomId}`);
+    expect(
+      screen.getByText("Only people with an account on this server can join its voice chat rooms."),
+    ).toBeInTheDocument();
+    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      `/login?return_to=%2Fvoice%2F${roomId}`,
+    );
     expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
   });
 
@@ -353,7 +442,11 @@ describe("the page of a room", () => {
   test("says that a room ended, with its name from the summary", async () => {
     server.use(signedInHandler);
     voiceOn([]);
-    server.use(http.get(`${apiBase}/voice/rooms/:id/summary`, () => HttpResponse.json({ id: roomId, state: "ended", name: "Friday night radio" })));
+    server.use(
+      http.get(`${apiBase}/voice/rooms/:id/summary`, () =>
+        HttpResponse.json({ id: roomId, state: "ended", name: "Friday night radio" }),
+      ),
+    );
     await renderApp({ path: `/voice/${roomId}` });
     expect(await screen.findByRole("heading", { level: 1, name: "This room has ended" })).toBeInTheDocument();
     expect(screen.getByText("Friday night radio")).toBeInTheDocument();
@@ -366,10 +459,17 @@ describe("the rooms elsewhere", () => {
   });
 
   test("the hashtag's page shows its open rooms above its posts", async () => {
-    voiceOn([voiceRoomFixture(), voiceRoomFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f2", name: "Cat talk", hashtags: ["cats"] })]);
+    voiceOn([
+      voiceRoomFixture(),
+      voiceRoomFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000f2", name: "Cat talk", hashtags: ["cats"] }),
+    ]);
     await renderApp({ path: "/tags/cats" });
     const section = await screen.findByRole("region", { name: "Voice chat rooms with #cats" });
-    expect(within(section).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Cat talk"]);
+    expect(
+      within(section)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(["Cat talk"]);
   });
 
   test("a profile links the room where the account hosts", async () => {
@@ -377,13 +477,20 @@ describe("the rooms elsewhere", () => {
     server.use(
       http.get(`${apiBase}/accounts/:id`, ({ request, params }) => {
         if (params["id"] !== otherAccountFixture.id) return undefined;
-        return withViewer(request, () => HttpResponse.json({ ...otherAccountFixture, voice_room: { id: roomId, name: "Friday night radio", role: "host", participants_count: 3 } }));
+        return withViewer(request, () =>
+          HttpResponse.json({
+            ...otherAccountFixture,
+            voice_room: { id: roomId, name: "Friday night radio", role: "host", participants_count: 3 },
+          }),
+        );
       }),
     );
     await renderApp({ path: "/@bob" });
     const link = await screen.findByRole("link", { name: "Friday night radio" });
     expect(link).toHaveAttribute("href", `/voice/${roomId}`);
-    expect(screen.getByText(/is hosting a voice chat room/u)).toHaveTextContent("⁨Bob⁩ is hosting a voice chat room: Friday night radio");
+    expect(screen.getByText(/is hosting a voice chat room/u)).toHaveTextContent(
+      "⁨Bob⁩ is hosting a voice chat room: Friday night radio",
+    );
     expect(screen.getByText("3 people")).toBeInTheDocument();
   });
 
@@ -395,7 +502,13 @@ describe("the rooms elsewhere", () => {
           HttpResponse.json({
             items: [
               { id: "r2", name: "Late show", opened_at: "2026-10-26T20:00:00Z" },
-              { id: "r1", name: "Morning call", opened_at: "2026-10-25T08:00:00Z", ended_at: "2026-10-25T09:00:00Z", end_reason: "empty" },
+              {
+                id: "r1",
+                name: "Morning call",
+                opened_at: "2026-10-25T08:00:00Z",
+                ended_at: "2026-10-25T09:00:00Z",
+                end_reason: "empty",
+              },
             ],
           }),
         ),

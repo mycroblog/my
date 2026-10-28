@@ -38,7 +38,11 @@ describe("while signed out", () => {
     await within(list).findByRole("link", { name: "Sign up" });
 
     // jsdom applies no styles, so Sign up, which only the rail shows, is here too.
-    expect(within(list).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    expect(
+      within(list)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
       ["Local", "/local"],
       ["Federated", "/public"],
       ["Search", "/search"],
@@ -51,7 +55,11 @@ describe("while signed out", () => {
     // The tab bar's Menu holds Sign up, the color theme and the server's information page.
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.textContent)).toEqual(["Sign up", "my example", "More about this server"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Sign up", "my example", "More about this server"]);
     expect(within(sheet).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
   });
 
@@ -62,7 +70,9 @@ describe("while signed out", () => {
     );
     await renderApp({ path: "/local" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "The local timeline is for signed-in users" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "The local timeline is for signed-in users" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Sign in to read the public posts of this server's accounts.")).toBeInTheDocument();
     // The page's own link and the navigation's both sign in and come back here.
     expect(screen.getAllByRole("link", { name: "Sign in" }).map((link) => link.getAttribute("href"))).toEqual([
@@ -93,7 +103,11 @@ describe("while signed out", () => {
   });
 
   test("leaves out Sign up while the server takes no new accounts", async () => {
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } }),
+      ),
+    );
     await renderApp({ path: "/about" });
     await screen.findByRole("heading", { level: 1, name: "About my example" });
     await within(navigation()).findByRole("link", { name: "Federated" });
@@ -159,14 +173,11 @@ describe("the timelines' items", () => {
       expect(within(navigation()).queryByRole("link", { name: "Local" })).not.toBeInTheDocument();
     });
     expect(within(navigation()).queryByRole("link", { name: "Federated" })).not.toBeInTheDocument();
-    expect(within(within(navigation()).getByRole("list")).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/home",
-      "/notifications",
-      "/search",
-      "/profile",
-      "/bookmarks",
-      "/settings",
-    ]);
+    expect(
+      within(within(navigation()).getByRole("list"))
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
   });
 
   test("offer the timelines kept for signed-in users", async () => {
@@ -211,24 +222,27 @@ describe("the user's arrangement", () => {
     await screen.findByRole("heading", { level: 1, name: "Home" });
     const list = within(navigation()).getByRole("list");
     await within(list).findByRole("link", { name: "Federated" });
-    expect(within(list).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/search",
-      "/notifications",
-      "/home",
-      "/profile",
-      "/public",
-      "/bookmarks",
-      "/settings",
-    ]);
+    expect(
+      within(list)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/search", "/notifications", "/home", "/profile", "/public", "/bookmarks", "/settings"]);
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.textContent)).toEqual(["Bookmarks", "Settings", "my example", "More about this server"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Bookmarks", "Settings", "my example", "More about this server"]);
   });
 
   test("keeps the place of a timeline the server does not offer among the first five", async () => {
     server.use(instanceWith({ local: "off", federated: "everyone" }));
-    navigationKey.write({ order: ["local", "home", "public", "notifications", "search", "profile", "bookmarks", "settings"], hidden: [] });
+    navigationKey.write({
+      order: ["local", "home", "public", "notifications", "search", "profile", "bookmarks", "settings"],
+      hidden: [],
+    });
     const { user } = await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
     await waitFor(() => {
@@ -237,7 +251,11 @@ describe("the user's arrangement", () => {
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.textContent)).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
   });
 
   test("follows a change made in another tab", async () => {
@@ -265,7 +283,11 @@ describe("the tab bar's Menu", () => {
     await user.click(menu);
 
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((link) => link.textContent)).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
     expect(within(sheet).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
 
@@ -324,7 +346,9 @@ describe("the tab bar's Menu", () => {
     await user.type(displayName, " Liddell");
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
-    await user.click(within(await screen.findByRole("dialog", { name: "Menu" })).getByRole("link", { name: "Settings" }));
+    await user.click(
+      within(await screen.findByRole("dialog", { name: "Menu" })).getByRole("link", { name: "Settings" }),
+    );
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Keep editing" }));
     expect(router.state.location.pathname).toBe("/settings/profile");
     expect(screen.getByRole("dialog", { name: "Menu" })).toBeInTheDocument();
@@ -383,16 +407,11 @@ describe("the sidebar's server and viewer", () => {
     expect(list).not.toContainElement(viewer);
     // The federated timeline joins the list once the instance says it serves it.
     await within(list).findByRole("link", { name: "Federated" });
-    expect(within(list).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/home",
-      "/local",
-      "/public",
-      "/notifications",
-      "/search",
-      "/profile",
-      "/bookmarks",
-      "/settings",
-    ]);
+    expect(
+      within(list)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/home", "/local", "/public", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
   });
 
   test("shows no account while signed out, and the server's name leads to the landing page", async () => {
@@ -421,12 +440,17 @@ describe("the sidebar's server and viewer", () => {
   });
 
   test("is in Japanese in the ja locale", async () => {
-    server.use(signedInHandler, http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })));
+    server.use(
+      signedInHandler,
+      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })),
+    );
     await renderApp({ path: "/home", locale: "ja" });
     const nav = await screen.findByRole("navigation", { name: "メイン" });
     expect(await within(nav).findByRole("link", { name: "Alice @alice" })).toHaveAccessibleDescription(
       "サインインしているアカウント",
     );
-    expect(within(nav).getByRole("link", { name: "my example" })).toHaveAccessibleDescription("このサーバーのトップページ");
+    expect(within(nav).getByRole("link", { name: "my example" })).toHaveAccessibleDescription(
+      "このサーバーのトップページ",
+    );
   });
 });

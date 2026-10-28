@@ -3,7 +3,19 @@
 // first, in the admin mode's list form: a toolbar with the state filter (kept in the URL by the route,
 // web-client/README.md S3), a table of one page, and previous / next. Each row's first cell links to the appeal's page,
 // where it is decided.
-import { EmptyState, Link, ListToolbar, Select, SelectItem, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text } from "@my/ui";
+import {
+  EmptyState,
+  Link,
+  ListToolbar,
+  Select,
+  SelectItem,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+} from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type Appeal, type AppealFilter, appealFilters } from "../api/appeals";
 import { appealStateLabels, appealTitle, useAppeals } from "../hooks/useAppeals";
@@ -73,7 +85,11 @@ function AppealList({ filter }: { filter: AppealFilter }) {
   const empty = decided ? (
     <EmptyState headingLevel={2} heading={t("client:admin.appeals.empty.decided")} />
   ) : (
-    <EmptyState headingLevel={2} heading={t("client:admin.appeals.empty.pending")} description={t("client:admin.appeals.empty.pending.description")} />
+    <EmptyState
+      headingLevel={2}
+      heading={t("client:admin.appeals.empty.pending")}
+      description={t("client:admin.appeals.empty.pending.description")}
+    />
   );
   return (
     <RecordTable
@@ -86,7 +102,9 @@ function AppealList({ filter }: { filter: AppealFilter }) {
           <TableColumnHeader>{t("client:admin.appeals.column.appeal")}</TableColumnHeader>
           <TableColumnHeader>{t("client:admin.appeal.account")}</TableColumnHeader>
           <TableColumnHeader>{t("client:admin.appeal.action_state")}</TableColumnHeader>
-          <TableColumnHeader>{t(decided ? "client:admin.appeal.decision" : "client:admin.appeal.submitted_at")}</TableColumnHeader>
+          <TableColumnHeader>
+            {t(decided ? "client:admin.appeal.decision" : "client:admin.appeal.submitted_at")}
+          </TableColumnHeader>
           {decided && <TableColumnHeader>{t("client:admin.appeal.decided_at")}</TableColumnHeader>}
         </>
       }

@@ -35,7 +35,26 @@ const moderator = {
   ai_opt_out: false,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
-  permissions: ["manage_reports", "manage_accounts", "view_audit", "manage_domains", "manage_invites", "manage_jobs", "manage_settings", "manage_rules", "manage_custom_emojis", "manage_webhooks", "manage_roles", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps", "manage_service_closure", "manage_errors", "manage_login_providers"],
+  permissions: [
+    "manage_reports",
+    "manage_accounts",
+    "view_audit",
+    "manage_domains",
+    "manage_invites",
+    "manage_jobs",
+    "manage_settings",
+    "manage_rules",
+    "manage_custom_emojis",
+    "manage_webhooks",
+    "manage_roles",
+    "manage_announcements",
+    "manage_finance",
+    "manage_supporters",
+    "manage_oauth_apps",
+    "manage_service_closure",
+    "manage_errors",
+    "manage_login_providers",
+  ],
 };
 
 /** The reported account: a long display name, local. */
@@ -92,7 +111,8 @@ function reportOf(id: string, overrides: Partial<Schemas["AdminReportDetail"]> =
   return {
     id,
     category: "spam",
-    comment: "This account posts the same advertisement in reply to everyone who mentions the server, many times a day.",
+    comment:
+      "This account posts the same advertisement in reply to everyone who mentions the server, many times a day.",
     forwarded: false,
     filed_at: "2026-10-16T09:00:00Z",
     state: "open",
@@ -105,7 +125,14 @@ function reportOf(id: string, overrides: Partial<Schemas["AdminReportDetail"]> =
     status_ids: [postId],
     rule_ids: [],
     statuses: [{ status: post }],
-    notes: [{ id: "0192f0c4-7a8e-7000-8000-0000000e0001", author_account_id: moderator.id, body: "Same as last week.", created_at: "2026-10-16T10:00:00Z" }],
+    notes: [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000e0001",
+        author_account_id: moderator.id,
+        body: "Same as last week.",
+        created_at: "2026-10-16T10:00:00Z",
+      },
+    ],
     target_history: { reports_count: 2, actions_count: 1 },
     ...overrides,
   };
@@ -132,7 +159,12 @@ const appeal: Schemas["AdminAppeal"] = {
   text: `I only posted the link to my own blog: https://birds.example/${"very-long-path-".repeat(6)}end.`,
   state: "pending",
   submitted_at: "2026-10-16T09:00:00Z",
-  action: { ...warning, id: "0192f0c4-7a8e-7000-8000-0000000d0101", kind: "suspend", issued_at: "2026-10-15T09:00:00Z" },
+  action: {
+    ...warning,
+    id: "0192f0c4-7a8e-7000-8000-0000000d0101",
+    kind: "suspend",
+    issued_at: "2026-10-15T09:00:00Z",
+  },
 };
 
 const registration = {
@@ -151,7 +183,8 @@ const domainAction = {
   id: "0192f0c4-7a8e-7000-8000-0000000000a2",
   domain: longDomain,
   kind: "limit",
-  public_comment: "Spam from every account of this server, reported many times by people here, with no answer from its moderators.",
+  public_comment:
+    "Spam from every account of this server, reported many times by people here, with no answer from its moderators.",
   private_note: "See the reports.",
   obfuscate: true,
   state: "active",
@@ -187,8 +220,12 @@ const customEmoji: Schemas["AdminCustomEmoji"] = {
   shortcode: "blobcat_with_a_very_long_name",
   local: true,
   uri: "https://my.example/ap/emojis/0192f0c4-7a8e-7000-8000-0000000000e2",
-  url: servedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg=="),
-  static_url: servedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg=="),
+  url: servedImage(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==",
+  ),
+  static_url: servedImage(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==",
+  ),
   enabled: true,
   visible_in_picker: true,
   category: "Blobs and other round creatures of the fediverse",
@@ -218,9 +255,32 @@ const roles: Schemas["AdminRole"][] = [
     id: "0192f0c4-7a8e-7000-8000-0000000000f7",
     key: "admin",
     position: 1000,
-    permissions: ["manage_reports", "manage_accounts", "manage_domains", "manage_rules", "manage_settings", "manage_roles", "manage_invites", "view_audit", "manage_jobs", "manage_login_recovery", "manage_custom_emojis", "manage_webhooks", "manage_announcements", "manage_finance", "manage_supporters", "view_finance", "create_custom_emojis"],
+    permissions: [
+      "manage_reports",
+      "manage_accounts",
+      "manage_domains",
+      "manage_rules",
+      "manage_settings",
+      "manage_roles",
+      "manage_invites",
+      "view_audit",
+      "manage_jobs",
+      "manage_login_recovery",
+      "manage_custom_emojis",
+      "manage_webhooks",
+      "manage_announcements",
+      "manage_finance",
+      "manage_supporters",
+      "view_finance",
+      "create_custom_emojis",
+    ],
   },
-  { id: "0192f0c4-7a8e-7000-8000-0000000000f8", key: "moderator", position: 100, permissions: ["manage_reports", "manage_accounts", "view_audit"] },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000000f8",
+    key: "moderator",
+    position: 100,
+    permissions: ["manage_reports", "manage_accounts", "view_audit"],
+  },
   {
     id: "0192f0c4-7a8e-7000-8000-0000000000f9",
     key: "weekend-volunteers-of-the-community-help-desk",
@@ -323,7 +383,13 @@ const relay: Schemas["AdminRelay"] = {
   created_at: "2026-10-19T00:00:00Z",
 };
 
-const instance = { domain: longDomain, state: "unavailable", since: "2026-10-10T08:00:00Z", failure_days: 7, last_failure_day: "2026-10-10" };
+const instance = {
+  domain: longDomain,
+  state: "unavailable",
+  since: "2026-10-10T08:00:00Z",
+  failure_days: 7,
+  last_failure_day: "2026-10-10",
+};
 
 /**
  * A rule written in Arabic, which reads right to left, with a long hint in English, as GET /admin/rules lists it: the
@@ -352,17 +418,74 @@ const invite: Schemas["AdminInvite"] = {
 /** The instance settings, as GET /admin/settings lists them: every one at its default. */
 const instanceSettings: Schemas["AdminSettingList"] = {
   items: [
-    { key: "registration_mode", kind: "enum", value: "approval", default: "approval", stored: false, choices: ["open", "approval", "invite", "closed"] },
+    {
+      key: "registration_mode",
+      kind: "enum",
+      value: "approval",
+      default: "approval",
+      stored: false,
+      choices: ["open", "approval", "invite", "closed"],
+    },
     { key: "default_locale", kind: "locale", value: "en", default: "en", stored: false },
-    { key: "local_timeline_access", kind: "enum", value: "everyone", default: "everyone", stored: false, choices: ["off", "logged_in", "everyone"] },
-    { key: "federated_timeline_access", kind: "enum", value: "everyone", default: "everyone", stored: false, choices: ["off", "logged_in", "everyone"] },
-    { key: "remote_media_policy", kind: "enum", value: "none", default: "none", stored: false, choices: ["none", "avatars", "all"] },
-    { key: "remote_media_cache_ttl", kind: "int", value: "86400", default: "86400", stored: false, minimum: 60, maximum: 31536000 },
+    {
+      key: "local_timeline_access",
+      kind: "enum",
+      value: "everyone",
+      default: "everyone",
+      stored: false,
+      choices: ["off", "logged_in", "everyone"],
+    },
+    {
+      key: "federated_timeline_access",
+      kind: "enum",
+      value: "everyone",
+      default: "everyone",
+      stored: false,
+      choices: ["off", "logged_in", "everyone"],
+    },
+    {
+      key: "remote_media_policy",
+      kind: "enum",
+      value: "none",
+      default: "none",
+      stored: false,
+      choices: ["none", "avatars", "all"],
+    },
+    {
+      key: "remote_media_cache_ttl",
+      kind: "int",
+      value: "86400",
+      default: "86400",
+      stored: false,
+      minimum: 60,
+      maximum: 31536000,
+    },
     { key: "authorized_fetch", kind: "bool", value: "false", default: "false", stored: false },
-    { key: "domain_actions_visibility", kind: "enum", value: "none", default: "none", stored: false, choices: ["none", "users", "all"] },
-    { key: "domain_actions_rationale_visibility", kind: "enum", value: "none", default: "none", stored: false, choices: ["none", "users", "all"] },
+    {
+      key: "domain_actions_visibility",
+      kind: "enum",
+      value: "none",
+      default: "none",
+      stored: false,
+      choices: ["none", "users", "all"],
+    },
+    {
+      key: "domain_actions_rationale_visibility",
+      kind: "enum",
+      value: "none",
+      default: "none",
+      stored: false,
+      choices: ["none", "users", "all"],
+    },
     { key: "search_indexing", kind: "enum", value: "deny", default: "deny", stored: false, choices: ["allow", "deny"] },
-    { key: "ai_usage", kind: "enum", value: "deny", default: "deny", stored: false, choices: ["allow", "deny_training", "deny"] },
+    {
+      key: "ai_usage",
+      kind: "enum",
+      value: "deny",
+      default: "deny",
+      stored: false,
+      choices: ["allow", "deny_training", "deny"],
+    },
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
     { key: "link_cards_enabled", kind: "bool", value: "true", default: "true", stored: false },
@@ -373,7 +496,10 @@ const deadJob = {
   id: "0192f0c4-7a8e-7000-8000-0000000000d1",
   type: "federation.deliver",
   state: "dead",
-  payload: JSON.stringify({ delivery_id: "0192f0c4-7a8e-7000-8000-0000000000aa", inbox: `https://${longDomain}/users/someone-with-a-long-name/inbox` }),
+  payload: JSON.stringify({
+    delivery_id: "0192f0c4-7a8e-7000-8000-0000000000aa",
+    inbox: `https://${longDomain}/users/someone-with-a-long-name/inbox`,
+  }),
   idempotency_key: "deliver:0192f0c4-7a8e-7000-8000-0000000000aa",
   attempts: 9,
   last_error: "502 Bad Gateway",
@@ -425,7 +551,12 @@ const errorGroupDetail: Schemas["ErrorGroupDetail"] = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /**
@@ -454,23 +585,53 @@ async function moderatorServer(page: Page) {
     actions,
     reports,
   });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
-    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`) return json(route, moderator);
+    if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`)
+      return json(route, moderator);
     if (key === `GET /accounts/${target.id}`) return json(route, target);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/counts") {
-      return json(route, { open_reports: reports.filter((item) => item.state === "open").length, pending_registrations: 1, pending_appeals: 1 });
+      return json(route, {
+        open_reports: reports.filter((item) => item.state === "open").length,
+        pending_registrations: 1,
+        pending_appeals: 1,
+      });
     }
     if (key === "GET /admin/reports") {
       if (slowLists) await new Promise((resolve) => setTimeout(resolve, slowListMs));
@@ -480,9 +641,23 @@ async function moderatorServer(page: Page) {
     const report = /^GET \/admin\/reports\/([^/]+)$/.exec(key);
     if (report) {
       const found = reports.find((item) => item.id === report[1]);
-      return found === undefined ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404) : json(route, found);
+      return found === undefined
+        ? json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404)
+        : json(route, found);
     }
-    if (key === "GET /admin/accounts") return json(route, { items: [{ id: target.id, account: target, local: true, state: "active", restrictions: [], registration_state: "approved" }] });
+    if (key === "GET /admin/accounts")
+      return json(route, {
+        items: [
+          {
+            id: target.id,
+            account: target,
+            local: true,
+            state: "active",
+            restrictions: [],
+            registration_state: "approved",
+          },
+        ],
+      });
     if (key === `GET /admin/accounts/${target.id}`) return json(route, adminAccount());
     if (key === `GET /admin/accounts/${target.id}/actions`) return json(route, { items: actions });
     if (key === `POST /admin/accounts/${target.id}/actions`) {
@@ -501,7 +676,11 @@ async function moderatorServer(page: Page) {
         ...(body.report_id === undefined ? {} : { report_id: body.report_id }),
       };
       actions = [action, ...actions];
-      reports = reports.map((item) => (item.id === body.report_id ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" } : item));
+      reports = reports.map((item) =>
+        item.id === body.report_id
+          ? { ...item, state: "resolved", outcome: "actioned", state_changed_at: "2026-10-17T00:00:00Z" }
+          : item,
+      );
       slowLists = true;
       return json(route, action);
     }
@@ -517,9 +696,23 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/instances") return json(route, { items: [instance] });
     if (key === `GET /admin/instances/${longDomain}`) return json(route, instance);
     if (key === `GET /admin/instances/${longDomain}/availability_events`) {
-      return json(route, { items: [{ id: "0192f0c4-7a8e-7000-8000-0000000000e1", kind: "marked_unavailable", reason: "failure_days", occurred_at: "2026-10-10T08:00:00Z" }] });
+      return json(route, {
+        items: [
+          {
+            id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+            kind: "marked_unavailable",
+            reason: "failure_days",
+            occurred_at: "2026-10-10T08:00:00Z",
+          },
+        ],
+      });
     }
-    if (key === "GET /admin/queue") return json(route, { adapter: "db", pending_listing: true, counts: [{ state: "dead", type: deadJob.type, count: 1 }] });
+    if (key === "GET /admin/queue")
+      return json(route, {
+        adapter: "db",
+        pending_listing: true,
+        counts: [{ state: "dead", type: deadJob.type, count: 1 }],
+      });
     if (key === "GET /admin/jobs") return json(route, { items: [deadJob] });
     if (key === "GET /admin/error_groups") return json(route, { items: [errorGroup] });
     if (key === `GET /admin/error_groups/${errorGroup.id}`) return json(route, errorGroupDetail);
@@ -528,7 +721,8 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/settings") return json(route, instanceSettings);
     if (key === "GET /admin/rules") return json(route, { items: [rule] });
     if (key === "GET /admin/invites") return json(route, { items: [invite] });
-    if (key === "GET /admin/custom_emojis") return json(route, { items: url.searchParams.get("local") === "false" ? [] : [customEmoji] });
+    if (key === "GET /admin/custom_emojis")
+      return json(route, { items: url.searchParams.get("local") === "false" ? [] : [customEmoji] });
     if (key === "GET /admin/custom_emoji_requests") return json(route, { items: [] });
     if (key === "GET /admin/webhooks") return json(route, { items: [webhook] });
     if (key === "GET /admin/announcements") return json(route, { items: [announcement] });
@@ -543,7 +737,11 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
     if (key === "GET /finance/cost_totals") {
-      return json(route, { ...costTotals, periods: costTotals.periods.map((period) => ({ ...period, items: [] })), viewer: { item_names: false, item_memos: false, income: "totals" } });
+      return json(route, {
+        ...costTotals,
+        periods: costTotals.periods.map((period) => ({ ...period, items: [] })),
+        viewer: { item_names: false, item_memos: false, income: "totals" },
+      });
     }
     if (key === "GET /admin/supporter_program") return json(route, supporterProgram);
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
@@ -552,7 +750,8 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/billing_imports") return json(route, { items: [] });
     if (key === "GET /admin/income_totals") return json(route, incomeTotals);
     if (key === "GET /admin/income_movements") return json(route, { items: [incomeMovement] });
-    if (/^GET \/admin\/accounts\/[^/]+\/roles$/.test(key)) return json(route, { items: key.includes(moderator.id) ? roles.slice(0, 1) : [] });
+    if (/^GET \/admin\/accounts\/[^/]+\/roles$/.test(key))
+      return json(route, { items: key.includes(moderator.id) ? roles.slice(0, 1) : [] });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
   return issued;
@@ -568,7 +767,9 @@ const costItem: Schemas["CostItem"] = {
   provider: "the-registrar-of-a-very-long-domain-name-that-does-not-wrap.example",
   category: "domain",
   memo: "",
-  prices: [{ effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" }],
+  prices: [
+    { effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" },
+  ],
   created_at: "2026-04-10T00:00:00Z",
 };
 
@@ -611,7 +812,11 @@ const incomeTotals: Schemas["AdminIncomeTotals"] = {
     },
   ],
   plans: [{ plan_id: "0192f0c4-7a8e-7000-8000-0000000000c1", name: "Coffee", members: 1 }],
-  rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+  rules: {
+    week_start: "monday",
+    providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+    amortize_after_days: 31,
+  },
 };
 
 /** A yearly payment of a supporter plan, as GET /admin/income_movements lists it. */
@@ -680,7 +885,11 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
 const paymentStatus: Schemas["PaymentStatus"] = { provider: "stripe", mode: "test", time_zone: "UTC", warnings: [] };
 
 /** The terms of service, as GET /admin/instance_texts lists them. */
-const documentText: Schemas["AdminInstanceText"] = { key: "terms", body: "# Accounts\n\nBe kind.", revised_at: "2026-10-12T08:00:00Z" };
+const documentText: Schemas["AdminInstanceText"] = {
+  key: "terms",
+  body: "# Accounts\n\nBe kind.",
+  revised_at: "2026-10-12T08:00:00Z",
+};
 /** The server's name, written in Arabic (a language without a catalog), which reads right to left in every project. */
 const instanceName: Schemas["AdminInstanceText"] = { key: "name", body: "مثال", revised_at: "2026-10-16T00:00:00Z" };
 
@@ -783,18 +992,27 @@ async function tabTo(page: Page, locator: Locator, { backward = false } = {}): P
     if (await hasFocus(locator)) return;
     await page.keyboard.press(backward ? "Shift+Tab" : "Tab");
   }
-  expect(await hasFocus(locator), `not reached with ${String(limit)} presses of ${backward ? "Shift+Tab" : "Tab"}`).toBe(true);
+  expect(
+    await hasFocus(locator),
+    `not reached with ${String(limit)} presses of ${backward ? "Shift+Tab" : "Tab"}`,
+  ).toBe(true);
 }
 
 /** Asserts the new page's h1 has focus (web-client/README.md Y5), axe passes, and the page does not scroll sideways. */
-async function expectPageReached(page: Page, makeAxeBuilder: Parameters<typeof expectNoAxeViolations>[0]): Promise<void> {
+async function expectPageReached(
+  page: Page,
+  makeAxeBuilder: Parameters<typeof expectNoAxeViolations>[0],
+): Promise<void> {
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeFocused();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 }
 
 test.describe("handling a report with the keyboard alone", () => {
-  test("opens a report, reads the target's history, takes an action that resolves it, and returns to the queue", async ({ page, makeAxeBuilder }) => {
+  test("opens a report, reads the target's history, takes an action that resolves it, and returns to the queue", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     // Every step is many presses of Tab, each checked for focus.
     test.setTimeout(120_000);
     const issued = await moderatorServer(page);

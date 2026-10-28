@@ -17,7 +17,7 @@ const PARENTS: Record<string, string> = { "zh-Hant": "", "zh-HK": "zh-Hant", "zh
 /** zh-Hant-TW -> zh-Hant -> en, ja-JP -> ja -> en (ADR-0009 §2). */
 export function fallbackChain(locale: string): string[] {
   const chain: string[] = [];
-  for (let l = locale; l !== ""; ) {
+  for (let l = locale; l !== "";) {
     chain.push(l);
     if (l in PARENTS) {
       l = PARENTS[l];

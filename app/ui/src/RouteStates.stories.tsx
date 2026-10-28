@@ -33,13 +33,18 @@ export const Standalone: Story = {
   render: () => (
     <StandalonePage>
       <PageHeading>Something went wrong</PageHeading>
-      <Text as="p">The server could not be reached. Check your connection and try again; the page loads again by itself when you are back online.</Text>
+      <Text as="p">
+        The server could not be reached. Check your connection and try again; the page loads again by itself when you
+        are back online.
+      </Text>
       <div>
         <Button>Try again</Button>
       </div>
     </StandalonePage>
   ),
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("main")).toContainElement(canvas.getByRole("heading", { level: 1, name: "Something went wrong" }));
+    await expect(canvas.getByRole("main")).toContainElement(
+      canvas.getByRole("heading", { level: 1, name: "Something went wrong" }),
+    );
   },
 };

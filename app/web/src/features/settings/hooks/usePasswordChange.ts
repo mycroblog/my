@@ -70,14 +70,19 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
       await refreshPasswordStatus(api, queryClient);
       setCurrentPassword("");
       setNewPassword("");
-      onStatus(t(confirmation.kind === "password" ? "client:settings.password.changed" : "client:settings.password.set.done"));
+      onStatus(
+        t(confirmation.kind === "password" ? "client:settings.password.changed" : "client:settings.password.set.done"),
+      );
     },
   });
   const failure = change.isError ? confirmationFailure(change.error) : undefined;
   let error: string | undefined;
-  if (failure === "rate-limited") error = t("client:settings.password.rate_limited", { reason: errorMessage(change.error) });
+  if (failure === "rate-limited")
+    error = t("client:settings.password.rate_limited", { reason: errorMessage(change.error) });
   else if (failure !== undefined && failure !== "wrong-password") {
-    error = confirmationErrorMessage(t, failure, change.error, (reason) => t("client:settings.password.failed", { reason }));
+    error = confirmationErrorMessage(t, failure, change.error, (reason) =>
+      t("client:settings.password.failed", { reason }),
+    );
   }
   return {
     hasPassword,
@@ -179,6 +184,8 @@ export function usePasswordRemoval(onStatus: (status: string | undefined) => voi
     error:
       failure === undefined
         ? undefined
-        : confirmationErrorMessage(t, failure, remove.error, (reason) => t("client:settings.password.remove.failed", { reason })),
+        : confirmationErrorMessage(t, failure, remove.error, (reason) =>
+            t("client:settings.password.remove.failed", { reason }),
+          ),
   };
 }

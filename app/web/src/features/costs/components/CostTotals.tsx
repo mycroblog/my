@@ -147,7 +147,12 @@ export function CostTotalsView({ totals, breakdown, items = false }: CostTotalsV
   const current = newestFirst[0];
   return (
     <Stack gap="4">
-      <Table caption={t("client:costs.totals.caption", { granularity: t(granularityLabels[granularity]), basis: t(basisLabels[basis].label) })}>
+      <Table
+        caption={t("client:costs.totals.caption", {
+          granularity: t(granularityLabels[granularity]),
+          basis: t(basisLabels[basis].label),
+        })}
+      >
         <TableHead>
           <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
           <TableColumnHeader>{t("client:costs.totals.total")}</TableColumnHeader>
@@ -167,7 +172,9 @@ export function CostTotalsView({ totals, breakdown, items = false }: CostTotalsV
         </TableBody>
       </Table>
       {breakdown && current !== undefined && <Breakdown name={periodName(granularity, current)} period={current} />}
-      {items && current !== undefined && <ItemLines name={periodName(granularity, current)} lines={current.items ?? []} />}
+      {items && current !== undefined && (
+        <ItemLines name={periodName(granularity, current)} lines={current.items ?? []} />
+      )}
       <PeriodRules totals={totals} />
     </Stack>
   );
@@ -262,10 +269,14 @@ function PeriodRules({ totals }: { totals: ShownTotals }) {
         <li>{t(totals.basis === "amortized" ? "client:costs.rules.amortized" : "client:costs.rules.cash")}</li>
         <li>{t("client:costs.rules.currencies")}</li>
         {totals.rules.sources.map((source) => (
-          <li key={source.source}>{t("client:costs.rules.source", { provider: source.provider, timeZone: source.time_zone })}</li>
+          <li key={source.source}>
+            {t("client:costs.rules.source", { provider: source.provider, timeZone: source.time_zone })}
+          </li>
         ))}
         {/* Without the sources (the public totals only), an estimated period still needs the explanation of its badge. */}
-        {(totals.rules.sources.length > 0 || totals.periods.some((period) => period.estimated)) && <li>{t("client:costs.rules.estimated")}</li>}
+        {(totals.rules.sources.length > 0 || totals.periods.some((period) => period.estimated)) && (
+          <li>{t("client:costs.rules.estimated")}</li>
+        )}
       </Stack>
     </Stack>
   );

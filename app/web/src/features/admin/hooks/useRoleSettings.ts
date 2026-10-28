@@ -59,15 +59,28 @@ export function useRoleSettings(): { rows: RoleRow[]; rights: RoleRights } {
   const viewer = useSuspenseQuery(viewerQueryOptions(api)).data;
   const roles = useSuspenseQuery(rolesQueryOptions(api)).data.items;
   const own = useSuspenseQuery(accountRolesQueryOptions(api, viewer.id)).data.items;
-  const top = own.reduce<AdminRole | undefined>((high, role) => (high === undefined || role.position > high.position ? role : high), undefined);
-  const rights: RoleRights = { top, permissions: viewer.permissions, maxPosition: Math.min(maxRolePosition, top?.position ?? -1) };
+  const top = own.reduce<AdminRole | undefined>(
+    (high, role) => (high === undefined || role.position > high.position ? role : high),
+    undefined,
+  );
+  const rights: RoleRights = {
+    top,
+    permissions: viewer.permissions,
+    maxPosition: Math.min(maxRolePosition, top?.position ?? -1),
+  };
   return {
     rights,
     rows: roles.map((role) => {
       const outrankedBy = top === undefined || role.position > top.position ? top : undefined;
       const builtin = role.key === adminRoleKey || role.key === moderatorRoleKey;
       const allowed = top !== undefined && outrankedBy === undefined;
-      return { role, outrankedBy, canChange: allowed && role.key !== adminRoleKey, canChangeBadge: allowed, canDelete: allowed && !builtin };
+      return {
+        role,
+        outrankedBy,
+        canChange: allowed && role.key !== adminRoleKey,
+        canChangeBadge: allowed,
+        canDelete: allowed && !builtin,
+      };
     }),
   };
 }
@@ -89,7 +102,11 @@ export function draftOfRole(role: AdminRole): RoleDraft {
 }
 
 /** The permissions of a draft with `permission` chosen or not, in the order of the API's `Permission`. */
-export function togglePermission(permissions: readonly Permission[], permission: Permission, selected: boolean): Permission[] {
+export function togglePermission(
+  permissions: readonly Permission[],
+  permission: Permission,
+  selected: boolean,
+): Permission[] {
   return allPermissions.filter((p) => (p === permission ? selected : permissions.includes(p)));
 }
 
@@ -134,7 +151,11 @@ function checkDraft(draft: RoleDraft, rights: RoleRights, t: Translate, isNew: b
     return { field: "key", message: t("client:admin.roles.key.invalid", { max: String(roleKeyLimit) }), missing: [] };
   }
   if (parsePosition(draft.position, rights.maxPosition) === undefined) {
-    return { field: "position", message: t("client:admin.roles.position.invalid", { max: String(rights.maxPosition) }), missing: [] };
+    return {
+      field: "position",
+      message: t("client:admin.roles.position.invalid", { max: String(rights.maxPosition) }),
+      missing: [],
+    };
   }
   return undefined;
 }
@@ -175,7 +196,11 @@ export function useNewRoleForm(rights: RoleRights) {
         mutation.reset();
         return;
       }
-      mutation.mutate({ key: draft.key.trim(), position: Number(draft.position.trim()), permissions: [...draft.permissions] });
+      mutation.mutate({
+        key: draft.key.trim(),
+        position: Number(draft.position.trim()),
+        permissions: [...draft.permissions],
+      });
     },
     isPending: mutation.isPending,
     /** Why the role was refused, next to its field; the draft stays. */
@@ -190,14 +215,20 @@ export type BadgeDraft = { label: string; color: BadgeColor };
 
 /** The draft of a role's badge: its badge, or a neutral one without a name. */
 export function draftOfBadge(role: AdminRole): BadgeDraft {
-  return role.badge === undefined ? { label: "", color: "neutral" } : { label: role.badge.label, color: role.badge.color };
+  return role.badge === undefined
+    ? { label: "", color: "neutral" }
+    : { label: role.badge.label, color: role.badge.color };
 }
 
 /** Checks the name of a badge before it is sent: 1 to 32 characters (code points, as the server counts) once trimmed. */
 function checkBadge(draft: BadgeDraft, t: Translate): RoleFieldError | undefined {
   const length = Array.from(draft.label.trim()).length;
   if (length === 0 || length > badgeLabelLimit) {
-    return { field: "badge", message: t("client:admin.roles.badge.label.invalid", { max: String(badgeLabelLimit) }), missing: [] };
+    return {
+      field: "badge",
+      message: t("client:admin.roles.badge.label.invalid", { max: String(badgeLabelLimit) }),
+      missing: [],
+    };
   }
   return undefined;
 }
@@ -234,7 +265,10 @@ export function useRoleActions(rights: RoleRights, onDeleted: (id: string) => vo
       const checked = checkDraft(draft, rights, t, false);
       if (checked !== undefined) return checked;
       const position = Number(draft.position.trim());
-      const change: RoleChange = { permissions: [...draft.permissions], ...(position === role.position ? {} : { position }) };
+      const change: RoleChange = {
+        permissions: [...draft.permissions],
+        ...(position === role.position ? {} : { position }),
+      };
       try {
         const saved = await update.mutateAsync({ key: role.key, change });
         await refreshRoles(api, queryClient);
@@ -247,7 +281,8 @@ export function useRoleActions(rights: RoleRights, onDeleted: (id: string) => vo
     updateBadge: async (role, draft) => {
       const checked = draft === null ? undefined : checkBadge(draft, t);
       if (checked !== undefined) return checked;
-      const change: RoleChange = draft === null ? { remove_badge: true } : { badge: { label: draft.label.trim(), color: draft.color } };
+      const change: RoleChange =
+        draft === null ? { remove_badge: true } : { badge: { label: draft.label.trim(), color: draft.color } };
       try {
         const saved = await update.mutateAsync({ key: role.key, change });
         await refreshRoles(api, queryClient);

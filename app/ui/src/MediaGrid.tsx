@@ -27,11 +27,14 @@ const mediaGrid = tv({
     // The play disc and the length over a video's poster only show what the native controls do; pointer events pass through to them.
     disc: "pointer-events-none absolute inset-0 m-auto grid size-14 place-items-center rounded-full bg-accent-fill text-accent-fill-fg [&>svg]:size-6",
     // At the top, clear of the native controls along the bottom edge.
-    length: "pointer-events-none absolute inset-e-2 top-2 rounded-md bg-media-chip px-2 py-0.5 text-xs font-bold text-toast-fg tabular-nums",
+    length:
+      "pointer-events-none absolute inset-e-2 top-2 rounded-md bg-media-chip px-2 py-0.5 text-xs font-bold text-toast-fg tabular-nums",
     blur: "absolute inset-0",
     // Marks a picture that has a description; decorative, and clear of pointer events so the cell's button still gets them.
-    badge: "pointer-events-none absolute inset-e-1.5 bottom-1.5 grid size-6 place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm [&>svg]:size-4",
-    toggle: "absolute cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
+    badge:
+      "pointer-events-none absolute inset-e-1.5 bottom-1.5 grid size-6 place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm [&>svg]:size-4",
+    toggle:
+      "absolute cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
   },
   variants: {
     count: {
@@ -43,9 +46,14 @@ const mediaGrid = tv({
     },
     revealed: {
       // Concealed: one button over the middle of the grid, so it is the obvious thing to press.
-      false: { toggle: "inset-0 m-auto size-fit min-h-10 max-w-[calc(100%-1rem)] px-4 py-2 text-sm shadow-md pointer-coarse:min-h-11" },
+      false: {
+        toggle:
+          "inset-0 m-auto size-fit min-h-10 max-w-[calc(100%-1rem)] px-4 py-2 text-sm shadow-md pointer-coarse:min-h-11",
+      },
       // Shown: a small icon button in the corner that conceals the media again.
-      true: { toggle: "inset-s-1.5 top-1.5 grid size-8 place-items-center shadow-sm pointer-coarse:size-11 [&>svg]:size-5" },
+      true: {
+        toggle: "inset-s-1.5 top-1.5 grid size-8 place-items-center shadow-sm pointer-coarse:size-11 [&>svg]:size-5",
+      },
     },
   },
 });
@@ -150,7 +158,14 @@ function usePrefersReducedMotion(): boolean {
  * `<video>` with its poster, or the poster with an `<audio>` over its bottom edge. The player is named by the
  * description, or by `noDescriptionLabel` when there is none.
  */
-function PlaybackCell({ item, playback, revealed, count, noDescriptionLabel, audioLabels }: MediaCellProps & { playback: MediaPlayback }) {
+function PlaybackCell({
+  item,
+  playback,
+  revealed,
+  count,
+  noDescriptionLabel,
+  audioLabels,
+}: MediaCellProps & { playback: MediaPlayback }) {
   const [loaded, setLoaded] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [length, setLength] = useState(0);
@@ -164,7 +179,9 @@ function PlaybackCell({ item, playback, revealed, count, noDescriptionLabel, aud
   const showsPoster = playback.kind === "audio" && item.src !== undefined;
   return (
     <div className={slots.cell()}>
-      {item.blurhash !== undefined && !(revealed && (loaded || playback.kind === "audio")) && <Blurhash hash={item.blurhash} className={slots.blur()} />}
+      {item.blurhash !== undefined && !(revealed && (loaded || playback.kind === "audio")) && (
+        <Blurhash hash={item.blurhash} className={slots.blur()} />
+      )}
       {revealed && (
         <>
           {playback.kind === "audio" ? (
@@ -180,46 +197,52 @@ function PlaybackCell({ item, playback, revealed, count, noDescriptionLabel, aud
                   className={slots.image()}
                 />
               )}
-              <AudioPlayer src={playback.url} name={name} lang={item.alt === null ? undefined : item.lang} labels={audioLabels} className={slots.audio()} />
+              <AudioPlayer
+                src={playback.url}
+                name={name}
+                lang={item.alt === null ? undefined : item.lang}
+                labels={audioLabels}
+                className={slots.audio()}
+              />
             </>
           ) : (
             <>
-            <video
-              // A new source or a change of autoplay starts the element again.
-              key={playsByItself ? "loop" : "still"}
-              src={playback.url}
-              poster={item.src}
-              controls={!playsByItself}
-              autoPlay={playsByItself}
-              muted={loops}
-              loop={loops}
-              playsInline
-              preload={playsByItself ? "auto" : "metadata"}
-              aria-label={name}
-              onLoadedData={() => {
-                setLoaded(true);
-              }}
-              onLoadedMetadata={(event) => {
-                setLength(event.currentTarget.duration);
-              }}
-              onPlay={() => {
-                setPlaying(true);
-              }}
-              onPause={() => {
-                setPlaying(false);
-              }}
-              className={slots.video()}
-            />
-            {!playing && !playsByItself && (
-              <span aria-hidden="true" className={slots.disc()}>
-                <PlayIcon />
-              </span>
-            )}
-            {!playing && !loops && Number.isFinite(length) && length > 0 && (
-              <span aria-hidden="true" className={slots.length()}>
-                {formatClock(locale, length)}
-              </span>
-            )}
+              <video
+                // A new source or a change of autoplay starts the element again.
+                key={playsByItself ? "loop" : "still"}
+                src={playback.url}
+                poster={item.src}
+                controls={!playsByItself}
+                autoPlay={playsByItself}
+                muted={loops}
+                loop={loops}
+                playsInline
+                preload={playsByItself ? "auto" : "metadata"}
+                aria-label={name}
+                onLoadedData={() => {
+                  setLoaded(true);
+                }}
+                onLoadedMetadata={(event) => {
+                  setLength(event.currentTarget.duration);
+                }}
+                onPlay={() => {
+                  setPlaying(true);
+                }}
+                onPause={() => {
+                  setPlaying(false);
+                }}
+                className={slots.video()}
+              />
+              {!playing && !playsByItself && (
+                <span aria-hidden="true" className={slots.disc()}>
+                  <PlayIcon />
+                </span>
+              )}
+              {!playing && !loops && Number.isFinite(length) && length > 0 && (
+                <span aria-hidden="true" className={slots.length()}>
+                  {formatClock(locale, length)}
+                </span>
+              )}
             </>
           )}
           {item.alt !== null && (
@@ -259,7 +282,9 @@ function MediaCell({ item, revealed, count, noDescriptionLabel, onOpen }: MediaC
   );
   return (
     <div className={slots.cell()}>
-      {item.blurhash !== undefined && !(revealed && loaded) && <Blurhash hash={item.blurhash} className={slots.blur()} />}
+      {item.blurhash !== undefined && !(revealed && loaded) && (
+        <Blurhash hash={item.blurhash} className={slots.blur()} />
+      )}
       {revealed && (
         <>
           {onOpen === undefined ? (
@@ -311,7 +336,14 @@ export function MediaGrid({
   const count = Math.min(4, Math.max(1, shown.length)) as 1 | 2 | 3 | 4;
   const slots = mediaGrid({ count, revealed });
   // The viewer steps through the shown pictures that have an original.
-  const viewable = viewerLabels === undefined ? [] : shown.flatMap((item) => (item.original === undefined || item.playback !== undefined ? [] : [{ ...item.original, id: item.id, alt: item.alt, lang: item.lang }]));
+  const viewable =
+    viewerLabels === undefined
+      ? []
+      : shown.flatMap((item) =>
+          item.original === undefined || item.playback !== undefined
+            ? []
+            : [{ ...item.original, id: item.id, alt: item.alt, lang: item.lang }],
+        );
   const openerOf = (index: number) =>
     index < 0
       ? undefined
@@ -333,7 +365,15 @@ export function MediaGrid({
             onOpen={openerOf(viewable.findIndex((viewed) => viewed.id === item.id))}
           />
         ) : (
-          <PlaybackCell key={item.id} item={item} playback={item.playback} revealed={revealed} count={count} noDescriptionLabel={noDescriptionLabel} audioLabels={audioLabels} />
+          <PlaybackCell
+            key={item.id}
+            item={item}
+            playback={item.playback}
+            revealed={revealed}
+            count={count}
+            noDescriptionLabel={noDescriptionLabel}
+            audioLabels={audioLabels}
+          />
         ),
       )}
       {sensitive && (

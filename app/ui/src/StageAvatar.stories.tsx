@@ -27,7 +27,13 @@ export const Speakers: Story = {
   render: () => (
     <StageGrid aria-label="Speakers">
       <StageAvatar name="Haruka" seed="1" caption="Host" speaking labels={labels} />
-      <StageAvatar name="Sota" seed="2" caption="Co-host" reaction={{ content: "❤️", label: "Reacted with ❤️" }} labels={labels} />
+      <StageAvatar
+        name="Sota"
+        seed="2"
+        caption="Co-host"
+        reaction={{ content: "❤️", label: "Reacted with ❤️" }}
+        labels={labels}
+      />
       <StageAvatar name="Mio" seed="3" caption="Speaker" muted labels={labels} />
       <StageAvatar name="Kenji" seed="4" caption="Speaker" muted labels={labels} />
     </StageGrid>
@@ -50,7 +56,14 @@ export const Listeners: Story = {
       <StageAvatar size="listener" name="Yui" seed="5" labels={labels} />
       <StageAvatar size="listener" name="Riku" seed="6" handRaised labels={labels} />
       <StageAvatar size="listener" name="Aoi" seed="7" labels={labels} />
-      <StageAvatar size="listener" name="Hinata" seed="8" handRaised reaction={{ content: "👏", label: "Reacted with 👏" }} labels={labels} />
+      <StageAvatar
+        size="listener"
+        name="Hinata"
+        seed="8"
+        handRaised
+        reaction={{ content: "👏", label: "Reacted with 👏" }}
+        labels={labels}
+      />
       <StageAvatar size="listener" name="Koharu" seed="9" labels={labels} />
       <StageAvatar size="listener" name="Takumi" seed="10" labels={labels} />
     </StageGrid>
@@ -99,5 +112,9 @@ export const WithMenu: Story = {
 
 /** A long name and a long role are cut short within the column. */
 export const LongName: Story = {
-  args: { name: "Haruka with a display name long enough to be cut short", caption: "Co-host of the room for tonight", speaking: true },
+  args: {
+    name: "Haruka with a display name long enough to be cut short",
+    caption: "Co-host of the room for tonight",
+    speaking: true,
+  },
 };

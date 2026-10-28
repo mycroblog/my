@@ -39,7 +39,13 @@ export const Disabled: Story = { args: { defaultValue: "en", isDisabled: true } 
  * `aria-label` names it), the icon and the chosen option.
  */
 export const Toolbar: Story = {
-  args: { label: undefined, "aria-label": "Post language", variant: "toolbar", icon: <LanguageIcon />, defaultValue: "ja" },
+  args: {
+    label: undefined,
+    "aria-label": "Post language",
+    variant: "toolbar",
+    icon: <LanguageIcon />,
+    defaultValue: "ja",
+  },
   render: (args) => (
     <div className="flex flex-wrap items-center gap-1">
       <Button variant="ghost" size="toolbar" aria-label="Add images">
@@ -56,7 +62,14 @@ export const Toolbar: Story = {
  * not change.
  */
 export const ToolbarTooltip: Story = {
-  args: { label: undefined, "aria-label": "Post language", variant: "toolbar", icon: <LanguageIcon />, defaultValue: "ja", tooltip: "Post language: Japanese" },
+  args: {
+    label: undefined,
+    "aria-label": "Post language",
+    variant: "toolbar",
+    icon: <LanguageIcon />,
+    defaultValue: "ja",
+    tooltip: "Post language: Japanese",
+  },
   render: (args) => (
     <div className="flex flex-wrap items-center gap-1">
       <Button variant="ghost" size="toolbar" aria-label="Add images">

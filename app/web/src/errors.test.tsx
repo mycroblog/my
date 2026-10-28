@@ -47,7 +47,8 @@ function routerWithBrokenPage(failures: number) {
     component: SettingsPage,
   });
   const routeTree = rootRoute.addChildren([indexRoute, brokenRoute]);
-  return ({ history, ...context }: RouterContext & { history: RouterHistory }) => createRouter({ ...routerOptions, routeTree, context, history });
+  return ({ history, ...context }: RouterContext & { history: RouterHistory }) =>
+    createRouter({ ...routerOptions, routeTree, context, history });
 }
 
 test("a page that fails shows the error inside the layout under the page's heading, focused and titled, and recovers on retry", async () => {
@@ -126,23 +127,26 @@ describe("a page whose API fails", () => {
       reason: "You may not read this timeline",
       retry: false,
     },
-  ])("for $kind keeps the page's heading and title, focused, and says what happened and why", async ({ respond, heading, reason, retry }) => {
-    await openHome(respond);
+  ])(
+    "for $kind keeps the page's heading and title, focused, and says what happened and why",
+    async ({ respond, heading, reason, retry }) => {
+      await openHome(respond);
 
-    const pageHeading = await screen.findByRole("heading", { level: 1, name: "Home" });
-    await waitFor(() => {
-      expect(pageHeading).toHaveFocus();
-    });
-    expect(document.title).toBe("Home – my example");
-    const errorHeading = await screen.findByRole("heading", { level: 2, name: heading });
-    const main = screen.getByRole("main");
-    expect(within(main).getByText(reason)).toBeInTheDocument();
-    // A failure the page opened with is read, not announced (G16).
-    expect(within(main).queryByRole("alert")).not.toBeInTheDocument();
-    expect(within(main).queryByRole("button", { name: "Try again" }) !== null).toBe(retry);
-    expect(screen.queryByRole("heading", { name: "Something went wrong" })).not.toBeInTheDocument();
-    expect(errorHeading).toBeVisible();
-  });
+      const pageHeading = await screen.findByRole("heading", { level: 1, name: "Home" });
+      await waitFor(() => {
+        expect(pageHeading).toHaveFocus();
+      });
+      expect(document.title).toBe("Home – my example");
+      const errorHeading = await screen.findByRole("heading", { level: 2, name: heading });
+      const main = screen.getByRole("main");
+      expect(within(main).getByText(reason)).toBeInTheDocument();
+      // A failure the page opened with is read, not announced (G16).
+      expect(within(main).queryByRole("alert")).not.toBeInTheDocument();
+      expect(within(main).queryByRole("button", { name: "Try again" }) !== null).toBe(retry);
+      expect(screen.queryByRole("heading", { name: "Something went wrong" })).not.toBeInTheDocument();
+      expect(errorHeading).toBeVisible();
+    },
+  );
 
   test("says in Japanese that it could not connect to the server", async () => {
     // The signed-in user's display language is Japanese too.
@@ -150,8 +154,12 @@ describe("a page whose API fails", () => {
     await openHome(() => HttpResponse.error(), "ja");
 
     expect(await screen.findByRole("heading", { level: 1, name: "ホーム" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { level: 2, name: "サーバーに接続できませんでした" })).toBeInTheDocument();
-    expect(screen.getByText("サーバーに接続できませんでした。接続を確かめて、もう一度試してください。")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "サーバーに接続できませんでした" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("サーバーに接続できませんでした。接続を確かめて、もう一度試してください。"),
+    ).toBeInTheDocument();
     expect(document.title).toBe("ホーム – my example");
   });
 
@@ -170,8 +178,12 @@ describe("a page whose API fails", () => {
 
     // The result of the user's action: an alert in place of the error, with the button still focused.
     const alert = await within(screen.getByRole("main")).findByRole("alert");
-    expect(within(alert).getByRole("heading", { level: 2, name: "Could not connect to the server" })).toBeInTheDocument();
-    expect(within(alert).getByText("Could not reach the server. Check your connection and try again.")).toBeInTheDocument();
+    expect(
+      within(alert).getByRole("heading", { level: 2, name: "Could not connect to the server" }),
+    ).toBeInTheDocument();
+    expect(
+      within(alert).getByText("Could not reach the server. Check your connection and try again."),
+    ).toBeInTheDocument();
     expect(retry).toHaveFocus();
 
     await user.click(retry);
@@ -202,7 +214,11 @@ test("reports a page that fails as a route_error with the pattern of its route (
   // The app's router, with a reporter that takes the test's stacks, which name files rather than URLs, for the app's own.
   await renderApp({
     path: "/local",
-    createRouter: (options) => createAppRouter({ ...options, errors: new ErrorReporter({ api: options.api, apiOrigin: window.location.origin, isOwnStack: () => true }) }),
+    createRouter: (options) =>
+      createAppRouter({
+        ...options,
+        errors: new ErrorReporter({ api: options.api, apiOrigin: window.location.origin, isOwnStack: () => true }),
+      }),
   });
 
   await waitFor(() => {

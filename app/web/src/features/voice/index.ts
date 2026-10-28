@@ -5,7 +5,12 @@
 // shows while the server has voice chat off. The call of a room goes on across pages: VoiceCallProvider (in the app's
 // providers) holds it, and VoiceCallBar (at the end of every page) shows it. Routes and other features use it
 // through this file only (web-client/README.md A3).
-export { voiceHistoryQueryOptions, voiceRoomQueryOptions, voiceRoomSummaryQueryOptions, voiceRoomsQueryOptions } from "./api/voice";
+export {
+  voiceHistoryQueryOptions,
+  voiceRoomQueryOptions,
+  voiceRoomSummaryQueryOptions,
+  voiceRoomsQueryOptions,
+} from "./api/voice";
 export { ProfileVoiceRoom } from "./components/ProfileVoiceRoom";
 export { VoiceCallBar } from "./components/VoiceCallBar";
 export { VoiceCallProvider } from "./components/VoiceCallProvider";

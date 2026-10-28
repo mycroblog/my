@@ -45,8 +45,13 @@ function stackItem(account: VoiceAccount): AvatarStackItem {
  * order they joined.
  */
 function speakerStack(room: VoiceRoom): AvatarStackItem[] {
-  const others = room.participants.filter((participant) => participant.role === "speaker" && participant.account.id !== room.host.id);
-  const ordered = [...others.filter((participant) => participant.cohost), ...others.filter((participant) => !participant.cohost)];
+  const others = room.participants.filter(
+    (participant) => participant.role === "speaker" && participant.account.id !== room.host.id,
+  );
+  const ordered = [
+    ...others.filter((participant) => participant.cohost),
+    ...others.filter((participant) => !participant.cohost),
+  ];
   return [stackItem(room.host), ...ordered.map((participant) => stackItem(participant.account))];
 }
 
@@ -61,7 +66,10 @@ function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemPr
       headingLevel={headingLevel}
       surface={surface}
       liveLabel={t("client:voice.room.live")}
-      stats={t("client:voice.room.stats", { people: t("client:voice.room.participants_count", { count: room.participants_count }), duration: openFor })}
+      stats={t("client:voice.room.stats", {
+        people: t("client:voice.room.participants_count", { count: room.participants_count }),
+        duration: openFor,
+      })}
       speakers={speakerStack(room)}
       host={
         <Link href={profilePath(room.host.acct)} variant="standalone">
@@ -120,13 +128,23 @@ function Rooms() {
       );
     case "error":
       return (
-        <RegionError heading={t("client:voice.list.failed")} reason={list.reason} retryLabel={t("client:voice.list.retry")} onRetry={list.retry} isRetrying={list.isRetrying} />
+        <RegionError
+          heading={t("client:voice.list.failed")}
+          reason={list.reason}
+          retryLabel={t("client:voice.list.retry")}
+          onRetry={list.retry}
+          isRetrying={list.isRetrying}
+        />
       );
     case "ready":
       return (
         <>
           {list.rooms.length === 0 ? (
-            <EmptyState illustration={<VoiceIcon />} heading={t("client:voice.list.empty")} description={t("client:voice.list.empty.description")} />
+            <EmptyState
+              illustration={<VoiceIcon />}
+              heading={t("client:voice.list.empty")}
+              description={t("client:voice.list.empty.description")}
+            />
           ) : (
             <Stack as="ul" gap="3" aria-label={t("client:voice.list.label")}>
               {list.rooms.map((room) => (
@@ -134,7 +152,9 @@ function Rooms() {
               ))}
             </Stack>
           )}
-          {list.moreError !== undefined && <RegionError heading={t("client:voice.list.more_failed")} reason={list.moreError} />}
+          {list.moreError !== undefined && (
+            <RegionError heading={t("client:voice.list.more_failed")} reason={list.moreError} />
+          )}
           {list.hasMore && (
             <div>
               <Button onPress={list.loadMore} isPending={list.isLoadingMore}>

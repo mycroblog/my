@@ -39,7 +39,9 @@ export function eventStreamResponse(): { response: Response; stream: TestEventSt
       controller?.close();
     },
   };
-  const response = new HttpResponse(body, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" } });
+  const response = new HttpResponse(body, {
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" },
+  });
   return { response, stream };
 }
 

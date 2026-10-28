@@ -62,10 +62,20 @@ export function useProfile(acct: string): ProfileView {
     note: account.note === "" ? null : serverSanitizedHtml(account.note),
     badges: account.badges.map((b) => ({ id: b.role_id, label: b.label, color: b.color })),
     // A profile's fields have no IDs; their order is their identity, and the list only changes as a whole.
-    fields: account.fields.map((field, index) => ({ key: `${String(index)}:${field.name}`, name: field.name, value: serverSanitizedHtml(field.value) })),
+    fields: account.fields.map((field, index) => ({
+      key: `${String(index)}:${field.name}`,
+      name: field.name,
+      value: serverSanitizedHtml(field.value),
+    })),
     onLinkClick,
-    following: account.following_count === undefined ? null : { count: account.following_count, href: followListPath(account.acct, "following") },
-    followers: account.followers_count === undefined ? null : { count: account.followers_count, href: followListPath(account.acct, "followers") },
+    following:
+      account.following_count === undefined
+        ? null
+        : { count: account.following_count, href: followListPath(account.acct, "following") },
+    followers:
+      account.followers_count === undefined
+        ? null
+        : { count: account.followers_count, href: followListPath(account.acct, "followers") },
     joined: { dateTime: account.created_at, date: intl.formatDate(account.created_at, { dateStyle: "long" }) },
     // A remote account's `url` is the page its actor declares, or its actor's ID (api/openapi.yaml, Account.url).
     original: isRemoteAcct(account.acct) ? { href: account.url, host: hostOf(account.url, account.domain) } : null,

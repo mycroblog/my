@@ -42,10 +42,19 @@ export function publicTotalsFixture(url: URL): Schemas["CostTotals"] {
  * fixture's periods, with the lines of the last one's items (two, one with a memo) when names or memos are shown, and
  * only the fields the settings show.
  */
-export function financeTotalsFixture(url: URL, viewer: Schemas["FinanceViewerSettings"] = { item_names: false, item_memos: false, income: "totals" }): Schemas["FinanceCostTotals"] {
+export function financeTotalsFixture(
+  url: URL,
+  viewer: Schemas["FinanceViewerSettings"] = { item_names: false, item_memos: false, income: "totals" },
+): Schemas["FinanceCostTotals"] {
   const totals = publicTotalsFixture(url);
   const lines: Schemas["FinanceCostItemLine"][] = [
-    { provider: "Cloud", category: "compute", amount: { amount: "12.34", currency: "USD" }, name: "Main VM", memo: "the main server" },
+    {
+      provider: "Cloud",
+      category: "compute",
+      amount: { amount: "12.34", currency: "USD" },
+      name: "Main VM",
+      memo: "the main server",
+    },
     { provider: "Registrar", category: "domain", amount: { amount: "1650", currency: "JPY" }, name: "example.com" },
   ];
   const shown = viewer.item_names || viewer.item_memos;
@@ -71,7 +80,10 @@ export function financeTotalsFixture(url: URL, viewer: Schemas["FinanceViewerSet
  * the last one, with its balance against the costs of publicTotalsFixture (3,150 yen and −12.34 USD) and the members of
  * a plan only where `shown` says so; nothing in the others.
  */
-export function incomeTotalsFixture(url: URL, shown: { balance: boolean; plans: boolean } = { balance: true, plans: false }): Schemas["IncomeTotals"] {
+export function incomeTotalsFixture(
+  url: URL,
+  shown: { balance: boolean; plans: boolean } = { balance: true, plans: false },
+): Schemas["IncomeTotals"] {
   const granularity = (url.searchParams.get("granularity") ?? "month") as Schemas["CostGranularity"];
   const basis = (url.searchParams.get("basis") ?? "amortized") as Schemas["CostBasis"];
   const to = url.searchParams.get("to") ?? "2026-10-22";
@@ -95,15 +107,27 @@ export function incomeTotalsFixture(url: URL, shown: { balance: boolean; plans: 
           : {}),
       },
     ],
-    ...(shown.plans ? { plans: [{ plan_id: "0199f0e0-0000-7000-8000-00000000aa01", name: "Coffee", members: 3 }] } : {}),
-    rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+    ...(shown.plans
+      ? { plans: [{ plan_id: "0199f0e0-0000-7000-8000-00000000aa01", name: "Coffee", members: 3 }] }
+      : {}),
+    rules: {
+      week_start: "monday",
+      providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+      amortize_after_days: 31,
+    },
   };
 }
 
 export const handlers = [
-  http.get(`${apiBase}/instance/cost_totals`, ({ request }) => HttpResponse.json(publicTotalsFixture(new URL(request.url)))),
-  http.get(`${apiBase}/finance/cost_totals`, ({ request }) => HttpResponse.json(financeTotalsFixture(new URL(request.url)))),
+  http.get(`${apiBase}/instance/cost_totals`, ({ request }) =>
+    HttpResponse.json(publicTotalsFixture(new URL(request.url))),
+  ),
+  http.get(`${apiBase}/finance/cost_totals`, ({ request }) =>
+    HttpResponse.json(financeTotalsFixture(new URL(request.url))),
+  ),
   // The instance fixture publishes no income (income_visibility: private).
   http.get(`${apiBase}/instance/income_totals`, () => problem(404, "about:blank", "Not Found")),
-  http.get(`${apiBase}/finance/income_totals`, ({ request }) => HttpResponse.json(incomeTotalsFixture(new URL(request.url)))),
+  http.get(`${apiBase}/finance/income_totals`, ({ request }) =>
+    HttpResponse.json(incomeTotalsFixture(new URL(request.url))),
+  ),
 ];

@@ -32,13 +32,20 @@ export const Route = createFileRoute("/settings/supporter")({
   validateSearch: searchSchema,
   loaderDeps: ({ search }): { returned: SupporterReturn } => ({
     returned:
-      search.checkout === "success" ? "checkout-success" : search.checkout === "canceled" ? "checkout-canceled" : search.portal === "returned" ? "portal" : undefined,
+      search.checkout === "success"
+        ? "checkout-success"
+        : search.checkout === "canceled"
+          ? "checkout-canceled"
+          : search.portal === "returned"
+            ? "portal"
+            : undefined,
   }),
   beforeLoad: requireSignIn,
   loader: async ({ context: { queryClient, api }, deps: { returned } }) => {
     if (isTauriApp()) return;
     // A failure does not fail the page: the page shows it, or the disabled program (404), in its body.
-    if (returned === "checkout-success" || returned === "portal") await syncOwnSubscription(api, queryClient).catch(() => undefined);
+    if (returned === "checkout-success" || returned === "portal")
+      await syncOwnSubscription(api, queryClient).catch(() => undefined);
     await Promise.all([
       queryClient.query({ ...supporterPlansQueryOptions(api), staleTime: Infinity }).catch(() => undefined),
       queryClient.query({ ...ownSupporterSubscriptionQueryOptions(api), staleTime: Infinity }).catch(() => undefined),

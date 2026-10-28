@@ -8,7 +8,13 @@
 // Texts come from the project's catalog, so the spec finds the same elements in every locale.
 import type { BrowserContext, Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, openFromNavigation as openFromNavigationItem, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  openFromNavigation as openFromNavigationItem,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Instance = components["schemas"]["Instance"];
@@ -99,7 +105,11 @@ async function serveApi(page: Page): Promise<void> {
   const json = (route: Route, body: unknown, status = 200) =>
     offline
       ? route.abort("internetdisconnected")
-      : route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
+      : route.fulfill({
+          status,
+          contentType: status < 400 ? "application/json" : "application/problem+json",
+          body: JSON.stringify(body),
+        });
   let publicRequests = 0;
   await page.route("**/api/v1/instance", (route) => json(route, instance));
   await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [post] } satisfies StatusPage));
@@ -156,7 +166,11 @@ test("shows the offline bar while offline and announces it", async ({ page, cont
   await expect(region).toBeEmpty();
 });
 
-test("the offline bar links to the server's status page read while online (FR-810)", async ({ page, context, makeAxeBuilder }) => {
+test("the offline bar links to the server's status page read while online (FR-810)", async ({
+  page,
+  context,
+  makeAxeBuilder,
+}) => {
   const link = page.locator(`a[href="${statusPageUrl}"]`);
   await expect(link).toHaveCount(0);
 
@@ -192,22 +206,41 @@ test("a page opened offline says why it cannot load, and loads back online", asy
   await expect(page.getByRole("feed").getByRole("article")).toHaveCount(1);
 });
 
-test("the home timeline says that it shows the posts loaded last while offline (FR-604)", async ({ page, context, makeAxeBuilder }) => {
+test("the home timeline says that it shows the posts loaded last while offline (FR-604)", async ({
+  page,
+  context,
+  makeAxeBuilder,
+}) => {
   // A signed-in session. Registered after serveApi's routes, so Playwright asks this one first; it leaves the
   // instance and the public timelines to them.
   const json = (route: Route, body: unknown, status = 200) =>
     offline
       ? route.abort("internetdisconnected")
-      : route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
+      : route.fulfill({
+          status,
+          contentType: status < 400 ? "application/json" : "application/problem+json",
+          body: JSON.stringify(body),
+        });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }),
+  );
   await page.route("**/api/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname.replace(/^\/api\/v1/, "");
-    if (path === "/instance" || path.startsWith("/timelines/local") || path.startsWith("/timelines/public")) return route.fallback();
+    if (path === "/instance" || path.startsWith("/timelines/local") || path.startsWith("/timelines/public"))
+      return route.fallback();
     if (path.startsWith("/timelines/home")) return json(route, { items: [post] } satisfies StatusPage);
-    if (path === "/accounts/verify_credentials") return json(route, { ...bob, source: { note: "", fields: [] }, permissions: [] });
+    if (path === "/accounts/verify_credentials")
+      return json(route, { ...bob, source: { note: "", fields: [] }, permissions: [] });
     if (path === "/preferences") {
       const locale = test.info().project.use.locale ?? "en";
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -215,7 +248,9 @@ test("the home timeline says that it shows the posts loaded last while offline (
   const feed = page.getByRole("feed");
   await expect(feed.getByRole("article")).toHaveCount(1);
   // The notice's text before the time it was loaded, in the project's locale.
-  const notice = page.getByRole("main").getByText(message("timeline.offline.home").split("{time}")[0]?.trim() ?? "", { exact: false });
+  const notice = page
+    .getByRole("main")
+    .getByText(message("timeline.offline.home").split("{time}")[0]?.trim() ?? "", { exact: false });
   await expect(notice).toHaveCount(0);
 
   await setOffline(context, true);

@@ -36,7 +36,9 @@ function Timelines(props: Omit<TabsProps, "children">) {
 
 /** The keys that move to the next and the previous tab in the page's reading direction. */
 function arrowKeys() {
-  return document.documentElement.dir === "rtl" ? { next: "{ArrowLeft}", previous: "{ArrowRight}" } : { next: "{ArrowRight}", previous: "{ArrowLeft}" };
+  return document.documentElement.dir === "rtl"
+    ? { next: "{ArrowLeft}", previous: "{ArrowRight}" }
+    : { next: "{ArrowRight}", previous: "{ArrowLeft}" };
 }
 
 const meta = {
@@ -174,8 +176,12 @@ export const Overflow: StoryObj<typeof NarrowTabs> = {
       await expect(tab).toHaveFocus();
       await expect(tab).toHaveAttribute("aria-selected", "true");
       // The next tab lies on the side of the key that was pressed.
-      if (rtl) await expect(tab.getBoundingClientRect().right).toBeLessThanOrEqual(previous.getBoundingClientRect().left + 1);
-      else await expect(tab.getBoundingClientRect().left).toBeGreaterThanOrEqual(previous.getBoundingClientRect().right - 1);
+      if (rtl)
+        await expect(tab.getBoundingClientRect().right).toBeLessThanOrEqual(previous.getBoundingClientRect().left + 1);
+      else
+        await expect(tab.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+          previous.getBoundingClientRect().right - 1,
+        );
       await expect(isClearOfFades(list, tab)).toBe(true);
       previous = tab;
     }

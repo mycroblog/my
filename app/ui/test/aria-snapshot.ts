@@ -52,14 +52,20 @@ function describe(element: Element, role: string): string {
     return attribute === "aria-busy" ? [`[${label}]`] : [`[${label}=${value}]`];
   });
   if (role === "heading") {
-    const level = element.getAttribute("aria-level") ?? (/^h[1-6]$/.test(element.localName) ? element.localName.slice(1) : "2");
+    const level =
+      element.getAttribute("aria-level") ?? (/^h[1-6]$/.test(element.localName) ? element.localName.slice(1) : "2");
     attributes.unshift(`[level=${level}]`);
   }
   const lang = element.getAttribute("lang");
   if (lang !== null) attributes.push(`[lang=${lang}]`);
   const dir = element.getAttribute("dir");
   if (dir !== null) attributes.push(`[dir=${dir}]`);
-  return [role, name === "" ? undefined : quote(name), description === "" ? undefined : `(${quote(description)})`, ...attributes]
+  return [
+    role,
+    name === "" ? undefined : quote(name),
+    description === "" ? undefined : `(${quote(description)})`,
+    ...attributes,
+  ]
     .filter((part) => part !== undefined)
     .join(" ");
 }
@@ -83,7 +89,9 @@ function walk(node: Node, depth: number, lines: string[], parentNamed: boolean):
     const before = lines.length;
     lines.push(`${indent}- ${describe(child, role ?? "generic")}`);
     // Children of a named control are its name already (a button, a link, an image).
-    const named = computeAccessibleName(child) !== "" && ["button", "link", "img", "heading", "checkbox", "switch", "radio", "tab", "menuitem"].includes(role ?? "");
+    const named =
+      computeAccessibleName(child) !== "" &&
+      ["button", "link", "img", "heading", "checkbox", "switch", "radio", "tab", "menuitem"].includes(role ?? "");
     walk(child, depth + 1, lines, named);
     if (lines.length > before + 1) lines[before] = `${lines[before] ?? ""}:`;
   }

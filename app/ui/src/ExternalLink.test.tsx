@@ -13,7 +13,11 @@ function newTab(name: string): RegExp {
 }
 
 function withLabel(ui: ReactNode) {
-  return <ExternalLinkContext value={{ newTabLabel: "(opens in a new tab)", isAppLink: () => false }}>{ui}</ExternalLinkContext>;
+  return (
+    <ExternalLinkContext value={{ newTabLabel: "(opens in a new tab)", isAppLink: () => false }}>
+      {ui}
+    </ExternalLinkContext>
+  );
 }
 
 describe("ExternalLink", () => {
@@ -28,7 +32,13 @@ describe("ExternalLink", () => {
   });
 
   it("keeps the tokens of rel and can leave out the icon", () => {
-    render(withLabel(<ExternalLink href="https://news.example/" rel="nofollow ugc" icon={false}>News</ExternalLink>));
+    render(
+      withLabel(
+        <ExternalLink href="https://news.example/" rel="nofollow ugc" icon={false}>
+          News
+        </ExternalLink>,
+      ),
+    );
     const link = screen.getByRole("link", { name: newTab("News") });
     expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
     // eslint-disable-next-line testing-library/no-node-access -- a decorative icon has no role.
@@ -36,8 +46,16 @@ describe("ExternalLink", () => {
   });
 
   it("ends a name given by aria-label with the text", () => {
-    render(withLabel(<ExternalLink href="https://remote.example/x" aria-label="Open the original post on remote.example">remote.example</ExternalLink>));
-    expect(screen.getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" })).toBeInTheDocument();
+    render(
+      withLabel(
+        <ExternalLink href="https://remote.example/x" aria-label="Open the original post on remote.example">
+          remote.example
+        </ExternalLink>,
+      ),
+    );
+    expect(
+      screen.getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
+    ).toBeInTheDocument();
   });
 
   it("still opens in a new tab without the app's text", () => {

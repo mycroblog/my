@@ -61,8 +61,8 @@ export const LongWords: Story = {
         {"مرحبا بالجميع\nهذا سطر ثان"}
       </Text>
       <Text as="p" lineClamp={2} wrap="anywhere">
-        A memo that goes on for a long while, much longer than two lines on a phone, so that the end of it is cut off with an
-        ellipsis instead of pushing the rest of the row down the page.
+        A memo that goes on for a long while, much longer than two lines on a phone, so that the end of it is cut off
+        with an ellipsis instead of pushing the rest of the row down the page.
       </Text>
     </Stack>
   ),

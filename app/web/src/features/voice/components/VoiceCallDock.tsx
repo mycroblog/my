@@ -52,10 +52,14 @@ export function JoinDock({ call }: { call: Outside }) {
           <Text as="p">{t("client:voice.call.unsupported_browser")}</Text>
         ) : (
           <Cluster gap="3" align="center" justify="between">
-            <Text as="p">{call.inRoomElsewhere ? t("client:voice.room.joined") : t("client:voice.room.listed_notice")}</Text>
+            <Text as="p">
+              {call.inRoomElsewhere ? t("client:voice.room.joined") : t("client:voice.room.listed_notice")}
+            </Text>
             {call.end?.kind !== "removed" && (
               <Button variant="primary" onPress={call.join} isPending={call.isJoining}>
-                {call.inRoomElsewhere || call.end?.kind === "replaced" ? t("client:voice.call.join_here") : t("client:voice.room.join")}
+                {call.inRoomElsewhere || call.end?.kind === "replaced"
+                  ? t("client:voice.call.join_here")
+                  : t("client:voice.room.join")}
               </Button>
             )}
           </Cluster>
@@ -96,7 +100,11 @@ export function CallDockControls({ room, call, controls, moderation, hands }: Ca
       </Stack>
     ) : undefined;
   return (
-    <CallDock label={t("client:voice.dock.label")} end={<LeaveCallButton controls={controls} look="dock" />} notice={notice}>
+    <CallDock
+      label={t("client:voice.dock.label")}
+      end={<LeaveCallButton controls={controls} look="dock" />}
+      notice={notice}
+    >
       {call.isSpeaker ? (
         <CallDockButton
           label={t("client:voice.call.microphone")}
@@ -136,7 +144,15 @@ export function CallDockControls({ room, call, controls, moderation, hands }: Ca
 }
 
 /** The raised hands, with their count, which open their list above the dock. */
-function HandsButton({ self, moderation, hands }: { self: VoiceRoomParticipant | undefined; moderation: VoiceModeration; hands: readonly VoiceRoomParticipant[] }) {
+function HandsButton({
+  self,
+  moderation,
+  hands,
+}: {
+  self: VoiceRoomParticipant | undefined;
+  moderation: VoiceModeration;
+  hands: readonly VoiceRoomParticipant[];
+}) {
   const t = useT();
   return (
     <PopoverTrigger>
@@ -144,7 +160,11 @@ function HandsButton({ self, moderation, hands }: { self: VoiceRoomParticipant |
         label={t("client:voice.dock.hands")}
         icon={<RaiseHandIcon />}
         showLabel
-        count={hands.length === 0 ? undefined : { value: hands.length, label: t("client:voice.hands.count", { count: hands.length }) }}
+        count={
+          hands.length === 0
+            ? undefined
+            : { value: hands.length, label: t("client:voice.hands.count", { count: hands.length }) }
+        }
       />
       <Popover title={t("client:voice.hands.heading", { count: hands.length })} placement="top">
         <RaisedHandList hands={hands} self={self} moderation={moderation} />
@@ -177,7 +197,9 @@ function InviteButton({ room }: { room: VoiceRoom }) {
         cancelLabel={t("client:voice.call.cancel")}
         tone="primary"
         isPending={invite.isPending}
-        errorMessage={invite.error === undefined ? undefined : t("client:voice.invite.failed", { reason: invite.error })}
+        errorMessage={
+          invite.error === undefined ? undefined : t("client:voice.invite.failed", { reason: invite.error })
+        }
         onConfirm={(close) => {
           invite.submit(close);
         }}
@@ -199,7 +221,11 @@ function InviteButton({ room }: { room: VoiceRoom }) {
           }}
         >
           {(["listener", "speaker"] as const satisfies readonly VoiceRole[]).map((role) => (
-            <Radio key={role} value={role} description={role === "speaker" ? t("client:voice.invite.role.speaker.description") : undefined}>
+            <Radio
+              key={role}
+              value={role}
+              description={role === "speaker" ? t("client:voice.invite.role.speaker.description") : undefined}
+            >
               {role === "speaker" ? t("client:voice.invite.role.speaker") : t("client:voice.invite.role.listener")}
             </Radio>
           ))}

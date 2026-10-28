@@ -3,12 +3,23 @@
 // notifications here and from another tab, and the removal of the user's data when the session ends.
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { autoplayKey, clearUserStorage, composeKey, localeKey, signInKey, themeKey, timelinesKey, useStorage } from "./storage";
+import {
+  autoplayKey,
+  clearUserStorage,
+  composeKey,
+  localeKey,
+  signInKey,
+  themeKey,
+  timelinesKey,
+  useStorage,
+} from "./storage";
 
 describe("storage", () => {
   test("keeps a value with the version of its format, and removes the key for the default", () => {
     timelinesKey.write({ local: "everyone", federated: "off" });
-    expect(localStorage.getItem("my:instance:timelines")).toBe('{"v":2,"value":{"local":"everyone","federated":"off"}}');
+    expect(localStorage.getItem("my:instance:timelines")).toBe(
+      '{"v":2,"value":{"local":"everyone","federated":"off"}}',
+    );
     expect(timelinesKey.read()).toEqual({ local: "everyone", federated: "off" });
 
     autoplayKey.write(false);
@@ -24,7 +35,13 @@ describe("storage", () => {
   });
 
   test("reads a broken value, another version or a value that fails its check as the default", () => {
-    for (const raw of ["{not json", '"dark"', '{"v":2,"value":"dark"}', '{"v":1,"value":"sepia"}', '{"value":"dark"}']) {
+    for (const raw of [
+      "{not json",
+      '"dark"',
+      '{"v":2,"value":"dark"}',
+      '{"v":1,"value":"sepia"}',
+      '{"value":"dark"}',
+    ]) {
       localStorage.setItem(themeKey.name, raw);
       expect(themeKey.read()).toBe("system");
     }

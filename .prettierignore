@@ -1,0 +1,8 @@
+# The files `bun fmt` leaves alone (scripts/task.sh web:fmt), besides those .gitignore lists.
+# Generated from the API spec.
+/pkg/mykit/ts/src/schema.gen.ts
+# The Oxlint violation fixtures: each `expect:` comment names the line Oxlint reports, so the layout is the test.
+# scripts/task.sh web:lint-rules copies them into app/web/src while it runs, beside the checks of other contexts.
+/app/oxlint/violations/
+/app/web/src/features/timeline/components/LintViolations.tsx
+/app/web/src/features/timeline/components/lintViolations.test.tsx

@@ -56,8 +56,10 @@ const megabytes = signupBlockImportByteLimit / 1_000_000;
 export function validateSignupBlockList(t: Translate, text: string): string | null {
   const count = countSignupBlockListValues(text);
   if (count === 0) return t("client:admin.signup_blocks.import.list.required");
-  if (count > signupBlockImportValueLimit) return t("client:admin.signup_blocks.import.list.too_many", { count, max: signupBlockImportValueLimit });
-  if (new TextEncoder().encode(text).length > signupBlockImportByteLimit) return t("client:admin.signup_blocks.import.list.too_large", { max: megabytes });
+  if (count > signupBlockImportValueLimit)
+    return t("client:admin.signup_blocks.import.list.too_many", { count, max: signupBlockImportValueLimit });
+  if (new TextEncoder().encode(text).length > signupBlockImportByteLimit)
+    return t("client:admin.signup_blocks.import.list.too_large", { max: megabytes });
   return null;
 }
 
@@ -110,7 +112,9 @@ export function useSignupBlockImportForm(): SignupBlockImportForm {
   });
   const sent = mutation.variables;
   const outcome: SignupBlockImportOutcome | undefined =
-    mutation.isSuccess && sent !== undefined ? { ...mutation.data, kind: sent.kind, severity: sent.severity, id: mutation.submittedAt } : undefined;
+    mutation.isSuccess && sent !== undefined
+      ? { ...mutation.data, kind: sent.kind, severity: sent.severity, id: mutation.submittedAt }
+      : undefined;
   return {
     draft,
     change: (change) => {
@@ -118,16 +122,28 @@ export function useSignupBlockImportForm(): SignupBlockImportForm {
     },
     chooseFile: (chosen) => {
       if (chosen.size > signupBlockImportByteLimit) {
-        setFile({ status: "failed", message: t("client:admin.signup_blocks.import.file.too_large", { name: chosen.name, max: megabytes }) });
+        setFile({
+          status: "failed",
+          message: t("client:admin.signup_blocks.import.file.too_large", { name: chosen.name, max: megabytes }),
+        });
         return;
       }
       chosen.text().then(
         (text) => {
           setDraft((current) => ({ ...current, text }));
-          setFile({ status: "read", message: t("client:admin.signup_blocks.import.file.read", { name: chosen.name, count: countSignupBlockListValues(text) }) });
+          setFile({
+            status: "read",
+            message: t("client:admin.signup_blocks.import.file.read", {
+              name: chosen.name,
+              count: countSignupBlockListValues(text),
+            }),
+          });
         },
         () => {
-          setFile({ status: "failed", message: t("client:admin.signup_blocks.import.file.failed", { name: chosen.name }) });
+          setFile({
+            status: "failed",
+            message: t("client:admin.signup_blocks.import.file.failed", { name: chosen.name }),
+          });
         },
       );
     },

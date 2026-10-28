@@ -10,12 +10,20 @@ import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
-import { inviteToVoiceRoom, type VoiceParticipantOperation, voiceParticipantOperation, type VoiceRole } from "../api/call";
+import {
+  inviteToVoiceRoom,
+  type VoiceParticipantOperation,
+  voiceParticipantOperation,
+  type VoiceRole,
+} from "../api/call";
 import { cacheVoiceRoom, type VoiceRoom, type VoiceRoomParticipant } from "../api/voice";
 import { participantName } from "./voiceCall";
 
 /** The operations that the user may run on `participant`, in the order of its menu. */
-export function participantOperations(self: VoiceRoomParticipant | undefined, participant: VoiceRoomParticipant): VoiceParticipantOperation[] {
+export function participantOperations(
+  self: VoiceRoomParticipant | undefined,
+  participant: VoiceRoomParticipant,
+): VoiceParticipantOperation[] {
   if (self === undefined || participant.account.id === self.account.id || participant.host) return [];
   if (!self.host && !self.cohost) return [];
   // A co-host does not operate on another co-host.
@@ -43,8 +51,13 @@ export function useVoiceModeration(room: VoiceRoom): VoiceModeration {
   const t = useT();
   const mutation = useMutation({
     mutationKey: ["voice", "moderate", room.id] as const,
-    mutationFn: ({ participant, operation }: { participant: VoiceRoomParticipant; operation: VoiceParticipantOperation }) =>
-      voiceParticipantOperation(api, room.id, participant.account.id, operation),
+    mutationFn: ({
+      participant,
+      operation,
+    }: {
+      participant: VoiceRoomParticipant;
+      operation: VoiceParticipantOperation;
+    }) => voiceParticipantOperation(api, room.id, participant.account.id, operation),
     onSuccess: async (updated, { participant, operation }) => {
       if (updated !== undefined) await cacheVoiceRoom(api, queryClient, updated);
       const name = participantName(participant);
@@ -71,7 +84,9 @@ export function useVoiceModeration(room: VoiceRoom): VoiceModeration {
     operate: (participant, operation) => {
       mutation.mutate({ participant, operation });
     },
-    pending: mutation.isPending ? { accountId: mutation.variables.participant.account.id, operation: mutation.variables.operation } : undefined,
+    pending: mutation.isPending
+      ? { accountId: mutation.variables.participant.account.id, operation: mutation.variables.operation }
+      : undefined,
     error: mutation.isError ? errorMessage(mutation.error) : undefined,
   };
 }
@@ -98,7 +113,8 @@ export function useVoiceInvite(room: VoiceRoom): VoiceInvite {
   const [role, setRole] = useState<VoiceRole>("listener");
   const mutation = useMutation({
     mutationKey: ["voice", "invite", room.id] as const,
-    mutationFn: ({ name, as }: { name: string; as: VoiceRole; close: () => void }) => inviteToVoiceRoom(api, room.id, name, as),
+    mutationFn: ({ name, as }: { name: string; as: VoiceRole; close: () => void }) =>
+      inviteToVoiceRoom(api, room.id, name, as),
     onSuccess: (invitation, { close }) => {
       announce(t("client:voice.invite.sent", { name: invitation.account.display_name || invitation.account.username }));
       close();

@@ -21,7 +21,11 @@ afterEach(() => {
   removePasskeys();
 });
 
-const phone: Schemas["Passkey"] = { id: "019a0000-0000-7000-8000-0000000000a1", name: "Phone", created_at: "2026-10-01T09:00:00Z" };
+const phone: Schemas["Passkey"] = {
+  id: "019a0000-0000-7000-8000-0000000000a1",
+  name: "Phone",
+  created_at: "2026-10-01T09:00:00Z",
+};
 
 /** The server's password of a viewer with a passkey: whether it is set, and the removals and settings it received. */
 function passwordlessServer(initial: boolean) {
@@ -33,7 +37,8 @@ function passwordlessServer(initial: boolean) {
     http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: hasPassword })),
     http.post(`${apiBase}/accounts/password/remove`, async ({ request }) => {
       removals.push((await request.json()) as Schemas["RemovePasswordRequest"]);
-      if (removals.length === 1) return problem(422, "/api/v1/problems/passkey-confirmation-expired", "The confirmation expired.");
+      if (removals.length === 1)
+        return problem(422, "/api/v1/problems/passkey-confirmation-expired", "The confirmation expired.");
       hasPassword = false;
       return new HttpResponse(null, { status: 204 });
     }),
@@ -56,7 +61,8 @@ function passwordServer() {
       if (body.current_password === "limited") {
         return problem(429, "about:blank", "Too many requests.", { headers: { "Retry-After": "60" } });
       }
-      if (body.current_password !== "correct horse") return problem(422, "/api/v1/problems/wrong-password", "The password is wrong.");
+      if (body.current_password !== "correct horse")
+        return problem(422, "/api/v1/problems/wrong-password", "The password is wrong.");
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -91,7 +97,9 @@ describe("password", () => {
     await user.clear(current);
     await user.type(current, "correct horse");
     await user.click(screen.getByRole("button", { name: "Change password" }));
-    expect(await screen.findByText("Your password is changed. Other browsers and apps are signed out.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Your password is changed. Other browsers and apps are signed out."),
+    ).toBeInTheDocument();
     expect(changes).toEqual([
       { current_password: "wrong", new_password: "a new password" },
       { current_password: "correct horse", new_password: "a new password" },
@@ -118,11 +126,15 @@ describe("password", () => {
     await user.click(within(section).getByRole("button", { name: "Remove password…" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Remove your password?" });
     await user.click(within(dialog).getByRole("button", { name: "Remove password" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Confirming with the passkey took too long. Try again.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Confirming with the passkey took too long. Try again.",
+    );
     await user.click(within(dialog).getByRole("button", { name: "Remove password" }));
 
     expect(
-      await screen.findByText("Your password is removed. Sign in with your passkeys from now on. Other browsers and apps are signed out."),
+      await screen.findByText(
+        "Your password is removed. Sign in with your passkeys from now on. Other browsers and apps are signed out.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(api.removals[1]?.passkey?.confirmation_token).toBe("conf-1");
@@ -133,7 +145,9 @@ describe("password", () => {
     expect(within(set).queryByLabelText(/^Current password/)).not.toBeInTheDocument();
     await user.type(within(set).getByLabelText(/^New password/), "a new password");
     await user.click(within(set).getByRole("button", { name: "Set password" }));
-    expect(await screen.findByText("Your password is set. Other browsers and apps are signed out.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Your password is set. Other browsers and apps are signed out."),
+    ).toBeInTheDocument();
     expect(api.changes).toHaveLength(1);
     expect(api.changes[0]?.new_password).toBe("a new password");
     expect(api.changes[0]?.passkey?.confirmation_token).toBe("conf-1");
@@ -145,7 +159,9 @@ describe("password", () => {
     installPasskeys();
     await renderApp({ path: "/settings/password" });
     const section = await screen.findByRole("region", { name: "Remove the password" });
-    expect(within(section).getByText("Add a passkey before you remove the password, so that you can still sign in.")).toBeInTheDocument();
+    expect(
+      within(section).getByText("Add a passkey before you remove the password, so that you can still sign in."),
+    ).toBeInTheDocument();
     expect(within(section).queryByRole("button")).not.toBeInTheDocument();
   });
 
@@ -157,6 +173,8 @@ describe("password", () => {
     const set = await screen.findByRole("region", { name: "Set a password" });
     await user.type(within(set).getByLabelText(/^New password/), "a new password");
     await user.click(within(set).getByRole("button", { name: "Set password" }));
-    expect(await within(set).findByRole("alert")).toHaveTextContent("Your passkey was not used: the browser's prompt was closed or timed out.");
+    expect(await within(set).findByRole("alert")).toHaveTextContent(
+      "Your passkey was not used: the browser's prompt was closed or timed out.",
+    );
   });
 });

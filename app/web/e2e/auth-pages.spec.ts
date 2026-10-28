@@ -175,14 +175,27 @@ test.describe("without JavaScript", () => {
 
 test.describe("status page of a suspended account", () => {
   test.use({ javaScriptEnabled: false });
-  test.skip(!ownsServer, "the test suspends a user with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the test suspends a user with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
 
   test("appeals the suspension without JavaScript", async ({ browser, context, page }) => {
     // A user of its own per project, suspended by the CLI as a moderator would (docs/operations/moderation.md).
     const username = `e2e_appeal_${randomBytes(4).toString("hex")}`;
     const user = { email: `${username}@example.com`, password: `e2e-password-${username}` };
     runMy(["admin", "create", "-username", username, "-email", user.email], `${user.password}\n`);
-    const issued = runMy(["admin", "account", "action", "issue", "-kind", "suspend", "-category", "spam", `@${username}`]);
+    const issued = runMy([
+      "admin",
+      "account",
+      "action",
+      "issue",
+      "-kind",
+      "suspend",
+      "-category",
+      "spam",
+      `@${username}`,
+    ]);
     const actionID = /\(action (\S+),/.exec(issued)?.[1] ?? "";
     expect(actionID).not.toBe("");
 
@@ -253,10 +266,15 @@ const codeField = (page: Page) => page.locator('input[autocomplete="one-time-cod
 
 test.describe("two-factor sign-in", () => {
   test.use({ javaScriptEnabled: false });
-  test.skip(!ownsServer, "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
 
   /** A user of its own per project with TOTP enabled through the client API, and the step of the code that enabled it. */
-  async function twoFactorUser(page: Page): Promise<{ email: string; password: string; secret: Buffer; step: number; recoveryCodes: string[] }> {
+  async function twoFactorUser(
+    page: Page,
+  ): Promise<{ email: string; password: string; secret: Buffer; step: number; recoveryCodes: string[] }> {
     const username = `e2e_totp_${randomBytes(4).toString("hex")}`;
     const user = { email: `${username}@example.com`, password: `e2e-password-${username}` };
     runMy(["admin", "create", "-username", username, "-email", user.email], `${user.password}\n`);
@@ -280,7 +298,13 @@ test.describe("two-factor sign-in", () => {
     await expect(page).toHaveURL(/\/login\/callback\?/);
     const code = new URL(page.url()).searchParams.get("code") ?? "";
     const token = await page.request.post("/oauth/token", {
-      form: { grant_type: "authorization_code", code, redirect_uri: redirectURI, client_id: "my-web", code_verifier: verifier },
+      form: {
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectURI,
+        client_id: "my-web",
+        code_verifier: verifier,
+      },
     });
     expect(token.ok()).toBe(true);
     const { access_token: accessToken } = (await token.json()) as { access_token: string };
@@ -291,7 +315,10 @@ test.describe("two-factor sign-in", () => {
     const { secret, setup_token } = (await setup.json()) as { secret: string; setup_token: string };
     const key = base32Decode(secret);
     const step = currentStep();
-    const enabled = await page.request.post("/api/v1/two_factor/totp", { headers, data: { setup_token, code: totp(key, step) } });
+    const enabled = await page.request.post("/api/v1/two_factor/totp", {
+      headers,
+      data: { setup_token, code: totp(key, step) },
+    });
     expect(enabled.ok()).toBe(true);
     const { recovery_codes } = (await enabled.json()) as { recovery_codes: string[] };
     await page.context().clearCookies();
@@ -377,7 +404,10 @@ test.describe("password reset", () => {
 
   test.describe("with a link from the CLI", () => {
     test.use({ javaScriptEnabled: false });
-    test.skip(!ownsServer, "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts");
+    test.skip(
+      !ownsServer,
+      "the test creates a user with bin/my, which needs the database of the server e2e/server.ts starts",
+    );
 
     test("sets a new password once", async ({ browser, context, page }) => {
       const username = `e2e_reset_${randomBytes(4).toString("hex")}`;
@@ -425,7 +455,11 @@ test.describe("sign-up page", () => {
   });
 
   test("describes every field by its hint", async ({ page }) => {
-    for (const field of [page.locator('input[autocomplete="nickname"]'), emailField(page), passwordField(page, "new-password")]) {
+    for (const field of [
+      page.locator('input[autocomplete="nickname"]'),
+      emailField(page),
+      passwordField(page, "new-password"),
+    ]) {
       await expect(field).toHaveAccessibleName(/\S/);
       await expect(field).toHaveAccessibleDescription(/\S/);
     }

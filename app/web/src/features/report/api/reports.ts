@@ -33,7 +33,9 @@ export function instanceQueryOptions(api: Api) {
 
 /** The account's latest page of posts without its boosts: a report cites only the account's own posts. */
 export function reportablePostsQueryOptions(api: Api, accountId: string) {
-  return api.query.queryOptions("get", "/accounts/{id}/statuses", { params: { path: { id: accountId }, query: { exclude_boosts: true } } });
+  return api.query.queryOptions("get", "/accounts/{id}/statuses", {
+    params: { path: { id: accountId }, query: { exclude_boosts: true } },
+  });
 }
 
 /** Files a report (POST /reports), as the options of useMutation. */
@@ -54,5 +56,7 @@ export function createReportMutation(api: Api) {
  * counts of open work, which are cached only once they have opened it. They are marked stale, to be fetched again when they open.
  */
 export function cacheFiledReport(queryClient: QueryClient): Promise<void> {
-  return queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/admin/reports" || query.queryKey[1] === "/admin/counts" });
+  return queryClient.invalidateQueries({
+    predicate: (query) => query.queryKey[1] === "/admin/reports" || query.queryKey[1] === "/admin/counts",
+  });
 }

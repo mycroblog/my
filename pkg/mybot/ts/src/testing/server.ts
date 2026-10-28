@@ -61,7 +61,12 @@ export const quietLogger: Logger = { debug() {}, info() {}, warn() {}, error() {
 
 /** Escapes text for HTML. */
 function escapeHTML(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&#34;").replace(/'/g, "&#39;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&#34;")
+    .replace(/'/g, "&#39;");
 }
 
 /** An account of acct ("alice" local, "alice@remote.example" remote), with every field that the spec requires. */
@@ -208,7 +213,10 @@ export class Server {
     const st = this.#newStatus(from, text, visibility);
     st.mentions = mentions.map((m) => ({ id: m.id, acct: m.acct, username: m.username, url: m.url }));
     const prefix = mentions
-      .map((m) => `<span class="h-card"><a href="${escapeHTML(m.url)}" class="u-url mention">@<span>${escapeHTML(m.username)}</span></a></span> `)
+      .map(
+        (m) =>
+          `<span class="h-card"><a href="${escapeHTML(m.url)}" class="u-url mention">@<span>${escapeHTML(m.username)}</span></a></span> `,
+      )
       .join("");
     st.content = `<p>${prefix}${escapeHTML(text)}</p>`;
     this.#statuses.set(st.id, st);
@@ -374,7 +382,9 @@ export class Server {
   /** Answers a request of the bot: the option fetch of a bot. */
   readonly fetch = async (request: Request): Promise<Response> => {
     if (!(request.headers.get("Authorization") ?? "").startsWith("Bearer ")) {
-      return problem(401, "/api/v1/problems/unauthenticated", "The operation needs an access token.", { "WWW-Authenticate": 'Bearer error="invalid_token"' });
+      return problem(401, "/api/v1/problems/unauthenticated", "The operation needs an access token.", {
+        "WWW-Authenticate": 'Bearer error="invalid_token"',
+      });
     }
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
@@ -432,7 +442,10 @@ export class Server {
     }
     const end = Math.min(start + limit, items.length);
     const last = items[end - 1];
-    return json({ items: items.slice(start, end), ...(end < items.length && last !== undefined ? { next_cursor: last.id } : {}) });
+    return json({
+      items: items.slice(start, end),
+      ...(end < items.length && last !== undefined ? { next_cursor: last.id } : {}),
+    });
   }
 
   async #streamEvents(request: Request): Promise<Response> {
@@ -492,12 +505,16 @@ export class Server {
     }, heartbeat);
     this.#streams.add(stream);
     this.#notify();
-    return new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" } });
+    return new Response(body, {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" },
+    });
   }
 
   async #createStatus(request: Request): Promise<Response> {
     const body = (await request.json()) as CreateStatusRequest;
-    if ((body.visibility as string | undefined) === undefined) return problem(422, "about:blank", "visibility is required.");
+    if ((body.visibility as string | undefined) === undefined)
+      return problem(422, "about:blank", "visibility is required.");
     const key = request.headers.get("Idempotency-Key");
     const seen = key === null || key === "" ? undefined : this.#keys.get(key);
     if (seen !== undefined) return json(this.#posts[seen]?.status);
@@ -561,7 +578,10 @@ export class Server {
 }
 
 function json(body: unknown): Response {
-  return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
 }
 
 /** An RFC 9457 problem document, as the server writes it. */

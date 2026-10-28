@@ -178,7 +178,13 @@ export function useOwnCustomEmojiActions(onDeleted: (id: string) => void): OwnCu
   const image = useMutation(requestCustomEmojiMutation(api));
   const remove = useMutation(deleteOwnCustomEmojiMutation(api));
   const imageFor = image.variables?.kind === "image" ? image.variables.emojiId : undefined;
-  const pendingId = remove.isPending ? remove.variables : update.isPending ? update.variables.id : image.isPending ? imageFor : undefined;
+  const pendingId = remove.isPending
+    ? remove.variables
+    : update.isPending
+      ? update.variables.id
+      : image.isPending
+        ? imageFor
+        : undefined;
   const failed = [update, image, remove].find((mutation) => mutation.isError);
   return {
     update: async (emoji, change) => {

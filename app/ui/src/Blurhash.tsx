@@ -34,5 +34,14 @@ export function Blurhash({ hash, className, ...props }: BlurhashProps) {
   }, [pixels]);
 
   if (pixels === null) return null;
-  return <canvas aria-hidden="true" {...props} ref={canvasRef} width={resolution} height={resolution} className={blurhash({ className })} />;
+  return (
+    <canvas
+      aria-hidden="true"
+      {...props}
+      ref={canvasRef}
+      width={resolution}
+      height={resolution}
+      className={blurhash({ className })}
+    />
+  );
 }

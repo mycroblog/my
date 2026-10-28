@@ -31,7 +31,10 @@ function postingServer() {
     }),
     http.post(`${apiBase}/statuses`, async ({ request }) => {
       const body = (await request.json()) as Schemas["CreateStatusRequest"];
-      const post = viewerStatusFixture({ id: `0192f0c4-7a8e-7000-8000-${String(posts.length + 1).padStart(12, "0")}`, content: `<p>${body.text}</p>` });
+      const post = viewerStatusFixture({
+        id: `0192f0c4-7a8e-7000-8000-${String(posts.length + 1).padStart(12, "0")}`,
+        content: `<p>${body.text}</p>`,
+      });
       posts.unshift(post);
       return HttpResponse.json(post);
     }),
@@ -63,7 +66,9 @@ describe("a new post", () => {
     await user.click(within(navigation()).getByRole("link", { name: "Profile" }));
     // The home timeline stays on screen while the profile's posts are fetched again (web-client/README.md E4).
     expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 5 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: viewerFixture.display_name }, { timeout: latency * 5 }),
+    ).toBeInTheDocument();
     // The profile shows the new post from its first render, and never the list from before it.
     expect(within(screen.getByRole("feed", { name: "Posts" })).getByText("Fresh from the oven")).toBeInTheDocument();
     expect(staleProfile()).toBe(false);
@@ -72,7 +77,10 @@ describe("a new post", () => {
 
 describe("a reply", () => {
   test("is counted on the post it answers at once when the post's page opens again", async () => {
-    const parent: Schemas["Status"] = { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000c1"), content: "<p>The question</p>" };
+    const parent: Schemas["Status"] = {
+      ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000c1"),
+      content: "<p>The question</p>",
+    };
     const replies: Schemas["Status"][] = [];
     server.use(
       resumableSession(),
@@ -86,7 +94,10 @@ describe("a reply", () => {
       }),
       http.post(`${apiBase}/statuses`, async ({ request }) => {
         const body = (await request.json()) as Schemas["CreateStatusRequest"];
-        const reply = { ...viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000c2", content: `<p>${body.text}</p>` }), in_reply_to_id: parent.id };
+        const reply = {
+          ...viewerStatusFixture({ id: "0192f0c4-7a8e-7000-8000-0000000000c2", content: `<p>${body.text}</p>` }),
+          in_reply_to_id: parent.id,
+        };
         replies.push(reply);
         return HttpResponse.json(reply);
       }),

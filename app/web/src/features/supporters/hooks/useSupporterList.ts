@@ -54,7 +54,9 @@ export function useSupporterList(): SupporterList {
     const members = query.data.pages.flatMap((page) => page.items);
     return {
       status: "ready",
-      groups: plans.map((plan) => ({ plan, members: members.filter((m) => m.plan_id === plan.id) })).filter((g) => g.members.length > 0),
+      groups: plans
+        .map((plan) => ({ plan, members: members.filter((m) => m.plan_id === plan.id) }))
+        .filter((g) => g.members.length > 0),
       hasMore: query.hasNextPage,
       loadMore: () => void query.fetchNextPage(),
       isLoadingMore: query.isFetchingNextPage,
@@ -64,7 +66,12 @@ export function useSupporterList(): SupporterList {
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
     if (query.error instanceof ApiError && query.error.status === 401) return { status: "signed-in-only" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }
@@ -82,7 +89,12 @@ export function useAboutSupporters(): AboutSupporters {
   const inApp = isTauriApp();
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const enabled = instance.data?.supporters_enabled === true;
-  const plans = useQuery({ ...supporterPlansQueryOptions(api), retry: shellQueryRetry, retryOnMount: false, enabled: enabled && !inApp });
+  const plans = useQuery({
+    ...supporterPlansQueryOptions(api),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+    enabled: enabled && !inApp,
+  });
   return {
     plans: enabled && !inApp ? plans.data?.items : undefined,
     listPublished: instance.data !== undefined && instance.data.supporter_list_visibility !== "off",
@@ -108,7 +120,12 @@ export function useSupporterListing(): SupporterListing | undefined {
   const announce = useAnnouncer();
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const published = instance.data !== undefined && instance.data.supporter_list_visibility !== "off";
-  const listing = useQuery({ ...supporterListingQueryOptions(api), retry: shellQueryRetry, retryOnMount: false, enabled: published });
+  const listing = useQuery({
+    ...supporterListingQueryOptions(api),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+    enabled: published,
+  });
   const mutation = useMutation({
     ...updateListingMutation(api),
     onSuccess: async (saved) => {

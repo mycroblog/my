@@ -12,7 +12,8 @@ const meta = {
     padding: "4",
     children: (
       <Text as="p" wrap="anywhere">
-        A framed block whose content flows as text: https://a-very-long-subdomain.example.social/users/someone/statuses/112233445566778899
+        A framed block whose content flows as text:
+        https://a-very-long-subdomain.example.social/users/someone/statuses/112233445566778899
       </Text>
     ),
   },

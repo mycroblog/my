@@ -32,7 +32,9 @@ const fake = vi.hoisted(() => {
     readonly options: unknown;
     readonly localParticipant = new FakeLocalParticipant();
     readonly listeners = new Map<string, Listener[]>();
-    readonly connect = vi.fn((_url: string, _token: string, _options?: unknown) => (FakeRoom.failNext ? Promise.reject(new Error("refused")) : Promise.resolve()));
+    readonly connect = vi.fn((_url: string, _token: string, _options?: unknown) =>
+      FakeRoom.failNext ? Promise.reject(new Error("refused")) : Promise.resolve(),
+    );
     readonly disconnect = vi.fn(() => {
       this.emit("disconnected", 1);
       return Promise.resolve();
@@ -161,7 +163,9 @@ test("joins the room with the grant's URL and token, audio only", async () => {
   await settle();
   expect(FakeRoom.all).toHaveLength(1);
   expect(room().connect).toHaveBeenCalledWith("wss://livekit.example", "token-1", { autoSubscribe: true });
-  expect(room().options).toMatchObject({ audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  expect(room().options).toMatchObject({
+    audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  });
   expect(getMicrophone).not.toHaveBeenCalled();
 });
 
@@ -200,7 +204,10 @@ describe("remote audio", () => {
 describe("who is talking", () => {
   /** LiveKit's active speakers, loudest first, the local participant among them. */
   const speakers = (...identities: string[]) => {
-    room().emit("activeSpeakersChanged", identities.map((identity) => ({ identity })));
+    room().emit(
+      "activeSpeakersChanged",
+      identities.map((identity) => ({ identity })),
+    );
   };
 
   test("maps LiveKit's active speakers to the sessions that speak, and reports only changes", async () => {

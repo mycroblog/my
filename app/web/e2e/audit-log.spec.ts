@@ -96,7 +96,12 @@ const entries: Entry[] = [
 ];
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /**
@@ -108,7 +113,14 @@ const slowLogMs = 1500;
 type DomainAction = Record<string, unknown> & { id: string; state: string };
 
 /** The limit on the long domain that the log's domain_action_issued entry records, in effect. */
-const domainLimit: DomainAction = { id: "0192f0c4-7a8e-7000-8000-0000000000a2", domain: longDomain, kind: "limit", obfuscate: false, state: "active", issued_at: "2026-10-16T09:30:00Z" };
+const domainLimit: DomainAction = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000a2",
+  domain: longDomain,
+  kind: "limit",
+  obfuscate: false,
+  state: "active",
+  issued_at: "2026-10-16T09:30:00Z",
+};
 
 /**
  * Plays the API of a signed-in operator: the audit log two entries per page. With `domains`, the operator also
@@ -121,36 +133,77 @@ async function operatorServer(page: Page, { domains = false }: { domains?: boole
   let log = entries;
   let limit = domainLimit;
   let slowLog = false;
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
-    if (key === "GET /accounts/verify_credentials") return json(route, domains ? { ...operator, permissions: ["view_audit", "manage_domains"] } : operator);
+    if (key === "GET /accounts/verify_credentials")
+      return json(route, domains ? { ...operator, permissions: ["view_audit", "manage_domains"] } : operator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /admin/audit_log") {
       requests.push(url.search);
       if (slowLog) await new Promise((resolve) => setTimeout(resolve, slowLogMs));
       const actor = url.searchParams.get("actor_account_id");
       const action = url.searchParams.get("action");
-      const matching = log.filter((entry) => (actor === null || entry.actor_account_id === actor) && (action === null || entry.action === action));
+      const matching = log.filter(
+        (entry) => (actor === null || entry.actor_account_id === actor) && (action === null || entry.action === action),
+      );
       const cursor = url.searchParams.get("cursor");
       const start = cursor === null ? 0 : matching.findIndex((entry) => entry.id === cursor) + 1;
       const items = matching.slice(start, start + 2);
       const last = items.at(-1);
-      return json(route, start + 2 < matching.length && last !== undefined ? { items, next_cursor: last.id } : { items });
+      return json(
+        route,
+        start + 2 < matching.length && last !== undefined ? { items, next_cursor: last.id } : { items },
+      );
     }
-    if (domains && key === "GET /admin/domain_actions") return json(route, { items: url.searchParams.get("active") === "true" && limit.state !== "active" ? [] : [limit] });
+    if (domains && key === "GET /admin/domain_actions")
+      return json(route, {
+        items: url.searchParams.get("active") === "true" && limit.state !== "active" ? [] : [limit],
+      });
     if (domains && key === `POST /admin/domain_actions/${domainLimit.id}/lift`) {
       limit = { ...limit, state: "lifted", lifted_at: "2026-10-17T10:00:00Z" };
-      const lift: Entry = { ...entries[1], id: "0192f0c4-7a8e-7000-8000-0000000a0005", actor_account_id: operator.id, actor_account: operator, action: "domain_action_lifted", occurred_at: "2026-10-17T10:00:00Z" };
+      const lift: Entry = {
+        ...entries[1],
+        id: "0192f0c4-7a8e-7000-8000-0000000a0005",
+        actor_account_id: operator.id,
+        actor_account: operator,
+        action: "domain_action_lifted",
+        occurred_at: "2026-10-17T10:00:00Z",
+      };
       log = [lift, ...log];
       slowLog = true;
       return json(route, limit);
@@ -162,7 +215,11 @@ async function operatorServer(page: Page, { domains = false }: { domains?: boole
 
 /** The rows of the table of operations, without its header row. */
 function rows(page: Page) {
-  return page.getByRole("main").getByRole("table").getByRole("row").filter({ has: page.getByRole("rowheader") });
+  return page
+    .getByRole("main")
+    .getByRole("table")
+    .getByRole("row")
+    .filter({ has: page.getByRole("rowheader") });
 }
 
 test.describe("page /moderation/audit-log", () => {
@@ -182,7 +239,10 @@ test.describe("page /moderation/audit-log", () => {
 });
 
 test.describe("audit log", () => {
-  test("lists operations, filters them by a row's actor and by kind in the URL, and pages through them", async ({ page, makeAxeBuilder }) => {
+  test("lists operations, filters them by a row's actor and by kind in the URL, and pages through them", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const requests = await operatorServer(page);
     await page.goto("/moderation/audit-log");
     await expect(rows(page)).toHaveCount(2);
@@ -193,10 +253,16 @@ test.describe("audit log", () => {
     await expect(first).toContainText(new RegExp(`${moderator.display_name}.*@${moderator.acct}`));
     await expect(first.locator("time")).toHaveCount(1);
     await expect(first.getByRole("listitem")).toHaveCount(2);
-    await expect(rows(page).first().getByRole("link", { name: targetHandle, exact: true })).toHaveAttribute("href", "/moderation/accounts/0192f0c4-7a8e-7000-8000-000000000031");
+    await expect(rows(page).first().getByRole("link", { name: targetHandle, exact: true })).toHaveAttribute(
+      "href",
+      "/moderation/accounts/0192f0c4-7a8e-7000-8000-000000000031",
+    );
 
     // Next page: the pages loaded stay in the URL, and a reload loads them again, on the first.
-    await page.getByRole("navigation", { name: message("admin.list.pages") }).getByRole("button", { name: message("admin.list.next") }).click();
+    await page
+      .getByRole("navigation", { name: message("admin.list.pages") })
+      .getByRole("button", { name: message("admin.list.next") })
+      .click();
     await expect(rows(page)).toHaveCount(1);
     await expect(page).toHaveURL(/[?&]pages=2/);
     await expectNoAxeViolations(makeAxeBuilder);
@@ -205,7 +271,9 @@ test.describe("audit log", () => {
     await expect(rows(page)).toHaveCount(2);
 
     // The row's link to its actor's operations, by keyboard: the row stays, and focus with it.
-    const actorLink = rows(page).first().getByRole("link", { name: new RegExp(moderator.display_name) });
+    const actorLink = rows(page)
+      .first()
+      .getByRole("link", { name: new RegExp(moderator.display_name) });
     await actorLink.focus();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(new RegExp(`[?&]actor=${moderator.id}`));
@@ -219,10 +287,15 @@ test.describe("audit log", () => {
     await page.keyboard.press("Enter");
     const listbox = page.getByRole("listbox");
     await expect(listbox).toBeVisible();
-    await listbox.getByRole("option", { name: message("admin.audit_log.action.domain_action_issued"), exact: true }).click();
+    await listbox
+      .getByRole("option", { name: message("admin.audit_log.action.domain_action_issued"), exact: true })
+      .click();
     await expect(page).toHaveURL(/[?&]action=domain_action_issued/);
     await expect(rows(page)).toHaveCount(1);
-    await expect(rows(page).first().getByRole("link").first()).toHaveAttribute("href", `/moderation/domain-actions?filter=all&domain=${longDomain}`);
+    await expect(rows(page).first().getByRole("link").first()).toHaveAttribute(
+      "href",
+      `/moderation/domain-actions?filter=all&domain=${longDomain}`,
+    );
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -236,7 +309,10 @@ test.describe("audit log", () => {
     ]);
   });
 
-  test("shows a lift made on the domain actions at once when going back, however slowly the log comes", async ({ page, makeAxeBuilder }) => {
+  test("shows a lift made on the domain actions at once when going back, however slowly the log comes", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     await operatorServer(page, { domains: true });
     await page.goto("/moderation/audit-log");
     await expect(rows(page)).toHaveCount(2);
@@ -244,7 +320,12 @@ test.describe("audit log", () => {
     // The domain action's row links to the domain's actions; lifting the limit there is recorded in the log.
     await rows(page).nth(1).getByRole("link").first().click();
     await expect(page).toHaveURL(/\/moderation\/domain-actions\?/);
-    const lift = page.getByRole("main").getByRole("button").filter({ hasText: new RegExp(`^${message("admin.domain_actions.lift").replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")}$`) });
+    const lift = page
+      .getByRole("main")
+      .getByRole("button")
+      .filter({
+        hasText: new RegExp(`^${message("admin.domain_actions.lift").replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")}$`),
+      });
     await expect(lift).toHaveCount(1);
     await lift.click();
     await expect(lift).toHaveCount(0);
@@ -254,7 +335,9 @@ test.describe("audit log", () => {
     await page.goBack();
     await expect(page).toHaveURL(/\/moderation\/audit-log$/);
     await expect(rows(page)).toHaveCount(2);
-    expect(await rows(page).first().getByRole("rowheader").textContent()).toBe(message("admin.audit_log.action.domain_action_lifted"));
+    expect(await rows(page).first().getByRole("rowheader").textContent()).toBe(
+      message("admin.audit_log.action.domain_action_lifted"),
+    );
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });

@@ -11,7 +11,6 @@ function Demo() {
   return (
     <div className="flex flex-wrap gap-2">
       <Button
-       
         onPress={() => {
           announce("3 new posts");
         }}
@@ -19,7 +18,6 @@ function Demo() {
         Load new posts
       </Button>
       <Button
-       
         onPress={() => {
           announce("Could not send the post. Check your connection.", "assertive");
         }}

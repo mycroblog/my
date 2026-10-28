@@ -75,7 +75,9 @@ async function signedInServer(page: Page) {
   let pins = [posts[2]?.id ?? ""];
   const json = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   const withPin = (status: Status): Status => ({ ...status, pinned: pins.includes(status.id) });
-  await page.route("**/oauth/token/refresh", (route) => route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })));
+  await page.route("**/oauth/token/refresh", (route) =>
+    route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
+  );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
   await page.route("**/api/v1/notifications/marker", (route) => route.fulfill(json({ unread_count: 0 })));
   await page.route("**/api/v1/accounts/lookup*", (route) => route.fulfill(json(alice)));
@@ -102,7 +104,10 @@ test.describe("the viewer's profile with a pinned post", () => {
     await expect(page.getByRole("feed").getByRole("article")).toHaveCount(4);
   });
 
-  test("starts with the pinned post, named as pinned, passes axe and does not scroll sideways", async ({ page, makeAxeBuilder }) => {
+  test("starts with the pinned post, named as pinned, passes axe and does not scroll sideways", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const articles = page.getByRole("feed").getByRole("article");
     await expect(articles.first()).toHaveAccessibleName(startsWithMessage("status.pin.label"));
     await expect(articles.first()).toHaveAccessibleDescription("Fresh bread number 3.");
@@ -111,7 +116,10 @@ test.describe("the viewer's profile with a pinned post", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("pins another post from its menu with the keyboard, which then comes first", async ({ page, makeAxeBuilder }) => {
+  test("pins another post from its menu with the keyboard, which then comes first", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const articles = page.getByRole("feed").getByRole("article");
     const more = articles.nth(1).getByRole("button", { name: message("status.action.more") });
     await more.focus();
@@ -127,7 +135,9 @@ test.describe("the viewer's profile with a pinned post", () => {
     await expect(pin).toBeFocused();
     await page.keyboard.press("Enter");
 
-    await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("status.pin.done"))).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("status.pin.done")),
+    ).toBeVisible();
     await expect(articles).toHaveCount(5);
     await expect(articles.first()).toHaveAccessibleDescription("Fresh bread number 1.");
     await expect(articles.first()).toHaveAccessibleName(startsWithMessage("status.pin.label"));

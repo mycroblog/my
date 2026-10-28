@@ -71,7 +71,14 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const styles = confirmDialog();
   return (
-    <Dialog {...overlayProps} role="alertdialog" closeLabel={null} size="sm" title={title} isDismissable={children === undefined}>
+    <Dialog
+      {...overlayProps}
+      role="alertdialog"
+      closeLabel={null}
+      size="sm"
+      title={title}
+      isDismissable={children === undefined}
+    >
       {({ close }) => (
         <Form
           className={styles.form()}

@@ -12,7 +12,13 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useLocale, useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
-import { type AttachmentView, countCharacters, type LanguageOption, languageOptions, rememberTags } from "../../compose";
+import {
+  type AttachmentView,
+  countCharacters,
+  type LanguageOption,
+  languageOptions,
+  rememberTags,
+} from "../../compose";
 import {
   cacheEditedStatus,
   editStatus,

@@ -31,4 +31,6 @@ export const Default: Story = {
 };
 
 /** A long legend wraps inside the frame. */
-export const LongLegend: Story = { args: { legend: "A poll whose caption is much longer than the room the frame leaves for it on a narrow screen" } };
+export const LongLegend: Story = {
+  args: { legend: "A poll whose caption is much longer than the room the frame leaves for it on a narrow screen" },
+};

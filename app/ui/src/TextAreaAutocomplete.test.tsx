@@ -30,7 +30,8 @@ function findWord(text: string, cursor: number): TextAutocompleteWord | null {
   return { trigger, start: cursor - query.length - 1, end: cursor, query };
 }
 
-const loadAccounts = (word: TextAutocompleteWord) => accounts.filter((account) => account.id.startsWith(word.query.toLowerCase()));
+const loadAccounts = (word: TextAutocompleteWord) =>
+  accounts.filter((account) => account.id.startsWith(word.query.toLowerCase()));
 
 type Props = Partial<TextAreaAutocompleteProps<Account>>;
 
@@ -67,7 +68,8 @@ function setup(props: Props = {}) {
 window.addEventListener(
   "blur",
   (event) => {
-    if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option") event.stopImmediatePropagation();
+    if (event.relatedTarget instanceof Element && event.relatedTarget.getAttribute("role") === "option")
+      event.stopImmediatePropagation();
   },
   { capture: true },
 );
@@ -82,7 +84,10 @@ beforeEach(() => {
       disconnect() {}
     },
   );
-  Object.defineProperty(document, "fonts", { configurable: true, value: Object.assign(new EventTarget(), { ready: Promise.resolve() }) });
+  Object.defineProperty(document, "fonts", {
+    configurable: true,
+    value: Object.assign(new EventTarget(), { ready: Promise.resolve() }),
+  });
 });
 
 afterEach(() => {
@@ -322,7 +327,10 @@ describe("TextAreaAutocomplete", () => {
     await screen.findByRole("option", { name: "Albert" });
     // Typed faster than the delay, the word is looked up once.
     expect(loadSuggestions).toHaveBeenCalledTimes(1);
-    expect(loadSuggestions).toHaveBeenLastCalledWith({ trigger: "@", start: 0, end: 4, query: "alb" }, expect.any(AbortSignal));
+    expect(loadSuggestions).toHaveBeenLastCalledWith(
+      { trigger: "@", start: 0, end: 4, query: "alb" },
+      expect.any(AbortSignal),
+    );
 
     await user.type(textbox, "{Backspace}");
     await waitFor(() => {

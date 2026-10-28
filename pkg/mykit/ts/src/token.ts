@@ -20,7 +20,11 @@ export type Token = {
 
 /** Whether the access token is set and not about to expire at now. */
 function valid(token: Token | null, now: number): token is Token {
-  return token !== null && token.accessToken !== "" && (token.expiresAt === undefined || now + expirySkewMs < token.expiresAt);
+  return (
+    token !== null &&
+    token.accessToken !== "" &&
+    (token.expiresAt === undefined || now + expirySkewMs < token.expiresAt)
+  );
 }
 
 /**

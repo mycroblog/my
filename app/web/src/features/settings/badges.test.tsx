@@ -81,7 +81,9 @@ describe("the badges of the profile", () => {
     badgeServer([{ role_id: supporterId, label: "Supporter", color: "blue", displayed: false }], true);
     const { user } = await renderApp({ path: "/settings/profile" });
 
-    const supporter = within(await screen.findByRole("region", { name: "Badges" })).getByRole("switch", { name: "Supporter" });
+    const supporter = within(await screen.findByRole("region", { name: "Badges" })).getByRole("switch", {
+      name: "Supporter",
+    });
     await user.click(supporter);
 
     expect(await screen.findByText(/^Could not change the badge:/)).toBeInTheDocument();

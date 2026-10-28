@@ -24,7 +24,14 @@ export type AttachmentListProps = {
  * The images of the draft. Every image has a description field, always shown, whatever its state
  * (web-client/README.md Y9): the description can be written while the file uploads.
  */
-export function AttachmentList({ items, onDescribe, onRemove, requireDescriptions, isDescriptionRequired = false, isDisabled = false }: AttachmentListProps) {
+export function AttachmentList({
+  items,
+  onDescribe,
+  onRemove,
+  requireDescriptions,
+  isDescriptionRequired = false,
+  isDisabled = false,
+}: AttachmentListProps) {
   const t = useT();
   const hint = isDescriptionRequired
     ? "client:compose.media.description.server_required"
@@ -36,21 +43,26 @@ export function AttachmentList({ items, onDescribe, onRemove, requireDescription
   return (
     <Stack as="ul" aria-label={t("client:compose.media.list")} gap="3">
       {items.map((item) => {
-        const progressKey = item.status === "uploading" ? "client:compose.media.uploading" : "client:compose.media.processing";
+        const progressKey =
+          item.status === "uploading" ? "client:compose.media.uploading" : "client:compose.media.processing";
         return (
           <AttachmentItem
             key={item.key}
             src={item.src}
             progressLabel={item.status === "uploading" || item.status === "processing" ? t(progressKey) : undefined}
           >
-            {item.status === "failed" && <InlineError>{t("client:compose.media.failed", { reason: item.message })}</InlineError>}
+            {item.status === "failed" && (
+              <InlineError>{t("client:compose.media.failed", { reason: item.message })}</InlineError>
+            )}
             <TextArea
               id={descriptionFieldId(item.key)}
               label={t("client:compose.media.description.label", { position: String(item.position) })}
               description={t(hint)}
               value={item.description}
               isRequired={isDescriptionRequired}
-              validate={(value) => (isDescriptionRequired && value.trim() === "" ? t("client:compose.media.description.missing") : null)}
+              validate={(value) =>
+                isDescriptionRequired && value.trim() === "" ? t("client:compose.media.description.missing") : null
+              }
               onChange={(description) => {
                 onDescribe(item.key, description);
               }}

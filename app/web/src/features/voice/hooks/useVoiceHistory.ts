@@ -7,7 +7,12 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { type ClientMessageKey } from "../../../lib/i18n";
 import { shellQueryRetry } from "../../../lib/query";
-import { accountVoiceRoomQueryOptions, type VoiceRoomEntry, type VoiceRoomHistoryEntry, voiceHistoryQueryOptions } from "../api/voice";
+import {
+  accountVoiceRoomQueryOptions,
+  type VoiceRoomEntry,
+  type VoiceRoomHistoryEntry,
+  voiceHistoryQueryOptions,
+} from "../api/voice";
 import { useVoiceAvailable } from "./useVoiceRooms";
 
 /** The sentence of each reason a room ended (api/spec VoiceRoomHistoryEntry); another reason reads as `other`. */
@@ -44,13 +49,23 @@ export type VoiceHistory =
   | { status: "unavailable" }
   | { status: "loading" }
   | { status: "error"; reason: string; retry: () => void; isRetrying: boolean }
-  | { status: "ready"; rows: readonly VoiceHistoryRow[]; hasMore: boolean; loadMore: () => void; isLoadingMore: boolean; moreError: string | undefined };
+  | {
+      status: "ready";
+      rows: readonly VoiceHistoryRow[];
+      hasMore: boolean;
+      loadMore: () => void;
+      isLoadingMore: boolean;
+      moreError: string | undefined;
+    };
 
 export function useVoiceHistory(): VoiceHistory {
   const api = useApi();
   const intl = useIntl();
   const query = useInfiniteQuery({ ...voiceHistoryQueryOptions(api), retry: shellQueryRetry, retryOnMount: false });
-  const dateOf = (value: string): DateView => ({ dateTime: value, text: intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" }) });
+  const dateOf = (value: string): DateView => ({
+    dateTime: value,
+    text: intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" }),
+  });
   const rowOf = (entry: VoiceRoomHistoryEntry): VoiceHistoryRow => ({
     id: entry.id,
     name: entry.name,
@@ -72,7 +87,12 @@ export function useVoiceHistory(): VoiceHistory {
   }
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "unavailable" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }
@@ -84,6 +104,11 @@ export function useVoiceHistory(): VoiceHistory {
 export function useProfileVoiceRoom(accountId: string): VoiceRoomEntry | undefined {
   const api = useApi();
   const available = useVoiceAvailable();
-  const query = useQuery({ ...accountVoiceRoomQueryOptions(api, accountId), enabled: available, retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...accountVoiceRoomQueryOptions(api, accountId),
+    enabled: available,
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   return available ? query.data?.voice_room : undefined;
 }

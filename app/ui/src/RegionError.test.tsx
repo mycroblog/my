@@ -7,7 +7,9 @@ import { RegionError } from "./RegionError";
 describe("RegionError", () => {
   it("shows what happened, the reason and a retry button, without a live region by default", async () => {
     const onRetry = vi.fn();
-    render(<RegionError heading="Couldn't load the posts" reason="Timed out." retryLabel="Try again" onRetry={onRetry} />);
+    render(
+      <RegionError heading="Couldn't load the posts" reason="Timed out." retryLabel="Try again" onRetry={onRetry} />,
+    );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading")).not.toBeInTheDocument();
     expect(screen.getByText("Couldn't load the posts")).toBeInTheDocument();

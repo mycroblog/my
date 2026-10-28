@@ -3,7 +3,14 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Poll, PollChoices, PollHint, PollResults, PollSummary } from "./Poll";
 
-const emojis = [{ shortcode: "blobcat", url: "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='4' fill='%23f59e0b'/%3E%3C/svg%3E", static_url: "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='4' fill='%23f59e0b'/%3E%3C/svg%3E" }];
+const emojis = [
+  {
+    shortcode: "blobcat",
+    url: "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='4' fill='%23f59e0b'/%3E%3C/svg%3E",
+    static_url:
+      "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='4' fill='%23f59e0b'/%3E%3C/svg%3E",
+  },
+];
 
 const options = [
   { key: 0, title: "Tea", share: "52%", ratio: 0.52, ownChoice: true },
@@ -15,7 +22,13 @@ const meta = {
   title: "Display/Poll",
   component: PollResults,
   args: { label: "Results", options, ownChoiceLabel: "Your vote" },
-  decorators: [(Story) => <div style={{ maxInlineSize: "24rem" }}><Story /></div>],
+  decorators: [
+    (Story) => (
+      <div style={{ maxInlineSize: "24rem" }}>
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof PollResults>;
 
 export default meta;
@@ -57,8 +70,19 @@ export const HiddenResults: Story = {
 export const LongOptions: Story = {
   args: {
     options: [
-      { key: 0, title: "Supercalifragilisticexpialidocious_and_then_some_more_words_without_any_break_at_all", share: "70%", ratio: 0.7 },
-      { key: 1, title: "A rather long option that has to wrap onto several lines in a narrow column of the timeline", share: "30%", ratio: 0.3, ownChoice: true },
+      {
+        key: 0,
+        title: "Supercalifragilisticexpialidocious_and_then_some_more_words_without_any_break_at_all",
+        share: "70%",
+        ratio: 0.7,
+      },
+      {
+        key: 1,
+        title: "A rather long option that has to wrap onto several lines in a narrow column of the timeline",
+        share: "30%",
+        ratio: 0.3,
+        ownChoice: true,
+      },
     ],
   },
 };
@@ -71,7 +95,13 @@ export const Rtl: Story = {
     ],
     ownChoiceLabel: "صوتك",
   },
-  decorators: [(Story) => <div dir="rtl"><Story /></div>],
+  decorators: [
+    (Story) => (
+      <div dir="rtl">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 function Choices({ multiple }: { multiple: boolean }) {
@@ -86,7 +116,9 @@ function Choices({ multiple }: { multiple: boolean }) {
         emojis={emojis}
         selected={selected}
         onChange={(value, on) => {
-          setSelected((current) => (multiple ? (on ? [...current, value] : current.filter((v) => v !== value)) : [value]));
+          setSelected((current) =>
+            multiple ? (on ? [...current, value] : current.filter((v) => v !== value)) : [value],
+          );
         }}
         submitLabel="Vote"
         canSubmit={selected.length > 0}

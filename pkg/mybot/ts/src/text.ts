@@ -14,7 +14,8 @@ const namedReferences: Readonly<Record<string, string>> = {
 function unescape(text: string): string {
   return text.replaceAll(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (whole, ref: string) => {
     if (ref.startsWith("#")) {
-      const code = ref[1] === "x" || ref[1] === "X" ? Number.parseInt(ref.slice(2), 16) : Number.parseInt(ref.slice(1), 10);
+      const code =
+        ref[1] === "x" || ref[1] === "X" ? Number.parseInt(ref.slice(2), 16) : Number.parseInt(ref.slice(1), 10);
       return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : "�";
     }
     return namedReferences[ref] ?? whole;

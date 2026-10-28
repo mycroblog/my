@@ -39,7 +39,10 @@ describe("the errors screen", () => {
   test("is in the administration menu of a viewer with manage_errors", async () => {
     await renderApp({ path: "/admin" });
 
-    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /^Errors/u })).toHaveAttribute("href", "/admin/errors");
+    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /^Errors/u })).toHaveAttribute(
+      "href",
+      "/admin/errors",
+    );
   });
 
   test("lists the open groups, and filters them by state and source in the URL", async () => {
@@ -50,7 +53,18 @@ describe("the errors screen", () => {
         params.delete("limit");
         queries.push(params.toString());
         if (params.get("state") === "muted") return HttpResponse.json({ items: [] });
-        return HttpResponse.json({ items: [errorGroupFixture(groupId), errorGroupFixture(otherId, { source: "web", kind: "error", type: "TypeError", where: "/@{$acct}", count_24h: 1 })] });
+        return HttpResponse.json({
+          items: [
+            errorGroupFixture(groupId),
+            errorGroupFixture(otherId, {
+              source: "web",
+              kind: "error",
+              type: "TypeError",
+              where: "/@{$acct}",
+              count_24h: 1,
+            }),
+          ],
+        });
       }),
     );
     const { user, router } = await renderApp({ path: "/admin/errors" });
@@ -136,7 +150,9 @@ describe("the page of an error group", () => {
     expect(hours.map((row) => within(row).getAllByRole("cell")[0]?.textContent)).toEqual(["3", "9"]);
 
     const history = screen.getByRole("table", { name: "History" });
-    const changes = within(history).getAllByRole("rowheader").map((cell) => cell.textContent);
+    const changes = within(history)
+      .getAllByRole("rowheader")
+      .map((cell) => cell.textContent);
     expect(changes).toEqual(["Muted", "Resolved (version ⁦0.3.0⁩)"]);
     expect(within(history).getByText("The command line")).toBeInTheDocument();
   });
@@ -146,7 +162,18 @@ describe("the page of an error group", () => {
     const sent: string[] = [];
     server.use(
       http.get(`${apiBase}/admin/error_groups/:id`, () =>
-        HttpResponse.json(errorGroupDetailFixture(groupId, state === "resolved" ? { state, resolved_version: "0.3.1", events: [{ kind: "resolved", actor: "user", version: "0.3.1", occurred_at: "2026-10-21T06:00:00Z" }] } : {})),
+        HttpResponse.json(
+          errorGroupDetailFixture(
+            groupId,
+            state === "resolved"
+              ? {
+                  state,
+                  resolved_version: "0.3.1",
+                  events: [{ kind: "resolved", actor: "user", version: "0.3.1", occurred_at: "2026-10-21T06:00:00Z" }],
+                }
+              : {},
+          ),
+        ),
       ),
       http.post(`${apiBase}/admin/error_groups/:id/resolve`, ({ params }) => {
         sent.push(String(params["id"]));
@@ -163,13 +190,17 @@ describe("the page of an error group", () => {
     expect(sent).toEqual([groupId]);
     expect(within(section).getByRole("heading", { name: "State" })).toHaveFocus();
     expect(within(section).queryByRole("button", { name: "Resolve" })).not.toBeInTheDocument();
-    expect(within(screen.getByRole("table", { name: "History" })).getByRole("rowheader")).toHaveTextContent("Resolved (version ⁦0.3.1⁩)");
+    expect(within(screen.getByRole("table", { name: "History" })).getByRole("rowheader")).toHaveTextContent(
+      "Resolved (version ⁦0.3.1⁩)",
+    );
   });
 
   test("mutes and unmutes a group", async () => {
     let state: "open" | "muted" = "open";
     server.use(
-      http.get(`${apiBase}/admin/error_groups/:id`, () => HttpResponse.json(errorGroupDetailFixture(groupId, { state }))),
+      http.get(`${apiBase}/admin/error_groups/:id`, () =>
+        HttpResponse.json(errorGroupDetailFixture(groupId, { state })),
+      ),
       http.post(`${apiBase}/admin/error_groups/:id/mute`, () => {
         state = "muted";
         return HttpResponse.json(errorGroupFixture(groupId, { state }));
@@ -195,7 +226,10 @@ describe("the page of an error group", () => {
   test("keeps the group and its buttons when an action fails, and says why", async () => {
     server.use(
       http.post(`${apiBase}/admin/error_groups/:id/mute`, () =>
-        HttpResponse.json({ type: "about:blank", title: "Service Unavailable", status: 503, detail: "Try again later." }, { status: 503, headers: { "Content-Type": "application/problem+json" } }),
+        HttpResponse.json(
+          { type: "about:blank", title: "Service Unavailable", status: 503, detail: "Try again later." },
+          { status: 503, headers: { "Content-Type": "application/problem+json" } },
+        ),
       ),
     );
     const { user } = await renderApp({ path: `/admin/errors/${groupId}` });
@@ -215,7 +249,14 @@ describe("the page of an error group", () => {
           const { sample: _, ...rest } = errorGroupDetailFixture(otherId);
           return HttpResponse.json(rest);
         }
-        const sample = { type: "TypeError", message: "x is undefined", stack: "TypeError: x is undefined", version: "0.3.1", role: "web", occurred_at: "2026-10-21T05:30:00Z" };
+        const sample = {
+          type: "TypeError",
+          message: "x is undefined",
+          stack: "TypeError: x is undefined",
+          version: "0.3.1",
+          role: "web",
+          occurred_at: "2026-10-21T05:30:00Z",
+        };
         return HttpResponse.json(errorGroupDetailFixture(groupId, { sample, hourly_counts: [] }));
       }),
     );
@@ -234,9 +275,24 @@ describe("the page of an error group", () => {
 describe("an admin_error_group notification", () => {
   test("leads to the group's page, or to the list for the groups beyond the hour's limit", async () => {
     const items: Schemas["Notification"][] = [
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e1", type: "admin_error_group", created_at: "2026-10-16T09:02:00Z", error_group: { change: "others", count: 4 } },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000e0", type: "admin_error_group", created_at: "2026-10-16T09:01:00Z", error_group: { change: "regressed", group_id: otherId } },
-      { id: "0192f0c4-7a8e-7000-8000-0000000000df", type: "admin_error_group", created_at: "2026-10-16T09:00:00Z", error_group: { change: "created", group_id: groupId } },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+        type: "admin_error_group",
+        created_at: "2026-10-16T09:02:00Z",
+        error_group: { change: "others", count: 4 },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000e0",
+        type: "admin_error_group",
+        created_at: "2026-10-16T09:01:00Z",
+        error_group: { change: "regressed", group_id: otherId },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000df",
+        type: "admin_error_group",
+        created_at: "2026-10-16T09:00:00Z",
+        error_group: { change: "created", group_id: groupId },
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -244,9 +300,15 @@ describe("an admin_error_group notification", () => {
 
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     const created = within(feed).getByRole("article", { name: /A new error was reported/u });
-    expect(within(created).getByRole("link", { name: "Open the error" })).toHaveAttribute("href", `/admin/errors/${groupId}`);
+    expect(within(created).getByRole("link", { name: "Open the error" })).toHaveAttribute(
+      "href",
+      `/admin/errors/${groupId}`,
+    );
     const regressed = within(feed).getByRole("article", { name: /A resolved error happened again/u });
-    expect(within(regressed).getByRole("link", { name: "Open the error" })).toHaveAttribute("href", `/admin/errors/${otherId}`);
+    expect(within(regressed).getByRole("link", { name: "Open the error" })).toHaveAttribute(
+      "href",
+      `/admin/errors/${otherId}`,
+    );
     const others = within(feed).getByRole("article", { name: /More new or recurring errors/u });
     expect(within(others).getByRole("link", { name: "Open the errors" })).toHaveAttribute("href", "/admin/errors");
   });

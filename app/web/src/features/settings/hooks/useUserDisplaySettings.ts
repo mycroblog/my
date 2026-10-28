@@ -20,7 +20,11 @@ export function useUserDisplaySettings(): void {
   const queryClient = useQueryClient();
   const status = useSessionStatus();
   const appLocale = useAppLocale();
-  const { data } = useQuery({ ...preferencesQueryOptions(api), enabled: status === "signed-in", retry: shellQueryRetry });
+  const { data } = useQuery({
+    ...preferencesQueryOptions(api),
+    enabled: status === "signed-in",
+    retry: shellQueryRetry,
+  });
   const locale = data?.locale;
   const unchosen = data?.time_zone_chosen === false;
   // Undefined is the browser's time zone: until the preferences load, and while none is chosen.

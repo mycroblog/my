@@ -13,10 +13,15 @@ import type { TextHighlight } from "./TextAreaMirror";
 import { TextField } from "./TextField";
 
 // Stories may spell out English; apps pass react-intl messages instead (web-client/README.md A9).
-const formatRemaining = (remaining: number) => (remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`);
+const formatRemaining = (remaining: number) =>
+  remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`;
 
 /** A stand-in for the web's textHighlights (lib/textHighlights.ts): the ranges of the given substrings. */
-function rangesOf(text: string, marks: readonly (readonly [TextHighlight["kind"], string])[], limit?: number): TextHighlight[] {
+function rangesOf(
+  text: string,
+  marks: readonly (readonly [TextHighlight["kind"], string])[],
+  limit?: number,
+): TextHighlight[] {
   const highlights: TextHighlight[] = marks.map(([kind, part]) => {
     const start = text.indexOf(part);
     return { kind, start, end: start + part.length };
@@ -55,7 +60,10 @@ function layerOf(control: HTMLElement): HTMLElement {
 }
 
 function marksOf(layer: HTMLElement) {
-  return [...layer.querySelectorAll("[data-highlight]")].map((mark) => [mark.getAttribute("data-highlight"), mark.textContent]);
+  return [...layer.querySelectorAll("[data-highlight]")].map((mark) => [
+    mark.getAttribute("data-highlight"),
+    mark.textContent,
+  ]);
 }
 
 const meta = {
@@ -72,7 +80,13 @@ type Story = StoryObj<typeof meta>;
  * action. The marks are the given ranges; the text over the limit wins over the URL it overlaps.
  */
 export const Post: Story = {
-  args: { defaultValue: post, highlights: postHighlights, characterLimit: postLimit, formatRemaining, endAction: emojiButton },
+  args: {
+    defaultValue: post,
+    highlights: postHighlights,
+    characterLimit: postLimit,
+    formatRemaining,
+    endAction: emojiButton,
+  },
   play: async ({ canvas }) => {
     const textbox = canvas.getByRole<HTMLTextAreaElement>("textbox", { name: "Post" });
     const layer = layerOf(textbox);
@@ -85,7 +99,15 @@ export const Post: Story = {
     const textareaStyle = getComputedStyle(textbox);
     const layerStyle = getComputedStyle(layer);
     await waitFor(() => expect(Number.isInteger(Number.parseFloat(textareaStyle.lineHeight))).toBe(true));
-    for (const property of ["font-family", "font-size", "line-height", "letter-spacing", "padding-inline-start", "padding-inline-end", "padding-block-start"]) {
+    for (const property of [
+      "font-family",
+      "font-size",
+      "line-height",
+      "letter-spacing",
+      "padding-inline-start",
+      "padding-inline-end",
+      "padding-block-start",
+    ]) {
       await waitFor(() => expect(layerStyle.getPropertyValue(property)).toBe(textareaStyle.getPropertyValue(property)));
     }
     // The textarea draws the text; the layer's text is transparent and only its marks have a background.
@@ -158,7 +180,14 @@ const name = "Alice :blobcat: :unknown: Liddell";
 
 /** A single-line field (a display name or a content warning) with only `:shortcode:`s highlighted. */
 export const SingleLine: Story = {
-  render: () => <TextField label="Display name" defaultValue={name} highlights={rangesOf(name, [["shortcode", ":blobcat:"]])} endAction={emojiButton} />,
+  render: () => (
+    <TextField
+      label="Display name"
+      defaultValue={name}
+      highlights={rangesOf(name, [["shortcode", ":blobcat:"]])}
+      endAction={emojiButton}
+    />
+  ),
   play: async ({ canvas }) => {
     const input = canvas.getByRole<HTMLInputElement>("textbox", { name: "Display name" });
     const layer = layerOf(input);

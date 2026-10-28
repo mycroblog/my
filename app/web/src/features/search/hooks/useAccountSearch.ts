@@ -71,7 +71,8 @@ export function useAccountSearch({ initialQuery, onFound }: AccountSearchOptions
   const scope: Scope = !followsRemote ? "known-only" : signedOut ? "signed-out" : "all";
   const mutation = useMutation({
     mutationKey: accountSearchMutationKey,
-    mutationFn: (variables: { query: string; scope: Scope }) => lookupAccount(api, variables.query, variables.scope === "all"),
+    mutationFn: (variables: { query: string; scope: Scope }) =>
+      lookupAccount(api, variables.query, variables.scope === "all"),
     onSuccess: (account, { query }) => {
       storeFoundAccount(queryClient, api, account);
       onFound(account.acct, query);
@@ -93,7 +94,10 @@ export function useAccountSearch({ initialQuery, onFound }: AccountSearchOptions
     },
     isPending: mutation.isPending,
     // The failure belongs to the text that caused it: editing the text clears it.
-    error: mutation.isError && mutation.variables.query === query ? failureOf(t, mutation.error, mutation.variables.scope) : null,
+    error:
+      mutation.isError && mutation.variables.query === query
+        ? failureOf(t, mutation.error, mutation.variables.scope)
+        : null,
     signedOut: scope === "signed-out",
     knownOnly: scope === "known-only",
   };

@@ -21,7 +21,12 @@ function message(key: string, values: Record<string, string> = {}): string {
 }
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 const account = {
@@ -60,7 +65,14 @@ async function serveApi(page: Page, initial: Schemas["AdminServiceClosure"]) {
   let closure = initial;
   const sent: string[] = [];
   const locale = test.info().project.use.locale ?? "en";
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
@@ -80,10 +92,18 @@ async function serveApi(page: Page, initial: Schemas["AdminServiceClosure"]) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/closure") return json(route, closure);
     if (key === "GET /admin/closure/check") return json(route, check);
@@ -106,7 +126,11 @@ async function serveApi(page: Page, initial: Schemas["AdminServiceClosure"]) {
       closure = {
         ...closure,
         state: "closed",
-        progress: { accounts: 12, fanouts_pending: 3, deliveries: { pending: 300, succeeded: 3000, permanent_failure: 20, skipped: 5, dead: 2 } },
+        progress: {
+          accounts: 12,
+          fanouts_pending: 3,
+          deliveries: { pending: 300, succeeded: 3000, permanent_failure: 20, skipped: 5, dead: 2 },
+        },
       };
       return json(route, closure);
     }
@@ -119,7 +143,9 @@ test.describe("the service closure screen", () => {
   test("announces the closure and warns of a short notice", async ({ page, makeAxeBuilder }) => {
     const sent = await serveApi(page, { state: "none", short_notice: false });
     await page.goto("/admin/closure");
-    const form = page.getByRole("main").getByRole("region", { name: message("admin.closure.announce.title"), exact: true });
+    const form = page
+      .getByRole("main")
+      .getByRole("region", { name: message("admin.closure.announce.title"), exact: true });
     await expect(form).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -130,7 +156,10 @@ test.describe("the service closure screen", () => {
 
     const soon = new Date(Date.now() + 5 * 86_400_000);
     const pad = (n: number) => String(n).padStart(2, "0");
-    await form.getByLabel(message("admin.closure.closes_at"), { exact: false }).first().fill(`${String(soon.getFullYear())}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}T12:00`);
+    await form
+      .getByLabel(message("admin.closure.closes_at"), { exact: false })
+      .first()
+      .fill(`${String(soon.getFullYear())}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}T12:00`);
     await expect(form.getByText(message("admin.closure.short_notice", { days: "30" }), { exact: true })).toBeVisible();
     await form.getByRole("textbox", { name: message("admin.closure.message"), exact: true }).fill(operatorMessage);
     await expectNoAxeViolations(makeAxeBuilder);
@@ -138,7 +167,9 @@ test.describe("the service closure screen", () => {
 
     await expect(page.getByRole("status").getByText(message("admin.closure.announced"), { exact: true })).toBeVisible();
     expect(sent).toEqual(["announce"]);
-    await expect(page.getByRole("main").getByRole("region", { name: message("admin.closure.current.title"), exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("region", { name: message("admin.closure.current.title"), exact: true }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -153,7 +184,9 @@ test.describe("the service closure screen", () => {
       short_notice: false,
     });
     await page.goto("/admin/closure");
-    const section = page.getByRole("main").getByRole("region", { name: message("admin.closure.close.title"), exact: true });
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("admin.closure.close.title"), exact: true });
     await expect(section.getByText(message("admin.closure.check.migrations.warning"), { exact: true })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -175,7 +208,9 @@ test.describe("the service closure screen", () => {
     await dialog.getByRole("button", { name: message("admin.closure.close.confirm"), exact: true }).click();
     await expect(page.getByRole("status").getByText(message("admin.closure.closed"), { exact: true })).toBeVisible();
     expect(sent).toEqual(["close MY.example"]);
-    const progress = page.getByRole("main").getByRole("region", { name: message("admin.closure.progress.title"), exact: true });
+    const progress = page
+      .getByRole("main")
+      .getByRole("region", { name: message("admin.closure.progress.title"), exact: true });
     await expect(progress.getByText(message("admin.closure.progress.dead"), { exact: true })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

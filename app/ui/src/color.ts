@@ -92,7 +92,10 @@ export function contrast(fg: LinearRgba, bg: LinearRgba): number {
 
 /** The `#rrggbb` (or `#rrggbbaa` when translucent) form of a color in the sRGB gamut. */
 export function toHex(color: LinearRgba): string {
-  const byte = (c: number) => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, "0");
+  const byte = (c: number) =>
+    Math.round(Math.min(1, Math.max(0, c)) * 255)
+      .toString(16)
+      .padStart(2, "0");
   const rgb = [color.r, color.g, color.b].map((c) => byte(toGamma(Math.min(1, Math.max(0, c))))).join("");
   return `#${rgb}${color.alpha < 1 ? byte(color.alpha) : ""}`;
 }

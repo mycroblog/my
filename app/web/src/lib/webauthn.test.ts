@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { afterEach, describe, expect, test } from "vitest";
-import { FakeAssertionResponse, FakeAttestationResponse, FakePublicKeyCredential, installPasskeys, removePasskeys } from "../test/webauthn";
+import {
+  FakeAssertionResponse,
+  FakeAttestationResponse,
+  FakePublicKeyCredential,
+  installPasskeys,
+  removePasskeys,
+} from "../test/webauthn";
 import {
   creationOptions,
   credentialJSON,
@@ -58,22 +64,37 @@ describe("creationOptions", () => {
     ]);
     expect(o.timeout).toBe(300000);
     expect(o.attestation).toBe("none");
-    expect(o.authenticatorSelection).toEqual({ requireResidentKey: true, residentKey: "required", userVerification: "required" });
-    expect(o.excludeCredentials?.map((d) => ({ ...d, id: asBytes(d.id) }))).toEqual([{ type: "public-key", id: [4, 5], transports: ["internal"] }]);
+    expect(o.authenticatorSelection).toEqual({
+      requireResidentKey: true,
+      residentKey: "required",
+      userVerification: "required",
+    });
+    expect(o.excludeCredentials?.map((d) => ({ ...d, id: asBytes(d.id) }))).toEqual([
+      { type: "public-key", id: [4, 5], transports: ["internal"] },
+    ]);
   });
 
   test("throws on options that are not WebAuthn's", () => {
     expect(() => creationOptions(null)).toThrow(PasskeyOptionsError);
     expect(() => creationOptions({ ...registration, challenge: 3 })).toThrow(PasskeyOptionsError);
     expect(() => creationOptions({ ...registration, attestation: "maybe" })).toThrow(PasskeyOptionsError);
-    expect(() => creationOptions({ ...registration, pubKeyCredParams: [{ type: "other", alg: -7 }] })).toThrow(PasskeyOptionsError);
-    expect(() => creationOptions({ ...registration, user: { ...registration.user, id: "!!" } })).toThrow(PasskeyOptionsError);
+    expect(() => creationOptions({ ...registration, pubKeyCredParams: [{ type: "other", alg: -7 }] })).toThrow(
+      PasskeyOptionsError,
+    );
+    expect(() => creationOptions({ ...registration, user: { ...registration.user, id: "!!" } })).toThrow(
+      PasskeyOptionsError,
+    );
   });
 });
 
 describe("requestOptions", () => {
   test("decodes the challenge of a sign-in with a discoverable credential", () => {
-    const o = requestOptions({ challenge: "AQI", rpId: "social.example", timeout: 300000, userVerification: "required" });
+    const o = requestOptions({
+      challenge: "AQI",
+      rpId: "social.example",
+      timeout: 300000,
+      userVerification: "required",
+    });
     expect(asBytes(o.challenge)).toEqual([1, 2]);
     expect(o).toMatchObject({ rpId: "social.example", timeout: 300000, userVerification: "required" });
     expect(o.allowCredentials).toBeUndefined();

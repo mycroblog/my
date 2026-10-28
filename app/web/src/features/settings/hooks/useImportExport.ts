@@ -52,7 +52,10 @@ export function useCsvExports(): CsvExports {
 }
 
 /** The chosen file: none, read, or one that cannot be imported. */
-type ChosenFile = { status: "none" } | { status: "read"; name: string; text: string } | { status: "invalid"; name: string; error: string };
+type ChosenFile =
+  | { status: "none" }
+  | { status: "read"; name: string; text: string }
+  | { status: "invalid"; name: string; error: string };
 
 /** What the import form needs. */
 export type ImportForm = {
@@ -125,12 +128,20 @@ export function useImportForm(): ImportForm {
         (content) => {
           setFile(
             content.length > maxImportTextLength
-              ? { status: "invalid", name: chosen.name, error: t("client:settings.import_export.import.file_too_large") }
+              ? {
+                  status: "invalid",
+                  name: chosen.name,
+                  error: t("client:settings.import_export.import.file_too_large"),
+                }
               : { status: "read", name: chosen.name, text: content },
           );
         },
         () => {
-          setFile({ status: "invalid", name: chosen.name, error: t("client:settings.import_export.import.file_unreadable") });
+          setFile({
+            status: "invalid",
+            name: chosen.name,
+            error: t("client:settings.import_export.import.file_unreadable"),
+          });
         },
       );
     },
@@ -155,7 +166,8 @@ export function useDataImports(): DataImport[] {
   const queryClient = useQueryClient();
   const query = useSuspenseQuery({
     ...dataImportsQueryOptions(api, queryClient),
-    refetchInterval: (q) => (q.state.data?.items.some((item) => item.state === "in_progress") === true ? progressPollInterval : false),
+    refetchInterval: (q) =>
+      q.state.data?.items.some((item) => item.state === "in_progress") === true ? progressPollInterval : false,
   });
   return query.data.items;
 }

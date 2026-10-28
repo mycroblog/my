@@ -32,7 +32,9 @@ export function markAnnouncementReadMutation(api: Api) {
 /** The list with `announcement` in place of the one of its ID, or joined in the order of the list. */
 function withAnnouncement(list: AnnouncementList, announcement: Announcement): AnnouncementList {
   const others = list.items.filter((item) => item.id !== announcement.id);
-  const items = [...others, announcement].toSorted((a, b) => b.published_at.localeCompare(a.published_at) || b.id.localeCompare(a.id));
+  const items = [...others, announcement].toSorted(
+    (a, b) => b.published_at.localeCompare(a.published_at) || b.id.localeCompare(a.id),
+  );
   return { items };
 }
 

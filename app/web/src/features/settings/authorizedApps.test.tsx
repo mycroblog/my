@@ -115,7 +115,9 @@ describe("authorized apps", () => {
 
     await user.click(await screen.findByRole("button", { name: "Revoke: Reader" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Revoke “Reader”?" });
-    expect(dialog).toHaveAccessibleDescription("The app loses access to your account at once. To use it again, you have to allow it again.");
+    expect(dialog).toHaveAccessibleDescription(
+      "The app loses access to your account at once. To use it again, you have to allow it again.",
+    );
     await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
 
     await waitFor(() => {

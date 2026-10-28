@@ -55,7 +55,10 @@ export function followRequestsQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", listPaths.followRequests, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/follow_requests", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/follow_requests", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status, so this is only for the types.
       if (data === undefined) throw new Error(error.title);
       return data;
@@ -66,7 +69,11 @@ export function followRequestsQueryOptions(api: Api) {
 }
 
 /** The actions on one account of the lists, each on the account's ID. */
-type AccountActionPath = "/accounts/{id}/unblock" | "/accounts/{id}/unmute" | "/follow_requests/{id}/authorize" | "/follow_requests/{id}/reject";
+type AccountActionPath =
+  | "/accounts/{id}/unblock"
+  | "/accounts/{id}/unmute"
+  | "/follow_requests/{id}/authorize"
+  | "/follow_requests/{id}/reject";
 
 /**
  * An action on the account with the given ID (POST `path`), as the options of TanStack Query's useMutation
@@ -94,19 +101,40 @@ export type ListChange = "unblock" | "unmute" | "accept" | "reject";
 export function removeFromList(queryClient: QueryClient, api: Api, change: ListChange, id: string): void {
   switch (change) {
     case "unblock":
-      queryClient.setQueryData(blocksQueryOptions(api).queryKey, (data) =>
-        data && { ...data, pages: data.pages.map((page) => ({ ...page, accounts: page.accounts.filter((account) => account.id !== id) })) },
+      queryClient.setQueryData(
+        blocksQueryOptions(api).queryKey,
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              accounts: page.accounts.filter((account) => account.id !== id),
+            })),
+          },
       );
       return;
     case "unmute":
-      queryClient.setQueryData(mutesQueryOptions(api).queryKey, (data) =>
-        data && { ...data, pages: data.pages.map((page) => ({ ...page, mutes: page.mutes.filter((mute) => mute.account.id !== id) })) },
+      queryClient.setQueryData(
+        mutesQueryOptions(api).queryKey,
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page) => ({ ...page, mutes: page.mutes.filter((mute) => mute.account.id !== id) })),
+          },
       );
       return;
     case "accept":
     case "reject":
-      queryClient.setQueryData(followRequestsQueryOptions(api).queryKey, (data) =>
-        data && { ...data, pages: data.pages.map((page) => ({ ...page, accounts: page.accounts.filter((account) => account.id !== id) })) },
+      queryClient.setQueryData(
+        followRequestsQueryOptions(api).queryKey,
+        (data) =>
+          data && {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              accounts: page.accounts.filter((account) => account.id !== id),
+            })),
+          },
       );
   }
 }
@@ -118,10 +146,23 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
  * again what refreshRelationship names (the follow counts and lists, the lists of posts). A rejected request
  * changes no list and no count. Resolves once that is done; the list itself is left to removeFromList.
  */
-export async function cacheListChange(queryClient: QueryClient, change: ListChange, relationship: Relationship, viewerId: string): Promise<void> {
+export async function cacheListChange(
+  queryClient: QueryClient,
+  change: ListChange,
+  relationship: Relationship,
+  viewerId: string,
+): Promise<void> {
   queryClient.setQueriesData<Relationship[]>(
-    { predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/accounts/relationships" && query.state.data !== undefined },
-    (data) => (data?.some((item) => item.id === relationship.id) ? data.map((item) => (item.id === relationship.id ? relationship : item)) : data),
+    {
+      predicate: (query) =>
+        query.queryKey[0] === "get" &&
+        query.queryKey[1] === "/accounts/relationships" &&
+        query.state.data !== undefined,
+    },
+    (data) =>
+      data?.some((item) => item.id === relationship.id)
+        ? data.map((item) => (item.id === relationship.id ? relationship : item))
+        : data,
   );
   if (change !== "reject") await refreshRelationship(queryClient, change, relationship.id, viewerId);
 }

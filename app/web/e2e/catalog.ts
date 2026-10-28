@@ -15,7 +15,10 @@ export function readCatalog(locale: string, namespace = "client"): Catalog {
   let catalog = catalogs.get(dir);
   if (catalog === undefined) {
     const files = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".json"));
-    catalog = Object.assign({}, ...files.map((f) => JSON.parse(readFileSync(`${dir}${f}`, "utf8")) as Catalog)) as Catalog;
+    catalog = Object.assign(
+      {},
+      ...files.map((f) => JSON.parse(readFileSync(`${dir}${f}`, "utf8")) as Catalog),
+    ) as Catalog;
     catalogs.set(dir, catalog);
   }
   return catalog;

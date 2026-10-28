@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button as RACButton, type ButtonProps as RACButtonProps, composeRenderProps, Link as RACLink, type LinkProps as RACLinkProps } from "react-aria-components";
+import {
+  Button as RACButton,
+  type ButtonProps as RACButtonProps,
+  composeRenderProps,
+  Link as RACLink,
+  type LinkProps as RACLinkProps,
+} from "react-aria-components";
 import { tv, type VariantProps } from "tailwind-variants";
 
 const button = tv({
@@ -63,13 +69,20 @@ export function Button({ variant, size, className, ...props }: ButtonProps) {
             // The focus the browser would have moved on pointer down, now that the press is over. Enter and Space on the
             // button already have it there, and Enter in a field (the form's implicit submission, a `virtual` click)
             // keeps it in the field. The form submits after this, in the click's default action.
-            const pointer = event.pointerType === "mouse" || event.pointerType === "touch" || event.pointerType === "pen";
+            const pointer =
+              event.pointerType === "mouse" || event.pointerType === "touch" || event.pointerType === "pen";
             if (pointer && event.target instanceof HTMLElement) event.target.focus();
             props.onPress?.(event);
           },
         }
       : {};
-  return <RACButton {...props} {...submitProps} className={composeRenderProps(className, (className) => button({ variant, size, className }))} />;
+  return (
+    <RACButton
+      {...props}
+      {...submitProps}
+      className={composeRenderProps(className, (className) => button({ variant, size, className }))}
+    />
+  );
 }
 
 export type ButtonLinkProps = RACLinkProps & VariantProps<typeof button>;
@@ -79,5 +92,10 @@ export type ButtonLinkProps = RACLinkProps & VariantProps<typeof button>;
  * registration page). Activated as a link: Enter, not Space.
  */
 export function ButtonLink({ variant, size, className, ...props }: ButtonLinkProps) {
-  return <RACLink {...props} className={composeRenderProps(className, (className) => button({ variant, size, className }))} />;
+  return (
+    <RACLink
+      {...props}
+      className={composeRenderProps(className, (className) => button({ variant, size, className }))}
+    />
+  );
 }

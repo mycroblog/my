@@ -7,7 +7,8 @@ import { InlineError } from "./Text";
 import { Stack } from "./Stack";
 import { TextArea } from "./TextArea";
 
-const image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90'%3E%3Crect width='160' height='90' fill='%2314b8a6'/%3E%3C/svg%3E";
+const image =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90'%3E%3Crect width='160' height='90' fill='%2314b8a6'/%3E%3C/svg%3E";
 
 const meta = {
   title: "Compose/AttachmentItem",
@@ -16,7 +17,11 @@ const meta = {
     src: image,
     children: (
       <>
-        <TextArea label="Description of image 1" description="Describe the image for people who cannot see it." rows={2} />
+        <TextArea
+          label="Description of image 1"
+          description="Describe the image for people who cannot see it."
+          rows={2}
+        />
         <Box self="start">
           <Button size="sm" variant="ghost">
             Remove image 1

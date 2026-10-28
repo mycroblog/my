@@ -16,7 +16,6 @@ const authorizePath = "/oauth/authorize";
 /** The path of the redirect URI on the web client's origin (platform.WebClientCallbackPath). */
 const callbackPath = "/login/callback";
 
-
 /** Unpadded base64url (RFC 4648 §5), the encoding of PKCE's verifier and challenge. */
 function base64url(bytes: Uint8Array): string {
   let binary = "";
@@ -58,7 +57,11 @@ export type BeginSignInOptions = {
  * registered with.
  */
 export async function beginSignIn({ apiOrigin, appOrigin, returnTo }: BeginSignInOptions): Promise<URL> {
-  const pending: StoredSignIn = { state: randomToken(), codeVerifier: randomToken(), returnTo: isReturnPath(returnTo) ? returnTo : "/" };
+  const pending: StoredSignIn = {
+    state: randomToken(),
+    codeVerifier: randomToken(),
+    returnTo: isReturnPath(returnTo) ? returnTo : "/",
+  };
   const url = new URL(authorizePath, apiOrigin);
   url.search = new URLSearchParams({
     response_type: "code",
@@ -73,7 +76,11 @@ export async function beginSignIn({ apiOrigin, appOrigin, returnTo }: BeginSignI
 }
 
 /** What the authorization server sent back to the callback (RFC 6749 §4.1.2, §4.1.2.1). */
-export type AuthorizationResponse = { code?: string | undefined; state?: string | undefined; error?: string | undefined };
+export type AuthorizationResponse = {
+  code?: string | undefined;
+  state?: string | undefined;
+  error?: string | undefined;
+};
 
 /** Why a sign-in failed at the callback. */
 export type SignInFailure =
@@ -112,12 +119,20 @@ export function completeSignIn(session: Session, response: AuthorizationResponse
   return completion;
 }
 
-async function exchange(session: Session, { code, state, error }: AuthorizationResponse, appOrigin: string): Promise<string> {
+async function exchange(
+  session: Session,
+  { code, state, error }: AuthorizationResponse,
+  appOrigin: string,
+): Promise<string> {
   const pending = takePending();
   if (pending === null || state === undefined || state !== pending.state) throw new SignInError("invalid-state");
   if (error !== undefined) throw new SignInError(error === "access_denied" ? "denied" : "rejected");
   if (code === undefined || code === "") throw new SignInError("rejected");
-  const accepted = await session.exchangeCode({ code, redirectUri: new URL(callbackPath, appOrigin).href, codeVerifier: pending.codeVerifier });
+  const accepted = await session.exchangeCode({
+    code,
+    redirectUri: new URL(callbackPath, appOrigin).href,
+    codeVerifier: pending.codeVerifier,
+  });
   if (!accepted) throw new SignInError("rejected");
   return pending.returnTo;
 }

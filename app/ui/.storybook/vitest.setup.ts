@@ -48,7 +48,13 @@ const hoveredControls = [
 
 async function moveThePointerAway(frame: HTMLElement) {
   const spot = document.createElement("div");
-  const spotStyle: Record<string, string> = { position: "fixed", "inset-inline-end": "0", "inset-block-end": "0", "inline-size": "2px", "block-size": "2px" };
+  const spotStyle: Record<string, string> = {
+    position: "fixed",
+    "inset-inline-end": "0",
+    "inset-block-end": "0",
+    "inline-size": "2px",
+    "block-size": "2px",
+  };
   for (const [property, value] of Object.entries(spotStyle)) spot.style.setProperty(property, value);
   document.body.append(spot);
   try {
@@ -60,7 +66,9 @@ async function moveThePointerAway(frame: HTMLElement) {
   // A control that moved from under a still pointer (a message appeared above it) gets no pointer event from the
   // browser, so React Aria never hears that the pointer left; tell it the way the browser would have.
   for (const element of frame.querySelectorAll<HTMLElement>("[data-hovered]")) {
-    element.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse", relatedTarget: document.body }));
+    element.dispatchEvent(
+      new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse", relatedTarget: document.body }),
+    );
   }
   await expect
     // Only controls change their look on hover; a sheet that fills a phone viewport is under the pointer wherever it goes.
@@ -70,7 +78,12 @@ async function moveThePointerAway(frame: HTMLElement) {
 
 /** Names a running animation for the failure message: the CSS animation or property and its element. */
 function describeAnimation(animation: Animation): string {
-  const name = animation instanceof CSSAnimation ? animation.animationName : animation instanceof CSSTransition ? animation.transitionProperty : animation.id;
+  const name =
+    animation instanceof CSSAnimation
+      ? animation.animationName
+      : animation instanceof CSSTransition
+        ? animation.transitionProperty
+        : animation.id;
   const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
   return `${name} on ${target?.outerHTML.slice(0, 120) ?? "an unknown element"}`;
 }
@@ -84,13 +97,16 @@ function viewportOf(globals: Record<string, unknown>): string | undefined {
 
 afterEach(async (context) => {
   // Only story tests carry a composed story; it stays mounted until the next one renders.
-  const { story } = context as typeof context & { story?: { id: string; tags: readonly string[]; globals: Record<string, unknown> } };
+  const { story } = context as typeof context & {
+    story?: { id: string; tags: readonly string[]; globals: Record<string, unknown> };
+  };
   if (story === undefined || context.task.result?.state === "fail") return;
   // A story tagged `no-screenshot` exists for its play function (a long, virtualized list); it still
   // renders and passes axe, and the same component's other stories carry its screenshots.
   if (story.tags.includes("no-screenshot")) return;
   const frame = document.querySelector<HTMLElement>("[data-story-frame]");
-  if (frame === null) throw new Error(`story ${story.id} rendered no [data-story-frame]; is the preview decorator missing?`);
+  if (frame === null)
+    throw new Error(`story ${story.id} rendered no [data-story-frame]; is the preview decorator missing?`);
   const { locale, theme } = story.globals;
   await emulateCaptureMedia(true, story.tags.includes("forced-colors"));
   try {
@@ -106,7 +122,9 @@ afterEach(async (context) => {
     expect(running, `story ${story.id} still animates with prefers-reduced-motion: reduce`).toEqual([]);
     const viewport = viewportOf(story.globals);
     if (viewport !== undefined) {
-      await expect.element(page.elementLocator(frame)).toMatchScreenshot(`${story.id}-${String(locale)}-${String(theme)}-${viewport}`);
+      await expect
+        .element(page.elementLocator(frame))
+        .toMatchScreenshot(`${story.id}-${String(locale)}-${String(theme)}-${viewport}`);
       return;
     }
     for (const width of widths) {
@@ -118,7 +136,9 @@ afterEach(async (context) => {
       // the 1200 px that the Storybook addon sets; the container width is what the components answer to.
       const bottom = Math.ceil(frame.getBoundingClientRect().bottom + window.scrollY);
       await page.viewport(viewportWidth, Math.max(viewportHeight, bottom + 16));
-      await expect.element(page.elementLocator(frame)).toMatchScreenshot(`${story.id}-${String(locale)}-${String(theme)}-${width}`);
+      await expect
+        .element(page.elementLocator(frame))
+        .toMatchScreenshot(`${story.id}-${String(locale)}-${String(theme)}-${width}`);
     }
   } finally {
     frame.style.inlineSize = "";

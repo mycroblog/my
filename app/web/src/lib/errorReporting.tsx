@@ -44,7 +44,8 @@ const maxRouteLength = 256;
  * The messages of a dynamic import that failed: Chromium, Firefox, and Safari. The chunk of a version that a deploy
  * removed, which `vite:preloadError` reloads the page for (lib/pwa).
  */
-const chunkLoadFailure = /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/;
+const chunkLoadFailure =
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/;
 
 /** The version of the build (VITE_MY_RELEASE, which the image build sets from its VERSION), if it has one. */
 const buildRelease: string | undefined = import.meta.env.VITE_MY_RELEASE || undefined;
@@ -154,7 +155,8 @@ export class ErrorReporter {
   /** The report of `error`, or null when it is not reported. */
   #reportOf(error: unknown, kind: ClientErrorKind): ClientErrorReport | null {
     if (!(error instanceof Error)) return null;
-    if (isNotFound(error) || isRedirect(error) || errorKind(error) !== "unexpected" || error.name === "AbortError") return null;
+    if (isNotFound(error) || isRedirect(error) || errorKind(error) !== "unexpected" || error.name === "AbortError")
+      return null;
     if (this.#preloadErrors.has(error) || chunkLoadFailure.test(error.message)) return null;
     const stack = error.stack ?? "";
     if (!this.#isOwnStack(stack)) return null;

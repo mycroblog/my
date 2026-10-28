@@ -3,7 +3,20 @@
 // source filters (kept in the URL by the route, web-client/README.md S3), a table of one page, and previous / next.
 // The groups are the most recently seen first; each row's first cell links to the group's page, where it is resolved
 // or muted. Types, places and messages are the server's own text, in English, read left to right.
-import { EmptyState, Hint, Link, ListToolbar, Select, SelectItem, Stack, TableCell, TableColumnHeader, TableRow, TableRowHeader, Text } from "@my/ui";
+import {
+  EmptyState,
+  Hint,
+  Link,
+  ListToolbar,
+  Select,
+  SelectItem,
+  Stack,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  Text,
+} from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { adminErrorGroupPath } from "../../../lib/paths";
 import { DateTime, RecordTable, RequirePermission } from "../../moderation";
@@ -61,7 +74,11 @@ function isSourceFilter(key: unknown): key is ErrorSourceFilter {
 export function ErrorStateLabel({ state }: { state: ErrorGroupState }) {
   const t = useT();
   return (
-    <Text weight="semibold" {...(state === "open" && { tone: "danger" as const })} {...(state === "resolved" && { tone: "success" as const })}>
+    <Text
+      weight="semibold"
+      {...(state === "open" && { tone: "danger" as const })}
+      {...(state === "resolved" && { tone: "success" as const })}
+    >
       {t(errorStateLabels[state])}
     </Text>
   );

@@ -46,7 +46,12 @@ const meta = {
         <Microphone initial />
         <CallDockButton label="Reactions" icon={<EmojiIcon />} />
         <CallDockButton label="Invite" icon={<InviteIcon />} />
-        <CallDockButton label="Hands" icon={<RaiseHandIcon />} showLabel count={{ value: 2, label: "2 raised hands" }} />
+        <CallDockButton
+          label="Hands"
+          icon={<RaiseHandIcon />}
+          showLabel
+          count={{ value: 2, label: "2 raised hands" }}
+        />
       </>
     ),
     end: <CallDockButton label="Leave" icon={<LeaveIcon />} showLabel variant="danger" onPress={onLeave} />,
@@ -93,7 +98,8 @@ export const Listener: Story = {
 export const Keyboard: Story = {
   play: async ({ canvas, userEvent }) => {
     onLeave.mockClear();
-    const [next, previous] = document.documentElement.dir === "rtl" ? ["{ArrowLeft}", "{ArrowRight}"] : ["{ArrowRight}", "{ArrowLeft}"];
+    const [next, previous] =
+      document.documentElement.dir === "rtl" ? ["{ArrowLeft}", "{ArrowRight}"] : ["{ArrowRight}", "{ArrowLeft}"];
     await userEvent.tab();
     const microphone = canvas.getByRole("button", { name: "Microphone" });
     await expect(microphone).toHaveFocus();

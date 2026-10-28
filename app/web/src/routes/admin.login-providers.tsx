@@ -11,7 +11,9 @@ export const Route = createFileRoute("/admin/login-providers")({
   staticData: { title: "client:admin.login_providers.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_login_providers", () => context.queryClient.query({ ...loginProvidersQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_login_providers", () =>
+      context.queryClient.query({ ...loginProvidersQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: LoginProvidersPage,
   errorComponent: LoginProvidersError,
 });
@@ -28,5 +30,7 @@ function LoginProvidersPage() {
 
 function LoginProvidersError(props: ErrorComponentProps) {
   const t = useT();
-  return <AdminError {...props} permission="manage_login_providers" heading={t("client:admin.login_providers.title")} />;
+  return (
+    <AdminError {...props} permission="manage_login_providers" heading={t("client:admin.login_providers.title")} />
+  );
 }

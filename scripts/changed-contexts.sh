@@ -87,6 +87,11 @@ classify() {
       select_contexts go mykit
       return
       ;;
+    # The options and the ignored files of bun fmt, which web:fmt-check reads for every TS package.
+    bunfig.toml | .prettierignore | .editorconfig)
+      select_contexts web
+      return
+      ;;
     app/bun.lock | app/bunfig.toml | app/package.json)
       select_contexts ui web
       return
@@ -220,7 +225,7 @@ classify() {
   esac
   case "$path" in
     # Files no check reads.
-    LICENSE | .editorconfig | .claude/* | .github/*)
+    LICENSE | .git-blame-ignore-revs | .claude/* | .github/*)
       known=1
       ;;
   esac

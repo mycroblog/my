@@ -27,7 +27,10 @@ const audioPlayer = tv({
 
 /** The height pattern of the waveform's bars, in the brand kit's order; it is not an analysis of the sound. */
 const barHeights = ["h-3", "h-3", "h-8", "h-6", "h-4.5", "h-8", "h-3", "h-6", "h-3", "h-8", "h-4.5", "h-6"];
-const bars = Array.from({ length: 24 }, (_, i) => ({ id: `bar-${String(i)}`, height: barHeights[(i * 5 + (i % 3)) % barHeights.length] ?? "h-3" }));
+const bars = Array.from({ length: 24 }, (_, i) => ({
+  id: `bar-${String(i)}`,
+  height: barHeights[(i * 5 + (i % 3)) % barHeights.length] ?? "h-3",
+}));
 
 export type AudioPlayerLabels = {
   /** The accessible name of the play button ("Play"). */
@@ -60,7 +63,16 @@ function useMediaTimes(audioRef: React.RefObject<HTMLAudioElement | null>) {
         playing: !element.paused && !element.ended,
       });
     };
-    const events = ["loadedmetadata", "durationchange", "timeupdate", "seeked", "play", "playing", "pause", "ended"] as const;
+    const events = [
+      "loadedmetadata",
+      "durationchange",
+      "timeupdate",
+      "seeked",
+      "play",
+      "playing",
+      "pause",
+      "ended",
+    ] as const;
     for (const event of events) element.addEventListener(event, read);
     read();
     return () => {

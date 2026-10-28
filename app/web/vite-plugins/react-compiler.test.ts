@@ -22,7 +22,8 @@ async function build(modules: Record<string, string>): Promise<string | undefine
   const buildEnd = plugin.buildEnd;
   if (typeof transform !== "object" || typeof buildEnd !== "function") throw new Error("unexpected plugin shape");
   try {
-    for (const [file, code] of Object.entries(modules)) await transform.handler.call(context as never, code, file, {} as never);
+    for (const [file, code] of Object.entries(modules))
+      await transform.handler.call(context as never, code, file, {} as never);
     await buildEnd.call(context as never, undefined);
   } catch (error) {
     return (error as Error).message;
@@ -65,12 +66,14 @@ describe("compileModule", () => {
   it("locates the problem by characters, not bytes, after non-ASCII text", async () => {
     const result = await compileModule("/src/useSend.ts", `// 日本語のコメント\n${dynamicHook}`);
     const column = /^\/src\/useSend\.ts:6:(\d+):/.exec(result.problems[0] ?? "")?.[1];
-    const plain = /^\/src\/useSend\.ts:5:(\d+):/.exec((await compileModule("/src/useSend.ts", dynamicHook)).problems[0] ?? "")?.[1];
+    const plain = /^\/src\/useSend\.ts:5:(\d+):/.exec(
+      (await compileModule("/src/useSend.ts", dynamicHook)).problems[0] ?? "",
+    )?.[1];
     expect(column).toBeDefined();
     expect(column).toBe(plain);
   });
 
-  it("ignores the diagnostics of a function that opts out with \"use no memo\"", async () => {
+  it('ignores the diagnostics of a function that opts out with "use no memo"', async () => {
     const result = await compileModule(
       "/src/useSend.ts",
       dynamicHook.replace("const api = useApi();", '"use no memo";\n    const api = useApi();'),
@@ -113,7 +116,10 @@ describe("reactCompiler", () => {
 
   it("keeps the problems of each module that TanStack Router splits from one route file", async () => {
     expect(
-      await build({ "/src/routes/a.tsx?tsr-split=component": dynamicHook, "/src/routes/a.tsx?tsr-split=errorComponent": counter }),
+      await build({
+        "/src/routes/a.tsx?tsr-split=component": dynamicHook,
+        "/src/routes/a.tsx?tsr-split=errorComponent": counter,
+      }),
     ).toMatch(/\/src\/routes\/a\.tsx\?tsr-split=component:5:\d+: [^\n]*\n {4}> return api\.query\.useMutation/);
   });
 

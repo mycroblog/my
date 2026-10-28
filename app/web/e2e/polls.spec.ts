@@ -92,17 +92,40 @@ const post: Status = {
 /** Answers the client API as Alice's session. A vote answers the post with it counted. */
 async function serveApi(page: Page): Promise<void> {
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500 }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500 },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
@@ -115,7 +138,9 @@ async function serveApi(page: Page): Promise<void> {
         ...poll,
         votes_count: poll.votes_count + choices.length,
         voters_count: (poll.voters_count ?? 0) + 1,
-        options: poll.options.map((option, index) => (choices.includes(index) ? { ...option, votes_count: (option.votes_count ?? 0) + 1 } : option)),
+        options: poll.options.map((option, index) =>
+          choices.includes(index) ? { ...option, votes_count: (option.votes_count ?? 0) + 1 } : option,
+        ),
         voted: true,
         own_votes: choices,
       };
@@ -150,7 +175,10 @@ test.describe("the poll of a post", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("takes a vote and shows its results, axe-clean and without horizontal scrolling", async ({ page, makeAxeBuilder }) => {
+  test("takes a vote and shows its results, axe-clean and without horizontal scrolling", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const region = pollRegion(page);
     // By keyboard: the radio's input is visually hidden under its drawn circle.
     const ridge = region.getByRole("radio", { name: "The ridge" });

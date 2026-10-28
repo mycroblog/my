@@ -13,7 +13,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Off: Story = {};
 export const On: Story = { args: { defaultSelected: true } };
-export const WithDescription: Story = { args: { description: "GIFs and animated avatars play without a click.", defaultSelected: true } };
+export const WithDescription: Story = {
+  args: { description: "GIFs and animated avatars play without a click.", defaultSelected: true },
+};
 
 export const Disabled: Story = {
   render: (args) => (

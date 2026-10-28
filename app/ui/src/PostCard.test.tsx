@@ -64,7 +64,9 @@ function renderAnimatedPost(autoplay = false) {
         avatar={<Avatar sources={dance} name="Alice" decorative />}
         author="Alice @alice"
         time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
-        content={<PostContent html={serverSanitizedHtml('<p>Hello <a href="https://example.com/">there</a></p>')} lang="en" />}
+        content={
+          <PostContent html={serverSanitizedHtml('<p>Hello <a href="https://example.com/">there</a></p>')} lang="en" />
+        }
         actions={<button type="button">Reply</button>}
       />
     </AutoplayContext>,
@@ -101,7 +103,11 @@ describe("PostCard animations", () => {
   it("starts and stops them with a tap on the card, but not with a tap on a control, a drag or a long press", async () => {
     const user = userEvent.setup();
     const { article, moves } = renderAnimatedPost();
-    const tap = (target: Element) => user.pointer([{ keys: "[TouchA>]", target }, { keys: "[/TouchA]", target }]);
+    const tap = (target: Element) =>
+      user.pointer([
+        { keys: "[TouchA>]", target },
+        { keys: "[/TouchA]", target },
+      ]);
     await tap(screen.getByRole("button", { name: "Reply" }));
     expect(moves()).toBe(false);
     await tap(screen.getByRole("link", { name: "there" }));
@@ -126,7 +132,10 @@ describe("PostCard animations", () => {
     const user = userEvent.setup();
     const { article, moves } = renderAnimatedPost(true);
     expect(moves()).toBe(true);
-    await user.pointer([{ keys: "[TouchA>]", target: article }, { keys: "[/TouchA]", target: article }]);
+    await user.pointer([
+      { keys: "[TouchA>]", target: article },
+      { keys: "[/TouchA]", target: article },
+    ]);
     expect(moves()).toBe(true);
   });
 });

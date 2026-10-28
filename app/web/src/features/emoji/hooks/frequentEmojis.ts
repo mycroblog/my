@@ -16,7 +16,20 @@ const halfLife = 7 * 24 * 60 * 60 * 1000;
  * The emoji shown as used often before any is used: those that the picker of reactions offers by default (ADR-0052
  * §2), the ones Misskey offers and a few more. Each is fully qualified, the form the server counts reactions in.
  */
-export const defaultFrequentEmojis: readonly string[] = ["👍", "❤️", "😆", "🤔", "😮", "🎉", "😢", "😇", "🙏", "👀", "🔥", "💯"];
+export const defaultFrequentEmojis: readonly string[] = [
+  "👍",
+  "❤️",
+  "😆",
+  "🤔",
+  "😮",
+  "🎉",
+  "😢",
+  "😇",
+  "🙏",
+  "👀",
+  "🔥",
+  "💯",
+];
 
 /** The key of a custom emoji in the list: its `:shortcode:`, which no Unicode emoji starts with. */
 export function customEmojiKey(shortcode: string): string {

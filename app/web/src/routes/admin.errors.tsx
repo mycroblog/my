@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
-import { type ErrorFilter, ErrorGroups, errorGroupsQueryOptions, errorSourceFilters, errorStateFilters } from "../features/admin";
+import {
+  type ErrorFilter,
+  ErrorGroups,
+  errorGroupsQueryOptions,
+  errorSourceFilters,
+  errorStateFilters,
+} from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -20,10 +26,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/admin/errors")({
   staticData: { title: "client:admin.errors.title" },
   validateSearch: searchSchema,
-  loaderDeps: ({ search: { state, source } }): { filter: ErrorFilter } => ({ filter: { state: state ?? "open", source: source ?? "all" } }),
+  loaderDeps: ({ search: { state, source } }): { filter: ErrorFilter } => ({
+    filter: { state: state ?? "open", source: source ?? "all" },
+  }),
   beforeLoad: requireSignIn,
   loader: ({ context, deps: { filter } }) =>
-    loadWithPermission(context, "manage_errors", () => context.queryClient.infiniteQuery({ ...errorGroupsQueryOptions(context.api, filter), staleTime: Infinity })),
+    loadWithPermission(context, "manage_errors", () =>
+      context.queryClient.infiniteQuery({ ...errorGroupsQueryOptions(context.api, filter), staleTime: Infinity }),
+    ),
   component: ErrorsPage,
   errorComponent: ErrorsError,
 });
@@ -38,7 +48,12 @@ function ErrorsPage() {
       <ErrorGroups
         filter={filter}
         onFilterChange={(next) => {
-          void navigate({ search: { state: next.state === "open" ? undefined : next.state, source: next.source === "all" ? undefined : next.source } });
+          void navigate({
+            search: {
+              state: next.state === "open" ? undefined : next.state,
+              source: next.source === "all" ? undefined : next.source,
+            },
+          });
         }}
       />
     </>

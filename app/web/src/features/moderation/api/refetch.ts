@@ -8,7 +8,8 @@ import { ApiError } from "../../../lib/errors";
 import { refreshAuditLog } from "./staff";
 
 /** What a refetch is for: a remote post, the posts of a remote account, or those of a remote server's accounts. */
-export type RefetchTarget = { kind: "status"; id: string } | { kind: "account"; id: string } | { kind: "domain"; domain: string };
+export type RefetchTarget =
+  { kind: "status"; id: string } | { kind: "account"; id: string } | { kind: "domain"; domain: string };
 
 /**
  * Queues the refetch of `target` (POST /admin/statuses/{id}/refetch, /admin/accounts/{id}/refetch_statuses or
@@ -23,7 +24,9 @@ export function refetchMutation(api: Api) {
           ? await api.fetch.POST("/admin/statuses/{id}/refetch", { params: { path: { id: target.id } } })
           : target.kind === "account"
             ? await api.fetch.POST("/admin/accounts/{id}/refetch_statuses", { params: { path: { id: target.id } } })
-            : await api.fetch.POST("/admin/instances/{domain}/refetch_statuses", { params: { path: { domain: target.domain } } });
+            : await api.fetch.POST("/admin/instances/{domain}/refetch_statuses", {
+                params: { path: { domain: target.domain } },
+              });
       // The middleware throws an ApiError for every error status; this is only for the types.
       if (error !== undefined) throw new ApiError(error);
     },

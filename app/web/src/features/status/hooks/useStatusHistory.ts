@@ -71,19 +71,20 @@ export function useStatusHistory(id: string): StatusHistoryView {
   const { data: history } = useSuspenseQuery(statusHistoryQueryOptions(api, id));
   const lang = post.language === "und" ? undefined : post.language;
   const last = history.items.length - 1;
-  const revisions = history.items.map(
-    (revision, index): RevisionView => ({
-      number: index + 1,
-      kind: index === last ? "current" : index === 0 ? "original" : "edit",
-      time: { dateTime: revision.created_at, absolute: intl.formatDate(Date.parse(revision.created_at), { dateStyle: "full", timeStyle: "short" }) },
-      changes: changesFrom(revision, history.items[index - 1]),
-      // `content` is sanitized HTML (api/openapi.yaml, StatusEdit.content).
-      html: serverSanitizedHtml(revision.content),
-      contentWarning: revision.spoiler_text === "" ? null : revision.spoiler_text,
-      emojis: revision.emojis,
-      media: mediaItems(revision.media_attachments, lang),
-      sensitive: revision.sensitive,
-    }),
-  );
+  const revisions = history.items.map((revision, index): RevisionView => ({
+    number: index + 1,
+    kind: index === last ? "current" : index === 0 ? "original" : "edit",
+    time: {
+      dateTime: revision.created_at,
+      absolute: intl.formatDate(Date.parse(revision.created_at), { dateStyle: "full", timeStyle: "short" }),
+    },
+    changes: changesFrom(revision, history.items[index - 1]),
+    // `content` is sanitized HTML (api/openapi.yaml, StatusEdit.content).
+    html: serverSanitizedHtml(revision.content),
+    contentWarning: revision.spoiler_text === "" ? null : revision.spoiler_text,
+    emojis: revision.emojis,
+    media: mediaItems(revision.media_attachments, lang),
+    sensitive: revision.sensitive,
+  }));
   return { postPath: statusPath(post), lang, revisions: revisions.toReversed(), onLinkClick };
 }

@@ -56,9 +56,11 @@ export const Route = createFileRoute("/moderation/accounts")({
   // the page's.
   loader: ({ context, deps: { search } }) =>
     loadWithPermission(context, "manage_accounts", () =>
-      context.queryClient.infiniteQuery({ ...adminAccountsQueryOptions(context.api, search), staleTime: Infinity }).catch((error: unknown) => {
-        if (isMissingPermission(error)) throw error;
-      }),
+      context.queryClient
+        .infiniteQuery({ ...adminAccountsQueryOptions(context.api, search), staleTime: Infinity })
+        .catch((error: unknown) => {
+          if (isMissingPermission(error)) throw error;
+        }),
     ),
   component: AccountsPage,
   errorComponent: AccountsError,

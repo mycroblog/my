@@ -4,7 +4,22 @@
 // each currency, the gross and the fees on the costs screen only, and the balance against the costs where the answer
 // carries it; the members of each supporter plan now where they are shown; and the rules that date and place the
 // payments. Nothing here names a payment or a subscriber. Plan names are the operators' words, shown with dir="auto".
-import { Cluster, Heading, Hint, RegionError, Spinner, Stack, Table, TableBody, TableCell, TableColumnHeader, TableHead, TableRow, TableRowHeader, Text } from "@my/ui";
+import {
+  Cluster,
+  Heading,
+  Hint,
+  RegionError,
+  Spinner,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumnHeader,
+  TableHead,
+  TableRow,
+  TableRowHeader,
+  Text,
+} from "@my/ui";
 import { useId } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -44,7 +59,11 @@ function useFormatBalance(): (balance: readonly Money[]) => string {
   return (balance) => {
     if (balance.length === 0) return t("client:costs.totals.none");
     const amounts = balance.map((money) =>
-      intl.formatNumber(Number(money.amount), { style: "currency", currency: money.currency, signDisplay: "exceptZero" }),
+      intl.formatNumber(Number(money.amount), {
+        style: "currency",
+        currency: money.currency,
+        signDisplay: "exceptZero",
+      }),
     );
     return intl.formatList(amounts, { type: "unit", style: "short" });
   };
@@ -62,7 +81,12 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3 }:
   const balance = totals.periods.some((period) => period.balance !== undefined);
   return (
     <Stack gap="4">
-      <Table caption={t("client:income.totals.caption", { granularity: t(granularityLabels[granularity]), basis: t(basisLabels[basis]) })}>
+      <Table
+        caption={t("client:income.totals.caption", {
+          granularity: t(granularityLabels[granularity]),
+          basis: t(basisLabels[basis]),
+        })}
+      >
         <TableHead>
           <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
           {detailed && (
@@ -80,12 +104,22 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3 }:
               <TableRowHeader>{periodName(granularity, period)}</TableRowHeader>
               {detailed && (
                 <>
-                  <TableCell numeric wrap="anywhere">{formatTotals(period.gross ?? [])}</TableCell>
-                  <TableCell numeric wrap="anywhere">{formatTotals(period.fee ?? [])}</TableCell>
+                  <TableCell numeric wrap="anywhere">
+                    {formatTotals(period.gross ?? [])}
+                  </TableCell>
+                  <TableCell numeric wrap="anywhere">
+                    {formatTotals(period.fee ?? [])}
+                  </TableCell>
                 </>
               )}
-              <TableCell numeric wrap="anywhere">{formatTotals(period.net)}</TableCell>
-              {balance && <TableCell numeric wrap="anywhere">{formatBalance(period.balance ?? [])}</TableCell>}
+              <TableCell numeric wrap="anywhere">
+                {formatTotals(period.net)}
+              </TableCell>
+              {balance && (
+                <TableCell numeric wrap="anywhere">
+                  {formatBalance(period.balance ?? [])}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -126,7 +160,15 @@ function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[
 }
 
 /** How the income totals date and place the payments (ADR-0073 §3, §5), and what the balance is. */
-function IncomeRules({ totals, balance, headingLevel }: { totals: ShownIncomeTotals; balance: boolean; headingLevel: 3 | 4 }) {
+function IncomeRules({
+  totals,
+  balance,
+  headingLevel,
+}: {
+  totals: ShownIncomeTotals;
+  balance: boolean;
+  headingLevel: 3 | 4;
+}) {
   const t = useT();
   const intl = useIntl();
   const headingId = useId();
@@ -138,7 +180,9 @@ function IncomeRules({ totals, balance, headingLevel }: { totals: ShownIncomeTot
       <Stack as="ul" gap="1" marker="disc">
         <li>{t("client:income.rules.net")}</li>
         {totals.rules.providers.map((provider) => (
-          <li key={provider.provider}>{t("client:income.rules.provider", { provider: provider.provider, timeZone: provider.time_zone })}</li>
+          <li key={provider.provider}>
+            {t("client:income.rules.provider", { provider: provider.provider, timeZone: provider.time_zone })}
+          </li>
         ))}
         <li>
           {totals.basis === "amortized"

@@ -5,7 +5,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { accountFixture, otherAccountFixture, remoteAccountFixture, type Schemas, statusFixture, viewerFixture } from "../../test/fixtures";
+import {
+  accountFixture,
+  otherAccountFixture,
+  remoteAccountFixture,
+  type Schemas,
+  statusFixture,
+  viewerFixture,
+} from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { watchAppearances } from "../../test/appearances";
@@ -77,7 +84,8 @@ function reportsServer(initial: Report[]) {
     }),
     http.post(`${apiBase}/admin/reports/:id/:operation`, async ({ request, params }) => {
       const operation = String(params["operation"]);
-      const body = operation === "resolve" || operation === "notes" ? ((await request.json()) as Record<string, string>) : {};
+      const body =
+        operation === "resolve" || operation === "notes" ? ((await request.json()) as Record<string, string>) : {};
       changes.push(`${operation}${body["outcome"] === undefined ? "" : ` ${body["outcome"]}`}`);
       const next = update(String(params["id"]), (report) => {
         switch (operation) {
@@ -89,7 +97,12 @@ function reportsServer(initial: Report[]) {
             return next;
           }
           case "resolve":
-            return { ...report, state: "resolved", outcome: body["outcome"] as Schemas["AdminReportOutcome"], state_changed_at: "2026-10-17T00:00:00Z" };
+            return {
+              ...report,
+              state: "resolved",
+              outcome: body["outcome"] as Schemas["AdminReportOutcome"],
+              state_changed_at: "2026-10-17T00:00:00Z",
+            };
           case "reopen": {
             const next: Report = { ...report, state: "open", state_changed_at: "2026-10-17T01:00:00Z" };
             delete next.outcome;
@@ -98,7 +111,15 @@ function reportsServer(initial: Report[]) {
           default:
             return {
               ...report,
-              notes: [...report.notes, { id: `0192f0c4-7a8e-7000-8000-0000000e000${String(report.notes.length)}`, author_account_id: viewerFixture.id, body: body["body"] ?? "", created_at: "2026-10-17T00:00:00Z" }],
+              notes: [
+                ...report.notes,
+                {
+                  id: `0192f0c4-7a8e-7000-8000-0000000e000${String(report.notes.length)}`,
+                  author_account_id: viewerFixture.id,
+                  body: body["body"] ?? "",
+                  created_at: "2026-10-17T00:00:00Z",
+                },
+              ],
             };
         }
       });
@@ -135,11 +156,18 @@ function region(name: string) {
 describe("the report queue", () => {
   test("lists the open reports newest first, with the target, reporter, category and assignee, and the resolved ones in their tab", async () => {
     const api = reportsServer([spam, older, dismissed]);
-    server.use(http.get(`${apiBase}/accounts/:id`, ({ params }) => (params["id"] === moderator.id ? HttpResponse.json(moderator) : undefined)));
+    server.use(
+      http.get(`${apiBase}/accounts/:id`, ({ params }) =>
+        params["id"] === moderator.id ? HttpResponse.json(moderator) : undefined,
+      ),
+    );
     const { user, router } = await renderApp({ path: "/moderation/reports" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Reports" })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: `Report on ${isolated("@bob")}` })).toHaveAttribute("href", `/moderation/reports/${spam.id}`);
+    expect(await screen.findByRole("link", { name: `Report on ${isolated("@bob")}` })).toHaveAttribute(
+      "href",
+      `/moderation/reports/${spam.id}`,
+    );
     expect(rows().map((row) => within(row).getByRole("link").textContent)).toEqual([
       `Report on ${isolated("@bob")}`,
       `Report on ${isolated("@carol@remote.example")}`,
@@ -180,7 +208,9 @@ describe("the report queue", () => {
     expect(rows()).toHaveLength(1);
     await user.click(within(pages).getByRole("button", { name: "Next" }));
 
-    expect(await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` }),
+    ).toBeInTheDocument();
     expect(rows()).toHaveLength(1);
     expect(within(pages).getByRole("button", { name: "Next" })).toBeDisabled();
     await user.click(within(pages).getByRole("button", { name: "Previous" }));
@@ -206,7 +236,11 @@ describe("the report queue", () => {
 describe("a report's page", () => {
   test("shows the report, its posts, its target with the target's history, the assignee and the notes on one page", async () => {
     const report = reportFixture({
-      status_ids: ["0192f0c4-7a8e-7000-8000-0000000000b1", "0192f0c4-7a8e-7000-8000-0000000000b2", "0192f0c4-7a8e-7000-8000-0000000000b3"],
+      status_ids: [
+        "0192f0c4-7a8e-7000-8000-0000000000b1",
+        "0192f0c4-7a8e-7000-8000-0000000000b2",
+        "0192f0c4-7a8e-7000-8000-0000000000b3",
+      ],
       statuses: [
         { status: { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b1"), visibility: "direct" } },
         { status: statusFixture("0192f0c4-7a8e-7000-8000-0000000000b2"), deleted_at: "2026-10-16T11:00:00Z" },
@@ -215,7 +249,9 @@ describe("a report's page", () => {
       rule_ids: ["0192f0c4-7a8e-7000-8000-0000000f0001", "0192f0c4-7a8e-7000-8000-0000000f0009"],
       forwarded: true,
       uri: "https://remote.example/flags/1",
-      notes: [{ id: "0192f0c4-7a8e-7000-8000-0000000e0001", body: "Seen this before.", created_at: "2026-10-16T10:00:00Z" }],
+      notes: [
+        { id: "0192f0c4-7a8e-7000-8000-0000000e0001", body: "Seen this before.", created_at: "2026-10-16T10:00:00Z" },
+      ],
       target_history: { reports_count: 2, actions_count: 1 },
     });
     reportsServer([report]);
@@ -276,17 +312,22 @@ describe("a report's page", () => {
     const target = region("Reported account");
     expect(within(target).getByText("@bob")).toBeInTheDocument();
     expect(within(target).getByRole("link", { name: "Open the profile" })).toHaveAttribute("href", "/@bob");
-    expect(within(target).getByRole("link", { name: "Open the account's admin page" })).toHaveAttribute("href", `/moderation/accounts/${otherAccountFixture.id}`);
-    expect(within(target).getByRole("link", { name: "Show operations on the account in the audit log" })).toHaveAttribute(
+    expect(within(target).getByRole("link", { name: "Open the account's admin page" })).toHaveAttribute(
       "href",
-      `/moderation/audit-log?target_kind=account&target=${otherAccountFixture.id}`,
+      `/moderation/accounts/${otherAccountFixture.id}`,
     );
+    expect(
+      within(target).getByRole("link", { name: "Show operations on the account in the audit log" }),
+    ).toHaveAttribute("href", `/moderation/audit-log?target_kind=account&target=${otherAccountFixture.id}`);
     expect(within(target).getByText("2 reports")).toBeInTheDocument();
     expect(within(target).getByText("1 action")).toBeInTheDocument();
 
     const history = region("Actions on the account");
     expect(await within(history).findByRole("heading", { level: 3, name: "Warn" })).toBeInTheDocument();
-    expect(within(history).getByRole("link", { name: "Open the report" })).toHaveAttribute("href", "/moderation/reports/0192f0c4-7a8e-7000-8000-0000000c0099");
+    expect(within(history).getByRole("link", { name: "Open the report" })).toHaveAttribute(
+      "href",
+      "/moderation/reports/0192f0c4-7a8e-7000-8000-0000000c0099",
+    );
     expect(within(history).getByText("Please stop.")).toHaveAttribute("dir", "auto");
 
     expect(within(region("Assignee")).getByText("Nobody")).toBeInTheDocument();
@@ -325,7 +366,9 @@ describe("a report's page", () => {
 
   test("a note the server refuses says why under its field and keeps the text", async () => {
     reportsServer([spam]);
-    server.use(http.post(`${apiBase}/admin/reports/:id/notes`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/reports/:id/notes`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
 
     const field = await screen.findByRole("textbox", { name: "New note" });
@@ -352,7 +395,16 @@ describe("a report's page", () => {
 
     expect(await within(handling).findByText("Action taken (Limit). The report is resolved.")).toBeInTheDocument();
     expect(api.actions).toEqual([
-      { accountId: otherAccountFixture.id, body: { kind: "limit", reason_category: "spam", public_reason: "Spam links.", report_id: spam.id, notify_target: true } },
+      {
+        accountId: otherAccountFixture.id,
+        body: {
+          kind: "limit",
+          reason_category: "spam",
+          public_reason: "Spam links.",
+          report_id: spam.id,
+          notify_target: true,
+        },
+      },
     ]);
     expect(await within(handling).findByRole("button", { name: "Reopen" })).toBeInTheDocument();
     expect(within(handling).getByText("Action taken")).toBeInTheDocument();
@@ -361,7 +413,9 @@ describe("a report's page", () => {
     });
 
     await user.click(screen.getByRole("link", { name: "Back to the reports" }));
-    expect(await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` })).not.toBeInTheDocument();
   });
 
@@ -382,9 +436,13 @@ describe("a report's page", () => {
     await user.click(within(handling).getByRole("button", { name: "Take action and resolve" }));
     expect(await within(handling).findByText("Action taken (Limit). The report is resolved.")).toBeInTheDocument();
 
-    const staleQueue = watchAppearances(() => screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` }) !== null);
+    const staleQueue = watchAppearances(
+      () => screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` }) !== null,
+    );
     await user.click(screen.getByRole("link", { name: "Back to the reports" }));
-    expect(await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` }),
+    ).toBeInTheDocument();
     expect(staleQueue()).toBe(false);
     expect(api.lists).toEqual(["limit=40&state=open", "limit=40&state=open"]);
   });
@@ -401,9 +459,13 @@ describe("a report's page", () => {
     await user.click(await screen.findByRole("button", { name: "Resolve without action" }));
     expect(await within(region("Handling")).findByText("The report is resolved: No action.")).toBeInTheDocument();
 
-    const staleQueue = watchAppearances(() => screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` }) !== null);
+    const staleQueue = watchAppearances(
+      () => screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` }) !== null,
+    );
     await user.click(screen.getByRole("link", { name: "Back to the reports" }));
-    expect(await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: `Report on ${isolated("@carol@remote.example")}` }),
+    ).toBeInTheDocument();
     expect(staleQueue()).toBe(false);
   });
 
@@ -438,7 +500,9 @@ describe("a report's page", () => {
   });
 
   test("deleting posts asks first, sends the chosen posts, and needs one", async () => {
-    const report = reportFixture({ status_ids: ["0192f0c4-7a8e-7000-8000-0000000000b1", "0192f0c4-7a8e-7000-8000-0000000000b2"] });
+    const report = reportFixture({
+      status_ids: ["0192f0c4-7a8e-7000-8000-0000000000b1", "0192f0c4-7a8e-7000-8000-0000000000b2"],
+    });
     const api = reportsServer([report]);
     const { user } = await renderApp({ path: `/moderation/reports/${report.id}` });
 
@@ -458,7 +522,13 @@ describe("a report's page", () => {
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
     expect(await screen.findByText("Action taken (Delete posts). The report is resolved.")).toBeInTheDocument();
     expect(api.actions.map(({ body }) => body)).toEqual([
-      { kind: "delete_statuses", reason_category: "spam", report_id: report.id, notify_target: true, status_ids: ["0192f0c4-7a8e-7000-8000-0000000000b2"] },
+      {
+        kind: "delete_statuses",
+        reason_category: "spam",
+        report_id: report.id,
+        notify_target: true,
+        status_ids: ["0192f0c4-7a8e-7000-8000-0000000000b2"],
+      },
     ]);
   });
 
@@ -473,14 +543,18 @@ describe("a report's page", () => {
     reportsServer([report]);
     const { user } = await renderApp({ path: `/moderation/reports/${report.id}` });
 
-    expect(within(await screen.findByRole("region", { name: "Reported posts" })).getAllByRole("article")).toHaveLength(2);
+    expect(within(await screen.findByRole("region", { name: "Reported posts" })).getAllByRole("article")).toHaveLength(
+      2,
+    );
     await user.click(await screen.findByRole("radio", { name: "Delete posts" }));
     expect(within(screen.getByRole("group", { name: "Posts" })).getAllByRole("checkbox")).toHaveLength(1);
   });
 
   test("an action that fails in its confirmation says why there, which stays open", async () => {
     reportsServer([spam]);
-    server.use(http.post(`${apiBase}/admin/accounts/:id/actions`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/accounts/:id/actions`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
 
     await user.click(await screen.findByRole("radio", { name: "Ban" }));
@@ -488,7 +562,9 @@ describe("a report's page", () => {
     const dialog = await screen.findByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "Ban" }));
 
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Could not take the action: Service Unavailable");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Could not take the action: Service Unavailable",
+    );
   });
 
   test("an account of another server takes only the actions for it, and is not told", async () => {
@@ -496,7 +572,11 @@ describe("a report's page", () => {
     const { user } = await renderApp({ path: `/moderation/reports/${older.id}` });
 
     const kinds = await screen.findByRole("radiogroup", { name: "Action" });
-    expect(within(kinds).getAllByRole("radio").map((radio) => radio.getAttribute("value"))).toEqual(["force_sensitive", "limit", "suspend"]);
+    expect(
+      within(kinds)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["force_sensitive", "limit", "suspend"]);
     expect(screen.queryByRole("checkbox", { name: "Tell the account" })).not.toBeInTheDocument();
     await user.click(within(kinds).getByRole("radio", { name: "Suspend" }));
     // A suspension can be lifted: it takes effect without asking.
@@ -524,7 +604,9 @@ describe("a report's page", () => {
 
   test("a change that fails is told in a toast, and the report stays as it was", async () => {
     reportsServer([spam]);
-    server.use(http.post(`${apiBase}/admin/reports/:id/resolve`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/reports/:id/resolve`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
 
     await user.click(await screen.findByRole("button", { name: "Resolve as actioned" }));
@@ -538,7 +620,9 @@ describe("a report's page", () => {
     reportsServer([spam]);
     await renderApp({ path: `/moderation/reports/${spam.id}` });
 
-    expect(await screen.findByText("Taking an action on the account needs the manage_accounts permission.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Taking an action on the account needs the manage_accounts permission."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Action" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Actions on the account" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open the account's admin page" })).not.toBeInTheDocument();
@@ -566,7 +650,9 @@ describe("permissions", () => {
   });
 
   test("a refusal of the server for a missing permission is shown as such", async () => {
-    server.use(http.get(`${apiBase}/admin/reports/:id`, () => problem(403, "/api/v1/problems/missing-permission", "Forbidden")));
+    server.use(
+      http.get(`${apiBase}/admin/reports/:id`, () => problem(403, "/api/v1/problems/missing-permission", "Forbidden")),
+    );
     await renderApp({ path: `/moderation/reports/${spam.id}` });
 
     expect(await screen.findByRole("heading", { level: 2, name: "You cannot use this screen" })).toBeInTheDocument();

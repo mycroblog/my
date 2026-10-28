@@ -53,11 +53,13 @@ const matrix: Project[] = widths
 
 // The Noto Color Emoji web font (ADR-0095 §3) picks its format by the browser's tech() support: COLRv1 in Chromium and
 // Firefox, OpenType-SVG in WebKit, so its spec runs in all three engines (the pinned Playwright image has them).
-const emojiFontProjects: Project[] = (["Desktop Chrome", "Desktop Firefox", "Desktop Safari"] as const).map((device) => ({
-  name: `emoji-font-${devices[device].defaultBrowserType}`,
-  testMatch: emojiFontSpec,
-  use: { ...devices[device], viewport: { width: 1440, height: 900 }, locale: "en" },
-}));
+const emojiFontProjects: Project[] = (["Desktop Chrome", "Desktop Firefox", "Desktop Safari"] as const).map(
+  (device) => ({
+    name: `emoji-font-${devices[device].defaultBrowserType}`,
+    testMatch: emojiFontSpec,
+    use: { ...devices[device], viewport: { width: 1440, height: 900 }, locale: "en" },
+  }),
+);
 
 // Chromium's fake microphone (a tone) and its acceptance of the permission prompt let two browser contexts speak to
 // each other without a device or a person (Chromium command-line switches); audio plays without a user gesture. The
@@ -71,7 +73,11 @@ const voiceP2PProject: Project = {
     locale: "en",
     permissions: ["microphone"],
     launchOptions: {
-      args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"],
+      args: [
+        "--use-fake-device-for-media-stream",
+        "--use-fake-ui-for-media-stream",
+        "--autoplay-policy=no-user-gesture-required",
+      ],
     },
   },
 };

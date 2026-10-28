@@ -12,7 +12,8 @@ export const Route = createFileRoute("/bookmarks")({
   beforeLoad: requireSignIn,
   // Cached pages that no bookmark has marked stale are shown at once (and refetched in the background once old);
   // marked or missing ones are fetched and waited for (web-client/README.md S7).
-  loader: ({ context: { queryClient, api } }) => queryClient.infiniteQuery({ ...timelineQueryOptions(api, { kind: "bookmarks" }), staleTime: Infinity }),
+  loader: ({ context: { queryClient, api } }) =>
+    queryClient.infiniteQuery({ ...timelineQueryOptions(api, { kind: "bookmarks" }), staleTime: Infinity }),
   component: BookmarksPage,
   pendingComponent: BookmarksPending,
 });

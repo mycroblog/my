@@ -12,7 +12,13 @@ import { useVoiceAvailable } from "../../voice";
  * enabled, outside the Tauri app (ADR-0072 §14), and the voice chat history only while the server has voice chat on
  * (ADR-0100 §13).
  */
-const pages: readonly { href: string; label: ClientMessageKey; permission?: Permission; supporters?: true; voice?: true }[] = [
+const pages: readonly {
+  href: string;
+  label: ClientMessageKey;
+  permission?: Permission;
+  supporters?: true;
+  voice?: true;
+}[] = [
   { href: "/settings/profile", label: "client:settings.profile.title" },
   { href: "/settings/preferences", label: "client:settings.preferences.title" },
   { href: "/settings/password", label: "client:settings.password.title" },
@@ -48,14 +54,23 @@ export function SettingsMenu({ pathname }: { pathname: string }) {
   const voice = useVoiceAvailable();
   const statusPageUrl = useStatusPageUrl();
   const shown = pages.filter(
-    (page) => (page.permission === undefined || permissions.includes(page.permission)) && (page.supporters === undefined || supporters) && (page.voice === undefined || voice),
+    (page) =>
+      (page.permission === undefined || permissions.includes(page.permission)) &&
+      (page.supporters === undefined || supporters) &&
+      (page.voice === undefined || voice),
   );
   return (
     <>
       <Stack as="ul" gap="1">
         {shown.map((page) => (
           <li key={page.href}>
-            <RailItem form="section" href={page.href} icon={null} label={t(page.label)} current={pathname === page.href} />
+            <RailItem
+              form="section"
+              href={page.href}
+              icon={null}
+              label={t(page.label)}
+              current={pathname === page.href}
+            />
           </li>
         ))}
       </Stack>

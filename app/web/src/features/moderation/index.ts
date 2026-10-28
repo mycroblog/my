@@ -24,7 +24,16 @@ export { moderationPages } from "./components/moderationPages";
 export { useModerationEntry } from "./hooks/useModerationCounts";
 // What the server administration screens share.
 export { isMissingPermission, pageQuery, type Permission, refreshAuditLog } from "./api/staff";
-export { DateTime, DetailSection, DomainName, MissingPermission, RecordList, RecordTable, RequirePermission, useFocusAfterChange } from "./components/parts";
+export {
+  DateTime,
+  DetailSection,
+  DomainName,
+  MissingPermission,
+  RecordList,
+  RecordTable,
+  RequirePermission,
+  useFocusAfterChange,
+} from "./components/parts";
 export { type StaffPage, type StaffPageBadge, StaffPages, useShownStaffPages } from "./components/StaffPages";
 export { type PagedList, type PagedPages, toPagedList, wholeList } from "./hooks/pagedList";
 export { useHasPermission, useViewerPermissions } from "./hooks/usePermissions";

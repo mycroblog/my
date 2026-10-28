@@ -133,8 +133,15 @@ export function subscriptionCommandMutation(api: Api) {
  * change may move: the user's choice to be listed and the supporter list (a member who stops being one leaves it),
  * and the viewer's account (the plan's role and its badge).
  */
-export async function cacheSubscription(api: Api, queryClient: QueryClient, subscription: SupporterSubscription): Promise<void> {
-  queryClient.setQueryData(ownSupporterSubscriptionQueryOptions(api).queryKey, (own: OwnSupporterSubscription | undefined) => ({ ...own, subscription }));
+export async function cacheSubscription(
+  api: Api,
+  queryClient: QueryClient,
+  subscription: SupporterSubscription,
+): Promise<void> {
+  queryClient.setQueryData(
+    ownSupporterSubscriptionQueryOptions(api).queryKey,
+    (own: OwnSupporterSubscription | undefined) => ({ ...own, subscription }),
+  );
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: supporterListingQueryOptions(api).queryKey }),
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/supporters"] }),
@@ -166,7 +173,11 @@ export function updateListingMutation(api: Api) {
 }
 
 /** Puts the choice as the server answered it into the cache, and marks the supporter list, which it changes (ADR-0045). */
-export async function cacheListing(api: Api, queryClient: QueryClient, saved: Schemas["SupporterListing"]): Promise<void> {
+export async function cacheListing(
+  api: Api,
+  queryClient: QueryClient,
+  saved: Schemas["SupporterListing"],
+): Promise<void> {
   queryClient.setQueryData(supporterListingQueryOptions(api).queryKey, saved);
   await queryClient.invalidateQueries({ queryKey: ["get", "/instance/supporters"] });
 }

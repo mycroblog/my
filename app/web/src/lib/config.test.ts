@@ -2,7 +2,12 @@
 import { describe, expect, test } from "vitest";
 import { readRuntimeConfig, RuntimeConfigError } from "./config";
 
-const valid = { apiOrigin: "https://my.example", instanceName: "my example", accountDomain: "my.example", defaultLocale: "ja" };
+const valid = {
+  apiOrigin: "https://my.example",
+  instanceName: "my example",
+  accountDomain: "my.example",
+  defaultLocale: "ja",
+};
 
 /** A document with the shell's data block holding `text`. */
 function shellWith(text: string, type = "application/json"): Document {
@@ -30,7 +35,10 @@ describe("readRuntimeConfig", () => {
     ["text that is not JSON", shellWith("{")],
     ["a missing field", shellWith(JSON.stringify({ ...valid, instanceName: undefined }))],
     ["an empty name", shellWith(JSON.stringify({ ...valid, instanceName: "" }))],
-    ["an API origin that is not an http(s) URL", shellWith(JSON.stringify({ ...valid, apiOrigin: "javascript:alert(1)" }))],
+    [
+      "an API origin that is not an http(s) URL",
+      shellWith(JSON.stringify({ ...valid, apiOrigin: "javascript:alert(1)" })),
+    ],
   ])("throws a RuntimeConfigError for %s", (_, doc) => {
     expect(() => readRuntimeConfig(doc)).toThrow(RuntimeConfigError);
   });

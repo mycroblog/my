@@ -66,7 +66,10 @@ export function webhookDeliveriesQueryOptions(api: Api, id: string) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/webhooks/{id}/deliveries", { id }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/webhooks/{id}/deliveries", { params: { path: { id }, query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/webhooks/{id}/deliveries", {
+        params: { path: { id }, query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -77,7 +80,9 @@ export function webhookDeliveriesQueryOptions(api: Api, id: string) {
 }
 
 /** The reason of an `invalid-webhook` problem and the permissions it names, or undefined for another error. */
-export function webhookProblem(error: unknown): { reason: WebhookProblemReason | undefined; missing: string[] } | undefined {
+export function webhookProblem(
+  error: unknown,
+): { reason: WebhookProblemReason | undefined; missing: string[] } | undefined {
   if (!(error instanceof ApiError) || error.type !== invalidWebhookProblem) return undefined;
   const reason = error.document["reason"];
   const missing = error.document["missing_permissions"];

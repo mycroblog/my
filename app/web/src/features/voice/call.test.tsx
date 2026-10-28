@@ -16,7 +16,13 @@ import { renderApp } from "../../test/render";
 import { FakeAudioContext, FakePeerConnection, FakeStream, resetFakeRtc, sdpDirections } from "./test/fakeRtc";
 import { participantFixture, roomId, voiceRoomFixture } from "./test/handlers";
 
-const grant: Schemas["VoiceGrant"] = { kind: "p2p", options: {}, ice_servers: [{ urls: ["stun:stun.example"] }], relay_only: false, expires_at: "2099-01-01T00:00:00Z" };
+const grant: Schemas["VoiceGrant"] = {
+  kind: "p2p",
+  options: {},
+  ice_servers: [{ urls: ["stun:stun.example"] }],
+  relay_only: false,
+  expires_at: "2099-01-01T00:00:00Z",
+};
 
 const encoder = new TextEncoder();
 
@@ -30,7 +36,11 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
   const record = async (request: Request) => {
     const url = new URL(request.url);
     const text = request.method === "GET" || request.method === "DELETE" ? "" : await request.text();
-    requests.push({ method: request.method, path: `${url.pathname.slice(apiBase.length)}${url.search}`, body: text === "" ? undefined : JSON.parse(text) });
+    requests.push({
+      method: request.method,
+      path: `${url.pathname.slice(apiBase.length)}${url.search}`,
+      body: text === "" ? undefined : JSON.parse(text),
+    });
   };
   const respondRoom = (next: Schemas["VoiceRoom"]) => {
     current = next;
@@ -38,11 +48,19 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
   };
   server.use(
     signedInHandler,
-    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "everyone" })),
-    http.get(`${apiBase}/voice/rooms/:id`, ({ request }) =>
-      withViewer(request, () => (ended ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 }) : HttpResponse.json(current))),
+    http.get(`${apiBase}/instance`, () =>
+      HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "everyone" }),
     ),
-    http.get(`${apiBase}/voice/rooms/:id/summary`, () => HttpResponse.json({ id: current.id, state: ended ? "ended" : "open", name: current.name })),
+    http.get(`${apiBase}/voice/rooms/:id`, ({ request }) =>
+      withViewer(request, () =>
+        ended
+          ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 })
+          : HttpResponse.json(current),
+      ),
+    ),
+    http.get(`${apiBase}/voice/rooms/:id/summary`, () =>
+      HttpResponse.json({ id: current.id, state: ended ? "ended" : "open", name: current.name }),
+    ),
     http.post(`${apiBase}/voice/rooms/:id/participation`, async ({ request }) => {
       await record(request);
       return withViewer(request, () => {
@@ -79,15 +97,30 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
     ),
     http.post(`${apiBase}/voice/rooms/:id/speaker`, async ({ request }) => {
       await record(request);
-      return respondRoom({ ...current, participants: current.participants.map((p) => (p.account.id === viewerFixture.id ? { ...p, role: "speaker", hand_raised: false } : p)) });
+      return respondRoom({
+        ...current,
+        participants: current.participants.map((p) =>
+          p.account.id === viewerFixture.id ? { ...p, role: "speaker", hand_raised: false } : p,
+        ),
+      });
     }),
     http.post(`${apiBase}/voice/rooms/:id/hand`, async ({ request }) => {
       await record(request);
-      return respondRoom({ ...current, participants: current.participants.map((p) => (p.account.id === viewerFixture.id ? { ...p, hand_raised: true } : p)) });
+      return respondRoom({
+        ...current,
+        participants: current.participants.map((p) =>
+          p.account.id === viewerFixture.id ? { ...p, hand_raised: true } : p,
+        ),
+      });
     }),
     http.post(`${apiBase}/voice/rooms/:id/participants/:accountId/grant`, async ({ request, params }) => {
       await record(request);
-      return respondRoom({ ...current, participants: current.participants.map((p) => (p.account.id === params["accountId"] ? { ...p, role: "speaker", hand_raised: false } : p)) });
+      return respondRoom({
+        ...current,
+        participants: current.participants.map((p) =>
+          p.account.id === params["accountId"] ? { ...p, role: "speaker", hand_raised: false } : p,
+        ),
+      });
     }),
   );
   return {
@@ -125,9 +158,17 @@ afterEach(() => {
 /** Bob hosts and speaks with the session s9; Alice, the user, joins as a listener with s1. */
 function bobsRoom() {
   const room = voiceRoomFixture();
-  const joined = voiceRoomFixture({ participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true }), participantFixture(viewerFixture)] });
+  const joined = voiceRoomFixture({
+    participants: [
+      participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+      participantFixture(viewerFixture),
+    ],
+  });
   const live = voiceRoomFixture({
-    participants: [participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }), participantFixture(viewerFixture, { session: "s1" })],
+    participants: [
+      participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }),
+      participantFixture(viewerFixture, { session: "s1" }),
+    ],
   });
   return { room, joined, live };
 }
@@ -137,7 +178,9 @@ describe("a listener in the call", () => {
     const { room, joined, live } = bobsRoom();
     const srv = serve(room, joined);
     const { user } = await renderApp({ path: `/voice/${roomId}` });
-    expect(await screen.findByText("When you join, your name is listed for everyone who can see this room.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("When you join, your name is listed for everyone who can see this room."),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Join" }));
     expect(srv.requests.filter((r) => r.path === `/voice/rooms/${roomId}/participation`)).toHaveLength(1);
 
@@ -150,9 +193,13 @@ describe("a listener in the call", () => {
     srv.send("state", live);
     srv.send("signal", { from: "s9", kind: "offer", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
     await waitFor(() => {
-      expect(srv.sent(`/voice/rooms/${roomId}/signals`)).toContainEqual(expect.objectContaining({ session: "s1", to: "s9", kind: "answer" }));
+      expect(srv.sent(`/voice/rooms/${roomId}/signals`)).toContainEqual(
+        expect.objectContaining({ session: "s1", to: "s9", kind: "answer" }),
+      );
     });
-    const answer = srv.sent(`/voice/rooms/${roomId}/signals`).find((s) => (s as Schemas["VoiceSignal"]).kind === "answer") as Schemas["VoiceSignal"];
+    const answer = srv
+      .sent(`/voice/rooms/${roomId}/signals`)
+      .find((s) => (s as Schemas["VoiceSignal"]).kind === "answer") as Schemas["VoiceSignal"];
     expect(sdpDirections(answer.sdp ?? "")).toEqual(["recvonly"]);
     expect(FakePeerConnection.all).toHaveLength(1);
 
@@ -193,7 +240,10 @@ describe("a listener in the call", () => {
     expect(await screen.findByRole("button", { name: "Raise hand", pressed: true })).toBeInTheDocument();
     expect(within(screen.getByRole("list", { name: "Listeners · 1" })).getByText("Hand raised")).toBeInTheDocument();
 
-    srv.send("state", { ...live, participants: live.participants.map((p) => (p.account.id === viewerFixture.id ? { ...p, role: "speaker" } : p)) });
+    srv.send("state", {
+      ...live,
+      participants: live.participants.map((p) => (p.account.id === viewerFixture.id ? { ...p, role: "speaker" } : p)),
+    });
     expect(await screen.findByText("You can speak now. Turn on the microphone to talk.")).toBeInTheDocument();
     const mic = await screen.findByRole("button", { name: "Microphone" });
     expect(mic).toHaveAttribute("aria-pressed", "false");
@@ -206,7 +256,10 @@ describe("a listener in the call", () => {
     await waitFor(() => {
       expect(srv.sent(`/voice/rooms/${roomId}/mic`)).toEqual([{ session: "s1", on: true }]);
     });
-    expect(getUserMedia).toHaveBeenCalledWith({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+    expect(getUserMedia).toHaveBeenCalledWith({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: false,
+    });
     expect(mic).toHaveAttribute("aria-pressed", "true");
 
     srv.send("muted", { by: otherAccountFixture.id });
@@ -272,7 +325,9 @@ describe("a listener in the call", () => {
     srv.send("state", live);
     await user.click(screen.getByRole("button", { name: "Leave" }));
     expect(await screen.findByRole("button", { name: "Join" })).toBeInTheDocument();
-    expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(true);
+    expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(
+      true,
+    );
 
     await user.click(screen.getByRole("button", { name: "Join" }));
     await screen.findByText("Connected");
@@ -334,7 +389,9 @@ describe("the call across pages", () => {
     await waitFor(() => {
       expect(screen.queryByRole("region", { name: "Voice chat call" })).not.toBeInTheDocument();
     });
-    expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(true);
+    expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(
+      true,
+    );
   });
 });
 
@@ -371,16 +428,26 @@ describe("the end of the call with the app", () => {
     server.use(
       http.all("*", async ({ request }) => {
         if (!maintenance || !new URL(request.url).pathname.startsWith("/api/")) return undefined;
-        if (request.method === "DELETE") srv.requests.push({ method: "DELETE", path: new URL(request.url).pathname.slice(apiBase.length), body: undefined });
+        if (request.method === "DELETE")
+          srv.requests.push({
+            method: "DELETE",
+            path: new URL(request.url).pathname.slice(apiBase.length),
+            body: undefined,
+          });
         await Promise.resolve();
-        return HttpResponse.json({ type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503 }, { status: 503, headers: { "Content-Type": "application/problem+json", "Retry-After": "600" } });
+        return HttpResponse.json(
+          { type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503 },
+          { status: 503, headers: { "Content-Type": "application/problem+json", "Retry-After": "600" } },
+        );
       }),
     );
     maintenance = true;
     await act(() => api.fetch.GET("/instance").catch(() => undefined));
     expect(await screen.findByRole("heading", { level: 1, name: "Under maintenance" })).toBeInTheDocument();
     await waitFor(() => {
-      expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(true);
+      expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation`)).toBe(
+        true,
+      );
     });
     expect(FakePeerConnection.all.every((pc) => pc.closed)).toBe(true);
   });
@@ -389,16 +456,24 @@ describe("the end of the call with the app", () => {
 describe("the host in the call", () => {
   function hostRoom() {
     const bob = participantFixture(otherAccountFixture, { hand_raised: true });
-    const room = voiceRoomFixture({ host: viewerFixture, participants: [participantFixture(viewerFixture, { role: "speaker", host: true }), bob] });
+    const room = voiceRoomFixture({
+      host: viewerFixture,
+      participants: [participantFixture(viewerFixture, { role: "speaker", host: true }), bob],
+    });
     return room;
   }
 
   test("is in the call of the room they start, without joining it again", async () => {
-    const room = voiceRoomFixture({ host: viewerFixture, participants: [participantFixture(viewerFixture, { role: "speaker", host: true })] });
+    const room = voiceRoomFixture({
+      host: viewerFixture,
+      participants: [participantFixture(viewerFixture, { role: "speaker", host: true })],
+    });
     const srv = serve(room, room);
     server.use(
       http.get(`${apiBase}/voice/rooms`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-      http.post(`${apiBase}/voice/rooms`, ({ request }) => withViewer(request, () => HttpResponse.json({ room, session: "s1", grant }, { status: 201 }))),
+      http.post(`${apiBase}/voice/rooms`, ({ request }) =>
+        withViewer(request, () => HttpResponse.json({ room, session: "s1", grant }, { status: 201 })),
+      ),
     );
     const { user } = await renderApp({ path: "/voice" });
     await user.click(await screen.findByRole("button", { name: "Start a room" }));
@@ -414,8 +489,14 @@ describe("the host in the call", () => {
     expect(screen.getByRole("button", { name: "Room settings" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join here" })).not.toBeInTheDocument();
     // A speaker goes back to listening from the menu of their own avatar.
-    await user.click(within(screen.getByRole("list", { name: "Speakers · 1" })).getByRole("button", { name: /^Alice/u }));
-    expect(within(await screen.findByRole("menu")).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["View profile", "Just listen"]);
+    await user.click(
+      within(screen.getByRole("list", { name: "Speakers · 1" })).getByRole("button", { name: /^Alice/u }),
+    );
+    expect(
+      within(await screen.findByRole("menu"))
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["View profile", "Just listen"]);
     expect(srv.sessions).toEqual(["s1"]);
     expect(srv.requests.filter((r) => r.path === `/voice/rooms/${roomId}/participation`)).toHaveLength(0);
   });
@@ -432,17 +513,16 @@ describe("the host in the call", () => {
     await user.click(within(listeners).getByRole("button", { name: /^Bob.*Hand raised/u }));
     // The menu is named by its button (aria-labelledby), the avatar.
     const menu = await screen.findByRole("menu", { name: /^Bob/u });
-    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-      "View profile",
-      "Let speak",
-      "Dismiss raised hand",
-      "Remove from room",
-      "Make co-host",
-      "Make host",
-    ]);
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["View profile", "Let speak", "Dismiss raised hand", "Remove from room", "Make co-host", "Make host"]);
     await user.click(within(menu).getByRole("menuitem", { name: "Let speak" }));
     expect(await screen.findByText("Bob can speak now.")).toBeInTheDocument();
-    expect(srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`)).toBe(true);
+    expect(
+      srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`),
+    ).toBe(true);
   });
 
   test("lets a raised hand speak from the list that the dock's Hands button opens", async () => {
@@ -460,7 +540,9 @@ describe("the host in the call", () => {
     expect(within(list).getByRole("button", { name: "Dismiss Bob's raised hand" })).toBeInTheDocument();
     await user.click(within(list).getByRole("button", { name: "Allow Bob to speak" }));
     expect(await screen.findByText("Bob can speak now.")).toBeInTheDocument();
-    expect(srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`)).toBe(true);
+    expect(
+      srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`),
+    ).toBe(true);
     expect(await within(list).findByText("No raised hands right now.")).toBeInTheDocument();
   });
 
@@ -476,7 +558,13 @@ describe("the host in the call", () => {
     await user.click(within(dialog).getByRole("radio", { name: "Make Bob the host" }));
     await user.click(within(dialog).getByRole("button", { name: "Leave" }));
     await waitFor(() => {
-      expect(srv.requests.some((r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participation?next_host_id=${otherAccountFixture.id}`)).toBe(true);
+      expect(
+        srv.requests.some(
+          (r) =>
+            r.method === "DELETE" &&
+            r.path === `/voice/rooms/${roomId}/participation?next_host_id=${otherAccountFixture.id}`,
+        ),
+      ).toBe(true);
     });
   });
 });

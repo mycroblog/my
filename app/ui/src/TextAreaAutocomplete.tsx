@@ -20,15 +20,7 @@
 // text area. The caret's line comes from the mirror (TextAreaMirror), the layer the highlight (§4) also draws on.
 // TextFieldAutocomplete is the same completion around a one-line TextField (the content warning and the display name,
 // ADR-0092 §5): its mirror is the single-line one, and the popover opens under the whole input.
-import {
-  type ReactNode,
-  use,
-  useEffect,
-  useEffectEvent,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, use, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 import {
   Autocomplete,
   AutocompleteStateContext,
@@ -77,7 +69,8 @@ const autocomplete = tv({
     // moves, so React Aria's resize observer places the popover again.
     anchor: "pointer-events-none invisible absolute inset-x-0",
     status: "sr-only",
-    popover: "flex w-(--trigger-width) flex-col overflow-hidden rounded-lg border border-border bg-surface-raised text-fg shadow-md outline-hidden",
+    popover:
+      "flex w-(--trigger-width) flex-col overflow-hidden rounded-lg border border-border bg-surface-raised text-fg shadow-md outline-hidden",
     list: "max-h-60 min-h-0 overflow-y-auto overscroll-contain p-1 outline-hidden",
     option: [
       "flex min-h-8.5 cursor-default items-center gap-2 rounded-md px-2 py-1 text-base text-fg outline-hidden",
@@ -108,7 +101,9 @@ function insertCompletion(textarea: HTMLTextAreaElement | HTMLInputElement, word
   }
   if (!inserted) {
     textarea.setRangeText(insert, word.start, word.end, "end");
-    textarea.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertReplacementText", data: insert }));
+    textarea.dispatchEvent(
+      new InputEvent("input", { bubbles: true, inputType: "insertReplacementText", data: insert }),
+    );
   }
   // The caret goes after the space that follows the value, the one it added or the one that was there.
   if (spaced && next !== "\n" && next !== "\r") {
@@ -304,7 +299,15 @@ function isolated(endAction: ReactNode): ReactNode {
 }
 
 /** Splits the props of a field with completion into the completion's, the value's and the field's own. */
-function splitProps<T extends TextAutocompleteSuggestion, F extends { value?: string | undefined; defaultValue?: string | undefined; onChange?: ((value: string) => void) | undefined; highlights?: readonly TextHighlight[] | undefined }>({
+function splitProps<
+  T extends TextAutocompleteSuggestion,
+  F extends {
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onChange?: ((value: string) => void) | undefined;
+    highlights?: readonly TextHighlight[] | undefined;
+  },
+>({
   triggers,
   findWord,
   loadSuggestions,
@@ -372,12 +375,14 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
 
   const found = caret === null || composing || !focused ? null : findWord(text, caret);
   const minimum = found === null ? undefined : triggers[found.trigger];
-  const isDismissed = found !== null && dismissed !== null && dismissed.text === text && dismissed.start === found.start;
+  const isDismissed =
+    found !== null && dismissed !== null && dismissed.text === text && dismissed.start === found.start;
   const word = found !== null && minimum !== undefined && found.query.length >= minimum && !isDismissed ? found : null;
   const key = word === null ? null : `${word.trigger}${word.query}`;
 
   // The results of this word, or of an earlier state of it (the same start) while the new ones load.
-  const current = word !== null && results !== null && (results.key === key || results.start === word.start) ? results : null;
+  const current =
+    word !== null && results !== null && (results.key === key || results.start === word.start) ? results : null;
   const items = current?.status === "done" ? current.items : [];
   let view: View = "closed";
   if (word !== null && current?.status !== "failed") {
@@ -394,7 +399,14 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
   const wordQuery = word?.query;
   const delay = word === null ? 0 : typeof queryDelay === "number" ? queryDelay : queryDelay(word);
   useEffect(() => {
-    if (key === null || wordTrigger === undefined || wordStart === undefined || wordEnd === undefined || wordQuery === undefined) return;
+    if (
+      key === null ||
+      wordTrigger === undefined ||
+      wordStart === undefined ||
+      wordEnd === undefined ||
+      wordQuery === undefined
+    )
+      return;
     const lookup: TextAutocompleteWord = { trigger: wordTrigger, start: wordStart, end: wordEnd, query: wordQuery };
     const controller = new AbortController();
     let slowTimer: ReturnType<typeof setTimeout> | undefined;
@@ -458,7 +470,8 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
     const needed = Math.min(popoverRef.current?.scrollHeight ?? listMaxHeight, listMaxHeight);
     if (singleLine) {
       // An input has one line, the whole box: the popover opens under it, or above it without room below.
-      const side: Placement = viewBottom - box.bottom >= needed || viewBottom - box.bottom >= box.top - viewTop ? "bottom" : "top";
+      const side: Placement =
+        viewBottom - box.bottom >= needed || viewBottom - box.bottom >= box.top - viewTop ? "bottom" : "top";
       anchor.style.top = "0px";
       anchor.style.height = `${String(box.height)}px`;
       setPlacement(side);
@@ -469,7 +482,8 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
     const lineHeight = Number.parseFloat(style.lineHeight) || mark.height;
     // Every line of the text area is one line height tall, so the caret's line is the one of that grid the marker sits
     // in; the grid is exact where the marker's own box (the font's ascent and descent) need not be centred in its line.
-    const contentTop = box.top + Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.paddingTop) - textarea.scrollTop;
+    const contentTop =
+      box.top + Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.paddingTop) - textarea.scrollTop;
     const line = Math.max(0, Math.floor(((mark.top + mark.bottom) / 2 - contentTop) / lineHeight));
     // A caret line scrolled out of the text area is taken to be at its edge.
     const lineTop = Math.min(Math.max(contentTop + line * lineHeight, box.top), box.bottom);
@@ -539,7 +553,14 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
     return true;
   };
 
-  const status = view === "list" ? formatSuggestionCount(items.length) : view === "loading" ? loadingLabel : view === "empty" ? emptyLabel : "";
+  const status =
+    view === "list"
+      ? formatSuggestionCount(items.length)
+      : view === "loading"
+        ? loadingLabel
+        : view === "empty"
+          ? emptyLabel
+          : "";
 
   const completedProps: CompletedProps = {
     value: text,

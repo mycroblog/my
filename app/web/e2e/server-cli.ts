@@ -50,7 +50,12 @@ export function serverEnv(server: E2EServer = "main"): NodeJS.ProcessEnv {
  * returns its standard output. A failing command throws with its standard error.
  */
 export function runMy(args: readonly string[], input = "", server: E2EServer = "main"): string {
-  return execFileSync(myBin, args, { env: serverEnv(server), input, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  return execFileSync(myBin, args, {
+    env: serverEnv(server),
+    input,
+    encoding: "utf8",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
 }
 
 /** Whether the specs reach the server e2e/server.ts starts, whose database `runMy` can change. */

@@ -75,7 +75,19 @@ describe("the relays screen", () => {
     let sent: Schemas["CreateRelayRequest"] | undefined;
     server.use(
       http.get(`${apiBase}/admin/relays`, () =>
-        HttpResponse.json({ items: sent === undefined ? [] : [relayFixture(relayId, { url: sent.url, inbox_url: sent.url, state: "pending", receive: sent.receive ?? true })] }),
+        HttpResponse.json({
+          items:
+            sent === undefined
+              ? []
+              : [
+                  relayFixture(relayId, {
+                    url: sent.url,
+                    inbox_url: sent.url,
+                    state: "pending",
+                    receive: sent.receive ?? true,
+                  }),
+                ],
+        }),
       ),
       http.post(`${apiBase}/admin/relays`, async ({ request }) => {
         sent = (await request.json()) as Schemas["CreateRelayRequest"];
@@ -90,7 +102,9 @@ describe("the relays screen", () => {
     await user.click(within(form).getByRole("checkbox", { name: "Receive posts from the relay" }));
     await user.click(within(form).getByRole("button", { name: "Join" }));
 
-    expect(await within(form).findByRole("status")).toHaveTextContent(`${name} is registered, and the server asked to join it.`);
+    expect(await within(form).findByRole("status")).toHaveTextContent(
+      `${name} is registered, and the server asked to join it.`,
+    );
     expect(sent).toEqual({ url: "https://relay.example/inbox", receive: false });
     expect(within(form).getByRole("textbox", { name: "URL" })).toHaveValue("");
     const list = screen.getByRole("region", { name: "Relays of this server" });
@@ -122,7 +136,13 @@ describe("the relays screen", () => {
     server.use(
       http.post(`${apiBase}/admin/relays`, () =>
         HttpResponse.json(
-          { type: "/api/v1/problems/invalid-relay", title: "The relay cannot be changed that way.", status: 422, detail: "detail", reason: "exists" },
+          {
+            type: "/api/v1/problems/invalid-relay",
+            title: "The relay cannot be changed that way.",
+            status: 422,
+            detail: "detail",
+            reason: "exists",
+          },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
         ),
       ),
@@ -134,7 +154,9 @@ describe("the relays screen", () => {
     await user.click(within(form).getByRole("button", { name: "Join" }));
 
     await waitFor(() => {
-      expect(url).toHaveAccessibleDescription(expect.stringContaining("A relay with this URL is already registered.") as string);
+      expect(url).toHaveAccessibleDescription(
+        expect.stringContaining("A relay with this URL is already registered.") as string,
+      );
     });
     expect(url).toHaveValue("https://relay.example/inbox");
   });
@@ -167,10 +189,18 @@ describe("the relays screen", () => {
 
   test("shows why the server refused to join a relay again", async () => {
     server.use(
-      http.get(`${apiBase}/admin/relays`, () => HttpResponse.json({ items: [relayFixture(relayId, { state: "left" })] })),
+      http.get(`${apiBase}/admin/relays`, () =>
+        HttpResponse.json({ items: [relayFixture(relayId, { state: "left" })] }),
+      ),
       http.post(`${apiBase}/admin/relays/:id/follow`, () =>
         HttpResponse.json(
-          { type: "/api/v1/problems/invalid-relay", title: "The relay cannot be changed that way.", status: 422, detail: "detail", reason: "domain_suspended" },
+          {
+            type: "/api/v1/problems/invalid-relay",
+            title: "The relay cannot be changed that way.",
+            status: 422,
+            detail: "detail",
+            reason: "domain_suspended",
+          },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
         ),
       ),
@@ -179,13 +209,17 @@ describe("the relays screen", () => {
     await user.click(await screen.findByRole("button", { name: `Join ${name} again` }));
 
     const list = screen.getByRole("region", { name: "Relays of this server" });
-    expect(await within(list).findByRole("alert")).toHaveTextContent("Could not change the relay: The server of the relay is suspended by a domain action.");
+    expect(await within(list).findByRole("alert")).toHaveTextContent(
+      "Could not change the relay: The server of the relay is suspended by a domain action.",
+    );
   });
 
   test("deletes a relay after asking", async () => {
     let deleted = "";
     server.use(
-      http.get(`${apiBase}/admin/relays`, () => HttpResponse.json({ items: deleted === "" ? [relayFixture(relayId, { state: "left" })] : [] })),
+      http.get(`${apiBase}/admin/relays`, () =>
+        HttpResponse.json({ items: deleted === "" ? [relayFixture(relayId, { state: "left" })] : [] }),
+      ),
       http.delete(`${apiBase}/admin/relays/:id`, ({ params }) => {
         deleted = String(params["id"]);
         return new HttpResponse(null, { status: 204 });

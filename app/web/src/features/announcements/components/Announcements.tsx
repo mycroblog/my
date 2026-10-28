@@ -4,7 +4,18 @@
 // rather than by color alone (WCAG 1.4.1), and has a "Mark as read" button. Once marked, the button goes and focus
 // moves to the announcement's heading (useFocusHeadingAfterLift). The body is the server's sanitized HTML of the
 // administrator's Markdown (web-client/README.md A8), in the direction of its own text (Y10).
-import { Badge, Button, Cluster, Heading, Hint, InlineError, PostContent, serverSanitizedHtml, Stack, Tag } from "@my/ui";
+import {
+  Badge,
+  Button,
+  Cluster,
+  Heading,
+  Hint,
+  InlineError,
+  PostContent,
+  serverSanitizedHtml,
+  Stack,
+  Tag,
+} from "@my/ui";
 import { useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useContentLinkClick } from "../../../lib/contentLinks";
@@ -26,7 +37,10 @@ export function Announcements() {
         <Cluster as="span" wrap={false} align="center" gap="2">
           {t("client:announcements.title")}
           {announcements.unread > 0 && (
-            <Badge count={announcements.unread} label={t("client:announcements.unread_count", { count: announcements.unread })} />
+            <Badge
+              count={announcements.unread}
+              label={t("client:announcements.unread_count", { count: announcements.unread })}
+            />
           )}
         </Cluster>
       </Heading>
@@ -64,7 +78,11 @@ function AnnouncementItem({ announcement, state, onRead }: AnnouncementItemProps
       </Heading>
       <PostContent html={serverSanitizedHtml(announcement.content)} onLinkClick={onLinkClick} />
       {announcement.ends_at !== undefined && (
-        <Hint>{t("client:announcements.until", { date: intl.formatDate(announcement.ends_at, { dateStyle: "medium", timeStyle: "short" }) })}</Hint>
+        <Hint>
+          {t("client:announcements.until", {
+            date: intl.formatDate(announcement.ends_at, { dateStyle: "medium", timeStyle: "short" }),
+          })}
+        </Hint>
       )}
       {!announcement.read && (
         <div>

@@ -3,7 +3,12 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
-import { type Instance, instanceQueryOptions, type PublicDomainAction, publicDomainActionsQueryOptions } from "../api/about";
+import {
+  type Instance,
+  instanceQueryOptions,
+  type PublicDomainAction,
+  publicDomainActionsQueryOptions,
+} from "../api/about";
 
 export type About = {
   /** The one-paragraph summary, as plain text; "" when there is none or the instance has not loaded. */
@@ -64,7 +69,8 @@ export function useAbout(): About {
     rules: instance?.rules ?? [],
     thumbnail: instance?.thumbnail,
     contact: instance?.contact,
-    crawlers: instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage },
+    crawlers:
+      instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage },
     finance: instance?.finance_visibility,
     income: instance?.income_visibility,
     sourceUrl: instance?.source_url,
@@ -117,7 +123,11 @@ export type ModeratedDomains =
  */
 export function useModeratedDomains(): ModeratedDomains {
   const api = useApi();
-  const query = useInfiniteQuery({ ...publicDomainActionsQueryOptions(api), retry: shellQueryRetry, retryOnMount: false });
+  const query = useInfiniteQuery({
+    ...publicDomainActionsQueryOptions(api),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) {
     return {
       status: "ready",
@@ -131,7 +141,12 @@ export function useModeratedDomains(): ModeratedDomains {
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
     if (query.error instanceof ApiError && query.error.status === 401) return { status: "signed-in-only" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }

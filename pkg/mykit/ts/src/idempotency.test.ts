@@ -30,7 +30,9 @@ describe("idempotencyKeyOperations", () => {
     const paths = schema.slice(schema.indexOf("\nexport interface paths {"), schema.indexOf("\nexport type webhooks"));
     const listed: { method: string; path: string }[] = [];
     for (const m of paths.matchAll(/^ {4}"([^"]+)": \{\n([\s\S]*?)^ {4}\};$/gm)) {
-      for (const op of (m[2] ?? "").matchAll(/^ {8}(get|put|post|delete|patch|head|options): operations\["(\w+)"\];$/gm)) {
+      for (const op of (m[2] ?? "").matchAll(
+        /^ {8}(get|put|post|delete|patch|head|options): operations\["(\w+)"\];$/gm,
+      )) {
         if (withKey.has(op[2] ?? "")) listed.push({ method: (op[1] ?? "").toUpperCase(), path: m[1] ?? "" });
       }
     }

@@ -6,16 +6,28 @@ const origin = "https://my.example";
 
 describe("notificationFor", () => {
   it("shows the server's localized title with the notification as the tag and its page as the target", () => {
-    const text = JSON.stringify({ notification_id: "n1", type: "mention", title: "Bobさんがあなたをメンションしました", lang: "ja", path: "/@bob/s1" });
+    const text = JSON.stringify({
+      notification_id: "n1",
+      type: "mention",
+      title: "Bobさんがあなたをメンションしました",
+      lang: "ja",
+      path: "/@bob/s1",
+    });
     expect(notificationFor(text, origin)).toEqual({
       title: "Bobさんがあなたをメンションしました",
       options: { tag: "n1", lang: "ja", dir: "auto", data: { url: "https://my.example/@bob/s1" } },
     });
   });
 
-  it.each([null, "", "not json", "{}", JSON.stringify({ title: 1 })])("shows the host and the notifications page for the message %j", (text) => {
-    expect(notificationFor(text, origin)).toEqual({ title: "my.example", options: { data: { url: "https://my.example/notifications" } } });
-  });
+  it.each([null, "", "not json", "{}", JSON.stringify({ title: 1 })])(
+    "shows the host and the notifications page for the message %j",
+    (text) => {
+      expect(notificationFor(text, origin)).toEqual({
+        title: "my.example",
+        options: { data: { url: "https://my.example/notifications" } },
+      });
+    },
+  );
 });
 
 describe("targetURL", () => {

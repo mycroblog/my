@@ -27,7 +27,14 @@ export function ConnectionBanner() {
   return (
     <OfflineBanner
       isOffline={message !== null}
-      {...(offline && statusPageUrl !== undefined && { action: <ExternalLink href={statusPageUrl} variant="standalone">{t("client:shell.status_page")}</ExternalLink> })}
+      {...(offline &&
+        statusPageUrl !== undefined && {
+          action: (
+            <ExternalLink href={statusPageUrl} variant="standalone">
+              {t("client:shell.status_page")}
+            </ExternalLink>
+          ),
+        })}
     >
       {message}
     </OfflineBanner>

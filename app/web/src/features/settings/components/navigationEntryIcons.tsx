@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { BookmarkIcon, FederatedIcon, HomeIcon, LocalIcon, NotificationsIcon, ProfileIcon, SearchIcon, SettingsIcon } from "@my/ui";
+import {
+  BookmarkIcon,
+  FederatedIcon,
+  HomeIcon,
+  LocalIcon,
+  NotificationsIcon,
+  ProfileIcon,
+  SearchIcon,
+  SettingsIcon,
+} from "@my/ui";
 import type { ReactNode } from "react";
 import type { NavigationEntryId } from "../hooks/useNavigationSettings";
 

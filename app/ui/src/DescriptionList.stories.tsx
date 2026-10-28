@@ -35,7 +35,9 @@ export const LongValues: Story = {
     children: (
       <>
         <DescriptionItem term="Idempotency key">
-          <code dir="ltr">deliver:https://very-long-subdomain.example.social/users/someone/statuses/112233445566778899</code>
+          <code dir="ltr">
+            deliver:https://very-long-subdomain.example.social/users/someone/statuses/112233445566778899
+          </code>
         </DescriptionItem>
         <DescriptionItem term="Last error">
           <span dir="auto">Post &quot;https://example.com/inbox&quot;: dial tcp: lookup example.com: no such host</span>

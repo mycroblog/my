@@ -18,7 +18,11 @@ const avatar = svgImage(128, 128, "#d8703b");
 /** Bytes no browser can decode, so the image fails to load at once. */
 const broken = { still: [{ url: "data:image/png;base64,AAAA" }] };
 
-const heart = { shortcode: "blobheart", url: svgImage(32, 32, "#d83b6f").still[0]?.url ?? "", static_url: svgImage(32, 32, "#d83b6f").still[0]?.url ?? "" };
+const heart = {
+  shortcode: "blobheart",
+  url: svgImage(32, 32, "#d83b6f").still[0]?.url ?? "",
+  static_url: svgImage(32, 32, "#d83b6f").still[0]?.url ?? "",
+};
 
 const fields = (
   <ProfileFields>
@@ -48,8 +52,22 @@ const meta = {
     fields,
     joined: "Joined 3 Mar 2024",
     counts: [
-      { key: "following", content: <Link href="#following" variant="standalone">120 following</Link> },
-      { key: "followers", content: <Link href="#followers" variant="standalone">3,400 followers</Link> },
+      {
+        key: "following",
+        content: (
+          <Link href="#following" variant="standalone">
+            120 following
+          </Link>
+        ),
+      },
+      {
+        key: "followers",
+        content: (
+          <Link href="#followers" variant="standalone">
+            3,400 followers
+          </Link>
+        ),
+      },
     ],
   },
   decorators: [
@@ -77,7 +95,8 @@ export const BrokenHeaderImage: Story = {
   args: { image: broken },
   play: async ({ canvasElement }) => {
     await waitFor(() => {
-      if (canvasElement.querySelector("img[src^='data:image/png']") !== null) throw new Error("the broken image is still shown");
+      if (canvasElement.querySelector("img[src^='data:image/png']") !== null)
+        throw new Error("the broken image is still shown");
     });
   },
 };

@@ -54,7 +54,10 @@ function goOnline() {
 
 /** Asserts whether the app's offline bar shows its message, in its polite live region. */
 function expectOfflineBar(shown: boolean) {
-  if (shown) expect(screen.getAllByRole("status").filter((region) => within(region).queryByText(offlineMessage) !== null)).toHaveLength(1);
+  if (shown)
+    expect(
+      screen.getAllByRole("status").filter((region) => within(region).queryByText(offlineMessage) !== null),
+    ).toHaveLength(1);
   else expect(screen.queryByText(offlineMessage)).not.toBeInTheDocument();
 }
 
@@ -85,7 +88,9 @@ describe("the offline bar", () => {
     const { user } = await renderApp({ path: "/local" });
 
     // The browser still says it is online: the server is unreachable.
-    expect(await screen.findByText("Could not reach the server. Check your connection and try again.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Could not reach the server. Check your connection and try again."),
+    ).toBeInTheDocument();
     expectOfflineBar(true);
 
     unreachable = false;
@@ -98,7 +103,9 @@ describe("the offline bar", () => {
   function serveStatusPage() {
     server.use(
       http.get(`${apiBase}/instance`, () =>
-        offline || unreachable ? HttpResponse.error() : HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" }),
+        offline || unreachable
+          ? HttpResponse.error()
+          : HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" }),
       ),
     );
   }
@@ -138,7 +145,10 @@ describe("the offline bar", () => {
     await waitFor(() => {
       expectOfflineBar(true);
     });
-    expect(screen.getByRole("link", { name: newTabName("Check the server's status") })).toHaveAttribute("href", "https://status.example/");
+    expect(screen.getByRole("link", { name: newTabName("Check the server's status") })).toHaveAttribute(
+      "href",
+      "https://status.example/",
+    );
   });
 
   test("has no link to a status page when the server has none", async () => {
@@ -234,7 +244,11 @@ describe("offline", () => {
 
 describe("the home timeline offline (FR-604)", () => {
   const savedNotice = /^You are offline\. These are the posts as of .+\.$/;
-  const newer = { ...timelineStatusFixture, id: "0192f0c4-7a8e-7000-8000-0000000000b1", content: "<p>A newer post</p>" };
+  const newer = {
+    ...timelineStatusFixture,
+    id: "0192f0c4-7a8e-7000-8000-0000000000b1",
+    content: "<p>A newer post</p>",
+  };
 
   /** Asserts the posts of the home feed by their text, newest first. */
   async function expectHomePosts(...texts: string[]) {
@@ -255,7 +269,11 @@ describe("the home timeline offline (FR-604)", () => {
 
     // A reload offline: the session cannot be resumed, and the timeline cannot be fetched.
     offline = true;
-    server.use(http.get(`${apiBase}/timelines/home`, ({ request }) => withViewer(request, () => HttpResponse.json(statusPage([newer, timelineStatusFixture])))));
+    server.use(
+      http.get(`${apiBase}/timelines/home`, ({ request }) =>
+        withViewer(request, () => HttpResponse.json(statusPage([newer, timelineStatusFixture]))),
+      ),
+    );
     // Before the session's and the timeline's handlers.
     server.use(noResponseOffline);
     await renderApp({ path: "/home" });
@@ -275,13 +293,30 @@ describe("the home timeline offline (FR-604)", () => {
   });
 
   test("never keeps followers-only or direct posts, nor boosts of them, nor a post edited into one", async () => {
-    const followers = { ...timelineStatusFixture, id: "0192f0c4-7a8e-7000-8000-0000000000b2", content: "<p>For followers</p>", visibility: "private" as const };
-    const direct = { ...timelineStatusFixture, id: "0192f0c4-7a8e-7000-8000-0000000000b3", content: "<p>Direct</p>", visibility: "direct" as const };
-    const boostOfFollowers = { ...timelineStatusFixture, id: "0192f0c4-7a8e-7000-8000-0000000000b4", content: "", boost: followers };
+    const followers = {
+      ...timelineStatusFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000b2",
+      content: "<p>For followers</p>",
+      visibility: "private" as const,
+    };
+    const direct = {
+      ...timelineStatusFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000b3",
+      content: "<p>Direct</p>",
+      visibility: "direct" as const,
+    };
+    const boostOfFollowers = {
+      ...timelineStatusFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000b4",
+      content: "",
+      boost: followers,
+    };
     server.use(
       resumableSession(),
       http.get(`${apiBase}/timelines/home`, ({ request }) =>
-        withViewer(request, () => HttpResponse.json(statusPage([newer, followers, direct, boostOfFollowers, timelineStatusFixture]))),
+        withViewer(request, () =>
+          HttpResponse.json(statusPage([newer, followers, direct, boostOfFollowers, timelineStatusFixture])),
+        ),
       ),
     );
     const view = await renderApp({ path: "/home" });
@@ -294,7 +329,15 @@ describe("the home timeline offline (FR-604)", () => {
       view.queryClient.setQueryData(timelineQueryOptions(view.api, { kind: "home" }).queryKey, (data) =>
         data === undefined
           ? data
-          : { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === newer.id ? { ...item, visibility: "private" as const } : item)) })) },
+          : {
+              ...data,
+              pages: data.pages.map((page) => ({
+                ...page,
+                items: page.items.map((item) =>
+                  item.id === newer.id ? { ...item, visibility: "private" as const } : item,
+                ),
+              })),
+            },
       );
     });
     expect(homeTimelineKey.read()?.items.map((item) => item["id"])).toEqual([timelineStatusFixture.id]);

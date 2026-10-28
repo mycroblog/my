@@ -13,7 +13,11 @@ import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
 
 const postId = "0192f0c4-7a8e-7000-8000-0000000000d1";
-const blobcat: Schemas["CustomEmoji"] = { shortcode: "blobcat", url: "https://remote.example/blobcat.png", static_url: "https://remote.example/blobcat.png" };
+const blobcat: Schemas["CustomEmoji"] = {
+  shortcode: "blobcat",
+  url: "https://remote.example/blobcat.png",
+  static_url: "https://remote.example/blobcat.png",
+};
 const post: Status = {
   ...statusFixture(postId),
   content: "<p>React to me</p>",
@@ -21,7 +25,14 @@ const post: Status = {
   favourites_count: 2,
   reactions: [
     { name: "👍", count: 2, me: false },
-    { name: "blobcat@remote.example", shortcode: "blobcat", domain: "remote.example", emoji: blobcat, count: 1, me: false },
+    {
+      name: "blobcat@remote.example",
+      shortcode: "blobcat",
+      domain: "remote.example",
+      emoji: blobcat,
+      count: 1,
+      me: false,
+    },
   ],
 };
 
@@ -133,7 +144,10 @@ describe("the reactions of a post", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Emoji to react with" })).not.toBeInTheDocument();
     });
-    expect(await within(article).findByRole("button", { name: "React with 🎉" })).toHaveAttribute("aria-pressed", "true");
+    expect(await within(article).findByRole("button", { name: "React with 🎉" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await waitFor(() => {
       expect(sent).toEqual(["🎉"]);
     });
@@ -212,8 +226,17 @@ describe("the reactions of a post", () => {
     signedIn();
     const sent: (string | null)[] = [];
     servePost(sent);
-    const partyblob = { shortcode: "partyblob", url: "https://media.example/emoji/partyblob.png", static_url: "https://media.example/emoji/partyblob.png", aliases: [] };
-    server.use(http.get(`${apiBase}/custom_emojis`, () => HttpResponse.json({ items: [partyblob] } satisfies Schemas["PickerCustomEmojiList"])));
+    const partyblob = {
+      shortcode: "partyblob",
+      url: "https://media.example/emoji/partyblob.png",
+      static_url: "https://media.example/emoji/partyblob.png",
+      aliases: [],
+    };
+    server.use(
+      http.get(`${apiBase}/custom_emojis`, () =>
+        HttpResponse.json({ items: [partyblob] } satisfies Schemas["PickerCustomEmojiList"]),
+      ),
+    );
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const article = await findPost();
 
@@ -230,13 +253,21 @@ describe("the reactions of a post", () => {
   test("put the favourite back and say why when the server refuses the reaction", async () => {
     signedIn();
     servePost();
-    server.use(http.put(`${apiBase}/statuses/:id/reaction`, () => problem(422, "about:blank", "Not an emoji you can react with.")));
+    server.use(
+      http.put(`${apiBase}/statuses/:id/reaction`, () =>
+        problem(422, "about:blank", "Not an emoji you can react with."),
+      ),
+    );
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const article = await findPost();
 
     await user.click(await within(article).findByRole("button", { name: "React with 👍" }));
 
-    expect(await within(await screen.findByRole("region", { name: "Messages" })).findByText(/Not an emoji you can react with/)).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("region", { name: "Messages" })).findByText(
+        /Not an emoji you can react with/,
+      ),
+    ).toBeInTheDocument();
     expect(within(article).getByRole("button", { name: "React with 👍" })).toHaveAttribute("aria-pressed", "false");
     expect(within(article).getByRole("button", { name: "Favourite" })).toHaveAttribute("aria-pressed", "true");
   });

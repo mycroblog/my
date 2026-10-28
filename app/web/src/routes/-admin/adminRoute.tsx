@@ -11,7 +11,11 @@ import { PageHeading } from "../-layout/PageHeading";
 import { RouteError } from "../-layout/RouteStates";
 
 /** Loads the viewer's account and, when its roles grant `permission`, runs `load`. */
-export async function loadWithPermission({ queryClient, api }: RouterContext, permission: Permission, load: () => Promise<unknown>): Promise<void> {
+export async function loadWithPermission(
+  { queryClient, api }: RouterContext,
+  permission: Permission,
+  load: () => Promise<unknown>,
+): Promise<void> {
   const viewer = await queryClient.query(viewerQueryOptions(api));
   if (viewer.permissions.includes(permission)) await load();
 }

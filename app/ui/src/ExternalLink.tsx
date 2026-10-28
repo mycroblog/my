@@ -54,7 +54,14 @@ export type ExternalLinkProps = Omit<LinkProps, "target" | "children" | "href"> 
  * text of `ExternalLinkContext` for assistive technology: after the children, or after `aria-label` when the
  * link has one. React Aria's router binding does not take a link with a `target`, so the browser opens it.
  */
-export function ExternalLink({ rel, icon = true, children, className, "aria-label": ariaLabel, ...props }: ExternalLinkProps) {
+export function ExternalLink({
+  rel,
+  icon = true,
+  children,
+  className,
+  "aria-label": ariaLabel,
+  ...props
+}: ExternalLinkProps) {
   const { newTabLabel } = use(ExternalLinkContext);
   const label = ariaLabel === undefined || newTabLabel === undefined ? ariaLabel : `${ariaLabel} ${newTabLabel}`;
   // Apart from the name by a space, which a browser keeps: the hidden text is a block (`sr-only` is absolute).

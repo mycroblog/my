@@ -27,7 +27,9 @@ function navigation() {
 }
 
 /** Plays the finances totals as a server with `viewer` answers them; records the queries and the admin requests. */
-function serveFinance(viewer: Schemas["FinanceViewerSettings"] = { item_names: false, item_memos: false, income: "totals" }) {
+function serveFinance(
+  viewer: Schemas["FinanceViewerSettings"] = { item_names: false, item_memos: false, income: "totals" },
+) {
   const queries: Record<string, string>[] = [];
   const adminRequests: string[] = [];
   server.events.on("request:start", ({ request }) => {
@@ -60,7 +62,11 @@ describe("a user with view_finance", () => {
     expect(within(navigation()).queryByRole("link", { name: /^Administration/u })).not.toBeInTheDocument();
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
-    expect(within(sheet).getAllByRole("link").map((item) => item.getAttribute("href"))).toEqual(["/profile", "/bookmarks", "/settings", "/finance", "/", "/about"]);
+    expect(
+      within(sheet)
+        .getAllByRole("link")
+        .map((item) => item.getAttribute("href")),
+    ).toEqual(["/profile", "/bookmarks", "/settings", "/finance", "/", "/about"]);
 
     await user.click(within(sheet).getByRole("link", { name: "Finances" }));
     const heading = await screen.findByRole("heading", { level: 1, name: "Finances" });
@@ -77,16 +83,27 @@ describe("a user with view_finance", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Finances" })).toBeInTheDocument();
     const costs = screen.getByRole("region", { name: "Costs" });
-    const table = await within(costs).findByRole("table", { name: "Totals by Months, Spread over the period paid for" });
+    const table = await within(costs).findByRole("table", {
+      name: "Totals by Months, Spread over the period paid for",
+    });
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent("¥1,650 + $12.34");
     expect(within(costs).getByRole("region", { name: /^Breakdown of/u })).toHaveTextContent("RegistrarDomain¥1,650");
     expect(within(costs).queryByRole("region", { name: /^Items of/u })).not.toBeInTheDocument();
     expect(screen.getByText("This server does not show the names or memos of the items.")).toBeInTheDocument();
     expect(screen.queryByText("Main VM")).not.toBeInTheDocument();
-    expect(finance.queries[0]).toEqual({ granularity: "month", basis: "amortized", from: expect.stringMatching(/-01$/u) as string, to: deviceToday() });
+    expect(finance.queries[0]).toEqual({
+      granularity: "month",
+      basis: "amortized",
+      from: expect.stringMatching(/-01$/u) as string,
+      to: deviceToday(),
+    });
 
     await user.click(screen.getByRole("tab", { name: "Weeks" }));
-    expect(await within(screen.getByRole("region", { name: "Costs" })).findByRole("table", { name: "Totals by Weeks, Spread over the period paid for" })).toBeInTheDocument();
+    expect(
+      await within(screen.getByRole("region", { name: "Costs" })).findByRole("table", {
+        name: "Totals by Weeks, Spread over the period paid for",
+      }),
+    ).toBeInTheDocument();
     expect(router.state.location.search).toEqual({ granularity: "week" });
     expect(finance.adminRequests).toEqual([]);
   });
@@ -141,16 +158,31 @@ describe("the income on the finances page", () => {
     const { user } = await renderApp({ path: "/finance" });
 
     const region = await screen.findByRole("region", { name: "Income" });
-    const table = await within(region).findByRole("table", { name: "Income by Months, Spread over the period paid for" });
-    expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Period", "Income after fees", "Balance"]);
+    const table = await within(region).findByRole("table", {
+      name: "Income by Months, Spread over the period paid for",
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Period", "Income after fees", "Balance"]);
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent("¥4,800");
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent("+¥3,150");
     expect(within(region).queryByRole("region", { name: "Members of each plan" })).not.toBeInTheDocument();
-    expect(income.queries[0]).toEqual({ granularity: "month", basis: "amortized", from: expect.stringMatching(/-01$/u) as string, to: deviceToday() });
+    expect(income.queries[0]).toEqual({
+      granularity: "month",
+      basis: "amortized",
+      from: expect.stringMatching(/-01$/u) as string,
+      to: deviceToday(),
+    });
 
     await user.click(screen.getByRole("radio", { name: /On the payment date/u }));
-    expect(await within(region).findByRole("table", { name: "Income by Months, On the payment date" })).toBeInTheDocument();
-    expect(within(region).getByRole("region", { name: "How the income is counted" })).toHaveTextContent("Every payment, refund, and fee counts on its date.");
+    expect(
+      await within(region).findByRole("table", { name: "Income by Months, On the payment date" }),
+    ).toBeInTheDocument();
+    expect(within(region).getByRole("region", { name: "How the income is counted" })).toHaveTextContent(
+      "Every payment, refund, and fee counts on its date.",
+    );
     expect(finance.adminRequests).toEqual([]);
   });
 
@@ -160,7 +192,9 @@ describe("the income on the finances page", () => {
     await renderApp({ path: "/finance" });
 
     const region = await screen.findByRole("region", { name: "Income" });
-    expect(await within(region).findByRole("region", { name: "Members of each plan" })).toHaveTextContent("Coffee3 members");
+    expect(await within(region).findByRole("region", { name: "Members of each plan" })).toHaveTextContent(
+      "Coffee3 members",
+    );
   });
 });
 

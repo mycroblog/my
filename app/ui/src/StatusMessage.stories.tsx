@@ -21,7 +21,10 @@ export const Success: Story = {};
 export const Neutral: Story = { args: { tone: "neutral", children: "No deliveries are queued for example.com." } };
 
 export const LongMessage: Story = {
-  args: { children: "The suspension of @someone-with-a-long-name@very-long-subdomain.example.social is lifted. Follows that it ended stay ended." },
+  args: {
+    children:
+      "The suspension of @someone-with-a-long-name@very-long-subdomain.example.social is lifted. Follows that it ended stay ended.",
+  },
 };
 
 function Demo() {

@@ -96,7 +96,11 @@ describe("the completion after @", () => {
     const eve = accountFixture(5, "Eve", "other.example");
     server.use(
       http.get(`${apiBase}/accounts/search`, ({ request }) =>
-        HttpResponse.json(new URL(request.url).searchParams.get("q")?.startsWith("eve") === true ? [eve, otherAccountFixture] : [otherAccountFixture]),
+        HttpResponse.json(
+          new URL(request.url).searchParams.get("q")?.startsWith("eve") === true
+            ? [eve, otherAccountFixture]
+            : [otherAccountFixture],
+        ),
       ),
     );
     const { user } = await renderApp();
@@ -111,13 +115,19 @@ describe("the completion after @", () => {
     // The search does not know it: it is looked up and resolved, and comes first.
     await user.type(text, " @dave@new.example");
     await screen.findByRole("option", { name: "Dave @dave@new.example" });
-    expect(within(screen.getByRole("listbox")).getAllByRole("option")[0]).toHaveAccessibleName("Dave @dave@new.example");
+    expect(within(screen.getByRole("listbox")).getAllByRole("option")[0]).toHaveAccessibleName(
+      "Dave @dave@new.example",
+    );
     expect(lookups).toEqual([{ acct: "dave@new.example", resolve: "true" }]);
   });
 
   test("does not ask to resolve while the instance takes nothing in from other servers", async () => {
     const lookups = recordLookups(dave);
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, federation: { mode: "outbound" } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, federation: { mode: "outbound" } }),
+      ),
+    );
     const { user } = await renderApp();
     const { text } = await openSheet(user);
 
@@ -222,7 +232,10 @@ describe("the completion after :", () => {
 
   test("is the only completion of the content warning", async () => {
     const queries: string[] = [];
-    server.use(accountSearchHandler([otherAccountFixture], (q) => queries.push(q)), customEmojisHandler({ blobcat: [] }));
+    server.use(
+      accountSearchHandler([otherAccountFixture], (q) => queries.push(q)),
+      customEmojisHandler({ blobcat: [] }),
+    );
     const { user } = await renderApp();
     const { sheet } = await openSheet(user);
 

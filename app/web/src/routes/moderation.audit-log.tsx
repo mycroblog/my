@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
-import { auditActions, AuditLog, type AuditLogFilter, auditLogMaxPages, auditLogQueryOptions, auditTargetKinds } from "../features/moderation";
+import {
+  auditActions,
+  AuditLog,
+  type AuditLogFilter,
+  auditLogMaxPages,
+  auditLogQueryOptions,
+  auditTargetKinds,
+} from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -37,7 +44,12 @@ export const Route = createFileRoute("/moderation/audit-log")({
   staticData: { title: "client:admin.audit_log.title" },
   validateSearch: searchSchema,
   loaderDeps: ({ search }): { filter: AuditLogFilter; pages: number } => ({
-    filter: { actor: search.actor, action: search.action, targetKind: search.target_kind, target: search.target_kind === undefined ? undefined : search.target },
+    filter: {
+      actor: search.actor,
+      action: search.action,
+      targetKind: search.target_kind,
+      target: search.target_kind === undefined ? undefined : search.target,
+    },
     pages: search.pages ?? 1,
   }),
   beforeLoad: requireSignIn,

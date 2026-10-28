@@ -36,7 +36,10 @@ export function setDocumentMutation(api: Api) {
   return {
     mutationKey: ["put", "/admin/instance_texts/{key}"] as const,
     mutationFn: async ({ key, body }: DocumentRevision): Promise<InstanceText> => {
-      const { data, error } = await api.fetch.PUT("/admin/instance_texts/{key}", { params: { path: { key } }, body: { body } });
+      const { data, error } = await api.fetch.PUT("/admin/instance_texts/{key}", {
+        params: { path: { key } },
+        body: { body },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;

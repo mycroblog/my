@@ -10,7 +10,11 @@ import type { ExternalConfirmation } from "../hooks/useExternalConfirmation";
 export function ExternalConfirmationChoice({ confirmation }: { confirmation: ExternalConfirmation }) {
   const t = useT();
   if (confirmation.confirmed !== undefined) {
-    return <Hint>{t("client:settings.external_confirmation.confirmed", { provider: confirmation.confirmed.providerName })}</Hint>;
+    return (
+      <Hint>
+        {t("client:settings.external_confirmation.confirmed", { provider: confirmation.confirmed.providerName })}
+      </Hint>
+    );
   }
   return (
     <Stack align="start" gap="3">

@@ -70,7 +70,8 @@ export class MaintenanceError extends ApiError {
     if (typeof message === "string" && message.trim() !== "") this.notice = message;
     const end = typeof until === "string" ? Date.parse(until) : Number.NaN;
     if (!Number.isNaN(end)) this.until = end;
-    if (typeof statusPageUrl === "string" && URL.parse(statusPageUrl)?.protocol === "https:") this.statusPageUrl = statusPageUrl;
+    if (typeof statusPageUrl === "string" && URL.parse(statusPageUrl)?.protocol === "https:")
+      this.statusPageUrl = statusPageUrl;
   }
 }
 
@@ -179,5 +180,7 @@ export async function apiErrorFromResponse(response: Response, t: Translate): Pr
   }
   const { problem } = await problemFromResponse(response);
   const document = problem.title === "" ? { ...problem, title: fallbackTitle() } : problem;
-  return isMaintenance(document, response.status) ? new MaintenanceError(document, options) : new ApiError(document, options);
+  return isMaintenance(document, response.status)
+    ? new MaintenanceError(document, options)
+    : new ApiError(document, options);
 }

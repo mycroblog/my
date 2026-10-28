@@ -22,7 +22,9 @@ export type ErrorGroupHourCount = Schemas["ErrorGroupHourCount"];
 export type ErrorGroupEvent = Schemas["ErrorGroupEvent"];
 
 /** The state filters of the list, in the order of their menu: the open groups first, then every group. */
-export const errorStateFilters = ["open", "resolved", "muted", "all"] as const satisfies readonly (ErrorGroupState | "all")[];
+export const errorStateFilters = ["open", "resolved", "muted", "all"] as const satisfies readonly (
+  ErrorGroupState | "all"
+)[];
 export type ErrorStateFilter = (typeof errorStateFilters)[number];
 
 /** The source filters of the list: both sources, the server's errors, or the web client's. */
@@ -41,7 +43,11 @@ export function errorGroupsQueryOptions(api: Api, filter: ErrorFilter) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/error_groups", { state, source }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const query = { ...pageQuery(pageParam), ...(state === undefined ? {} : { state }), ...(source === undefined ? {} : { source }) };
+      const query = {
+        ...pageQuery(pageParam),
+        ...(state === undefined ? {} : { state }),
+        ...(source === undefined ? {} : { source }),
+      };
       const { data, error } = await api.fetch.GET("/admin/error_groups", { params: { query }, signal });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);

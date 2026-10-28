@@ -22,7 +22,12 @@ export type IncomePlanCount = Schemas["IncomePlanCount"];
  * The public income totals of the shown periods up to `today` (GET /instance/income_totals): a 404 when the instance
  * does not publish its income.
  */
-export function publicIncomeTotalsQueryOptions(api: Api, granularity: CostGranularity, basis: CostBasis, today: string) {
+export function publicIncomeTotalsQueryOptions(
+  api: Api,
+  granularity: CostGranularity,
+  basis: CostBasis,
+  today: string,
+) {
   const query = totalsQuery(granularity, basis, today);
   return queryOptions({
     queryKey: ["get", "/instance/income_totals", query] as const,
@@ -40,7 +45,12 @@ export function publicIncomeTotalsQueryOptions(api: Api, granularity: CostGranul
  * (GET /finance/income_totals): always with the balance, and with the members of each plan as far as the instance
  * shows them.
  */
-export function financeIncomeTotalsQueryOptions(api: Api, granularity: CostGranularity, basis: CostBasis, today: string) {
+export function financeIncomeTotalsQueryOptions(
+  api: Api,
+  granularity: CostGranularity,
+  basis: CostBasis,
+  today: string,
+) {
   const query = totalsQuery(granularity, basis, today);
   return queryOptions({
     queryKey: ["get", "/finance/income_totals", query] as const,

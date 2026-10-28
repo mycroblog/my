@@ -25,7 +25,10 @@ export function ClosureBanner() {
     return (
       <NoticeBanner
         label={t("client:closure.label")}
-        headline={t("client:closure.announced.headline", { instance, date: intl.formatDate(closure.closes_at, dateFormat) })}
+        headline={t("client:closure.announced.headline", {
+          instance,
+          date: intl.formatDate(closure.closes_at, dateFormat),
+        })}
         actions={
           <>
             <Link href={dataExportPath} variant="standalone">
@@ -64,7 +67,10 @@ export function OperatorMessage({ message }: { message: string | undefined }) {
   if (message === undefined || message === "") return null;
   return (
     <p>
-      <span>{t("client:closure.message_from")}</span> <span dir="auto" lang="">{message}</span>
+      <span>{t("client:closure.message_from")} </span>
+      <span dir="auto" lang="">
+        {message}
+      </span>
     </p>
   );
 }

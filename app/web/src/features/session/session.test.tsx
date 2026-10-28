@@ -17,12 +17,20 @@ const origin = window.location.origin;
 /** The S256 code challenge of a verifier, computed independently of the app (RFC 7636 §4.2). */
 async function s256(verifier: string): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
-  return btoa(String.fromCharCode(...digest)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  return btoa(String.fromCharCode(...digest))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
 }
 
 /** The server's OAuth endpoints and the verify_credentials operation, with what they received. */
 function oauthServer() {
-  const seen = { tokenForms: [] as Record<string, string>[], refreshes: 0, revoked: [] as Record<string, string>[], authorizations: [] as (string | null)[] };
+  const seen = {
+    tokenForms: [] as Record<string, string>[],
+    refreshes: 0,
+    revoked: [] as Record<string, string>[],
+    authorizations: [] as (string | null)[],
+  };
   let challenge = "";
   /** The refresh token cookie; null when the browser has none. */
   let cookie: string | null = null;
@@ -30,7 +38,8 @@ function oauthServer() {
     http.post(oauthPaths.token, async ({ request }) => {
       const form = Object.fromEntries(new URLSearchParams(await request.text()));
       seen.tokenForms.push(form);
-      if (form.code !== "the-code" || (await s256(form.code_verifier ?? "")) !== challenge) return oauthError("invalid_grant");
+      if (form.code !== "the-code" || (await s256(form.code_verifier ?? "")) !== challenge)
+        return oauthError("invalid_grant");
       cookie = "refresh-1";
       return tokenResponse("access-1");
     }),
@@ -49,11 +58,15 @@ function oauthServer() {
     http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => {
       const authorization = request.headers.get("Authorization");
       seen.authorizations.push(authorization);
-      return authorization === "Bearer access-2" ? HttpResponse.json(viewerFixture) : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
+      return authorization === "Bearer access-2"
+        ? HttpResponse.json(viewerFixture)
+        : problem(401, "/api/v1/problems/invalid-token", "Invalid token");
     }),
     // The shell's other requests take the refreshed token too, as every operation of the server does.
     http.get(`${apiBase}/preferences`, ({ request }) =>
-      request.headers.get("Authorization") === "Bearer access-2" ? HttpResponse.json(preferencesFixture) : problem(401, "/api/v1/problems/invalid-token", "Invalid token"),
+      request.headers.get("Authorization") === "Bearer access-2"
+        ? HttpResponse.json(preferencesFixture)
+        : problem(401, "/api/v1/problems/invalid-token", "Invalid token"),
     ),
   );
   return {
@@ -125,7 +138,12 @@ describe("signing in and out", () => {
     expect(await within(main).findByText("Alice")).toBeInTheDocument();
     expect(within(main).getByText("@alice")).toBeInTheDocument();
     expect(oauth.seen.tokenForms).toEqual([
-      expect.objectContaining({ grant_type: "authorization_code", code: "the-code", client_id: "my-web", redirect_uri: `${origin}/login/callback` }),
+      expect.objectContaining({
+        grant_type: "authorization_code",
+        code: "the-code",
+        client_id: "my-web",
+        redirect_uri: `${origin}/login/callback`,
+      }),
     ]);
     expect(oauth.seen.authorizations).toEqual(["Bearer access-1", "Bearer access-2"]);
     expect(oauth.seen.refreshes).toBe(1);
@@ -172,7 +190,9 @@ describe("a callback that is not for this tab's sign-in", () => {
     await renderApp({ path: "/login/callback?code=the-code&state=forged" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Could not sign in" })).toBeInTheDocument();
-    expect(screen.getByText("This sign-in was not started in this tab, or it has already been completed. Start again.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This sign-in was not started in this tab, or it has already been completed. Start again."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in again" })).toHaveAttribute("href", "/login");
     expect(oauth.seen.tokenForms).toEqual([]);
   });

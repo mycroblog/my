@@ -27,7 +27,10 @@ export type PostExcerptProps = {
 /** The excerpt of a post as a quote that links to the post, in the color of the text and underlined on hover. */
 export function PostExcerpt({ href, children }: PostExcerptProps) {
   return (
-    <Link href={href} className="block rounded-md bg-surface-sunken px-3 py-2 wrap-anywhere text-fg-muted no-underline data-hovered:text-fg data-hovered:underline">
+    <Link
+      href={href}
+      className="block rounded-md bg-surface-sunken px-3 py-2 wrap-anywhere text-fg-muted no-underline data-hovered:text-fg data-hovered:underline"
+    >
       {children}
     </Link>
   );

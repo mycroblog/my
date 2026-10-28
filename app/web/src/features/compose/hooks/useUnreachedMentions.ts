@@ -40,13 +40,21 @@ export function useUnreachedMentions(text: string, isLocal: boolean): string[] {
   const { followsRemote } = useFederation();
   const handles = useSettled(isLocal ? domainMentions(text).join(" ") : "", mentionLookupDelay);
   const lookups = useQueries({
-    queries: (handles === "" ? [] : handles.split(" ")).map((acct) => lookupAccountQueryOptions(api, acct, followsRemote)),
+    queries: (handles === "" ? [] : handles.split(" ")).map((acct) =>
+      lookupAccountQueryOptions(api, acct, followsRemote),
+    ),
   });
-  const remote = lookups.flatMap((lookup) => (lookup.data !== undefined && lookup.data.acct.includes("@") ? [lookup.data] : []));
+  const remote = lookups.flatMap((lookup) =>
+    lookup.data !== undefined && lookup.data.acct.includes("@") ? [lookup.data] : [],
+  );
   const ids = [...new Set(remote.map((account) => account.id))].slice(0, maxRelationshipIds);
   const relationships = useQuery({ ...relationshipsQueryOptions(api, ids), enabled: ids.length > 0 });
   if (!isLocal || relationships.data === undefined) return [];
   const followers = new Set(relationships.data.filter((r) => r.followed_by).map((r) => r.id));
   const checked = new Set(ids);
-  return [...new Set(remote.filter((account) => checked.has(account.id) && !followers.has(account.id)).map((account) => account.acct))];
+  return [
+    ...new Set(
+      remote.filter((account) => checked.has(account.id) && !followers.has(account.id)).map((account) => account.acct),
+    ),
+  ];
 }

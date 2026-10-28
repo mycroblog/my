@@ -6,11 +6,38 @@
 // one. "Your custom emoji" lists the emoji the user made: their settings change in a dialog, a new image is requested
 // by choosing another file, and deleting one asks first in an alert dialog (it cannot be undone). What a change did
 // stays in a StatusMessage (role="status") of its region, and a failure stays there too (role="alert").
-import { Button, Checkbox, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, Dialog, DialogTrigger, EmojiTile, EmptyState, FileTrigger, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import {
+  Button,
+  Checkbox,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  DialogTrigger,
+  EmojiTile,
+  EmptyState,
+  FileTrigger,
+  Heading,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextField,
+} from "@my/ui";
 import { type SubmitEvent, useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
-import { acceptedEmojiTypes, categoryLimit, federatedEmojiBytes, maxAliases, parseAliases, requestStateLabels, shortcodePattern } from "../../admin";
+import {
+  acceptedEmojiTypes,
+  categoryLimit,
+  federatedEmojiBytes,
+  maxAliases,
+  parseAliases,
+  requestStateLabels,
+  shortcodePattern,
+} from "../../admin";
 import { DateTime, DetailSection, RecordList, RequirePermission } from "../../moderation";
 import type { CustomEmojiRequest, OwnCustomEmoji } from "../api/ownEmojis";
 import {
@@ -57,7 +84,9 @@ function Usage() {
   const { used, limit } = useOwnCustomEmojis();
   return (
     <Hint>
-      {limit === undefined ? t("client:custom_emojis.usage.unlimited", { used }) : t("client:custom_emojis.usage", { used, limit: String(limit) })}
+      {limit === undefined
+        ? t("client:custom_emojis.usage.unlimited", { used })
+        : t("client:custom_emojis.usage", { used, limit: String(limit) })}
     </Hint>
   );
 }
@@ -88,8 +117,16 @@ function RequestForm() {
             </Button>
           </FileTrigger>
         </div>
-        {draft.file !== null && <Text as="p" size="sm" wrap="anywhere">{t("client:custom_emojis.image.chosen", { name: draft.file.name })}</Text>}
-        {draft.file !== null && draft.file.size > federatedEmojiBytes && <Text as="p" size="sm" tone="warning">{t("client:custom_emojis.image.large_hint")}</Text>}
+        {draft.file !== null && (
+          <Text as="p" size="sm" wrap="anywhere">
+            {t("client:custom_emojis.image.chosen", { name: draft.file.name })}
+          </Text>
+        )}
+        {draft.file !== null && draft.file.size > federatedEmojiBytes && (
+          <Text as="p" size="sm" tone="warning">
+            {t("client:custom_emojis.image.large_hint")}
+          </Text>
+        )}
         {form.missingImage && (
           <InlineError alert id={imageErrorId}>
             {t("client:custom_emojis.image.required")}
@@ -137,7 +174,11 @@ function RequestList() {
           {t("client:custom_emojis.withdraw_failed", { reason: actions.error })}
         </InlineError>
       )}
-      <RecordList list={list} getId={(request) => request.id} empty={<EmptyState headingLevel={3} heading={t("client:custom_emojis.requests.empty")} />}>
+      <RecordList
+        list={list}
+        getId={(request) => request.id}
+        empty={<EmptyState headingLevel={3} heading={t("client:custom_emojis.requests.empty")} />}
+      >
         {(request) => <RequestRow request={request} actions={actions} />}
       </RecordList>
     </Stack>
@@ -145,9 +186,19 @@ function RequestList() {
 }
 
 /** The image of an emoji or a request beside its heading, which names it. */
-function EmojiImage({ shortcode, url, staticUrl }: { shortcode: string; url: string | undefined; staticUrl: string | undefined }) {
+function EmojiImage({
+  shortcode,
+  url,
+  staticUrl,
+}: {
+  shortcode: string;
+  url: string | undefined;
+  staticUrl: string | undefined;
+}) {
   return (
-<EmojiTile emoji={url !== undefined && staticUrl !== undefined ? { shortcode, url, static_url: staticUrl } : undefined} />
+    <EmojiTile
+      emoji={url !== undefined && staticUrl !== undefined ? { shortcode, url, static_url: staticUrl } : undefined}
+    />
   );
 }
 
@@ -164,7 +215,9 @@ function RequestRow({ request, actions }: { request: CustomEmojiRequest; actions
       </Cluster>
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:custom_emoji_requests.kind")}>{t(kindLabels[request.kind])}</DescriptionItem>
-        <DescriptionItem term={t("client:custom_emoji_requests.state")}>{t(requestStateLabels[request.state])}</DescriptionItem>
+        <DescriptionItem term={t("client:custom_emoji_requests.state")}>
+          {t(requestStateLabels[request.state])}
+        </DescriptionItem>
         <DescriptionItem term={t("client:custom_emoji_requests.created_at")}>
           <DateTime value={request.created_at} />
         </DescriptionItem>
@@ -220,7 +273,13 @@ function EmojiList() {
         list={list}
         getId={(emoji) => emoji.id}
         listRef={listRef}
-        empty={<EmptyState headingLevel={3} heading={t("client:custom_emojis.empty")} description={t("client:custom_emojis.empty.description")} />}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:custom_emojis.empty")}
+            description={t("client:custom_emojis.empty.description")}
+          />
+        }
       >
         {(emoji) => <EmojiRow emoji={emoji} actions={actions} />}
       </RecordList>
@@ -242,7 +301,9 @@ function EmojiRow({ emoji, actions }: { emoji: OwnCustomEmoji; actions: OwnCusto
         </Heading>
       </Cluster>
       <DescriptionList columns={2}>
-        <DescriptionItem term={t("client:custom_emojis.state")}>{t(emoji.enabled ? "client:custom_emojis.state.enabled" : "client:custom_emojis.state.disabled")}</DescriptionItem>
+        <DescriptionItem term={t("client:custom_emojis.state")}>
+          {t(emoji.enabled ? "client:custom_emojis.state.enabled" : "client:custom_emojis.state.disabled")}
+        </DescriptionItem>
         <DescriptionItem term={t("client:custom_emojis.picker")}>
           {t(emoji.visible_in_picker ? "client:custom_emojis.picker.shown" : "client:custom_emojis.picker.hidden")}
         </DescriptionItem>
@@ -250,7 +311,11 @@ function EmojiRow({ emoji, actions }: { emoji: OwnCustomEmoji; actions: OwnCusto
           {emoji.category === undefined ? t("client:custom_emojis.none") : <span dir="auto">{emoji.category}</span>}
         </DescriptionItem>
         <DescriptionItem term={t("client:custom_emojis.aliases")}>
-          {emoji.aliases.length === 0 ? t("client:custom_emojis.none") : <span dir="ltr">{emoji.aliases.join(", ")}</span>}
+          {emoji.aliases.length === 0 ? (
+            t("client:custom_emojis.none")
+          ) : (
+            <span dir="ltr">{emoji.aliases.join(", ")}</span>
+          )}
         </DescriptionItem>
         <DescriptionItem term={t("client:custom_emojis.updated_at")}>
           <DateTime value={emoji.updated_at} />
@@ -265,7 +330,11 @@ function EmojiRow({ emoji, actions }: { emoji: OwnCustomEmoji; actions: OwnCusto
             if (file !== undefined) actions.requestImage(emoji, file);
           }}
         >
-          <Button size="sm" isPending={isPending} aria-label={t("client:custom_emojis.request_image_of", { emoji: name })}>
+          <Button
+            size="sm"
+            isPending={isPending}
+            aria-label={t("client:custom_emojis.request_image_of", { emoji: name })}
+          >
             {t("client:custom_emojis.request_image")}
           </Button>
         </FileTrigger>
@@ -286,14 +355,27 @@ function EditEmoji({ emoji, actions, isPending }: RowActionProps) {
       <Button size="sm" isDisabled={isPending} aria-label={t("client:custom_emojis.edit_emoji", { emoji: name })}>
         {t("client:custom_emojis.edit")}
       </Button>
-      <Dialog title={t("client:custom_emojis.edit.title", { emoji: name })} closeLabel={t("client:custom_emojis.edit.close")} isDismissable={false} size="md">
+      <Dialog
+        title={t("client:custom_emojis.edit.title", { emoji: name })}
+        closeLabel={t("client:custom_emojis.edit.close")}
+        isDismissable={false}
+        size="md"
+      >
         {({ close }) => <EditEmojiForm emoji={emoji} actions={actions} close={close} />}
       </Dialog>
     </DialogTrigger>
   );
 }
 
-function EditEmojiForm({ emoji, actions, close }: { emoji: OwnCustomEmoji; actions: OwnCustomEmojiActions; close: () => void }) {
+function EditEmojiForm({
+  emoji,
+  actions,
+  close,
+}: {
+  emoji: OwnCustomEmoji;
+  actions: OwnCustomEmojiActions;
+  close: () => void;
+}) {
   const t = useT();
   const [category, setCategory] = useState(emoji.category ?? "");
   const [aliases, setAliases] = useState(emoji.aliases.join(" "));
@@ -305,11 +387,13 @@ function EditEmojiForm({ emoji, actions, close }: { emoji: OwnCustomEmoji; actio
     event.preventDefault();
     setIsSaving(true);
     setError(false);
-    void actions.update(emoji, { category: category.trim(), aliases: parseAliases(aliases), visible_in_picker: visibleInPicker }).then((saved) => {
-      setIsSaving(false);
-      if (saved) close();
-      else setError(true);
-    });
+    void actions
+      .update(emoji, { category: category.trim(), aliases: parseAliases(aliases), visible_in_picker: visibleInPicker })
+      .then((saved) => {
+        setIsSaving(false);
+        if (saved) close();
+        else setError(true);
+      });
   };
   return (
     <Stack as="form" gap="4" onSubmit={onSubmit}>
@@ -327,11 +411,18 @@ function EditEmojiForm({ emoji, actions, close }: { emoji: OwnCustomEmoji; actio
         description={t("client:custom_emojis.aliases.description", { max: String(maxAliases) })}
         value={aliases}
         onChange={setAliases}
-        {...(aliasCount > maxAliases && { isInvalid: true, errorMessage: t("client:custom_emojis.aliases.too_many", { max: String(maxAliases) }) })}
+        {...(aliasCount > maxAliases && {
+          isInvalid: true,
+          errorMessage: t("client:custom_emojis.aliases.too_many", { max: String(maxAliases) }),
+        })}
         autoComplete="off"
         spellCheck="false"
       />
-      <Checkbox isSelected={visibleInPicker} onChange={setVisibleInPicker} description={t("client:custom_emojis.visible_in_picker.description")}>
+      <Checkbox
+        isSelected={visibleInPicker}
+        onChange={setVisibleInPicker}
+        description={t("client:custom_emojis.visible_in_picker.description")}
+      >
         {t("client:custom_emojis.visible_in_picker")}
       </Checkbox>
       {error && actions.error !== undefined && (
@@ -357,7 +448,12 @@ function DeleteEmoji({ emoji, actions, isPending }: RowActionProps) {
   const [failed, setFailed] = useState(false);
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger" isDisabled={isPending} aria-label={t("client:custom_emojis.delete_emoji", { emoji: name })}>
+      <Button
+        size="sm"
+        variant="danger"
+        isDisabled={isPending}
+        aria-label={t("client:custom_emojis.delete_emoji", { emoji: name })}
+      >
         {t("client:custom_emojis.delete")}
       </Button>
       <ConfirmDialog
@@ -366,7 +462,10 @@ function DeleteEmoji({ emoji, actions, isPending }: RowActionProps) {
         confirmLabel={t("client:custom_emojis.delete")}
         cancelLabel={t("client:custom_emojis.cancel")}
         isPending={isDeleting}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:custom_emojis.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:custom_emojis.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDeleting(true);
           setFailed(false);

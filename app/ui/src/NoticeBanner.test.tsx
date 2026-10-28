@@ -7,7 +7,11 @@ import { NoticeBanner } from "./NoticeBanner";
 describe("NoticeBanner", () => {
   it("is a named region with the headline, the details and the actions in that order", () => {
     render(
-      <NoticeBanner label="Closure" headline="This server closes on 1 Nov." actions={<Link href="/settings/account">Export</Link>}>
+      <NoticeBanner
+        label="Closure"
+        headline="This server closes on 1 Nov."
+        actions={<Link href="/settings/account">Export</Link>}
+      >
         <p>Thank you.</p>
       </NoticeBanner>,
     );

@@ -22,7 +22,12 @@ const item = tv({
 
 const ELLIPSIS = "\u2026";
 
-type ItemProps = { to: PaginationTarget | null; current?: boolean; label?: string | undefined; children: React.ReactNode };
+type ItemProps = {
+  to: PaginationTarget | null;
+  current?: boolean;
+  label?: string | undefined;
+  children: React.ReactNode;
+};
 
 function Item({ to, current, label, children }: ItemProps) {
   const common = {
@@ -38,7 +43,13 @@ function Item({ to, current, label, children }: ItemProps) {
     );
   }
   return (
-    <Button {...common} variant="ghost" size="md" isDisabled={to === null} {...(to?.onPress && { onPress: to.onPress })}>
+    <Button
+      {...common}
+      variant="ghost"
+      size="md"
+      isDisabled={to === null}
+      {...(to?.onPress && { onPress: to.onPress })}
+    >
       {children}
     </Button>
   );
@@ -112,7 +123,8 @@ export function Pagination({
   const { locale } = useLocale();
   const format = new Intl.NumberFormat(locale);
 
-  const target = (to: number): PaginationTarget => (getHref ? { href: getHref(to) } : { onPress: () => onPageChange?.(to) });
+  const target = (to: number): PaginationTarget =>
+    getHref ? { href: getHref(to) } : { onPress: () => onPageChange?.(to) };
   const hasPages = page !== undefined && pageCount !== undefined;
   const previousTarget = previous !== undefined ? previous : hasPages && page > 1 ? target(page - 1) : null;
   const nextTarget = next !== undefined ? next : hasPages && page < pageCount ? target(page + 1) : null;
@@ -129,7 +141,11 @@ export function Pagination({
         {hasPages &&
           pageEntries(page, pageCount, siblings).map((entry) =>
             typeof entry === "string" ? (
-              <li key={entry} aria-hidden="true" className="inline-flex min-h-9 min-w-9 items-center justify-center text-fg-muted">
+              <li
+                key={entry}
+                aria-hidden="true"
+                className="inline-flex min-h-9 min-w-9 items-center justify-center text-fg-muted"
+              >
                 {ELLIPSIS}
               </li>
             ) : (

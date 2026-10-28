@@ -34,8 +34,19 @@ const idn = signupBlockFixture({
   created_at: "2026-10-12T08:00:00Z",
   expires_at: "2026-11-11T08:00:00Z",
 });
-const range = signupBlockFixture({ id: "0192f0c4-7a8e-7000-8000-0000000001a2", kind: "ip_range", value: "192.0.2.0/24", moderation_action_id: "0192f0c4-7a8e-7000-8000-0000000d0000" });
-const address = signupBlockFixture({ id: "0192f0c4-7a8e-7000-8000-0000000001a0", kind: "email_hash", value: hash, state: "lifted", lifted_at: "2026-10-11T00:00:00Z" });
+const range = signupBlockFixture({
+  id: "0192f0c4-7a8e-7000-8000-0000000001a2",
+  kind: "ip_range",
+  value: "192.0.2.0/24",
+  moderation_action_id: "0192f0c4-7a8e-7000-8000-0000000d0000",
+});
+const address = signupBlockFixture({
+  id: "0192f0c4-7a8e-7000-8000-0000000001a0",
+  kind: "email_hash",
+  value: hash,
+  state: "lifted",
+  lifted_at: "2026-10-11T00:00:00Z",
+});
 
 /** Plays the sign-up blocks of the server: a list that new blocks join and lifts change; records the requests. */
 function signupBlocksServer(initial: SignupBlock[]) {
@@ -47,7 +58,9 @@ function signupBlocksServer(initial: SignupBlock[]) {
     http.get(`${apiBase}/admin/signup_blocks`, ({ request }) => {
       const query = new URL(request.url).searchParams;
       lists.push(query.toString());
-      return HttpResponse.json({ items: blocks.filter((block) => query.get("active") !== "true" || block.state === "active") });
+      return HttpResponse.json({
+        items: blocks.filter((block) => query.get("active") !== "true" || block.state === "active"),
+      });
     }),
     http.post(`${apiBase}/admin/signup_blocks`, async ({ request }) => {
       const body = (await request.json()) as NewBlock;
@@ -81,7 +94,11 @@ describe("the list of sign-up blocks", () => {
     const { user, router } = await renderApp({ path: "/moderation/signup-blocks" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Sign-up blocks" })).toBeInTheDocument();
-    expect(within(await screen.findByRole("table")).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["例え.jp (xn--r8jz45g.jp)", "192.0.2.0/24"]);
+    expect(
+      within(await screen.findByRole("table"))
+        .getAllByRole("rowheader")
+        .map((header) => header.textContent),
+    ).toEqual(["例え.jp (xn--r8jz45g.jp)", "192.0.2.0/24"]);
     const [first, second] = rows();
     if (first === undefined || second === undefined) throw new Error("the blocks are not listed");
     const details = within(first);
@@ -93,7 +110,9 @@ describe("the list of sign-up blocks", () => {
     expect(details.getByText("Added on its own")).toBeInTheDocument();
     expect(details.getByText("Disposable addresses.")).toHaveAttribute("dir", "auto");
     expect(
-      details.getByRole("button", { name: `Lift the block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}, added ${details.getByText(/^Oct 12, 2026/).textContent}` }),
+      details.getByRole("button", {
+        name: `Lift the block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}, added ${details.getByText(/^Oct 12, 2026/).textContent}`,
+      }),
     ).toBeInTheDocument();
     expect(within(second).getByText("IP range")).toBeInTheDocument();
     expect(within(second).getByText("Refuse")).toBeInTheDocument();
@@ -133,7 +152,9 @@ describe("the list of sign-up blocks", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Lift the block on the IP range/ })).toHaveFocus();
     });
-    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(`The block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`);
+    expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(
+      `The block on the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")} is lifted.`,
+    );
     expect(api.liftedIds).toEqual([idn.id]);
   });
 
@@ -151,7 +172,9 @@ describe("the list of sign-up blocks", () => {
 
   test("a block that cannot be lifted stays, and the failure says why", async () => {
     signupBlocksServer([range]);
-    server.use(http.post(`${apiBase}/admin/signup_blocks/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")));
+    server.use(
+      http.post(`${apiBase}/admin/signup_blocks/:id/lift`, () => problem(503, "about:blank", "Service Unavailable")),
+    );
     const { user } = await renderApp({ path: "/moderation/signup-blocks" });
 
     await user.click(await screen.findByRole("button", { name: /^Lift the block on the IP range/ }));
@@ -176,9 +199,21 @@ describe("a new sign-up block", () => {
     await user.type(form.getByRole("textbox", { name: "Comment" }), "Disposable addresses.");
     await user.click(form.getByRole("button", { name: "Add block" }));
 
-    expect(await screen.findByText(`Refuse is in effect for the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}.`)).toBeInTheDocument();
-    expect(api.created).toEqual([{ kind: "email_domain", value: "例え.jp", severity: "reject", comment: "Disposable addresses.", expires_in: 30 * 86_400 }]);
-    expect(await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" })).toBeInTheDocument();
+    expect(
+      await screen.findByText(`Refuse is in effect for the Email domain ${isolated("例え.jp (xn--r8jz45g.jp)")}.`),
+    ).toBeInTheDocument();
+    expect(api.created).toEqual([
+      {
+        kind: "email_domain",
+        value: "例え.jp",
+        severity: "reject",
+        comment: "Disposable addresses.",
+        expires_in: 30 * 86_400,
+      },
+    ]);
+    expect(
+      await within(screen.getByRole("table")).findByRole("rowheader", { name: "例え.jp (xn--r8jz45g.jp)" }),
+    ).toBeInTheDocument();
     // The form is ready for the next block of the same kind.
     expect(form.getByRole("radio", { name: "Email domain" })).toBeChecked();
     expect(form.getByRole("textbox", { name: "Domain" })).toHaveValue("");
@@ -196,7 +231,9 @@ describe("a new sign-up block", () => {
     await user.click(form.getByRole("radio", { name: "Require approval" }));
     await user.click(form.getByRole("button", { name: "Add block" }));
 
-    expect(await screen.findByText(`Require approval is in effect for the IP range ${isolated("192.0.2.0/24")}.`)).toBeInTheDocument();
+    expect(
+      await screen.findByText(`Require approval is in effect for the IP range ${isolated("192.0.2.0/24")}.`),
+    ).toBeInTheDocument();
     expect(api.created).toEqual([{ kind: "ip_range", value: "192.0.2.0/24", severity: "require_approval" }]);
     expect(form.getByRole("radio", { name: "IP range" })).toBeChecked();
   });
@@ -220,7 +257,12 @@ describe("a new sign-up block", () => {
     server.use(
       http.post(`${apiBase}/admin/signup_blocks`, () =>
         HttpResponse.json(
-          { type: "about:blank", title: "Unprocessable Content", status: 422, detail: "value: not a valid CIDR prefix" },
+          {
+            type: "about:blank",
+            title: "Unprocessable Content",
+            status: 422,
+            detail: "value: not a valid CIDR prefix",
+          },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
         ),
       ),
@@ -233,7 +275,10 @@ describe("a new sign-up block", () => {
     await user.click(form.getByRole("radio", { name: "Refuse" }));
     await user.click(form.getByRole("button", { name: "Add block" }));
 
-    expect(await screen.findByText("Could not add the block: value: not a valid CIDR prefix")).toHaveAttribute("role", "alert");
+    expect(await screen.findByText("Could not add the block: value: not a valid CIDR prefix")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(form.getByRole("textbox", { name: "IP address or range" })).toHaveValue("192.0.2.0/99");
     expect(form.getByRole("radio", { name: "Refuse" })).toBeChecked();
   });
@@ -245,7 +290,9 @@ describe("permissions", () => {
 
     const link = await within(await screen.findByRole("main")).findByRole("link", { name: "Sign-up blocks" });
     expect(link).toHaveAttribute("href", "/moderation/signup-blocks");
-    expect(link).toHaveAccessibleDescription("Email domains, email addresses and IP ranges whose sign-ups are refused or need approval.");
+    expect(link).toHaveAccessibleDescription(
+      "Email domains, email addresses and IP ranges whose sign-ups are refused or need approval.",
+    );
   });
 
   test("a user without manage_accounts is told why, and nothing is asked of the server", async () => {

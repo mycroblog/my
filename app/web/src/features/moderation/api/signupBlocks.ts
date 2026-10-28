@@ -21,7 +21,11 @@ export type SignupBlockImportResult = Schemas["SignupBlockImportResult"];
 export type SignupBlockImportSkipReason = Schemas["SignupBlockImportSkipped"]["reason"];
 
 /** The kinds of sign-up block, in the order of the form: the domain of the email address first, the most used. */
-export const signupBlockKinds = ["email_domain", "email_hash", "ip_range"] as const satisfies readonly SignupBlockKind[];
+export const signupBlockKinds = [
+  "email_domain",
+  "email_hash",
+  "ip_range",
+] as const satisfies readonly SignupBlockKind[];
 
 /** The severities of a sign-up block, from the lighter to the heavier. */
 export const signupBlockSeverities = ["require_approval", "reject"] as const satisfies readonly SignupBlockSeverity[];
@@ -31,7 +35,11 @@ export const signupBlockValueLimit = 320;
 export const signupBlockCommentLimit = 1000;
 
 /** The reasons a line of an imported list is skipped, in the order the screen counts them. */
-export const signupBlockImportSkipReasons = ["invalid", "duplicate", "already_blocked"] as const satisfies readonly SignupBlockImportSkipReason[];
+export const signupBlockImportSkipReasons = [
+  "invalid",
+  "duplicate",
+  "already_blocked",
+] as const satisfies readonly SignupBlockImportSkipReason[];
 
 /** The most values one import may hold (ImportSignupBlocksRequest). */
 export const signupBlockImportValueLimit = 10_000;
@@ -85,7 +93,13 @@ function isSignupBlocksQuery(queryKey: readonly unknown[]): boolean {
 /** Whether a list of sign-up blocks keeps only those in effect, which a lifted block leaves. */
 function isActiveSignupBlocksQuery(queryKey: readonly unknown[]): boolean {
   const params = queryKey[2];
-  return isSignupBlocksQuery(queryKey) && typeof params === "object" && params !== null && "active" in params && params.active === true;
+  return (
+    isSignupBlocksQuery(queryKey) &&
+    typeof params === "object" &&
+    params !== null &&
+    "active" in params &&
+    params.active === true
+  );
 }
 
 /** Marks stale every cached list of sign-up blocks (web-client/README.md S1): a new block is in each. */
@@ -124,10 +138,20 @@ export function liftSignupBlockMutation(api: Api) {
  * (ADR-0045): those of the blocks in effect drop it, the others show it lifted.
  */
 export function cacheLiftedSignupBlock(queryClient: QueryClient, lifted: SignupBlock): void {
-  for (const query of queryClient.getQueryCache().findAll({ predicate: (query) => isSignupBlocksQuery(query.queryKey) })) {
+  for (const query of queryClient
+    .getQueryCache()
+    .findAll({ predicate: (query) => isSignupBlocksQuery(query.queryKey) })) {
     const keep = isActiveSignupBlocksQuery(query.queryKey) ? [] : [lifted];
-    queryClient.setQueryData<InfiniteData<{ items: SignupBlock[] }>>(query.queryKey, (data) =>
-      data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.flatMap((item) => (item.id === lifted.id ? keep : [item])) })) },
+    queryClient.setQueryData<InfiniteData<{ items: SignupBlock[] }>>(
+      query.queryKey,
+      (data) =>
+        data && {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.flatMap((item) => (item.id === lifted.id ? keep : [item])),
+          })),
+        },
     );
   }
 }

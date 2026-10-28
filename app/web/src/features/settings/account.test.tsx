@@ -39,7 +39,10 @@ function exportsServer(initial: DataExport[]) {
     http.get(`${apiBase}/exports`, () => HttpResponse.json({ items })),
     http.post(`${apiBase}/exports`, () => {
       requests.push(1);
-      const requested = dataExportFixture({ id: "0192f0c4-7a8e-7000-8000-0000000008e2", requested_at: "2026-10-17T10:00:00Z" });
+      const requested = dataExportFixture({
+        id: "0192f0c4-7a8e-7000-8000-0000000008e2",
+        requested_at: "2026-10-17T10:00:00Z",
+      });
       items = [requested, ...items];
       return HttpResponse.json(requested, { status: 202 });
     }),
@@ -62,14 +65,23 @@ describe("the archives of the user's data", () => {
 
     const item = await within(section).findByRole("article", { name: "Archive of Oct 17, 2026, 10:00 AM" });
     expect(within(item).getByText("Being prepared")).toBeInTheDocument();
-    expect(within(section).getByRole("status")).toHaveTextContent("The archive is being prepared. It appears below when it is ready.");
+    expect(within(section).getByRole("status")).toHaveTextContent(
+      "The archive is being prepared. It appears below when it is ready.",
+    );
     // Another archive waits for this one.
     expect(within(section).getByRole("button", { name: "Prepare an archive" })).toBeDisabled();
     expect(api.requests).toHaveLength(1);
   });
 
   test("downloads a ready archive as a file", async () => {
-    exportsServer([ready, dataExportFixture({ id: "0192f0c4-7a8e-7000-8000-0000000008e0", state: "failed", requested_at: "2026-10-01T00:00:00Z" })]);
+    exportsServer([
+      ready,
+      dataExportFixture({
+        id: "0192f0c4-7a8e-7000-8000-0000000008e0",
+        state: "failed",
+        requested_at: "2026-10-01T00:00:00Z",
+      }),
+    ]);
     Object.defineProperty(URL, "createObjectURL", { configurable: true, value: () => "blob:archive" });
     Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: () => undefined });
     const saved: { href: string; download: string }[] = [];
@@ -102,7 +114,9 @@ describe("deleting the account", () => {
       http.post(`${apiBase}/accounts/delete`, async ({ request }) => {
         const body = (await request.json()) as Schemas["DeleteOwnAccountRequest"];
         passwords.push(body.password ?? "");
-        return body.password === "secret" ? new HttpResponse(null, { status: 204 }) : problem(422, "/api/v1/problems/wrong-password", "The password is wrong.");
+        return body.password === "secret"
+          ? new HttpResponse(null, { status: 204 })
+          : problem(422, "/api/v1/problems/wrong-password", "The password is wrong.");
       }),
       http.post(oauthPaths.revoke, () => {
         revoked++;
@@ -114,7 +128,9 @@ describe("deleting the account", () => {
 
     await user.click(within(section).getByRole("button", { name: "Delete account…" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Delete your account?" });
-    expect(dialog).toHaveAccessibleDescription("Enter your password to confirm. Your account is deleted at once, and you are signed out. This cannot be undone.");
+    expect(dialog).toHaveAccessibleDescription(
+      "Enter your password to confirm. Your account is deleted at once, and you are signed out. This cannot be undone.",
+    );
     const password = within(dialog).getByLabelText(/Password/);
     expect(password).toHaveAttribute("type", "password");
     expect(password).toHaveAttribute("autocomplete", "current-password");
@@ -156,7 +172,9 @@ describe("deleting the account", () => {
     expect(within(dialog).queryByLabelText(/Password/)).not.toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("The passkey could not be verified. Use a passkey of this account.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "The passkey could not be verified. Use a passkey of this account.",
+    );
     await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
 
     expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();

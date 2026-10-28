@@ -6,11 +6,23 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { otherAccountFixture, remoteStatusFixture, type Schemas, statusPage, timelineStatusFixture } from "../../test/fixtures";
+import {
+  otherAccountFixture,
+  remoteStatusFixture,
+  type Schemas,
+  statusPage,
+  timelineStatusFixture,
+} from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { adminAccountFixture, newAccountAction, newDomainAction, registrationFixture, reportFixture } from "./test/handlers";
+import {
+  adminAccountFixture,
+  newAccountAction,
+  newDomainAction,
+  registrationFixture,
+  reportFixture,
+} from "./test/handlers";
 
 /**
  * How long the server takes to answer a list, in ms. The waits keep the setup's asyncUtilTimeout
@@ -42,7 +54,11 @@ describe("a suspension of an account", () => {
       }),
     );
     const { user, router } = await renderApp({ path: "/local" });
-    expect(await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", { description: "Hello from the local timeline!" })).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", {
+        description: "Hello from the local timeline!",
+      }),
+    ).toBeInTheDocument();
 
     await router.navigate({ to: "/moderation/accounts/$id", params: { id: otherAccountFixture.id } });
     const form = await screen.findByRole("region", { name: "Take action" });
@@ -69,7 +85,9 @@ describe("a limit of a domain", () => {
       }),
       http.get(`${apiBase}/timelines/public`, async () => {
         await delay(latency);
-        return HttpResponse.json(statusPage(limited ? [timelineStatusFixture] : [timelineStatusFixture, remoteStatusFixture]));
+        return HttpResponse.json(
+          statusPage(limited ? [timelineStatusFixture] : [timelineStatusFixture, remoteStatusFixture]),
+        );
       }),
     );
     const { user, router } = await renderApp({ path: "/public" });
@@ -96,15 +114,21 @@ describe("an approved registration", () => {
   test("is in the account search at once when it opens again", async () => {
     let approved = false;
     server.use(
-      http.get(`${apiBase}/admin/registrations`, () => HttpResponse.json({ items: approved ? [] : [registrationFixture()] })),
+      http.get(`${apiBase}/admin/registrations`, () =>
+        HttpResponse.json({ items: approved ? [] : [registrationFixture()] }),
+      ),
       http.post(`${apiBase}/admin/registrations/:userId/approve`, () => {
         approved = true;
         return HttpResponse.json(registrationFixture({ state: "approved" }));
       }),
       http.get(`${apiBase}/admin/accounts`, async () => {
         await delay(latency);
-        const state = approved ? { state: "active", registration_state: "approved" } : { state: "pending", registration_state: "pending" };
-        return HttpResponse.json({ items: [adminAccountFixture(otherAccountFixture, state as Partial<Schemas["AdminAccount"]>)] });
+        const state = approved
+          ? { state: "active", registration_state: "approved" }
+          : { state: "pending", registration_state: "pending" };
+        return HttpResponse.json({
+          items: [adminAccountFixture(otherAccountFixture, state as Partial<Schemas["AdminAccount"]>)],
+        });
       }),
     );
     const { user, router } = await renderApp({ path: "/moderation/accounts" });
@@ -137,13 +161,16 @@ describe("a report filed by a moderator", () => {
     );
     // The default handler answers the report; the queue has it from then on.
     server.events.on("request:start", ({ request }) => {
-      if (request.method === "POST" && new URL(request.url).pathname === `${apiBase}/reports`) reports.push(reportFixture());
+      if (request.method === "POST" && new URL(request.url).pathname === `${apiBase}/reports`)
+        reports.push(reportFixture());
     });
     const { user, router } = await renderApp({ path: "/moderation/reports" });
     expect(await screen.findByRole("heading", { level: 2, name: "No open reports" })).toBeInTheDocument();
 
     await router.navigate({ to: "/local" });
-    const article = await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", { description: "Hello from the local timeline!" });
+    const article = await within(await screen.findByRole("feed", { name: "Local timeline" })).findByRole("article", {
+      description: "Hello from the local timeline!",
+    });
     await user.click(await within(article).findByRole("button", { name: "More actions" }));
     await user.click(await screen.findByRole("menuitem", { name: "Report" }));
     const dialog = await screen.findByRole("dialog", { name: "Report ⁨Bob⁩" });

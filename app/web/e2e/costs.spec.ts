@@ -23,7 +23,14 @@ function totals(url: URL, breakdown: boolean): CostTotals {
     granularity: (url.searchParams.get("granularity") ?? "month") as CostTotals["granularity"],
     basis: (url.searchParams.get("basis") ?? "amortized") as CostTotals["basis"],
     periods: [
-      { label: previous, starts_on: `${previous}-01`, ends_on: `${previous}-28`, totals: [{ amount: "1650", currency: "JPY" }], breakdown: [], estimated: false },
+      {
+        label: previous,
+        starts_on: `${previous}-01`,
+        ends_on: `${previous}-28`,
+        totals: [{ amount: "1650", currency: "JPY" }],
+        breakdown: [],
+        estimated: false,
+      },
       {
         label: month,
         starts_on: `${month}-01`,
@@ -34,7 +41,11 @@ function totals(url: URL, breakdown: boolean): CostTotals {
         ],
         breakdown: breakdown
           ? [
-              { provider: "A registrar with a rather long name that has to wrap on the narrowest screens", category: "domain", amount: { amount: "1650", currency: "JPY" } },
+              {
+                provider: "A registrar with a rather long name that has to wrap on the narrowest screens",
+                category: "domain",
+                amount: { amount: "1650", currency: "JPY" },
+              },
               { provider: "Cloud", category: "compute", amount: { amount: "1234.56", currency: "USD" } },
             ]
           : [],
@@ -71,13 +82,31 @@ function incomeTotals(url: URL, balance: boolean, plans: boolean): IncomeTotals 
           : {}),
       },
     ],
-    ...(plans ? { plans: [{ plan_id: "0199f0e0-0000-7000-8000-00000000aa01", name: "A plan with a rather long name that has to wrap on the narrowest screens", members: 3 }] } : {}),
-    rules: { week_start: "monday", providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }], amortize_after_days: 31 },
+    ...(plans
+      ? {
+          plans: [
+            {
+              plan_id: "0199f0e0-0000-7000-8000-00000000aa01",
+              name: "A plan with a rather long name that has to wrap on the narrowest screens",
+              members: 3,
+            },
+          ],
+        }
+      : {}),
+    rules: {
+      week_start: "monday",
+      providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
+      amortize_after_days: 31,
+    },
   };
 }
 
 /** Plays the instance with `visibility` and `income`, and its public totals, for a visitor without a session. */
-async function serveCosts(page: Page, visibility: Instance["finance_visibility"], income: Instance["income_visibility"] = "private"): Promise<void> {
+async function serveCosts(
+  page: Page,
+  visibility: Instance["finance_visibility"],
+  income: Instance["income_visibility"] = "private",
+): Promise<void> {
   const instance: Instance = {
     domain: "my.example",
     name: "my example",
@@ -100,17 +129,31 @@ async function serveCosts(page: Page, visibility: Instance["finance_visibility"]
   };
   await page.route("**/api/v1/instance", (route) => route.fulfill({ json: instance }));
   await page.route("**/api/v1/instance/domain_actions*", (route) =>
-    route.fulfill({ status: 404, contentType: "application/problem+json", json: { type: "about:blank", title: "Not Found", status: 404 } }),
+    route.fulfill({
+      status: 404,
+      contentType: "application/problem+json",
+      json: { type: "about:blank", title: "Not Found", status: 404 },
+    }),
   );
   await page.route("**/api/v1/instance/cost_totals*", (route) =>
     visibility === "private"
-      ? route.fulfill({ status: 404, contentType: "application/problem+json", json: { type: "about:blank", title: "Not Found", status: 404 } })
+      ? route.fulfill({
+          status: 404,
+          contentType: "application/problem+json",
+          json: { type: "about:blank", title: "Not Found", status: 404 },
+        })
       : route.fulfill({ json: totals(new URL(route.request().url()), visibility === "breakdown") }),
   );
   await page.route("**/api/v1/instance/income_totals*", (route) =>
     income === "private"
-      ? route.fulfill({ status: 404, contentType: "application/problem+json", json: { type: "about:blank", title: "Not Found", status: 404 } })
-      : route.fulfill({ json: incomeTotals(new URL(route.request().url()), visibility !== "private", income === "plans") }),
+      ? route.fulfill({
+          status: 404,
+          contentType: "application/problem+json",
+          json: { type: "about:blank", title: "Not Found", status: 404 },
+        })
+      : route.fulfill({
+          json: incomeTotals(new URL(route.request().url()), visibility !== "private", income === "plans"),
+        }),
   );
 }
 
@@ -208,7 +251,10 @@ test("the costs page of a server that publishes its income only", async ({ page,
   await expectNoHorizontalScroll(page);
 });
 
-test("the information page of a server that publishes its income only links to it", async ({ page, makeAxeBuilder }) => {
+test("the information page of a server that publishes its income only links to it", async ({
+  page,
+  makeAxeBuilder,
+}) => {
   await serveCosts(page, "private", "totals");
   await page.goto("/about");
   const main = page.getByRole("main");

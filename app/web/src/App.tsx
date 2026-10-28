@@ -6,7 +6,19 @@
 // on across pages, features/voice), whether animations play by
 // themselves (lib/autoplay), how links leave the app (ExternalLinks), React Aria's router binding, and the router
 // with every page, or the maintenance of the server in its place (Maintenance.tsx).
-import { AnnouncerProvider, AutoplayContext, Box, Center, ExternalLinkContext, Heading, I18nProvider as AriaI18nProvider, RouterProvider as AriaRouterProvider, Stack, Text, ToastProvider } from "@my/ui";
+import {
+  AnnouncerProvider,
+  AutoplayContext,
+  Box,
+  Center,
+  ExternalLinkContext,
+  Heading,
+  I18nProvider as AriaI18nProvider,
+  RouterProvider as AriaRouterProvider,
+  Stack,
+  Text,
+  ToastProvider,
+} from "@my/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type AnyRouter, RouterProvider } from "@tanstack/react-router";
 import type { ReactNode } from "react";

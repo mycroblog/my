@@ -32,7 +32,13 @@ import { cacheVoiceRoom, joinVoiceRoomMutation, type VoiceRoomJoin } from "../ap
 import { browserEnvironment } from "../rtc/connect";
 import type { VoiceEnvironment } from "../rtc/types";
 import { voiceEndReasonLabel } from "./useVoiceHistory";
-import { participantName, VoiceCall, type VoiceCallEnd, type VoiceCallNotice, type VoiceCallSnapshot } from "./voiceCall";
+import {
+  participantName,
+  VoiceCall,
+  type VoiceCallEnd,
+  type VoiceCallNotice,
+  type VoiceCallSnapshot,
+} from "./voiceCall";
 
 /** What a call needs from the user's gesture, taken before a request that joins the user to a room (`prepare`). */
 export type VoiceCallGesture = { accountId: string; environment: VoiceEnvironment; generation: number };
@@ -207,12 +213,14 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
   const join = useMutation({
     mutationKey: ["voice", "join"] as const,
     mutationFn: ({ roomId }: { roomId: string } & VoiceCallGesture) => joinVoiceRoomMutation(api, roomId).mutationFn(),
-    onSuccess: (joined, { accountId, environment, generation }) => startCall(joined, { accountId, environment, generation }),
+    onSuccess: (joined, { accountId, environment, generation }) =>
+      startCall(joined, { accountId, environment, generation }),
   });
 
   const leave = useMutation({
     mutationKey: ["voice", "leave"] as const,
-    mutationFn: ({ roomId, choice }: { roomId: string; choice: VoiceLeaveChoice }) => leaveVoiceRoom(api, roomId, choice),
+    mutationFn: ({ roomId, choice }: { roomId: string; choice: VoiceLeaveChoice }) =>
+      leaveVoiceRoom(api, roomId, choice),
     onSuccess: async (_, { roomId }) => {
       call?.close();
       setActive(null);

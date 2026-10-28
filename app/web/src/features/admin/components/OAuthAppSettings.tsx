@@ -5,12 +5,48 @@
 // one press, and the server's own clients cannot be disabled. An app that registered by its metadata document can
 // have its host denied. The second tab lists the denied hosts, denies one in a dialog and lifts a denial. What a
 // change did stays above the list in a StatusMessage (role="status"), and a failure stays there too (role="alert").
-import { Button, Cluster, ConfirmDialog, DialogTrigger, EmptyState, Hint, InlineError, Select, SelectItem, Stack, StatusMessage, Tab, TableCell, TableColumnHeader, TableRow, TableRowHeader, TabList, TabPanel, Tabs, Text, TextField } from "@my/ui";
+import {
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DialogTrigger,
+  EmptyState,
+  Hint,
+  InlineError,
+  Select,
+  SelectItem,
+  Stack,
+  StatusMessage,
+  Tab,
+  TableCell,
+  TableColumnHeader,
+  TableRow,
+  TableRowHeader,
+  TabList,
+  TabPanel,
+  Tabs,
+  Text,
+  TextField,
+} from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { DateTime, DetailSection, RecordTable, RequirePermission } from "../../moderation";
-import { hostLimit, type HostDenial, type OAuthClient, type OAuthClientFilter, type OAuthClientRegistration, oauthClientRegistrations } from "../api/oauthApps";
-import { appName, metadataHost, type OAuthAppActions, useHostDenials, useOAuthAppActions, useOAuthClients } from "../hooks/useOAuthApps";
+import {
+  hostLimit,
+  type HostDenial,
+  type OAuthClient,
+  type OAuthClientFilter,
+  type OAuthClientRegistration,
+  oauthClientRegistrations,
+} from "../api/oauthApps";
+import {
+  appName,
+  metadataHost,
+  type OAuthAppActions,
+  useHostDenials,
+  useOAuthAppActions,
+  useOAuthClients,
+} from "../hooks/useOAuthApps";
 
 /** The tabs of the screen: the apps, and the denied hosts. */
 export type OAuthAppTab = "apps" | "hosts";
@@ -89,7 +125,10 @@ function ClientsTab({ filter, onFilterChange }: Pick<OAuthAppSettingsProps, "fil
   const actions = useOAuthAppActions();
   const choices = [
     { id: anyRegistration, name: t("client:admin.oauth_apps.filter.all") },
-    ...oauthClientRegistrations.map((registration) => ({ id: registration, name: t(registrationLabels[registration]) })),
+    ...oauthClientRegistrations.map((registration) => ({
+      id: registration,
+      name: t(registrationLabels[registration]),
+    })),
   ];
   return (
     <Stack gap="4">
@@ -125,7 +164,13 @@ function ClientList({ filter, actions }: { filter: OAuthClientFilter; actions: O
       list={clients}
       caption={t("client:admin.oauth_apps.list.title")}
       getId={(client) => client.id}
-      empty={<EmptyState headingLevel={3} heading={t("client:admin.oauth_apps.empty")} description={t("client:admin.oauth_apps.empty.description")} />}
+      empty={
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:admin.oauth_apps.empty")}
+          description={t("client:admin.oauth_apps.empty.description")}
+        />
+      }
       head={
         <>
           <TableColumnHeader>{t("client:admin.oauth_apps.column.app")}</TableColumnHeader>
@@ -256,7 +301,10 @@ function DenyAppHost({ host, actions }: { host: string; actions: OAuthAppActions
         confirmLabel={t("client:admin.oauth_apps.hosts.deny")}
         cancelLabel={t("client:admin.oauth_apps.cancel")}
         isPending={isDenying}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.oauth_apps.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.oauth_apps.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDenying(true);
           setFailed(false);
@@ -286,7 +334,13 @@ function HostsTab() {
         list={denials}
         caption={t("client:admin.oauth_apps.hosts.title")}
         getId={(denial) => denial.id}
-        empty={<EmptyState headingLevel={3} heading={t("client:admin.oauth_apps.hosts.empty")} description={t("client:admin.oauth_apps.hosts.empty.description")} />}
+        empty={
+          <EmptyState
+            headingLevel={3}
+            heading={t("client:admin.oauth_apps.hosts.empty")}
+            description={t("client:admin.oauth_apps.hosts.empty.description")}
+          />
+        }
         head={
           <>
             <TableColumnHeader>{t("client:admin.oauth_apps.hosts.column.host")}</TableColumnHeader>
@@ -351,7 +405,10 @@ function DenyHostByName({ actions }: { actions: OAuthAppActions }) {
         confirmLabel={t("client:admin.oauth_apps.hosts.deny")}
         cancelLabel={t("client:admin.oauth_apps.cancel")}
         isPending={isDenying}
-        {...(failed && actions.error !== undefined && { errorMessage: t("client:admin.oauth_apps.change_failed", { reason: actions.error }) })}
+        {...(failed &&
+          actions.error !== undefined && {
+            errorMessage: t("client:admin.oauth_apps.change_failed", { reason: actions.error }),
+          })}
         onConfirm={(close) => {
           setIsDenying(true);
           setFailed(false);

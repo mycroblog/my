@@ -19,7 +19,11 @@ export function frequentSection(emojis: readonly PickerEmoji[], t: Translate): E
  * The emoji of `keys` (Unicode emoji without their skin tone, custom emoji as `:shortcode:`) that the picker offers:
  * a custom emoji the server still has, a Unicode emoji once the Unicode data is loaded.
  */
-export function emojisOfKeys(keys: readonly string[], custom: readonly PickerCustomEmoji[], unicode: UnicodeEmojiSet | undefined): PickerEmoji[] {
+export function emojisOfKeys(
+  keys: readonly string[],
+  custom: readonly PickerCustomEmoji[],
+  unicode: UnicodeEmojiSet | undefined,
+): PickerEmoji[] {
   const byShortcode = new Map(custom.map((emoji) => [emoji.shortcode, emoji]));
   return keys.flatMap((key): PickerEmoji[] => {
     const shortcode = shortcodeOf(key);
@@ -40,7 +44,12 @@ export function customEmojiSections(emojis: readonly ServerEmoji[], t: Translate
   }
   const uncategorized = byCategory.get("");
   if (uncategorized !== undefined) {
-    sections.push({ id: "custom:", heading: t("client:emoji.picker.uncategorized"), icon: "custom", emojis: uncategorized });
+    sections.push({
+      id: "custom:",
+      heading: t("client:emoji.picker.uncategorized"),
+      icon: "custom",
+      emojis: uncategorized,
+    });
   }
   for (const [category, list] of byCategory) {
     if (category !== "") sections.push({ id: `custom:${category}`, heading: category, icon: "custom", emojis: list });
@@ -63,7 +72,12 @@ const groupHeadings: Readonly<Record<UnicodeGroupId, PlainClientMessageKey>> = {
 
 /** One section per group of the Unicode emoji, in emoji-test.txt's order. */
 export function unicodeEmojiSections(unicode: UnicodeEmojiSet, t: Translate): EmojiPickerSection[] {
-  return unicode.groups.map((group) => ({ id: `unicode:${group.id}`, heading: t(groupHeadings[group.id]), icon: group.id, emojis: group.emojis }));
+  return unicode.groups.map((group) => ({
+    id: `unicode:${group.id}`,
+    heading: t(groupHeadings[group.id]),
+    icon: group.id,
+    emojis: group.emojis,
+  }));
 }
 
 /** The words of the picker, with the accessible name of its grid. */

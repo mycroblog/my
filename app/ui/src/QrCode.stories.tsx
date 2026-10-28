@@ -7,15 +7,37 @@ import { QrCode } from "./QrCode";
 function finder(x: number, y: number): string {
   const rows = [
     [[0, 7]],
-    [[0, 1], [6, 1]],
-    [[0, 1], [2, 3], [6, 1]],
-    [[0, 1], [2, 3], [6, 1]],
-    [[0, 1], [2, 3], [6, 1]],
-    [[0, 1], [6, 1]],
+    [
+      [0, 1],
+      [6, 1],
+    ],
+    [
+      [0, 1],
+      [2, 3],
+      [6, 1],
+    ],
+    [
+      [0, 1],
+      [2, 3],
+      [6, 1],
+    ],
+    [
+      [0, 1],
+      [2, 3],
+      [6, 1],
+    ],
+    [
+      [0, 1],
+      [6, 1],
+    ],
     [[0, 7]],
   ];
   return rows
-    .flatMap((runs, row) => runs.map(([start = 0, length = 0]) => `M${String(x + start)} ${String(y + row)}h${String(length)}v1h-${String(length)}z`))
+    .flatMap((runs, row) =>
+      runs.map(
+        ([start = 0, length = 0]) => `M${String(x + start)} ${String(y + row)}h${String(length)}v1h-${String(length)}z`,
+      ),
+    )
     .join("");
 }
 

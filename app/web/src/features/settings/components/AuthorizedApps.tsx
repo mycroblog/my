@@ -4,7 +4,18 @@
 // authorized and when it was last used (exact to the hour), and a button that revokes it after a confirmation. The name
 // is what the app says about itself; only the origin is what the server knows, so a third-party app says it is not
 // verified. Revoking the web client signs the user out of every browser, which the confirmation says.
-import { Box, Button, ConfirmDialog, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, Stack, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  EmptyState,
+  Heading,
+  Hint,
+  Stack,
+  Text,
+} from "@my/ui";
 import { useRef, useState } from "react";
 import { type IntlShape, useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -133,7 +144,9 @@ function AppRow({ app, revoke, onRevoke }: { app: AuthorizedApp; revoke: RevokeA
         <DescriptionItem term={t("client:settings.authorized_apps.authorized_at")}>
           {intl.formatDate(app.authorized_at, { dateStyle: "medium", timeStyle: "short" })}
         </DescriptionItem>
-        <DescriptionItem term={t("client:settings.authorized_apps.last_used")}>{lastUsed(t, intl, app)}</DescriptionItem>
+        <DescriptionItem term={t("client:settings.authorized_apps.last_used")}>
+          {lastUsed(t, intl, app)}
+        </DescriptionItem>
       </DescriptionList>
       <div>
         <Button

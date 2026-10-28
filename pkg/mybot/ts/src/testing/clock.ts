@@ -85,7 +85,12 @@ export class Clock {
 }
 
 /** Resolves when cond holds, checked whenever a listener of listeners is called, or rejects when signal aborts. */
-export function waitFor(listeners: Set<() => void>, cond: () => boolean, signal: AbortSignal, what: string): Promise<void> {
+export function waitFor(
+  listeners: Set<() => void>,
+  cond: () => boolean,
+  signal: AbortSignal,
+  what: string,
+): Promise<void> {
   if (cond()) return Promise.resolve();
   return new Promise<void>((resolve, reject) => {
     const done = () => {

@@ -24,7 +24,8 @@ export function useServerSettings() {
 
   const value = draft ?? saved;
   const error = (() => {
-    if (characterCount(value) > instanceNameLimit) return t("client:admin.settings.name.too_long", { max: String(instanceNameLimit) });
+    if (characterCount(value) > instanceNameLimit)
+      return t("client:admin.settings.name.too_long", { max: String(instanceNameLimit) });
     if (value !== "" && value.trim() === "") return t("client:admin.settings.name.blank");
     return undefined;
   })();

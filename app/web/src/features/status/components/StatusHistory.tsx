@@ -2,7 +2,12 @@
 import { Box, Cluster, ContentWarning, EmojiText, Heading, Link, MediaGrid, PostContent, Stack, Text } from "@my/ui";
 import { useId } from "react";
 import { type PlainClientMessageKey, useLocale, useT } from "../../../lib/i18n";
-import { type RevisionChange, type RevisionView, type StatusHistoryView, useStatusHistory } from "../hooks/useStatusHistory";
+import {
+  type RevisionChange,
+  type RevisionView,
+  type StatusHistoryView,
+  useStatusHistory,
+} from "../hooks/useStatusHistory";
 import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
 import { useAudioPlayerLabels } from "../hooks/useAudioPlayerLabels";
 
@@ -61,9 +66,13 @@ function Revision({ revision, history }: RevisionProps) {
     revision.changes.length === 0
       ? null
       : t("client:status.history.changes", {
-          changes: new Intl.ListFormat(locale, { type: "conjunction" }).format(revision.changes.map((change) => t(changeLabels[change]))),
+          changes: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+            revision.changes.map((change) => t(changeLabels[change])),
+          ),
         });
-  const body = <PostContent html={revision.html} lang={history.lang} emojis={revision.emojis} onLinkClick={history.onLinkClick} />;
+  const body = (
+    <PostContent html={revision.html} lang={history.lang} emojis={revision.emojis} onLinkClick={history.onLinkClick} />
+  );
   const media =
     revision.media.length > 0 ? (
       <MediaGrid
@@ -96,7 +105,11 @@ function Revision({ revision, history }: RevisionProps) {
           {media}
         </>
       ) : (
-        <ContentWarning summary={<EmojiText text={revision.contentWarning} emojis={revision.emojis} />} summaryLang={history.lang} toggleLabel={t("client:timeline.content_warning.toggle")}>
+        <ContentWarning
+          summary={<EmojiText text={revision.contentWarning} emojis={revision.emojis} />}
+          summaryLang={history.lang}
+          toggleLabel={t("client:timeline.content_warning.toggle")}
+        >
           {body}
           {media}
         </ContentWarning>

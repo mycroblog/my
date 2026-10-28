@@ -54,7 +54,10 @@ export function moveRuleMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/rules/{id}/move"] as const,
     mutationFn: async ({ id, position }: { id: string; position: number }): Promise<Rule> => {
-      const { data, error } = await api.fetch.POST("/admin/rules/{id}/move", { params: { path: { id } }, body: { position } });
+      const { data, error } = await api.fetch.POST("/admin/rules/{id}/move", {
+        params: { path: { id } },
+        body: { position },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;

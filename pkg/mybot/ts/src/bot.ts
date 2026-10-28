@@ -10,7 +10,15 @@ import {
   type Sleep,
   type TokenSource,
 } from "@mycroblog/mykit";
-import { Budget, defaultMaxSendWait, defaultPostRate, defaultReplyLimits, defaultWriteRate, type Rate, ReplyLimiter } from "./budget.js";
+import {
+  Budget,
+  defaultMaxSendWait,
+  defaultPostRate,
+  defaultReplyLimits,
+  defaultWriteRate,
+  type Rate,
+  ReplyLimiter,
+} from "./budget.js";
 import { answered, Context, type Handler, type Middleware, type Runtime } from "./context.js";
 import { Dispatcher, type Job, senderOf, Tracker } from "./dispatch.js";
 import type { EveryJob, EveryOptions } from "./every.js";
@@ -183,7 +191,14 @@ export class ScopeError extends Error {
 }
 
 /** The scopes under follow. */
-const followScopes: readonly string[] = ["read:follows", "read:blocks", "read:mutes", "write:follows", "write:blocks", "write:mutes"];
+const followScopes: readonly string[] = [
+  "read:follows",
+  "read:blocks",
+  "read:mutes",
+  "write:follows",
+  "write:blocks",
+  "write:mutes",
+];
 
 /** Whether the scope have gives need: itself, or a broad scope above it (the oauth2 security scheme of api/openapi.yaml). */
 function grants(have: string, need: string): boolean {
@@ -307,7 +322,10 @@ export class Bot {
     this.#now = options.now ?? Date.now;
     this.#sleep = options.sleep ?? sleepSignal;
     const fetch = options.fetch ?? ((request: Request) => globalThis.fetch(request));
-    const userAgent = options.userAgent === undefined || options.userAgent === "" ? userAgentProduct : `${options.userAgent} ${userAgentProduct}`;
+    const userAgent =
+      options.userAgent === undefined || options.userAgent === ""
+        ? userAgentProduct
+        : `${options.userAgent} ${userAgentProduct}`;
     this.#fetch = async (request) => {
       request.headers.set("User-Agent", userAgent);
       const response = await fetch(request);
@@ -388,7 +406,9 @@ export class Bot {
     if (this.#every.some((j) => j.name === name)) throw new Error(`mybot: a scheduled job is named "${name}" already`);
     const visibility = options.visibility ?? "unlisted";
     if (!["unlisted", "public", "local"].includes(visibility)) {
-      throw new Error(`mybot: the scheduled job "${name}" cannot post with the visibility "${visibility}": use unlisted, public, or local`);
+      throw new Error(
+        `mybot: the scheduled job "${name}" cannot post with the visibility "${visibility}": use unlisted, public, or local`,
+      );
     }
     this.#every.push({ name, schedule, handler, catchUp: options.catchUp ?? "skip", visibility });
   }
@@ -401,7 +421,8 @@ export class Bot {
   /** The registered commands, by name, with help when the bot answers it. */
   commands(): Command[] {
     const commands = [...this.#commands.values()].map((c) => c.command);
-    if (!this.#commands.has("help") && this.#options.disableHelp !== true) commands.push({ name: "help", description: "list the commands" });
+    if (!this.#commands.has("help") && this.#options.disableHelp !== true)
+      commands.push({ name: "help", description: "list the commands" });
     return commands.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   }
 
@@ -416,7 +437,8 @@ export class Bot {
   async #newTokenSource(): Promise<TokenSource> {
     const { oauth, tokenSource } = this.#options;
     if (oauth === undefined) {
-      if (tokenSource === undefined) throw new Error("mybot: the options need oauth and refreshToken, or a tokenSource");
+      if (tokenSource === undefined)
+        throw new Error("mybot: the options need oauth and refreshToken, or a tokenSource");
       return tokenSource;
     }
     let refreshToken: string | null;
@@ -464,7 +486,10 @@ export class Bot {
     let me = answered((await api.GET("/accounts/verify_credentials", { signal })).data, "verifyCredentials");
     if (!me.bot) {
       if (this.#options.setBotFlag === true) {
-        me = answered((await api.PATCH("/accounts/update_credentials", { body: { bot: true }, signal })).data, "updateCredentials");
+        me = answered(
+          (await api.PATCH("/accounts/update_credentials", { body: { bot: true }, signal })).data,
+          "updateCredentials",
+        );
         this.#logger.info("mybot: set the bot flag of the account", { account: me.acct });
       } else if (this.#options.allowNonBot === true) {
         this.#logger.warn("mybot: the account has no bot flag", { account: me.acct });
@@ -592,7 +617,9 @@ export class Bot {
     clearTimeout(timer);
     if (graceOver) {
       this.#abandoned = true;
-      this.#logger.warn("mybot: aborted the handlers still running after the grace period", { grace: this.#settings.shutdownGrace });
+      this.#logger.warn("mybot: aborted the handlers still running after the grace period", {
+        grace: this.#settings.shutdownGrace,
+      });
     }
     stopHandlers.abort();
   }
@@ -733,7 +760,11 @@ export class Bot {
         if (event.type === "notification") {
           if (catching) waiting.push(event.notification);
           else this.#submitNotification(event.notification);
-        } else if (event.type === "update" && this.#handlers.status !== undefined && event.status.account.id !== runtime.me.id) {
+        } else if (
+          event.type === "update" &&
+          this.#handlers.status !== undefined &&
+          event.status.account.id !== runtime.me.id
+        ) {
           this.#dispatcher?.submit({ status: event.status, sender: senderOf(event.status.account) });
         }
       },
@@ -750,7 +781,8 @@ export class Bot {
         await this.#catchUp(signal);
       } catch (error) {
         if (signal.aborted) return;
-        if (error instanceof ProblemError && error.status >= 400 && error.status < 500 && error.status !== 429) throw error;
+        if (error instanceof ProblemError && error.status >= 400 && error.status < 500 && error.status !== 429)
+          throw error;
         this.#logger.warn("mybot: reading the notifications failed; trying again", { error });
       }
       try {
@@ -806,7 +838,10 @@ export class Bot {
     const cutoff = this.#now() - this.#settings.catchUpLimit;
     const found: Notification[] = [];
     for await (const n of all(async (cursor) => {
-      const { data } = await api.GET("/notifications", { params: { query: { limit: 40, ...(cursor === undefined ? {} : { cursor }) } }, signal });
+      const { data } = await api.GET("/notifications", {
+        params: { query: { limit: 40, ...(cursor === undefined ? {} : { cursor }) } },
+        signal,
+      });
       return answered(data, "listNotifications");
     })) {
       if ((position !== null && n.id <= position) || Date.parse(n.created_at) < cutoff) break;
@@ -858,7 +893,9 @@ export class Bot {
       }
       // Aborted by the shutdown: handled again by the next start.
       if (n === undefined || this.#abandoned || signal.aborted) return;
-      const marked = await this.#retryStore(signal, "record the notification processed", n.id, () => this.store.markProcessed(n.id, this.#now()));
+      const marked = await this.#retryStore(signal, "record the notification processed", n.id, () =>
+        this.store.markProcessed(n.id, this.#now()),
+      );
       // Stopped: handled again by the next start.
       if (marked === null) return;
       await this.#completed(n.id);
@@ -876,7 +913,12 @@ export class Bot {
    * Calls op until it resolves, waiting longer after each failure, and returns its value; null when the bot stops
    * first. A notification whose Store calls fail stays pending, which holds the position, until the Store works again.
    */
-  async #retryStore<T>(signal: AbortSignal, what: string, id: string, op: () => Promise<T>): Promise<{ value: T } | null> {
+  async #retryStore<T>(
+    signal: AbortSignal,
+    what: string,
+    id: string,
+    op: () => Promise<T>,
+  ): Promise<{ value: T } | null> {
     let wait = retryFirstWait;
     for (;;) {
       if (this.#stopped(signal)) return null;
@@ -925,7 +967,9 @@ export class Bot {
 
   /** The middleware of every handler: the default chain outermost, then those of use. */
   #chain(): Middleware[] {
-    return this.#options.noDefaultMiddleware === true ? this.#middleware : [...defaultMiddleware(), ...this.#middleware];
+    return this.#options.noDefaultMiddleware === true
+      ? this.#middleware
+      : [...defaultMiddleware(), ...this.#middleware];
   }
 
   /** Picks the handler of the event of ctx, filling in its command; undefined when none takes it. */

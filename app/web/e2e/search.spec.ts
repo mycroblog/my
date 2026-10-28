@@ -79,18 +79,41 @@ async function serveApi(page: Page) {
     muting_notifications: false,
   };
   const json = (route: Route, body: unknown, statusCode = 200) =>
-    route.fulfill({ status: statusCode, contentType: statusCode < 400 ? "application/json" : "application/problem+json", body: JSON.stringify(body) });
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }));
+    route.fulfill({
+      status: statusCode,
+      contentType: statusCode < 400 ? "application/json" : "application/problem+json",
+      body: JSON.stringify(body),
+    });
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace("/api/v1", "");
     if (path === "/accounts/verify_credentials") return json(route, alice);
     if (path === "/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });
@@ -132,7 +155,10 @@ test.describe("the account search", () => {
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("resolves a handle and follows the account from the keyboard only, waiting for its server", async ({ page, makeAxeBuilder }) => {
+  test("resolves a handle and follows the account from the keyboard only, waiting for its server", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const server = await serveApi(page);
     await page.reload();
     const field = page.getByRole("searchbox", { name: message("search.label") });
@@ -155,9 +181,13 @@ test.describe("the account search", () => {
     await pressUntilFocused(page, "Shift+Tab", follow);
     await page.keyboard.press("Enter");
 
-    const requested = page.getByRole("main").getByRole("button", { name: message("profile.follow.requested"), exact: true });
+    const requested = page
+      .getByRole("main")
+      .getByRole("button", { name: message("profile.follow.requested"), exact: true });
     await expect(requested).toBeVisible();
-    await expect(requested).toHaveAccessibleDescription(message("profile.follow.pending_remote", { host: `⁨${host}⁩` }));
+    await expect(requested).toHaveAccessibleDescription(
+      message("profile.follow.pending_remote", { host: `⁨${host}⁩` }),
+    );
     await expect(requested).toBeFocused();
     expect(server.changes).toEqual(["follow"]);
     await expectNoAxeViolations(makeAxeBuilder);
@@ -176,7 +206,9 @@ test.describe("the account search", () => {
     await field.press("Enter");
 
     await expect(field).toHaveAttribute("aria-invalid", "true");
-    await expect(field).toHaveAccessibleDescription(new RegExp(message("search.not_found").replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)));
+    await expect(field).toHaveAccessibleDescription(
+      new RegExp(message("search.not_found").replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)),
+    );
     await expect(field).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

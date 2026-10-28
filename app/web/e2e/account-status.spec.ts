@@ -36,7 +36,12 @@ const longReason = `Repeated spam in replies, such as https://spam.example/${"ve
 const arabicReason = "صور غير مناسبة";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 type Action = Record<string, unknown> & { id: string; state: string };
@@ -83,19 +88,39 @@ async function userServer(page: Page) {
     },
   ];
   const appeals: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, viewer);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /moderation/actions") {
       const active = url.searchParams.get("active") === "true";
@@ -107,9 +132,23 @@ async function userServer(page: Page) {
       const body = (request.postDataJSON() ?? {}) as { text?: string };
       appeals.push(`${id} ${body.text ?? ""}`);
       actions = actions.map((action) =>
-        action.id === id ? { ...action, appealable: false, appeal: { id: "0192f0c4-7a8e-7000-8000-0000000007b9", text: body.text, state: "pending", submitted_at: "2026-10-17T00:00:00Z" } } : action,
+        action.id === id
+          ? {
+              ...action,
+              appealable: false,
+              appeal: {
+                id: "0192f0c4-7a8e-7000-8000-0000000007b9",
+                text: body.text,
+                state: "pending",
+                submitted_at: "2026-10-17T00:00:00Z",
+              },
+            }
+          : action,
       );
-      return json(route, actions.find((action) => action.id === id));
+      return json(
+        route,
+        actions.find((action) => action.id === id),
+      );
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -133,7 +172,10 @@ test.describe("page /settings/account-status", () => {
 });
 
 test.describe("account status", () => {
-  test("lists the actions on the account, and appeals the one in effect by keyboard after confirming", async ({ page, makeAxeBuilder }) => {
+  test("lists the actions on the account, and appeals the one in effect by keyboard after confirming", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const appeals = await userServer(page);
     await page.goto("/settings/account-status");
     const main = page.getByRole("main");

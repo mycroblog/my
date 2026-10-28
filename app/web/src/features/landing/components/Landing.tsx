@@ -134,20 +134,33 @@ function LandingHero({ heading, landing }: { heading: ReactNode; landing: Landin
         <>
           {signUpMode !== undefined && (
             // The registration page is the server's own; the link loads it in place of the app (lib/paths.ts).
-            <ButtonLink href={landing.signUpHref} variant="primary" size="lg" {...(note !== undefined && { "aria-describedby": noteId })}>
+            <ButtonLink
+              href={landing.signUpHref}
+              variant="primary"
+              size="lg"
+              {...(note !== undefined && { "aria-describedby": noteId })}
+            >
               {t(signUpLabels[signUpMode])}
             </ButtonLink>
           )}
-          <Button variant={signUpMode === undefined ? "primary" : "secondary"} size="lg" onPress={signIn} isPending={isPending}>
+          <Button
+            variant={signUpMode === undefined ? "primary" : "secondary"}
+            size="lg"
+            onPress={signIn}
+            isPending={isPending}
+          >
             {t("client:landing.sign_in")}
           </Button>
         </>
       }
       {...(note !== undefined && { note: <Hint id={noteId}>{t(note)}</Hint> })}
       {...(mode === "closed" && { note: <Hint>{t("client:landing.registrations.closed")}</Hint> })}
-      {...(landing.recentPosts.status === "ready" && landing.recentPosts.posts.length > 0 && {
-        aside: landing.recentPosts.posts.slice(0, heroPostCount).map((post) => <StatusCard key={post.id} status={post} withActions={false} />),
-      })}
+      {...(landing.recentPosts.status === "ready" &&
+        landing.recentPosts.posts.length > 0 && {
+          aside: landing.recentPosts.posts
+            .slice(0, heroPostCount)
+            .map((post) => <StatusCard key={post.id} status={post} withActions={false} />),
+        })}
       {...(landing.thumbnail !== undefined && { media: <ServerThumbnail thumbnail={landing.thumbnail} /> })}
     >
       {landing.summary !== "" && (

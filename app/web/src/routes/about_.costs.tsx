@@ -2,7 +2,14 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
 import { instanceQueryOptions } from "../features/about";
-import { type CostBasis, type CostGranularity, deviceToday, PublicCosts, publicCostTotalsQueryOptions, publicIncomeTotalsQueryOptions } from "../features/costs";
+import {
+  type CostBasis,
+  type CostGranularity,
+  deviceToday,
+  PublicCosts,
+  publicCostTotalsQueryOptions,
+  publicIncomeTotalsQueryOptions,
+} from "../features/costs";
 import { useT } from "../lib/i18n";
 import { useInstanceName } from "../lib/instanceName";
 import { InfoLayout } from "./-layout/InfoLayout";
@@ -35,8 +42,12 @@ export const Route = createFileRoute("/about_/costs")({
     // setting that publishes nothing (404), in the page. Cached data is shown at once (web-client/README.md S7).
     await Promise.all([
       queryClient.query({ ...instanceQueryOptions(api), staleTime: Infinity }).catch(() => undefined),
-      queryClient.query({ ...publicCostTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity }).catch(() => undefined),
-      queryClient.query({ ...publicIncomeTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity }).catch(() => undefined),
+      queryClient
+        .query({ ...publicCostTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity })
+        .catch(() => undefined),
+      queryClient
+        .query({ ...publicIncomeTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity })
+        .catch(() => undefined),
     ]);
   },
   component: CostsPage,

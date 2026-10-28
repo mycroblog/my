@@ -8,13 +8,33 @@
 // alert dialog (ConfirmDialog, WAI-ARIA APG alert dialog; NFR-MOD-7). Once closed, the screen shows the progress of the
 // deliveries, read again every few seconds. What a change did stays on the page in a StatusMessage; a failure
 // stays in the form or the dialog that ran it (role="alert", web-client/README.md E2).
-import { Button, Callout, ConfirmDialog, DescriptionItem, DescriptionList, DialogTrigger, Heading, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField } from "@my/ui";
+import {
+  Button,
+  Callout,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DialogTrigger,
+  Heading,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextArea,
+  TextField,
+} from "@my/ui";
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { DateTime, DetailSection, RequirePermission } from "../../moderation";
 import { characterCount } from "../hooks/languages";
-import { type AdminServiceClosure, type AdminServiceClosureProgress, closureMessageLimit, shortNoticeDays } from "../api/closure";
+import {
+  type AdminServiceClosure,
+  type AdminServiceClosureProgress,
+  closureMessageLimit,
+  shortNoticeDays,
+} from "../api/closure";
 import {
   isServerDomain,
   useAdminClosure,
@@ -158,7 +178,9 @@ function AnnounceForm({ closure, onDone }: { closure: AdminServiceClosure; onDon
         rows={5}
         characterLimit={closureMessageLimit}
         formatRemaining={() =>
-          remaining < 0 ? t("client:admin.settings.characters_over", { count: -remaining }) : t("client:admin.settings.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.settings.characters_over", { count: -remaining })
+            : t("client:admin.settings.characters_left", { count: remaining })
         }
         {...(form.errors.message !== undefined && { isInvalid: true, errorMessage: form.errors.message })}
       />
@@ -194,7 +216,9 @@ function Withdraw({ onDone }: { onDone: (status: string) => void }) {
           confirmLabel={t("client:admin.closure.withdraw")}
           cancelLabel={t("client:admin.closure.cancel")}
           isPending={action.isPending}
-          {...(action.error !== undefined && { errorMessage: t("client:admin.closure.withdraw_failed", { reason: action.error }) })}
+          {...(action.error !== undefined && {
+            errorMessage: t("client:admin.closure.withdraw_failed", { reason: action.error }),
+          })}
           onConfirm={(close) => {
             void action.withdraw().then((withdrawn) => {
               if (withdrawn) close();
@@ -223,11 +247,17 @@ function ClosureCheck() {
             inboxes: count(check.delivery_inboxes),
           })}
         </DescriptionItem>
-        <DescriptionItem term={t("client:admin.closure.check.subscriptions")}>{count(check.live_supporter_subscriptions)}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.closure.check.migrations")}>{count(check.pending_migrations)}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.closure.check.subscriptions")}>
+          {count(check.live_supporter_subscriptions)}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:admin.closure.check.migrations")}>
+          {count(check.pending_migrations)}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.check.holds")}>{count(check.retention_holds)}</DescriptionItem>
       </DescriptionList>
-      {check.live_supporter_subscriptions > 0 && <Callout>{t("client:admin.closure.check.subscriptions.warning")}</Callout>}
+      {check.live_supporter_subscriptions > 0 && (
+        <Callout>{t("client:admin.closure.check.subscriptions.warning")}</Callout>
+      )}
       {check.pending_migrations > 0 && <Callout>{t("client:admin.closure.check.migrations.warning")}</Callout>}
       {check.retention_holds > 0 && <Callout>{t("client:admin.closure.check.holds.warning")}</Callout>}
       <Hint size="inherit">{t("client:admin.closure.check.federation")}</Hint>
@@ -236,14 +266,26 @@ function ClosureCheck() {
 }
 
 /** Closing the server for good, after an alert dialog that asks for the server's domain. */
-function CloseService({ due, closesAt, onDone }: { due: boolean; closesAt: string | undefined; onDone: (status: string) => void }) {
+function CloseService({
+  due,
+  closesAt,
+  onDone,
+}: {
+  due: boolean;
+  closesAt: string | undefined;
+  onDone: (status: string) => void;
+}) {
   const t = useT();
   const intl = useIntl();
   const action = useCloseService(onDone);
   return (
     <Stack gap="2">
       {!due && closesAt !== undefined && (
-        <Hint size="inherit">{t("client:admin.closure.close.not_yet", { date: intl.formatDate(closesAt, { dateStyle: "medium", timeStyle: "short" }) })}</Hint>
+        <Hint size="inherit">
+          {t("client:admin.closure.close.not_yet", {
+            date: intl.formatDate(closesAt, { dateStyle: "medium", timeStyle: "short" }),
+          })}
+        </Hint>
       )}
       <div>
         <DialogTrigger
@@ -260,7 +302,9 @@ function CloseService({ due, closesAt, onDone }: { due: boolean; closesAt: strin
             confirmLabel={t("client:admin.closure.close.confirm")}
             cancelLabel={t("client:admin.closure.cancel")}
             isPending={action.isPending}
-            {...(action.error !== undefined && { errorMessage: t("client:admin.closure.close_failed", { reason: action.error }) })}
+            {...(action.error !== undefined && {
+              errorMessage: t("client:admin.closure.close_failed", { reason: action.error }),
+            })}
             onConfirm={(close) => {
               void action.close().then((closed) => {
                 if (closed) close();
@@ -275,7 +319,9 @@ function CloseService({ due, closesAt, onDone }: { due: boolean; closesAt: strin
               isRequired
               autoComplete="off"
               dir="ltr"
-              validate={(value) => (isServerDomain(value, action.domain) ? null : t("client:admin.closure.close.domain.mismatch"))}
+              validate={(value) =>
+                isServerDomain(value, action.domain) ? null : t("client:admin.closure.close.domain.mismatch")
+              }
             />
           </ConfirmDialog>
         </DialogTrigger>
@@ -295,8 +341,14 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
       </DetailSection>
       <DetailSection title={t("client:admin.closure.progress.title")}>
         <Stack gap="4">
-          <Callout>{t(completed ? "client:admin.closure.progress.completed" : "client:admin.closure.progress.running")}</Callout>
-          {closure.progress === undefined ? <Hint size="inherit">{t("client:admin.closure.progress.none")}</Hint> : <Progress progress={closure.progress} />}
+          <Callout>
+            {t(completed ? "client:admin.closure.progress.completed" : "client:admin.closure.progress.running")}
+          </Callout>
+          {closure.progress === undefined ? (
+            <Hint size="inherit">{t("client:admin.closure.progress.none")}</Hint>
+          ) : (
+            <Progress progress={closure.progress} />
+          )}
         </Stack>
       </DetailSection>
     </>
@@ -314,12 +366,18 @@ function Progress({ progress }: { progress: AdminServiceClosureProgress }) {
     <Stack gap="4">
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.closure.progress.accounts")}>{count(progress.accounts)}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.closure.progress.fanouts_pending")}>{count(progress.fanouts_pending)}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.closure.progress.fanouts_pending")}>
+          {count(progress.fanouts_pending)}
+        </DescriptionItem>
       </DescriptionList>
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.closure.progress.pending")}>{count(deliveries.pending)}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.closure.progress.succeeded")}>{count(deliveries.succeeded)}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.closure.progress.permanent_failure")}>{count(deliveries.permanent_failure)}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.closure.progress.succeeded")}>
+          {count(deliveries.succeeded)}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:admin.closure.progress.permanent_failure")}>
+          {count(deliveries.permanent_failure)}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.skipped")}>{count(deliveries.skipped)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.dead")}>{count(deliveries.dead)}</DescriptionItem>
       </DescriptionList>

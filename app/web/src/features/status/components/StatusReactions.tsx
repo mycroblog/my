@@ -2,7 +2,18 @@
 // The emoji reactions under a post (FR-116, ADR-0052 §5): one toggle per emoji with its count, which the viewer
 // presses to react with that emoji or to take the reaction back, and a button that lists the accounts that reacted.
 // A custom emoji of another server is shown with its count but is no button: nobody here can react with it.
-import { AccountItem, Box, Button, Cluster, Dialog, EmojiText, ReactionChip as UIReactionChip, ReactionEmoji as UIReactionEmoji, ReactionRow, Stack } from "@my/ui";
+import {
+  AccountItem,
+  Box,
+  Button,
+  Cluster,
+  Dialog,
+  EmojiText,
+  ReactionChip as UIReactionChip,
+  ReactionEmoji as UIReactionEmoji,
+  ReactionRow,
+  Stack,
+} from "@my/ui";
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -71,7 +82,12 @@ function ReactorsDialog({ statusId, isOpen, onOpenChange }: ReactorsDialogProps)
   const t = useT();
   const state = useReactors(statusId, isOpen);
   return (
-    <Dialog title={t("client:reaction.list.title")} closeLabel={t("client:reaction.list.close")} isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Dialog
+      title={t("client:reaction.list.title")}
+      closeLabel={t("client:reaction.list.close")}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       {state.status === "loading" ? (
         <p role="status">{t("client:reaction.list.loading")}</p>
       ) : state.status === "error" ? (
@@ -100,7 +116,9 @@ function ReactorsDialog({ statusId, isOpen, onOpenChange }: ReactorsDialogProps)
               ))}
             </Stack>
           )}
-          {state.loadMoreError !== null && <p>{t("client:reaction.list.load_more_failed", { reason: state.loadMoreError })}</p>}
+          {state.loadMoreError !== null && (
+            <p>{t("client:reaction.list.load_more_failed", { reason: state.loadMoreError })}</p>
+          )}
           {state.hasMore && (
             <Cluster justify="center">
               {/* A pending button keeps its focus while the page loads (React Aria Button, isPending). */}

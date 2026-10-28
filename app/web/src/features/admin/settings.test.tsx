@@ -23,7 +23,9 @@ type Text = Schemas["AdminInstanceText"];
 /** The server with voice chat on (GET /instance) and no room open. */
 function voiceOn() {
   server.use(
-    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "permitted" })),
+    http.get(`${apiBase}/instance`, () =>
+      HttpResponse.json({ ...instanceFixture, voice_enabled: true, voice_room_starters: "permitted" }),
+    ),
     http.get(`${apiBase}/voice/rooms`, () => HttpResponse.json({ items: [] })),
   );
 }
@@ -36,9 +38,14 @@ function namesServer(initial: string | undefined) {
   let name = initial;
   const changes: string[] = [];
   server.use(
-    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, name: name ?? instanceFixture.domain })),
+    http.get(`${apiBase}/instance`, () =>
+      HttpResponse.json({ ...instanceFixture, name: name ?? instanceFixture.domain }),
+    ),
     http.get(`${apiBase}/admin/instance_texts`, () =>
-      HttpResponse.json({ items: name === undefined ? [] : [{ key: "name", body: name, revised_at: "2026-10-16T00:00:00Z" } satisfies Text] }),
+      HttpResponse.json({
+        items:
+          name === undefined ? [] : [{ key: "name", body: name, revised_at: "2026-10-16T00:00:00Z" } satisfies Text],
+      }),
     ),
     http.put(`${apiBase}/admin/instance_texts/name`, async ({ request }) => {
       const { body } = (await request.json()) as Schemas["SetInstanceTextRequest"];
@@ -125,7 +132,12 @@ describe("the server's name", () => {
 
   test("shows why a save failed and keeps the names", async () => {
     namesServer(undefined);
-    const refusal: Schemas["Problem"] = { type: "about:blank", title: "Unprocessable", status: 422, detail: "body is invalid" };
+    const refusal: Schemas["Problem"] = {
+      type: "about:blank",
+      title: "Unprocessable",
+      status: 422,
+      detail: "body is invalid",
+    };
     server.use(
       http.put(`${apiBase}/admin/instance_texts/name`, () =>
         HttpResponse.json(refusal, { status: 422, headers: { "Content-Type": "application/problem+json" } }),
@@ -175,7 +187,11 @@ describe("the server's descriptions", () => {
     const changes: { key: string; body: string }[] = [];
     server.use(
       http.get(`${apiBase}/admin/instance_texts`, () =>
-        HttpResponse.json({ items: [{ key: "short_description", body: "A small server.", revised_at: "2026-10-16T00:00:00Z" }] satisfies Text[] }),
+        HttpResponse.json({
+          items: [
+            { key: "short_description", body: "A small server.", revised_at: "2026-10-16T00:00:00Z" },
+          ] satisfies Text[],
+        }),
       ),
       http.put(`${apiBase}/admin/instance_texts/:key`, async ({ request, params }) => {
         const { body } = (await request.json()) as Schemas["SetInstanceTextRequest"];
@@ -191,7 +207,9 @@ describe("the server's descriptions", () => {
     await user.type(within(section).getByRole("textbox", { name: "Description" }), "小さなサーバーです。");
     await user.click(within(section).getByRole("button", { name: "Save the descriptions" }));
 
-    expect(await within(section).findByText("Saved the descriptions. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(section).findByText("Saved the descriptions. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(changes).toEqual([{ key: "description", body: "小さなサーバーです。" }]);
   });
 });
@@ -231,15 +249,28 @@ describe("the server's policies", () => {
 
     await user.click(within(registration).getByRole("radio", { name: "With an invite" }));
     await user.click(within(local).getByRole("radio", { name: "Signed-in users" }));
-    await user.click(within(screen.getByRole("region", { name: "Federation" })).getByRole("checkbox", { name: "Require signed requests (authorized fetch)" }));
+    await user.click(
+      within(screen.getByRole("region", { name: "Federation" })).getByRole("checkbox", {
+        name: "Require signed requests (authorized fetch)",
+      }),
+    );
     const domainActions = screen.getByRole("radiogroup", { name: "Who may read the list" });
     await user.click(within(domainActions).getByRole("radio", { name: "Signed-in users" }));
     const reads = settings.instanceReads();
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([
-      { values: { registration_mode: "invite", local_timeline_access: "logged_in", authorized_fetch: "true", domain_actions_visibility: "users" } },
+      {
+        values: {
+          registration_mode: "invite",
+          local_timeline_access: "logged_in",
+          authorized_fetch: "true",
+          domain_actions_visibility: "users",
+        },
+      },
     ]);
     // The navigation's timelines and the registration mode come from GET /instance, read again before the status.
     expect(settings.instanceReads()).toBeGreaterThan(reads);
@@ -263,8 +294,12 @@ describe("the server's policies", () => {
     await user.click(within(apps).getByRole("checkbox", { name: "Dynamic client registration" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { user_app_registration: "false", dynamic_client_registration: "false" } }]);
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      { values: { user_app_registration: "false", dynamic_client_registration: "false" } },
+    ]);
     expect(within(apps).getByRole("checkbox", { name: "Users register apps" })).not.toBeChecked();
     expect(within(apps).getByRole("checkbox", { name: "Client ID Metadata Documents" })).toBeChecked();
   });
@@ -276,12 +311,16 @@ describe("the server's policies", () => {
     const choice = within(costs).getByRole("radiogroup", { name: "What to publish" });
     expect(within(choice).getByRole("radio", { name: "Nothing" })).toBeChecked();
     const breakdown = within(choice).getByRole("radio", { name: "Totals and breakdown" });
-    expect(breakdown).toHaveAccessibleDescription(/This reveals which providers, such as cloud services, run this server\./u);
+    expect(breakdown).toHaveAccessibleDescription(
+      /This reveals which providers, such as cloud services, run this server\./u,
+    );
 
     await user.click(breakdown);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { finance_visibility: "breakdown" } }]);
     expect(breakdown).toBeChecked();
   });
@@ -298,7 +337,9 @@ describe("the server's policies", () => {
     await user.click(plans);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { income_visibility: "plans" } }]);
   });
 
@@ -314,7 +355,9 @@ describe("the server's policies", () => {
     await user.click(signedIn);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
   });
 
@@ -334,8 +377,12 @@ describe("the server's policies", () => {
     await user.click(within(income).getByRole("radio", { name: "Totals and members of each plan" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { finance_viewer_item_memos: "true", finance_viewer_income: "plans" } }]);
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      { values: { finance_viewer_item_memos: "true", finance_viewer_income: "plans" } },
+    ]);
     expect(names).not.toBeChecked();
     expect(memos).toBeChecked();
   });
@@ -346,12 +393,16 @@ describe("the server's policies", () => {
     const posts = await screen.findByRole("region", { name: "Posts" });
     const required = within(posts).getByRole("checkbox", { name: "Require a description of every image" });
     expect(required).not.toBeChecked();
-    expect(required).toHaveAccessibleDescription(/Posts and edits with an image without a description \(alt text\) are refused/);
+    expect(required).toHaveAccessibleDescription(
+      /Posts and edits with an image without a description \(alt text\) are refused/,
+    );
 
     await user.click(required);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { require_media_description: "true" } }]);
     expect(required).toBeChecked();
   });
@@ -372,7 +423,14 @@ describe("the server's policies", () => {
 
     expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
     expect(settings.patches).toEqual([
-      { values: { search_indexing: "allow", indexable_default: "true", ai_usage: "deny_training", security_contact: "mailto:security@example.com" } },
+      {
+        values: {
+          search_indexing: "allow",
+          indexable_default: "true",
+          ai_usage: "deny_training",
+          security_contact: "mailto:security@example.com",
+        },
+      },
     ]);
   });
 
@@ -392,7 +450,11 @@ describe("the server's policies", () => {
     settingsServer();
     await renderApp({ path: "/admin/settings" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
-    expect(within(direction).getAllByRole("radio").map((radio) => radio.getAttribute("value"))).toEqual(["both", "inbound", "outbound", "off"]);
+    expect(
+      within(direction)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["both", "inbound", "outbound", "off"]);
     expect(within(direction).getByRole("radio", { name: "Both ways" })).toBeChecked();
   });
 
@@ -403,7 +465,9 @@ describe("the server's policies", () => {
     await user.click(within(direction).getByRole("radio", { name: "Receive only" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    const dialog = await screen.findByRole("alertdialog", { name: "Change the federation direction to “Receive only”?" });
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Change the federation direction to “Receive only”?",
+    });
     const items = within(dialog)
       .getAllByRole("listitem")
       .map((item) => item.textContent);
@@ -422,7 +486,9 @@ describe("the server's policies", () => {
 
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Change and save" }));
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { federation_mode: "inbound" } }]);
   });
 
@@ -437,34 +503,51 @@ describe("the server's policies", () => {
     expect(within(dialog).getByText(/Changing from “Both ways” to “Off”/)).toBeInTheDocument();
     expect(within(dialog).getAllByRole("listitem")).toHaveLength(4);
     expect(within(dialog).getByText(/Posts and reactions from other servers no longer come in/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/deleted while federation is off are not deleted on other servers/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/deleted while federation is off are not deleted on other servers/),
+    ).toBeInTheDocument();
   });
 
   test("widening the federation direction saves without asking", async () => {
     const settings = settingsServer();
-    server.use(http.get(`${apiBase}/admin/settings`, () => HttpResponse.json(instanceSettingsFixture({ federation_mode: "inbound" }))));
+    server.use(
+      http.get(`${apiBase}/admin/settings`, () =>
+        HttpResponse.json(instanceSettingsFixture({ federation_mode: "inbound" })),
+      ),
+    );
     const { user } = await renderApp({ path: "/admin/settings" });
     const direction = await screen.findByRole("radiogroup", { name: "Federation direction" });
     expect(within(direction).getByRole("radio", { name: "Receive only" })).toBeChecked();
     await user.click(within(direction).getByRole("radio", { name: "Both ways" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { federation_mode: "both" } }]);
   });
 
   test("shows why a save failed, keeps the choices and changes nothing", async () => {
-    const refusal: Schemas["Problem"] = { type: "about:blank", title: "Unprocessable", status: 422, detail: "values.registration_mode is invalid" };
+    const refusal: Schemas["Problem"] = {
+      type: "about:blank",
+      title: "Unprocessable",
+      status: 422,
+      detail: "values.registration_mode is invalid",
+    };
     server.use(
-      http.patch(`${apiBase}/admin/settings`, () => HttpResponse.json(refusal, { status: 422, headers: { "Content-Type": "application/problem+json" } })),
+      http.patch(`${apiBase}/admin/settings`, () =>
+        HttpResponse.json(refusal, { status: 422, headers: { "Content-Type": "application/problem+json" } }),
+      ),
     );
     const { user } = await renderApp({ path: "/admin/settings" });
     const registration = await screen.findByRole("region", { name: "Registration" });
     await user.click(within(registration).getByRole("radio", { name: "Nobody" }));
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
-    expect(await screen.findByText("Could not save the settings; nothing was changed: values.registration_mode is invalid")).toHaveAttribute("role", "alert");
+    expect(
+      await screen.findByText("Could not save the settings; nothing was changed: values.registration_mode is invalid"),
+    ).toHaveAttribute("role", "alert");
     expect(within(registration).getByRole("radio", { name: "Nobody" })).toBeChecked();
   });
 
@@ -501,8 +584,12 @@ describe("the server's policies", () => {
     await user.clear(days);
     await user.type(days, " 45 ");
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
-    expect(await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.")).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { voice_room_starters: "everyone", voice_public_summary: "true", retention_voice_participants: "45" } }]);
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      { values: { voice_room_starters: "everyone", voice_public_summary: "true", retention_voice_participants: "45" } },
+    ]);
     expect(days).toHaveValue("45");
   });
 });
@@ -524,7 +611,15 @@ describe("the server's contact and thumbnail", () => {
       http.get(`${apiBase}/instance`, () =>
         HttpResponse.json({
           ...instanceFixture,
-          ...(current.thumbnail ? { thumbnail: { url: `https://my.example/media/${current.thumbnail}/r/large.webp`, width: 1600, height: 900 } } : {}),
+          ...(current.thumbnail
+            ? {
+                thumbnail: {
+                  url: `https://my.example/media/${current.thumbnail}/r/large.webp`,
+                  width: 1600,
+                  height: 900,
+                },
+              }
+            : {}),
         }),
       ),
       http.get(`${apiBase}/admin/settings`, () => HttpResponse.json(instanceSettingsFixture(current))),
@@ -565,10 +660,14 @@ describe("the server's contact and thumbnail", () => {
     await user.type(within(section).getByRole("textbox", { name: "Description of the image" }), "A beach at dawn");
     await user.click(within(section).getByRole("button", { name: "Save the contact and thumbnail" }));
 
-    expect(await within(section).findByText("Saved the contact and thumbnail. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(section).findByText("Saved the contact and thumbnail. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(contact.purposes).toEqual(["attachment"]);
     // The @ that people type before a username is not part of it.
-    expect(contact.patches).toEqual([{ values: { contact_account: "Admin", contact_email: "admin@my.example", thumbnail: uploadedId } }]);
+    expect(contact.patches).toEqual([
+      { values: { contact_account: "Admin", contact_email: "admin@my.example", thumbnail: uploadedId } },
+    ]);
     expect(contact.alts).toEqual(["A beach at dawn"]);
 
     // Saving again without a change sends nothing.
@@ -584,7 +683,9 @@ describe("the server's contact and thumbnail", () => {
     await user.click(await within(section).findByRole("button", { name: "Remove the image" }));
     await user.click(within(section).getByRole("button", { name: "Save the contact and thumbnail" }));
 
-    expect(await within(section).findByText("Saved the contact and thumbnail. The audit log records the change.")).toBeInTheDocument();
+    expect(
+      await within(section).findByText("Saved the contact and thumbnail. The audit log records the change."),
+    ).toBeInTheDocument();
     expect(contact.patches).toEqual([{ values: { thumbnail: "" } }]);
   });
 });

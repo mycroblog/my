@@ -26,16 +26,32 @@ export type VoiceRoomEntry = Schemas["VoiceRoomEntry"];
 export type VoiceRoomHistoryEntry = Schemas["VoiceRoomHistoryEntry"];
 
 /** The visibilities of a room, in the order of the form. */
-export const voiceRoomVisibilities = ["local", "followers", "mutuals", "invited"] as const satisfies readonly VoiceRoomVisibility[];
+export const voiceRoomVisibilities = [
+  "local",
+  "followers",
+  "mutuals",
+  "invited",
+] as const satisfies readonly VoiceRoomVisibility[];
 
 /** Who may speak without asking, in the order of the form. */
-export const voiceRoomSpeakers = ["everyone", "followers", "mutuals", "manual"] as const satisfies readonly VoiceRoomSpeakers[];
+export const voiceRoomSpeakers = [
+  "everyone",
+  "followers",
+  "mutuals",
+  "manual",
+] as const satisfies readonly VoiceRoomSpeakers[];
 
 /**
  * The limits of a room's settings, as the server checks them (internal/domain/voice, ADR-0100 回答 38): the name in
  * grapheme clusters (and in code points, `nameCodePoints`), the description and each hashtag in code points.
  */
-export const voiceRoomLimits = { name: 100, nameCodePoints: 1000, description: 500, hashtags: 5, hashtagLength: 100 } as const;
+export const voiceRoomLimits = {
+  name: 100,
+  nameCodePoints: 1000,
+  description: 500,
+  hashtags: 5,
+  hashtagLength: 100,
+} as const;
 
 /** How many rooms the third column shows. */
 const voiceRailSize = 3;
@@ -63,7 +79,11 @@ export function voiceRoomsQueryOptions(api: Api, tag?: string) {
   return infiniteQueryOptions({
     queryKey: ["get", "/voice/rooms", { tag }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const query = { limit: pageSize, ...(pageParam === undefined ? {} : { cursor: pageParam }), ...(tag === undefined ? {} : { tag }) };
+      const query = {
+        limit: pageSize,
+        ...(pageParam === undefined ? {} : { cursor: pageParam }),
+        ...(tag === undefined ? {} : { tag }),
+      };
       const { data, error } = await api.fetch.GET("/voice/rooms", { params: { query }, signal });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
@@ -80,7 +100,10 @@ export function voiceRoomsQueryOptions(api: Api, tag?: string) {
  * bar) takes these options, so none of them puts the default three retries on the query they share.
  */
 export function voiceRoomQueryOptions(api: Api, id: string) {
-  return { ...api.query.queryOptions("get", "/voice/rooms/{id}", { params: { path: { id } } }), retry: shellQueryRetry };
+  return {
+    ...api.query.queryOptions("get", "/voice/rooms/{id}", { params: { path: { id } } }),
+    retry: shellQueryRetry,
+  };
 }
 
 /** What the page of a room shows to a visitor who does not see it; needs no session. A 404 for an unknown room. */
@@ -146,14 +169,24 @@ export function joinVoiceRoomMutation(api: Api, id: string) {
 
 /** Marks stale every list of rooms (the third column, the list, the hashtags' sections): their order and counts move. */
 function refreshRoomLists(queryClient: QueryClient): Promise<void> {
-  return queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/voice/rooms" });
+  return queryClient.invalidateQueries({
+    predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/voice/rooms",
+  });
 }
 
 /**
  * Puts a room as the server answered a write into its query (ADR-0045), and marks stale the lists, which it may enter,
  * leave, or move in, and the user's history after opening one.
  */
-export async function cacheVoiceRoom(api: Api, queryClient: QueryClient, room: VoiceRoom, { opened = false }: { opened?: boolean } = {}): Promise<void> {
+export async function cacheVoiceRoom(
+  api: Api,
+  queryClient: QueryClient,
+  room: VoiceRoom,
+  { opened = false }: { opened?: boolean } = {},
+): Promise<void> {
   queryClient.setQueryData(voiceRoomQueryOptions(api, room.id).queryKey, room);
-  await Promise.all([refreshRoomLists(queryClient), ...(opened ? [queryClient.invalidateQueries({ queryKey: ["get", "/voice/history"] })] : [])]);
+  await Promise.all([
+    refreshRoomLists(queryClient),
+    ...(opened ? [queryClient.invalidateQueries({ queryKey: ["get", "/voice/history"] })] : []),
+  ]);
 }

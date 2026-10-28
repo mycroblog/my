@@ -45,7 +45,11 @@ export type PageNavigation = {
  * Makes the services for a page displayed in `i18n`, whose <html lang dir> follows the locale; tests pass
  * their own `leaveApp` and `reload`, as jsdom cannot load another document.
  */
-export function createAppServices(config: RuntimeConfig, i18n: I18n, { leaveApp = assignLocation, reload }: PageNavigation = {}): AppServices {
+export function createAppServices(
+  config: RuntimeConfig,
+  i18n: I18n,
+  { leaveApp = assignLocation, reload }: PageNavigation = {},
+): AppServices {
   // Each app starts from what the browser says about the network (tests make one app per test).
   startConnectivity();
   const queryClient = createQueryClient();

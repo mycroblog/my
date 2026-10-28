@@ -22,8 +22,10 @@ import { EmojiIcon } from "./Icons";
 import { Popover, PopoverTrigger } from "./Popover";
 
 // Plain squares stand in for emoji images, as in the CustomEmoji stories.
-const orange = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
-const blue = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==";
+const orange =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
+const blue =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==";
 
 const blobcat: PickerCustomEmoji = { shortcode: "blobcat", url: blue, static_url: orange };
 const thanks: PickerCustomEmoji = { shortcode: "thanks", url: blue, static_url: blue };
@@ -41,7 +43,9 @@ function unicode(emoji: string, name: string, keywords: readonly string[] = [], 
     unicode: emoji,
     name,
     keywords,
-    ...(toned ? { skins: tones.map(([modifier, tone]) => ({ unicode: emoji + modifier, name: `${name}: ${tone}` })) } : {}),
+    ...(toned
+      ? { skins: tones.map(([modifier, tone]) => ({ unicode: emoji + modifier, name: `${name}: ${tone}` })) }
+      : {}),
   };
 }
 
@@ -106,13 +110,42 @@ const sections: EmojiPickerSection[] = [
     id: "food-drink",
     heading: "Food & drink",
     icon: "food-drink",
-    emojis: [unicode("🍣", "sushi", ["food"]), unicode("🍙", "rice ball", ["food"]), unicode("☕", "hot beverage", ["coffee", "tea"])],
+    emojis: [
+      unicode("🍣", "sushi", ["food"]),
+      unicode("🍙", "rice ball", ["food"]),
+      unicode("☕", "hot beverage", ["coffee", "tea"]),
+    ],
   },
-  { id: "travel-places", heading: "Travel & places", icon: "travel-places", emojis: [unicode("🗻", "mount fuji", ["mountain"]), unicode("✈️", "airplane", ["plane"])] },
-  { id: "activities", heading: "Activities", icon: "activities", emojis: [unicode("🎉", "party popper", ["party", "tada"]), unicode("⚽", "soccer ball", ["ball"])] },
-  { id: "objects", heading: "Objects", icon: "objects", emojis: [unicode("💡", "light bulb", ["idea"]), unicode("📚", "books", ["book"])] },
-  { id: "symbols", heading: "Symbols", icon: "symbols", emojis: [unicode("💯", "hundred points", ["100"]), unicode("🔥", "fire", ["flame"])] },
-  { id: "flags", heading: "Flags", icon: "flags", emojis: [unicode("🏁", "chequered flag", ["racing"]), unicode("🇯🇵", "flag: Japan", ["flag"])] },
+  {
+    id: "travel-places",
+    heading: "Travel & places",
+    icon: "travel-places",
+    emojis: [unicode("🗻", "mount fuji", ["mountain"]), unicode("✈️", "airplane", ["plane"])],
+  },
+  {
+    id: "activities",
+    heading: "Activities",
+    icon: "activities",
+    emojis: [unicode("🎉", "party popper", ["party", "tada"]), unicode("⚽", "soccer ball", ["ball"])],
+  },
+  {
+    id: "objects",
+    heading: "Objects",
+    icon: "objects",
+    emojis: [unicode("💡", "light bulb", ["idea"]), unicode("📚", "books", ["book"])],
+  },
+  {
+    id: "symbols",
+    heading: "Symbols",
+    icon: "symbols",
+    emojis: [unicode("💯", "hundred points", ["100"]), unicode("🔥", "fire", ["flame"])],
+  },
+  {
+    id: "flags",
+    heading: "Flags",
+    icon: "flags",
+    emojis: [unicode("🏁", "chequered flag", ["racing"]), unicode("🇯🇵", "flag: Japan", ["flag"])],
+  },
 ];
 
 const labels: EmojiPickerLabels = {
@@ -193,7 +226,12 @@ export const Grid: Story = {
     await userEvent.keyboard("{ArrowUp}");
     await expect(rowOf("thumbs up")).toHaveFocus();
     await userEvent.keyboard("{Enter}");
-    await expect(args.onSelect).toHaveBeenLastCalledWith({ kind: "unicode", emoji: thumbsUp, text: "👍", keepOpen: false });
+    await expect(args.onSelect).toHaveBeenLastCalledWith({
+      kind: "unicode",
+      emoji: thumbsUp,
+      text: "👍",
+      keepOpen: false,
+    });
   },
 };
 
@@ -256,8 +294,15 @@ export const SkinTones: Story = {
     await expect(args.onSkinToneChange).toHaveBeenCalledWith("medium-dark");
     await expect(canvas.getByRole("gridcell", { name: "waving hand: medium-dark skin tone" })).toHaveTextContent("👋🏾");
     await waitFor(() => expect(canvas.queryByRole("menu")).not.toBeInTheDocument());
-    await userEvent.click(canvas.getAllByRole("gridcell", { name: "thumbs up: medium-dark skin tone" })[0] as HTMLElement);
-    await expect(args.onSelect).toHaveBeenLastCalledWith({ kind: "unicode", emoji: thumbsUp, text: "👍🏾", keepOpen: false });
+    await userEvent.click(
+      canvas.getAllByRole("gridcell", { name: "thumbs up: medium-dark skin tone" })[0] as HTMLElement,
+    );
+    await expect(args.onSelect).toHaveBeenLastCalledWith({
+      kind: "unicode",
+      emoji: thumbsUp,
+      text: "👍🏾",
+      keepOpen: false,
+    });
   },
 };
 
@@ -273,7 +318,10 @@ export const SkinToneMenu: Story = {
   ],
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole("button", { name: "Skin tone" }));
-    await expect(await canvas.findByRole("menuitemradio", { name: "Light skin tone" })).toHaveAttribute("aria-checked", "true");
+    await expect(await canvas.findByRole("menuitemradio", { name: "Light skin tone" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   },
 };
 
@@ -346,9 +394,17 @@ export const InPopover: Story = {
 };
 
 /** The groups of the app's base data (base.gen.json), as far as this story reads them. */
-type BaseData = { groups: readonly { id: EmojiSectionIcon; emoji: readonly (readonly [string, string, (readonly (readonly [string, string])[])?])[] }[] };
+type BaseData = {
+  groups: readonly {
+    id: EmojiSectionIcon;
+    emoji: readonly (readonly [string, string, (readonly (readonly [string, string])[])?])[];
+  }[];
+};
 /** The English names of the app's data (en.gen.json). */
-type NameData = { emoji: Readonly<Record<string, readonly [string, readonly string[]]>>; skins: Readonly<Record<string, string>> };
+type NameData = {
+  emoji: Readonly<Record<string, readonly [string, readonly string[]]>>;
+  skins: Readonly<Record<string, string>>;
+};
 
 /** The heading of each group in English, as the app's catalog has them. */
 const groupHeadings: Readonly<Record<string, string>> = {
@@ -372,7 +428,10 @@ async function readData(file: string): Promise<unknown> {
 
 /** Every Unicode emoji of the app's data, by group, named in English. */
 async function loadFullSet(): Promise<EmojiPickerSection[]> {
-  const [base, names] = (await Promise.all([readData("base.gen.json"), readData("en.gen.json")])) as [BaseData, NameData];
+  const [base, names] = (await Promise.all([readData("base.gen.json"), readData("en.gen.json")])) as [
+    BaseData,
+    NameData,
+  ];
   return base.groups.map((group) => ({
     id: group.id,
     heading: groupHeadings[group.id] ?? group.id,
@@ -383,7 +442,9 @@ async function loadFullSet(): Promise<EmojiPickerSection[]> {
         unicode: emoji,
         name,
         keywords,
-        ...(skins === undefined ? {} : { skins: skins.map(([variant]) => ({ unicode: variant, name: names.skins[variant] ?? variant })) }),
+        ...(skins === undefined
+          ? {}
+          : { skins: skins.map(([variant]) => ({ unicode: variant, name: names.skins[variant] ?? variant })) }),
       };
     }),
   }));
@@ -409,7 +470,9 @@ export const FullSet: Story = {
     // A section button scrolls far down, smoothly when motion is allowed, and focuses the section's first emoji.
     await userEvent.click(canvas.getByRole("button", { name: "Flags" }));
     await waitFor(() => expect(canvas.getByRole("gridcell", { name: "chequered flag" })).toHaveFocus());
-    await waitFor(() => expect(canvas.getByRole("button", { name: "Flags" })).toHaveAttribute("aria-current", "true"), { timeout: 5000 });
+    await waitFor(() => expect(canvas.getByRole("button", { name: "Flags" })).toHaveAttribute("aria-current", "true"), {
+      timeout: 5000,
+    });
     await expect(canvas.queryByRole("gridcell", { name: "grinning face" })).not.toBeInTheDocument();
     // The last emoji of the grid, in the last row.
     await userEvent.keyboard("{Control>}{End}{/Control}");
@@ -419,7 +482,9 @@ export const FullSet: Story = {
     // Back to the first; the grid scrolls to the top, where the focused emoji is.
     await userEvent.keyboard("{Control>}{Home}{/Control}");
     await waitFor(() => expect(canvas.getByRole("gridcell", { name: "grinning face" })).toHaveFocus());
-    await waitFor(() => expect(canvas.getByRole("button", { name: "Smileys & emotion" })).toHaveAttribute("aria-current", "true"));
+    await waitFor(() =>
+      expect(canvas.getByRole("button", { name: "Smileys & emotion" })).toHaveAttribute("aria-current", "true"),
+    );
     // Page Down moves by the rows in view, in the same column.
     await userEvent.keyboard("{PageDown}");
     const paged = document.activeElement;

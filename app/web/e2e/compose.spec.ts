@@ -83,15 +83,27 @@ async function serveApi(page: Page): Promise<Posted[]> {
     "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE",
   };
   const json = (route: Route, body: unknown, status = 200) =>
-    route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", headers: cors, body: JSON.stringify(body) });
+    route.fulfill({
+      status,
+      contentType: status < 400 ? "application/json" : "application/problem+json",
+      headers: cors,
+      body: JSON.stringify(body),
+    });
   await page.route(`${apiOrigin}/**`, async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     // The page and its assets come from the same origin.
     if (!path.startsWith("/api/") && !path.startsWith("/oauth/")) return route.fallback();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    if (path === "/oauth/token/refresh") return json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" });
-    if (path === "/api/v1/accounts/verify_credentials") return json(route, {
+    if (path === "/oauth/token/refresh")
+      return json(route, {
+        access_token: "e2e-token",
+        token_type: "Bearer",
+        expires_in: 3600,
+        scope: "read write follow",
+      });
+    if (path === "/api/v1/accounts/verify_credentials")
+      return json(route, {
         ...account,
         discoverable: true,
         indexable: true,
@@ -101,19 +113,50 @@ async function serveApi(page: Page): Promise<Posted[]> {
         permissions: [],
       });
     if (path === "/api/v1/instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0-e2e", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0-e2e",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (path === "/api/v1/custom_emojis") {
-      return json(route, { items: [{ shortcode: "blobcat", url: `${apiOrigin}/emoji/blobcat.png`, static_url: `${apiOrigin}/emoji/blobcat.png`, aliases: [] }] });
+      return json(route, {
+        items: [
+          {
+            shortcode: "blobcat",
+            url: `${apiOrigin}/emoji/blobcat.png`,
+            static_url: `${apiOrigin}/emoji/blobcat.png`,
+            aliases: [],
+          },
+        ],
+      });
     }
     if (path === "/api/v1/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, { locale: test.info().project.use.locale ?? "en", time_zone: "UTC", time_zone_chosen: true, default_visibility: "public", default_quote_policy: "public", default_post_language: "en", require_media_description: false, email_moderator_notifications: false, timeline_auto_insert: true, timeline_languages: [] });
+      return json(route, {
+        locale: test.info().project.use.locale ?? "en",
+        time_zone: "UTC",
+        time_zone_chosen: true,
+        default_visibility: "public",
+        default_quote_policy: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        email_moderator_notifications: false,
+        timeline_auto_insert: true,
+        timeline_languages: [],
+      });
     }
     if (path === "/api/v1/statuses" && request.method() === "POST") {
       const body = request.postDataJSON() as Record<string, unknown>;
-      posted.push({ body, idempotencyKey: await request.headerValue("Idempotency-Key") ?? undefined });
-      if (posted.length === 1) return json(route, { type: "about:blank", title: "Service Unavailable", status: 503 }, 503);
+      posted.push({ body, idempotencyKey: (await request.headerValue("Idempotency-Key")) ?? undefined });
+      if (posted.length === 1)
+        return json(route, { type: "about:blank", title: "Service Unavailable", status: 503 }, 503);
       return json(route, {
         id: "0192f0c4-7a8e-7000-8000-0000000000a1",
         uri: "https://my.example/users/alice/statuses/1",
@@ -139,7 +182,8 @@ async function serveApi(page: Page): Promise<Posted[]> {
     if (path === "/api/v1/tags/search") return json(route, [{ name: "caturday", statuses_count: 3 }]);
     // Carol is found only by resolving her handle, as the server resolves the mentions of a post.
     const query = new URL(request.url()).searchParams;
-    if (path === "/api/v1/accounts/lookup" && query.get("acct") === carol.acct && query.get("resolve") === "true") return json(route, carol);
+    if (path === "/api/v1/accounts/lookup" && query.get("acct") === carol.acct && query.get("resolve") === "true")
+      return json(route, carol);
     if (path === "/api/v1/accounts/relationships") {
       return json(
         route,
@@ -174,7 +218,11 @@ async function openForm(page: Page, hasTouch: boolean) {
 }
 
 test.describe("the new-post form", () => {
-  test("has no axe violations and does not scroll horizontally, with the visibility choices open too", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("has no axe violations and does not scroll horizontally, with the visibility choices open too", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     const posted = await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -182,20 +230,29 @@ test.describe("the new-post form", () => {
     await expect(form.getByRole("textbox", { name: message("compose.warning.label") })).toBeVisible();
     // Text with highlighted ranges, so axe and the scroll check see the layers behind the CW and the text too.
     await form.getByRole("textbox", { name: message("compose.warning.label") }).fill("Spoilers :blobcat:");
-    await form.getByRole("textbox", { name: message("compose.text.label") }).fill("#tag https://example.com/a/long/path/that/wraps/at/320/px :blobcat:");
+    await form
+      .getByRole("textbox", { name: message("compose.text.label") })
+      .fill("#tag https://example.com/a/long/path/that/wraps/at/320/px :blobcat:");
     await expect(form.locator("[data-highlight]")).toHaveCount(4);
 
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form.getByRole("button", { name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }) }).click();
+    await form
+      .getByRole("button", {
+        name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }),
+      })
+      .click();
     await expect(page.getByRole("radiogroup", { name: message("compose.visibility.title") })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
     expect(posted).toEqual([]);
   });
 
-  test("exposes the text, then the tools with their current values, then the submit button", async ({ page, hasTouch }) => {
+  test("exposes the text, then the tools with their current values, then the submit button", async ({
+    page,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -245,7 +302,11 @@ test.describe("the new-post form", () => {
     `);
   });
 
-  test("completes a mention, a hashtag and an emoji from a list under the text, which has no axe violations (ADR-0092)", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("completes a mention, a hashtag and an emoji from a list under the text, which has no axe violations (ADR-0092)", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -268,7 +329,9 @@ test.describe("the new-post form", () => {
     await expect(suggestions).toBeHidden();
 
     await text.pressSequentially("#cat");
-    await expect(suggestions.getByRole("option", { name: `#caturday ${formatted("compose.completion.tag_posts", { count: 3 })}` })).toBeVisible();
+    await expect(
+      suggestions.getByRole("option", { name: `#caturday ${formatted("compose.completion.tag_posts", { count: 3 })}` }),
+    ).toBeVisible();
     await text.press("Tab");
     await expect(text).toHaveValue("Hi @carol@remote.example #caturday ");
     await expect(text).toBeFocused();
@@ -279,7 +342,10 @@ test.describe("the new-post form", () => {
     await expect(text).toHaveValue("Hi @carol@remote.example #caturday :blobcat: ");
   });
 
-  test("keeps its tools level, and the submit button on the first screen of a 320 × 568 sheet", async ({ page, hasTouch }) => {
+  test("keeps its tools level, and the submit button on the first screen of a 320 × 568 sheet", async ({
+    page,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -289,7 +355,9 @@ test.describe("the new-post form", () => {
       form.getByRole("button", { name: message("compose.media.add") }),
       form.getByRole("button", { name: message("compose.poll.toggle") }),
       form.getByRole("button", { name: message("compose.warning.toggle") }),
-      form.getByRole("button", { name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }) }),
+      form.getByRole("button", {
+        name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }),
+      }),
       form.getByRole("button", { name: new RegExp(endingWith(message("compose.language.label"))) }),
     ];
     const heights = await Promise.all(tools.map(async (tool) => (await boxOf(tool)).height));
@@ -300,7 +368,11 @@ test.describe("the new-post form", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("puts the emoji button in the top end corner of the text, whose lines keep clear of it (ADR-0091 §4)", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("puts the emoji button in the top end corner of the text, whose lines keep clear of it (ADR-0091 §4)", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     await page.setViewportSize({ width: 320, height: 568 });
@@ -323,7 +395,10 @@ test.describe("the new-post form", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("keeps the draft when posting fails and posts it again with the same Idempotency-Key", async ({ page, hasTouch }) => {
+  test("keeps the draft when posting fails and posts it again with the same Idempotency-Key", async ({
+    page,
+    hasTouch,
+  }) => {
     const posted = await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -337,7 +412,9 @@ test.describe("the new-post form", () => {
 
     await form.getByRole("button", { name: message("compose.submit") }).click();
 
-    await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted"))).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted")),
+    ).toBeVisible();
     expect(posted).toHaveLength(2);
     expect(posted[1]?.idempotencyKey).toBeTruthy();
     expect(posted[1]?.idempotencyKey).toBe(posted[0]?.idempotencyKey);
@@ -345,7 +422,11 @@ test.describe("the new-post form", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("posts a poll from its fields, which have no axe violations and do not scroll horizontally (FR-112)", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("posts a poll from its fields, which have no axe violations and do not scroll horizontally (FR-112)", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     const posted = await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
@@ -366,7 +447,9 @@ test.describe("the new-post form", () => {
     await form.getByRole("button", { name: message("compose.submit") }).click();
     await expect(form.getByText(message("compose.failed", { reason: "Service Unavailable" }))).toBeVisible();
     await form.getByRole("button", { name: message("compose.submit") }).click();
-    await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted"))).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted")),
+    ).toBeVisible();
     expect(posted[1]?.body).toEqual({
       text: "Which one?",
       visibility: "public",
@@ -375,19 +458,29 @@ test.describe("the new-post form", () => {
     });
   });
 
-  test("warns that a local post does not reach a mentioned account of another server that does not follow the viewer", async ({ page, makeAxeBuilder, hasTouch }) => {
+  test("warns that a local post does not reach a mentioned account of another server that does not follow the viewer", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
     await serveApi(page);
     await page.goto("/");
     const form = await openForm(page, hasTouch);
 
-    await form.getByRole("button", { name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }) }).click();
+    await form
+      .getByRole("button", {
+        name: message("compose.visibility.button", { visibility: message("compose.visibility.public") }),
+      })
+      .click();
     const choices = page.getByRole("radiogroup", { name: message("compose.visibility.title") });
     await choices.getByText(message("compose.visibility.local"), { exact: true }).click();
     await expect(choices.getByRole("radio", { name: message("compose.visibility.local"), exact: true })).toBeChecked();
     await page.getByRole("button", { name: message("compose.visibility.done") }).click();
     await form.getByRole("textbox", { name: message("compose.text.label") }).fill("Hi @carol@remote.example");
 
-    await expect(form.getByText(formatted("compose.mention.unreached", { count: 1, accounts: "@carol@remote.example" }))).toBeVisible();
+    await expect(
+      form.getByText(formatted("compose.mention.unreached", { count: 1, accounts: "@carol@remote.example" })),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -415,7 +508,9 @@ async function serveHomeTimeline(page: Page): Promise<void> {
     reactions: [],
   });
   // Registered after serveApi's route, so Playwright asks this one first.
-  await page.route("**/api/v1/timelines/home*", (route) => route.fulfill({ json: { items: Array.from({ length: 6 }, (_, i) => post(i + 1)) } }));
+  await page.route("**/api/v1/timelines/home*", (route) =>
+    route.fulfill({ json: { items: Array.from({ length: 6 }, (_, i) => post(i + 1)) } }),
+  );
 }
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -533,7 +628,11 @@ test.describe("the rail's new-post button", () => {
     await serveHomeTimeline(page);
     for (const path of ["/home", "/notifications", "/settings"]) {
       await page.goto(path);
-      await expect(page.getByRole("navigation", { name: message("shell.nav.label") }).getByRole("button", { name: message("compose.open") })).toBeVisible();
+      await expect(
+        page
+          .getByRole("navigation", { name: message("shell.nav.label") })
+          .getByRole("button", { name: message("compose.open") }),
+      ).toBeVisible();
     }
     await page.getByRole("button", { name: message("compose.open") }).click();
     await expect(page.getByRole("dialog", { name: message("compose.title") })).toBeVisible();

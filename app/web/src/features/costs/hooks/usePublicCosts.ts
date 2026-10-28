@@ -20,13 +20,27 @@ export type PublicCosts =
  * `finance_visibility` from GET /instance: the totals alone carry no sign of it. A 4xx is the instance's setting or a
  * query the page never makes, not a failure to try again, so it is not retried.
  */
-export function usePublicCosts(granularity: CostGranularity, basis: CostBasis, today: string, breakdown: boolean): PublicCosts {
+export function usePublicCosts(
+  granularity: CostGranularity,
+  basis: CostBasis,
+  today: string,
+  breakdown: boolean,
+): PublicCosts {
   const api = useApi();
-  const query = useQuery({ ...publicCostTotalsQueryOptions(api, granularity, basis, today), retry: shellQueryRetry, retryOnMount: false });
+  const query = useQuery({
+    ...publicCostTotalsQueryOptions(api, granularity, basis, today),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+  });
   if (query.data !== undefined) return { status: "ready", totals: query.data, breakdown };
   if (query.error !== null) {
     if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
-    return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   }
   return { status: "loading" };
 }

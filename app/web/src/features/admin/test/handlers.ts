@@ -12,7 +12,9 @@ export function instanceTextFixture(key: Schemas["InstanceTextKey"], body: strin
 }
 
 /** The supporter program as the admin API answers it: disabled, on a server that could enable it, with `overrides`. */
-export function supporterProgramFixture(overrides: Partial<Schemas["AdminSupporterProgram"]> = {}): Schemas["AdminSupporterProgram"] {
+export function supporterProgramFixture(
+  overrides: Partial<Schemas["AdminSupporterProgram"]> = {},
+): Schemas["AdminSupporterProgram"] {
   return {
     enabled: false,
     configured_provider: "stripe",
@@ -27,11 +29,21 @@ export function supporterProgramFixture(overrides: Partial<Schemas["AdminSupport
 
 /** The state of the payment provider as the admin API answers it: Stripe in test mode, never reconciled, with `overrides`. */
 export function paymentStatusFixture(overrides: Partial<Schemas["PaymentStatus"]> = {}): Schemas["PaymentStatus"] {
-  return { provider: "stripe", mode: "test", time_zone: "UTC", last_webhook_at: "2026-10-21T00:00:00Z", warnings: [], ...overrides };
+  return {
+    provider: "stripe",
+    mode: "test",
+    time_zone: "UTC",
+    last_webhook_at: "2026-10-21T00:00:00Z",
+    warnings: [],
+    ...overrides,
+  };
 }
 
 /** A supporter plan as the admin API answers it, created at 2026-10-20T00:00:00Z with its prices ready, with `overrides`. */
-export function supporterPlanFixture(id: string, overrides: Partial<Schemas["AdminSupporterPlan"]> = {}): Schemas["AdminSupporterPlan"] {
+export function supporterPlanFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminSupporterPlan"]> = {},
+): Schemas["AdminSupporterPlan"] {
   return {
     id,
     name: "Supporter",
@@ -53,7 +65,10 @@ export function supporterPlanFixture(id: string, overrides: Partial<Schemas["Adm
 }
 
 /** A subscription as the admin API answers it: an active monthly one of @bob, started at 2026-10-20T00:00:00Z, with `overrides`. */
-export function supporterSubscriptionFixture(id: string, overrides: Partial<Schemas["AdminSupporterSubscription"]> = {}): Schemas["AdminSupporterSubscription"] {
+export function supporterSubscriptionFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminSupporterSubscription"]> = {},
+): Schemas["AdminSupporterSubscription"] {
   return {
     id,
     state: "active",
@@ -70,7 +85,11 @@ export function supporterSubscriptionFixture(id: string, overrides: Partial<Sche
 }
 
 /** A local custom emoji as the admin API answers it, registered at 2026-10-20T00:00:00Z, with `overrides`. */
-export function adminCustomEmojiFixture(id: string, shortcode: string, overrides: Partial<Schemas["AdminCustomEmoji"]> = {}): Schemas["AdminCustomEmoji"] {
+export function adminCustomEmojiFixture(
+  id: string,
+  shortcode: string,
+  overrides: Partial<Schemas["AdminCustomEmoji"]> = {},
+): Schemas["AdminCustomEmoji"] {
   return {
     id,
     shortcode,
@@ -89,7 +108,11 @@ export function adminCustomEmojiFixture(id: string, shortcode: string, overrides
 }
 
 /** A pending request for a new emoji as the admin API answers it, made at 2026-10-21T00:00:00Z by Bob, with `overrides`. */
-export function adminCustomEmojiRequestFixture(id: string, shortcode: string, overrides: Partial<Schemas["AdminCustomEmojiRequest"]> = {}): Schemas["AdminCustomEmojiRequest"] {
+export function adminCustomEmojiRequestFixture(
+  id: string,
+  shortcode: string,
+  overrides: Partial<Schemas["AdminCustomEmojiRequest"]> = {},
+): Schemas["AdminCustomEmojiRequest"] {
   return {
     id,
     kind: "create",
@@ -120,7 +143,10 @@ export function webhookFixture(id: string, overrides: Partial<Schemas["AdminWebh
 }
 
 /** An OpenID Connect login provider as the admin API answers it, set up at 2026-10-20T00:00:00Z and enabled, with `overrides`. */
-export function loginProviderFixture(id: string, overrides: Partial<Schemas["AdminLoginProvider"]> = {}): Schemas["AdminLoginProvider"] {
+export function loginProviderFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminLoginProvider"]> = {},
+): Schemas["AdminLoginProvider"] {
   return {
     id,
     kind: "oidc",
@@ -144,7 +170,10 @@ export function loginProviderFixture(id: string, overrides: Partial<Schemas["Adm
 }
 
 /** A delivery of a webhook as the admin API answers it, made at 2026-10-20T01:00:00Z, with `overrides`. */
-export function webhookDeliveryFixture(id: string, overrides: Partial<Schemas["AdminWebhookDelivery"]> = {}): Schemas["AdminWebhookDelivery"] {
+export function webhookDeliveryFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminWebhookDelivery"]> = {},
+): Schemas["AdminWebhookDelivery"] {
   return {
     id,
     message_id: `0199f0e0-0000-7000-8000-${id.padStart(12, "0")}`,
@@ -176,7 +205,10 @@ export function relayFixture(id: string, overrides: Partial<Schemas["AdminRelay"
 }
 
 /** An OAuth client as the admin API answers it: an app that a user registered at 2026-10-22T00:00:00Z, enabled, with `overrides`. */
-export function oauthClientFixture(id: string, overrides: Partial<Schemas["AdminOAuthClient"]> = {}): Schemas["AdminOAuthClient"] {
+export function oauthClientFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminOAuthClient"]> = {},
+): Schemas["AdminOAuthClient"] {
   return {
     id,
     client_id: `client-${id}`,
@@ -191,12 +223,19 @@ export function oauthClientFixture(id: string, overrides: Partial<Schemas["Admin
 }
 
 /** A denied host as the admin API answers it, denied at 2026-10-23T00:00:00Z, with `overrides`. */
-export function hostDenialFixture(id: string, host: string, overrides: Partial<Schemas["AdminOAuthClientHostDenial"]> = {}): Schemas["AdminOAuthClientHostDenial"] {
+export function hostDenialFixture(
+  id: string,
+  host: string,
+  overrides: Partial<Schemas["AdminOAuthClientHostDenial"]> = {},
+): Schemas["AdminOAuthClientHostDenial"] {
   return { id, host, denied_at: "2026-10-23T00:00:00Z", ...overrides };
 }
 
 /** An announcement as the admin API answers it, written at 2026-10-21T00:00:00Z as a draft, with `overrides`. */
-export function adminAnnouncementFixture(id: string, overrides: Partial<Schemas["AdminAnnouncement"]> = {}): Schemas["AdminAnnouncement"] {
+export function adminAnnouncementFixture(
+  id: string,
+  overrides: Partial<Schemas["AdminAnnouncement"]> = {},
+): Schemas["AdminAnnouncement"] {
   return {
     id,
     text: "Maintenance on **Sunday**.",
@@ -251,7 +290,9 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */
-export function instanceSettingsFixture(stored: Readonly<Partial<Record<Schemas["InstanceSettingKey"], string>>> = {}): Schemas["AdminSettingList"] {
+export function instanceSettingsFixture(
+  stored: Readonly<Partial<Record<Schemas["InstanceSettingKey"], string>>> = {},
+): Schemas["AdminSettingList"] {
   return {
     items: settingDefaults.map((setting) => {
       const value = stored[setting.key];
@@ -261,7 +302,11 @@ export function instanceSettingsFixture(stored: Readonly<Partial<Record<Schemas[
 }
 
 /** A rule at `position`, created at 2026-10-16, as the admin API answers it; `overrides` replace its fields. */
-export function ruleFixture(id: string, position: number, overrides: Partial<Schemas["AdminRule"]> = {}): Schemas["AdminRule"] {
+export function ruleFixture(
+  id: string,
+  position: number,
+  overrides: Partial<Schemas["AdminRule"]> = {},
+): Schemas["AdminRule"] {
   return {
     id,
     position,
@@ -283,7 +328,9 @@ export function costItemFixture(id: string, overrides: Partial<Schemas["CostItem
     provider: "Registrar",
     category: "domain",
     memo: "",
-    prices: [{ effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" }],
+    prices: [
+      { effective_on: "2026-04-10", price: { amount: "1650", currency: "JPY" }, revised_at: "2026-04-10T00:00:00Z" },
+    ],
     created_at: "2026-04-10T00:00:00Z",
     ...overrides,
   };
@@ -312,13 +359,17 @@ export function errorGroupFixture(id: string, overrides: Partial<Schemas["ErrorG
 }
 
 /** An error group with its latest occurrence, two hours of counts and no change of state, with `overrides`. */
-export function errorGroupDetailFixture(id: string, overrides: Partial<Schemas["ErrorGroupDetail"]> = {}): Schemas["ErrorGroupDetail"] {
+export function errorGroupDetailFixture(
+  id: string,
+  overrides: Partial<Schemas["ErrorGroupDetail"]> = {},
+): Schemas["ErrorGroupDetail"] {
   return {
     ...errorGroupFixture(id),
     sample: {
       type: "runtime.Error",
       message: "runtime error: invalid memory address or nil pointer dereference",
-      stack: "goroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32",
+      stack:
+        "goroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32",
       request_id: "01JB0000000000000000000000",
       trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
       version: "0.3.1",
@@ -342,7 +393,16 @@ function emptyTotals(url: URL): Schemas["CostTotals"] {
   return {
     granularity,
     basis,
-    periods: [{ label: to.slice(0, 7), starts_on: `${to.slice(0, 7)}-01`, ends_on: to, totals: [], breakdown: [], estimated: false }],
+    periods: [
+      {
+        label: to.slice(0, 7),
+        starts_on: `${to.slice(0, 7)}-01`,
+        ends_on: to,
+        totals: [],
+        breakdown: [],
+        estimated: false,
+      },
+    ],
     rules: { week_start: "monday", sources: [] },
   };
 }
@@ -355,7 +415,17 @@ function emptyIncomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
   return {
     granularity,
     basis,
-    periods: [{ label: to.slice(0, 7), starts_on: `${to.slice(0, 7)}-01`, ends_on: to, gross: [], fee: [], net: [], balance: [] }],
+    periods: [
+      {
+        label: to.slice(0, 7),
+        starts_on: `${to.slice(0, 7)}-01`,
+        ends_on: to,
+        gross: [],
+        fee: [],
+        net: [],
+        balance: [],
+      },
+    ],
     plans: [],
     rules: { week_start: "monday", providers: [], amortize_after_days: 31 },
   };
@@ -400,108 +470,188 @@ export const handlers = [
     };
     return withViewer(request, () => HttpResponse.json(role));
   }),
-  http.delete(`${apiBase}/admin/roles/:role`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/admin/roles/:role`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds getAdminQueue, listAdminJobs, listAdminJobAttempts, retryAdminJob: a database queue without jobs.
-  http.get(`${apiBase}/admin/queue`, ({ request }) => withViewer(request, () => HttpResponse.json({ adapter: "db", pending_listing: true, counts: [] }))),
+  http.get(`${apiBase}/admin/queue`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ adapter: "db", pending_listing: true, counts: [] })),
+  ),
   http.get(`${apiBase}/admin/jobs`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-  http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-  http.post(`${apiBase}/admin/jobs/:id/retry`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] })),
+  ),
+  http.post(`${apiBase}/admin/jobs/:id/retry`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds listErrorGroups, getErrorGroup, resolveErrorGroup, muteErrorGroup, unmuteErrorGroup: no groups; a
   // group asked for by its ID is an open one, and an action answers the group in its new state.
-  http.get(`${apiBase}/admin/error_groups`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-  http.get(`${apiBase}/admin/error_groups/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupDetailFixture(String(params["id"]))))),
-  http.post(`${apiBase}/admin/error_groups/:id/resolve`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "resolved", resolved_version: "0.3.1" }))),
+  http.get(`${apiBase}/admin/error_groups`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] })),
   ),
-  http.post(`${apiBase}/admin/error_groups/:id/mute`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "muted" })))),
-  http.post(`${apiBase}/admin/error_groups/:id/unmute`, ({ request, params }) => withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]))))),
+  http.get(`${apiBase}/admin/error_groups/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(errorGroupDetailFixture(String(params["id"])))),
+  ),
+  http.post(`${apiBase}/admin/error_groups/:id/resolve`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "resolved", resolved_version: "0.3.1" })),
+    ),
+  ),
+  http.post(`${apiBase}/admin/error_groups/:id/mute`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"]), { state: "muted" }))),
+  ),
+  http.post(`${apiBase}/admin/error_groups/:id/unmute`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(errorGroupFixture(String(params["id"])))),
+  ),
   // operationIds listInstanceTexts, setInstanceText: no texts; a new text is recorded as sent, at 2026-10-17T00:00:00Z.
-  http.get(`${apiBase}/admin/instance_texts`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  http.get(`${apiBase}/admin/instance_texts`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] })),
+  ),
   http.put(`${apiBase}/admin/instance_texts/:key`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["SetInstanceTextRequest"];
-    return withViewer(request, () => HttpResponse.json(instanceTextFixture(String(params["key"]) as Schemas["InstanceTextKey"], body.body)));
+    return withViewer(request, () =>
+      HttpResponse.json(instanceTextFixture(String(params["key"]) as Schemas["InstanceTextKey"], body.body)),
+    );
   }),
   // operationIds listInstanceSettings, updateInstanceSettings: every setting at its default; a change is answered
   // with the values sent.
-  http.get(`${apiBase}/admin/settings`, ({ request }) => withViewer(request, () => HttpResponse.json(instanceSettingsFixture()))),
+  http.get(`${apiBase}/admin/settings`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(instanceSettingsFixture())),
+  ),
   http.patch(`${apiBase}/admin/settings`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["UpdateInstanceSettingsRequest"];
     return withViewer(request, () => HttpResponse.json(instanceSettingsFixture(body.values)));
   }),
   // operationIds listInstanceRules, createInstanceRule, getInstanceRule, updateInstanceRule, moveInstanceRule,
   // retireInstanceRule: no rules; a new or changed rule is answered as sent.
-  http.get(`${apiBase}/admin/rules`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminRuleList"]))),
+  http.get(`${apiBase}/admin/rules`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminRuleList"])),
+  ),
   http.post(`${apiBase}/admin/rules`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["InstanceRuleInput"];
     return withViewer(request, () => HttpResponse.json(ruleFixture(createdRuleId, 1, body)));
   }),
-  http.get(`${apiBase}/admin/rules/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1)))),
+  http.get(`${apiBase}/admin/rules/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1))),
+  ),
   http.patch(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["InstanceRuleInput"];
-    return withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1, { ...body, revised_at: "2026-10-17T00:00:00Z" })));
+    return withViewer(request, () =>
+      HttpResponse.json(ruleFixture(String(params["id"]), 1, { ...body, revised_at: "2026-10-17T00:00:00Z" })),
+    );
   }),
   http.post(`${apiBase}/admin/rules/:id/move`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["MoveInstanceRuleRequest"];
     return withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), body.position)));
   }),
   http.post(`${apiBase}/admin/rules/:id/retire`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1, { retired_at: "2026-10-17T00:00:00Z" }))),
+    withViewer(request, () =>
+      HttpResponse.json(ruleFixture(String(params["id"]), 1, { retired_at: "2026-10-17T00:00:00Z" })),
+    ),
   ),
   // operationIds getAdminTheme, setAdminTheme: no theme; a saved theme is answered as sent, at a new revision.
-  http.get(`${apiBase}/admin/theme`, ({ request }) => withViewer(request, () => HttpResponse.json({ tokens: [], custom_css: "" } satisfies Schemas["AdminTheme"]))),
+  http.get(`${apiBase}/admin/theme`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ tokens: [], custom_css: "" } satisfies Schemas["AdminTheme"])),
+  ),
   http.put(`${apiBase}/admin/theme`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["SetThemeRequest"];
-    return withViewer(request, () => HttpResponse.json({ ...body, revision: "0199f0e0-0000-7000-8000-00000000a001", revised_at: "2026-10-20T00:00:00Z" } satisfies Schemas["AdminTheme"]));
+    return withViewer(request, () =>
+      HttpResponse.json({
+        ...body,
+        revision: "0199f0e0-0000-7000-8000-00000000a001",
+        revised_at: "2026-10-20T00:00:00Z",
+      } satisfies Schemas["AdminTheme"]),
+    );
   }),
   // operationIds listAdminCustomEmojis, createCustomEmoji, getAdminCustomEmoji, updateCustomEmoji, deleteCustomEmoji,
   // replaceCustomEmojiImage: no emoji; a new or changed emoji is answered as sent.
-  http.get(`${apiBase}/admin/custom_emojis`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminCustomEmojiPage"]))),
+  http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminCustomEmojiPage"])),
+  ),
   http.post(`${apiBase}/admin/custom_emojis`, async ({ request }) => {
     const { media_id: _, ...body } = (await request.clone().json()) as Schemas["CreateCustomEmojiRequest"];
-    return withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(createdCustomEmojiId, body.shortcode, body)));
+    return withViewer(request, () =>
+      HttpResponse.json(adminCustomEmojiFixture(createdCustomEmojiId, body.shortcode, body)),
+    );
   }),
-  http.get(`${apiBase}/admin/custom_emojis/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat")))),
+  http.get(`${apiBase}/admin/custom_emojis/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat"))),
+  ),
   http.patch(`${apiBase}/admin/custom_emojis/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["UpdateCustomEmojiRequest"];
     return withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat", body)));
   }),
-  http.delete(`${apiBase}/admin/custom_emojis/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/admin/custom_emojis/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   http.put(`${apiBase}/admin/custom_emojis/:id/image`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat", { updated_at: "2026-10-21T00:00:00Z" }))),
+    withViewer(request, () =>
+      HttpResponse.json(
+        adminCustomEmojiFixture(String(params["id"]), "blobcat", { updated_at: "2026-10-21T00:00:00Z" }),
+      ),
+    ),
   ),
   // operationIds listAdminCustomEmojiRequests, approveCustomEmojiRequest, rejectCustomEmojiRequest: no requests; a
   // decided request is answered approved or rejected with the reason sent.
-  http.get(`${apiBase}/admin/custom_emoji_requests`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminCustomEmojiRequestPage"]))),
+  http.get(`${apiBase}/admin/custom_emoji_requests`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminCustomEmojiRequestPage"])),
+  ),
   http.post(`${apiBase}/admin/custom_emoji_requests/:id/approve`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(adminCustomEmojiRequestFixture(String(params["id"]), "blobcat", { state: "approved", decided_at: "2026-10-22T00:00:00Z" }))),
+    withViewer(request, () =>
+      HttpResponse.json(
+        adminCustomEmojiRequestFixture(String(params["id"]), "blobcat", {
+          state: "approved",
+          decided_at: "2026-10-22T00:00:00Z",
+        }),
+      ),
+    ),
   ),
   http.post(`${apiBase}/admin/custom_emoji_requests/:id/reject`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["RejectCustomEmojiRequestRequest"];
     return withViewer(request, () =>
       HttpResponse.json(
-        adminCustomEmojiRequestFixture(String(params["id"]), "blobcat", { state: "rejected", decided_at: "2026-10-22T00:00:00Z", ...(body.reason === undefined ? {} : { reason: body.reason }) }),
+        adminCustomEmojiRequestFixture(String(params["id"]), "blobcat", {
+          state: "rejected",
+          decided_at: "2026-10-22T00:00:00Z",
+          ...(body.reason === undefined ? {} : { reason: body.reason }),
+        }),
       ),
     );
   }),
   // operationIds listAdminWebhooks, createWebhook, getAdminWebhook, updateWebhook, deleteWebhook, enableWebhook,
   // disableWebhook, rotateWebhookSecret, testWebhook, listWebhookDeliveries, redeliverWebhookDelivery: no webhooks
   // and no deliveries; a new or changed webhook is answered as sent.
-  http.get(`${apiBase}/admin/webhooks`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminWebhookList"]))),
+  http.get(`${apiBase}/admin/webhooks`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminWebhookList"])),
+  ),
   http.post(`${apiBase}/admin/webhooks`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["CreateWebhookRequest"];
-    return withViewer(request, () => HttpResponse.json({ webhook: webhookFixture(createdWebhookId, body), secret: webhookSecret } satisfies Schemas["AdminWebhookCreated"]));
+    return withViewer(request, () =>
+      HttpResponse.json({
+        webhook: webhookFixture(createdWebhookId, body),
+        secret: webhookSecret,
+      } satisfies Schemas["AdminWebhookCreated"]),
+    );
   }),
-  http.get(`${apiBase}/admin/webhooks/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"]))))),
+  http.get(`${apiBase}/admin/webhooks/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"])))),
+  ),
   http.patch(`${apiBase}/admin/webhooks/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["UpdateWebhookRequest"];
     return withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"]), body)));
   }),
-  http.delete(`${apiBase}/admin/webhooks/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.post(`${apiBase}/admin/webhooks/:id/enable`, ({ request, params }) => withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"]))))),
+  http.delete(`${apiBase}/admin/webhooks/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.post(`${apiBase}/admin/webhooks/:id/enable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"])))),
+  ),
   http.post(`${apiBase}/admin/webhooks/:id/disable`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(webhookFixture(String(params["id"]), { state: "disabled" }))),
   ),
-  http.post(`${apiBase}/admin/webhooks/:id/rotate_secret`, ({ request }) => withViewer(request, () => HttpResponse.json({ secret: webhookSecret } satisfies Schemas["AdminWebhookSecret"]))),
+  http.post(`${apiBase}/admin/webhooks/:id/rotate_secret`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ secret: webhookSecret } satisfies Schemas["AdminWebhookSecret"])),
+  ),
   http.post(`${apiBase}/admin/webhooks/:id/test`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(webhookDeliveryFixture("1", { event_type: "webhook.test" }))),
   ),
@@ -514,18 +664,26 @@ export const handlers = [
   // operationIds listAdminLoginProviders, createLoginProvider, getAdminLoginProvider, updateLoginProvider,
   // deleteLoginProvider, enableLoginProvider, disableLoginProvider, rotateLoginProviderSecret: no providers; a new or
   // changed provider is answered as sent.
-  http.get(`${apiBase}/admin/login_providers`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminLoginProviderList"]))),
+  http.get(`${apiBase}/admin/login_providers`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminLoginProviderList"])),
+  ),
   http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
     const { client_secret: _, ...body } = (await request.clone().json()) as Schemas["CreateLoginProviderRequest"];
     return withViewer(request, () => HttpResponse.json(loginProviderFixture(createdLoginProviderId, body)));
   }),
-  http.get(`${apiBase}/admin/login_providers/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]))))),
+  http.get(`${apiBase}/admin/login_providers/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"])))),
+  ),
   http.patch(`${apiBase}/admin/login_providers/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["UpdateLoginProviderRequest"];
     return withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]), body)));
   }),
-  http.delete(`${apiBase}/admin/login_providers/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.post(`${apiBase}/admin/login_providers/:id/enable`, ({ request, params }) => withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]))))),
+  http.delete(`${apiBase}/admin/login_providers/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.post(`${apiBase}/admin/login_providers/:id/enable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"])))),
+  ),
   http.post(`${apiBase}/admin/login_providers/:id/disable`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(loginProviderFixture(String(params["id"]), { state: "disabled" }))),
   ),
@@ -534,7 +692,9 @@ export const handlers = [
   ),
   // operationIds listAdminRelays, createRelay, followRelay, unfollowRelay, deleteRelay: no relays; a new relay is
   // pending with what was sent, a relay joined again is pending and one left is left.
-  http.get(`${apiBase}/admin/relays`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminRelayList"]))),
+  http.get(`${apiBase}/admin/relays`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminRelayList"])),
+  ),
   http.post(`${apiBase}/admin/relays`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["CreateRelayRequest"];
     const { actor_uri: _, ...pending } = relayFixture(createdRelayId, {
@@ -554,10 +714,14 @@ export const handlers = [
     const { actor_uri: _, ...left } = relayFixture(String(params["id"]), { state: "left" });
     return withViewer(request, () => HttpResponse.json(left));
   }),
-  http.delete(`${apiBase}/admin/relays/:id`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.delete(`${apiBase}/admin/relays/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds listAdminOAuthClients, disableOAuthClient, enableOAuthClient, listOAuthClientHostDenials,
   // denyOAuthClientHost, allowOAuthClientHost: no clients and no denied hosts; the changes are answered as asked.
-  http.get(`${apiBase}/admin/oauth_clients`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientPage"]))),
+  http.get(`${apiBase}/admin/oauth_clients`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientPage"])),
+  ),
   http.post(`${apiBase}/admin/oauth_clients/:id/disable`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"]), { disabled: true }))),
   ),
@@ -567,8 +731,12 @@ export const handlers = [
   http.get(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientHostDenialPage"])),
   ),
-  http.post(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.delete(`${apiBase}/admin/oauth_client_host_denials/:host`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.delete(`${apiBase}/admin/oauth_client_host_denials/:host`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds listAdminAnnouncements, createAdminAnnouncement, getAdminAnnouncement, updateAdminAnnouncement,
   // publishAdminAnnouncement, withdrawAdminAnnouncement: no announcements; a new or changed one is answered as sent.
   http.get(`${apiBase}/admin/announcements`, ({ request }) =>
@@ -577,26 +745,36 @@ export const handlers = [
   http.post(`${apiBase}/admin/announcements`, async ({ request }) => {
     const { publish, ...body } = (await request.clone().json()) as Schemas["AdminAnnouncementCreateRequest"];
     return withViewer(request, () =>
-      HttpResponse.json(adminAnnouncementFixture(createdAnnouncementId, { ...body, state: publish ? "published" : "draft" })),
+      HttpResponse.json(
+        adminAnnouncementFixture(createdAnnouncementId, { ...body, state: publish ? "published" : "draft" }),
+      ),
     );
   }),
-  http.get(`${apiBase}/admin/announcements/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(adminAnnouncementFixture(String(params["id"]))))),
+  http.get(`${apiBase}/admin/announcements/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(adminAnnouncementFixture(String(params["id"])))),
+  ),
   http.put(`${apiBase}/admin/announcements/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["AdminAnnouncementInput"];
     return withViewer(request, () => HttpResponse.json(adminAnnouncementFixture(String(params["id"]), body)));
   }),
   http.post(`${apiBase}/admin/announcements/:id/publish`, ({ request, params }) =>
     withViewer(request, () =>
-      HttpResponse.json(adminAnnouncementFixture(String(params["id"]), { state: "published", published_at: "2026-10-21T00:00:00Z" })),
+      HttpResponse.json(
+        adminAnnouncementFixture(String(params["id"]), { state: "published", published_at: "2026-10-21T00:00:00Z" }),
+      ),
     ),
   ),
   http.post(`${apiBase}/admin/announcements/:id/withdraw`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(adminAnnouncementFixture(String(params["id"]), { state: "withdrawn" }))),
+    withViewer(request, () =>
+      HttpResponse.json(adminAnnouncementFixture(String(params["id"]), { state: "withdrawn" })),
+    ),
   ),
   // operationIds listCostItems, createCostItem, getCostItem, updateCostItem, reviseCostItemPrice, setCostItemEnd,
   // cancelCostItem, getCostTotals, listBillingImports, runBillingImport: no items, no costs in the periods asked for,
   // and no billing sources; a new or changed item is answered as sent.
-  http.get(`${apiBase}/admin/cost_items`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["CostItemPage"]))),
+  http.get(`${apiBase}/admin/cost_items`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["CostItemPage"])),
+  ),
   http.post(`${apiBase}/admin/cost_items`, async ({ request }) => {
     const { price, ends_on, memo, ...body } = (await request.clone().json()) as Schemas["CostItemCreateRequest"];
     return withViewer(request, () =>
@@ -610,7 +788,9 @@ export const handlers = [
       ),
     );
   }),
-  http.get(`${apiBase}/admin/cost_items/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(costItemFixture(String(params["id"]))))),
+  http.get(`${apiBase}/admin/cost_items/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(costItemFixture(String(params["id"])))),
+  ),
   http.patch(`${apiBase}/admin/cost_items/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["CostItemLabelRequest"];
     return withViewer(request, () => HttpResponse.json(costItemFixture(String(params["id"]), body)));
@@ -618,28 +798,48 @@ export const handlers = [
   http.post(`${apiBase}/admin/cost_items/:id/price_revisions`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["CostPriceRevisionRequest"];
     const item = costItemFixture(String(params["id"]));
-    return withViewer(request, () => HttpResponse.json({ ...item, prices: [...item.prices, { ...body, revised_at: "2026-10-22T00:00:00Z" }] }));
+    return withViewer(request, () =>
+      HttpResponse.json({ ...item, prices: [...item.prices, { ...body, revised_at: "2026-10-22T00:00:00Z" }] }),
+    );
   }),
   http.put(`${apiBase}/admin/cost_items/:id/end`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["CostItemEndRequest"];
     return withViewer(request, () => HttpResponse.json(costItemFixture(String(params["id"]), body)));
   }),
-  http.post(`${apiBase}/admin/cost_items/:id/cancel`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.get(`${apiBase}/admin/cost_totals`, ({ request }) => withViewer(request, () => HttpResponse.json(emptyTotals(new URL(request.url))))),
-  http.get(`${apiBase}/admin/billing_imports`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["BillingImportList"]))),
-  http.get(`${apiBase}/admin/income_totals`, ({ request }) => withViewer(request, () => HttpResponse.json(emptyIncomeTotals(new URL(request.url))))),
-  http.get(`${apiBase}/admin/income_movements`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["IncomeMovementPage"]))),
-  http.post(`${apiBase}/admin/billing_imports/:source/runs`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/admin/cost_items/:id/cancel`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.get(`${apiBase}/admin/cost_totals`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(emptyTotals(new URL(request.url)))),
+  ),
+  http.get(`${apiBase}/admin/billing_imports`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["BillingImportList"])),
+  ),
+  http.get(`${apiBase}/admin/income_totals`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(emptyIncomeTotals(new URL(request.url)))),
+  ),
+  http.get(`${apiBase}/admin/income_movements`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["IncomeMovementPage"])),
+  ),
+  http.post(`${apiBase}/admin/billing_imports/:source/runs`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds getSupporterProgram, setSupporterProgram, listAdminSupporterPlans, createSupporterPlan,
   // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, cancelSupporterSubscription, getPaymentStatus,
   // runPaymentReconcile: a disabled program without plans or subscriptions, and Stripe in test mode; a change is
   // answered as sent.
-  http.get(`${apiBase}/admin/supporter_program`, ({ request }) => withViewer(request, () => HttpResponse.json(supporterProgramFixture()))),
+  http.get(`${apiBase}/admin/supporter_program`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(supporterProgramFixture())),
+  ),
   http.put(`${apiBase}/admin/supporter_program`, async ({ request }) => {
     const { enabled } = (await request.clone().json()) as Schemas["AdminSupporterProgramRequest"];
-    return withViewer(request, () => HttpResponse.json(supporterProgramFixture({ enabled, ...(enabled ? { provider: "stripe" } : {}) })));
+    return withViewer(request, () =>
+      HttpResponse.json(supporterProgramFixture({ enabled, ...(enabled ? { provider: "stripe" } : {}) })),
+    );
   }),
-  http.get(`${apiBase}/admin/supporter_plans`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterPlanList"]))),
+  http.get(`${apiBase}/admin/supporter_plans`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterPlanList"])),
+  ),
   http.post(`${apiBase}/admin/supporter_plans`, async ({ request }) => {
     const { role, description, ...body } = (await request.clone().json()) as Schemas["AdminSupporterPlanCreateRequest"];
     return withViewer(request, () =>
@@ -653,12 +853,22 @@ export const handlers = [
       ),
     );
   }),
-  http.patch(`${apiBase}/admin/supporter_plans/:id`, ({ request, params }) => withViewer(request, () => HttpResponse.json(supporterPlanFixture(String(params["id"]))))),
-  http.post(`${apiBase}/admin/supporter_plans/:id/retire`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.patch(`${apiBase}/admin/supporter_plans/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(supporterPlanFixture(String(params["id"])))),
+  ),
+  http.post(`${apiBase}/admin/supporter_plans/:id/retire`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterSubscriptionPage"])),
   ),
-  http.post(`${apiBase}/admin/supporter_subscriptions/:id/cancel`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
-  http.get(`${apiBase}/admin/payment_status`, ({ request }) => withViewer(request, () => HttpResponse.json(paymentStatusFixture()))),
-  http.post(`${apiBase}/admin/payment_reconciles`, ({ request }) => withViewer(request, () => new HttpResponse(null, { status: 204 }))),
+  http.post(`${apiBase}/admin/supporter_subscriptions/:id/cancel`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.get(`${apiBase}/admin/payment_status`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(paymentStatusFixture())),
+  ),
+  http.post(`${apiBase}/admin/payment_reconciles`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
 ];

@@ -45,7 +45,12 @@ const relayUrl = "https://relay.example/inbox";
 const name = "⁦relay.example⁩";
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in administrator with no relay at first. Returns what was sent. */
@@ -57,12 +62,20 @@ async function administratorServer(page: Page) {
     relays = relays.map((relay) => ({ ...relay, state, state_changed_at: "2026-10-20T01:00:00Z" }));
     return relays[0];
   };
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -70,7 +83,8 @@ async function administratorServer(page: Page) {
         name: "my example",
         version: "0.0.0",
         source_url: "https://github.com/mycroblog/my",
-        registrations: { mode: "approval" }, federation: { mode: "both" },
+        registrations: { mode: "approval" },
+        federation: { mode: "both" },
         limits: { max_post_characters: 500 },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],
@@ -78,9 +92,17 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/relays") return json(route, { items: relays });
     if (key === "POST /admin/relays") {
@@ -139,9 +161,13 @@ test.describe("relays", () => {
     await expectNoHorizontalScroll(page);
 
     await list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
-    await expect(list.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }),
+    ).toBeVisible();
     await list.getByRole("button", { name: message("admin.relays.follow_relay", name), exact: true }).click();
-    await expect(list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }),
+    ).toBeVisible();
     await list.getByRole("button", { name: message("admin.relays.unfollow_relay", name), exact: true }).click();
 
     await list.getByRole("button", { name: message("admin.relays.delete_relay", name), exact: true }).click();
@@ -149,7 +175,9 @@ test.describe("relays", () => {
     await expect(dialog).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.relays.delete"), exact: true }).click();
-    await expect(list.getByRole("heading", { level: 3, name: message("admin.relays.empty"), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.relays.empty"), exact: true }),
+    ).toBeVisible();
     expect(sent).toEqual([`create ${relayUrl} auto true`, "unfollow", "follow", "unfollow", "delete"]);
   });
 });

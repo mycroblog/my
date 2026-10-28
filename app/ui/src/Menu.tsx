@@ -65,7 +65,10 @@ export function Menu<T extends object>({ placement, className, ...props }: MenuP
   );
 }
 
-export type MenuItemProps<T extends object = object> = Omit<AriaMenuItemProps<T>, "className" | "style" | "children"> & {
+export type MenuItemProps<T extends object = object> = Omit<
+  AriaMenuItemProps<T>,
+  "className" | "style" | "children"
+> & {
   children: ReactNode;
   /** `danger` for destructive actions (delete, block). The label must still say what happens. */
   intent?: "neutral" | "danger";
@@ -78,7 +81,11 @@ export type MenuItemProps<T extends object = object> = Omit<AriaMenuItemProps<T>
 export function MenuItem<T extends object = object>({ intent, className, children, ...props }: MenuItemProps<T>) {
   const textValue = props.textValue ?? (typeof children === "string" ? children : undefined);
   return (
-    <AriaMenuItem {...props} {...(textValue === undefined ? {} : { textValue })} className={menuItem({ intent, class: className })}>
+    <AriaMenuItem
+      {...props}
+      {...(textValue === undefined ? {} : { textValue })}
+      className={menuItem({ intent, class: className })}
+    >
       {children}
     </AriaMenuItem>
   );

@@ -13,7 +13,9 @@ describe("TextField", () => {
   });
 
   it("links the error message while invalid", () => {
-    render(<TextField label="Username" description="Letters and digits." isInvalid errorMessage="This username is taken." />);
+    render(
+      <TextField label="Username" description="Letters and digits." isInvalid errorMessage="This username is taken." />,
+    );
     const input = screen.getByRole("textbox", { name: "Username" });
     expect(input).toBeInvalid();
     expect(input).toHaveAccessibleDescription(expect.stringContaining("This username is taken."));

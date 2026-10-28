@@ -31,7 +31,11 @@ export const categoryLimit = 64;
 /** Which emoji the list shows: those of this server or of others, and a search (web-client/README.md S3). */
 export type CustomEmojiOrigin = "local" | "remote";
 export const customEmojiOrigins = ["local", "remote"] as const satisfies readonly CustomEmojiOrigin[];
-export type CustomEmojiFilter = { origin: CustomEmojiOrigin; shortcode?: string | undefined; domain?: string | undefined };
+export type CustomEmojiFilter = {
+  origin: CustomEmojiOrigin;
+  shortcode?: string | undefined;
+  domain?: string | undefined;
+};
 
 /** The custom emoji under `filter`, newest first. */
 export function adminCustomEmojisQueryOptions(api: Api, filter: CustomEmojiFilter) {
@@ -43,7 +47,10 @@ export function adminCustomEmojisQueryOptions(api: Api, filter: CustomEmojiFilte
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/custom_emojis", query, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/custom_emojis", { params: { query: { ...query, ...pageQuery(pageParam) } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/custom_emojis", {
+        params: { query: { ...query, ...pageQuery(pageParam) } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -74,7 +81,10 @@ export function updateCustomEmojiMutation(api: Api) {
   return {
     mutationKey: ["patch", "/admin/custom_emojis/{id}"] as const,
     mutationFn: async ({ id, change }: { id: string; change: CustomEmojiChange }): Promise<AdminCustomEmoji> => {
-      const { data, error } = await api.fetch.PATCH("/admin/custom_emojis/{id}", { params: { path: { id } }, body: change });
+      const { data, error } = await api.fetch.PATCH("/admin/custom_emojis/{id}", {
+        params: { path: { id } },
+        body: change,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -87,7 +97,10 @@ export function replaceCustomEmojiImageMutation(api: Api) {
     mutationKey: ["put", "/admin/custom_emojis/{id}/image"] as const,
     mutationFn: async ({ id, file }: { id: string; file: File }): Promise<AdminCustomEmoji> => {
       const media = await uploadImage(api, file, "emoji");
-      const { data, error } = await api.fetch.PUT("/admin/custom_emojis/{id}/image", { params: { path: { id } }, body: { media_id: media.id } });
+      const { data, error } = await api.fetch.PUT("/admin/custom_emojis/{id}/image", {
+        params: { path: { id } },
+        body: { media_id: media.id },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -98,7 +111,13 @@ export function replaceCustomEmojiImageMutation(api: Api) {
 export function copyCustomEmojiMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/custom_emojis/{id}/copy"] as const,
-    mutationFn: async ({ id, shortcode }: { id: string; shortcode?: string | undefined }): Promise<AdminCustomEmoji> => {
+    mutationFn: async ({
+      id,
+      shortcode,
+    }: {
+      id: string;
+      shortcode?: string | undefined;
+    }): Promise<AdminCustomEmoji> => {
       const { data, error } = await api.fetch.POST("/admin/custom_emojis/{id}/copy", {
         params: { path: { id } },
         body: shortcode === undefined ? {} : { shortcode },
@@ -124,18 +143,32 @@ type EmojiPages = InfiniteData<{ items: AdminCustomEmoji[]; next_cursor?: string
 
 /** Marks stale what any change of the emoji changes besides the rows: the picker's emoji and the audit log. */
 async function refreshAfterChange(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis"] }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }
 
 /** A new emoji: the lists gain it (newest first), so they are fetched again, with the picker and the audit log. */
 export async function cacheCreatedCustomEmoji(queryClient: QueryClient): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emojis"] }), refreshAfterChange(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/custom_emojis"] }),
+    refreshAfterChange(queryClient),
+  ]);
 }
 
 /** A changed emoji: its rows show the answer at once (ADR-0045). */
 export async function cacheChangedCustomEmoji(queryClient: QueryClient, emoji: AdminCustomEmoji): Promise<void> {
-  queryClient.setQueriesData<EmojiPages>({ queryKey: ["get", "/admin/custom_emojis"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === emoji.id ? emoji : item)) })) },
+  queryClient.setQueriesData<EmojiPages>(
+    { queryKey: ["get", "/admin/custom_emojis"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === emoji.id ? emoji : item)),
+        })),
+      },
   );
   await refreshAfterChange(queryClient);
 }
@@ -143,7 +176,12 @@ export async function cacheChangedCustomEmoji(queryClient: QueryClient, emoji: A
 /** A deleted emoji: it leaves the cached lists. */
 export async function cacheDeletedCustomEmoji(queryClient: QueryClient, id: string): Promise<void> {
   await refreshAfterChange(queryClient);
-  queryClient.setQueriesData<EmojiPages>({ queryKey: ["get", "/admin/custom_emojis"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })) },
+  queryClient.setQueriesData<EmojiPages>(
+    { queryKey: ["get", "/admin/custom_emojis"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })),
+      },
   );
 }

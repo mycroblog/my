@@ -42,7 +42,9 @@ describe("the announcements above the home timeline", () => {
     // again on every reconnect, which can come after the click.
     server.use(
       resumableSession(),
-      http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [{ ...maintenance, read: reads.includes(maintenance.id) }, welcome] })),
+      http.get(`${apiBase}/announcements`, () =>
+        HttpResponse.json({ items: [{ ...maintenance, read: reads.includes(maintenance.id) }, welcome] }),
+      ),
       http.post(`${apiBase}/announcements/:id/read`, ({ params }) => {
         reads.push(String(params["id"]));
         return HttpResponse.json({ ...maintenance, read: true });
@@ -52,17 +54,23 @@ describe("the announcements above the home timeline", () => {
 
     const region = await screen.findByRole("region", { name: /^Announcements\s*1 unread$/u });
     const [first, second] = within(region).getAllByRole("article");
-    expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(/^Announcement of Oct 21, 2026Unread$/u);
+    expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(
+      /^Announcement of Oct 21, 2026Unread$/u,
+    );
     expect(within(first ?? region).getByText("Sunday")).toBeInTheDocument();
     expect(within(first ?? region).getByText(/^Shown until/u)).toBeInTheDocument();
-    expect(within(second ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(/^Announcement of Oct 20, 2026$/u);
+    expect(within(second ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(
+      /^Announcement of Oct 20, 2026$/u,
+    );
     expect(within(second ?? region).queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
 
     await user.click(within(first ?? region).getByRole("button", { name: "Mark as read" }));
 
     // The heading loses its "Unread" and takes the focus in separate renders, so wait for each.
     await waitFor(() => {
-      expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(/^Announcement of Oct 21, 2026$/u);
+      expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveTextContent(
+        /^Announcement of Oct 21, 2026$/u,
+      );
     });
     await waitFor(() => {
       expect(within(first ?? region).getByRole("heading", { level: 3 })).toHaveFocus();
@@ -73,7 +81,11 @@ describe("the announcements above the home timeline", () => {
 
   test("follows the announcements that the event stream sends", async () => {
     const streams = streamingServer();
-    server.use(resumableSession(), streams.handler, http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [welcome] })));
+    server.use(
+      resumableSession(),
+      streams.handler,
+      http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [welcome] })),
+    );
     await renderApp({ path: "/home" });
     const region = await screen.findByRole("region", { name: "Announcements" });
     await waitFor(() => {

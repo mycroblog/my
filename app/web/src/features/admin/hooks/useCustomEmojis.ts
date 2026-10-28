@@ -178,7 +178,12 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
         { id: emoji.id, change: { enabled } },
         {
           onSuccess: (saved) => {
-            void changed(saved, t(enabled ? "client:admin.custom_emojis.enabled_status" : "client:admin.custom_emojis.disabled_status", { emoji: emojiInText(saved) }));
+            void changed(
+              saved,
+              t(enabled ? "client:admin.custom_emojis.enabled_status" : "client:admin.custom_emojis.disabled_status", {
+                emoji: emojiInText(saved),
+              }),
+            );
           },
         },
       );

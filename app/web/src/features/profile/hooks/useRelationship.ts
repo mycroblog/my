@@ -11,7 +11,14 @@ import { isRemoteAcct } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
 import { profilePath } from "../../../lib/paths";
 import { useViewer } from "../../session";
-import { type Account, changeRelationship, type Relationship, type RelationshipAction, relationshipQueryOptions, storeRelationship } from "../api/accounts";
+import {
+  type Account,
+  changeRelationship,
+  type Relationship,
+  type RelationshipAction,
+  relationshipQueryOptions,
+  storeRelationship,
+} from "../api/accounts";
 import { isolate, nameOf } from "./useProfile";
 
 /** Where the viewer's follow of the account stands; a block replaces the follow, which it ends. */
@@ -54,7 +61,9 @@ function doneMessage(t: Translate, action: RelationshipAction, relationship: Rel
   const values = { name: isolate(name) };
   switch (action) {
     case "follow":
-      return relationship.requested ? t("client:profile.done.requested", values) : t("client:profile.done.followed", values);
+      return relationship.requested
+        ? t("client:profile.done.requested", values)
+        : t("client:profile.done.followed", values);
     case "unfollow":
       return t("client:profile.done.unfollowed", values);
     case "block":
@@ -85,7 +94,8 @@ export function useRelationship(account: Account): RelationshipState {
     onSuccess: async (relationship, action) => {
       // The change is done once what it changes is fetched again (the action stays pending until then), so that
       // a page opened next shows it at once (web-client/README.md S1).
-      if (viewer.status === "signed-in") await storeRelationship(queryClient, api, relationship, action, viewer.account.id);
+      if (viewer.status === "signed-in")
+        await storeRelationship(queryClient, api, relationship, action, viewer.account.id);
       announce(doneMessage(t, action, relationship, nameOf(account)));
     },
     onError: (error) => {
@@ -94,7 +104,10 @@ export function useRelationship(account: Account): RelationshipState {
   });
 
   if (session === "signed-out") {
-    return { kind: "signed-out", signInHref: `/login?${new URLSearchParams({ return_to: profilePath(account.acct) }).toString()}` };
+    return {
+      kind: "signed-out",
+      signInHref: `/login?${new URLSearchParams({ return_to: profilePath(account.acct) }).toString()}`,
+    };
   }
   if (viewer.status === "error") return { kind: "error", message: viewer.message };
   if (viewer.status !== "signed-in") return { kind: "loading" };

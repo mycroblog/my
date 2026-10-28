@@ -93,7 +93,8 @@ export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
     return {
       status: "outside",
       supported: voiceSupported(),
-      inRoomElsewhere: call === null && room.participants.some((p) => p.account.id === viewerId) && state.call?.roomId !== room.id,
+      inRoomElsewhere:
+        call === null && room.participants.some((p) => p.account.id === viewerId) && state.call?.roomId !== room.id,
       join: () => {
         state.join(room.id, viewerId);
       },
@@ -102,9 +103,12 @@ export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
       end,
     };
   }
-  const self = room.participants.find((p) => p.session === call.session) ?? room.participants.find((p) => p.account.id === viewerId);
+  const self =
+    room.participants.find((p) => p.session === call.session) ??
+    room.participants.find((p) => p.account.id === viewerId);
   const reactions = new Map<string, VoiceReactionShown[]>();
-  for (const shown of snapshot.reactions) reactions.set(shown.participant, [...(reactions.get(shown.participant) ?? []), shown]);
+  for (const shown of snapshot.reactions)
+    reactions.set(shown.participant, [...(reactions.get(shown.participant) ?? []), shown]);
   const isHost = self?.host ?? false;
   return {
     status: "in-call",

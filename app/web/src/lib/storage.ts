@@ -287,7 +287,9 @@ export const composeKey = declareKeyFamily<StoredCompose | null>("my:user:compos
   area: "session",
   version: 1,
   defaultValue: null,
-  parse: schemaParser(z.object({ draft: z.record(z.string(), z.unknown()), outbox: z.array(z.record(z.string(), z.unknown())) })),
+  parse: schemaParser(
+    z.object({ draft: z.record(z.string(), z.unknown()), outbox: z.array(z.record(z.string(), z.unknown())) }),
+  ),
   userData: true,
 });
 
@@ -353,7 +355,11 @@ export const frequentEmojisKey = declareKey<readonly StoredEmojiUse[]>("my:emoji
   version: 2,
   defaultValue: [],
   parse: schemaParser(
-    z.array(z.object({ emoji: z.string().min(1).max(64), score: z.number().nonnegative(), at: z.number().nonnegative() })).max(64),
+    z
+      .array(
+        z.object({ emoji: z.string().min(1).max(64), score: z.number().nonnegative(), at: z.number().nonnegative() }),
+      )
+      .max(64),
   ),
   userData: false,
 });

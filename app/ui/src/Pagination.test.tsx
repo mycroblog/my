@@ -40,7 +40,9 @@ describe("Pagination", () => {
   });
 
   it("renders links with getHref", () => {
-    render(<Pagination {...labels} page={2} pageCount={3} getHref={(p) => `?page=${p}`} pageLabel={(p) => `Page ${p}`} />);
+    render(
+      <Pagination {...labels} page={2} pageCount={3} getHref={(p) => `?page=${p}`} pageLabel={(p) => `Page ${p}`} />,
+    );
     expect(screen.getByRole("link", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Page 3" })).toHaveAttribute("href", "?page=3");
     expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "?page=3");

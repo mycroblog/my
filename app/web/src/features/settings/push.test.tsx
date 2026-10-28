@@ -27,7 +27,10 @@ function browserSubscription(endpoint: string, key: string) {
 }
 
 /** Plays a browser with the Push API whose user answers the permission prompt with `answer`. */
-function pushBrowser({ permission = "default", answer = "granted" }: { permission?: NotificationPermission; answer?: NotificationPermission } = {}) {
+function pushBrowser({
+  permission = "default",
+  answer = "granted",
+}: { permission?: NotificationPermission; answer?: NotificationPermission } = {}) {
   let current: ReturnType<typeof browserSubscription> | null = null;
   const pushManager = {
     getSubscription: vi.fn(() => Promise.resolve(current)),
@@ -41,7 +44,10 @@ function pushBrowser({ permission = "default", answer = "granted" }: { permissio
   const notifications = { permission, requestPermission: vi.fn(() => Promise.resolve(answer)) };
   vi.stubGlobal("PushManager", function PushManager() {});
   vi.stubGlobal("Notification", notifications);
-  Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: { ready: Promise.resolve({ pushManager }) } });
+  Object.defineProperty(navigator, "serviceWorker", {
+    configurable: true,
+    value: { ready: Promise.resolve({ pushManager }) },
+  });
   return {
     pushManager,
     notifications,
@@ -66,14 +72,22 @@ function pushServer(initial: Schemas["PushSubscription"] | null = null) {
     http.get(`${apiBase}/push/subscription`, ({ request }) =>
       withViewer(request, () =>
         saved === null
-          ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404, headers: { "Content-Type": "application/problem+json" } })
+          ? HttpResponse.json(
+              { type: "about:blank", title: "Not Found", status: 404 },
+              { status: 404, headers: { "Content-Type": "application/problem+json" } },
+            )
           : HttpResponse.json(saved),
       ),
     ),
     http.put(`${apiBase}/push/subscription`, async ({ request }) => {
       const body = (await request.clone().json()) as PushSubscriptionRequest;
       puts.push(body);
-      saved = { id: "01900000-0000-7000-8000-0000000000f1", endpoint: body.endpoint, alerts: body.alerts, server_key: pushServerKey };
+      saved = {
+        id: "01900000-0000-7000-8000-0000000000f1",
+        endpoint: body.endpoint,
+        alerts: body.alerts,
+        server_key: pushServerKey,
+      };
       return withViewer(request, () => HttpResponse.json(saved));
     }),
     http.delete(`${apiBase}/push/subscription`, ({ request }) =>
@@ -189,7 +203,12 @@ describe("push notifications", () => {
   test("unchecking a kind registers the subscription without it", async () => {
     const browser = pushBrowser({ permission: "granted" });
     browser.subscribed(pushServerKey);
-    const api = pushServer({ id: "01900000-0000-7000-8000-0000000000f1", endpoint: "https://push.example.net/send/old", alerts: ["mention", "boost"], server_key: pushServerKey });
+    const api = pushServer({
+      id: "01900000-0000-7000-8000-0000000000f1",
+      endpoint: "https://push.example.net/send/old",
+      alerts: ["mention", "boost"],
+      server_key: pushServerKey,
+    });
     const { user } = await renderApp({ path: "/settings/preferences" });
     const section = await pushSection();
     expect(within(section).getByRole("switch", { name: "Notify me on this device" })).toBeChecked();
@@ -200,7 +219,13 @@ describe("push notifications", () => {
     await user.click(boosts);
 
     await waitFor(() => {
-      expect(api.puts).toEqual([{ endpoint: "https://push.example.net/send/old", keys: { p256dh: "browser-p256dh", auth: "browser-auth" }, alerts: ["mention"] }]);
+      expect(api.puts).toEqual([
+        {
+          endpoint: "https://push.example.net/send/old",
+          keys: { p256dh: "browser-p256dh", auth: "browser-auth" },
+          alerts: ["mention"],
+        },
+      ]);
     });
     expect(browser.notifications.requestPermission).not.toHaveBeenCalled();
     expect(browser.pushManager.subscribe).not.toHaveBeenCalled();
@@ -211,7 +236,9 @@ describe("push notifications", () => {
 
   test("a subscription made with another key is replaced", async () => {
     const browser = pushBrowser({ permission: "granted" });
-    const old = browser.subscribed("BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4");
+    const old = browser.subscribed(
+      "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    );
     const api = pushServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
 
@@ -227,7 +254,12 @@ describe("push notifications", () => {
   test("turning them off deletes the server's subscription and the browser's", async () => {
     const browser = pushBrowser({ permission: "granted" });
     const current = browser.subscribed(pushServerKey);
-    const api = pushServer({ id: "01900000-0000-7000-8000-0000000000f1", endpoint: "https://push.example.net/send/old", alerts: ["mention"], server_key: pushServerKey });
+    const api = pushServer({
+      id: "01900000-0000-7000-8000-0000000000f1",
+      endpoint: "https://push.example.net/send/old",
+      alerts: ["mention"],
+      server_key: pushServerKey,
+    });
     const { user } = await renderApp({ path: "/settings/preferences" });
     const toggle = within(await pushSection()).getByRole("switch", { name: "Notify me on this device" });
 
@@ -251,7 +283,9 @@ describe("push notifications", () => {
 
     await user.click(toggle);
 
-    expect(await within(section).findByRole("alert")).toHaveTextContent("Push notifications are off because the browser did not allow notifications.");
+    expect(await within(section).findByRole("alert")).toHaveTextContent(
+      "Push notifications are off because the browser did not allow notifications.",
+    );
     expect(toggle).not.toBeChecked();
     expect(browser.pushManager.subscribe).not.toHaveBeenCalled();
     expect(api.puts).toEqual([]);

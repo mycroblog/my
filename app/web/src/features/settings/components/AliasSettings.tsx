@@ -3,7 +3,20 @@
 // and the aliases with the button that removes each. At the most aliases, a note replaces the form. The form follows the
 // browser's constraint validation; an alias is removed as easily as it is added, so neither asks first. What adding did
 // stays on the page in a StatusMessage (role="status") under the form; removing is announced and moves focus to the next row.
-import { Box, Button, Cluster, EmptyState, Heading, Hint, InlineError, Link, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Link,
+  Stack,
+  StatusMessage,
+  Text,
+  TextField,
+} from "@my/ui";
 import { useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -122,7 +135,9 @@ function AliasRow({ alias, remove, onRemoved }: AliasRowProps) {
           </Text>
         )}
         <Hint as="span">
-          {t("client:account_move.aliases.item.since", { date: intl.formatDate(alias.created_at, { dateStyle: "medium", timeStyle: "short" }) })}
+          {t("client:account_move.aliases.item.since", {
+            date: intl.formatDate(alias.created_at, { dateStyle: "medium", timeStyle: "short" }),
+          })}
         </Hint>
       </Stack>
       <Cluster gap="2">

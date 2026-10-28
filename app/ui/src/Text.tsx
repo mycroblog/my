@@ -6,7 +6,8 @@ import { tv } from "tailwind-variants";
 import type { PolymorphicProps } from "./layout";
 
 /** The elements a run of text may render. */
-export type TextElement = "p" | "span" | "div" | "li" | "dt" | "dd" | "code" | "time" | "strong" | "small" | "label" | "legend";
+export type TextElement =
+  "p" | "span" | "div" | "li" | "dt" | "dd" | "code" | "time" | "strong" | "small" | "label" | "legend";
 
 const text = tv({
   variants: {
@@ -92,7 +93,25 @@ export function Text<E extends TextElement = "span">({
   eyebrow,
   ...rest
 }: TextProps<E>) {
-  return createElement(as ?? "span", { ...rest, className: text({ size, tone, weight, wrap, whitespace, numeric, mono, block, align, lineClamp, selectAll, shrink, inset, eyebrow }) });
+  return createElement(as ?? "span", {
+    ...rest,
+    className: text({
+      size,
+      tone,
+      weight,
+      wrap,
+      whitespace,
+      numeric,
+      mono,
+      block,
+      align,
+      lineClamp,
+      selectAll,
+      shrink,
+      inset,
+      eyebrow,
+    }),
+  });
 }
 
 export type HintProps<E extends "p" | "span" | "div" = "p"> = Omit<TextProps<E>, "tone" | "size"> & {
@@ -121,7 +140,18 @@ export type InlineErrorProps<E extends "p" | "span" | "div" = "p"> = Omit<TextPr
  * An error shown in place (`text-danger`): the failure of an action next to it. A field's own error belongs to the
  * field's `errorMessage`, and an error of a loaded region to `RegionError`.
  */
-export function InlineError<E extends "p" | "span" | "div" = "p">({ as, size = "sm", alert = false, ...rest }: InlineErrorProps<E>) {
-  const props = { ...rest, as: as ?? "p", size: size === "inherit" ? undefined : size, tone: "danger", role: alert ? "alert" : undefined } as TextProps;
+export function InlineError<E extends "p" | "span" | "div" = "p">({
+  as,
+  size = "sm",
+  alert = false,
+  ...rest
+}: InlineErrorProps<E>) {
+  const props = {
+    ...rest,
+    as: as ?? "p",
+    size: size === "inherit" ? undefined : size,
+    tone: "danger",
+    role: alert ? "alert" : undefined,
+  } as TextProps;
   return <Text {...props} />;
 }

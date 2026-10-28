@@ -15,9 +15,13 @@ export const Route = createFileRoute("/admin/closure")({
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
     loadWithPermission(context, "manage_service_closure", async () => {
-      const closure = await context.queryClient.query({ ...adminClosureQueryOptions(context.api), staleTime: Infinity });
+      const closure = await context.queryClient.query({
+        ...adminClosureQueryOptions(context.api),
+        staleTime: Infinity,
+      });
       // The check stands before the confirmation of the closing, which only an announced closure has.
-      if (closure.state === "announced") await context.queryClient.query({ ...adminClosureCheckQueryOptions(context.api), staleTime: Infinity });
+      if (closure.state === "announced")
+        await context.queryClient.query({ ...adminClosureCheckQueryOptions(context.api), staleTime: Infinity });
     }),
   component: ClosurePage,
   errorComponent: ClosureError,

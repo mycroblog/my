@@ -85,7 +85,9 @@ export function markAvailableMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/instances/{domain}/mark_available"] as const,
     mutationFn: async (domain: string): Promise<InstanceHealth> => {
-      const { data, error } = await api.fetch.POST("/admin/instances/{domain}/mark_available", { params: { path: { domain } } });
+      const { data, error } = await api.fetch.POST("/admin/instances/{domain}/mark_available", {
+        params: { path: { domain } },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -98,7 +100,12 @@ export function markAvailableMutation(api: Api) {
  * ADR-0045), once every cached list of remote servers is marked stale (refreshInstanceLists): marking it moves
  * it between them. Its history has a new event, which is marked.
  */
-export async function cacheMarkedAvailable(api: Api, queryClient: QueryClient, domain: string, next: InstanceHealth): Promise<void> {
+export async function cacheMarkedAvailable(
+  api: Api,
+  queryClient: QueryClient,
+  domain: string,
+  next: InstanceHealth,
+): Promise<void> {
   await refreshInstanceLists(queryClient);
   queryClient.setQueryData(instanceQueryOptions(api, domain).queryKey, next);
   void queryClient.invalidateQueries({ queryKey: availabilityEventsQueryOptions(api, domain).queryKey });
@@ -118,7 +125,13 @@ export type DomainActionState = Schemas["AdminDomainActionState"];
 export type NewDomainAction = Schemas["CreateDomainActionRequest"];
 
 /** The kinds of domain action, from the lightest to the heaviest, in the order of the form. */
-export const domainActionKinds = ["force_sensitive", "reject_media", "reject_reports", "limit", "suspend"] as const satisfies readonly DomainActionKind[];
+export const domainActionKinds = [
+  "force_sensitive",
+  "reject_media",
+  "reject_reports",
+  "limit",
+  "suspend",
+] as const satisfies readonly DomainActionKind[];
 
 /** The most characters of a domain action's public comment and private note (CreateDomainActionRequest). */
 export const domainActionTextLimit = 5000;
@@ -137,7 +150,11 @@ export function domainActionsQueryOptions(api: Api, { filter, domain }: DomainAc
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/domain_actions", { active, domain }, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const query = { ...pageQuery(pageParam), ...(active === undefined ? {} : { active }), ...(domain === undefined ? {} : { domain }) };
+      const query = {
+        ...pageQuery(pageParam),
+        ...(active === undefined ? {} : { active }),
+        ...(domain === undefined ? {} : { domain }),
+      };
       const { data, error } = await api.fetch.GET("/admin/domain_actions", { params: { query }, signal });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
@@ -161,7 +178,13 @@ function refreshDomainActionLists(queryClient: QueryClient): Promise<void> {
 /** Whether a list of domain actions keeps only those in effect, which a lifted action leaves. */
 function isActiveOnlyQuery(queryKey: readonly unknown[]): boolean {
   const params = queryKey[2];
-  return isDomainActionsQuery(queryKey) && typeof params === "object" && params !== null && "active" in params && params.active === true;
+  return (
+    isDomainActionsQuery(queryKey) &&
+    typeof params === "object" &&
+    params !== null &&
+    "active" in params &&
+    params.active === true
+  );
 }
 
 /** Takes a moderation action on a domain (POST /admin/domain_actions), as the options of useMutation. */
@@ -205,7 +228,11 @@ function refreshPostListsAfter(queryClient: QueryClient, kind: DomainActionKind)
  * They are marked stale; resolves once those on screen are fetched again.
  */
 export async function cacheIssuedDomainAction(queryClient: QueryClient, action: DomainAction): Promise<void> {
-  await Promise.all([refreshDomainActionLists(queryClient), refreshAuditLog(queryClient), refreshPostListsAfter(queryClient, action.kind)]);
+  await Promise.all([
+    refreshDomainActionLists(queryClient),
+    refreshAuditLog(queryClient),
+    refreshPostListsAfter(queryClient, action.kind),
+  ]);
 }
 
 /**
@@ -221,10 +248,20 @@ export async function refreshLiftedDomainAction(queryClient: QueryClient, lifted
  * (ADR-0045): those of the actions in effect drop it, the others show it lifted.
  */
 export function cacheLiftedDomainAction(queryClient: QueryClient, lifted: DomainAction): void {
-  for (const query of queryClient.getQueryCache().findAll({ predicate: (query) => isDomainActionsQuery(query.queryKey) })) {
+  for (const query of queryClient
+    .getQueryCache()
+    .findAll({ predicate: (query) => isDomainActionsQuery(query.queryKey) })) {
     const keep = isActiveOnlyQuery(query.queryKey) ? [] : [lifted];
-    queryClient.setQueryData<InfiniteData<{ items: DomainAction[] }>>(query.queryKey, (data) =>
-      data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.flatMap((item) => (item.id === lifted.id ? keep : [item])) })) },
+    queryClient.setQueryData<InfiniteData<{ items: DomainAction[] }>>(
+      query.queryKey,
+      (data) =>
+        data && {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.flatMap((item) => (item.id === lifted.id ? keep : [item])),
+          })),
+        },
     );
   }
 }

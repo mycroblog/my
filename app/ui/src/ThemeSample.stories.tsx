@@ -45,7 +45,11 @@ function Gallery() {
       </section>
       <section className="flex flex-col gap-4 rounded-lg bg-surface-raised px-4 py-3 shadow-md">
         <h2 className="text-lg font-semibold">Profile</h2>
-        <TextField label="Display name" description="Shown on your profile and next to your posts." defaultValue="Alice Liddell" />
+        <TextField
+          label="Display name"
+          description="Shown on your profile and next to your posts."
+          defaultValue="Alice Liddell"
+        />
         <Checkbox defaultSelected>Require approval for new followers</Checkbox>
         <Switch defaultSelected>Show sensitive media</Switch>
       </section>

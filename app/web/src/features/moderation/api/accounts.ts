@@ -25,7 +25,15 @@ export type EmailSuppression = Schemas["EmailSuppression"];
 export type AdminPasswordResetLink = Schemas["AdminPasswordResetLink"];
 
 /** The states of an account, in the order of the search's select. */
-export const adminAccountStates = ["active", "pending", "rejected", "limited", "disabled", "suspended", "deleted"] as const satisfies readonly AdminAccountState[];
+export const adminAccountStates = [
+  "active",
+  "pending",
+  "rejected",
+  "limited",
+  "disabled",
+  "suspended",
+  "deleted",
+] as const satisfies readonly AdminAccountState[];
 
 /** Where the accounts of a search are: on this server or on others. */
 export const adminAccountOrigins = ["local", "remote"] as const;
@@ -65,7 +73,10 @@ export function adminAccountsQueryOptions(api: Api, search: AdminAccountSearch) 
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/accounts", query, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/accounts", { params: { query: { ...query, ...pageQuery(pageParam) } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/accounts", {
+        params: { query: { ...query, ...pageQuery(pageParam) } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -91,7 +102,12 @@ function isAccountSearchQuery(queryKey: readonly unknown[]): boolean {
  * actions too. Resolves once those on screen are fetched again; the others are fetched when their page opens
  * (web-client/README.md S1, S7).
  */
-export async function refreshAdminAccount(queryClient: QueryClient, api: Api, id: string, { actions }: { actions: boolean }): Promise<void> {
+export async function refreshAdminAccount(
+  queryClient: QueryClient,
+  api: Api,
+  id: string,
+  { actions }: { actions: boolean },
+): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ predicate: (query) => isAccountSearchQuery(query.queryKey) }),
     queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }),
@@ -138,7 +154,9 @@ export function liftAccountEmailSuppressionMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/accounts/{id}/email_suppression/lift"] as const,
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await api.fetch.POST("/admin/accounts/{id}/email_suppression/lift", { params: { path: { id } } });
+      const { error } = await api.fetch.POST("/admin/accounts/{id}/email_suppression/lift", {
+        params: { path: { id } },
+      });
       // The middleware throws an ApiError for every error status; this is only for the types.
       if (error !== undefined) throw new ApiError(error);
     },
@@ -154,7 +172,9 @@ export function issuePasswordResetLinkMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/accounts/{id}/password_reset_link"] as const,
     mutationFn: async (id: string): Promise<AdminPasswordResetLink> => {
-      const { data, error } = await api.fetch.POST("/admin/accounts/{id}/password_reset_link", { params: { path: { id } } });
+      const { data, error } = await api.fetch.POST("/admin/accounts/{id}/password_reset_link", {
+        params: { path: { id } },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -168,7 +188,10 @@ export function issuePasswordResetLinkMutation(api: Api) {
  * on screen are fetched again.
  */
 export async function refreshAccountTwoFactor(queryClient: QueryClient, api: Api, id: string): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }),
+    refreshAuditLog(queryClient),
+  ]);
 }
 
 /**
@@ -176,7 +199,10 @@ export async function refreshAccountTwoFactor(queryClient: QueryClient, api: Api
  * which records the lift. Both are marked stale; resolves once those on screen are fetched again.
  */
 export async function refreshAccountEmailSuppression(queryClient: QueryClient, api: Api, id: string): Promise<void> {
-  await Promise.all([queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }), refreshAuditLog(queryClient)]);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, id).queryKey }),
+    refreshAuditLog(queryClient),
+  ]);
 }
 
 /** Lifts a moderation action on an account (POST /admin/account_actions/{id}/lift), as the options of useMutation. */
@@ -184,7 +210,10 @@ export function liftAccountActionMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/account_actions/{id}/lift"] as const,
     mutationFn: async ({ id, reason }: { id: string; reason: string }): Promise<AccountAction> => {
-      const { data, error } = await api.fetch.POST("/admin/account_actions/{id}/lift", { params: { path: { id } }, body: reason === "" ? {} : { reason } });
+      const { data, error } = await api.fetch.POST("/admin/account_actions/{id}/lift", {
+        params: { path: { id } },
+        body: reason === "" ? {} : { reason },
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -198,15 +227,28 @@ function isProfileOf(query: Query, id: string): boolean {
 }
 
 /** The kinds of moderation action that change what everyone sees of the account: its profile or its posts. */
-const publicKinds: ReadonlySet<AccountAction["kind"]> = new Set(["mark_statuses_sensitive", "delete_statuses", "force_sensitive", "limit", "suspend", "ban"]);
+const publicKinds: ReadonlySet<AccountAction["kind"]> = new Set([
+  "mark_statuses_sensitive",
+  "delete_statuses",
+  "force_sensitive",
+  "limit",
+  "suspend",
+  "ban",
+]);
 
 /**
  * Marks stale what everyone sees of account `id` when a moderation action of `kind` starts or ends (publicKinds):
  * its profile and the lists of posts. A warning or a restriction of what the account itself may do changes neither.
  */
-export function refreshPublicAccount(queryClient: QueryClient, id: string, kind: AccountAction["kind"]): Promise<void> | undefined {
+export function refreshPublicAccount(
+  queryClient: QueryClient,
+  id: string,
+  kind: AccountAction["kind"],
+): Promise<void> | undefined {
   if (!publicKinds.has(kind)) return undefined;
-  return queryClient.invalidateQueries({ predicate: (query) => isProfileOf(query, id) || isPostListQuery(query.queryKey) });
+  return queryClient.invalidateQueries({
+    predicate: (query) => isProfileOf(query, id) || isPostListQuery(query.queryKey),
+  });
 }
 
 /**
@@ -214,7 +256,13 @@ export function refreshPublicAccount(queryClient: QueryClient, id: string, kind:
  * its actions and the searches (refreshAdminAccount), the audit log, the lists of reports when it resolves report
  * `reportId`, and what everyone sees of the account. They are marked stale; resolves once those on screen are fetched again.
  */
-export async function cacheIssuedAccountAction(queryClient: QueryClient, api: Api, accountId: string, action: AccountAction, reportId: string | undefined): Promise<void> {
+export async function cacheIssuedAccountAction(
+  queryClient: QueryClient,
+  api: Api,
+  accountId: string,
+  action: AccountAction,
+  reportId: string | undefined,
+): Promise<void> {
   await Promise.all([
     refreshAdminAccount(queryClient, api, accountId, { actions: true }),
     reportId === undefined ? undefined : refreshReportLists(queryClient),
@@ -229,14 +277,20 @@ export async function cacheIssuedAccountAction(queryClient: QueryClient, api: Ap
  */
 export function refreshActedReports(queryClient: QueryClient, action: AccountAction): void {
   void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/admin/reports/{id}" });
-  if (action.status_ids !== undefined) void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/statuses/{id}" });
+  if (action.status_ids !== undefined)
+    void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/statuses/{id}" });
 }
 
 /**
  * Marks stale what lifting `lifted`, an action on account `accountId`, changes beside its row: the account's
  * state and restrictions (its page and the searches), the audit log, and what everyone sees of the account.
  */
-export async function refreshLiftedAccountAction(queryClient: QueryClient, api: Api, accountId: string, lifted: AccountAction): Promise<void> {
+export async function refreshLiftedAccountAction(
+  queryClient: QueryClient,
+  api: Api,
+  accountId: string,
+  lifted: AccountAction,
+): Promise<void> {
   await Promise.all([
     refreshAdminAccount(queryClient, api, accountId, { actions: false }),
     refreshAuditLog(queryClient),
@@ -245,9 +299,21 @@ export async function refreshLiftedAccountAction(queryClient: QueryClient, api: 
 }
 
 /** Writes the lifted action from the answer into the cached actions of account `accountId` (ADR-0045). */
-export function cacheLiftedAccountAction(api: Api, queryClient: QueryClient, accountId: string, lifted: AccountAction): void {
+export function cacheLiftedAccountAction(
+  api: Api,
+  queryClient: QueryClient,
+  accountId: string,
+  lifted: AccountAction,
+): void {
   queryClient.setQueryData<InfiniteData<{ items: AccountAction[] }>>(
     accountActionsQueryOptions(api, accountId).queryKey,
-    (data) => data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === lifted.id ? lifted : item)) })) },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === lifted.id ? lifted : item)),
+        })),
+      },
   );
 }

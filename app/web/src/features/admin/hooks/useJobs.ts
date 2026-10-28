@@ -3,11 +3,28 @@
 // runs that did not succeed, and running dead jobs again. A job that is enqueued again leaves the dead jobs on the
 // server, so it leaves the cached pages at once.
 import { useAnnouncer, useToast } from "@my/ui";
-import { useInfiniteQuery, useMutation, useMutationState, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useMutationState,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
-import { cacheRetriedJob, type Job, type JobAttempt, jobAttemptsQueryOptions, type JobFilter, type JobQueue, jobQueueQueryOptions, jobsQueryOptions, retryJobMutation } from "../api/jobs";
+import {
+  cacheRetriedJob,
+  type Job,
+  type JobAttempt,
+  jobAttemptsQueryOptions,
+  type JobFilter,
+  type JobQueue,
+  jobQueueQueryOptions,
+  jobsQueryOptions,
+  retryJobMutation,
+} from "../api/jobs";
 import { type PagedList, toPagedList } from "../../moderation";
 
 /** The state of the queue. */
@@ -52,7 +69,13 @@ export function useJobAttempts(id: string): JobAttempts {
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null) return { status: "error", reason: errorMessage(query.error), retry: () => void query.refetch(), isRetrying: query.isFetching };
+  if (query.error !== null)
+    return {
+      status: "error",
+      reason: errorMessage(query.error),
+      retry: () => void query.refetch(),
+      isRetrying: query.isFetching,
+    };
   return { status: "loading" };
 }
 

@@ -46,29 +46,50 @@ describe("where the restrictions apply", () => {
   it("draws SVG only in the controls that list it, stories of them and tests (G10)", () => {
     assert.ok(ruleOptions("restrict/svg", files.component).length > 0);
     assert.ok(ruleOptions("restrict/svg", files.featureComponent).length > 0);
-    for (const file of [files.svgControl, files.story, files.featureTest]) assert.equal(ruleValue("restrict/svg", file), "off");
+    for (const file of [files.svgControl, files.story, files.featureTest])
+      assert.equal(ruleValue("restrict/svg", file), "off");
   });
   it("keeps cache writes out of a feature's hooks and components, but not out of their tests (S1)", () => {
     assert.ok(ruleOptions("restrict/feature", files.featureComponent).length > 0);
-    for (const file of [files.featureApi, files.featureComponentTest, files.route]) assert.equal(ruleValue("restrict/feature", file), undefined);
+    for (const file of [files.featureApi, files.featureComponentTest, files.route])
+      assert.equal(ruleValue("restrict/feature", file), undefined);
   });
   it("keeps the browser's storage to lib/storage and the tests (S11)", () => {
-    for (const file of [files.route, files.lib, files.featureHook, files.component]) assert.ok(ruleOptions("restrict/storage", file).length > 0);
-    for (const file of [files.storage, files.testSetup, files.featureTest]) assert.equal(ruleValue("restrict/storage", file), "off");
+    for (const file of [files.route, files.lib, files.featureHook, files.component])
+      assert.ok(ruleOptions("restrict/storage", file).length > 0);
+    for (const file of [files.storage, files.testSetup, files.featureTest])
+      assert.equal(ruleValue("restrict/storage", file), "off");
   });
   it("keeps the Trusted Types sinks to PostContent and the tests (A8)", () => {
-    for (const file of [files.route, files.lib, files.featureHook, files.component, files.story]) assert.ok(ruleOptions("restrict/html", file).length > 0);
-    for (const file of [files.postContent, files.featureTest, files.featureComponentTest]) assert.equal(ruleValue("restrict/html", file), "off");
+    for (const file of [files.route, files.lib, files.featureHook, files.component, files.story])
+      assert.ok(ruleOptions("restrict/html", file).length > 0);
+    for (const file of [files.postContent, files.featureTest, files.featureComponentTest])
+      assert.equal(ruleValue("restrict/html", file), "off");
   });
   it("allows viewport breakpoints in the app shell's components of the kit, and not in its other components (D2)", () => {
-    assert.deepEqual(ruleValue("better-tailwindcss/no-restricted-classes", files.shell), ruleValue("better-tailwindcss/no-restricted-classes", files.route));
-    assert.notDeepEqual(ruleValue("better-tailwindcss/no-restricted-classes", files.component), ruleValue("better-tailwindcss/no-restricted-classes", files.route));
+    assert.deepEqual(
+      ruleValue("better-tailwindcss/no-restricted-classes", files.shell),
+      ruleValue("better-tailwindcss/no-restricted-classes", files.route),
+    );
+    assert.notDeepEqual(
+      ruleValue("better-tailwindcss/no-restricted-classes", files.component),
+      ruleValue("better-tailwindcss/no-restricted-classes", files.route),
+    );
   });
   it("keeps className and the class-composing libraries out of every file of web/src, tests included, and leaves them to @my/ui (A4)", () => {
-    for (const file of [files.route, files.featureComponent, files.featureHook, files.featureTest, files.featureComponentTest, files.lib, files.testSetup]) {
+    for (const file of [
+      files.route,
+      files.featureComponent,
+      files.featureHook,
+      files.featureTest,
+      files.featureComponentTest,
+      files.lib,
+      files.testSetup,
+    ]) {
       assert.ok(ruleOptions("restrict/classes", file).length > 0);
     }
-    for (const file of [files.component, files.shell, files.story]) assert.equal(ruleValue("restrict/classes", file), undefined);
+    for (const file of [files.component, files.shell, files.story])
+      assert.equal(ruleValue("restrict/classes", file), undefined);
   });
   it("allows the API client and fetch in features/<x>/api and lib/ (S1)", () => {
     for (const file of [files.featureApi, files.lib]) {
@@ -169,7 +190,10 @@ ruleTester.run("restrict/svg (G10)", restrict.rules.svg, {
 const feature = ruleOptions("restrict/feature", files.featureHook);
 ruleTester.run("restrict/feature (a feature's hooks and components)", restrict.rules.feature, {
   valid: [
-    { code: "useMutation({ ...createStatusMutation(api), onSuccess: (status) => cachePostedStatus(api, queryClient, status) });", options: feature },
+    {
+      code: "useMutation({ ...createStatusMutation(api), onSuccess: (status) => cachePostedStatus(api, queryClient, status) });",
+      options: feature,
+    },
     { code: "const job = queryClient.getQueryData(key);", options: feature },
     { code: "const last = queryClient.isMutating({ mutationKey }) <= 1;", options: feature },
   ],
@@ -257,26 +281,59 @@ const componentClasses = ruleOptions("better-tailwindcss/no-restricted-classes",
 ruleTester.run("better-tailwindcss/no-restricted-classes", betterTailwind.rules["no-restricted-classes"], {
   valid: [
     // D7
-    ...["ms-2 me-2 ps-2 pe-2 start-0 end-0 text-start text-end rounded-s border-e", "rtl:-scale-x-100 ltr:ml-2 md:rtl:mr-2 data-open:ltr:mask-l-from-50%", "mx-2 px-2 border-lime-500 rounded-lg place-items-center mask-x-from-90% mask-linear-50 mask-radial-from-50%"].map(
-      (c) => ({ code: jsx(c), options: classes, settings: tailwindSettings }),
-    ),
+    ...[
+      "ms-2 me-2 ps-2 pe-2 start-0 end-0 text-start text-end rounded-s border-e",
+      "rtl:-scale-x-100 ltr:ml-2 md:rtl:mr-2 data-open:ltr:mask-l-from-50%",
+      "mx-2 px-2 border-lime-500 rounded-lg place-items-center mask-x-from-90% mask-linear-50 mask-radial-from-50%",
+    ].map((c) => ({ code: jsx(c), options: classes, settings: tailwindSettings })),
     // D5, D6
-    ...["min-h-svh h-dvh", "motion-safe:animate-spin animate-none"].map((c) => ({ code: jsx(c), options: classes, settings: tailwindSettings })),
+    ...["min-h-svh h-dvh", "motion-safe:animate-spin animate-none"].map((c) => ({
+      code: jsx(c),
+      options: classes,
+      settings: tailwindSettings,
+    })),
     // D2: container queries in components, breakpoints in the shell
     { code: jsx("@container @md:flex"), options: componentClasses, settings: tailwindSettings },
     { code: jsx("md:flex"), options: classes, settings: tailwindSettings },
   ],
   invalid: [
     // D7
-    ...["ml-2", "-mr-1", "pl-4", "hover:pr-4", "left-0", "right-2", "text-left", "text-right", "rounded-l-lg", "rounded-tr", "border-l", "border-r-2", "float-left", "scroll-ml-4", "mask-l-from-50%", "data-open:mask-r-to-8"].map(
-      (c) => ({ ...fails(jsx(c)), options: classes, settings: tailwindSettings }),
-    ),
+    ...[
+      "ml-2",
+      "-mr-1",
+      "pl-4",
+      "hover:pr-4",
+      "left-0",
+      "right-2",
+      "text-left",
+      "text-right",
+      "rounded-l-lg",
+      "rounded-tr",
+      "border-l",
+      "border-r-2",
+      "float-left",
+      "scroll-ml-4",
+      "mask-l-from-50%",
+      "data-open:mask-r-to-8",
+    ].map((c) => ({ ...fails(jsx(c)), options: classes, settings: tailwindSettings })),
     // D5
-    ...["h-screen", "min-h-screen", "md:max-h-screen", "h-[100vh]"].map((c) => ({ ...fails(jsx(c)), options: classes, settings: tailwindSettings })),
+    ...["h-screen", "min-h-screen", "md:max-h-screen", "h-[100vh]"].map((c) => ({
+      ...fails(jsx(c)),
+      options: classes,
+      settings: tailwindSettings,
+    })),
     // D6
-    ...["animate-spin", "hover:animate-bounce"].map((c) => ({ ...fails(jsx(c)), options: classes, settings: tailwindSettings })),
+    ...["animate-spin", "hover:animate-bounce"].map((c) => ({
+      ...fails(jsx(c)),
+      options: classes,
+      settings: tailwindSettings,
+    })),
     // D2
-    ...["md:flex", "max-lg:hidden", "min-[40rem]:grid"].map((c) => ({ ...fails(jsx(c)), options: componentClasses, settings: tailwindSettings })),
+    ...["md:flex", "max-lg:hidden", "min-[40rem]:grid"].map((c) => ({
+      ...fails(jsx(c)),
+      options: componentClasses,
+      settings: tailwindSettings,
+    })),
   ],
 });
 
@@ -297,7 +354,10 @@ function runNative(rule, file, cases) {
   const dir = path.join(scratch, String(runs++));
   const all = [...cases.valid.map((code) => ({ code, errors: 0 })), ...cases.invalid];
   mkdirSync(dir);
-  writeFileSync(path.join(dir, ".oxlintrc.json"), JSON.stringify({ plugins: [], categories: { correctness: "off" }, rules: { [rule]: ruleValue(rule, file) } }));
+  writeFileSync(
+    path.join(dir, ".oxlintrc.json"),
+    JSON.stringify({ plugins: [], categories: { correctness: "off" }, rules: { [rule]: ruleValue(rule, file) } }),
+  );
   all.forEach(({ code }, i) => writeFileSync(path.join(dir, `case${String(i)}.tsx`), code + "\n"));
   const result = spawnSync(oxlint, ["-c", path.join(dir, ".oxlintrc.json"), "-f", "json", dir], { encoding: "utf8" });
   /** @type {{ diagnostics: { code: string, filename: string }[] }} */
@@ -348,4 +408,7 @@ runNative("no-restricted-imports", files.icons, {
 });
 // S1
 runNative("no-restricted-globals", files.route, { valid: ["client.GET('/x');"], invalid: [native("fetch('/x');")] });
-runNative("no-restricted-properties", files.route, { valid: ["client.fetch('/x');"], invalid: [native("window.fetch('/x');")] });
+runNative("no-restricted-properties", files.route, {
+  valid: ["client.fetch('/x');"],
+  invalid: [native("window.fetch('/x');")],
+});

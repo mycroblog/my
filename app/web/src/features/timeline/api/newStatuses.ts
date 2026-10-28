@@ -43,14 +43,19 @@ function newestFirst(a: Status, b: Status): number {
 
 /** The loaded home timeline, newest first, or undefined when it has not been loaded. */
 function loadedHome(queryClient: QueryClient, api: Api): readonly Status[] | undefined {
-  return queryClient.getQueryData(timelineQueryOptions(api, { kind: "home" }).queryKey)?.pages.flatMap((page) => page.items);
+  return queryClient
+    .getQueryData(timelineQueryOptions(api, { kind: "home" }).queryKey)
+    ?.pages.flatMap((page) => page.items);
 }
 
 /**
  * The waiting entries that are still new to the loaded timeline: not in it and newer than its newest. A
  * refetch of the timeline (on navigating back to it) may have loaded some of them already.
  */
-export function unseenStatuses(waiting: NewStatuses | undefined, loaded: readonly Status[] | undefined): readonly Status[] {
+export function unseenStatuses(
+  waiting: NewStatuses | undefined,
+  loaded: readonly Status[] | undefined,
+): readonly Status[] {
   if (waiting === undefined) return [];
   if (loaded === undefined) return waiting.statuses;
   const ids = new Set(loaded.map((status) => status.id));
@@ -65,7 +70,10 @@ function addWaiting(queryClient: QueryClient, statuses: readonly Status[], gap: 
     const added = statuses.filter((status) => !known.has(status.id));
     if (added.length === 0 && !gap) return previous;
     const all = [...added, ...(previous?.statuses ?? [])].toSorted(newestFirst);
-    return { statuses: all.slice(0, maxNewStatuses), gap: gap || previous?.gap === true || all.length > maxNewStatuses };
+    return {
+      statuses: all.slice(0, maxNewStatuses),
+      gap: gap || previous?.gap === true || all.length > maxNewStatuses,
+    };
   });
 }
 
@@ -81,7 +89,10 @@ function insertWaiting(queryClient: QueryClient, api: Api): boolean {
   queryClient.setQueryData(waitingKey, { statuses: [], gap: false });
   queryClient.setQueryData(timelineQueryOptions(api, { kind: "home" }).queryKey, (data) => {
     if (data === undefined) return data;
-    const fresh = unseenStatuses(waiting, data.pages.flatMap((page) => page.items));
+    const fresh = unseenStatuses(
+      waiting,
+      data.pages.flatMap((page) => page.items),
+    );
     const [first, ...rest] = data.pages;
     if (first === undefined || fresh.length === 0) return data;
     return { ...data, pages: [{ ...first, items: [...fresh, ...first.items] }, ...rest] };
@@ -91,7 +102,9 @@ function insertWaiting(queryClient: QueryClient, api: Api): boolean {
 
 /** Whether a page shows the home timeline now: its query has observers (the timeline's components). */
 function homeShown(queryClient: QueryClient, api: Api): boolean {
-  const query = queryClient.getQueryCache().find({ queryKey: timelineQueryOptions(api, { kind: "home" }).queryKey, exact: true });
+  const query = queryClient
+    .getQueryCache()
+    .find({ queryKey: timelineQueryOptions(api, { kind: "home" }).queryKey, exact: true });
   return (query?.getObserversCount() ?? 0) > 0;
 }
 
@@ -143,6 +156,9 @@ export async function showNewHomeStatuses(queryClient: QueryClient, api: Api): P
   if (insertWaiting(queryClient, api)) return;
   const homeKey = timelineQueryOptions(api, { kind: "home" }).queryKey;
   queryClient.setQueryData(newHomeStatusesQueryOptions().queryKey, { statuses: [], gap: false });
-  queryClient.setQueryData(homeKey, (data) => data && { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) });
+  queryClient.setQueryData(
+    homeKey,
+    (data) => data && { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) },
+  );
   await queryClient.refetchQueries({ queryKey: homeKey, exact: true }, { throwOnError: true });
 }

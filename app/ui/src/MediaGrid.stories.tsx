@@ -32,13 +32,26 @@ const pictures: readonly MediaItem[] = [
     lang: "en",
     blurhash: "L6PZfSi_.AyE_3t7t7R**0o#DgR4",
   },
-  { id: "4", src: picture("#8f5a2e", '<circle cx="50" cy="45" r="15" fill="#fbe3c8"/><circle cx="110" cy="45" r="15" fill="#fbe3c8"/>'), alt: null },
+  {
+    id: "4",
+    src: picture(
+      "#8f5a2e",
+      '<circle cx="50" cy="45" r="15" fill="#fbe3c8"/><circle cx="110" cy="45" r="15" fill="#fbe3c8"/>',
+    ),
+    alt: null,
+  },
 ];
 
 const meta = {
   title: "Timeline/MediaGrid",
   component: MediaGrid,
-  args: { items: pictures.slice(0, 1), noDescriptionLabel: "No description", revealLabel: "Show sensitive media", audioLabels: { play: "Play", pause: "Pause", seek: "Position" }, onRevealedChange: fn() },
+  args: {
+    items: pictures.slice(0, 1),
+    noDescriptionLabel: "No description",
+    revealLabel: "Show sensitive media",
+    audioLabels: { play: "Play", pause: "Pause", seek: "Position" },
+    onRevealedChange: fn(),
+  },
 } satisfies Meta<typeof MediaGrid>;
 
 export default meta;
@@ -106,7 +119,10 @@ export const SensitiveRevealed: Story = {
  */
 export const Viewer: Story = {
   args: {
-    items: pictures.slice(0, 2).map((item) => ({ ...item, original: { sources: { still: [{ url: item.src ?? "" }] }, width: 1600, height: 900 } })),
+    items: pictures.slice(0, 2).map((item) => ({
+      ...item,
+      original: { sources: { still: [{ url: item.src ?? "" }] }, width: 1600, height: 900 },
+    })),
     viewerLabels: {
       title: (position, count) => `Image ${String(position)} of ${String(count)}`,
       close: "Close",
@@ -129,7 +145,9 @@ export const Viewer: Story = {
     await userEvent.click(first);
     const dialog = await canvas.findByRole("dialog", { name: "Image 1 of 2" });
     // Visible once the panel has faded in.
-    await waitFor(() => expect(within(dialog).getByRole("img", { name: "A yellow sun over a blue sky" })).toBeVisible());
+    await waitFor(() =>
+      expect(within(dialog).getByRole("img", { name: "A yellow sun over a blue sky" })).toBeVisible(),
+    );
     // The arrow keys follow the screen: the next picture is to the right in left-to-right text, to the left otherwise.
     const forward = document.documentElement.dir === "rtl" ? "{ArrowLeft}" : "{ArrowRight}";
     await userEvent.keyboard(forward);
@@ -154,8 +172,21 @@ const audioFile =
 
 /** A video, an audio file with a poster, an audio file without one, and a short silent video that loops like a GIF. */
 const playables: readonly MediaItem[] = [
-  { id: "v", src: pictures[0]?.src, playback: { kind: "video", url: videoFile }, alt: "A sunny sky, filmed for a second", lang: "en", blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
-  { id: "a", src: pictures[1]?.src, playback: { kind: "audio", url: audioFile }, alt: "A second of silence", lang: "en" },
+  {
+    id: "v",
+    src: pictures[0]?.src,
+    playback: { kind: "video", url: videoFile },
+    alt: "A sunny sky, filmed for a second",
+    lang: "en",
+    blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+  },
+  {
+    id: "a",
+    src: pictures[1]?.src,
+    playback: { kind: "audio", url: audioFile },
+    alt: "A second of silence",
+    lang: "en",
+  },
   { id: "n", src: undefined, playback: { kind: "audio", url: audioFile }, alt: null },
   { id: "g", src: pictures[2]?.src, playback: { kind: "gifv", url: videoFile }, alt: "A pink square" },
 ];

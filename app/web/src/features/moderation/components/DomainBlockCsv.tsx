@@ -7,13 +7,36 @@
 // after a confirmation in an alert dialog when they suspend a domain (ConfirmDialog, NFR-MOD-7). What the export
 // and the import did stays on the page in a StatusMessage (role="status"); the import's result replaces the preview,
 // and focus moves to the heading of the import.
-import { Box, Button, Checkbox, ConfirmDialog, FileTrigger, Heading, Hint, InlineError, ReasonField, Stack, StatusMessage, Text, TextArea } from "@my/ui";
+import {
+  Box,
+  Button,
+  Checkbox,
+  ConfirmDialog,
+  FileTrigger,
+  Heading,
+  Hint,
+  InlineError,
+  ReasonField,
+  Stack,
+  StatusMessage,
+  Text,
+  TextArea,
+} from "@my/ui";
 import { useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { type DomainBlockImportRow, type DomainBlockImportStatus, domainBlockImportRowLimit } from "../api/domainBlocks";
+import {
+  type DomainBlockImportRow,
+  type DomainBlockImportStatus,
+  domainBlockImportRowLimit,
+} from "../api/domainBlocks";
 import { domainActionTextLimit } from "../api/staff";
-import { type DomainBlockPreview, useDomainBlockExport, useDomainBlockImportForm, validateDomainBlockCsv } from "../hooks/useDomainBlockCsv";
+import {
+  type DomainBlockPreview,
+  useDomainBlockExport,
+  useDomainBlockImportForm,
+  validateDomainBlockCsv,
+} from "../hooks/useDomainBlockCsv";
 import { domainActionKindLabels } from "../hooks/useDomainActions";
 import { DomainName, useFocusAfterChange } from "./parts";
 
@@ -47,7 +70,9 @@ function DomainBlockExport() {
         {t("client:admin.domain_actions.csv.export")}
       </Button>
       {exporting.error !== undefined && (
-        <InlineError alert>{t("client:admin.domain_actions.csv.export.failed", { reason: exporting.error })}</InlineError>
+        <InlineError alert>
+          {t("client:admin.domain_actions.csv.export.failed", { reason: exporting.error })}
+        </InlineError>
       )}
       <StatusMessage>{exporting.status}</StatusMessage>
     </Stack>
@@ -110,7 +135,10 @@ function DomainBlockImport() {
       <StatusMessage tone={form.outcome !== undefined && form.outcome.issued.length === 0 ? "neutral" : "success"}>
         {form.outcome === undefined
           ? undefined
-          : t("client:admin.domain_actions.csv.import.done", { issued: form.outcome.issued.length, skipped: form.outcome.skipped.length })}
+          : t("client:admin.domain_actions.csv.import.done", {
+              issued: form.outcome.issued.length,
+              skipped: form.outcome.skipped.length,
+            })}
       </StatusMessage>
       {/* A new preview starts its rows afresh (R10). */}
       {form.preview !== undefined && (
@@ -164,7 +192,17 @@ type PreviewRowsProps = {
 };
 
 /** The rows of a previewed CSV, the private note, and the import of the chosen rows. */
-function PreviewRows({ preview, isChosen, choose, chosenCount, privateNote, changePrivateNote, submit, isPending, error }: PreviewRowsProps) {
+function PreviewRows({
+  preview,
+  isChosen,
+  choose,
+  chosenCount,
+  privateNote,
+  changePrivateNote,
+  submit,
+  isPending,
+  error,
+}: PreviewRowsProps) {
   const t = useT();
   const headingId = useId();
   const { rows } = preview;
@@ -189,7 +227,9 @@ function PreviewRows({ preview, isChosen, choose, chosenCount, privateNote, chan
         onChange={changePrivateNote}
         characterLimit={domainActionTextLimit}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:admin.domain_actions.characters_over", { count: -remaining }) : t("client:admin.domain_actions.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:admin.domain_actions.characters_over", { count: -remaining })
+            : t("client:admin.domain_actions.characters_left", { count: remaining })
         }
         errorMessage={t("client:admin.domain_actions.too_long", { max: domainActionTextLimit })}
       />
@@ -207,7 +247,15 @@ function PreviewRows({ preview, isChosen, choose, chosenCount, privateNote, chan
   );
 }
 
-function PreviewRow({ row, isChosen, choose }: { row: DomainBlockImportRow; isChosen: boolean; choose: (line: number, chosen: boolean) => void }) {
+function PreviewRow({
+  row,
+  isChosen,
+  choose,
+}: {
+  row: DomainBlockImportRow;
+  isChosen: boolean;
+  choose: (line: number, chosen: boolean) => void;
+}) {
   const t = useT();
   const intl = useIntl();
   if (row.status === "importable" && row.block !== undefined) {

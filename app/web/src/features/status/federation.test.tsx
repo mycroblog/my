@@ -42,29 +42,35 @@ beforeEach(() => {
 });
 
 describe("the actions on a post of another server", () => {
-  test.each(["inbound", "off"] as const)("say that they do not reach it, and offer no quote, while the direction is %s", async (mode) => {
-    serve(mode, carols);
-    await renderApp({ path: carolsPath });
+  test.each(["inbound", "off"] as const)(
+    "say that they do not reach it, and offer no quote, while the direction is %s",
+    async (mode) => {
+      serve(mode, carols);
+      await renderApp({ path: carolsPath });
 
-    const post = await focusedPost();
-    const text = await within(post).findByText(note);
-    await waitFor(() => {
-      expect(within(post).queryByRole("button", { name: "Quote" })).not.toBeInTheDocument();
-    });
-    expect(text).toBeVisible();
-    expect(within(post).getByRole("button", { name: "Favourite" })).toHaveAccessibleDescription(note);
-    expect(within(post).getByRole("button", { name: "Boost" })).toHaveAccessibleDescription(note);
-    expect(within(post).getByRole("button", { name: "Reply" })).toHaveAccessibleDescription(note);
-  });
+      const post = await focusedPost();
+      const text = await within(post).findByText(note);
+      await waitFor(() => {
+        expect(within(post).queryByRole("button", { name: "Quote" })).not.toBeInTheDocument();
+      });
+      expect(text).toBeVisible();
+      expect(within(post).getByRole("button", { name: "Favourite" })).toHaveAccessibleDescription(note);
+      expect(within(post).getByRole("button", { name: "Boost" })).toHaveAccessibleDescription(note);
+      expect(within(post).getByRole("button", { name: "Reply" })).toHaveAccessibleDescription(note);
+    },
+  );
 
-  test.each(["outbound", "both"] as const)("say nothing more and offer the quote while the direction is %s", async (mode) => {
-    serve(mode, carols);
-    await renderApp({ path: carolsPath });
+  test.each(["outbound", "both"] as const)(
+    "say nothing more and offer the quote while the direction is %s",
+    async (mode) => {
+      serve(mode, carols);
+      await renderApp({ path: carolsPath });
 
-    const post = await focusedPost();
-    expect(await within(post).findByRole("button", { name: "Quote" })).toBeEnabled();
-    expect(within(post).queryByText(note)).not.toBeInTheDocument();
-  });
+      const post = await focusedPost();
+      expect(await within(post).findByRole("button", { name: "Quote" })).toBeEnabled();
+      expect(within(post).queryByText(note)).not.toBeInTheDocument();
+    },
+  );
 
   test("leave the posts of this server as they are", async () => {
     serve("inbound", bobs);

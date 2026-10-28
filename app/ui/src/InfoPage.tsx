@@ -42,7 +42,10 @@ function readSections(column: HTMLElement): Section[] {
 }
 
 function sameSections(a: readonly Section[], b: readonly Section[]) {
-  return a.length === b.length && a.every((section, index) => section.id === b[index]?.id && section.title === b[index].title);
+  return (
+    a.length === b.length &&
+    a.every((section, index) => section.id === b[index]?.id && section.title === b[index].title)
+  );
 }
 
 /**
@@ -127,7 +130,7 @@ export function InfoPage({ heading, children, contentsLabel, placement = "inline
         {heading}
         {/* The folded contents come right after the heading on narrow screens. */}
         {placement === "inline" && sections.length > 1 && (
-          <details >
+          <details>
             <summary className={slots.summary()}>{contentsLabel}</summary>
             <nav aria-label={contentsLabel} className="pt-2">
               {list}

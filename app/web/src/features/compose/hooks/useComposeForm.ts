@@ -38,7 +38,8 @@ const createStatusMutationKey = ["compose", "createStatus"] as const;
 type SendVariables = { idempotencyKey: string; body: CreateStatusRequest };
 
 /** The post being replied to, or quoted. */
-export type ReplyTarget = { status: "none" } | { status: "loading" } | { status: "error" } | { status: "ready"; post: Status };
+export type ReplyTarget =
+  { status: "none" } | { status: "loading" } | { status: "error" } | { status: "ready"; post: Status };
 
 /** A post of the outbox as the form shows it. `message` is localized. */
 export type OutboxView = {
@@ -128,7 +129,9 @@ export type PollForm = {
 /** The request a draft becomes. */
 function requestBody(draft: Draft, visibility: Visibility, language: string): CreateStatusRequest {
   const media = draft.attachments.flatMap((a) =>
-    a.mediaId === null ? [] : [{ id: a.mediaId, ...(a.description.trim() === "" ? {} : { description: a.description.trim() }) }],
+    a.mediaId === null
+      ? []
+      : [{ id: a.mediaId, ...(a.description.trim() === "" ? {} : { description: a.description.trim() }) }],
   );
   return {
     text: draft.text,
@@ -190,7 +193,9 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const replyPost = draft.replyToId === null ? undefined : replyQuery.data;
   const preferredVisibility = preferences.data?.default_visibility;
   const visibility =
-    preferredVisibility === undefined ? undefined : postedVisibility(draft.visibility ?? defaultVisibility(preferredVisibility, replyPost), limits);
+    preferredVisibility === undefined
+      ? undefined
+      : postedVisibility(draft.visibility ?? defaultVisibility(preferredVisibility, replyPost), limits);
   const unreachedMentions = useUnreachedMentions(draft.text, visibility === "local");
   const { reachesRemote } = useFederation();
   const { accountDomain } = useConfig();
@@ -209,7 +214,9 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
       const narrowed = status.visibility !== body.visibility;
       toast.show({
-        message: narrowed ? t("client:compose.visibility.limited", { visibility: t(visibilityLabel[status.visibility]) }) : t("client:compose.posted"),
+        message: narrowed
+          ? t("client:compose.visibility.limited", { visibility: t(visibilityLabel[status.visibility]) })
+          : t("client:compose.posted"),
         tone: narrowed ? "neutral" : "success",
         ...(narrowed ? { timeout: null } : {}),
       });
@@ -242,7 +249,8 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       },
     };
   }
-  if (instance.data === undefined || preferences.data === undefined || visibility === undefined) return { status: "loading" };
+  if (instance.data === undefined || preferences.data === undefined || visibility === undefined)
+    return { status: "loading" };
 
   const { max_post_characters: maxCharacters, require_media_description: isDescriptionRequired } = instance.data.limits;
   const { default_post_language: preferredLanguage, require_media_description: requireDescriptions } = preferences.data;

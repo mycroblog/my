@@ -23,7 +23,8 @@ const modal = tv({
       "motion-safe:transition-opacity motion-safe:duration-normal data-entering:opacity-0 data-exiting:opacity-0",
       "motion-safe:data-exiting:ease-exit",
     ],
-    panel: "flex w-full flex-col bg-surface-raised text-fg shadow-lg outline-none motion-safe:transition motion-safe:duration-normal",
+    panel:
+      "flex w-full flex-col bg-surface-raised text-fg shadow-lg outline-none motion-safe:transition motion-safe:duration-normal",
     // The panel is a flex column with a capped height, so the dialog and then its body shrink and scroll.
     dialog: "flex min-h-0 flex-col outline-none",
     header: "flex items-start gap-2 px-4 pt-4 pb-2",
@@ -40,7 +41,8 @@ const modal = tv({
     placement: {
       center: {
         overlay: "items-center p-4",
-        panel: "max-h-[min(85svh,100%)] rounded-xl data-entering:scale-95 data-entering:opacity-0 data-exiting:scale-95 data-exiting:opacity-0",
+        panel:
+          "max-h-[min(85svh,100%)] rounded-xl data-entering:scale-95 data-entering:opacity-0 data-exiting:scale-95 data-exiting:opacity-0",
       },
       sheet: {
         overlay: "items-end @lg:items-center @lg:p-4",

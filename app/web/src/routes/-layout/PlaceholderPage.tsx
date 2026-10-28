@@ -11,7 +11,9 @@ export function PlaceholderPage({ titleKey }: PlaceholderPageProps) {
   return (
     <>
       <PageHeading>{t(titleKey)}</PageHeading>
-      <Text as="p" tone="muted">{t("client:page.not_built")}</Text>
+      <Text as="p" tone="muted">
+        {t("client:page.not_built")}
+      </Text>
     </>
   );
 }

@@ -10,7 +10,14 @@ describe("EmptyState", () => {
   });
 
   it("takes the heading level, description and action from props", () => {
-    render(<EmptyState heading="No results" headingLevel={4} description="Try another word." action={<a href="#x">Explore</a>} />);
+    render(
+      <EmptyState
+        heading="No results"
+        headingLevel={4}
+        description="Try another word."
+        action={<a href="#x">Explore</a>}
+      />,
+    );
     expect(screen.getByRole("heading", { level: 4, name: "No results" })).toBeInTheDocument();
     expect(screen.getByText("Try another word.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore" })).toBeInTheDocument();

@@ -111,7 +111,12 @@ export const End: Story = {
   args: { hasMore: false },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole("button", { name: "Load more posts" })).not.toBeInTheDocument();
-    await expect(canvas.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual(["4", "4", "4", "4"]);
+    await expect(canvas.getAllByRole("article").map((article) => article.getAttribute("aria-setsize"))).toEqual([
+      "4",
+      "4",
+      "4",
+      "4",
+    ]);
   },
 };
 

@@ -24,7 +24,10 @@ export function ownCustomEmojisQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/custom_emojis/mine", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/custom_emojis/mine", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/custom_emojis/mine", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -39,7 +42,10 @@ export function ownCustomEmojiRequestsQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/custom_emoji_requests", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/custom_emoji_requests", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/custom_emoji_requests", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -49,7 +55,8 @@ export function ownCustomEmojiRequestsQueryOptions(api: Api) {
 }
 
 /** A request with the image file to upload for it: a new emoji under a shortcode, or a new image of one of the user's. */
-export type CustomEmojiRequestDraft = { kind: "create"; shortcode: string; file: File } | { kind: "image"; emojiId: string; file: File };
+export type CustomEmojiRequestDraft =
+  { kind: "create"; shortcode: string; file: File } | { kind: "image"; emojiId: string; file: File };
 
 /** Uploads the image of a request and sends the request, as the options of useMutation. Returns the request as recorded. */
 export function requestCustomEmojiMutation(api: Api) {
@@ -57,7 +64,10 @@ export function requestCustomEmojiMutation(api: Api) {
     mutationKey: ["post", "/custom_emoji_requests"] as const,
     mutationFn: async (draft: CustomEmojiRequestDraft): Promise<CustomEmojiRequest> => {
       const media = await uploadImage(api, draft.file, "emoji");
-      const body = draft.kind === "create" ? { kind: draft.kind, shortcode: draft.shortcode, media_id: media.id } : { kind: draft.kind, emoji_id: draft.emojiId, media_id: media.id };
+      const body =
+        draft.kind === "create"
+          ? { kind: draft.kind, shortcode: draft.shortcode, media_id: media.id }
+          : { kind: draft.kind, emoji_id: draft.emojiId, media_id: media.id };
       const { data, error } = await api.fetch.POST("/custom_emoji_requests", { body });
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -70,7 +80,9 @@ export function withdrawCustomEmojiRequestMutation(api: Api) {
   return {
     mutationKey: ["post", "/custom_emoji_requests/{id}/withdraw"] as const,
     mutationFn: async (id: string): Promise<CustomEmojiRequest> => {
-      const { data, error } = await api.fetch.POST("/custom_emoji_requests/{id}/withdraw", { params: { path: { id } } });
+      const { data, error } = await api.fetch.POST("/custom_emoji_requests/{id}/withdraw", {
+        params: { path: { id } },
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -82,7 +94,10 @@ export function updateOwnCustomEmojiMutation(api: Api) {
   return {
     mutationKey: ["patch", "/custom_emojis/mine/{id}"] as const,
     mutationFn: async ({ id, change }: { id: string; change: OwnCustomEmojiChange }): Promise<OwnCustomEmoji> => {
-      const { data, error } = await api.fetch.PATCH("/custom_emojis/mine/{id}", { params: { path: { id } }, body: change });
+      const { data, error } = await api.fetch.PATCH("/custom_emojis/mine/{id}", {
+        params: { path: { id } },
+        body: change,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },
@@ -112,17 +127,36 @@ export async function cacheRequestedCustomEmoji(queryClient: QueryClient): Promi
 }
 
 /** A withdrawn request: its row shows the answer at once, and it no longer counts against the limit. */
-export async function cacheWithdrawnCustomEmojiRequest(queryClient: QueryClient, request: CustomEmojiRequest): Promise<void> {
-  queryClient.setQueriesData<RequestPages>({ queryKey: ["get", "/custom_emoji_requests"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === request.id ? request : item)) })) },
+export async function cacheWithdrawnCustomEmojiRequest(
+  queryClient: QueryClient,
+  request: CustomEmojiRequest,
+): Promise<void> {
+  queryClient.setQueriesData<RequestPages>(
+    { queryKey: ["get", "/custom_emoji_requests"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === request.id ? request : item)),
+        })),
+      },
   );
   await queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis/mine"] });
 }
 
 /** A changed emoji: its row shows the answer at once (ADR-0045), and the picker may offer it differently. */
 export async function cacheChangedOwnCustomEmoji(queryClient: QueryClient, emoji: OwnCustomEmoji): Promise<void> {
-  queryClient.setQueriesData<EmojiPages>({ queryKey: ["get", "/custom_emojis/mine"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === emoji.id ? emoji : item)) })) },
+  queryClient.setQueriesData<EmojiPages>(
+    { queryKey: ["get", "/custom_emojis/mine"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === emoji.id ? emoji : item)),
+        })),
+      },
   );
   await queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis"] });
 }
@@ -137,7 +171,12 @@ export async function cacheDeletedOwnCustomEmoji(queryClient: QueryClient, id: s
     queryClient.invalidateQueries({ queryKey: ["get", "/custom_emoji_requests"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis"] }),
   ]);
-  queryClient.setQueriesData<EmojiPages>({ queryKey: ["get", "/custom_emojis/mine"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })) },
+  queryClient.setQueriesData<EmojiPages>(
+    { queryKey: ["get", "/custom_emojis/mine"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })),
+      },
   );
 }

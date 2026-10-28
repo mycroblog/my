@@ -23,7 +23,16 @@
 // Who is talking comes from the level of each remote stream that is heard, and of the microphone while it sends
 // (TalkingDetector), each under its session.
 import { TalkingDetector } from "./talking";
-import { type IncomingVoiceSignal, rtcConfiguration, type VoiceConnection, type VoiceConnectionOptions, type VoiceGrant, type VoiceMember, type VoiceRoster, type VoiceSignal } from "./types";
+import {
+  type IncomingVoiceSignal,
+  rtcConfiguration,
+  type VoiceConnection,
+  type VoiceConnectionOptions,
+  type VoiceGrant,
+  type VoiceMember,
+  type VoiceRoster,
+  type VoiceSignal,
+} from "./types";
 
 /** How long a polite side waits for its first offer, and an offer for its answer, before asking again. */
 export const offerWait = 10_000;
@@ -44,7 +53,9 @@ function candidateJson(candidate: RTCIceCandidate): string {
     candidate: init.candidate ?? "",
     sdpMid: init.sdpMid ?? null,
     sdpMLineIndex: init.sdpMLineIndex ?? null,
-    ...(init.usernameFragment === undefined || init.usernameFragment === null ? {} : { usernameFragment: init.usernameFragment }),
+    ...(init.usernameFragment === undefined || init.usernameFragment === null
+      ? {}
+      : { usernameFragment: init.usernameFragment }),
   });
 }
 
@@ -122,7 +133,8 @@ class Peer {
       this.#stream = stream;
       this.#measure();
       this.#audio.play(stream).catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "NotAllowedError") options.connection.events.onPlaybackBlocked();
+        if (error instanceof DOMException && error.name === "NotAllowedError")
+          options.connection.events.onPlaybackBlocked();
         else warn("could not play the audio", error);
       });
     };
@@ -171,7 +183,8 @@ class Peer {
 
   /** Measures the remote stream while it is heard: a participant who does not speak never talks. */
   #measure(): void {
-    if (this.#stream !== null && this.#audible && !this.#closed) this.#talking.watch(this.remote, this.remote, this.#stream);
+    if (this.#stream !== null && this.#audible && !this.#closed)
+      this.#talking.watch(this.remote, this.remote, this.#stream);
     else this.#talking.unwatch(this.remote);
   }
 
@@ -325,7 +338,12 @@ class Peer {
   /** Adds a candidate of the current remote description; one of another ICE generation, or one that fails, is dropped. */
   async #addCandidate(candidate: RTCIceCandidateInit): Promise<void> {
     const fragment = candidate.usernameFragment;
-    if (fragment !== undefined && fragment !== null && !usernameFragments(this.#pc.remoteDescription?.sdp).has(fragment)) return;
+    if (
+      fragment !== undefined &&
+      fragment !== null &&
+      !usernameFragments(this.#pc.remoteDescription?.sdp).has(fragment)
+    )
+      return;
     try {
       await this.#pc.addIceCandidate(candidate);
     } catch (error) {

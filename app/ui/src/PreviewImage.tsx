@@ -6,10 +6,7 @@ const previewImage = tv({
   base: "aspect-video w-full max-w-md rounded-lg bg-surface-sunken object-cover",
 });
 
-export type PreviewImageProps = Omit<
-  ComponentPropsWithRef<"img">,
-  "className" | "style"
->;
+export type PreviewImageProps = Omit<ComponentPropsWithRef<"img">, "className" | "style">;
 
 /** A 16:9 preview of an image the user chose, before it is saved. */
 export function PreviewImage(props: PreviewImageProps) {

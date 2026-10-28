@@ -51,7 +51,12 @@ export function extractArgs(ast: MessageFormatElement[], args: Args = new Map())
         for (const o of Object.values(el.options)) extractArgs(o.value, args);
         break;
       case TYPE.select:
-        put(el.value, { kind: "select", options: Object.keys(el.options).filter((k) => k !== "other").sort() });
+        put(el.value, {
+          kind: "select",
+          options: Object.keys(el.options)
+            .filter((k) => k !== "other")
+            .sort(),
+        });
         for (const o of Object.values(el.options)) extractArgs(o.value, args);
         break;
       case TYPE.tag:

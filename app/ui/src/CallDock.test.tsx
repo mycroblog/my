@@ -9,7 +9,10 @@ describe("CallDock", () => {
   it("is a named toolbar whose arrow keys move between its buttons", async () => {
     const user = userEvent.setup();
     render(
-      <CallDock label="Call controls" end={<CallDockButton label="Leave" icon={<LeaveIcon />} showLabel variant="danger" />}>
+      <CallDock
+        label="Call controls"
+        end={<CallDockButton label="Leave" icon={<LeaveIcon />} showLabel variant="danger" />}
+      >
         <CallDockButton label="Reactions" icon={<EmojiIcon />} />
         <CallDockButton label="Hands" icon={<RaiseHandIcon />} />
       </CallDock>,
@@ -41,11 +44,15 @@ describe("CallDockButton", () => {
   it("is a toggle with aria-pressed and the same name in both states", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const { rerender } = render(<CallDockButton label="Microphone" icon={<MicrophoneIcon />} showLabel isSelected={false} onChange={onChange} />);
+    const { rerender } = render(
+      <CallDockButton label="Microphone" icon={<MicrophoneIcon />} showLabel isSelected={false} onChange={onChange} />,
+    );
     const button = screen.getByRole("button", { name: "Microphone", pressed: false });
     await user.click(button);
     expect(onChange).toHaveBeenCalledWith(true);
-    rerender(<CallDockButton label="Microphone" icon={<MicrophoneIcon filled />} showLabel isSelected onChange={onChange} />);
+    rerender(
+      <CallDockButton label="Microphone" icon={<MicrophoneIcon filled />} showLabel isSelected onChange={onChange} />,
+    );
     expect(screen.getByRole("button", { name: "Microphone", pressed: true })).toBe(button);
   });
 
@@ -60,7 +67,9 @@ describe("CallDockButton", () => {
   });
 
   it("is described by its count, and keeps its name", () => {
-    render(<CallDockButton label="Hands" icon={<RaiseHandIcon />} showLabel count={{ value: 2, label: "2 raised hands" }} />);
+    render(
+      <CallDockButton label="Hands" icon={<RaiseHandIcon />} showLabel count={{ value: 2, label: "2 raised hands" }} />,
+    );
     expect(screen.getByRole("button", { name: "Hands" })).toHaveAccessibleDescription("2 raised hands");
   });
 

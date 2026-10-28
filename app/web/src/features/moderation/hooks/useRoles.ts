@@ -41,7 +41,10 @@ export type AccountRoles =
 
 /** The highest of `roles` (the API lists them highest first), or undefined for none. */
 function highest(roles: readonly AdminRole[]): AdminRole | undefined {
-  return roles.reduce<AdminRole | undefined>((top, role) => (top === undefined || role.position > top.position ? role : top), undefined);
+  return roles.reduce<AdminRole | undefined>(
+    (top, role) => (top === undefined || role.position > top.position ? role : top),
+    undefined,
+  );
 }
 
 /**
@@ -126,7 +129,9 @@ export function useRoleChanges(accountId: string, handle: string, onChanged: () 
       setDialog((current) => current && { ...current, isOpen: false });
       const role = `⁦${change.role}⁩`;
       setStatus(
-        change.kind === "grant" ? t("client:admin.account.roles.granted", { role, handle }) : t("client:admin.account.roles.revoked", { role, handle }),
+        change.kind === "grant"
+          ? t("client:admin.account.roles.granted", { role, handle })
+          : t("client:admin.account.roles.revoked", { role, handle }),
       );
       onChanged();
     },

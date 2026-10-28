@@ -65,7 +65,9 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
   const remove = actions.delete;
   // The note that the actions on a post of another server do not reach it (ADR-0076) describes each of them.
   const note = actions.staysLocal ? staysLocalId : undefined;
-  const replyDescription = [post.replies_count > 0 ? repliesId : undefined, note].filter((id) => id !== undefined).join(" ");
+  const replyDescription = [post.replies_count > 0 ? repliesId : undefined, note]
+    .filter((id) => id !== undefined)
+    .join(" ");
 
   return (
     <>
@@ -79,7 +81,13 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
         <ReplyIcon />
         <Count id={repliesId} value={post.replies_count} />
       </Button>
-      <RelationButton label={t("client:status.action.boost")} toggle={actions.boost} tone="success" icon={(on) => <BoostIcon filled={on} />} describedBy={note} />
+      <RelationButton
+        label={t("client:status.action.boost")}
+        toggle={actions.boost}
+        tone="success"
+        icon={(on) => <BoostIcon filled={on} />}
+        describedBy={note}
+      />
       {actions.quote !== null && (
         <Button
           variant="subtle"
@@ -103,7 +111,12 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
           actions.react(reactionEmojiOf(choice));
         }}
       />
-      <RelationButton label={t("client:status.action.bookmark")} toggle={actions.bookmark} tone="accent" icon={(on) => <BookmarkIcon filled={on} />} />
+      <RelationButton
+        label={t("client:status.action.bookmark")}
+        toggle={actions.bookmark}
+        tone="accent"
+        icon={(on) => <BookmarkIcon filled={on} />}
+      />
       <MenuTrigger>
         <Button variant="subtle" size="toolbar" aria-label={t("client:status.action.more")}>
           <MoreIcon />
@@ -128,7 +141,9 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
               {t("client:status.action.edit")}
             </MenuItem>
           )}
-          {actions.revokeQuote !== null && <MenuItem onAction={actions.revokeQuote}>{t("client:status.quote.revoke.action")}</MenuItem>}
+          {actions.revokeQuote !== null && (
+            <MenuItem onAction={actions.revokeQuote}>{t("client:status.quote.revoke.action")}</MenuItem>
+          )}
           {actions.quotePolicy !== null && (
             <MenuItem
               onAction={() => {
@@ -138,9 +153,13 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
               {t("client:status.quote_policy.action")}
             </MenuItem>
           )}
-          {actions.quotePolicy !== null && <MenuItem href={actions.quotePolicy.quotesPath}>{t("client:status.quotes.action")}</MenuItem>}
+          {actions.quotePolicy !== null && (
+            <MenuItem href={actions.quotePolicy.quotesPath}>{t("client:status.quotes.action")}</MenuItem>
+          )}
           {actions.pin !== null && (
-            <MenuItem onAction={actions.pin.toggle}>{actions.pin.isPinned ? t("client:status.unpin.action") : t("client:status.pin.action")}</MenuItem>
+            <MenuItem onAction={actions.pin.toggle}>
+              {actions.pin.isPinned ? t("client:status.unpin.action") : t("client:status.pin.action")}
+            </MenuItem>
           )}
           {remove !== null && (
             <MenuItem
@@ -159,7 +178,9 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
           {t("client:status.federation.stays_local")}
         </Hint>
       )}
-      {actions.canReport && <ReportDialog account={post.account} status={post} isOpen={isReporting} onOpenChange={setIsReporting} />}
+      {actions.canReport && (
+        <ReportDialog account={post.account} status={post} isOpen={isReporting} onOpenChange={setIsReporting} />
+      )}
       {actions.canEdit && <EditStatusDialog status={post} isOpen={isEditing} onOpenChange={setIsEditing} />}
       {actions.quotePolicy !== null && (
         <QuotePolicyDialog

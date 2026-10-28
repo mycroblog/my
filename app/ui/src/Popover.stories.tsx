@@ -22,7 +22,9 @@ const meta = {
     title: "Content warnings",
     children: ({ close }) => (
       <>
-        <p className="text-sm text-fg-muted">A content warning hides the post behind a summary until a reader chooses to show it.</p>
+        <p className="text-sm text-fg-muted">
+          A content warning hides the post behind a summary until a reader chooses to show it.
+        </p>
         <Button variant="ghost" size="sm" className="self-start" onPress={close}>
           Got it
         </Button>

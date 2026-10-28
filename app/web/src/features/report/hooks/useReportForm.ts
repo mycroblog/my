@@ -33,7 +33,10 @@ type ReportDraft = {
 };
 
 /** Data that a step loads: loading, failed with a localized reason and a retry, or there (S5). */
-type Loadable<T> = { status: "loading" } | { status: "error"; message: string; retry: () => void; isRetrying: boolean } | { status: "ready"; value: T };
+type Loadable<T> =
+  | { status: "loading" }
+  | { status: "error"; message: string; retry: () => void; isRetrying: boolean }
+  | { status: "ready"; value: T };
 
 export type ReportForm = {
   step: ReportStep;
@@ -60,7 +63,10 @@ export type ReportForm = {
 };
 
 /** What a step shows of a query: `value` is the part of its data that the step needs. */
-function loadable<T>(query: { isError: boolean; error: unknown; refetch: () => unknown; isRefetching: boolean }, value: T | undefined): Loadable<T> {
+function loadable<T>(
+  query: { isError: boolean; error: unknown; refetch: () => unknown; isRefetching: boolean },
+  value: T | undefined,
+): Loadable<T> {
   if (value !== undefined) return { status: "ready", value };
   if (query.isError)
     return {
@@ -79,12 +85,19 @@ export type ReportedVoiceRoom = { id: string; name: string };
 
 /** The steps of the draft for `category`; a room's report has no posts step. */
 function stepsOf(category: ReportCategory | null, isRoom: boolean): readonly ReportStep[] {
-  const steps: readonly ReportStep[] = category === "violation" ? ["category", "rules", "posts", "comment"] : ["category", "posts", "comment"];
+  const steps: readonly ReportStep[] =
+    category === "violation" ? ["category", "rules", "posts", "comment"] : ["category", "posts", "comment"];
   return isRoom ? steps.filter((step) => step !== "posts") : steps;
 }
 
 /** The request of a draft whose category is chosen; what does not apply is left out. */
-function requestOf(account: Account, draft: ReportDraft, category: ReportCategory, remoteDomain: string | null, room: ReportedVoiceRoom | undefined): CreateReportRequest {
+function requestOf(
+  account: Account,
+  draft: ReportDraft,
+  category: ReportCategory,
+  remoteDomain: string | null,
+  room: ReportedVoiceRoom | undefined,
+): CreateReportRequest {
   const comment = draft.comment.trim();
   if (room !== undefined) {
     // A room's report points at the room, not at posts, and stays on this server (its host is local).
@@ -134,7 +147,10 @@ export function useReportForm(account: Account, status: Status | undefined, room
   const latestPosts = latest.data?.items;
   const posts = loadable(
     latest,
-    latestPosts && (status === undefined || latestPosts.some((post) => post.id === status.id) ? latestPosts : [status, ...latestPosts]),
+    latestPosts &&
+      (status === undefined || latestPosts.some((post) => post.id === status.id)
+        ? latestPosts
+        : [status, ...latestPosts]),
   );
   const remoteDomain = account.acct.includes("@") ? account.domain : null;
   const steps = stepsOf(draft.category, room !== undefined);

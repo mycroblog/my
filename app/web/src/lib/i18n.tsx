@@ -42,7 +42,12 @@ export const supportedLocales: readonly string[] = [...catalogLoaders.keys()].to
 const pseudoLocales: ReadonlySet<string> = new Set(["en-XA", "ar-XB"]);
 
 /** Traditional Chinese never falls back to zh (parentLocales in internal/i18n). */
-const parentLocales: Readonly<Record<string, string>> = { "zh-Hant": "", "zh-HK": "zh-Hant", "zh-MO": "zh-Hant", "zh-TW": "zh-Hant" };
+const parentLocales: Readonly<Record<string, string>> = {
+  "zh-Hant": "",
+  "zh-HK": "zh-Hant",
+  "zh-MO": "zh-Hant",
+  "zh-TW": "zh-Hant",
+};
 
 /** The locales `locale` falls back through, ending with the source locale: ja-JP → ja → en (ADR-0009 §2). */
 export function fallbackChain(locale: string): string[] {
@@ -142,7 +147,9 @@ function formattingLocale(locale: string): string {
 type MessageValues<K extends ClientMessageKey> = keyof MessageArgs[K] extends never ? [] : [values: MessageArgs[K]];
 
 /** A client message without arguments, which a value such as a route's static data can name on its own. */
-export type PlainClientMessageKey = { [K in ClientMessageKey]: keyof MessageArgs[K] extends never ? K : never }[ClientMessageKey];
+export type PlainClientMessageKey = {
+  [K in ClientMessageKey]: keyof MessageArgs[K] extends never ? K : never;
+}[ClientMessageKey];
 
 /** Formats a client message to a string, with its arguments type-checked: `t("client:shell.nav.home")`. */
 export type Translate = <K extends ClientMessageKey>(id: K, ...values: MessageValues<K>) => string;
@@ -163,6 +170,10 @@ export function useLocale(): string {
  * client's localized errors). Components use `useT()`.
  */
 export function createTranslate(i18n: I18n): Translate {
-  const intl = createIntl({ locale: formattingLocale(i18n.locale), defaultLocale: sourceLocale, messages: i18n.messages });
+  const intl = createIntl({
+    locale: formattingLocale(i18n.locale),
+    defaultLocale: sourceLocale,
+    messages: i18n.messages,
+  });
   return (id, ...[values]) => intl.formatMessage({ id }, values);
 }

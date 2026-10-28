@@ -30,7 +30,9 @@ function freePorts(count: number): number[] {
  * run uses the same ports and runs in other worktrees on the same machine use others.
  */
 function ports(): { preview: number; server: number; voice: number } {
-  const missing = ["E2E_PREVIEW_PORT", "E2E_SERVER_PORT", "E2E_VOICE_SERVER_PORT"].filter((name) => process.env[name] === undefined);
+  const missing = ["E2E_PREVIEW_PORT", "E2E_SERVER_PORT", "E2E_VOICE_SERVER_PORT"].filter(
+    (name) => process.env[name] === undefined,
+  );
   const picked = freePorts(missing.length);
   for (const [i, name] of missing.entries()) {
     process.env[name] = String(picked[i]);

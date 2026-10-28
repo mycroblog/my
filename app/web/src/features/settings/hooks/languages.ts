@@ -35,7 +35,29 @@ export function displayLanguageOf(locale: string): string {
 }
 
 /** Widely used languages, offered for the timeline languages besides the ones already chosen. */
-const commonLanguages = ["ar", "de", "en", "es", "fa", "fr", "hi", "id", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "th", "tr", "uk", "vi", "zh"];
+const commonLanguages = [
+  "ar",
+  "de",
+  "en",
+  "es",
+  "fa",
+  "fr",
+  "hi",
+  "id",
+  "it",
+  "ja",
+  "ko",
+  "nl",
+  "pl",
+  "pt",
+  "ru",
+  "sv",
+  "th",
+  "tr",
+  "uk",
+  "vi",
+  "zh",
+];
 
 /**
  * The languages a timeline can be limited to: widely used languages and the ones already chosen, named in
@@ -44,5 +66,7 @@ const commonLanguages = ["ar", "de", "en", "es", "fa", "fr", "hi", "id", "it", "
 export function timelineLanguageOptions(chosen: readonly string[], displayLocale: string): LanguageOption[] {
   const tags = [...new Set([...commonLanguages, ...chosen])];
   const collator = new Intl.Collator(displayLocale);
-  return tags.map((tag) => ({ id: tag, name: languageName(tag, displayLocale) })).toSorted((a, b) => collator.compare(a.name, b.name));
+  return tags
+    .map((tag) => ({ id: tag, name: languageName(tag, displayLocale) }))
+    .toSorted((a, b) => collator.compare(a.name, b.name));
 }

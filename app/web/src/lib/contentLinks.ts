@@ -22,7 +22,11 @@ export function contentLinkPath(href: string, apiOrigin: string): string | null 
   } catch {
     return null;
   }
-  if ((url.protocol !== "https:" && url.protocol !== "http:") || url.host !== origin.host || !contentPagePath.test(url.pathname)) {
+  if (
+    (url.protocol !== "https:" && url.protocol !== "http:") ||
+    url.host !== origin.host ||
+    !contentPagePath.test(url.pathname)
+  ) {
     return null;
   }
   return url.pathname + url.search + url.hash;

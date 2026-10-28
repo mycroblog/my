@@ -23,7 +23,15 @@ export type OutboxItemProps = {
 export function OutboxItem({ text, lang, sendingLabel, error, children }: OutboxItemProps) {
   return (
     <Stack as="li" gap="2" border="md" padding="3" aria-busy={sendingLabel !== undefined}>
-      <Text as="p" dir="auto" {...(lang !== undefined && { lang })} lineClamp={3} whitespace="preWrap" wrap="anywhere" tone="muted">
+      <Text
+        as="p"
+        dir="auto"
+        {...(lang !== undefined && { lang })}
+        lineClamp={3}
+        whitespace="preWrap"
+        wrap="anywhere"
+        tone="muted"
+      >
         {text}
       </Text>
       {sendingLabel !== undefined ? (

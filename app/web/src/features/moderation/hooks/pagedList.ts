@@ -40,7 +40,13 @@ export function toPagedList<T>(query: InfiniteList<{ items: T[] }>): PagedPages<
 
 /** A list that is all there is, in one page, for a table of records the API returns whole. */
 export function wholeList<T>(items: T[]): PagedPages<T> {
-  return { items, pages: items.length > 0 ? [items] : [], hasMore: false, isLoadingMore: false, loadMore: () => undefined };
+  return {
+    items,
+    pages: items.length > 0 ? [items] : [],
+    hasMore: false,
+    isLoadingMore: false,
+    loadMore: () => undefined,
+  };
 }
 
 export type ListPages<T> = {
@@ -64,7 +70,12 @@ export function useListPages<T>(list: PagedPages<T>): ListPages<T> {
   const index = Math.min(wanted, last);
   return {
     items: list.pages[index] ?? [],
-    previous: index > 0 ? () => { setWanted(index - 1); } : undefined,
+    previous:
+      index > 0
+        ? () => {
+            setWanted(index - 1);
+          }
+        : undefined,
     next:
       index < last || list.hasMore
         ? () => {

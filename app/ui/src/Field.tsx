@@ -63,7 +63,8 @@ export function FieldError({ children, className }: PartProps<FieldErrorMessage>
   return (
     <RACFieldError className={field().error({ className })}>
       {(validation) => {
-        const message = typeof children === "function" ? children(validation) : (children ?? validation.validationErrors.join(" "));
+        const message =
+          typeof children === "function" ? children(validation) : (children ?? validation.validationErrors.join(" "));
         if (message === undefined || message === null || message === false || message === "") return null;
         return (
           <>

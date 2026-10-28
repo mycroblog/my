@@ -72,10 +72,12 @@ function templatize(html: string): string {
     .replaceAll("text-align:left", "text-align:{{$.Start}}")
     .replaceAll('align="left"', 'align="{{$.Start}}"')
     .replace(/<!--[\s\S]*?-->/g, (comment) => {
-      if (comment.includes("`") || comment.includes("{{")) throw new Error(`a comment cannot become a template action: ${comment}`);
+      if (comment.includes("`") || comment.includes("{{"))
+        throw new Error(`a comment cannot become a template action: ${comment}`);
       return "{{comment `" + comment + "`}}";
     });
-  if (/\b(ltr|text-align:left)\b/.test(out.replaceAll("{{", ""))) throw new Error("a left-to-right default is left in the frame");
+  if (/\b(ltr|text-align:left)\b/.test(out.replaceAll("{{", "")))
+    throw new Error("a left-to-right default is left in the frame");
   return out;
 }
 

@@ -26,7 +26,14 @@ import {
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { type Account, maxReportComment, maxReportItems, reportCategories, type ReportCategory, type Status } from "../api/reports";
+import {
+  type Account,
+  maxReportComment,
+  maxReportItems,
+  reportCategories,
+  type ReportCategory,
+  type Status,
+} from "../api/reports";
 import { type ReportedVoiceRoom, type ReportForm, type ReportStep, useReportForm } from "../hooks/useReportForm";
 
 export type ReportDialogProps = {
@@ -68,16 +75,30 @@ const stepHeadings: Readonly<Record<ReportStep, ClientMessageKey>> = {
 /** The report dialog. It loads the rules and the posts when it opens, and every opening starts a new draft. */
 export function ReportDialog({ account, status, voiceRoom, isOpen, onOpenChange }: ReportDialogProps) {
   const t = useT();
-  const title = voiceRoom === undefined ? t("client:report.title", { name: isolatedName(account) }) : t("client:report.title_room", { room: `⁨${voiceRoom.name}⁩` });
+  const title =
+    voiceRoom === undefined
+      ? t("client:report.title", { name: isolatedName(account) })
+      : t("client:report.title_room", { room: `⁨${voiceRoom.name}⁩` });
   return (
-    <Dialog title={title} closeLabel={t("client:report.close")} isDismissable={false} isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Dialog
+      title={title}
+      closeLabel={t("client:report.close")}
+      isDismissable={false}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       {/* The steps mount with the dialog's content, so closing the dialog drops the draft. */}
       {({ close }) => <ReportSteps account={account} status={status} voiceRoom={voiceRoom} close={close} />}
     </Dialog>
   );
 }
 
-type ReportStepsProps = { account: Account; status: Status | undefined; voiceRoom: ReportedVoiceRoom | undefined; close: () => void };
+type ReportStepsProps = {
+  account: Account;
+  status: Status | undefined;
+  voiceRoom: ReportedVoiceRoom | undefined;
+  close: () => void;
+};
 
 function ReportSteps({ account, status, voiceRoom, close }: ReportStepsProps) {
   const t = useT();
@@ -86,7 +107,11 @@ function ReportSteps({ account, status, voiceRoom, close }: ReportStepsProps) {
   // A new key per step mounts a new heading, which takes the focus.
   const heading = (
     <StepHeading key={form.step} id={headingId}>
-      {t(voiceRoom !== undefined && form.step === "category" ? "client:report.room.category.heading" : stepHeadings[form.step])}
+      {t(
+        voiceRoom !== undefined && form.step === "category"
+          ? "client:report.room.category.heading"
+          : stepHeadings[form.step],
+      )}
     </StepHeading>
   );
 
@@ -201,7 +226,12 @@ function RulesStep({ form, headingId }: { form: ReportForm; headingId: string })
   if (form.rules.status !== "ready") return null;
   const chosen = new Set(form.draft.ruleIds);
   return (
-    <Stack role="group" aria-labelledby={headingId} aria-describedby={form.isRuleMissing ? `${descriptionId} ${errorId}` : descriptionId} gap="3">
+    <Stack
+      role="group"
+      aria-labelledby={headingId}
+      aria-describedby={form.isRuleMissing ? `${descriptionId} ${errorId}` : descriptionId}
+      gap="3"
+    >
       <Hint id={descriptionId}>{t("client:report.rules.description")}</Hint>
       {form.rules.value.map((rule) => (
         <Checkbox
@@ -210,11 +240,23 @@ function RulesStep({ form, headingId }: { form: ReportForm; headingId: string })
           isInvalid={form.isRuleMissing}
           isDisabled={!chosen.has(rule.id) && chosen.size >= maxReportItems}
           onChange={(isSelected) => {
-            form.change({ ruleIds: isSelected ? [...form.draft.ruleIds, rule.id] : form.draft.ruleIds.filter((id) => id !== rule.id) });
+            form.change({
+              ruleIds: isSelected
+                ? [...form.draft.ruleIds, rule.id]
+                : form.draft.ruleIds.filter((id) => id !== rule.id),
+            });
           }}
-          {...(rule.hint !== undefined && { description: <span dir="auto" lang="">{rule.hint}</span> })}
+          {...(rule.hint !== undefined && {
+            description: (
+              <span dir="auto" lang="">
+                {rule.hint}
+              </span>
+            ),
+          })}
         >
-          <span dir="auto" lang="">{rule.text}</span>
+          <span dir="auto" lang="">
+            {rule.text}
+          </span>
         </Checkbox>
       ))}
       {form.isRuleMissing && (
@@ -231,7 +273,13 @@ function PostsStep({ form, headingId }: { form: ReportForm; headingId: string })
   const descriptionId = useId();
   const { posts } = form;
   return (
-    <Stack role="group" aria-labelledby={headingId} aria-describedby={descriptionId} aria-busy={posts.status === "loading"} gap="3">
+    <Stack
+      role="group"
+      aria-labelledby={headingId}
+      aria-describedby={descriptionId}
+      aria-busy={posts.status === "loading"}
+      gap="3"
+    >
       <Hint id={descriptionId}>{t("client:report.posts.description")}</Hint>
       {posts.status === "loading" && <Spinner label={t("client:report.posts.loading")} />}
       {posts.status === "error" && (
@@ -269,11 +317,17 @@ function PostChoice({ post, form }: { post: Status; form: ReportForm }) {
         isSelected={isSelected}
         isDisabled={!isSelected && form.draft.statusIds.length >= maxReportItems}
         onChange={(selected) => {
-          form.change({ statusIds: selected ? [...form.draft.statusIds, post.id] : form.draft.statusIds.filter((id) => id !== post.id) });
+          form.change({
+            statusIds: selected
+              ? [...form.draft.statusIds, post.id]
+              : form.draft.statusIds.filter((id) => id !== post.id),
+          });
         }}
         aria-describedby={previewId}
       >
-        {t("client:report.posts.item", { date: intl.formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" }) })}
+        {t("client:report.posts.item", {
+          date: intl.formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" }),
+        })}
       </Checkbox>
       {/* The post describes its checkbox; it is inert, so its links are no stops on the way through the list. */}
       <Stack id={previewId} inert marginStart="8" gap="1" textSize="sm">
@@ -306,7 +360,9 @@ function CommentStep({ form }: { form: ReportForm }) {
         rows={4}
         characterLimit={maxReportComment}
         formatRemaining={(remaining) =>
-          remaining < 0 ? t("client:report.comment.characters_over", { count: -remaining }) : t("client:report.comment.characters_left", { count: remaining })
+          remaining < 0
+            ? t("client:report.comment.characters_over", { count: -remaining })
+            : t("client:report.comment.characters_left", { count: remaining })
         }
         errorMessage={t("client:report.comment.too_long", { max: maxReportComment })}
       />

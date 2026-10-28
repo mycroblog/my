@@ -3,7 +3,16 @@
 // row is full, with gaps from the spacing steps (web-client/16-look-states-and-wording.md G1). It renders the element the content needs (`as`).
 import { createElement } from "react";
 import { tv } from "tailwind-variants";
-import { columnGaps, flex, type FlexLayoutProps, type LayoutElement, type PolymorphicProps, rowGaps, type Space, splitBox } from "./layout";
+import {
+  columnGaps,
+  flex,
+  type FlexLayoutProps,
+  type LayoutElement,
+  type PolymorphicProps,
+  rowGaps,
+  type Space,
+  splitBox,
+} from "./layout";
 
 const cluster = tv({
   extend: flex,
@@ -32,5 +41,8 @@ export type ClusterProps<E extends LayoutElement = "div"> = PolymorphicProps<E, 
 /** Children side by side in the reading direction (`flex flex-wrap`). */
 export function Cluster<E extends LayoutElement = "div">(props: ClusterProps<E>) {
   const [boxProps, { as, align, justify, gap, rowGap, wrap, inline, ...rest }] = splitBox(props);
-  return createElement(as ?? "div", { ...rest, className: cluster({ ...boxProps, align, justify, gap, rowGap: rowGap ?? gap, wrap, inline }) });
+  return createElement(as ?? "div", {
+    ...rest,
+    className: cluster({ ...boxProps, align, justify, gap, rowGap: rowGap ?? gap, wrap, inline }),
+  });
 }

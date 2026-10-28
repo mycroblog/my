@@ -9,7 +9,8 @@ import { SettingsHeading } from "./-layout/SettingsHeading";
 export const Route = createFileRoute("/settings/auto-delete")({
   staticData: { title: "client:settings.auto_delete.title" },
   beforeLoad: requireSignIn,
-  loader: ({ context }) => context.queryClient.query({ ...autoDeletePolicyQueryOptions(context.api), staleTime: Infinity }),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...autoDeletePolicyQueryOptions(context.api), staleTime: Infinity }),
   component: AutoDeletePage,
 });
 

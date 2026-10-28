@@ -2,7 +2,12 @@
 import { Link, Stack, Text } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
-import { availabilityEventsQueryOptions, DomainName, InstanceDetail, instanceQueryOptions } from "../features/moderation";
+import {
+  availabilityEventsQueryOptions,
+  DomainName,
+  InstanceDetail,
+  instanceQueryOptions,
+} from "../features/moderation";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -19,7 +24,10 @@ export const Route = createFileRoute("/moderation/instances_/$domain")({
     loadWithPermission(context, "manage_domains", () =>
       Promise.all([
         context.queryClient.query({ ...instanceQueryOptions(context.api, domain), staleTime: Infinity }),
-        context.queryClient.infiniteQuery({ ...availabilityEventsQueryOptions(context.api, domain), staleTime: Infinity }),
+        context.queryClient.infiniteQuery({
+          ...availabilityEventsQueryOptions(context.api, domain),
+          staleTime: Infinity,
+        }),
       ]),
     ),
   component: InstancePage,

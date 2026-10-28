@@ -34,7 +34,12 @@ export function useAdminAnnouncements(): AdminAnnouncement[] {
 export function announcementName(text: string): string {
   const line = text
     .split("\n")
-    .map((item) => item.trim().replace(/^[#>*+\- ]+/u, "").trim())
+    .map((item) =>
+      item
+        .trim()
+        .replace(/^[#>*+\- ]+/u, "")
+        .trim(),
+    )
     .find((item) => item !== "");
   return line ?? "";
 }
@@ -44,7 +49,8 @@ function useTextError() {
   const t = useT();
   return (text: string): string | undefined => {
     if (text.trim() === "") return t("client:admin.announcements.text_required");
-    if (characterCount(text) > announcementTextLimit) return t("client:admin.announcements.too_long", { max: String(announcementTextLimit) });
+    if (characterCount(text) > announcementTextLimit)
+      return t("client:admin.announcements.too_long", { max: String(announcementTextLimit) });
     return undefined;
   };
 }
@@ -69,7 +75,13 @@ export function useNewAnnouncementForm() {
       await refreshAnnouncements(queryClient);
       setText("");
       setSubmitted(false);
-      setStatus(t(announcement.state === "published" ? "client:admin.announcements.published" : "client:admin.announcements.drafted"));
+      setStatus(
+        t(
+          announcement.state === "published"
+            ? "client:admin.announcements.published"
+            : "client:admin.announcements.drafted",
+        ),
+      );
     },
   });
   const error = submitted ? textError(text) : undefined;
@@ -119,7 +131,9 @@ export type AnnouncementActions = {
  * the list shows it (the announcements are fetched again first), so that the screen can move focus and keep the
  * status next to the list.
  */
-export function useAnnouncementActions(onDone: (announcement: AdminAnnouncement, status: string) => void): AnnouncementActions {
+export function useAnnouncementActions(
+  onDone: (announcement: AdminAnnouncement, status: string) => void,
+): AnnouncementActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -128,7 +142,10 @@ export function useAnnouncementActions(onDone: (announcement: AdminAnnouncement,
   const update = useMutation({ ...updateAnnouncementMutation(api) });
   const publish = useMutation({ ...publishAnnouncementMutation(api) });
   const withdraw = useMutation({ ...withdrawAnnouncementMutation(api) });
-  const run = async (work: () => Promise<AdminAnnouncement>, status: (announcement: AdminAnnouncement) => string): Promise<boolean> => {
+  const run = async (
+    work: () => Promise<AdminAnnouncement>,
+    status: (announcement: AdminAnnouncement) => string,
+  ): Promise<boolean> => {
     setError(undefined);
     try {
       const changed = await work();

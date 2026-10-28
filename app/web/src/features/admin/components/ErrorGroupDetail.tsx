@@ -25,7 +25,14 @@ import {
 import { useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { DateTime, DetailSection, type PagedPages, RecordTable, RequirePermission, useFocusAfterChange } from "../../moderation";
+import {
+  DateTime,
+  DetailSection,
+  type PagedPages,
+  RecordTable,
+  RequirePermission,
+  useFocusAfterChange,
+} from "../../moderation";
 import type { ErrorGroupDetail as Detail, ErrorGroupEvent, ErrorGroupHourCount, ErrorGroupSample } from "../api/errors";
 import { type ErrorGroupActions, useCopyErrorValue, useErrorGroup, useErrorGroupActions } from "../hooks/useErrors";
 import { errorKindLabels, errorSourceLabels, ErrorStateLabel, isolatedVersion, SeenAt } from "./ErrorGroups";
@@ -64,7 +71,11 @@ function ErrorGroupView({ id }: { id: string }) {
         <Facts group={group} />
       </DetailSection>
       <DetailSection title={t("client:admin.errors.sample")}>
-        {group.sample === undefined ? <Hint size="inherit">{t("client:admin.errors.sample.none")}</Hint> : <Sample sample={group.sample} />}
+        {group.sample === undefined ? (
+          <Hint size="inherit">{t("client:admin.errors.sample.none")}</Hint>
+        ) : (
+          <Sample sample={group.sample} />
+        )}
       </DetailSection>
       <DetailSection title={t("client:admin.errors.hourly")}>
         <HourlyCounts counts={group.hourly_counts} />
@@ -117,7 +128,15 @@ function Actions({ group, actions }: { group: Detail; actions: ErrorGroupActions
     <Stack gap="3">
       {group.state === "open" && (
         <Stack align="start" gap="1">
-          <Button variant="primary" isPending={actions.pending === "resolve"} isDisabled={busy} aria-describedby={resolveId} onPress={() => { actions.run("resolve"); }}>
+          <Button
+            variant="primary"
+            isPending={actions.pending === "resolve"}
+            isDisabled={busy}
+            aria-describedby={resolveId}
+            onPress={() => {
+              actions.run("resolve");
+            }}
+          >
             {t("client:admin.errors.resolve")}
           </Button>
           <Hint id={resolveId}>{t("client:admin.errors.resolve.description")}</Hint>
@@ -125,7 +144,14 @@ function Actions({ group, actions }: { group: Detail; actions: ErrorGroupActions
       )}
       {group.state !== "muted" && (
         <Stack align="start" gap="1">
-          <Button isPending={actions.pending === "mute"} isDisabled={busy} aria-describedby={muteId} onPress={() => { actions.run("mute"); }}>
+          <Button
+            isPending={actions.pending === "mute"}
+            isDisabled={busy}
+            aria-describedby={muteId}
+            onPress={() => {
+              actions.run("mute");
+            }}
+          >
             {t("client:admin.errors.mute")}
           </Button>
           <Hint id={muteId}>{t("client:admin.errors.mute.description")}</Hint>
@@ -133,7 +159,14 @@ function Actions({ group, actions }: { group: Detail; actions: ErrorGroupActions
       )}
       {group.state === "muted" && (
         <Stack align="start" gap="1">
-          <Button isPending={actions.pending === "unmute"} isDisabled={busy} aria-describedby={unmuteId} onPress={() => { actions.run("unmute"); }}>
+          <Button
+            isPending={actions.pending === "unmute"}
+            isDisabled={busy}
+            aria-describedby={unmuteId}
+            onPress={() => {
+              actions.run("unmute");
+            }}
+          >
             {t("client:admin.errors.unmute")}
           </Button>
           <Hint id={unmuteId}>{t("client:admin.errors.unmute.description")}</Hint>
@@ -150,8 +183,12 @@ function Facts({ group }: { group: Detail }) {
       <DescriptionList columns={3}>
         <DescriptionItem term={t("client:admin.errors.source")}>{t(errorSourceLabels[group.source])}</DescriptionItem>
         <DescriptionItem term={t("client:admin.errors.kind")}>{t(errorKindLabels[group.kind])}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.errors.count_24h")}>{t("client:admin.errors.count", { count: group.count_24h })}</DescriptionItem>
-        <DescriptionItem term={t("client:admin.errors.count_7d")}>{t("client:admin.errors.count", { count: group.count_7d })}</DescriptionItem>
+        <DescriptionItem term={t("client:admin.errors.count_24h")}>
+          {t("client:admin.errors.count", { count: group.count_24h })}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:admin.errors.count_7d")}>
+          {t("client:admin.errors.count", { count: group.count_7d })}
+        </DescriptionItem>
         <DescriptionItem term={t("client:admin.errors.first_seen")}>
           <SeenAt at={group.first_seen_at} version={group.first_version} />
         </DescriptionItem>
@@ -207,8 +244,16 @@ function Sample({ sample }: { sample: ErrorGroupSample }) {
         </DescriptionItem>
       </DescriptionList>
       <DescriptionList>
-        <CopyableItem term={t("client:admin.errors.sample.request_id")} copyLabel={t("client:admin.errors.copy_request_id")} value={sample.request_id} />
-        <CopyableItem term={t("client:admin.errors.sample.trace_id")} copyLabel={t("client:admin.errors.copy_trace_id")} value={sample.trace_id} />
+        <CopyableItem
+          term={t("client:admin.errors.sample.request_id")}
+          copyLabel={t("client:admin.errors.copy_request_id")}
+          value={sample.request_id}
+        />
+        <CopyableItem
+          term={t("client:admin.errors.sample.trace_id")}
+          copyLabel={t("client:admin.errors.copy_trace_id")}
+          value={sample.trace_id}
+        />
         <DescriptionItem term={t("client:admin.errors.sample.type")}>
           <Text mono wrap="anywhere" dir="ltr">
             {sample.type}
@@ -303,7 +348,13 @@ function History({ events }: { events: readonly ErrorGroupEvent[] }) {
   const items = [...events].reverse();
   return (
     <RecordTable
-      list={{ items, pages: items.length > 0 ? [items] : [], hasMore: false, isLoadingMore: false, loadMore: () => undefined }}
+      list={{
+        items,
+        pages: items.length > 0 ? [items] : [],
+        hasMore: false,
+        isLoadingMore: false,
+        loadMore: () => undefined,
+      }}
       caption={t("client:admin.errors.history")}
       getId={(event) => `${event.occurred_at} ${event.kind}`}
       empty={<EmptyState headingLevel={3} heading={t("client:admin.errors.history.empty")} />}
@@ -318,7 +369,12 @@ function History({ events }: { events: readonly ErrorGroupEvent[] }) {
       {(event) => (
         <TableRow data-row-id={`${event.occurred_at} ${event.kind}`}>
           <TableRowHeader wrap="anywhere">
-            {event.version === undefined ? t(eventLabels[event.kind]) : t("client:admin.errors.event.with_version", { change: t(eventLabels[event.kind]), version: isolatedVersion(event.version) })}
+            {event.version === undefined
+              ? t(eventLabels[event.kind])
+              : t("client:admin.errors.event.with_version", {
+                  change: t(eventLabels[event.kind]),
+                  version: isolatedVersion(event.version),
+                })}
           </TableRowHeader>
           <TableCell>{t(actorLabels[event.actor])}</TableCell>
           <TableCell>

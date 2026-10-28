@@ -6,7 +6,14 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Status } from "./api/timelines";
 import { apiBase, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
-import { imageFixture, longDomainAccountFixture, longNameAccountFixture, rtlNameAccountFixture, statusPage, timelineStatusFixture } from "../../test/fixtures";
+import {
+  imageFixture,
+  longDomainAccountFixture,
+  longNameAccountFixture,
+  rtlNameAccountFixture,
+  statusPage,
+  timelineStatusFixture,
+} from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { autoplayKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
@@ -14,7 +21,12 @@ import { renderApp } from "../../test/render";
 
 /** A status like the fixture, with its own ID and text. */
 function status(n: number, overrides: Partial<Status> = {}): Status {
-  return { ...timelineStatusFixture, id: `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`, content: `<p>Post ${String(n)}</p>`, ...overrides };
+  return {
+    ...timelineStatusFixture,
+    id: `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`,
+    content: `<p>Post ${String(n)}</p>`,
+    ...overrides,
+  };
 }
 
 beforeEach(() => {
@@ -48,7 +60,9 @@ describe("the local timeline", () => {
       http.get(`${apiBase}/timelines/local`, ({ request }) => {
         const cursor = new URL(request.url).searchParams.get("cursor");
         cursors.push(cursor);
-        return HttpResponse.json(cursor === null ? statusPage([status(1), status(2)], "page-2") : statusPage([status(3)]));
+        return HttpResponse.json(
+          cursor === null ? statusPage([status(1), status(2)], "page-2") : statusPage([status(3)]),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/local" });
@@ -62,7 +76,11 @@ describe("the local timeline", () => {
 
     expect(await within(feed).findByRole("article", { description: "Post 3" })).toHaveAttribute("aria-posinset", "3");
     expect(cursors).toEqual([null, "page-2"]);
-    expect(within(feed).getAllByRole("article").map((a) => a.getAttribute("aria-setsize"))).toEqual(["3", "3", "3"]);
+    expect(
+      within(feed)
+        .getAllByRole("article")
+        .map((a) => a.getAttribute("aria-setsize")),
+    ).toEqual(["3", "3", "3"]);
     expect(screen.queryByRole("button", { name: "Load more posts" })).not.toBeInTheDocument();
   });
 
@@ -95,7 +113,8 @@ describe("the local timeline", () => {
     let failures = 1;
     server.use(
       http.get(`${apiBase}/timelines/local`, ({ request }) => {
-        if (new URL(request.url).searchParams.get("cursor") === null) return HttpResponse.json(statusPage([status(1)], "page-2"));
+        if (new URL(request.url).searchParams.get("cursor") === null)
+          return HttpResponse.json(statusPage([status(1)], "page-2"));
         if (failures-- > 0) return problem(503, "about:blank", "Service Unavailable");
         return HttpResponse.json(statusPage([status(2)]));
       }),
@@ -105,7 +124,9 @@ describe("the local timeline", () => {
 
     await user.click(screen.getByRole("button", { name: "Load more posts" }));
 
-    expect(await within(screen.getByRole("alert")).findByText("Could not load more posts: Service Unavailable")).toBeInTheDocument();
+    expect(
+      await within(screen.getByRole("alert")).findByText("Could not load more posts: Service Unavailable"),
+    ).toBeInTheDocument();
     expect(within(feed).getAllByRole("article")).toHaveLength(1);
     // The feed stops loading by itself; only the retry button asks again.
     expect(screen.queryByRole("button", { name: "Load more posts" })).not.toBeInTheDocument();
@@ -121,7 +142,13 @@ describe("a status card", () => {
   test("shows a boost as the boosted post under the booster's name", async () => {
     const original = status(1, { created_at: "2026-10-16T11:55:00Z" });
     const boost = status(2, {
-      account: { ...timelineStatusFixture.account, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol@remote.example", display_name: "" },
+      account: {
+        ...timelineStatusFixture.account,
+        id: "0192f0c4-7a8e-7000-8000-000000000003",
+        username: "carol",
+        acct: "carol@remote.example",
+        display_name: "",
+      },
       content: "",
       created_at: "2026-10-16T11:59:30Z",
       boost: original,
@@ -135,7 +162,9 @@ describe("a status card", () => {
   });
 
   test("names the author's link by the whole name and handle, however long, in the name's own direction", async () => {
-    const posts = [longNameAccountFixture, rtlNameAccountFixture, longDomainAccountFixture].map((account, n) => status(n + 1, { account }));
+    const posts = [longNameAccountFixture, rtlNameAccountFixture, longDomainAccountFixture].map((account, n) =>
+      status(n + 1, { account }),
+    );
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage(posts))));
     await renderApp({ path: "/local" });
 
@@ -150,7 +179,9 @@ describe("a status card", () => {
   });
 
   test("shows the author's avatar, and the first letter of the name without one", async () => {
-    const pictured = status(1, { account: { ...timelineStatusFixture.account, avatar: imageFixture("https://my.example/media/avatar/small.webp") } });
+    const pictured = status(1, {
+      account: { ...timelineStatusFixture.account, avatar: imageFixture("https://my.example/media/avatar/small.webp") },
+    });
     const plain = status(2);
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([pictured, plain]))));
     await renderApp({ path: "/local" });
@@ -158,7 +189,10 @@ describe("a status card", () => {
     const [withAvatar, withoutAvatar] = await screen.findAllByRole("article");
     if (withAvatar === undefined || withoutAvatar === undefined) throw new Error("want two articles");
     // The avatar is decorative (alt=""), and its link is hidden: the name is next to it.
-    expect(within(withAvatar).getByRole("presentation", { hidden: true })).toHaveAttribute("src", "https://my.example/media/avatar/small.webp");
+    expect(within(withAvatar).getByRole("presentation", { hidden: true })).toHaveAttribute(
+      "src",
+      "https://my.example/media/avatar/small.webp",
+    );
     expect(within(withoutAvatar).queryByRole("presentation", { hidden: true })).not.toBeInTheDocument();
     expect(within(withoutAvatar).getByText("B")).toBeInTheDocument();
   });
@@ -203,9 +237,27 @@ describe("a status card", () => {
           state: "ready",
           meta: { focus: { x: 0, y: 0 } },
           variants: {
-            small: { url: "https://my.example/media/thumb.webp", content_type: "image/webp", width: 640, height: 360, size: 100 },
-            medium: { url: "https://my.example/media/medium.webp", content_type: "image/webp", width: 1600, height: 900, size: 500 },
-            large: { url: "https://my.example/media/full.jpg", content_type: "image/jpeg", width: 1600, height: 900, size: 1000 },
+            small: {
+              url: "https://my.example/media/thumb.webp",
+              content_type: "image/webp",
+              width: 640,
+              height: 360,
+              size: 100,
+            },
+            medium: {
+              url: "https://my.example/media/medium.webp",
+              content_type: "image/webp",
+              width: 1600,
+              height: 900,
+              size: 500,
+            },
+            large: {
+              url: "https://my.example/media/full.jpg",
+              content_type: "image/jpeg",
+              width: 1600,
+              height: 900,
+              size: 1000,
+            },
           },
           url: "https://my.example/media/full.jpg",
           preview_url: "https://my.example/media/thumb.webp",
@@ -231,7 +283,10 @@ describe("a status card", () => {
     expect(article.querySelector("canvas")).toHaveAttribute("aria-hidden", "true");
     await user.click(reveal);
     // No description: the picture is named so, and not skipped.
-    expect(within(article).getByRole("img", { name: "No description" })).toHaveAttribute("src", "https://my.example/media/thumb.webp");
+    expect(within(article).getByRole("img", { name: "No description" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/thumb.webp",
+    );
   });
 
   test("shows the card of a post's link as one link, behind the content warning with the body", async () => {
@@ -246,7 +301,12 @@ describe("a status card", () => {
         language: "en",
         author_name: "Alice Example",
         published_at: "2026-10-02T09:00:00Z",
-        image: { url: "https://my.example/media/proxy/card/small?sig=x", width: 1200, height: 630, description: "A sunrise" },
+        image: {
+          url: "https://my.example/media/proxy/card/small?sig=x",
+          width: 1200,
+          height: 630,
+          description: "A sunrise",
+        },
       },
     });
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([linked]))));
@@ -266,11 +326,18 @@ describe("a status card", () => {
     // The post is sensitive: the card's image waits for its own toggle.
     expect(within(article).queryByRole("img", { name: "A sunrise" })).not.toBeInTheDocument();
     await user.click(within(article).getByRole("button", { name: "Show sensitive media", pressed: false }));
-    expect(within(article).getByRole("img", { name: "A sunrise" })).toHaveAttribute("src", "https://my.example/media/proxy/card/small?sig=x");
+    expect(within(article).getByRole("img", { name: "A sunrise" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/proxy/card/small?sig=x",
+    );
   });
 
   test("moves an animated picture only without reduced motion, and not at all with autoplay off", async () => {
-    const variant = (name: string, width: number) => ({ url: `https://my.example/media/${name}`, width, height: width / 2 });
+    const variant = (name: string, width: number) => ({
+      url: `https://my.example/media/${name}`,
+      width,
+      height: width / 2,
+    });
     const dancing = status(1, {
       media_attachments: [
         {
@@ -283,7 +350,11 @@ describe("a status card", () => {
             small: variant("s.webp", 640),
             medium: variant("m.webp", 1920),
             large: variant("l.jpg", 3840),
-            animated: { small: variant("s-a.webp", 640), medium: variant("m-a.webp", 1920), large: variant("l-a.gif", 3840) },
+            animated: {
+              small: variant("s-a.webp", 640),
+              medium: variant("m-a.webp", 1920),
+              large: variant("l-a.gif", 3840),
+            },
           },
           url: "https://my.example/media/l-a.gif",
           preview_url: "https://my.example/media/s.webp",
@@ -293,9 +364,15 @@ describe("a status card", () => {
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([dancing]))));
     const { unmount } = await renderApp({ path: "/local" });
     const picture = await screen.findByRole("img", { name: "A dance" });
-    expect(picture).toHaveAttribute("srcset", "https://my.example/media/s.webp 640w, https://my.example/media/m.webp 1920w, https://my.example/media/l.jpg 3840w");
+    expect(picture).toHaveAttribute(
+      "srcset",
+      "https://my.example/media/s.webp 640w, https://my.example/media/m.webp 1920w, https://my.example/media/l.jpg 3840w",
+    );
     // eslint-disable-next-line testing-library/no-node-access -- <picture> and <source> have no role.
-    expect(picture.parentElement?.querySelector("source")).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
+    expect(picture.parentElement?.querySelector("source")).toHaveAttribute(
+      "media",
+      "(prefers-reduced-motion: no-preference)",
+    );
     unmount();
 
     autoplayKey.write(false);
@@ -342,11 +419,17 @@ describe("a status card", () => {
     const cat = within(article).getByRole("button", { name: "A cat" });
     await user.click(cat);
     const dialog = await screen.findByRole("dialog", { name: "Image 1 of 2" });
-    expect(within(dialog).getByRole("img", { name: "A cat" })).toHaveAttribute("src", "https://my.example/media/cat-l.jpg");
+    expect(within(dialog).getByRole("img", { name: "A cat" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/cat-l.jpg",
+    );
 
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("dialog", { name: "Image 2 of 2" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("img", { name: "No description" })).toHaveAttribute("src", "https://my.example/media/proxy/dog/original?sig=x");
+    expect(within(dialog).getByRole("img", { name: "No description" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/proxy/dog/original?sig=x",
+    );
 
     await user.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => {
@@ -366,7 +449,11 @@ describe("a status card", () => {
   });
 
   test("plays videos and audio files, local and remote, only when asked to", async () => {
-    const variant = (name: string, width: number) => ({ url: `https://my.example/media/${name}`, width, height: (width * 9) / 16 });
+    const variant = (name: string, width: number) => ({
+      url: `https://my.example/media/${name}`,
+      width,
+      height: (width * 9) / 16,
+    });
     const playing = status(1, {
       media_attachments: [
         {
@@ -403,7 +490,15 @@ describe("a status card", () => {
     const article = await screen.findByRole("article", { description: "Post 1" });
     // eslint-disable-next-line testing-library/no-node-access -- <video> and <audio> have no ARIA role.
     const players = Array.from(article.querySelectorAll("video, audio"));
-    expect(players.map((p) => [p.tagName, p.getAttribute("src"), p.getAttribute("poster"), p.hasAttribute("controls"), p.hasAttribute("autoplay")])).toEqual([
+    expect(
+      players.map((p) => [
+        p.tagName,
+        p.getAttribute("src"),
+        p.getAttribute("poster"),
+        p.hasAttribute("controls"),
+        p.hasAttribute("autoplay"),
+      ]),
+    ).toEqual([
       ["VIDEO", "https://my.example/media/large-animated.mp4", "https://my.example/media/l.jpg", true, false],
       ["AUDIO", "https://my.example/media/large-animated.ogg", null, false, false],
       ["VIDEO", "https://my.example/proxy/media/m5/full", null, true, false],
@@ -499,7 +594,11 @@ describe("the bookmarks", () => {
       http.get(`${apiBase}/bookmarks`, ({ request }) => {
         const cursor = new URL(request.url).searchParams.get("cursor");
         cursors.push(cursor);
-        return HttpResponse.json(cursor === null ? statusPage([status(1, { bookmarked: true })], "page-2") : statusPage([status(2, { bookmarked: true })]));
+        return HttpResponse.json(
+          cursor === null
+            ? statusPage([status(1, { bookmarked: true })], "page-2")
+            : statusPage([status(2, { bookmarked: true })]),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/bookmarks" });
@@ -527,7 +626,9 @@ describe("the bookmarks", () => {
     const local = status(1);
     server.use(
       http.post(oauthPaths.refresh, () => tokenResponse("test-access-token")),
-      http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([{ ...local, bookmarked: bookmarked.has(local.id) }]))),
+      http.get(`${apiBase}/timelines/local`, () =>
+        HttpResponse.json(statusPage([{ ...local, bookmarked: bookmarked.has(local.id) }])),
+      ),
       http.get(`${apiBase}/bookmarks`, () => HttpResponse.json(statusPage([...bookmarked.values()]))),
       http.post(`${apiBase}/statuses/:id/bookmark`, () => {
         const answer = { ...local, bookmarked: true };
@@ -550,7 +651,10 @@ describe("the bookmarks", () => {
     await user.click(within(navigation).getByRole("link", { name: "Bookmarks" }));
 
     const feed = await screen.findByRole("feed", { name: "Bookmarks" });
-    const toggle = within(within(feed).getByRole("article", { description: "Post 1" })).getByRole("button", { name: "Bookmark", pressed: true });
+    const toggle = within(within(feed).getByRole("article", { description: "Post 1" })).getByRole("button", {
+      name: "Bookmark",
+      pressed: true,
+    });
 
     await user.click(toggle);
 

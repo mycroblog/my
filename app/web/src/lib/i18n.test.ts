@@ -48,7 +48,11 @@ describe("loadI18n", () => {
     const { locale, messages } = await loadI18n("ja");
     expect(locale).toBe("ja");
     expect(messages["client:shell.nav.home"]).toBe("ホーム");
-    expect(Object.keys(messages).toSorted()).toEqual(Object.keys(en).map((key) => `client:${key}`).toSorted());
+    expect(Object.keys(messages).toSorted()).toEqual(
+      Object.keys(en)
+        .map((key) => `client:${key}`)
+        .toSorted(),
+    );
   });
 
   test("uses the source locale for an unsupported locale", async () => {

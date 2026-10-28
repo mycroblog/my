@@ -34,7 +34,15 @@ export interface RadioGroupProps extends Omit<RACRadioGroupProps, "children">, F
  * A radio group (React Aria RadioGroup): Tab moves into and out of the group, the arrow keys move and
  * select. Controlled with `value` / `onChange` or uncontrolled with `defaultValue`.
  */
-export function RadioGroup({ label, description, errorMessage, children, className, orientation = "vertical", ...props }: RadioGroupProps) {
+export function RadioGroup({
+  label,
+  description,
+  errorMessage,
+  children,
+  className,
+  orientation = "vertical",
+  ...props
+}: RadioGroupProps) {
   const styles = radioGroup({ orientation });
   return (
     <RACRadioGroup
@@ -100,4 +108,3 @@ export function Radio({ children, description, className, ...props }: RadioProps
     </RadioField>
   );
 }
-

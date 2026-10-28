@@ -9,7 +9,14 @@ import { useLocale, useT } from "../../../lib/i18n";
 import { skinToneKey, useStorage } from "../../../lib/storage";
 import { customEmojisQueryOptions } from "../api/customEmojis";
 import { customEmojiKey, defaultFrequentEmojis, rememberEmoji, useFrequentEmojis } from "./frequentEmojis";
-import { customEmojiSections, emojisOfKeys, frequentSection, pickerLabels, skinToneLabels, unicodeEmojiSections } from "./pickerSections";
+import {
+  customEmojiSections,
+  emojisOfKeys,
+  frequentSection,
+  pickerLabels,
+  skinToneLabels,
+  unicodeEmojiSections,
+} from "./pickerSections";
 import { preloadUnicodeEmoji, useUnicodeEmoji } from "./unicodeEmoji";
 
 export type EmojiPickerContent = {
@@ -46,7 +53,11 @@ export function useEmojiPickerContent(grid: string): EmojiPickerContent {
     preload: () => {
       preloadUnicodeEmoji(locale);
     },
-    sections: [frequentSection(frequent, t), ...customEmojiSections(custom, t), ...(unicodeSet === undefined ? [] : unicodeEmojiSections(unicodeSet, t))],
+    sections: [
+      frequentSection(frequent, t),
+      ...customEmojiSections(custom, t),
+      ...(unicodeSet === undefined ? [] : unicodeEmojiSections(unicodeSet, t)),
+    ],
     labels: { ...pickerLabels(grid, t), ...skinToneLabels(t) },
     skinTone,
     setSkinTone: (tone) => {

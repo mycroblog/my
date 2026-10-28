@@ -20,7 +20,12 @@ function homeQueryKey(api: Api) {
 /** Whether a kept item has what every post card reads first; the rest follows the stored version (lib/storage). */
 function looksLikeStatus(item: Record<string, unknown>): boolean {
   const account = item["account"];
-  return typeof item["id"] === "string" && typeof item["created_at"] === "string" && typeof account === "object" && account !== null;
+  return (
+    typeof item["id"] === "string" &&
+    typeof item["created_at"] === "string" &&
+    typeof account === "object" &&
+    account !== null
+  );
 }
 
 /** The visibilities whose posts are never kept on the browser: only their audience may read them. */
@@ -32,7 +37,10 @@ const unsavedVisibilities: ReadonlySet<string> = new Set(["private", "direct"]);
  * rewrites the cached post, which saves the timeline again without it.
  */
 function savable(status: Status): boolean {
-  return !unsavedVisibilities.has(status.visibility) && (status.boost === undefined || !unsavedVisibilities.has(status.boost.visibility));
+  return (
+    !unsavedVisibilities.has(status.visibility) &&
+    (status.boost === undefined || !unsavedVisibilities.has(status.boost.visibility))
+  );
 }
 
 /** Keeps the newest posts of the cached home timeline that may be kept, unless it holds none. */
@@ -57,7 +65,10 @@ export function restoreSavedHomeTimeline(queryClient: QueryClient, api: Api): bo
   const saved = homeTimelineKey.read();
   if (saved === null || !saved.items.every(looksLikeStatus)) return false;
   // The items are the Status objects that saveHomeTimeline wrote, of the same stored version.
-  const page: TimelinePage = { items: (saved.items as Status[]).filter(savable),...(saved.nextCursor !== null && { next_cursor: saved.nextCursor }) };
+  const page: TimelinePage = {
+    items: (saved.items as Status[]).filter(savable),
+    ...(saved.nextCursor !== null && { next_cursor: saved.nextCursor }),
+  };
   queryClient.setQueryData(key, { pages: [page], pageParams: [undefined] }, { updatedAt: saved.loadedAt });
   return true;
 }
@@ -76,6 +87,7 @@ export function keepHomeTimelineSaved(queryClient: QueryClient, api: Api): () =>
   saveHomeTimeline(queryClient, api);
   return queryClient.getQueryCache().subscribe((event) => {
     // A fetch, or a write to the cache (a new post, a favourite), that succeeded.
-    if (event.type === "updated" && event.action.type === "success" && event.query.queryHash === hash) saveHomeTimeline(queryClient, api);
+    if (event.type === "updated" && event.action.type === "success" && event.query.queryHash === hash)
+      saveHomeTimeline(queryClient, api);
   });
 }

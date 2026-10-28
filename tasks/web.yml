@@ -11,19 +11,25 @@ vars:
   # internal/interface/web embeds the build from here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
   # committed, so Go builds and tests need no Bun; go:bin embeds the real build.
   WEB_EMBED_DIR: internal/interface/web/dist
+  # The files bun fmt formats (web:fmt, web:fmt-check): the TypeScript and JavaScript of every TS package. The options
+  # are in the [fmt] section of the root bunfig.toml; .prettierignore lists the files it leaves alone, besides
+  # .gitignore's.
+  FMT_FILES: >-
+    'app/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
+    'tools/i18n/**/*.{ts,tsx,js,mjs}' 'tools/mail/**/*.{ts,tsx,js,mjs}'
 
 tasks:
   # web:lint-rules copies its violation fixtures into app/web/src while it runs, so the tasks that read app/web/src
   # (tsc, Oxlint, knip, the build, Vitest, the token scan) run after it, never beside it.
   check:
-    desc: Run the offline checks of app/web and the workspace-wide client checks (Oxlint, knip, licenses, tokens), in parallel
+    desc: Run the offline checks of app/web and the workspace-wide client checks (Oxlint, knip, bun fmt, licenses, tokens), in parallel
     deps: [lint-rules]
     cmds:
       - task: check-after-lint-rules
 
   # Without a desc, so `--list` leaves it out; not internal, so scripts/ci-coverage.sh can read it with --summary.
   check-after-lint-rules:
-    deps: [static, lint-css, licenses, tokens, test, playwright-image-check]
+    deps: [static, fmt-check, lint-css, licenses, tokens, test, playwright-image-check]
 
   static:
     desc: Run tsc, Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
@@ -126,6 +132,19 @@ tasks:
     dir: app
     cmds:
       - bun run knip
+
+  # Bun only: it reads no node_modules, so it needs no install.
+  fmt:
+    desc: Format the TypeScript and JavaScript of app/, pkg/mykit/ts, pkg/mybot/ts, tools/i18n, and tools/mail with bun fmt (run it before committing them)
+    cmds:
+      - bun fmt {{.FMT_FILES}}
+
+  # The i18n, mail, and mykit checks run it too, for their packages' files.
+  fmt-check:
+    desc: Fail if bun fmt would change a TypeScript or JavaScript file of the TS packages (scripts/task.sh web:fmt fixes them)
+    run: once
+    cmds:
+      - bun fmt --check {{.FMT_FILES}}
 
   lint-css:
     desc: Fail when CSS uses 100vh (docs/architecture/web-client/README.md D5)

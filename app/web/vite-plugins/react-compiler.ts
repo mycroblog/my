@@ -19,7 +19,8 @@ interface AstNode {
   [key: string]: unknown;
 }
 
-const isNode = (value: unknown): value is AstNode => value != null && typeof value === "object" && typeof (value as AstNode).type === "string";
+const isNode = (value: unknown): value is AstNode =>
+  value != null && typeof value === "object" && typeof (value as AstNode).type === "string";
 
 /** The [start, end) ranges, in UTF-16 code units, of the functions whose body opens with an opt-out directive. */
 function optOutRanges(file: string, code: string): Array<[number, number]> {
@@ -31,7 +32,12 @@ function optOutRanges(file: string, code: string): Array<[number, number]> {
       return;
     }
     if (value == null || typeof value !== "object") return;
-    if (isNode(value) && value.type.includes("Function") && isNode(value.body) && value.body.type === "BlockStatement") {
+    if (
+      isNode(value) &&
+      value.type.includes("Function") &&
+      isNode(value.body) &&
+      value.body.type === "BlockStatement"
+    ) {
       const statements = value.body.body as unknown[];
       if (statements.some((s) => isNode(s) && typeof s.directive === "string" && optOut.test(s.directive))) {
         ranges.push([value.start, value.end]);
@@ -70,8 +76,15 @@ export interface CompiledModule {
  */
 export async function compileModule(id: string, code: string, sourcemap = true): Promise<CompiledModule> {
   const file = id.split("?")[0] ?? id;
-  const result = await transform(file, code, { jsx: "preserve", sourcemap, reactCompiler: { reportDiagnostics: true } });
-  if (result.fatal) throw new Error(result.errors.map((e) => e.codeframe ?? e.message).join("\n\n") || `React Compiler failed on ${id}`);
+  const result = await transform(file, code, {
+    jsx: "preserve",
+    sourcemap,
+    reactCompiler: { reportDiagnostics: true },
+  });
+  if (result.fatal)
+    throw new Error(
+      result.errors.map((e) => e.codeframe ?? e.message).join("\n\n") || `React Compiler failed on ${id}`,
+    );
   const problems: string[] = [];
   if (result.errors.length > 0) {
     const ranges = optOutRanges(file, code);
@@ -82,7 +95,9 @@ export async function compileModule(id: string, code: string, sourcemap = true):
       const at = decoder.decode(bytes.subarray(0, error.labels[0]?.start ?? 0)).length;
       if (ranges.some(([start, end]) => start <= at && at < end)) continue;
       const { at: where, line } = position(code, at);
-      problems.push(`${id}:${where}: ${error.message}${error.helpMessage ? ` (${error.helpMessage})` : ""}\n    > ${line}`);
+      problems.push(
+        `${id}:${where}: ${error.message}${error.helpMessage ? ` (${error.helpMessage})` : ""}\n    > ${line}`,
+      );
     }
   }
   return { code: result.code, map: result.map, compiled: (result.code.match(/\b_c\(\d+\)/g) ?? []).length, problems };
@@ -122,7 +137,9 @@ export function reactCompiler(): Plugin {
       if (error || config.consumer !== "client" || config.command !== "build") return;
       const found = [...problems.values()].flat();
       if (found.length > 0) {
-        this.error(`React Compiler skipped these functions; rewrite them so that it compiles them (web-client/README.md R4):\n${found.join("\n")}`);
+        this.error(
+          `React Compiler skipped these functions; rewrite them so that it compiles them (web-client/README.md R4):\n${found.join("\n")}`,
+        );
       }
       const total = [...compiled.values()].reduce((sum, n) => sum + n, 0);
       if (total === 0) this.error("React Compiler compiled no function; check reactCompiler() in vite.config.ts");

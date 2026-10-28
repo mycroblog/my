@@ -9,7 +9,8 @@ import { SettingsHeading } from "./-layout/SettingsHeading";
 export const Route = createFileRoute("/settings/mutes")({
   staticData: { title: "client:settings.mutes.title" },
   beforeLoad: requireSignIn,
-  loader: ({ context }) => context.queryClient.infiniteQuery({ ...mutesQueryOptions(context.api), staleTime: Infinity }),
+  loader: ({ context }) =>
+    context.queryClient.infiniteQuery({ ...mutesQueryOptions(context.api), staleTime: Infinity }),
   component: MutesPage,
 });
 

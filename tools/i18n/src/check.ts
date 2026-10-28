@@ -77,8 +77,10 @@ function copyStyleFindings(locale: string, text: string): string[] {
   const out: string[] = [];
   if (/[!！]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
   if (new Intl.Locale(locale).language === "ja") {
-    if (text.includes(":")) out.push("use the full-width colon \"：\" in Japanese (web-client/16-look-states-and-wording.md G20)");
-    if (text.includes(",")) out.push("use \"、\" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)");
+    if (text.includes(":"))
+      out.push('use the full-width colon "：" in Japanese (web-client/16-look-states-and-wording.md G20)');
+    if (text.includes(","))
+      out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
   }
   return out;
 }
@@ -90,7 +92,8 @@ function checkCatalog(catalog: Catalog) {
     try {
       canonical = Intl.getCanonicalLocales(locale)[0];
     } catch {}
-    if (canonical !== locale) error(`locales/${locale}: not a canonical BCP 47 tag${canonical ? ` (use ${canonical})` : ""}`);
+    if (canonical !== locale)
+      error(`locales/${locale}: not a canonical BCP 47 tag${canonical ? ` (use ${canonical})` : ""}`);
   }
 
   const sourceArgs = new Map<string, Args | undefined>();
@@ -179,7 +182,10 @@ async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
   const generated = await generate(catalog, ["go"]);
   for (const [path, want] of generated) {
     const got = existsSync(path) ? readFileSync(path, "utf8") : undefined;
-    if (got !== want) error(`${rel(path)} is ${got === undefined ? "missing" : "stale"}; run scripts/task.sh i18n:gen and commit the result`);
+    if (got !== want)
+      error(
+        `${rel(path)} is ${got === undefined ? "missing" : "stale"}; run scripts/task.sh i18n:gen and commit the result`,
+      );
   }
   for (const { path } of files.filter((f) => isPseudo(f.locale))) {
     if (!generated.has(path)) error(`${rel(path)} has no source; run scripts/task.sh i18n:gen`);

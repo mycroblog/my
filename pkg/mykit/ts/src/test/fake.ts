@@ -28,7 +28,12 @@ export function json(status: number, body: unknown, headers: Record<string, stri
 }
 
 /** An RFC 9457 problem answer. */
-export function problem(status: number, type: string, extra: Record<string, unknown> = {}, headers: Record<string, string> = {}): Response {
+export function problem(
+  status: number,
+  type: string,
+  extra: Record<string, unknown> = {},
+  headers: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify({ type, title: `title of ${type}`, status, ...extra }), {
     status,
     headers: { "Content-Type": "application/problem+json", ...headers },

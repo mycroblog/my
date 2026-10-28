@@ -12,7 +12,8 @@ import { DurationSelect } from "./DurationSelect";
 import { ReasonField } from "./ReasonField";
 
 // Stories may spell out English; apps pass react-intl messages instead (web-client/README.md A9).
-const formatRemaining = (remaining: number) => (remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`);
+const formatRemaining = (remaining: number) =>
+  remaining < 0 ? `${String(-remaining)} characters too many` : `${String(remaining)} characters left`;
 const day = 86_400;
 const formatDuration = (seconds: number) => (seconds === day ? "1 day" : `${String(seconds / day)} days`);
 
@@ -29,7 +30,8 @@ const meta = {
   ],
   args: {
     title: "Suspend example.com?",
-    description: "Deliveries to and from example.com stop and follows between its accounts and yours end. Lifting the suspension does not bring the follows back.",
+    description:
+      "Deliveries to and from example.com stop and follows between its accounts and yours end. Lifting the suspension does not bring the follows back.",
     confirmLabel: "Suspend",
     cancelLabel: "Cancel",
     onConfirm: fn(),
@@ -94,8 +96,24 @@ function SuspendWithFields({ open = false, ...args }: ConfirmDialogProps & { ope
     <DialogTrigger defaultOpen={open}>
       <Button variant="danger">Suspend</Button>
       <ConfirmDialog {...args}>
-        <ReasonField label="Reason" description="Shown to the account's owner." isRequired value={reason} onChange={setReason} characterLimit={5000} formatRemaining={formatRemaining} errorMessage="Give a reason." />
-        <DurationSelect label="Duration" durations={[day, 7 * day, 30 * day]} formatDuration={formatDuration} indefiniteLabel="Indefinitely" value={duration} onChange={setDuration} />
+        <ReasonField
+          label="Reason"
+          description="Shown to the account's owner."
+          isRequired
+          value={reason}
+          onChange={setReason}
+          characterLimit={5000}
+          formatRemaining={formatRemaining}
+          errorMessage="Give a reason."
+        />
+        <DurationSelect
+          label="Duration"
+          durations={[day, 7 * day, 30 * day]}
+          formatDuration={formatDuration}
+          indefiniteLabel="Indefinitely"
+          value={duration}
+          onChange={setDuration}
+        />
       </ConfirmDialog>
     </DialogTrigger>
   );
@@ -153,5 +171,10 @@ export const Failed: Story = {
 /** A primary confirmation, for actions that are not destructive. */
 export const Primary: Story = {
   ...Open,
-  args: { tone: "primary", title: "Resume deliveries to example.com?", description: "Queued activities are sent again.", confirmLabel: "Resume" },
+  args: {
+    tone: "primary",
+    title: "Resume deliveries to example.com?",
+    description: "Queued activities are sent again.",
+    confirmLabel: "Resume",
+  },
 };

@@ -1,11 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Cluster, ConfirmDialog, DescriptionItem, DescriptionList, DialogTrigger, EmptyState, Heading, Hint, InlineError, Radio, RadioGroup, RegionError, Spinner, Stack, StatusMessage, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Cluster,
+  ConfirmDialog,
+  DescriptionItem,
+  DescriptionList,
+  DialogTrigger,
+  EmptyState,
+  Heading,
+  Hint,
+  InlineError,
+  Radio,
+  RadioGroup,
+  RegionError,
+  Spinner,
+  Stack,
+  StatusMessage,
+  Text,
+} from "@my/ui";
 import { type ReactNode, useId, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFormatMoney } from "../../costs";
 import { DocumentLink } from "../../documents";
-import { type SupporterIneligibleReason, type SupporterInterval, supporterIntervals, type SupporterPlan, type SupporterSubscription } from "../api/supporters";
+import {
+  type SupporterIneligibleReason,
+  type SupporterInterval,
+  supporterIntervals,
+  type SupporterPlan,
+  type SupporterSubscription,
+} from "../api/supporters";
 import {
   changeTiming,
   type SupporterReturn,
@@ -49,9 +74,17 @@ export function SupporterSubscriptionSettings({ returned }: { returned: Supporte
         <Stack gap="8">
           <ReturnMessage returned={returned} confirming={page.confirming} subscription={page.subscription} />
           {page.subscription === undefined ? (
-            <Subscribe plans={page.plans} ineligible={page.ineligible} commerceDisclosureUrl={page.commerceDisclosureUrl} />
+            <Subscribe
+              plans={page.plans}
+              ineligible={page.ineligible}
+              commerceDisclosureUrl={page.commerceDisclosureUrl}
+            />
           ) : (
-            <CurrentSubscription subscription={page.subscription} plans={page.plans} commerceDisclosureUrl={page.commerceDisclosureUrl} />
+            <CurrentSubscription
+              subscription={page.subscription}
+              plans={page.plans}
+              commerceDisclosureUrl={page.commerceDisclosureUrl}
+            />
           )}
         </Stack>
       );
@@ -59,7 +92,15 @@ export function SupporterSubscriptionSettings({ returned }: { returned: Supporte
 }
 
 /** What the provider's checkout returned: the payment being confirmed, the subscription that started, or nothing charged. */
-function ReturnMessage({ returned, confirming, subscription }: { returned: SupporterReturn; confirming: boolean; subscription: SupporterSubscription | undefined }) {
+function ReturnMessage({
+  returned,
+  confirming,
+  subscription,
+}: {
+  returned: SupporterReturn;
+  confirming: boolean;
+  subscription: SupporterSubscription | undefined;
+}) {
   const t = useT();
   let message: string | undefined;
   if (returned === "checkout-canceled") message = t("client:supporter.return.canceled");
@@ -67,7 +108,11 @@ function ReturnMessage({ returned, confirming, subscription }: { returned: Suppo
     if (confirming) message = t("client:supporter.return.confirming");
     else if (subscription !== undefined) message = t("client:supporter.return.started");
   }
-  return <StatusMessage tone={returned === "checkout-success" && !confirming ? "success" : "neutral"}>{message}</StatusMessage>;
+  return (
+    <StatusMessage tone={returned === "checkout-success" && !confirming ? "success" : "neutral"}>
+      {message}
+    </StatusMessage>
+  );
 }
 
 /** A section of the page: an `h2` that names a `<section>`. */
@@ -92,7 +137,8 @@ const ineligibleMessages = {
 /** An amount per interval: "¥500 a month". */
 function usePerInterval(): (amount: string, interval: SupporterInterval) => string {
   const t = useT();
-  return (amount, interval) => t(interval === "year" ? "client:supporter.per_year" : "client:supporter.per_month", { amount });
+  return (amount, interval) =>
+    t(interval === "year" ? "client:supporter.per_year" : "client:supporter.per_month", { amount });
 }
 
 /** The plans, the choice of one and of the interval, and the final confirmation before the checkout. */
@@ -122,7 +168,13 @@ function Subscribe({
         <EmptyState headingLevel={3} heading={t("client:supporter.plans.empty")} />
       ) : (
         <>
-          <PlanChooser plans={plans} plan={plan} onPlanChange={setPlanId} interval={interval} onIntervalChange={setInterval} />
+          <PlanChooser
+            plans={plans}
+            plan={plan}
+            onPlanChange={setPlanId}
+            interval={interval}
+            onIntervalChange={setInterval}
+          />
           {ineligible === undefined && (
             <div>
               <DialogTrigger>
@@ -202,7 +254,11 @@ function PlanChooser({
         }}
       >
         {supporterIntervals.map((i) => (
-          <Radio key={i} value={i} description={perInterval(format(i === "year" ? plan.yearly_price : plan.monthly_price), i)}>
+          <Radio
+            key={i}
+            value={i}
+            description={perInterval(format(i === "year" ? plan.yearly_price : plan.monthly_price), i)}
+          >
             {t(i === "year" ? "client:supporter.interval.year" : "client:supporter.interval.month")}
           </Radio>
         ))}
@@ -256,15 +312,19 @@ function CheckoutConfirmation({
         <DescriptionItem term={t("client:supporter.confirm.amount")}>
           {t("client:supporter.confirm.amount.value", { price: perInterval(amount, interval) })}
         </DescriptionItem>
-        <DescriptionItem term={t("client:supporter.confirm.payments")}>{t("client:supporter.confirm.payments.value", { interval })}</DescriptionItem>
-        <DescriptionItem term={t("client:supporter.confirm.benefits")}>{t("client:supporter.confirm.benefits.value")}</DescriptionItem>
-        <DescriptionItem term={t("client:supporter.confirm.cancel")}>{t("client:supporter.confirm.cancel.value")}</DescriptionItem>
+        <DescriptionItem term={t("client:supporter.confirm.payments")}>
+          {t("client:supporter.confirm.payments.value", { interval })}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:supporter.confirm.benefits")}>
+          {t("client:supporter.confirm.benefits.value")}
+        </DescriptionItem>
+        <DescriptionItem term={t("client:supporter.confirm.cancel")}>
+          {t("client:supporter.confirm.cancel.value")}
+        </DescriptionItem>
       </DescriptionList>
       {commerceDisclosureUrl !== undefined && (
         <p>
-          <DocumentLink href={commerceDisclosureUrl}>
-            {t("client:supporter.commerce")}
-            </DocumentLink>
+          <DocumentLink href={commerceDisclosureUrl}>{t("client:supporter.commerce")}</DocumentLink>
         </p>
       )}
     </ConfirmDialog>
@@ -313,11 +373,19 @@ function CurrentSubscription({
               {subscription.plan_name}
             </span>
           </DescriptionItem>
-          <DescriptionItem term={t("client:supporter.subscription.state")}>{t(stateLabels[subscription.state])}</DescriptionItem>
-          <DescriptionItem term={t("client:supporter.subscription.price")}>{perInterval(format(subscription.price), subscription.interval)}</DescriptionItem>
+          <DescriptionItem term={t("client:supporter.subscription.state")}>
+            {t(stateLabels[subscription.state])}
+          </DescriptionItem>
+          <DescriptionItem term={t("client:supporter.subscription.price")}>
+            {perInterval(format(subscription.price), subscription.interval)}
+          </DescriptionItem>
           {subscription.period_ends_at !== undefined && (
             <DescriptionItem
-              term={t(subscription.state === "canceling" ? "client:supporter.subscription.ends_at" : "client:supporter.subscription.renews_at")}
+              term={t(
+                subscription.state === "canceling"
+                  ? "client:supporter.subscription.ends_at"
+                  : "client:supporter.subscription.renews_at",
+              )}
             >
               <When value={subscription.period_ends_at} />
             </DescriptionItem>
@@ -339,7 +407,11 @@ function CurrentSubscription({
         </DescriptionList>
         <StateNote subscription={subscription} />
         <StatusMessage tone="success">{commands.status}</StatusMessage>
-        <SubscriptionActions subscription={subscription} commands={commands} commerceDisclosureUrl={commerceDisclosureUrl} />
+        <SubscriptionActions
+          subscription={subscription}
+          commands={commands}
+          commerceDisclosureUrl={commerceDisclosureUrl}
+        />
       </Section>
       {subscription.state === "active" && <ChangePlan subscription={subscription} plans={plans} commands={commands} />}
     </>
@@ -422,28 +494,26 @@ function SubscriptionActions({
             {t("client:supporter.portal")}
           </Button>
         )}
-        {(state === "active" || state === "past_due") && <CancelSubscription subscription={subscription} commands={commands} />}
+        {(state === "active" || state === "past_due") && (
+          <CancelSubscription subscription={subscription} commands={commands} />
+        )}
       </Cluster>
       {checkout.error !== undefined && (
-        <InlineError alert>
-          {t("client:supporter.confirm.failed", { reason: checkout.error })}
-        </InlineError>
+        <InlineError alert>{t("client:supporter.confirm.failed", { reason: checkout.error })}</InlineError>
       )}
       {portal.error !== undefined && (
-        <InlineError alert>
-          {t("client:supporter.portal.failed", { reason: portal.error })}
-        </InlineError>
+        <InlineError alert>{t("client:supporter.portal.failed", { reason: portal.error })}</InlineError>
       )}
       {(failed("resume") ?? failed("cancel_scheduled_change")) !== undefined && (
         <InlineError alert>
-          {t("client:supporter.command.failed", { reason: failed("resume") ?? failed("cancel_scheduled_change") ?? "" })}
+          {t("client:supporter.command.failed", {
+            reason: failed("resume") ?? failed("cancel_scheduled_change") ?? "",
+          })}
         </InlineError>
       )}
       {commerceDisclosureUrl !== undefined && (
         <p>
-          <DocumentLink href={commerceDisclosureUrl}>
-            {t("client:supporter.commerce")}
-            </DocumentLink>
+          <DocumentLink href={commerceDisclosureUrl}>{t("client:supporter.commerce")}</DocumentLink>
         </p>
       )}
     </Stack>
@@ -463,7 +533,10 @@ function CancelSubscription({ subscription, commands }: { subscription: Supporte
         cancelLabel={t("client:supporter.keep")}
         tone="danger"
         isPending={commands.pending === "cancel"}
-        {...(commands.failed === "cancel" && commands.error !== undefined && { errorMessage: t("client:supporter.command.failed", { reason: commands.error }) })}
+        {...(commands.failed === "cancel" &&
+          commands.error !== undefined && {
+            errorMessage: t("client:supporter.command.failed", { reason: commands.error }),
+          })}
         onConfirm={(close) => {
           void commands.run({ kind: "cancel" }).then((done) => {
             if (done) close();
@@ -475,7 +548,15 @@ function CancelSubscription({ subscription, commands }: { subscription: Supporte
 }
 
 /** Changing the plan or the interval of an active subscription, after a dialog that says when the change applies. */
-function ChangePlan({ subscription, plans, commands }: { subscription: SupporterSubscription; plans: readonly SupporterPlan[]; commands: Commands }) {
+function ChangePlan({
+  subscription,
+  plans,
+  commands,
+}: {
+  subscription: SupporterSubscription;
+  plans: readonly SupporterPlan[];
+  commands: Commands;
+}) {
   const t = useT();
   const format = useFormatMoney();
   const current = plans.find((p) => p.id === subscription.plan_id);
@@ -485,15 +566,26 @@ function ChangePlan({ subscription, plans, commands }: { subscription: Supporter
   if (plan === undefined) return null;
   const unchanged = plan.id === subscription.plan_id && interval === subscription.interval;
   const timing = changeTiming({ rank: current?.rank, interval: subscription.interval }, { rank: plan.rank, interval });
-  const currentPrice = current === undefined ? undefined : subscription.interval === "year" ? current.yearly_price : current.monthly_price;
+  const currentPrice =
+    current === undefined ? undefined : subscription.interval === "year" ? current.yearly_price : current.monthly_price;
   const keepsLowerPrice = currentPrice !== undefined && currentPrice.amount !== subscription.price.amount;
   const timingNote: ClientMessageKey =
-    timing === "now" ? "client:supporter.change.now" : timing === "period_end" ? "client:supporter.change.period_end" : "client:supporter.change.rules";
+    timing === "now"
+      ? "client:supporter.change.now"
+      : timing === "period_end"
+        ? "client:supporter.change.period_end"
+        : "client:supporter.change.rules";
   return (
     <Section title={t("client:supporter.change.title")}>
       <Hint size="inherit">{t("client:supporter.change.description")}</Hint>
       {keepsLowerPrice && <p>{t("client:supporter.change.price_kept", { price: format(subscription.price) })}</p>}
-      <PlanChooser plans={plans} plan={plan} onPlanChange={setPlanId} interval={interval} onIntervalChange={setInterval} />
+      <PlanChooser
+        plans={plans}
+        plan={plan}
+        onPlanChange={setPlanId}
+        interval={interval}
+        onIntervalChange={setInterval}
+      />
       <div>
         <DialogTrigger>
           <Button isDisabled={unchanged}>{t("client:supporter.change")}</Button>
@@ -504,7 +596,10 @@ function ChangePlan({ subscription, plans, commands }: { subscription: Supporter
             cancelLabel={t("client:supporter.cancel")}
             tone="primary"
             isPending={commands.pending === "change"}
-            {...(commands.failed === "change" && commands.error !== undefined && { errorMessage: t("client:supporter.command.failed", { reason: commands.error }) })}
+            {...(commands.failed === "change" &&
+              commands.error !== undefined && {
+                errorMessage: t("client:supporter.command.failed", { reason: commands.error }),
+              })}
             onConfirm={(close) => {
               void commands.run({ kind: "change", choice: { plan_id: plan.id, interval } }).then((done) => {
                 if (done) close();

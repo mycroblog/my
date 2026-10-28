@@ -9,7 +9,8 @@ import { SettingsHeading } from "./-layout/SettingsHeading";
 export const Route = createFileRoute("/settings/domain-mutes")({
   staticData: { title: "client:settings.domain_mutes.title" },
   beforeLoad: requireSignIn,
-  loader: ({ context }) => context.queryClient.infiniteQuery({ ...domainMutesQueryOptions(context.api), staleTime: Infinity }),
+  loader: ({ context }) =>
+    context.queryClient.infiniteQuery({ ...domainMutesQueryOptions(context.api), staleTime: Infinity }),
   component: DomainMutesPage,
 });
 

@@ -8,7 +8,15 @@
 // The user is new to the test (a random name), created with `my admin create` (e2e/server-cli.ts).
 import { randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
-import { axeBuilder, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, openFromNavigation, test } from "./fixtures";
+import {
+  axeBuilder,
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  localeDir,
+  openFromNavigation,
+  test,
+} from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
@@ -39,7 +47,9 @@ async function signIn(page: Page, email: string, password: string): Promise<void
   await page.goto("/login");
   await expect(pageHeading(page)).toBeVisible();
   const authorized = page.waitForRequest(
-    (request) => new URL(request.url()).pathname.startsWith("/api/") && request.headers()["authorization"]?.startsWith("Bearer ") === true,
+    (request) =>
+      new URL(request.url()).pathname.startsWith("/api/") &&
+      request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
   await page.getByRole("main").getByRole("button").click();
   await page.locator('input[type="email"][autocomplete="username"]').fill(email);
@@ -48,7 +58,10 @@ async function signIn(page: Page, email: string, password: string): Promise<void
   const authorization = (await authorized).headers()["authorization"] ?? "";
   await expect(page).toHaveURL(`${serverURL}/home`);
   const locale = projectLocale();
-  const response = await page.request.patch(`${serverURL}/api/v1/preferences`, { headers: { Authorization: authorization }, data: { locale } });
+  const response = await page.request.patch(`${serverURL}/api/v1/preferences`, {
+    headers: { Authorization: authorization },
+    data: { locale },
+  });
   expect(response.ok(), `PATCH /api/v1/preferences: ${String(response.status())}`).toBe(true);
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("dir", localeDir(locale));
@@ -68,7 +81,11 @@ async function newUser(page: Page, prefix: string): Promise<string> {
 /** The Authorization header that the app sends with its next request to the client API. */
 function nextAuthorization(page: Page): Promise<string> {
   return page
-    .waitForRequest((request) => new URL(request.url()).pathname.startsWith("/api/") && request.headers()["authorization"]?.startsWith("Bearer ") === true)
+    .waitForRequest(
+      (request) =>
+        new URL(request.url()).pathname.startsWith("/api/") &&
+        request.headers()["authorization"]?.startsWith("Bearer ") === true,
+    )
     .then((request) => request.headers()["authorization"] ?? "");
 }
 
@@ -168,7 +185,9 @@ test("a new post is on the profile from the moment it opens again", async ({ pag
   await expectNoHorizontalScroll(page);
 });
 
-test("a change of the timeline languages is on the local timeline from the moment it opens again", async ({ page }, info) => {
+test("a change of the timeline languages is on the local timeline from the moment it opens again", async ({
+  page,
+}, info) => {
   test.skip(!ownsServer, "creates its user with bin/my against the server's database");
   test.setTimeout(120_000);
   const touch = info.project.use.hasTouch === true;
@@ -188,13 +207,17 @@ test("a change of the timeline languages is on the local timeline from the momen
   expect(posted.ok(), `POST /api/v1/statuses: ${String(posted.status())}`).toBe(true);
   await openFromNavigation(page, "/local", touch);
   await expect(pageHeading(page)).toHaveText(message("local.title"));
-  await expect(page.getByRole("feed").getByRole("article").filter({ hasText: text })).toBeVisible({ timeout: latency * 10 });
+  await expect(page.getByRole("feed").getByRole("article").filter({ hasText: text })).toBeVisible({
+    timeout: latency * 10,
+  });
 
   // The timelines show German only from now on.
   await openFromNavigation(page, "/settings", touch);
   await page.getByRole("main").locator('a[href="/settings/preferences"]').click();
   await expect(pageHeading(page)).toHaveText(message("settings.preferences.title"));
-  const german = await page.evaluate(() => new Intl.DisplayNames([document.documentElement.lang], { type: "language" }).of("de") ?? "de");
+  const german = await page.evaluate(
+    () => new Intl.DisplayNames([document.documentElement.lang], { type: "language" }).of("de") ?? "de",
+  );
   const languages = page.getByRole("group", { name: message("settings.timeline_languages.label") });
   // The checkbox is visually hidden behind its box; its label is what a pointer presses.
   await languages.getByText(german, { exact: true }).click();
@@ -208,7 +231,8 @@ test("a change of the timeline languages is on the local timeline from the momen
       w.__staleRenders = 0;
       new MutationObserver(() => {
         const main = document.querySelector("main");
-        if (main?.querySelector("h1")?.textContent === heading && main.textContent.includes(unwanted)) w.__staleRenders += 1;
+        if (main?.querySelector("h1")?.textContent === heading && main.textContent.includes(unwanted))
+          w.__staleRenders += 1;
       }).observe(document.body, { subtree: true, childList: true, characterData: true });
     },
     [message("local.title"), text] as const,
@@ -217,7 +241,10 @@ test("a change of the timeline languages is on the local timeline from the momen
   await expect(pageHeading(page)).toHaveText(message("local.title"));
   // Give a stale list the time it would have taken to be replaced.
   await page.waitForTimeout(latency * 2);
-  expect(await page.evaluate(() => (window as unknown as { __staleRenders: number }).__staleRenders), "renders of the local timeline with the English post").toBe(0);
+  expect(
+    await page.evaluate(() => (window as unknown as { __staleRenders: number }).__staleRenders),
+    "renders of the local timeline with the English post",
+  ).toBe(0);
   await expect(page.getByRole("main").getByText(text)).toHaveCount(0);
 
   await expect(pageHeading(page)).toMatchAriaSnapshot(`- heading "${message("local.title")}" [level=1]`);

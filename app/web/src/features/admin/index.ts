@@ -29,7 +29,13 @@ export { adminCustomEmojiRequestsQueryOptions, type CustomEmojiRequestState } fr
 export { CustomEmojiSettings, type CustomEmojiTab } from "./components/CustomEmojiSettings";
 // What the user's page of their own custom emoji (features/custom-emojis) shares with the screen: the rules of an
 // emoji, how a sentence names one, and the names of the states of a request.
-export { acceptedEmojiTypes, categoryLimit, federatedEmojiBytes, maxAliases, shortcodePattern } from "./api/customEmojis";
+export {
+  acceptedEmojiTypes,
+  categoryLimit,
+  federatedEmojiBytes,
+  maxAliases,
+  shortcodePattern,
+} from "./api/customEmojis";
 export { requestStateLabels } from "./components/CustomEmojiRequests";
 export { parseAliases } from "./hooks/useCustomEmojis";
 // The OAuth apps: every client by registration route, disabling them, and denying the hosts of Client ID Metadata
@@ -79,6 +85,12 @@ export { adminClosureCheckQueryOptions, adminClosureQueryOptions } from "./api/c
 export { ServiceClosureSettings } from "./components/ServiceClosureSettings";
 // The groups of the errors that the server and the web client report: the list, one group with its latest occurrence,
 // and resolving, muting and unmuting it (ADR-0103 §8), for manage_errors.
-export { type ErrorFilter, errorGroupQueryOptions, errorGroupsQueryOptions, errorSourceFilters, errorStateFilters } from "./api/errors";
+export {
+  type ErrorFilter,
+  errorGroupQueryOptions,
+  errorGroupsQueryOptions,
+  errorSourceFilters,
+  errorStateFilters,
+} from "./api/errors";
 export { ErrorGroupDetail } from "./components/ErrorGroupDetail";
 export { ErrorGroups } from "./components/ErrorGroups";

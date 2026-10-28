@@ -18,7 +18,12 @@ export type OAuthClientRegistration = Schemas["OAuthClientRegistration"];
 export type HostDenial = Schemas["AdminOAuthClientHostDenial"];
 
 /** The routes of registration, in the order of the filter. */
-export const oauthClientRegistrations = ["first_party", "user", "metadata_document", "dynamic"] as const satisfies readonly OAuthClientRegistration[];
+export const oauthClientRegistrations = [
+  "first_party",
+  "user",
+  "metadata_document",
+  "dynamic",
+] as const satisfies readonly OAuthClientRegistration[];
 
 /** The longest host name (DenyOAuthClientHostRequest). */
 export const hostLimit = 253;
@@ -32,7 +37,10 @@ export function oauthClientsQueryOptions(api: Api, filter: OAuthClientFilter) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/oauth_clients", query, "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/oauth_clients", { params: { query: { ...query, ...pageQuery(pageParam) } }, signal });
+      const { data, error } = await api.fetch.GET("/admin/oauth_clients", {
+        params: { query: { ...query, ...pageQuery(pageParam) } },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -47,7 +55,10 @@ export function hostDenialsQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/oauth_client_host_denials", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/oauth_client_host_denials", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/oauth_client_host_denials", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },

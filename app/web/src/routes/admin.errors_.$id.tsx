@@ -20,7 +20,9 @@ export const Route = createFileRoute("/admin/errors_/$id")({
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: ({ context, params: { id } }) =>
-    loadWithPermission(context, "manage_errors", () => context.queryClient.query({ ...errorGroupQueryOptions(context.api, id), staleTime: Infinity })),
+    loadWithPermission(context, "manage_errors", () =>
+      context.queryClient.query({ ...errorGroupQueryOptions(context.api, id), staleTime: Infinity }),
+    ),
   component: ErrorGroupPage,
   errorComponent: ErrorGroupError,
 });

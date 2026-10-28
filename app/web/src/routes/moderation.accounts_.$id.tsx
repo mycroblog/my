@@ -17,7 +17,9 @@ export const Route = createFileRoute("/moderation/accounts_/$id")({
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: ({ context, params: { id } }) =>
-    loadWithPermission(context, "manage_accounts", () => context.queryClient.query({ ...adminAccountQueryOptions(context.api, id), staleTime: Infinity })),
+    loadWithPermission(context, "manage_accounts", () =>
+      context.queryClient.query({ ...adminAccountQueryOptions(context.api, id), staleTime: Infinity }),
+    ),
   component: AccountPage,
   errorComponent: AccountError,
 });

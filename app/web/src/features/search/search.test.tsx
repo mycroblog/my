@@ -6,7 +6,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { instanceFixture, relationshipFixture, remoteAccountFixture, type Schemas, statusPage, viewerFixture } from "../../test/fixtures";
+import {
+  instanceFixture,
+  relationshipFixture,
+  remoteAccountFixture,
+  type Schemas,
+  statusPage,
+  viewerFixture,
+} from "../../test/fixtures";
 import { apiBase, problem, resumableSession } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -65,7 +72,8 @@ describe("the search page", () => {
       expect(heading).toHaveFocus();
     });
     expect(searches).toEqual([{ acct: "@carol@remote.example", resolve: true }]);
-    expect(within(screen.getByRole("main")).getAllByText("@carol@remote.example")[0]).toBeInTheDocument();  });
+    expect(within(screen.getByRole("main")).getAllByText("@carol@remote.example")[0]).toBeInTheDocument();
+  });
 
   test("resolves the URL of a profile, trimmed", async () => {
     server.use(resumableSession());
@@ -98,7 +106,9 @@ describe("the search page", () => {
 
   test("says when the server limits the searches", async () => {
     server.use(resumableSession());
-    searchServer(() => problem(429, "/api/v1/problems/rate-limited", "Too Many Requests", { headers: { "Retry-After": "120" } }));
+    searchServer(() =>
+      problem(429, "/api/v1/problems/rate-limited", "Too Many Requests", { headers: { "Retry-After": "120" } }),
+    );
     const { user, field } = await openSearch();
 
     await user.type(field, "@dave@elsewhere.example{Enter}");
@@ -129,10 +139,15 @@ describe("the search page", () => {
     const { user, field } = await openSearch();
 
     expect(field).toHaveAccessibleDescription(/Only accounts this server already knows are found\./);
-    expect(screen.getByRole("link", { name: "Sign in to find accounts on other servers" })).toHaveAttribute("href", "/login?return_to=%2Fsearch");
+    expect(screen.getByRole("link", { name: "Sign in to find accounts on other servers" })).toHaveAttribute(
+      "href",
+      "/login?return_to=%2Fsearch",
+    );
 
     await user.type(field, "@dave@elsewhere.example{Enter}");
-    expect(await screen.findByRole("alert")).toHaveTextContent("This server does not know that account. Sign in to look it up on its own server.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This server does not know that account. Sign in to look it up on its own server.",
+    );
     expect(searches).toEqual([{ acct: "@dave@elsewhere.example", resolve: false }]);
   });
 });
@@ -143,7 +158,9 @@ describe("an account on another server", () => {
     const changes: string[] = [];
     server.use(
       http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json(carol)),
-      http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([relationshipFixture(carol.id, relationship)])),
+      http.get(`${apiBase}/accounts/relationships`, () =>
+        HttpResponse.json([relationshipFixture(carol.id, relationship)]),
+      ),
       http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
         const action = String(params["action"]);
         changes.push(action);
@@ -232,7 +249,9 @@ describe("while the instance takes nothing in from other servers", () => {
     });
     await user.type(field, "@dave@elsewhere.example{Enter}");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This server does not know that account, and it does not look up accounts of other servers now.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This server does not know that account, and it does not look up accounts of other servers now.",
+    );
     expect(searches).toEqual([{ acct: "@dave@elsewhere.example", resolve: false }]);
   });
 
@@ -250,12 +269,20 @@ describe("while the instance takes nothing in from other servers", () => {
     server.use(resumableSession());
     // The operators turned federation off after the page read GET /instance.
     federationServer("both", "off");
-    const { searches } = searchServer(() => problem(403, "/api/v1/problems/federation-restricted", "This server does not federate in the direction that this needs."));
+    const { searches } = searchServer(() =>
+      problem(
+        403,
+        "/api/v1/problems/federation-restricted",
+        "This server does not federate in the direction that this needs.",
+      ),
+    );
     const { user, field } = await openSearch();
 
     await user.type(field, "@dave@elsewhere.example{Enter}");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("This server does not know that account, and it does not look up accounts of other servers now.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This server does not know that account, and it does not look up accounts of other servers now.",
+    );
     await waitFor(() => {
       expect(field).toHaveAccessibleDescription(/does not look up accounts of other servers now/);
     });
@@ -288,7 +315,9 @@ describe("while the instance takes nothing in from other servers", () => {
     federationServer("off");
     server.use(
       http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json(carol)),
-      http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([relationshipFixture(carol.id, { following: true })])),
+      http.get(`${apiBase}/accounts/relationships`, () =>
+        HttpResponse.json([relationshipFixture(carol.id, { following: true })]),
+      ),
     );
     await renderApp({ path: `/@${carol.acct}` });
 

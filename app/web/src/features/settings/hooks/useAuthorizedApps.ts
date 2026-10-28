@@ -62,7 +62,9 @@ export function useRevokeApp(): RevokeApp {
   });
   return {
     pendingId: revoke.isPending ? revoke.variables.id : undefined,
-    error: revoke.isError ? t("client:settings.authorized_apps.revoke.failed", { reason: errorMessage(revoke.error) }) : undefined,
+    error: revoke.isError
+      ? t("client:settings.authorized_apps.revoke.failed", { reason: errorMessage(revoke.error) })
+      : undefined,
     reset: revoke.reset,
     run: (app, onDone) => {
       revoke.mutate(app, {

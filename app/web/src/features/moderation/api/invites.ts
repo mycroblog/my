@@ -20,7 +20,10 @@ export function invitesQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/invites", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/invites", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/invites", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -63,7 +66,15 @@ export function refreshInvites(queryClient: QueryClient): Promise<void> {
 
 /** Writes the revoked invite from the answer into the cached list (ADR-0045), which shows it right. */
 export function cacheRevokedInvite(queryClient: QueryClient, revoked: Invite): void {
-  queryClient.setQueriesData<InfiniteData<{ items: Invite[] }>>({ queryKey: ["get", "/admin/invites"] }, (data) =>
-    data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map((item) => (item.id === revoked.id ? revoked : item)) })) },
+  queryClient.setQueriesData<InfiniteData<{ items: Invite[] }>>(
+    { queryKey: ["get", "/admin/invites"] },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === revoked.id ? revoked : item)),
+        })),
+      },
   );
 }

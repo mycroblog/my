@@ -8,7 +8,9 @@ export const idempotencyKeyHeader = "Idempotency-Key";
  * When the caller sends none, the client adds a new one, so that the request can be retried. A test keeps the list
  * equal to the operations of schema.gen.ts that take the header.
  */
-export const idempotencyKeyOperations: readonly { readonly method: string; readonly path: string }[] = [{ method: "POST", path: "/statuses" }];
+export const idempotencyKeyOperations: readonly { readonly method: string; readonly path: string }[] = [
+  { method: "POST", path: "/statuses" },
+];
 
 /** Whether the request to the spec path `schemaPath` is one of idempotencyKeyOperations. */
 export function acceptsIdempotencyKey(method: string, schemaPath: string): boolean {

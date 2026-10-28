@@ -58,7 +58,15 @@ export type StatusCardProps = {
  * One status: the hook's view of it placed into the slots of PostCard, with the action bar. Its names link
  * to the profiles and its time to the post's page (FR-113).
  */
-export function StatusCard({ status, variant = "compact", thread, onDeleted, withActions = true, ref, pinned = false }: StatusCardProps) {
+export function StatusCard({
+  status,
+  variant = "compact",
+  thread,
+  onDeleted,
+  withActions = true,
+  ref,
+  pinned = false,
+}: StatusCardProps) {
   const t = useT();
   const intl = useIntl();
   const view = useStatusView(status);
@@ -99,7 +107,8 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
       card
     );
   // The poll goes with the body, under the content warning too (FR-112).
-  const poll = (status.boost ?? status).poll === undefined ? undefined : <StatusPoll status={status} canVote={withActions} />;
+  const poll =
+    (status.boost ?? status).poll === undefined ? undefined : <StatusPoll status={status} canVote={withActions} />;
   // The quoted post goes with the body too, after the media (FR-114).
   const quoted = (status.boost ?? status).quote;
   const quote = quoted === undefined ? undefined : <QuotedStatus quote={quoted} />;
@@ -140,8 +149,12 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
         details: (
           <>
             <time dateTime={view.time.dateTime}>{view.time.absolute}</time>
-            {view.counts.boosts > 0 && <Text numeric>{t("client:status.focused.boosts", { count: view.counts.boosts })}</Text>}
-            {view.counts.favourites > 0 && <Text numeric>{t("client:status.focused.favourites", { count: view.counts.favourites })}</Text>}
+            {view.counts.boosts > 0 && (
+              <Text numeric>{t("client:status.focused.boosts", { count: view.counts.boosts })}</Text>
+            )}
+            {view.counts.favourites > 0 && (
+              <Text numeric>{t("client:status.focused.favourites", { count: view.counts.favourites })}</Text>
+            )}
             {edited}
           </>
         ),
@@ -151,35 +164,46 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
         // Part of the article's name, so that a reader of the feed hears it before the author.
         context: <span>{t("client:status.pin.label")}</span>,
       })}
-      {...(!pinned && view.boostedBy !== null && {
-        context: (
-          <PostCardBoostContext>
-            {/* The booster's name is the user's text, isolated from the sentence around it (Y10). */}
-            {intl.formatMessage(
-              { id: "client:timeline.boosted_by" },
-              {
-                name: (
-                  <PostCardNameLink key="name" href={view.boostedBy.href}>
-                    <EmojiText text={view.boostedBy.name} emojis={view.boostedBy.emojis} />
-                  </PostCardNameLink>
-                ),
-              },
-            )}
-          </PostCardBoostContext>
-        ),
-      })}
+      {...(!pinned &&
+        view.boostedBy !== null && {
+          context: (
+            <PostCardBoostContext>
+              {/* The booster's name is the user's text, isolated from the sentence around it (Y10). */}
+              {intl.formatMessage(
+                { id: "client:timeline.boosted_by" },
+                {
+                  name: (
+                    <PostCardNameLink key="name" href={view.boostedBy.href}>
+                      <EmojiText text={view.boostedBy.name} emojis={view.boostedBy.emojis} />
+                    </PostCardNameLink>
+                  ),
+                },
+              )}
+            </PostCardBoostContext>
+          ),
+        })}
       avatar={
         <PostCardAvatarLink href={view.author.href}>
           <Avatar sources={view.author.avatar} name={view.author.name} seed={view.author.id} decorative />
         </PostCardAvatarLink>
       }
-      author={<PostCardAuthorLink href={view.author.href} name={<EmojiText text={view.author.name} emojis={view.author.emojis} />} handle={view.author.handle} />}
+      author={
+        <PostCardAuthorLink
+          href={view.author.href}
+          name={<EmojiText text={view.author.name} emojis={view.author.emojis} />}
+          handle={view.author.handle}
+        />
+      }
       time={time}
       content={
         view.contentWarning === null ? (
           body
         ) : (
-          <ContentWarning summary={<EmojiText text={view.contentWarning} emojis={view.emojis} />} summaryLang={view.lang} toggleLabel={t("client:timeline.content_warning.toggle")}>
+          <ContentWarning
+            summary={<EmojiText text={view.contentWarning} emojis={view.emojis} />}
+            summaryLang={view.lang}
+            toggleLabel={t("client:timeline.content_warning.toggle")}
+          >
             {body}
             {poll}
             {media}
@@ -200,7 +224,8 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
               </Stack>
             ),
         })}
-      {...(withActions && (status.boost ?? status).reactions.length > 0 && { reactions: <StatusReactions status={status} /> })}
+      {...(withActions &&
+        (status.boost ?? status).reactions.length > 0 && { reactions: <StatusReactions status={status} /> })}
       {...((withActions || view.original !== null) && {
         actions: (
           <>
@@ -208,7 +233,11 @@ export function StatusCard({ status, variant = "compact", thread, onDeleted, wit
             {view.original !== null && (
               // The post's page on its own server, shown also while nobody is signed in. The host is what it
               // shows; the name says where it leads, and contains the host (WCAG 2.5.3, label in name).
-              <PostCardOrigin href={view.original.href} host={view.original.host} label={t("client:status.original", { host: view.original.host })} />
+              <PostCardOrigin
+                href={view.original.href}
+                host={view.original.host}
+                label={t("client:status.original", { host: view.original.host })}
+              />
             )}
           </>
         ),

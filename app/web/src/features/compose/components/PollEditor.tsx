@@ -1,8 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Checkbox, CloseIcon, Cluster, Fieldset, InlineError, Select, SelectItem, Stack, TextField, Tooltip, TooltipTrigger } from "@my/ui";
+import {
+  Box,
+  Button,
+  Checkbox,
+  CloseIcon,
+  Cluster,
+  Fieldset,
+  InlineError,
+  Select,
+  SelectItem,
+  Stack,
+  TextField,
+  Tooltip,
+  TooltipTrigger,
+} from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { durationParts, maxPollOptionLength, maxPollOptions, minPollOptions, type PollDraft, pollDurations } from "../hooks/poll";
+import {
+  durationParts,
+  maxPollOptionLength,
+  maxPollOptions,
+  minPollOptions,
+  type PollDraft,
+  pollDurations,
+} from "../hooks/poll";
 import type { PollForm } from "../hooks/useComposeForm";
 
 export type PollEditorProps = { poll: PollForm; draft: PollDraft };
@@ -24,7 +45,10 @@ export function PollEditor({ poll, draft }: PollEditorProps) {
   const problemId = useId();
   const canRemove = draft.options.length > minPollOptions;
   return (
-    <Fieldset legend={t("client:compose.poll.legend")} aria-describedby={poll.problem === "duplicate" ? problemId : undefined}>
+    <Fieldset
+      legend={t("client:compose.poll.legend")}
+      aria-describedby={poll.problem === "duplicate" ? problemId : undefined}
+    >
       <Stack as="ol" gap="2">
         {draft.options.map((option, index) => {
           const number = index + 1;
@@ -60,9 +84,7 @@ export function PollEditor({ poll, draft }: PollEditorProps) {
           );
         })}
       </Stack>
-      {poll.problem === "duplicate" && (
-        <InlineError id={problemId}>{t("client:compose.poll.duplicate")}</InlineError>
-      )}
+      {poll.problem === "duplicate" && <InlineError id={problemId}>{t("client:compose.poll.duplicate")}</InlineError>}
       {draft.options.length < maxPollOptions && (
         <Box>
           <Button size="sm" onPress={poll.addOption}>

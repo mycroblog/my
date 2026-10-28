@@ -59,12 +59,18 @@ export function usePreferences(): PreferencesControls {
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
     timelineAutoInsert: usePreferenceControl("timeline_auto_insert", data.timeline_auto_insert),
-    emailModeratorNotifications: usePreferenceControl("email_moderator_notifications", data.email_moderator_notifications),
+    emailModeratorNotifications: usePreferenceControl(
+      "email_moderator_notifications",
+      data.email_moderator_notifications,
+    ),
     emailSuppression: data.email_suppression,
   };
 }
 
-function usePreferenceControl<K extends PreferenceKey>(key: K, saved: Preferences[K]): PreferenceControl<Preferences[K]> {
+function usePreferenceControl<K extends PreferenceKey>(
+  key: K,
+  saved: Preferences[K],
+): PreferenceControl<Preferences[K]> {
   const api = useApi();
   const queryClient = useQueryClient();
   const announce = useAnnouncer();

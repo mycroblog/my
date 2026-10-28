@@ -43,7 +43,11 @@ describe("refetching remote posts", () => {
     expect(button).toHaveAccessibleDescription(/the newest 20 of each account/);
     await user.click(button);
 
-    expect(await refetch.findByText("The refetch is requested and recorded in the audit log. The posts change as they are fetched.")).toBeInTheDocument();
+    expect(
+      await refetch.findByText(
+        "The refetch is requested and recorded in the audit log. The posts change as they are fetched.",
+      ),
+    ).toBeInTheDocument();
     expect(requests).toEqual(["POST /admin/instances/remote.example/refetch_statuses"]);
     // The button stays, with focus on it.
     expect(button).toHaveFocus();
@@ -52,11 +56,17 @@ describe("refetching remote posts", () => {
   test("a refetch the server refuses is a toast, and the button stays", async () => {
     server.use(
       operatorHandler(["manage_domains"]),
-      http.post(`${apiBase}/admin/instances/:domain/refetch_statuses`, () => problem(422, "about:blank", "Not remote.")),
+      http.post(`${apiBase}/admin/instances/:domain/refetch_statuses`, () =>
+        problem(422, "about:blank", "Not remote."),
+      ),
     );
     const { user } = await renderApp({ path: "/moderation/instances/remote.example" });
 
-    await user.click(await within(await screen.findByRole("region", { name: "Refetch posts" })).findByRole("button", { name: "Refetch posts" }));
+    await user.click(
+      await within(await screen.findByRole("region", { name: "Refetch posts" })).findByRole("button", {
+        name: "Refetch posts",
+      }),
+    );
 
     expect(await screen.findByText("The refetch could not be requested: Not remote.")).toBeInTheDocument();
     expect(within(region("Refetch posts")).getByRole("button", { name: "Refetch posts" })).toBeEnabled();
@@ -65,7 +75,9 @@ describe("refetching remote posts", () => {
   test("a remote account's page refetches its posts for a viewer with manage_domains", async () => {
     server.use(
       operatorHandler(["manage_accounts", "manage_domains"]),
-      http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(adminAccountDetailFixture(remoteAccountFixture))),
+      http.get(`${apiBase}/admin/accounts/:id`, () =>
+        HttpResponse.json(adminAccountDetailFixture(remoteAccountFixture)),
+      ),
     );
     const requests = recordRefetches();
     const { user } = await renderApp({ path: `/moderation/accounts/${remoteAccountFixture.id}` });
@@ -74,14 +86,20 @@ describe("refetching remote posts", () => {
     expect(refetch.getByRole("button", { name: "Refetch posts" })).toHaveAccessibleDescription(/up to 1,000/);
     await user.click(refetch.getByRole("button", { name: "Refetch posts" }));
 
-    expect(await refetch.findByText("The refetch is requested and recorded in the audit log. The posts change as they are fetched.")).toBeInTheDocument();
+    expect(
+      await refetch.findByText(
+        "The refetch is requested and recorded in the audit log. The posts change as they are fetched.",
+      ),
+    ).toBeInTheDocument();
     expect(requests).toEqual([`POST /admin/accounts/${remoteAccountFixture.id}/refetch_statuses`]);
   });
 
   test("a viewer without manage_domains is not offered a refetch", async () => {
     server.use(
       operatorHandler(["manage_accounts"]),
-      http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(adminAccountDetailFixture(remoteAccountFixture))),
+      http.get(`${apiBase}/admin/accounts/:id`, () =>
+        HttpResponse.json(adminAccountDetailFixture(remoteAccountFixture)),
+      ),
     );
     await renderApp({ path: `/moderation/accounts/${remoteAccountFixture.id}` });
     expect(await screen.findByRole("region", { name: "Actions on the account" })).toBeInTheDocument();
@@ -91,7 +109,9 @@ describe("refetching remote posts", () => {
   test("a local account has no refetch", async () => {
     server.use(
       operatorHandler(["manage_accounts", "manage_domains"]),
-      http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(adminAccountDetailFixture(otherAccountFixture))),
+      http.get(`${apiBase}/admin/accounts/:id`, () =>
+        HttpResponse.json(adminAccountDetailFixture(otherAccountFixture)),
+      ),
     );
     await renderApp({ path: `/moderation/accounts/${otherAccountFixture.id}` });
     expect(await screen.findByRole("region", { name: "Actions on the account" })).toBeInTheDocument();
@@ -100,7 +120,10 @@ describe("refetching remote posts", () => {
 
   test("a reported remote post is refetched on its own; a local one has no refetch", async () => {
     const local = statusFixture("0192f0c4-7a8e-7000-8000-0000000000b1");
-    const report = reportFixture({ status_ids: [remoteStatusFixture.id, local.id], statuses: [{ status: remoteStatusFixture }, { status: local }] });
+    const report = reportFixture({
+      status_ids: [remoteStatusFixture.id, local.id],
+      statuses: [{ status: remoteStatusFixture }, { status: local }],
+    });
     server.use(
       operatorHandler(["manage_reports", "manage_domains"]),
       http.get(`${apiBase}/admin/reports/:id`, () => HttpResponse.json(report)),
@@ -115,7 +138,9 @@ describe("refetching remote posts", () => {
     if (button === undefined) throw new Error("no refetch button");
     await user.click(button);
 
-    expect(await posts.findByText("The refetch of the post is requested and recorded in the audit log.")).toBeInTheDocument();
+    expect(
+      await posts.findByText("The refetch of the post is requested and recorded in the audit log."),
+    ).toBeInTheDocument();
     expect(requests).toEqual([`POST /admin/statuses/${remoteStatusFixture.id}/refetch`]);
   });
 });

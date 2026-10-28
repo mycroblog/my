@@ -51,11 +51,13 @@ const stageAvatar = tv({
   slots: {
     item: "flex min-w-0 flex-col items-center",
     // The press target of `menu`: the avatar and the name, as one button.
-    button: "flex w-full min-w-0 cursor-default flex-col items-center gap-2 rounded-lg p-2 data-focus-visible:focus-ring",
+    button:
+      "flex w-full min-w-0 cursor-default flex-col items-center gap-2 rounded-lg p-2 data-focus-visible:focus-ring",
     plain: "flex w-full min-w-0 flex-col items-center gap-2 p-2",
     figure: "relative",
     // The ring is an outline, so the gap between it and the avatar is the ground the avatar is on, whatever that is.
-    avatar: "outline-3 outline-offset-3 outline-solid motion-safe:transition-[outline-color] motion-safe:duration-normal",
+    avatar:
+      "outline-3 outline-offset-3 outline-solid motion-safe:transition-[outline-color] motion-safe:duration-normal",
     text: "flex w-full min-w-0 flex-col items-center text-center",
     name: "w-full truncate font-extrabold",
     caption: "w-full truncate text-xs text-fg-muted",
@@ -149,7 +151,15 @@ export function StageAvatar({
   const content = (
     <>
       <span className={slots.figure()}>
-        <Avatar src={src} sources={sources} name={name} seed={seed} decorative size={size === "speaker" ? "xl" : "lg"} className={slots.avatar()} />
+        <Avatar
+          src={src}
+          sources={sources}
+          name={name}
+          seed={seed}
+          decorative
+          size={size === "speaker" ? "xl" : "lg"}
+          className={slots.avatar()}
+        />
         {muted && (
           <span className={slots.badge({ className: slots.muted() })}>
             <MicrophoneOffIcon />

@@ -4,7 +4,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { otherAccountFixture, remoteAccountFixture, type Schemas, statusFixture, timelineStatusFixture, viewerStatusFixture } from "../../test/fixtures";
+import {
+  otherAccountFixture,
+  remoteAccountFixture,
+  type Schemas,
+  statusFixture,
+  timelineStatusFixture,
+  viewerStatusFixture,
+} from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -84,7 +91,9 @@ describe("reporting from a post", () => {
 
     await expectStep("Which rules does it break?");
     const rules = within(dialog).getByRole("group", { name: "Which rules does it break?" });
-    expect(within(rules).getByRole("checkbox", { name: "No advertising" })).toHaveAccessibleDescription(rulesFixture[1]?.hint ?? "");
+    expect(within(rules).getByRole("checkbox", { name: "No advertising" })).toHaveAccessibleDescription(
+      rulesFixture[1]?.hint ?? "",
+    );
     await user.tab();
     await user.tab();
     expect(within(rules).getByRole("checkbox", { name: "No advertising" })).toHaveFocus();
@@ -176,7 +185,11 @@ describe("reporting from a post", () => {
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const dialog = await openFromPost(user);
 
-    expect(within(dialog).getAllByRole("radio").map((radio) => radio.getAttribute("value"))).toEqual(["spam", "legal", "other"]);
+    expect(
+      within(dialog)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["spam", "legal", "other"]);
     await user.click(within(dialog).getByRole("radio", { name: "Spam" }));
     await user.click(within(dialog).getByRole("button", { name: "Next" }));
     await expectStep("Which posts are you reporting?");
@@ -193,7 +206,9 @@ describe("reporting from a post", () => {
   test("keeps the dialog and the answers when the server refuses the report", async () => {
     server.use(
       signedInHandler,
-      http.post(`${apiBase}/reports`, () => problem(429, "/api/v1/problems/rate-limited", "Too many reports in the last hour.")),
+      http.post(`${apiBase}/reports`, () =>
+        problem(429, "/api/v1/problems/rate-limited", "Too many reports in the last hour."),
+      ),
     );
     servePost();
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
@@ -205,9 +220,13 @@ describe("reporting from a post", () => {
     await user.type(await within(dialog).findByRole("textbox", { name: "Comment" }), "Impersonates me");
     await user.click(within(dialog).getByRole("button", { name: "Send report" }));
 
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Could not send the report: Too many reports in the last hour.");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Could not send the report: Too many reports in the last hour.",
+    );
     expect(within(dialog).getByRole("textbox", { name: "Comment" })).toHaveValue("Impersonates me");
-    expect(within(dialog).getByRole("heading", { name: "Anything else the moderators should know?" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("heading", { name: "Anything else the moderators should know?" }),
+    ).toBeInTheDocument();
   });
 
   test("tells why the posts did not load and loads them again", async () => {
@@ -215,7 +234,9 @@ describe("reporting from a post", () => {
     server.use(
       signedInHandler,
       http.get(`${apiBase}/accounts/:id/statuses`, () =>
-        fails ? problem(503, "about:blank", "The server is busy.") : HttpResponse.json({ items: [timelineStatusFixture] }),
+        fails
+          ? problem(503, "about:blank", "The server is busy.")
+          : HttpResponse.json({ items: [timelineStatusFixture] }),
       ),
     );
     servePost();
@@ -237,7 +258,11 @@ describe("reporting from a post", () => {
     servePost(own);
     const { user } = await renderApp({ path: `/@alice/status/${own.id}` });
 
-    await user.click(await within(await screen.findByRole("article", { description: "My post" })).findByRole("button", { name: "More actions" }));
+    await user.click(
+      await within(await screen.findByRole("article", { description: "My post" })).findByRole("button", {
+        name: "More actions",
+      }),
+    );
     expect(await screen.findByRole("menuitem", { name: "Copy link" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Report" })).not.toBeInTheDocument();
   });
@@ -265,14 +290,27 @@ describe("reporting from a profile", () => {
     await user.click(within(dialog).getByRole("button", { name: "Next" }));
 
     await expectStep("Anything else the moderators should know?");
-    const forward = within(dialog).getByRole("checkbox", { name: "Also send the report to \u2066remote.example\u2069" });
+    const forward = within(dialog).getByRole("checkbox", {
+      name: "Also send the report to \u2066remote.example\u2069",
+    });
     expect(forward).not.toBeChecked();
-    expect(forward).toHaveAccessibleDescription("The moderators of \u2066remote.example\u2069 get a copy without your name.");
+    expect(forward).toHaveAccessibleDescription(
+      "The moderators of \u2066remote.example\u2069 get a copy without your name.",
+    );
     await user.click(forward);
     await user.click(within(dialog).getByRole("button", { name: "Send report" }));
 
     await expectStep("Report sent");
-    expect(within(dialog).getByText("A copy without your name goes to \u2066remote.example\u2069.")).toBeInTheDocument();
-    expect(bodies).toEqual([{ account_id: remoteAccountFixture.id, category: "legal", status_ids: ["0192f0c4-7a8e-7000-8000-0000000003c1"], forward: true }]);
+    expect(
+      within(dialog).getByText("A copy without your name goes to \u2066remote.example\u2069."),
+    ).toBeInTheDocument();
+    expect(bodies).toEqual([
+      {
+        account_id: remoteAccountFixture.id,
+        category: "legal",
+        status_ids: ["0192f0c4-7a8e-7000-8000-0000000003c1"],
+        forward: true,
+      },
+    ]);
   });
 });

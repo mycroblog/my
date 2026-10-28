@@ -77,7 +77,10 @@ export function useServerContact() {
     onSuccess: async (saved) => {
       // The about page and the landing page show the new contact and thumbnail once GET /instance is fetched again
       // (the button stays pending until then).
-      await Promise.all([saved === undefined ? undefined : cacheSavedSettings(queryClient, api, saved), cacheSavedTexts(queryClient)]);
+      await Promise.all([
+        saved === undefined ? undefined : cacheSavedSettings(queryClient, api, saved),
+        cacheSavedTexts(queryClient),
+      ]);
       setAccount(undefined);
       setEmail(undefined);
       setThumbnail({ kind: "keep" });
@@ -91,8 +94,16 @@ export function useServerContact() {
   });
 
   // The medium rendition of a new upload fills the preview; the saved thumbnail comes from GET /instance.
-  const previewUrl = thumbnail.kind === "new" ? thumbnail.media.variants?.medium.url : thumbnail.kind === "keep" ? instance.thumbnail?.url : undefined;
-  const uploadError = upload.error instanceof MediaProcessingError ? t("client:admin.settings.contact.thumbnail.failed") : errorMessage(upload.error);
+  const previewUrl =
+    thumbnail.kind === "new"
+      ? thumbnail.media.variants?.medium.url
+      : thumbnail.kind === "keep"
+        ? instance.thumbnail?.url
+        : undefined;
+  const uploadError =
+    upload.error instanceof MediaProcessingError
+      ? t("client:admin.settings.contact.thumbnail.failed")
+      : errorMessage(upload.error);
 
   return {
     account: { value: accountValue, onChange: setAccount },

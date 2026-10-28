@@ -10,7 +10,9 @@ import { Menu, MenuItem, MenuSeparator, MenuTrigger, SubmenuTrigger } from "./Me
 
 /** The keys that move into and out of a submenu in the page's reading direction. */
 function submenuKeys() {
-  return document.documentElement.dir === "rtl" ? { open: "{ArrowLeft}", close: "{ArrowRight}" } : { open: "{ArrowRight}", close: "{ArrowLeft}" };
+  return document.documentElement.dir === "rtl"
+    ? { open: "{ArrowLeft}", close: "{ArrowRight}" }
+    : { open: "{ArrowRight}", close: "{ArrowLeft}" };
 }
 
 const onAction = fn();

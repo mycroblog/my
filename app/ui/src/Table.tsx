@@ -23,7 +23,11 @@ const table = tv({
   variants: {
     density: {
       // Totals of a few columns at body size, a rule under every row.
-      regular: { root: "text-start", headRow: "border-border", row: "border-b border-border align-top last:border-b-0" },
+      regular: {
+        root: "text-start",
+        headRow: "border-border",
+        row: "border-b border-border align-top last:border-b-0",
+      },
       // Many short values at `text-sm` in fixed columns, rules between the rows.
       compact: {
         root: "table-fixed border-collapse text-sm",
@@ -130,7 +134,8 @@ type CellLook = {
   align?: "matchParent";
 };
 
-export type TableRowHeaderProps = Omit<ComponentPropsWithRef<"th">, "className" | "style" | "scope" | "align"> & CellLook;
+export type TableRowHeaderProps = Omit<ComponentPropsWithRef<"th">, "className" | "style" | "scope" | "align"> &
+  CellLook;
 
 /** The header of a row (`th scope="row"`): the name of what the row is about, at body weight. */
 export function TableRowHeader({ wrap, align, ...props }: TableRowHeaderProps) {

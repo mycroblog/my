@@ -10,9 +10,13 @@ import { CustomEmoji, type CustomEmojiImage } from "./CustomEmoji";
 import { Text } from "./Text";
 import { ToggleButton } from "./ToggleButton";
 
-const chip = tv({ base: "rounded-full bg-surface px-3 font-bold text-fg data-selected:bg-soft data-selected:text-accent" });
+const chip = tv({
+  base: "rounded-full bg-surface px-3 font-bold text-fg data-selected:bg-soft data-selected:text-accent",
+});
 
-const staticChip = tv({ base: "inline-flex min-h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold text-fg-muted" });
+const staticChip = tv({
+  base: "inline-flex min-h-8 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold text-fg-muted",
+});
 
 export type ReactionEmojiProps = {
   /** The image of a custom emoji; without it the emoji is text. */
@@ -59,7 +63,15 @@ export function ReactionChip({ image, text, count, label, isSelected, onChange }
     );
   }
   return (
-    <ToggleButton aria-label={label} aria-describedby={countId} tone="accent" isSelected={isSelected} onChange={onChange} outlined className={chip()}>
+    <ToggleButton
+      aria-label={label}
+      aria-describedby={countId}
+      tone="accent"
+      isSelected={isSelected}
+      onChange={onChange}
+      outlined
+      className={chip()}
+    >
       <ReactionEmoji image={image} text={text} />
       {countText}
     </ToggleButton>

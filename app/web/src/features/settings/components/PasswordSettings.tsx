@@ -10,7 +10,12 @@ import { Box, Button, ConfirmDialog, Heading, InlineError, Stack, StatusMessage,
 import { type ReactNode, useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { passwordMaxLength, passwordMinLength } from "../api/password";
-import { type PasswordChangeForm, type PasswordRemoval, usePasswordChangeForm, usePasswordRemoval } from "../hooks/usePasswordChange";
+import {
+  type PasswordChangeForm,
+  type PasswordRemoval,
+  usePasswordChangeForm,
+  usePasswordRemoval,
+} from "../hooks/usePasswordChange";
 import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 
 export function PasswordSettings() {

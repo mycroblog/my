@@ -61,7 +61,9 @@ describe("automatic deletion of old posts", () => {
     await user.click(await screen.findByRole("option", { name: "5 times" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Saved. Posts older than 14 days will be deleted, except those you keep.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Saved. Posts older than 14 days will be deleted, except those you keep."),
+    ).toBeInTheDocument();
     expect(api.saves).toEqual([
       {
         ...autoDeletePolicyFixture,
@@ -83,7 +85,9 @@ describe("automatic deletion of old posts", () => {
 
   test("keeps the edits when the save fails", async () => {
     server.use(
-      http.put(`${apiBase}/preferences/auto_delete`, () => problem(422, "about:blank", "The request cannot be processed.")),
+      http.put(`${apiBase}/preferences/auto_delete`, () =>
+        problem(422, "about:blank", "The request cannot be processed."),
+      ),
     );
     const { user } = await renderApp({ path: "/settings/auto-delete" });
     await user.click(await screen.findByRole("switch", { name: /Delete old posts automatically/ }));

@@ -7,7 +7,14 @@
 // horizontal scrolling and against an ARIA snapshot.
 import { randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
-import { axeBuilder, expect, expectNoAxeViolations, expectNoHorizontalScroll, openFromNavigation, test } from "./fixtures";
+import {
+  axeBuilder,
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  openFromNavigation,
+  test,
+} from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
@@ -38,7 +45,9 @@ async function signIn(page: Page, email: string, password: string): Promise<void
   await page.goto("/login");
   await expect(pageHeading(page)).toBeVisible();
   const authorized = page.waitForRequest(
-    (request) => new URL(request.url()).pathname.startsWith("/api/") && request.headers()["authorization"]?.startsWith("Bearer ") === true,
+    (request) =>
+      new URL(request.url()).pathname.startsWith("/api/") &&
+      request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
   await page.getByRole("main").getByRole("button").click();
   await page.locator('input[type="email"][autocomplete="username"]').fill(email);
@@ -47,7 +56,10 @@ async function signIn(page: Page, email: string, password: string): Promise<void
   const authorization = (await authorized).headers()["authorization"] ?? "";
   await expect(page).toHaveURL(`${serverURL}/home`);
   const locale = test.info().project.use.locale ?? "en";
-  const response = await page.request.patch(`${serverURL}/api/v1/preferences`, { headers: { Authorization: authorization }, data: { locale } });
+  const response = await page.request.patch(`${serverURL}/api/v1/preferences`, {
+    headers: { Authorization: authorization },
+    data: { locale },
+  });
   expect(response.ok(), `PATCH /api/v1/preferences: ${String(response.status())}`).toBe(true);
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", locale);
@@ -65,11 +77,19 @@ async function post(page: Page, text: string): Promise<void> {
 
 /** Asserts that a toast says `text`; an earlier toast may still say it too. */
 async function expectToast(page: Page, text: string): Promise<void> {
-  await expect(page.getByRole("region", { name: message("shell.toast.region") }).getByText(text).last()).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: message("shell.toast.region") })
+      .getByText(text)
+      .last(),
+  ).toBeVisible();
 }
 
 test("a saved display name is on the profile page from its first render", async ({ page }, testInfo) => {
-  test.skip(!ownsServer, "the test creates its user with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the test creates its user with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
   test.setTimeout(90_000);
   const touch = testInfo.project.use.hasTouch ?? false;
   // A user new to the test, so that a retry and the other projects never meet its posts.
@@ -89,14 +109,19 @@ test("a saved display name is on the profile page from its first render", async 
 
   const name = `Display ${username}`;
   await openFromNavigation(page, "/settings", touch);
-  await page.getByRole("main").getByRole("link", { name: message("settings.profile.title") }).first().click();
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: message("settings.profile.title") })
+    .first()
+    .click();
   await expect(pageHeading(page)).toHaveText(message("settings.profile.title"));
   await page.getByRole("textbox", { name: message("settings.profile.display_name") }).fill(name);
   await page.getByRole("button", { name: message("settings.profile.save") }).click();
   await expectToast(page, message("settings.profile.saved"));
 
   await page.route("**/api/v1/**", async (route) => {
-    if (route.request().method() === "GET" && !route.request().url().includes("/streaming")) await new Promise((resolve) => setTimeout(resolve, slowReads));
+    if (route.request().method() === "GET" && !route.request().url().includes("/streaming"))
+      await new Promise((resolve) => setTimeout(resolve, slowReads));
     await route.fallback();
   });
   // Every heading the page shows from here on, sampled on every frame.

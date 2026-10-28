@@ -11,7 +11,12 @@ function setup() {
   const api = createClient({ server, fetch: f.fetch, tokenSource: staticToken("t1") });
   const last = () => {
     const sent = f.requests.at(-1);
-    return { method: sent?.request.method, url: sent?.request.url.slice(`${server}/api/v1`.length), body: sent?.body, auth: sent?.request.headers.get("Authorization") };
+    return {
+      method: sent?.request.method,
+      url: sent?.request.url.slice(`${server}/api/v1`.length),
+      body: sent?.body,
+      auth: sent?.request.headers.get("Authorization"),
+    };
   };
   return { api, last };
 }
@@ -44,7 +49,9 @@ describe("voice rooms", () => {
     const { api, last } = setup();
     await api.POST("/voice/rooms/{id}/participation", room);
     expect(last()).toMatchObject({ method: "POST", url: "/voice/rooms/r1/participation" });
-    await api.DELETE("/voice/rooms/{id}/participation", { params: { path: { id }, query: { next_host_id: accountId, end: true } } });
+    await api.DELETE("/voice/rooms/{id}/participation", {
+      params: { path: { id }, query: { next_host_id: accountId, end: true } },
+    });
     expect(last()).toMatchObject({ method: "DELETE", url: "/voice/rooms/r1/participation?next_host_id=a1&end=true" });
     await api.POST("/voice/rooms/{id}/heartbeat", { ...room, body: { session: "s1" } });
     expect(last()).toMatchObject({ method: "POST", url: "/voice/rooms/r1/heartbeat", body: '{"session":"s1"}' });

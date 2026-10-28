@@ -64,7 +64,11 @@ function receivedAudio(page: Page): Promise<number[]> {
     for (const pc of window.e2ePeerConnections ?? []) {
       if (pc.connectionState !== "connected") continue;
       let packets = 0;
-      for (const report of (await pc.getStats()).values() as IterableIterator<{ type: string; kind?: string; packetsReceived?: number }>) {
+      for (const report of (await pc.getStats()).values() as IterableIterator<{
+        type: string;
+        kind?: string;
+        packetsReceived?: number;
+      }>) {
         if (report.type === "inbound-rtp" && report.kind === "audio") packets += report.packetsReceived ?? 0;
       }
       counts.push(packets);
@@ -109,8 +113,10 @@ async function signIn(page: Page, user: User): Promise<void> {
 
 const dock = (page: Page) => page.getByRole("toolbar", { name: message("voice.dock.label") });
 /** The speakers (`count` of them) or the listeners on the room's stage. */
-const speakers = (page: Page, count: number) => page.getByRole("list", { name: message("voice.stage.speakers", { "count, number": String(count) }) });
-const listeners = (page: Page, count: number) => page.getByRole("list", { name: message("voice.stage.listeners", { "count, number": String(count) }) });
+const speakers = (page: Page, count: number) =>
+  page.getByRole("list", { name: message("voice.stage.speakers", { "count, number": String(count) }) });
+const listeners = (page: Page, count: number) =>
+  page.getByRole("list", { name: message("voice.stage.listeners", { "count, number": String(count) }) });
 /** The call's state in the room's head ("Connected"). */
 const callState = (page: Page) => page.getByRole("main").getByText(message("voice.call.live"), { exact: true });
 
@@ -120,13 +126,21 @@ async function turnMicrophoneOn(page: Page, name: string, speakerCount: number):
   await expect(microphone).toBeEnabled();
   if ((await microphone.getAttribute("aria-pressed")) !== "true") await microphone.click();
   await expect(microphone).toHaveAttribute("aria-pressed", "true");
-  await expect(speakers(page, speakerCount).getByRole("listitem").filter({ hasText: name })).not.toContainText(message("voice.participant.mic_off"));
+  await expect(speakers(page, speakerCount).getByRole("listitem").filter({ hasText: name })).not.toContainText(
+    message("voice.participant.mic_off"),
+  );
 }
 
 test.describe("a voice chat call between two browsers", () => {
-  test.skip(!ownsServer, "the spec creates users with bin/my, which needs the database of the server e2e/server.ts starts");
+  test.skip(
+    !ownsServer,
+    "the spec creates users with bin/my, which needs the database of the server e2e/server.ts starts",
+  );
 
-  test("the host speaks to a listener, lets the listener speak, and ends the room", async ({ browser, page: hostPage }) => {
+  test("the host speaks to a listener, lets the listener speak, and ends the room", async ({
+    browser,
+    page: hostPage,
+  }) => {
     test.setTimeout(90_000);
     const host = createUser("host");
     const guest = createUser("guest");
@@ -135,9 +149,13 @@ test.describe("a voice chat call between two browsers", () => {
     await recordPeerConnections(guestContext);
     const guestPage = await guestContext.newPage();
     // The call's warnings (signals that could not be sent or taken, a refused microphone) go to the test's output.
-    for (const [who, page] of [["host", hostPage], ["guest", guestPage]] as const) {
+    for (const [who, page] of [
+      ["host", hostPage],
+      ["guest", guestPage],
+    ] as const) {
       page.on("console", (entry) => {
-        if (entry.text().startsWith("voice:") || entry.text().includes("Permissions policy")) console.log(`[${who}] ${entry.type()}: ${entry.text()}`);
+        if (entry.text().startsWith("voice:") || entry.text().includes("Permissions policy"))
+          console.log(`[${who}] ${entry.type()}: ${entry.text()}`);
       });
     }
 
@@ -172,12 +190,16 @@ test.describe("a voice chat call between two browsers", () => {
 
       await test.step("the host speaks and the guest hears it", async () => {
         await turnMicrophoneOn(hostPage, host.username, 1);
-        await expect(speakers(guestPage, 1).getByRole("listitem").filter({ hasText: host.username })).not.toContainText(message("voice.participant.mic_off"));
+        await expect(speakers(guestPage, 1).getByRole("listitem").filter({ hasText: host.username })).not.toContainText(
+          message("voice.participant.mic_off"),
+        );
         await expectReceivesAudio(guestPage);
       });
 
       await test.step("the guest raises a hand, the host lets the guest speak, and the host hears the guest", async () => {
-        await dock(guestPage).getByRole("button", { name: message("voice.call.raise_hand") }).click();
+        await dock(guestPage)
+          .getByRole("button", { name: message("voice.call.raise_hand") })
+          .click();
         const guestAvatar = listeners(hostPage, 1).getByRole("listitem").filter({ hasText: guest.username });
         await expect(guestAvatar).toContainText(message("voice.participant.hand_raised"));
         // The host opens the guest's menu from the avatar.
@@ -185,15 +207,21 @@ test.describe("a voice chat call between two browsers", () => {
         await hostPage.getByRole("menuitem", { name: message("voice.moderate.grant") }).click();
         await expect(guestAvatar).not.toContainText(message("voice.participant.hand_raised"));
         // The grant lets the guest speak; the guest then becomes a speaker.
-        await dock(guestPage).getByRole("button", { name: message("voice.call.speak") }).click();
-        await expect(speakers(hostPage, 2).getByRole("listitem").filter({ hasText: guest.username })).toContainText(message("voice.role.speaker"));
+        await dock(guestPage)
+          .getByRole("button", { name: message("voice.call.speak") })
+          .click();
+        await expect(speakers(hostPage, 2).getByRole("listitem").filter({ hasText: guest.username })).toContainText(
+          message("voice.role.speaker"),
+        );
         await turnMicrophoneOn(guestPage, guest.username, 2);
         await expectReceivesAudio(hostPage);
         await expectReceivesAudio(guestPage);
       });
 
       await test.step("the host leaves and ends the room", async () => {
-        await dock(hostPage).getByRole("button", { name: message("voice.call.leave") }).click();
+        await dock(hostPage)
+          .getByRole("button", { name: message("voice.call.leave") })
+          .click();
         const dialog = hostPage.getByRole("alertdialog", { name: message("voice.call.host_leave.title") });
         // The radio's input is visually hidden too: the user presses its label.
         await dialog.getByText(message("voice.call.host_leave.end"), { exact: true }).click();

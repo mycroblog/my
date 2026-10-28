@@ -12,7 +12,9 @@ const retryFirstWait = 1000;
 /** A bot of f in the streaming mode that records the IDs of the mentions it handles. */
 function streamingBot(f: FakeServer, clock?: Clock): { bot: Bot; store: MemoryStore; handled: string[] } {
   const store = new MemoryStore();
-  const bot = new Bot(f.options({ mode: "streaming", store, ...(clock === undefined ? {} : { now: clock.now, sleep: clock.sleep }) }));
+  const bot = new Bot(
+    f.options({ mode: "streaming", store, ...(clock === undefined ? {} : { now: clock.now, sleep: clock.sleep }) }),
+  );
   const handled: string[] = [];
   bot.onMention((ctx) => {
     handled.push(ctx.notification?.id ?? "");

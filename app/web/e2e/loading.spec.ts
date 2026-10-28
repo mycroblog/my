@@ -58,7 +58,10 @@ async function expectLoadingRegion(page: Page): Promise<void> {
 }
 
 test.describe("a timeline's first page", () => {
-  test("is a busy skeleton named once, which passes axe and does not scroll sideways", async ({ page, makeAxeBuilder }) => {
+  test("is a busy skeleton named once, which passes axe and does not scroll sideways", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const { release } = await hold(page, "**/api/v1/timelines/local*", { items: [] });
     await page.goto("/local");
 

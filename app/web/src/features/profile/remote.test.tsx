@@ -62,7 +62,8 @@ function fetchServer(reread: () => Response) {
       // Carol pinned nothing that this server knows of.
       if (new URL(request.url).searchParams.get("pinned") === "true") return HttpResponse.json(statusPage([]));
       state.requests += 1;
-      if (state.requests === 1) return HttpResponse.json({ ...statusPage([remoteStatusFixture]), remote_fetch_started: true });
+      if (state.requests === 1)
+        return HttpResponse.json({ ...statusPage([remoteStatusFixture]), remote_fetch_started: true });
       await gate;
       return reread();
     }),
@@ -83,7 +84,9 @@ describe("a profile of another server", () => {
     expect(within(main()).getByRole("link", original)).toHaveAttribute("href", "https://remote.example/@carol");
     // Above the posts, outside the feed.
     expect(within(feed).queryByText(notice)).not.toBeInTheDocument();
-    expect(within(main()).getByText(notice).compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      within(main()).getByText(notice).compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(main()).queryByText(fetching)).not.toBeInTheDocument();
   });
 
@@ -111,7 +114,9 @@ describe("a profile of another server whose recent posts are being fetched", () 
     expect(within(main()).getByText(fetching)).toBeInTheDocument();
 
     state.open();
-    expect(await screen.findByRole("article", { description: "An older post, fetched from my server." })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("article", { description: "An older post, fetched from my server." }),
+    ).toBeInTheDocument();
     expect(within(main()).queryByText(fetching)).not.toBeInTheDocument();
     expect(within(main()).getByText(notice)).toBeInTheDocument();
     // Once: no further read, however long the profile stays open.

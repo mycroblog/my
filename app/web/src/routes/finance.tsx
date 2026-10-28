@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { z } from "zod";
-import { type CostBasis, type CostGranularity, deviceToday, FinanceCosts, financeCostTotalsQueryOptions, financeIncomeTotalsQueryOptions } from "../features/costs";
+import {
+  type CostBasis,
+  type CostGranularity,
+  deviceToday,
+  FinanceCosts,
+  financeCostTotalsQueryOptions,
+  financeIncomeTotalsQueryOptions,
+} from "../features/costs";
 import { viewerQueryOptions } from "../features/session";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
@@ -37,8 +44,12 @@ export const Route = createFileRoute("/finance")({
     const viewer = await queryClient.query(viewerQueryOptions(api));
     if (!viewer.permissions.includes("view_finance") && !viewer.permissions.includes("manage_finance")) return;
     await Promise.all([
-      queryClient.query({ ...financeCostTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity }).catch(() => undefined),
-      queryClient.query({ ...financeIncomeTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity }).catch(() => undefined),
+      queryClient
+        .query({ ...financeCostTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity })
+        .catch(() => undefined),
+      queryClient
+        .query({ ...financeIncomeTotalsQueryOptions(api, granularity, basis, today), staleTime: Infinity })
+        .catch(() => undefined),
     ]);
   },
   component: FinancePage,

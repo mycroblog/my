@@ -5,7 +5,14 @@
 // it, which replaces the cached one once the lists of reports it changes and the audit log are fetched again;
 // failures are shown in a toast and leave the page as it was (web-client/README.md E2).
 import { useToast } from "@my/ui";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -127,18 +134,23 @@ export function useCitedRules(ruleIds: readonly string[]): CitedRule[] | null {
  * One post a report points at: shown, whatever its visibility, with when it was deleted for a post its author (or
  * someone else) deleted; or gone, when the server no longer has it.
  */
-export type ReportedStatus = { id: string; status: "found"; value: Status; deletedAt: string | undefined } | { id: string; status: "gone" };
+export type ReportedStatus =
+  { id: string; status: "found"; value: Status; deletedAt: string | undefined } | { id: string; status: "gone" };
 
 /** The posts that a report points at, in its order; the report carries them for the moderators (`statuses`). */
 export function reportedStatuses(report: Pick<ReportDetail, "status_ids" | "statuses">): ReportedStatus[] {
   return report.status_ids.map((id) => {
     const found = report.statuses.find((item) => item.status.id === id);
-    return found === undefined ? { id, status: "gone" } : { id, status: "found", value: found.status, deletedAt: found.deleted_at };
+    return found === undefined
+      ? { id, status: "gone" }
+      : { id, status: "found", value: found.status, deletedAt: found.deleted_at };
   });
 }
 
 /** The moderation actions on the target of a report, newest first; only for a viewer with manage_accounts. */
-export function useTargetActions(accountId: string): PagedList<AccountAction> & { error: string | undefined; isLoading: boolean } {
+export function useTargetActions(
+  accountId: string,
+): PagedList<AccountAction> & { error: string | undefined; isLoading: boolean } {
   const api = useApi();
   const query = useInfiniteQuery(accountActionsQueryOptions(api, accountId));
   // An infinite query's data before its first page is undefined; the list shows a spinner or the reason meanwhile.
@@ -199,7 +211,10 @@ export type ReportChanges = {
  * then), with what the change did in words: the page shows it next to the pressed button, and keeps focus where
  * that button went away.
  */
-export function useReportChanges(id: string, onChanged: (change: ChangeReport, message: string) => void): ReportChanges {
+export function useReportChanges(
+  id: string,
+  onChanged: (change: ChangeReport, message: string) => void,
+): ReportChanges {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -283,7 +298,11 @@ export function useReportNoteForm(id: string): ReportNoteForm {
       add.mutate({ id, body });
     },
     isPending: add.isPending,
-    error: isBlank ? t("client:admin.report.notes.blank") : add.isError ? t("client:admin.report.notes.failed", { reason: errorMessage(add.error) }) : undefined,
+    error: isBlank
+      ? t("client:admin.report.notes.blank")
+      : add.isError
+        ? t("client:admin.report.notes.failed", { reason: errorMessage(add.error) })
+        : undefined,
     status,
   };
 }

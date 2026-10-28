@@ -38,7 +38,10 @@ export function useExternalOutcome(): ExternalOutcome | undefined {
 }
 
 /** The message of a failed confirmation with a provider. */
-const confirmationFailureMessages: Record<Exclude<ExternalFailure, "linked_elsewhere" | "already_linked">, ClientMessageKey> = {
+const confirmationFailureMessages: Record<
+  Exclude<ExternalFailure, "linked_elsewhere" | "already_linked">,
+  ClientMessageKey
+> = {
   mismatch: "client:settings.external_confirmation.failed.mismatch",
   expired: "client:settings.external_confirmation.failed.expired",
   rate_limited: "client:settings.external_confirmation.failed.rate_limited",
@@ -89,14 +92,16 @@ export function useExternalConfirmation(operation: ConfirmedOperation, hasPasswo
     },
   });
   const providers = links.filter((link) => link.available);
-  const mine = outcome !== undefined && outcome.kind !== "linked" && outcome.operation === operation ? outcome : undefined;
+  const mine =
+    outcome !== undefined && outcome.kind !== "linked" && outcome.operation === operation ? outcome : undefined;
   let confirmed: ExternalConfirmation["confirmed"];
   if (mine?.kind === "confirmed" && !used) {
     const link = links.find((l) => l.provider_id === mine.providerId);
     confirmed = { token: mine.token, providerName: link?.provider_name ?? "" };
   }
   let error: string | undefined;
-  if (begin.isError) error = t("client:settings.external_confirmation.start_failed", { reason: errorMessage(begin.error) });
+  if (begin.isError)
+    error = t("client:settings.external_confirmation.start_failed", { reason: errorMessage(begin.error) });
   else if (mine?.kind === "failed" && mine.failure !== "linked_elsewhere" && mine.failure !== "already_linked") {
     error = t(confirmationFailureMessages[mine.failure]);
   }

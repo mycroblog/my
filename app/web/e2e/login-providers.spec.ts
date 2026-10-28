@@ -47,7 +47,12 @@ const displayName = "Example SSO";
 const name = `⁨${displayName}⁩`;
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in administrator with no login provider at first. Returns what was sent. */
@@ -55,12 +60,20 @@ async function administratorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   let providers: Schemas["AdminLoginProvider"][] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -77,14 +90,24 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
     if (key === "GET /admin/login_providers") return json(route, { items: providers });
     if (key === "POST /admin/login_providers") {
       const body = request.postDataJSON() as Schemas["CreateLoginProviderRequest"];
-      sent.push(`create ${body.kind} ${body.issuer ?? ""} ${body.client_id ?? ""}${(body.guilds ?? []).length > 0 ? ` guilds=${(body.guilds ?? []).join(",")}` : ""}`);
+      sent.push(
+        `create ${body.kind} ${body.issuer ?? ""} ${body.client_id ?? ""}${(body.guilds ?? []).length > 0 ? ` guilds=${(body.guilds ?? []).join(",")}` : ""}`,
+      );
       const provider: Schemas["AdminLoginProvider"] = {
         id: providerId,
         kind: body.kind,
@@ -134,9 +157,15 @@ test.describe("login providers", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await form.getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true }).fill(displayName);
-    await form.getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true }).fill("https://sso.example");
-    await form.getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true }).fill("my-client");
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true })
+      .fill(displayName);
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })
+      .fill("https://sso.example");
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true })
+      .fill("my-client");
     await form.getByLabel(message("admin.login_providers.client_secret"), { exact: true }).fill("s3cret");
     await form.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();
 
@@ -147,19 +176,27 @@ test.describe("login providers", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    await list.getByRole("button", { name: message("admin.login_providers.disable_provider", name), exact: true }).click();
+    await list
+      .getByRole("button", { name: message("admin.login_providers.disable_provider", name), exact: true })
+      .click();
     const disable = page.getByRole("alertdialog");
     await expect(disable).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await disable.getByRole("button", { name: message("admin.login_providers.disable"), exact: true }).click();
-    await expect(list.getByRole("button", { name: message("admin.login_providers.enable_provider", name), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("button", { name: message("admin.login_providers.enable_provider", name), exact: true }),
+    ).toBeVisible();
 
-    await list.getByRole("button", { name: message("admin.login_providers.delete_provider", name), exact: true }).click();
+    await list
+      .getByRole("button", { name: message("admin.login_providers.delete_provider", name), exact: true })
+      .click();
     const remove = page.getByRole("alertdialog");
     await expect(remove).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await remove.getByRole("button", { name: message("admin.login_providers.delete"), exact: true }).click();
-    await expect(list.getByRole("heading", { level: 3, name: message("admin.login_providers.empty"), exact: true })).toBeVisible();
+    await expect(
+      list.getByRole("heading", { level: 3, name: message("admin.login_providers.empty"), exact: true }),
+    ).toBeVisible();
     expect(sent).toEqual(["create oidc https://sso.example my-client", "disable", "delete"]);
   });
 
@@ -171,11 +208,19 @@ test.describe("login providers", () => {
     await expect(form).toBeVisible();
 
     await form.getByRole("radio", { name: message("admin.login_providers.kind.discord"), exact: true }).check();
-    await expect(form.getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })).toHaveCount(0);
-    await form.getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true }).fill(displayName);
-    await form.getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true }).fill("my-client");
+    await expect(form.getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })).toHaveCount(
+      0,
+    );
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true })
+      .fill(displayName);
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true })
+      .fill("my-client");
     await form.getByLabel(message("admin.login_providers.client_secret"), { exact: true }).fill("s3cret");
-    await form.getByRole("textbox", { name: message("admin.login_providers.guilds"), exact: true }).fill("1234567890, 987654321");
+    await form
+      .getByRole("textbox", { name: message("admin.login_providers.guilds"), exact: true })
+      .fill("1234567890, 987654321");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
     await form.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();

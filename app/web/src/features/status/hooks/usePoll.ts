@@ -14,7 +14,14 @@ import { isRemoteAcct } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { type DeadlineView, useDeadlineView } from "../../../lib/time";
 import { useViewer } from "../../session";
-import { cacheVoteAnswer, type Poll, refreshAfterRefusedVote, type Status, statusShareUrl, votePoll } from "../api/status";
+import {
+  cacheVoteAnswer,
+  type Poll,
+  refreshAfterRefusedVote,
+  type Status,
+  statusShareUrl,
+  votePoll,
+} from "../api/status";
 
 /** One option of a poll, with its share of the votes. */
 type PollOptionView = {
@@ -82,7 +89,8 @@ export function usePoll(status: Status, canVote: boolean): PollView | null {
   // The options chosen so far, for this poll only: an edit that replaces the poll starts over.
   const [choice, setChoice] = useState<{ pollId: string; selected: readonly number[] }>({ pollId: "", selected: [] });
   const vote = useMutation({
-    mutationFn: ({ pollId, choices }: { pollId: string; choices: readonly number[] }) => votePoll(api, post.id, pollId, choices),
+    mutationFn: ({ pollId, choices }: { pollId: string; choices: readonly number[] }) =>
+      votePoll(api, post.id, pollId, choices),
     // One vote at a time per post.
     scope: { id: `status:${post.id}:poll` },
     onSuccess: (answer) => {

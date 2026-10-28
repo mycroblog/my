@@ -150,7 +150,12 @@ describe("the poll of a post", () => {
         return HttpResponse.json(post);
       }),
       http.post(`${apiBase}/statuses/:id/poll/votes`, () => {
-        const body: Schemas["Problem"] = { type: "about:blank", title: "Unprocessable Content", status: 422, detail: "This poll has ended." };
+        const body: Schemas["Problem"] = {
+          type: "about:blank",
+          title: "Unprocessable Content",
+          status: 422,
+          detail: "This poll has ended.",
+        };
         return HttpResponse.json(body, { status: 422, headers: { "Content-Type": "application/problem+json" } });
       }),
     );

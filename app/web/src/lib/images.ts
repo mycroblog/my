@@ -41,7 +41,10 @@ export function originalImage(
   if (variants !== undefined) {
     const { large, animated } = variants;
     return {
-      sources: animated === undefined ? { still: [{ url: large.url }] } : { still: [{ url: large.url }], animated: [{ url: animated.large.url }] },
+      sources:
+        animated === undefined
+          ? { still: [{ url: large.url }] }
+          : { still: [{ url: large.url }], animated: [{ url: animated.large.url }] },
       width: large.width,
       height: large.height,
     };

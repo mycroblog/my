@@ -1,5 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { AccountItem, BannerImage, Button, Cluster, EmptyState, ExternalLink, Heading, Hint, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
+import {
+  AccountItem,
+  BannerImage,
+  Button,
+  Cluster,
+  EmptyState,
+  ExternalLink,
+  Heading,
+  Hint,
+  Link,
+  RegionError,
+  Spinner,
+  Stack,
+  Text,
+} from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
@@ -38,11 +52,15 @@ export function About() {
       <DocumentsSection />
       {/* How the server treats other servers and crawlers. */}
       <ModeratedDomainsSection />
-      {about.crawlers !== undefined && <Crawlers searchIndexing={about.crawlers.searchIndexing} aiUsage={about.crawlers.aiUsage} />}
-      {/* Who runs the server, what it costs and what it runs. */}
-      {about.finance !== undefined && about.income !== undefined && (about.finance !== "private" || about.income !== "private") && (
-        <Costs finance={about.finance} income={about.income} />
+      {about.crawlers !== undefined && (
+        <Crawlers searchIndexing={about.crawlers.searchIndexing} aiUsage={about.crawlers.aiUsage} />
       )}
+      {/* Who runs the server, what it costs and what it runs. */}
+      {about.finance !== undefined &&
+        about.income !== undefined &&
+        (about.finance !== "private" || about.income !== "private") && (
+          <Costs finance={about.finance} income={about.income} />
+        )}
       <AboutSupportersSection />
       {about.commerceDisclosureUrl !== undefined && <CommerceDisclosure url={about.commerceDisclosureUrl} />}
       {about.contact !== undefined && <Contact contact={about.contact} />}
@@ -158,7 +176,13 @@ function Contact({ contact }: { contact: NonNullable<Instance["contact"]> }) {
  * What the instance states to search engines and AI crawlers (FR-725, ADR-0057), and what such a statement is: a
  * request that crawlers may or may not follow, with the legal standing it may have, never a promise of one.
  */
-function Crawlers({ searchIndexing, aiUsage }: { searchIndexing: Instance["search_indexing"]; aiUsage: Instance["ai_usage"] }) {
+function Crawlers({
+  searchIndexing,
+  aiUsage,
+}: {
+  searchIndexing: Instance["search_indexing"];
+  aiUsage: Instance["ai_usage"];
+}) {
   const t = useT();
   return (
     <Section title={t("client:about.crawlers.title")}>
@@ -176,7 +200,13 @@ function Crawlers({ searchIndexing, aiUsage }: { searchIndexing: Instance["searc
  * instance publishes of each, whether the balance is published (only when both are), and the link to the page of the
  * totals. Absent when the instance publishes neither.
  */
-function Costs({ finance, income }: { finance: Instance["finance_visibility"]; income: Instance["income_visibility"] }) {
+function Costs({
+  finance,
+  income,
+}: {
+  finance: Instance["finance_visibility"];
+  income: Instance["income_visibility"];
+}) {
   const t = useT();
   return (
     <Section title={t("client:about.costs.title")}>
@@ -185,7 +215,9 @@ function Costs({ finance, income }: { finance: Instance["finance_visibility"]; i
       {finance !== "private" && income !== "private" && <p>{t("client:about.income.balance")}</p>}
       <p>
         <Link href="/about/costs" variant="standalone">
-          {t("client:about.costs.link", { shown: finance === "private" ? "income" : income === "private" ? "costs" : "both" })}
+          {t("client:about.costs.link", {
+            shown: finance === "private" ? "income" : income === "private" ? "costs" : "both",
+          })}
         </Link>
       </p>
     </Section>
@@ -369,7 +401,9 @@ function ModeratedDomainsBody({ domains }: { domains: Exclude<ModeratedDomains, 
               </Stack>
             ))}
           </Stack>
-          {domains.moreError !== undefined && <RegionError heading={t("client:about.domains.more_failed")} reason={domains.moreError} />}
+          {domains.moreError !== undefined && (
+            <RegionError heading={t("client:about.domains.more_failed")} reason={domains.moreError} />
+          )}
           {domains.hasMore && (
             <div>
               <Button onPress={domains.loadMore} isPending={domains.isLoadingMore}>

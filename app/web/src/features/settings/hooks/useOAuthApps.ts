@@ -62,7 +62,10 @@ function redirectUrisOf(text: string): string[] {
 
 /** The scopes typed, separated by white space, as the single-spaced list the API takes. */
 function scopeOf(text: string): string {
-  return text.split(/\s+/).filter((scope) => scope !== "").join(" ");
+  return text
+    .split(/\s+/)
+    .filter((scope) => scope !== "")
+    .join(" ");
 }
 
 /** Copies a value to the clipboard and says whether that worked in a toast. */
@@ -140,7 +143,9 @@ export function useRegisterAppForm(onRegistered: (shown: ShownSecret) => void): 
       });
     },
     isPending: register.isPending,
-    error: register.isError ? t("client:settings.apps.register_failed", { reason: errorMessage(register.error) }) : undefined,
+    error: register.isError
+      ? t("client:settings.apps.register_failed", { reason: errorMessage(register.error) })
+      : undefined,
     status,
   };
 }

@@ -34,7 +34,11 @@ export function useBadgeChoices(): BadgeSwitch[] {
     onSuccess: async (saved) => {
       await cacheBadgeChoice(api, queryClient, saved);
       const badge = `⁨${saved.label}⁩`;
-      announce(t(saved.displayed ? "client:settings.profile.badges.shown" : "client:settings.profile.badges.hidden", { badge }));
+      announce(
+        t(saved.displayed ? "client:settings.profile.badges.shown" : "client:settings.profile.badges.hidden", {
+          badge,
+        }),
+      );
     },
   });
   return data.items.map((choice) => {

@@ -19,7 +19,13 @@ export type QuotePolicyDialogProps = {
 export function QuotePolicyDialog({ value, onChange, isPending, isOpen, onOpenChange }: QuotePolicyDialogProps) {
   const t = useT();
   return (
-    <Dialog title={t("client:status.quote_policy.title")} closeLabel={t("client:status.quote_policy.close")} size="sm" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Dialog
+      title={t("client:status.quote_policy.title")}
+      closeLabel={t("client:status.quote_policy.close")}
+      size="sm"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <RadioGroup
         label={t("client:status.quote_policy.label")}
         description={t("client:status.quote_policy.description")}

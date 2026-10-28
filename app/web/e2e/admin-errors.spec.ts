@@ -83,12 +83,20 @@ function detail(state: Schemas["ErrorGroupState"]): Schemas["ErrorGroupDetail"] 
       { hour: "2026-10-20T00:00:00Z", count: 9, last_version: "0.3.0" },
       { hour: "2026-10-21T05:00:00Z", count: 3, last_version: "0.3.1" },
     ],
-    events: state === "resolved" ? [{ kind: "resolved", actor: "user", version: "0.3.1", occurred_at: "2026-10-21T06:00:00Z" }] : [],
+    events:
+      state === "resolved"
+        ? [{ kind: "resolved", actor: "user", version: "0.3.1", occurred_at: "2026-10-21T06:00:00Z" }]
+        : [],
   };
 }
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the API of a signed-in administrator with one open error group. Returns what was sent. */
@@ -96,12 +104,20 @@ async function administratorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent: string[] = [];
   let state: Schemas["ErrorGroupState"] = "open";
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
       return json(route, {
@@ -118,9 +134,17 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
-    if (key === "GET /admin/counts") return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
+    if (key === "GET /admin/counts")
+      return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/error_groups") {
       const wanted = url.searchParams.get("state");
       return json(route, { items: wanted === null || wanted === state ? [group(state)] : [] });

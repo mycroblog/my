@@ -65,7 +65,8 @@ describe("the OAuth apps screen", () => {
         const registration = new URL(request.url).searchParams.get("registration");
         asked.push(registration);
         return HttpResponse.json({
-          items: registration === "dynamic" ? [oauthClientFixture(clientId, { registration: "dynamic", name: "Dyn" })] : [],
+          items:
+            registration === "dynamic" ? [oauthClientFixture(clientId, { registration: "dynamic", name: "Dyn" })] : [],
         } satisfies Schemas["AdminOAuthClientPage"]);
       }),
     );
@@ -84,7 +85,9 @@ describe("the OAuth apps screen", () => {
     const disabledIds: string[] = [];
     server.use(
       http.get(`${apiBase}/admin/oauth_clients`, () =>
-        HttpResponse.json({ items: [oauthClientFixture(clientId, { disabled })] } satisfies Schemas["AdminOAuthClientPage"]),
+        HttpResponse.json({
+          items: [oauthClientFixture(clientId, { disabled })],
+        } satisfies Schemas["AdminOAuthClientPage"]),
       ),
       http.post(`${apiBase}/admin/oauth_clients/:id/disable`, ({ params }) => {
         disabled = true;
@@ -116,7 +119,9 @@ describe("the OAuth apps screen", () => {
 
   test("shows why the server refused to disable an app", async () => {
     server.use(
-      http.get(`${apiBase}/admin/oauth_clients`, () => HttpResponse.json({ items: [oauthClientFixture(clientId)] } satisfies Schemas["AdminOAuthClientPage"])),
+      http.get(`${apiBase}/admin/oauth_clients`, () =>
+        HttpResponse.json({ items: [oauthClientFixture(clientId)] } satisfies Schemas["AdminOAuthClientPage"]),
+      ),
       http.post(`${apiBase}/admin/oauth_clients/:id/disable`, () =>
         HttpResponse.json(
           { type: "about:blank", title: "A first-party client cannot be disabled.", status: 422 },
@@ -129,7 +134,9 @@ describe("the OAuth apps screen", () => {
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Disable" }));
 
     const list = screen.getByRole("region", { name: "Apps" });
-    expect(await within(list).findByRole("alert")).toHaveTextContent("Could not change the app: A first-party client cannot be disabled.");
+    expect(await within(list).findByRole("alert")).toHaveTextContent(
+      "Could not change the app: A first-party client cannot be disabled.",
+    );
   });
 
   test("denies the host of an app's metadata document", async () => {
@@ -137,7 +144,13 @@ describe("the OAuth apps screen", () => {
     server.use(
       http.get(`${apiBase}/admin/oauth_clients`, () =>
         HttpResponse.json({
-          items: [oauthClientFixture(documentClientId, { registration: "metadata_document", client_id: "https://App.Example/client.json", name: "Doc" })],
+          items: [
+            oauthClientFixture(documentClientId, {
+              registration: "metadata_document",
+              client_id: "https://App.Example/client.json",
+              name: "Doc",
+            }),
+          ],
         } satisfies Schemas["AdminOAuthClientPage"]),
       ),
       http.post(`${apiBase}/admin/oauth_client_host_denials`, async ({ request }) => {
@@ -152,7 +165,9 @@ describe("the OAuth apps screen", () => {
 
     const list = screen.getByRole("region", { name: "Apps" });
     await waitFor(() => {
-      expect(within(list).getByRole("status")).toHaveTextContent("app.example is denied, and the tokens of its apps are revoked.");
+      expect(within(list).getByRole("status")).toHaveTextContent(
+        "app.example is denied, and the tokens of its apps are revoked.",
+      );
     });
     expect(denied).toEqual([{ host: "app.example" }]);
   });
@@ -190,7 +205,9 @@ describe("the denied hosts", () => {
     let lifted = "";
     server.use(
       http.get(`${apiBase}/admin/oauth_client_host_denials`, () =>
-        HttpResponse.json({ items: lifted === "" ? [hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "spam.example")] : [] } satisfies Schemas["AdminOAuthClientHostDenialPage"]),
+        HttpResponse.json({
+          items: lifted === "" ? [hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "spam.example")] : [],
+        } satisfies Schemas["AdminOAuthClientHostDenialPage"]),
       ),
       http.delete(`${apiBase}/admin/oauth_client_host_denials/:host`, ({ params }) => {
         lifted = String(params["host"]);

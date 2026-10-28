@@ -10,7 +10,10 @@ import { type RefObject, useEffect, useRef } from "react";
  *
  * Returns `removed(id)`, to call when the row of `id` is taken off the list. Rows carry `data-row-id`.
  */
-export function useFocusAfterRemoval(list: RefObject<HTMLElement | null>, ids: readonly string[]): (id: string) => void {
+export function useFocusAfterRemoval(
+  list: RefObject<HTMLElement | null>,
+  ids: readonly string[],
+): (id: string) => void {
   /** The row being removed and where it was. */
   const pendingRef = useRef<{ id: string; index: number } | null>(null);
 

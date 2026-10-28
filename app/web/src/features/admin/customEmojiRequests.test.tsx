@@ -21,7 +21,12 @@ describe("the requests tab of the custom emoji screen", () => {
   test("counts the pending requests on the tab, and lists them with their requesters", async () => {
     server.use(
       http.get(`${apiBase}/admin/custom_emoji_requests`, () =>
-        HttpResponse.json({ items: [adminCustomEmojiRequestFixture("r1", "blobcat"), adminCustomEmojiRequestFixture("r2", "blobfox", { kind: "image", emoji_id: "e2" })] }),
+        HttpResponse.json({
+          items: [
+            adminCustomEmojiRequestFixture("r1", "blobcat"),
+            adminCustomEmojiRequestFixture("r2", "blobfox", { kind: "image", emoji_id: "e2" }),
+          ],
+        }),
       ),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
@@ -38,10 +43,18 @@ describe("the requests tab of the custom emoji screen", () => {
   test("approves a request, which leaves the pending ones", async () => {
     let approved = "";
     server.use(
-      http.get(`${apiBase}/admin/custom_emoji_requests`, () => HttpResponse.json({ items: approved === "" ? [adminCustomEmojiRequestFixture("r1", "blobcat")] : [] })),
+      http.get(`${apiBase}/admin/custom_emoji_requests`, () =>
+        HttpResponse.json({ items: approved === "" ? [adminCustomEmojiRequestFixture("r1", "blobcat")] : [] }),
+      ),
       http.post(`${apiBase}/admin/custom_emoji_requests/:id/approve`, ({ params }) => {
         approved = String(params["id"]);
-        return HttpResponse.json(adminCustomEmojiRequestFixture(approved, "blobcat", { state: "approved", emoji_id: "e1", decided_at: "2026-10-22T00:00:00Z" }));
+        return HttpResponse.json(
+          adminCustomEmojiRequestFixture(approved, "blobcat", {
+            state: "approved",
+            emoji_id: "e1",
+            decided_at: "2026-10-22T00:00:00Z",
+          }),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis?tab=requests" });
@@ -56,10 +69,18 @@ describe("the requests tab of the custom emoji screen", () => {
   test("rejects a request with a reason after asking", async () => {
     let sent: Schemas["RejectCustomEmojiRequestRequest"] | undefined;
     server.use(
-      http.get(`${apiBase}/admin/custom_emoji_requests`, () => HttpResponse.json({ items: sent === undefined ? [adminCustomEmojiRequestFixture("r1", "blobcat")] : [] })),
+      http.get(`${apiBase}/admin/custom_emoji_requests`, () =>
+        HttpResponse.json({ items: sent === undefined ? [adminCustomEmojiRequestFixture("r1", "blobcat")] : [] }),
+      ),
       http.post(`${apiBase}/admin/custom_emoji_requests/:id/reject`, async ({ request }) => {
         sent = (await request.json()) as Schemas["RejectCustomEmojiRequestRequest"];
-        return HttpResponse.json(adminCustomEmojiRequestFixture("r1", "blobcat", { state: "rejected", reason: sent.reason ?? "", decided_at: "2026-10-22T00:00:00Z" }));
+        return HttpResponse.json(
+          adminCustomEmojiRequestFixture("r1", "blobcat", {
+            state: "rejected",
+            reason: sent.reason ?? "",
+            decided_at: "2026-10-22T00:00:00Z",
+          }),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis?tab=requests" });
@@ -72,12 +93,16 @@ describe("the requests tab of the custom emoji screen", () => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     });
     expect(sent).toEqual({ reason: "Too close to an existing emoji." });
-    expect(screen.getByRole("region", { name: "Requests for custom emoji" })).toHaveTextContent("The request for ⁦:blobcat:⁩ is rejected.");
+    expect(screen.getByRole("region", { name: "Requests for custom emoji" })).toHaveTextContent(
+      "The request for ⁦:blobcat:⁩ is rejected.",
+    );
   });
 
   test("shows why a request cannot be approved, and keeps it", async () => {
     server.use(
-      http.get(`${apiBase}/admin/custom_emoji_requests`, () => HttpResponse.json({ items: [adminCustomEmojiRequestFixture("r1", "blobcat")] })),
+      http.get(`${apiBase}/admin/custom_emoji_requests`, () =>
+        HttpResponse.json({ items: [adminCustomEmojiRequestFixture("r1", "blobcat")] }),
+      ),
       http.post(`${apiBase}/admin/custom_emoji_requests/:id/approve`, () =>
         HttpResponse.json(
           {
@@ -95,7 +120,9 @@ describe("the requests tab of the custom emoji screen", () => {
     await user.click(await screen.findByRole("button", { name: "Approve the request for ⁦:blobcat:⁩" }));
 
     const region = screen.getByRole("region", { name: "Requests for custom emoji" });
-    expect(await within(region).findByRole("alert")).toHaveTextContent("Could not decide the request: The requester can no longer create custom emoji. Reject the request instead.");
+    expect(await within(region).findByRole("alert")).toHaveTextContent(
+      "Could not decide the request: The requester can no longer create custom emoji. Reject the request instead.",
+    );
     expect(screen.getByRole("rowheader", { name: ":blobcat:" })).toBeInTheDocument();
   });
 
@@ -105,7 +132,12 @@ describe("the requests tab of the custom emoji screen", () => {
       http.get(`${apiBase}/admin/custom_emoji_requests`, ({ request }) => {
         const state = new URL(request.url).searchParams.get("state");
         states.push(state);
-        return HttpResponse.json({ items: state === "rejected" ? [adminCustomEmojiRequestFixture("r1", "blobcat", { state: "rejected", reason: "No thanks." })] : [] });
+        return HttpResponse.json({
+          items:
+            state === "rejected"
+              ? [adminCustomEmojiRequestFixture("r1", "blobcat", { state: "rejected", reason: "No thanks." })]
+              : [],
+        });
       }),
     );
     await renderApp({ path: "/admin/custom-emojis?tab=requests&state=rejected" });
@@ -118,7 +150,12 @@ describe("the requests tab of the custom emoji screen", () => {
   test("names who made an emoji, or that their account is deleted", async () => {
     server.use(
       http.get(`${apiBase}/admin/custom_emojis`, () =>
-        HttpResponse.json({ items: [adminCustomEmojiFixture("e1", "blobcat"), adminCustomEmojiFixture("e2", "blobfox", { created_by_deleted: true })] }),
+        HttpResponse.json({
+          items: [
+            adminCustomEmojiFixture("e1", "blobcat"),
+            adminCustomEmojiFixture("e2", "blobfox", { created_by_deleted: true }),
+          ],
+        }),
       ),
     );
     await renderApp({ path: "/admin/custom-emojis" });

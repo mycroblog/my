@@ -89,9 +89,13 @@ export function dataImportsQueryOptions(api: Api, queryClient: QueryClient) {
       const { data, error } = await api.fetch.GET("/imports", { signal });
       if (data === undefined) throw new ApiError(error);
       const before = queryClient.getQueryData<Schemas["DataImportList"]>(["get", "/imports"]);
-      const wasInProgress = new Set(before?.items.filter((item) => item.state === "in_progress").map((item) => item.id));
+      const wasInProgress = new Set(
+        before?.items.filter((item) => item.state === "in_progress").map((item) => item.id),
+      );
       if (data.items.some((item) => item.state === "finished" && wasInProgress.has(item.id))) {
-        void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "get" && importedPaths.has(query.queryKey[1]) });
+        void queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === "get" && importedPaths.has(query.queryKey[1]),
+        });
       }
       return data;
     },
@@ -100,7 +104,10 @@ export function dataImportsQueryOptions(api: Api, queryClient: QueryClient) {
 
 /** Puts a started import at the top of the cached list, as the server answered it (ADR-0045). */
 export function cacheStartedImport(api: Api, queryClient: QueryClient, started: DataImport): void {
-  queryClient.setQueryData(dataImportsQueryOptions(api, queryClient).queryKey, (list: Schemas["DataImportList"] | undefined) => ({
-    items: [started, ...(list?.items ?? []).filter((item) => item.id !== started.id)],
-  }));
+  queryClient.setQueryData(
+    dataImportsQueryOptions(api, queryClient).queryKey,
+    (list: Schemas["DataImportList"] | undefined) => ({
+      items: [started, ...(list?.items ?? []).filter((item) => item.id !== started.id)],
+    }),
+  );
 }

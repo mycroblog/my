@@ -25,7 +25,8 @@ export function createQueryClient(): QueryClient {
         // that the message is not delayed by the backoff; loaders (`queryClient.query`) do not retry at all.
         // `retry` keeps its default: setting one here would make the loaders retry too.
         networkMode: "always",
-        retryDelay: (failureCount, error) => (error instanceof NetworkError ? 0 : Math.min(1000 * 2 ** failureCount, 30_000)),
+        retryDelay: (failureCount, error) =>
+          error instanceof NetworkError ? 0 : Math.min(1000 * 2 ** failureCount, 30_000),
         // Back online, only the queries that failed fetch again (G17); the others wait until they are stale
         // and used. A query that must not refetch then (a timeline, whose top would change) says so itself.
         refetchOnReconnect: refetchFailed,

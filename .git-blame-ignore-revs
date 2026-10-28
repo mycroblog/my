@@ -1,0 +1,6 @@
+# Commits that only reformat code, which `git blame` skips with
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs` (GitHub's blame view reads this file by itself).
+# Add a commit here only when it changes nothing but formatting; the hash is the full one of the commit on main.
+
+# style: format the TypeScript packages with bun fmt
+b0b93700e447c5bdfa7f847de21c5c9b6154a6fc

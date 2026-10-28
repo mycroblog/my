@@ -18,7 +18,8 @@ export function receiveNotification(queryClient: QueryClient, api: Api, notifica
   } else {
     queryClient.setQueryData<NotificationMarker>(markerKey, (marker) => {
       // IDs are UUIDv7 strings, which sort in the order they were made.
-      const unread = marker !== undefined && (marker.last_read_id === undefined || notification.id > marker.last_read_id);
+      const unread =
+        marker !== undefined && (marker.last_read_id === undefined || notification.id > marker.last_read_id);
       return unread ? { ...marker, unread_count: marker.unread_count + 1 } : marker;
     });
   }

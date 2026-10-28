@@ -8,7 +8,13 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { instanceTextsQueryOptions } from "../api/documents";
-import { cacheSavedTexts, descriptionLimit, type InstanceTextChange, setInstanceTextsMutation, shortDescriptionLimit } from "../api/settings";
+import {
+  cacheSavedTexts,
+  descriptionLimit,
+  type InstanceTextChange,
+  setInstanceTextsMutation,
+  shortDescriptionLimit,
+} from "../api/settings";
 import { characterCount } from "./languages";
 
 type DescriptionKey = Extract<InstanceTextChange["key"], "short_description" | "description">;
@@ -38,7 +44,9 @@ export function useServerDescriptions() {
   const [status, setStatus] = useState<string | undefined>(undefined);
 
   const valueOf = (key: DescriptionKey) => drafts[key] ?? savedOf(key);
-  const changes = descriptionKeys.filter((key) => valueOf(key) !== savedOf(key)).map((key) => ({ key, body: valueOf(key) }));
+  const changes = descriptionKeys
+    .filter((key) => valueOf(key) !== savedOf(key))
+    .map((key) => ({ key, body: valueOf(key) }));
   const tooLong = changes.some((change) => characterCount(change.body) > descriptionLimits[change.key]);
 
   const save = useMutation({

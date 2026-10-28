@@ -3,7 +3,16 @@
 // state in a few words, who is talking, the mini-player's microphone toggle, what failed (why the browser refused the
 // microphone, leaving), the button that plays the sound the browser blocked, and leaving, which asks the host of a
 // room with others in it for the next host or the end of the room.
-import { Button, CallDockButton, ConfirmDialog, InlineError, LeaveIcon, MicrophoneIcon, Radio, RadioGroup } from "@my/ui";
+import {
+  Button,
+  CallDockButton,
+  ConfirmDialog,
+  InlineError,
+  LeaveIcon,
+  MicrophoneIcon,
+  Radio,
+  RadioGroup,
+} from "@my/ui";
 import { useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
@@ -75,14 +84,24 @@ function MicrophoneErrors({ controls }: { controls: VoiceCallControls }) {
 
 /** Whether something failed in the call: the microphone (of a speaker), leaving, or `actionError`. */
 export function hasCallErrors(controls: VoiceCallControls, actionError?: string): boolean {
-  return (controls.isSpeaker && (controls.micError !== undefined || controls.micRefused !== undefined)) || controls.leaveError !== undefined || actionError !== undefined;
+  return (
+    (controls.isSpeaker && (controls.micError !== undefined || controls.micRefused !== undefined)) ||
+    controls.leaveError !== undefined ||
+    actionError !== undefined
+  );
 }
 
 /**
  * What failed in the call (the microphone, leaving, and on the room's page the user's last operation, `actionError`),
  * for the notice of the mini-player or the dock; null for nothing.
  */
-export function CallErrors({ controls, actionError }: { controls: VoiceCallControls; actionError?: string | undefined }) {
+export function CallErrors({
+  controls,
+  actionError,
+}: {
+  controls: VoiceCallControls;
+  actionError?: string | undefined;
+}) {
   const t = useT();
   if (!hasCallErrors(controls, actionError)) return null;
   return (
@@ -129,9 +148,23 @@ export function LeaveCallButton({ controls, look }: { controls: VoiceCallControl
   return (
     <>
       {look === "dock" ? (
-        <CallDockButton label={t("client:voice.call.leave")} icon={<LeaveIcon />} showLabel variant="danger" onPress={onPress} isPending={isPending} />
+        <CallDockButton
+          label={t("client:voice.call.leave")}
+          icon={<LeaveIcon />}
+          showLabel
+          variant="danger"
+          onPress={onPress}
+          isPending={isPending}
+        />
       ) : (
-        <CallDockButton label={t("client:voice.call.leave")} icon={<LeaveIcon />} size="sm" variant="danger-soft" onPress={onPress} isPending={isPending} />
+        <CallDockButton
+          label={t("client:voice.call.leave")}
+          icon={<LeaveIcon />}
+          size="sm"
+          variant="danger-soft"
+          onPress={onPress}
+          isPending={isPending}
+        />
       )}
       {controls.mustChoose && (
         <HostLeaveDialog
@@ -147,7 +180,15 @@ export function LeaveCallButton({ controls, look }: { controls: VoiceCallControl
   );
 }
 
-function HostLeaveDialog({ controls, isOpen, onClose }: { controls: VoiceCallControls; isOpen: boolean; onClose: () => void }) {
+function HostLeaveDialog({
+  controls,
+  isOpen,
+  onClose,
+}: {
+  controls: VoiceCallControls;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const t = useT();
   const [choice, setChoice] = useState("");
   return (
@@ -170,7 +211,9 @@ function HostLeaveDialog({ controls, isOpen, onClose }: { controls: VoiceCallCon
       <RadioGroup label={t("client:voice.call.host_leave.choice")} value={choice} onChange={setChoice} isRequired>
         {controls.nextHosts.map((participant) => (
           <Radio key={participant.account.id} value={participant.account.id}>
-            <span dir="auto">{t("client:voice.call.host_leave.next_host", { name: participantName(participant) })}</span>
+            <span dir="auto">
+              {t("client:voice.call.host_leave.next_host", { name: participantName(participant) })}
+            </span>
           </Radio>
         ))}
         <Radio value="end">{t("client:voice.call.host_leave.end")}</Radio>

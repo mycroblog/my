@@ -17,7 +17,11 @@ describe("federationReachOf", () => {
 
 describe("isFederationRestricted", () => {
   test("is the 403 of the federation-restricted problem only", () => {
-    expect(isFederationRestricted(new ApiError({ type: "/api/v1/problems/federation-restricted", title: "Restricted", status: 403 }))).toBe(true);
+    expect(
+      isFederationRestricted(
+        new ApiError({ type: "/api/v1/problems/federation-restricted", title: "Restricted", status: 403 }),
+      ),
+    ).toBe(true);
     expect(isFederationRestricted(new ApiError({ type: "about:blank", title: "Forbidden", status: 403 }))).toBe(false);
     expect(isFederationRestricted(new Error("network"))).toBe(false);
   });

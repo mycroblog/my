@@ -31,7 +31,11 @@ describe("the information page", () => {
     expect(await screen.findByText("A small server for gardeners.")).toHaveAttribute("dir", "auto");
 
     const description = screen.getByRole("region", { name: "Description" });
-    expect(within(description).getAllByText(/./u, { selector: "p" }).map((p) => p.textContent)).toEqual(["We grow vegetables.", "Everyone is welcome."]);
+    expect(
+      within(description)
+        .getAllByText(/./u, { selector: "p" })
+        .map((p) => p.textContent),
+    ).toEqual(["We grow vegetables.", "Everyone is welcome."]);
 
     const rule = within(screen.getByRole("region", { name: "Rules" })).getByRole("listitem");
     expect(rule).toHaveAttribute("lang", "");
@@ -48,10 +52,11 @@ describe("the information page", () => {
     expect(within(domains).getByText("Some server names are partly hidden with *.")).toBeInTheDocument();
 
     const documents = screen.getByRole("region", { name: "Terms and policies" });
-    expect(within(documents).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/about/terms",
-      "/about/privacy",
-    ]);
+    expect(
+      within(documents)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/about/terms", "/about/privacy"]);
   });
 
   test("puts the terms and policies right after the rules, and the operators, the source code and the licenses last", async () => {
@@ -66,7 +71,11 @@ describe("the information page", () => {
 
     await screen.findByRole("region", { name: "Moderated servers" });
     const main = screen.getByRole("main");
-    expect(within(main).getAllByRole("region").map((region) => within(region).getByRole("heading", { level: 2 }).textContent)).toEqual([
+    expect(
+      within(main)
+        .getAllByRole("region")
+        .map((region) => within(region).getByRole("heading", { level: 2 }).textContent),
+    ).toEqual([
       "Description",
       "Rules",
       "Terms and policies",
@@ -80,15 +89,26 @@ describe("the information page", () => {
 
   test("shows the server's thumbnail and how to reach its operators", async () => {
     serveInstance({
-      thumbnail: { url: "https://my.example/media/beach/r/large.webp", width: 1600, height: 900, alt: "A beach at dawn" },
+      thumbnail: {
+        url: "https://my.example/media/beach/r/large.webp",
+        width: 1600,
+        height: 900,
+        alt: "A beach at dawn",
+      },
       contact: { account: otherAccountFixture, email: "admin@my.example" },
     });
     await renderApp({ path: "/about" });
 
-    expect(await screen.findByRole("img", { name: "A beach at dawn" })).toHaveAttribute("src", "https://my.example/media/beach/r/large.webp");
+    expect(await screen.findByRole("img", { name: "A beach at dawn" })).toHaveAttribute(
+      "src",
+      "https://my.example/media/beach/r/large.webp",
+    );
     const contact = screen.getByRole("region", { name: "Contact" });
     expect(within(contact).getByRole("link", { name: "Bob @bob" })).toHaveAttribute("href", "/@bob");
-    expect(within(contact).getByRole("link", { name: "admin@my.example" })).toHaveAttribute("href", "mailto:admin@my.example");
+    expect(within(contact).getByRole("link", { name: "admin@my.example" })).toHaveAttribute(
+      "href",
+      "mailto:admin@my.example",
+    );
   });
 
   test("leaves out the contact and the thumbnail when the server has none", async () => {
@@ -118,8 +138,14 @@ describe("the information page", () => {
     expect(link).toHaveAttribute("href", "https://status.example/");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    const headings = within(screen.getByRole("main")).getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
-    expect(headings.slice(headings.indexOf("Contact"), headings.indexOf("Contact") + 3)).toEqual(["Contact", "Server status", "Source code"]);
+    const headings = within(screen.getByRole("main"))
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings.slice(headings.indexOf("Contact"), headings.indexOf("Contact") + 3)).toEqual([
+      "Contact",
+      "Server status",
+      "Source code",
+    ]);
   });
 
   test("has no status section when the server has no status page", async () => {
@@ -132,7 +158,11 @@ describe("the information page", () => {
   test("links to the license notices of what the web app bundles, which load in place of the app", async () => {
     const { user, leftTo } = await renderApp({ path: "/about" });
     const licenses = await screen.findByRole("region", { name: "Licenses" });
-    expect(within(licenses).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    expect(
+      within(licenses)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
       ["npm packages in the app", "/licenses/npm-packages.md"],
       ["npm packages in the offline support (Service Worker)", "/licenses/npm-packages-sw.md"],
       ["Unicode emoji data and CLDR emoji names (Unicode License v3)", "/licenses/LICENSE-Unicode.txt"],
@@ -158,8 +188,14 @@ describe("the information page", () => {
     serveInstance({ search_indexing: "allow", ai_usage: "deny_training" });
     await renderApp({ path: "/about" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
-    expect(within(crawlers).getByText("Search engines may index the profiles and public posts of the accounts that allow it.")).toBeInTheDocument();
-    expect(within(crawlers).getByText(/^This server reserves its pages against the training of AI models\. AI search/u)).toBeInTheDocument();
+    expect(
+      within(crawlers).getByText(
+        "Search engines may index the profiles and public posts of the accounts that allow it.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(crawlers).getByText(/^This server reserves its pages against the training of AI models\. AI search/u),
+    ).toBeInTheDocument();
     expect(within(crawlers).getByText(/Article 30-4 of the Copyright Act/u)).toBeInTheDocument();
   });
 
@@ -167,9 +203,13 @@ describe("the information page", () => {
     serveInstance({ search_indexing: "deny", ai_usage: "deny" });
     await renderApp({ path: "/about" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
-    expect(within(crawlers).getByText("This server asks search engines not to index any of its pages.")).toBeInTheDocument();
     expect(
-      within(crawlers).getByText("This server reserves its pages against the training of AI models and against their use by AI search, assistants and agents."),
+      within(crawlers).getByText("This server asks search engines not to index any of its pages."),
+    ).toBeInTheDocument();
+    expect(
+      within(crawlers).getByText(
+        "This server reserves its pages against the training of AI models and against their use by AI search, assistants and agents.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -234,19 +274,28 @@ describe("the information page", () => {
     let fail = true;
     server.use(
       http.get(`${apiBase}/instance/domain_actions`, () =>
-        fail ? problem(500, "about:blank", "Internal Server Error") : HttpResponse.json({ items: publicDomainActionsFixture }),
+        fail
+          ? problem(500, "about:blank", "Internal Server Error")
+          : HttpResponse.json({ items: publicDomainActionsFixture }),
       ),
     );
     const { user } = await renderApp({ path: "/about" });
     const domains = await screen.findByRole("region", { name: "Moderated servers" });
-    expect(await within(domains).findByRole("heading", { level: 3, name: "Couldn't load the moderated servers" })).toBeInTheDocument();
+    expect(
+      await within(domains).findByRole("heading", { level: 3, name: "Couldn't load the moderated servers" }),
+    ).toBeInTheDocument();
     fail = false;
     await user.click(within(domains).getByRole("button", { name: "Try again" }));
     expect(await within(domains).findByText("spam.example")).toBeInTheDocument();
   });
 
   test("is linked from the column about the server on wide screens", async () => {
-    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === "(min-width: 80rem)", media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(min-width: 80rem)",
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
     await renderApp({ path: "/home" });
     const aside = await screen.findByRole("complementary", { name: "About this server" });
     expect(within(aside).getByRole("link", { name: "More about this server" })).toHaveAttribute("href", "/about");

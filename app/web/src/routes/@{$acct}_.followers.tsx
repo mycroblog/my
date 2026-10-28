@@ -11,7 +11,10 @@ export const Route = createFileRoute("/@{$acct}_/followers")({
   params: { parse: (params) => profileParamsSchema.parse(params) },
   loader: async ({ context, params: { acct } }) => {
     const account = await loadAccount(context, acct);
-    await context.queryClient.infiniteQuery({ ...followListQueryOptions(context.api, account.id, "followers"), staleTime: Infinity });
+    await context.queryClient.infiniteQuery({
+      ...followListQueryOptions(context.api, account.id, "followers"),
+      staleTime: Infinity,
+    });
   },
   component: FollowersPage,
   pendingComponent: FollowersPending,
@@ -21,12 +24,21 @@ export const Route = createFileRoute("/@{$acct}_/followers")({
 
 function FollowersPage() {
   const { acct } = Route.useParams();
-  return <FollowListView key={acct} acct={acct} list="followers" renderHeading={(text) => <PageHeading>{text}</PageHeading>} />;
+  return (
+    <FollowListView
+      key={acct}
+      acct={acct}
+      list="followers"
+      renderHeading={(text) => <PageHeading>{text}</PageHeading>}
+    />
+  );
 }
 
 function FollowersPending() {
   const { acct } = Route.useParams();
-  return <FollowListSkeleton acct={acct} list="followers" renderHeading={(text) => <PageHeading>{text}</PageHeading>} />;
+  return (
+    <FollowListSkeleton acct={acct} list="followers" renderHeading={(text) => <PageHeading>{text}</PageHeading>} />
+  );
 }
 
 function FollowersError(props: ErrorComponentProps) {

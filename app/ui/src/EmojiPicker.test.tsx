@@ -100,8 +100,11 @@ describe("EmojiPicker", () => {
   // The virtualizer scrolls no further than the grid's scrollHeight - clientHeight, which jsdom gives as 0: the grid
   // here is 256 px high, and its content as high as the block size the picker gives its rows.
   const sizes = {
-    // eslint-disable-next-line testing-library/no-node-access -- a layout stub, not a query: it reads the block size of the grid's content
-    scrollHeight: (element: HTMLElement) => Number.parseFloat(element.firstElementChild instanceof HTMLElement ? element.firstElementChild.style.blockSize : "") || 0,
+    scrollHeight: (element: HTMLElement) => {
+      // eslint-disable-next-line testing-library/no-node-access -- a layout stub, not a query: it reads the block size of the grid's content
+      const content = element.firstElementChild;
+      return content instanceof HTMLElement ? Number.parseFloat(content.style.blockSize) || 0 : 0;
+    },
     clientHeight: () => 256,
   };
   const originals = new Map<string, PropertyDescriptor | undefined>();
@@ -141,16 +144,34 @@ describe("EmojiPicker", () => {
       "きつね",
     ]);
     expect(screen.getAllByRole("img", { name: ":blobcat:" })).toHaveLength(2);
-    expect(screen.getAllByRole("rowgroup").map((group) => group.getAttribute("aria-label"))).toEqual(["Recently used", "Blobs", "People", "Animals"]);
+    expect(screen.getAllByRole("rowgroup").map((group) => group.getAttribute("aria-label"))).toEqual([
+      "Recently used",
+      "Blobs",
+      "People",
+      "Animals",
+    ]);
     const toolbar = screen.getByRole("toolbar", { name: "Categories" });
-    expect(within(toolbar).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["Recently used", "Blobs", "People", "Animals"]);
+    expect(
+      within(toolbar)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label")),
+    ).toEqual(["Recently used", "Blobs", "People", "Animals"]);
     expect(within(toolbar).getByRole("button", { name: "Recently used" })).toHaveAttribute("aria-current", "true");
   });
 
   it("goes from the search field to the skin tone, the section buttons and the grid with Tab, and through the grid with the keys", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    render(<EmojiPicker sections={sections} onSelect={onSelect} labels={labels} skinTone="none" onSkinToneChange={() => {}} autoFocus />);
+    render(
+      <EmojiPicker
+        sections={sections}
+        onSelect={onSelect}
+        labels={labels}
+        skinTone="none"
+        onSkinToneChange={() => {}}
+        autoFocus
+      />,
+    );
     expect(screen.getByRole("searchbox", { name: "Search emoji" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("button", { name: "Skin tone" })).toHaveFocus();
@@ -231,8 +252,24 @@ describe("EmojiPicker", () => {
     expect(screen.getAllByRole("gridcell")).toHaveLength(80);
     expect(screen.queryByRole("gridcell", { name: "emoji 80" })).not.toBeInTheDocument();
     const rows = screen.getAllByRole("row");
-    expect(rows.map((row) => row.getAttribute("aria-rowindex"))).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]);
-    expect(within(rows[2] as HTMLElement).getAllByRole("gridcell").map((gridcell) => gridcell.getAttribute("aria-colindex"))).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+    expect(rows.map((row) => row.getAttribute("aria-rowindex"))).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+    ]);
+    expect(
+      within(rows[2] as HTMLElement)
+        .getAllByRole("gridcell")
+        .map((gridcell) => gridcell.getAttribute("aria-colindex")),
+    ).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
     expect(cell("emoji 9")).toHaveAttribute("aria-colindex", "2");
   });
 
@@ -321,11 +358,17 @@ describe("EmojiPicker", () => {
   it("searches every emoji, rendered or not, and starts the results at the top", async () => {
     const user = userEvent.setup();
     render(<EmojiPicker sections={manySections} onSelect={() => {}} labels={labels} />);
-    await user.click(within(screen.getByRole("toolbar", { name: "Categories" })).getByRole("button", { name: "Section 9" }));
+    await user.click(
+      within(screen.getByRole("toolbar", { name: "Categories" })).getByRole("button", { name: "Section 9" }),
+    );
     await user.type(screen.getByRole("searchbox", { name: "Search emoji" }), "emoji 89");
     expect(screen.getByRole("grid", { name: "Emoji" }).scrollTop).toBe(0);
     // The exact name, then the names that start with it.
-    expect(rowNames()).toEqual(["Search results", "emoji 89", ...Array.from({ length: 10 }, (_, index) => `emoji ${String(890 + index)}`)]);
+    expect(rowNames()).toEqual([
+      "Search results",
+      "emoji 89",
+      ...Array.from({ length: 10 }, (_, index) => `emoji ${String(890 + index)}`),
+    ]);
     // The section buttons are disabled, so Tab goes straight to the grid, and to its first result.
     await user.tab();
     expect(cell("emoji 89")).toHaveFocus();
@@ -347,14 +390,30 @@ describe("EmojiPicker", () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const onSkinToneChange = vi.fn();
-    const { rerender } = render(<EmojiPicker sections={sections} onSelect={onSelect} labels={labels} skinTone="none" onSkinToneChange={onSkinToneChange} />);
+    const { rerender } = render(
+      <EmojiPicker
+        sections={sections}
+        onSelect={onSelect}
+        labels={labels}
+        skinTone="none"
+        onSkinToneChange={onSkinToneChange}
+      />,
+    );
     expect(cell("waving hand")).toHaveTextContent("👋");
     await user.click(screen.getByRole("button", { name: "Skin tone" }));
     const menu = screen.getByRole("menu", { name: "Skin tone" });
     expect(within(menu).getByRole("menuitemradio", { name: "Default" })).toHaveAttribute("aria-checked", "true");
     await user.click(within(menu).getByRole("menuitemradio", { name: "Medium" }));
     expect(onSkinToneChange).toHaveBeenCalledWith("medium");
-    rerender(<EmojiPicker sections={sections} onSelect={onSelect} labels={labels} skinTone="medium" onSkinToneChange={onSkinToneChange} />);
+    rerender(
+      <EmojiPicker
+        sections={sections}
+        onSelect={onSelect}
+        labels={labels}
+        skinTone="medium"
+        onSkinToneChange={onSkinToneChange}
+      />,
+    );
     expect(cell("waving hand: medium skin tone")).toHaveTextContent("👋🏽");
     expect(cell("handshake: medium skin tone")).toHaveTextContent("🤝🏽");
     // Without a variant, an emoji stays as it is.

@@ -11,7 +11,9 @@ export const Route = createFileRoute("/moderation/registrations")({
   staticData: { title: "client:admin.registrations.title" },
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
-    loadWithPermission(context, "manage_accounts", () => context.queryClient.infiniteQuery({ ...registrationsQueryOptions(context.api), staleTime: Infinity })),
+    loadWithPermission(context, "manage_accounts", () =>
+      context.queryClient.infiniteQuery({ ...registrationsQueryOptions(context.api), staleTime: Infinity }),
+    ),
   component: RegistrationsPage,
   errorComponent: RegistrationsError,
 });

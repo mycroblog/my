@@ -36,8 +36,22 @@ const alice: Schemas["Account"] = {
   bot: false,
   created_at: "2026-10-01T00:00:00Z",
 };
-const bob: Schemas["Account"] = { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000002", username: "bob", acct: "bob", display_name: "Bob", url: "https://my.example/@bob" };
-const carol: Schemas["Account"] = { ...alice, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol", display_name: "Carol", url: "https://my.example/@carol" };
+const bob: Schemas["Account"] = {
+  ...alice,
+  id: "0192f0c4-7a8e-7000-8000-000000000002",
+  username: "bob",
+  acct: "bob",
+  display_name: "Bob",
+  url: "https://my.example/@bob",
+};
+const carol: Schemas["Account"] = {
+  ...alice,
+  id: "0192f0c4-7a8e-7000-8000-000000000003",
+  username: "carol",
+  acct: "carol",
+  display_name: "Carol",
+  url: "https://my.example/@carol",
+};
 
 /** Alice's own account, with the permissions of her role. */
 const credentials = {
@@ -104,8 +118,17 @@ function roomReport(ended: boolean): Schemas["AdminReportDetail"] {
       ...(ended ? { ended_at: "2026-10-26T13:00:00Z", end_reason: "moderator", ended_by_account_id: alice.id } : {}),
       revisions: [revision],
       participations: [
-        { account_id: bob.id, joined_at: "2026-10-26T12:00:00Z", ...(ended ? { left_at: "2026-10-26T13:00:00Z", leave_reason: "room_ended" } : {}) },
-        { account_id: carol.id, joined_at: "2026-10-26T12:10:00Z", left_at: "2026-10-26T12:20:00Z", leave_reason: "removed" },
+        {
+          account_id: bob.id,
+          joined_at: "2026-10-26T12:00:00Z",
+          ...(ended ? { left_at: "2026-10-26T13:00:00Z", leave_reason: "room_ended" } : {}),
+        },
+        {
+          account_id: carol.id,
+          joined_at: "2026-10-26T12:10:00Z",
+          left_at: "2026-10-26T12:20:00Z",
+          leave_reason: "removed",
+        },
       ],
       bans: [{ account_id: carol.id, banned_by_account_id: bob.id, banned_at: "2026-10-26T12:20:00Z" }],
     },
@@ -115,14 +138,34 @@ function roomReport(ended: boolean): Schemas["AdminReportDetail"] {
 /** The voice chat settings at their defaults, as GET /admin/settings lists them. */
 const voiceSettings = {
   items: [
-    { key: "voice_room_starters", kind: "enum", default: "permitted", choices: ["everyone", "permitted"], value: "permitted", stored: false },
+    {
+      key: "voice_room_starters",
+      kind: "enum",
+      default: "permitted",
+      choices: ["everyone", "permitted"],
+      value: "permitted",
+      stored: false,
+    },
     { key: "voice_public_summary", kind: "bool", default: "false", value: "false", stored: false },
-    { key: "retention_voice_participants", kind: "int", default: "90", minimum: 30, maximum: 3650, value: "90", stored: false },
+    {
+      key: "retention_voice_participants",
+      kind: "int",
+      default: "90",
+      minimum: 30,
+      maximum: 3650,
+      value: "90",
+      stored: false,
+    },
   ],
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: status < 400 ? "application/json" : "application/problem+json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: status < 400 ? "application/json" : "application/problem+json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Answers the client API as Alice's session on a server with voice chat on; returns the bodies of the reports and the room ends. */
@@ -130,7 +173,14 @@ async function serveApi(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   const sent = { reports: [] as unknown[], ends: [] as unknown[] };
   let ended = false;
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow admin" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, {
+      access_token: "e2e-token",
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "read write follow admin",
+    }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace(/^\/api\/v1/, "");
@@ -152,7 +202,14 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, credentials);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "en", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "en",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /voice/rooms") return json(route, { items: ended ? [] : [room] });
@@ -163,7 +220,18 @@ async function serveApi(page: Page) {
     if (key === "POST /reports") {
       const body = request.postDataJSON() as Schemas["CreateReportRequest"];
       sent.reports.push(body);
-      return json(route, { id: reportId, category: body.category, comment: body.comment ?? "", forwarded: false, filed_at: "2026-10-26T12:30:00Z", target_account: bob, status_ids: [], rule_ids: [], voice_room_id: roomId, state: "open" });
+      return json(route, {
+        id: reportId,
+        category: body.category,
+        comment: body.comment ?? "",
+        forwarded: false,
+        filed_at: "2026-10-26T12:30:00Z",
+        target_account: bob,
+        status_ids: [],
+        rule_ids: [],
+        voice_room_id: roomId,
+        state: "open",
+      });
     }
     if (key === `GET /admin/reports/${reportId}`) return json(route, roomReport(ended));
     if (key === `POST /admin/voice_rooms/${roomId}/end`) {
@@ -171,7 +239,8 @@ async function serveApi(page: Page) {
       ended = true;
       return route.fulfill({ status: 204 });
     }
-    if (key === "GET /admin/instance_texts") return json(route, { items: [{ key: "name", body: "my example", revised_at: "2026-10-16T00:00:00Z" }] });
+    if (key === "GET /admin/instance_texts")
+      return json(route, { items: [{ key: "name", body: "my example", revised_at: "2026-10-16T00:00:00Z" }] });
     if (key === "GET /admin/settings") return json(route, voiceSettings);
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });
@@ -179,14 +248,19 @@ async function serveApi(page: Page) {
 }
 
 test.describe("voice chat moderation", () => {
-  test("reports a room from its page, the dialog axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
+  test("reports a room from its page, the dialog axe-clean and without horizontal scroll", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent = await serveApi(page);
     await page.goto(`/voice/${roomId}`);
     await expect(page.getByRole("heading", { level: 1, name: roomName })).toBeVisible();
     await page.getByRole("button", { name: message("voice.room.more") }).click();
     await page.getByRole("menuitem", { name: message("voice.room.report") }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { level: 3, name: message("report.room.category.heading") })).toBeFocused();
+    await expect(
+      dialog.getByRole("heading", { level: 3, name: message("report.room.category.heading") }),
+    ).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -210,7 +284,10 @@ test.describe("voice chat moderation", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("shows a room's report with its records and ends the room after its confirmation", async ({ page, makeAxeBuilder }) => {
+  test("shows a room's report with its records and ends the room after its confirmation", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const sent = await serveApi(page);
     await page.goto(`/moderation/reports/${reportId}`);
     const section = page.getByRole("region", { name: message("admin.report.voice.title") });
@@ -220,7 +297,9 @@ test.describe("voice chat moderation", () => {
 
     await section.getByRole("button", { name: message("admin.report.voice.end") }).click();
     const confirmation = page.getByRole("alertdialog", { name: message("admin.report.voice.end.confirm.title") });
-    await expect(confirmation.getByRole("textbox", { name: message("admin.report.voice.end.note_field") })).toBeFocused();
+    await expect(
+      confirmation.getByRole("textbox", { name: message("admin.report.voice.end.note_field") }),
+    ).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
     await confirmation.getByRole("textbox", { name: message("admin.report.voice.end.note_field") }).fill("Advertising");

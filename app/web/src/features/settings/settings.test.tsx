@@ -57,11 +57,21 @@ function preferencesServer(initial: Partial<Preferences> = {}) {
     http.patch(`${apiBase}/preferences`, async ({ request }) => {
       const change = (await request.json()) as PreferencesChange;
       changes.push(change);
-      preferences = { ...preferences, ...change, time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined };
+      preferences = {
+        ...preferences,
+        ...change,
+        time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
+      };
       return HttpResponse.json(preferences);
     }),
   );
-  return { changes, languages, get current() { return preferences; } };
+  return {
+    changes,
+    languages,
+    get current() {
+      return preferences;
+    },
+  };
 }
 
 describe("preferences", () => {
@@ -105,7 +115,11 @@ describe("preferences", () => {
     await user.click(within(languages).getByRole("checkbox", { name: "German" }));
 
     await waitFor(() => {
-      expect(prefs.changes).toEqual([{ default_visibility: "private" }, { timeline_languages: ["ja"] }, { timeline_languages: ["de", "ja"] }]);
+      expect(prefs.changes).toEqual([
+        { default_visibility: "private" },
+        { timeline_languages: ["ja"] },
+        { timeline_languages: ["de", "ja"] },
+      ]);
     });
     expect(within(languages).getByRole("checkbox", { name: "German" })).toBeChecked();
     expect((await screen.findAllByText("Saved")).length).toBeGreaterThan(0);
@@ -116,7 +130,9 @@ describe("preferences", () => {
     const { user } = await renderApp({ path: "/settings/preferences" });
     const select = await screen.findByRole("button", { name: /Default language of your posts/ });
     expect(select).toHaveTextContent("Not specified");
-    expect(select).toHaveAccessibleDescription(expect.stringContaining("You can still choose for each post.") as string);
+    expect(select).toHaveAccessibleDescription(
+      expect.stringContaining("You can still choose for each post.") as string,
+    );
 
     await user.click(select);
     const options = await screen.findAllByRole("option");
@@ -186,7 +202,9 @@ describe("preferences", () => {
 
     const timeZone = screen.getByRole("button", { name: /Time zone/ });
     await waitFor(() => {
-      expect(timeZone).toHaveAccessibleDescription(expect.stringContaining("time_zone is not a valid value.") as string);
+      expect(timeZone).toHaveAccessibleDescription(
+        expect.stringContaining("time_zone is not a valid value.") as string,
+      );
     });
     expect(timeZone).toHaveTextContent("(UTC+00:00) Coordinated Universal Time");
   });
@@ -200,10 +218,16 @@ describe("preferences", () => {
 
     await user.click(timeZone);
     const listbox = await screen.findByRole("listbox");
-    expect(within(listbox).getByRole("option", { name: "（UTC+09:00）日本標準時" })).toHaveAccessibleDescription("Asia/Tokyo");
+    expect(within(listbox).getByRole("option", { name: "（UTC+09:00）日本標準時" })).toHaveAccessibleDescription(
+      "Asia/Tokyo",
+    );
     // Zones of one name are told apart by their IANA name.
-    expect(within(listbox).getByRole("option", { description: "America/New_York" })).toHaveAccessibleName(/^（UTC−0[45]:00）米国東部時間$/);
-    expect(within(listbox).getByRole("option", { description: "America/Detroit" })).toHaveAccessibleName(/^（UTC−0[45]:00）米国東部時間$/);
+    expect(within(listbox).getByRole("option", { description: "America/New_York" })).toHaveAccessibleName(
+      /^（UTC−0[45]:00）米国東部時間$/,
+    );
+    expect(within(listbox).getByRole("option", { description: "America/Detroit" })).toHaveAccessibleName(
+      /^（UTC−0[45]:00）米国東部時間$/,
+    );
     // Nepal is ahead of UTC by 5 hours 45 minutes all year; its IANA name depends on the ICU data (Asia/Katmandu).
     await user.click(within(listbox).getByRole("option", { name: "（UTC+05:45）ネパール時間" }));
 
@@ -274,11 +298,17 @@ describe("navigation", () => {
     const prefs = preferencesServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
     const section = await screen.findByRole("region", { name: "Navigation" });
-    expect(section).toHaveAccessibleDescription(expect.stringContaining("the first 5 shown items are in the tab bar") as string);
+    expect(section).toHaveAccessibleDescription(
+      expect.stringContaining("the first 5 shown items are in the tab bar") as string,
+    );
     expect(within(section).getAllByRole("checkbox")).toHaveLength(8);
     expect(within(section).getByRole("checkbox", { name: "Settings" })).toBeDisabled();
-    expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription("In the tab bar on phones");
-    expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription("In the menu on phones");
+    expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription(
+      "In the tab bar on phones",
+    );
+    expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription(
+      "In the menu on phones",
+    );
     expect(within(section).getByRole("button", { name: "Move Home up" })).toBeDisabled();
 
     // Enter on Move up moves the item; the focus stays on the moved item's button and the move is announced.
@@ -288,8 +318,12 @@ describe("navigation", () => {
       expect(within(section).getByRole("button", { name: "Move Profile up" })).toHaveFocus();
     });
     expect(await screen.findByText("Profile moved to position 5 of 8")).toBeInTheDocument();
-    expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription("In the tab bar on phones");
-    expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription("In the menu on phones");
+    expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription(
+      "In the tab bar on phones",
+    );
+    expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription(
+      "In the menu on phones",
+    );
 
     // Down on the item before the last moves it to the end, and the focus goes to its Move up, Move down being disabled.
     within(section).getByRole("button", { name: "Move Bookmarks down" }).focus();
@@ -310,15 +344,11 @@ describe("navigation", () => {
       hidden: ["local"],
     });
     const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(within(nav).getByRole("list")).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/home",
-      "/public",
-      "/notifications",
-      "/profile",
-      "/search",
-      "/settings",
-      "/bookmarks",
-    ]);
+    expect(
+      within(within(nav).getByRole("list"))
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/home", "/public", "/notifications", "/profile", "/search", "/settings", "/bookmarks"]);
     expect(prefs.changes).toEqual([]);
 
     // Restoring the default forgets the arrangement.
@@ -330,13 +360,21 @@ describe("navigation", () => {
 
   test("says which timeline this server does not offer", async () => {
     preferencesServer();
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, timelines: { local: "everyone", federated: "off" } })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, timelines: { local: "everyone", federated: "off" } }),
+      ),
+    );
     await renderApp({ path: "/settings/preferences" });
     const section = await screen.findByRole("region", { name: "Navigation" });
     await waitFor(() => {
-      expect(within(section).getByRole("checkbox", { name: "Federated" })).toHaveAccessibleDescription("Not offered by this server");
+      expect(within(section).getByRole("checkbox", { name: "Federated" })).toHaveAccessibleDescription(
+        "Not offered by this server",
+      );
     });
-    expect(within(section).getByRole("checkbox", { name: "Local" })).toHaveAccessibleDescription("In the tab bar on phones");
+    expect(within(section).getByRole("checkbox", { name: "Local" })).toHaveAccessibleDescription(
+      "In the tab bar on phones",
+    );
   });
 
   test("is in Japanese in the ja locale", async () => {
@@ -368,7 +406,9 @@ describe("time zone of the device", () => {
     const prefs = preferencesServer({ time_zone: "Asia/Tokyo" });
     const { user } = await renderApp({ path: "/settings/preferences" });
 
-    expect(await screen.findByText(/^This device is in a different time zone: \(UTC−0[45]:00\) Eastern Time\.$/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/^This device is in a different time zone: \(UTC−0[45]:00\) Eastern Time\.$/),
+    ).toBeInTheDocument();
     const timeZone = screen.getByRole("button", { name: /Time zone$/ });
     expect(timeZone).toHaveTextContent("(UTC+09:00) Japan Standard Time");
     expect(prefs.changes).toEqual([]);
@@ -388,7 +428,9 @@ describe("time zone of the device", () => {
     preferencesServer({ time_zone: "Asia/Kolkata" });
     await renderApp({ path: "/settings/preferences" });
 
-    expect(await screen.findByRole("button", { name: /Time zone$/ })).toHaveTextContent("(UTC+05:30) India Standard Time");
+    expect(await screen.findByRole("button", { name: /Time zone$/ })).toHaveTextContent(
+      "(UTC+05:30) India Standard Time",
+    );
     expect(screen.queryByText(/different time zone/)).not.toBeInTheDocument();
   });
 });
@@ -397,7 +439,9 @@ describe("moderator notifications by email", () => {
   /** The viewer's account with the permissions `permissions`. */
   function viewerWith(permissions: Schemas["Permission"][]) {
     server.use(
-      http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) => withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions }))),
+      http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) =>
+        withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions })),
+      ),
     );
   }
 
@@ -450,7 +494,11 @@ describe("moderator notifications by email", () => {
     await renderApp({ path: "/settings/preferences" });
 
     const section = await screen.findByRole("region", { name: "Moderator notifications" });
-    expect(await within(section).findByText("This server does not send email, so the moderator notifications come only in the app.")).toBeInTheDocument();
+    expect(
+      await within(section).findByText(
+        "This server does not send email, so the moderator notifications come only in the app.",
+      ),
+    ).toBeInTheDocument();
     expect(within(section).queryByRole("switch")).not.toBeInTheDocument();
   });
 });
@@ -492,7 +540,11 @@ describe("profile", () => {
       http.patch(`${apiBase}/accounts/update_credentials`, async ({ request }) => {
         const change = (await request.json()) as ProfileChange;
         changes.push(change);
-        return HttpResponse.json({ ...viewerFixture, display_name: change.display_name ?? viewerFixture.display_name, locked: change.locked ?? false });
+        return HttpResponse.json({
+          ...viewerFixture,
+          display_name: change.display_name ?? viewerFixture.display_name,
+          locked: change.locked ?? false,
+        });
       }),
     );
     return changes;
@@ -576,16 +628,24 @@ describe("profile", () => {
 
   test("saves whether search and AI may use the profile, and says what the server already denies", async () => {
     const changes = profileServer();
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, search_indexing: "deny", ai_usage: "deny_training" })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, search_indexing: "deny", ai_usage: "deny_training" }),
+      ),
+    );
     const { user } = await renderApp({ path: "/settings/profile" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
     const indexable = within(crawlers).getByRole("checkbox", { name: "Show my profile and public posts in search" });
     expect(indexable).toBeChecked();
     expect(
-      await within(crawlers).findByText("This server asks search engines not to index any page, so they do not index yours even if you allow it."),
+      await within(crawlers).findByText(
+        "This server asks search engines not to index any page, so they do not index yours even if you allow it.",
+      ),
     ).toBeInTheDocument();
     expect(
-      within(crawlers).getByText("This server already denies AI training on every page; this also denies the use by AI search and assistants."),
+      within(crawlers).getByText(
+        "This server already denies AI training on every page; this also denies the use by AI search and assistants.",
+      ),
     ).toBeInTheDocument();
 
     await user.click(indexable);
@@ -598,7 +658,11 @@ describe("profile", () => {
 
   test("says nothing about the server when it allows search and AI", async () => {
     profileServer();
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, search_indexing: "allow", ai_usage: "allow" })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, search_indexing: "allow", ai_usage: "allow" }),
+      ),
+    );
     await renderApp({ path: "/settings/profile" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
     expect(within(crawlers).getByRole("checkbox", { name: "Deny AI training and use" })).not.toBeChecked();
@@ -693,7 +757,9 @@ describe("profile", () => {
     );
     const { user, router } = await renderApp({ path: "/profile" });
     expect(await screen.findByRole("heading", { level: 1, name: "Alice" })).toBeInTheDocument();
-    expect(within(screen.getByRole("feed", { name: "Posts" })).getByRole("article", { name: /^Alice/ })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("feed", { name: "Posts" })).getByRole("article", { name: /^Alice/ }),
+    ).toBeInTheDocument();
 
     await router.navigate({ to: "/settings/profile" });
     const displayName = await screen.findByRole("textbox", { name: "Display name" });
@@ -706,7 +772,9 @@ describe("profile", () => {
     // The first render of the page has the new name, long before the slow reads could answer.
     const heading = await screen.findByRole("heading", { level: 1 }, { timeout: 500 });
     expect(heading).toHaveTextContent("Alice in Chains");
-    expect(within(screen.getByRole("feed", { name: "Posts" })).getByRole("article", { name: /^Alice in Chains/ })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("feed", { name: "Posts" })).getByRole("article", { name: /^Alice in Chains/ }),
+    ).toBeInTheDocument();
   });
 
   test("a save the server refuses says why", async () => {
@@ -764,7 +832,10 @@ describe("blocks, mutes and follow requests", () => {
       http.get(`${apiBase}/mutes`, ({ request }) =>
         new URL(request.url).searchParams.get("cursor") === "next"
           ? HttpResponse.json({ mutes: [{ account: carol, notifications: false }] })
-          : HttpResponse.json({ mutes: [{ account: bob, notifications: true, expires_at: "2026-11-01T09:30:00Z" }], next_cursor: "next" }),
+          : HttpResponse.json({
+              mutes: [{ account: bob, notifications: true, expires_at: "2026-11-01T09:30:00Z" }],
+              next_cursor: "next",
+            }),
       ),
     );
     const { user } = await renderApp({ path: "/settings/mutes" });
@@ -831,7 +902,11 @@ describe("the settings page", () => {
     await renderApp({ path: "/settings" });
 
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });
-    expect(within(menu).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual([
       "/settings/profile",
       "/settings/preferences",
       "/settings/password",
@@ -854,7 +929,11 @@ describe("the settings page", () => {
   });
 
   test("links to the server's status page under the menu, in a new tab, when the server has one (FR-810)", async () => {
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" })));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, status_page_url: "https://status.example/" }),
+      ),
+    );
     await renderApp({ path: "/settings" });
 
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });

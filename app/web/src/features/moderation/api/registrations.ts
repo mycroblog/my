@@ -23,7 +23,10 @@ export function registrationsQueryOptions(api: Api) {
   return infiniteQueryOptions({
     queryKey: ["get", "/admin/registrations", "pages"] as const,
     queryFn: async ({ pageParam, signal }) => {
-      const { data, error } = await api.fetch.GET("/admin/registrations", { params: { query: pageQuery(pageParam) }, signal });
+      const { data, error } = await api.fetch.GET("/admin/registrations", {
+        params: { query: pageQuery(pageParam) },
+        signal,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -70,7 +73,9 @@ function isAdminCountsQuery(queryKey: readonly unknown[]): boolean {
 export async function refreshDecidedRegistration(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     refreshAuditLog(queryClient),
-    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/admin/accounts" || query.queryKey[1] === "/admin/accounts/{id}" }),
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[1] === "/admin/accounts" || query.queryKey[1] === "/admin/accounts/{id}",
+    }),
   ]);
 }
 
@@ -81,7 +86,11 @@ export async function refreshDecidedRegistration(queryClient: QueryClient): Prom
 export function cacheDecidedRegistration(api: Api, queryClient: QueryClient, userId: string): void {
   queryClient.setQueryData(
     registrationsQueryOptions(api).queryKey,
-    (data) => data && { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.user_id !== userId) })) },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.user_id !== userId) })),
+      },
   );
   void queryClient.invalidateQueries({ predicate: (query) => isAdminCountsQuery(query.queryKey) });
 }

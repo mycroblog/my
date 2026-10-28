@@ -60,7 +60,10 @@ function imageOf(url: URL): { contentType: string; body: Buffer } | null {
   const match = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(dataURL);
   if (match === null) throw new Error(`not a data: URL: ${dataURL}`);
   const [, contentType = "", base64, data = ""] = match;
-  return { contentType, body: base64 === undefined ? Buffer.from(decodeURIComponent(data)) : Buffer.from(data, "base64") };
+  return {
+    contentType,
+    body: base64 === undefined ? Buffer.from(decodeURIComponent(data)) : Buffer.from(data, "base64"),
+  };
 }
 
 /** Pseudo-locale and right-to-left languages the projects use; the rest are left to right. */
@@ -83,7 +86,10 @@ async function settleAnimations(page: Page): Promise<void> {
       // getAnimations() brings the styles up to date first, so a transition that a class change starts is listed.
       const running = document
         .getAnimations()
-        .filter((animation) => animation.playState === "running" && Number.isFinite(animation.effect?.getComputedTiming().endTime));
+        .filter(
+          (animation) =>
+            animation.playState === "running" && Number.isFinite(animation.effect?.getComputedTiming().endTime),
+        );
       if (running.length === 0) return;
       // An animation cancelled on the way (its element removed) rejects `finished`; it no longer runs either.
       await Promise.allSettled(running.map((animation) => animation.finished));
@@ -129,31 +135,34 @@ export const test = base.extend<Fixtures>({
         await use(lang);
         return;
       }
-      await page.route((url) => url.origin === previewOrigin, async (route) => {
-        const image = imageOf(new URL(route.request().url()));
-        if (image !== null) {
-          await route.fulfill(image);
-          return;
-        }
-        if (route.request().resourceType() !== "document") {
-          await route.fallback();
-          return;
-        }
-        // The fetch reuses an idle keep-alive connection, which `vite preview` closes after 5 seconds; a
-        // request sent as the server closes it is reset before any response. A browser sends such a GET
-        // again on a new connection (RFC 9112 §9.3.1), so the fetch does too, once.
-        const response = await route.fetch({ maxRetries: 1 });
-        // The build's index.html links its entry relative to itself (base "./"), which resolves under
-        // the path of a nested page (/tags/cats). `my serve` never sends that file: it writes the shell's
-        // tags from the build manifest as root paths (e2e/deep-links.spec.ts checks it), so only here
-        // are the links made root-relative.
-        const body = (await response.text())
-          .replace(/<html [^>]*>/, `<html lang="${lang}" dir="${localeDir(lang)}">`)
-          .replace(/"apiOrigin":"[^"]*"/, `"apiOrigin":"${previewOrigin}"`)
-          .replaceAll(/(src|href)="\.\//g, '$1="/');
-        const headers = { ...response.headers(), "content-security-policy": await shellPolicy() };
-        await route.fulfill({ response, body, headers });
-      });
+      await page.route(
+        (url) => url.origin === previewOrigin,
+        async (route) => {
+          const image = imageOf(new URL(route.request().url()));
+          if (image !== null) {
+            await route.fulfill(image);
+            return;
+          }
+          if (route.request().resourceType() !== "document") {
+            await route.fallback();
+            return;
+          }
+          // The fetch reuses an idle keep-alive connection, which `vite preview` closes after 5 seconds; a
+          // request sent as the server closes it is reset before any response. A browser sends such a GET
+          // again on a new connection (RFC 9112 §9.3.1), so the fetch does too, once.
+          const response = await route.fetch({ maxRetries: 1 });
+          // The build's index.html links its entry relative to itself (base "./"), which resolves under
+          // the path of a nested page (/tags/cats). `my serve` never sends that file: it writes the shell's
+          // tags from the build manifest as root paths (e2e/deep-links.spec.ts checks it), so only here
+          // are the links made root-relative.
+          const body = (await response.text())
+            .replace(/<html [^>]*>/, `<html lang="${lang}" dir="${localeDir(lang)}">`)
+            .replace(/"apiOrigin":"[^"]*"/, `"apiOrigin":"${previewOrigin}"`)
+            .replaceAll(/(src|href)="\.\//g, '$1="/');
+          const headers = { ...response.headers(), "content-security-policy": await shellPolicy() };
+          await route.fulfill({ response, body, headers });
+        },
+      );
       await use(lang);
     },
     { auto: true },
@@ -185,14 +194,19 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
     const clientWidth = document.documentElement.clientWidth;
     // What lies past the edge outside a table's own scroller, to name the culprit in the failure.
     const wide = [...document.body.querySelectorAll("*")]
-      .filter((element) => element.getBoundingClientRect().right > clientWidth + 1 && element.closest('[role="group"][tabindex="0"]') === null)
+      .filter(
+        (element) =>
+          element.getBoundingClientRect().right > clientWidth + 1 &&
+          element.closest('[role="group"][tabindex="0"]') === null,
+      )
       .slice(0, 4)
       .map((element) => `${element.tagName.toLowerCase()} ${Math.round(element.getBoundingClientRect().width)}px`);
     return { scrollWidth: document.documentElement.scrollWidth, clientWidth, wide };
   });
-  expect(scrollWidth, `scrollWidth ${scrollWidth}px exceeds clientWidth ${clientWidth}px (past the edge: ${wide.join(", ")})`).toBeLessThanOrEqual(
-    clientWidth,
-  );
+  expect(
+    scrollWidth,
+    `scrollWidth ${scrollWidth}px exceeds clientWidth ${clientWidth}px (past the edge: ${wide.join(", ")})`,
+  ).toBeLessThanOrEqual(clientWidth);
 }
 
 /**
@@ -216,7 +230,9 @@ export async function expectTabWhollyVisible(tab: Locator): Promise<void> {
         const left = listRect.left + ((rtl ? end : start) ? Number.parseFloat(style.scrollPaddingLeft) : 0);
         const right = listRect.right - ((rtl ? start : end) ? Number.parseFloat(style.scrollPaddingRight) : 0);
         // A pixel of slack for fractional positions.
-        return tabRect.left >= left - 1 && tabRect.right <= right + 1 ? "whole" : `${tabRect.left}–${tabRect.right} outside ${left}–${right} (scrollLeft ${list.scrollLeft})`;
+        return tabRect.left >= left - 1 && tabRect.right <= right + 1
+          ? "whole"
+          : `${tabRect.left}–${tabRect.right} outside ${left}–${right} (scrollLeft ${list.scrollLeft})`;
       }),
     )
     .toBe("whole");
@@ -250,16 +266,23 @@ export async function expectPostHeadersInTwoLines(feed: Locator): Promise<void> 
     articles.flatMap((article) => {
       const header = article.querySelector("header");
       const name = header?.querySelector<HTMLElement>("[dir=auto]");
-      if (header == null || name == null) return [`article ${article.getAttribute("aria-posinset") ?? "?"}: no header with a name`];
+      if (header == null || name == null)
+        return [`article ${article.getAttribute("aria-posinset") ?? "?"}: no header with a name`];
       const height = header.getBoundingClientRect().height;
       const lineHeight = Number.parseFloat(getComputedStyle(name).lineHeight);
-      return height <= 2 * lineHeight + 1 ? [] : [`${name.textContent}: ${String(height)}px for a line height of ${String(lineHeight)}px`];
+      return height <= 2 * lineHeight + 1
+        ? []
+        : [`${name.textContent}: ${String(height)}px for a line height of ${String(lineHeight)}px`];
     }),
   );
   expect(tall, "post headers taller than two lines").toEqual([]);
 }
 
 /** The renditions of an image whose every size is served at `url` (api/openapi.yaml, MediaVariants). */
-export function imageVariants(url: string): { small: { url: string }; medium: { url: string }; large: { url: string } } {
+export function imageVariants(url: string): {
+  small: { url: string };
+  medium: { url: string };
+  large: { url: string };
+} {
   return { small: { url }, medium: { url }, large: { url } };
 }

@@ -67,7 +67,21 @@ export type ProfileHeaderProps = {
  * avatar, header image and emoji move while it is hovered or has keyboard focus inside, and from a tap on it until another
  * tap or until it scrolls off the screen.
  */
-export function ProfileHeader({ image, avatar, avatarSeed, name, actions, heading, handle, badges, tags = noTags, note, fields, joined, counts = noCounts }: ProfileHeaderProps) {
+export function ProfileHeader({
+  image,
+  avatar,
+  avatarSeed,
+  name,
+  actions,
+  heading,
+  handle,
+  badges,
+  tags = noTags,
+  note,
+  fields,
+  joined,
+  counts = noCounts,
+}: ProfileHeaderProps) {
   const styles = profileHeader();
   const scope = useAnimationScope<HTMLElement>();
   return (

@@ -31,7 +31,10 @@ export const Route = createFileRoute("/admin/supporters")({
       Promise.all([
         context.queryClient.query({ ...supporterProgramQueryOptions(context.api), staleTime: Infinity }),
         context.queryClient.query({ ...supporterPlansQueryOptions(context.api), staleTime: Infinity }),
-        context.queryClient.infiniteQuery({ ...supporterSubscriptionsQueryOptions(context.api, deps), staleTime: Infinity }),
+        context.queryClient.infiniteQuery({
+          ...supporterSubscriptionsQueryOptions(context.api, deps),
+          staleTime: Infinity,
+        }),
       ]),
     ),
   component: SupportersPage,
@@ -49,7 +52,10 @@ function SupportersPage() {
         filter={filter}
         onFilterChange={(next) => {
           void navigate({
-            search: { ...(next.planId === undefined ? {} : { plan: next.planId }), ...(next.state === undefined ? {} : { state: next.state }) },
+            search: {
+              ...(next.planId === undefined ? {} : { plan: next.planId }),
+              ...(next.state === undefined ? {} : { state: next.state }),
+            },
           });
         }}
       />

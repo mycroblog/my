@@ -12,7 +12,15 @@ import { InlineError } from "./Text";
 
 function Microphone() {
   const [on, setOn] = useState(true);
-  return <CallDockButton label="Microphone" size="sm" icon={<MicrophoneIcon filled={on} />} isSelected={on} onChange={setOn} />;
+  return (
+    <CallDockButton
+      label="Microphone"
+      size="sm"
+      icon={<MicrophoneIcon filled={on} />}
+      isSelected={on}
+      onChange={setOn}
+    />
+  );
 }
 
 const leave = <CallDockButton label="Leave" size="sm" variant="danger-soft" icon={<LeaveIcon />} />;

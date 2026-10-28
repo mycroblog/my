@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ReactNode } from "react";
-import {
-  CheckboxButton,
-  CheckboxField,
-  type CheckboxFieldProps,
-  composeRenderProps,
-} from "react-aria-components";
+import { CheckboxButton, CheckboxField, type CheckboxFieldProps, composeRenderProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { FieldDescription, FieldError, type FieldTextProps } from "./Field";
 
@@ -25,7 +20,11 @@ const checkbox = tv({
     text: "ms-8",
   },
   variants: {
-    isSelected: { true: { box: "border-accent bg-accent group-data-invalid:border-danger group-data-invalid:bg-danger group-data-invalid:text-danger-fg" } },
+    isSelected: {
+      true: {
+        box: "border-accent bg-accent group-data-invalid:border-danger group-data-invalid:bg-danger group-data-invalid:text-danger-fg",
+      },
+    },
     isFocusVisible: { true: { box: "focus-ring" } },
   },
 });

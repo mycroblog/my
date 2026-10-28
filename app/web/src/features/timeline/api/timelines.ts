@@ -75,12 +75,22 @@ function timelineQueryKey(timeline: Timeline) {
     case "quotes":
       return ["get", "/statuses/{id}/quotes", { params: { path: { id: timeline.id } } }, "pages"] as const;
     case "account":
-      return ["get", "/accounts/{id}/statuses", { params: { path: { id: timeline.id }, query: accountTimelineQuery(timeline.filter) } }, "pages"] as const;
+      return [
+        "get",
+        "/accounts/{id}/statuses",
+        { params: { path: { id: timeline.id }, query: accountTimelineQuery(timeline.filter) } },
+        "pages",
+      ] as const;
   }
 }
 
 /** Fetches one page of `timeline`; `cursor` is the previous page's `next_cursor`, or undefined for the first. */
-async function fetchTimelinePage(api: Api, timeline: Timeline, cursor: string | undefined, signal: AbortSignal): Promise<TimelinePage> {
+async function fetchTimelinePage(
+  api: Api,
+  timeline: Timeline,
+  cursor: string | undefined,
+  signal: AbortSignal,
+): Promise<TimelinePage> {
   const query = cursor === undefined ? {} : { cursor };
   const { data, error } = await (() => {
     switch (timeline.kind) {
@@ -91,7 +101,10 @@ async function fetchTimelinePage(api: Api, timeline: Timeline, cursor: string | 
       case "public":
         return api.fetch.GET("/timelines/public", { params: { query }, signal });
       case "tag":
-        return api.fetch.GET("/timelines/tag/{hashtag}", { params: { path: { hashtag: timeline.tag }, query }, signal });
+        return api.fetch.GET("/timelines/tag/{hashtag}", {
+          params: { path: { hashtag: timeline.tag }, query },
+          signal,
+        });
       case "bookmarks":
         return api.fetch.GET("/bookmarks", { params: { query }, signal });
       case "quotes":
@@ -146,9 +159,15 @@ export function remoteFetchStarted(data: InfiniteData<TimelinePage>): boolean {
  * (S1). Then the shown timeline's first page forgets that it started the fetch, whether the read succeeded or
  * not, so that the page is read again only once and a failure is not told. Resolves once that is done.
  */
-export async function rereadRemoteAccountPosts(queryClient: QueryClient, api: Api, timeline: Extract<Timeline, { kind: "account" }>): Promise<void> {
+export async function rereadRemoteAccountPosts(
+  queryClient: QueryClient,
+  api: Api,
+  timeline: Extract<Timeline, { kind: "account" }>,
+): Promise<void> {
   // A partial key matches the account's posts with any filter (TanStack Query, "Query Filters").
-  await queryClient.invalidateQueries({ queryKey: ["get", "/accounts/{id}/statuses", { params: { path: { id: timeline.id } } }] });
+  await queryClient.invalidateQueries({
+    queryKey: ["get", "/accounts/{id}/statuses", { params: { path: { id: timeline.id } } }],
+  });
   queryClient.setQueryData(timelineQueryOptions(api, timeline).queryKey, (data) => {
     const first = data?.pages[0];
     if (data === undefined || first?.remote_fetch_started !== true) return data;

@@ -6,13 +6,36 @@
 // validation (React Aria's native validation). An action that cannot be undone asks first in an alert dialog
 // (ConfirmDialog, NFR-MOD-7), whose failure stays in it; a failure of another kind is shown under the form and
 // keeps what was filled in.
-import { Box, Button, Checkbox, ConfirmDialog, DurationSelect, InlineError, PostContent, Radio, RadioGroup, ReasonField, Select, SelectItem, serverSanitizedHtml, Stack, Text } from "@my/ui";
+import {
+  Box,
+  Button,
+  Checkbox,
+  ConfirmDialog,
+  DurationSelect,
+  InlineError,
+  PostContent,
+  Radio,
+  RadioGroup,
+  ReasonField,
+  Select,
+  SelectItem,
+  serverSanitizedHtml,
+  Stack,
+  Text,
+} from "@my/ui";
 import { useId } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, type Translate, useT } from "../../../lib/i18n";
 import type { Status } from "../../status";
 import { type AccountAction, type AccountActionKind, accountActionTextLimit, reportCategories } from "../api/reports";
-import { type ActionTarget, type AccountActionForm as Form, isPostKind, takesDuration, takesEmailBlock, useAccountActionForm } from "../hooks/useAccountActionForm";
+import {
+  type ActionTarget,
+  type AccountActionForm as Form,
+  isPostKind,
+  takesDuration,
+  takesEmailBlock,
+  useAccountActionForm,
+} from "../hooks/useAccountActionForm";
 import { accountActionKindLabels, isolate, reportCategoryLabels } from "../hooks/useReports";
 
 const kindDescriptions: Readonly<Record<AccountActionKind, ClientMessageKey>> = {
@@ -29,7 +52,12 @@ const kindDescriptions: Readonly<Record<AccountActionKind, ClientMessageKey>> = 
 };
 
 /** The question, the result and the verb of the confirmation of a kind that cannot be undone (web-client/16-look-states-and-wording.md G22). */
-function confirmationOf(t: Translate, kind: AccountActionKind, handle: string, count: number): { title: string; description: string; confirm: string } {
+function confirmationOf(
+  t: Translate,
+  kind: AccountActionKind,
+  handle: string,
+  count: number,
+): { title: string; description: string; confirm: string } {
   if (kind === "ban") {
     return {
       title: t("client:admin.account_actions.confirm_ban.title", { handle }),
@@ -63,10 +91,15 @@ export function AccountActionForm({ target, handle, posts, onIssued }: AccountAc
   const form = useAccountActionForm(target, onIssued);
   const { draft } = form;
   const formatRemaining = (remaining: number) =>
-    remaining < 0 ? t("client:admin.account_actions.characters_over", { count: -remaining }) : t("client:admin.account_actions.characters_left", { count: remaining });
+    remaining < 0
+      ? t("client:admin.account_actions.characters_over", { count: -remaining })
+      : t("client:admin.account_actions.characters_left", { count: remaining });
   const tooLong = t("client:admin.account_actions.too_long", { max: accountActionTextLimit });
   // The handle reads in its own direction inside the question.
-  const confirmation = form.confirmation === null ? undefined : confirmationOf(t, form.confirmation.kind, isolate(handle), form.chosenStatusIds.length);
+  const confirmation =
+    form.confirmation === null
+      ? undefined
+      : confirmationOf(t, form.confirmation.kind, isolate(handle), form.chosenStatusIds.length);
   return (
     <>
       <Stack as="form" onSubmit={form.submit} gap="6">
@@ -168,7 +201,9 @@ export function AccountActionForm({ target, handle, posts, onIssued }: AccountAc
         )}
         <Box>
           <Button type="submit" variant="primary" isPending={form.isPending && form.confirmation === null}>
-            {target.reportId === undefined ? t("client:admin.account_actions.submit") : t("client:admin.account_actions.submit_and_resolve")}
+            {target.reportId === undefined
+              ? t("client:admin.account_actions.submit")
+              : t("client:admin.account_actions.submit_and_resolve")}
           </Button>
         </Box>
       </Stack>
@@ -231,7 +266,9 @@ function PostChoice({ post, form }: { post: Status; form: Form }) {
         }}
         aria-describedby={previewId}
       >
-        {t("client:admin.account_actions.posts.item", { date: intl.formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" }) })}
+        {t("client:admin.account_actions.posts.item", {
+          date: intl.formatDate(post.created_at, { dateStyle: "medium", timeStyle: "short" }),
+        })}
       </Checkbox>
       {/* The post describes its checkbox; it is inert, so its links are no stops on the way through the list. */}
       <Box id={previewId} inert marginStart="8" textSize="sm">

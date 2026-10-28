@@ -40,7 +40,9 @@ describe("the notice of the closure", () => {
   test("shows on the information page too", async () => {
     serveClosure(announced);
     await renderApp({ path: "/about" });
-    expect(await screen.findByRole("region", { name: "Notice of the server's closure" })).toHaveTextContent("will close on December 1, 2026");
+    expect(await screen.findByRole("region", { name: "Notice of the server's closure" })).toHaveTextContent(
+      "will close on December 1, 2026",
+    );
   });
 
   test("is absent when no closure is announced", async () => {

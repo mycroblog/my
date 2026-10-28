@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { AccountItem, Button, Cluster, EmptyState, Heading, Hint, Link, RegionError, Spinner, Stack, Switch, Text } from "@my/ui";
+import {
+  AccountItem,
+  Button,
+  Cluster,
+  EmptyState,
+  Heading,
+  Hint,
+  Link,
+  RegionError,
+  Spinner,
+  Stack,
+  Switch,
+  Text,
+} from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
@@ -7,7 +20,12 @@ import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
 import { useFormatMoney } from "../../costs";
 import type { SupporterListEntry } from "../api/supporters";
-import { type SupporterGroup, useAboutSupporters, useSupporterList, useSupporterListing } from "../hooks/useSupporterList";
+import {
+  type SupporterGroup,
+  useAboutSupporters,
+  useSupporterList,
+  useSupporterListing,
+} from "../hooks/useSupporterList";
 
 /** A section: an `h2` that names a `<section>`. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -46,7 +64,10 @@ export function SupporterListView() {
       return (
         <Cluster as="p" gap="1" rowGap="0">
           <span>{t("client:supporters.list.signed_in_only")}</span>
-          <Link href={`/login?${new URLSearchParams({ return_to: "/about/supporters" }).toString()}`} variant="standalone">
+          <Link
+            href={`/login?${new URLSearchParams({ return_to: "/about/supporters" }).toString()}`}
+            variant="standalone"
+          >
             {t("client:supporters.list.sign_in")}
           </Link>
         </Cluster>
@@ -76,7 +97,9 @@ export function SupporterListView() {
           ) : (
             list.groups.map((group) => <PlanGroup key={group.plan.id} group={group} />)
           )}
-          {list.moreError !== undefined && <RegionError heading={t("client:supporters.list.more_failed")} reason={list.moreError} />}
+          {list.moreError !== undefined && (
+            <RegionError heading={t("client:supporters.list.more_failed")} reason={list.moreError} />
+          )}
           {list.hasMore && (
             <div>
               <Button onPress={list.loadMore} isPending={list.isLoadingMore}>
@@ -191,7 +214,10 @@ export function SupporterListingSettings() {
       <Switch
         isSelected={listing.listed}
         onChange={listing.onChange}
-        {...(listing.error !== undefined && { isInvalid: true, errorMessage: t("client:supporter.listing.failed", { reason: listing.error }) })}
+        {...(listing.error !== undefined && {
+          isInvalid: true,
+          errorMessage: t("client:supporter.listing.failed", { reason: listing.error }),
+        })}
       >
         {t("client:supporter.listing.switch")}
       </Switch>

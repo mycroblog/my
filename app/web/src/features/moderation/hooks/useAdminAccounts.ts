@@ -150,7 +150,10 @@ export type AccountSearchForm = {
  * The search form, starting from `search` (the URL's). `onSearch(next)` runs the search; the route puts it into
  * the URL, and a new search there gives the form a new key (web-client/README.md R10).
  */
-export function useAccountSearchForm(search: AdminAccountSearch, onSearch: (search: AdminAccountSearch) => void): AccountSearchForm {
+export function useAccountSearchForm(
+  search: AdminAccountSearch,
+  onSearch: (search: AdminAccountSearch) => void,
+): AccountSearchForm {
   const [draft, setDraft] = useState(() => draftOf(search));
   return {
     draft,
@@ -232,7 +235,10 @@ export function usePrivateData(id: string, onRevealed: () => void): PrivateData 
       onRevealed();
     },
     onError: (error) => {
-      toast.show({ message: t("client:admin.account.private.failed", { reason: errorMessage(error) }), tone: "danger" });
+      toast.show({
+        message: t("client:admin.account.private.failed", { reason: errorMessage(error) }),
+        tone: "danger",
+      });
     },
   });
   return {
@@ -393,7 +399,8 @@ export function useLiftEmailSuppression(accountId: string, handle: string, onLif
       setStatus(t("client:admin.account.email_suppression.lifted", { handle }));
     },
     onError: (error) => {
-      if (error instanceof ApiError && error.status === 409) void refreshAccountEmailSuppression(queryClient, api, accountId);
+      if (error instanceof ApiError && error.status === 409)
+        void refreshAccountEmailSuppression(queryClient, api, accountId);
     },
   });
   return {

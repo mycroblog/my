@@ -38,7 +38,13 @@ function fileInput(region: HTMLElement): HTMLInputElement {
 
 /** GET /custom_emojis/mine answering `items`, `used`, and `limit` (absent for none). */
 function mineHandler(items: Schemas["OwnCustomEmoji"][], used: number, limit?: number) {
-  return http.get(`${apiBase}/custom_emojis/mine`, () => HttpResponse.json({ items, used, ...(limit === undefined ? {} : { limit }) } satisfies Schemas["OwnCustomEmojiPage"]));
+  return http.get(`${apiBase}/custom_emojis/mine`, () =>
+    HttpResponse.json({
+      items,
+      used,
+      ...(limit === undefined ? {} : { limit }),
+    } satisfies Schemas["OwnCustomEmojiPage"]),
+  );
 }
 
 beforeEach(() => {
@@ -63,18 +69,25 @@ describe("the user's custom emoji page", () => {
     server.use(operatorHandler(["create_custom_emojis"]));
     await renderApp({ path: "/settings" });
 
-    expect(await screen.findByRole("link", { name: "Your custom emoji" })).toHaveAttribute("href", "/settings/custom-emojis");
+    expect(await screen.findByRole("link", { name: "Your custom emoji" })).toHaveAttribute(
+      "href",
+      "/settings/custom-emojis",
+    );
   });
 
   test("says what the user used of their limit, or that there is none", async () => {
     server.use(operatorHandler(["create_custom_emojis"]), mineHandler([ownCustomEmojiFixture("e1", "blobcat")], 2, 5));
     const { unmount } = await renderApp({ path: "/settings/custom-emojis" });
-    expect(await screen.findByText("You have 2 of 5 custom emoji, counting your pending requests.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You have 2 of 5 custom emoji, counting your pending requests."),
+    ).toBeInTheDocument();
     unmount();
 
     server.use(mineHandler([], 0));
     await renderApp({ path: "/settings/custom-emojis" });
-    expect(await screen.findByText("You have 0 custom emoji, counting your pending requests. Your roles set no limit.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You have 0 custom emoji, counting your pending requests. Your roles set no limit."),
+    ).toBeInTheDocument();
   });
 
   test("requests an emoji with an uploaded image", async () => {
@@ -126,7 +139,9 @@ describe("the user's custom emoji page", () => {
     await user.type(within(form).getByRole("textbox", { name: "Shortcode" }), "blobcat");
     await user.click(within(form).getByRole("button", { name: "Request" }));
 
-    expect(await within(form).findByRole("alert")).toHaveTextContent("Could not send the request: You already have as many custom emoji and pending requests as your limit.");
+    expect(await within(form).findByRole("alert")).toHaveTextContent(
+      "Could not send the request: You already have as many custom emoji and pending requests as your limit.",
+    );
     expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("blobcat");
   });
 
@@ -137,14 +152,24 @@ describe("the user's custom emoji page", () => {
       http.get(`${apiBase}/custom_emoji_requests`, () =>
         HttpResponse.json({
           items: [
-            customEmojiRequestFixture("r2", "blobfox", withdrawn === "" ? {} : { state: "withdrawn", decided_at: "2026-10-22T00:00:00Z" }),
-            customEmojiRequestFixture("r1", "blobcat", { state: "rejected", reason: "Too close to :blob:.", decided_at: "2026-10-21T12:00:00Z" }),
+            customEmojiRequestFixture(
+              "r2",
+              "blobfox",
+              withdrawn === "" ? {} : { state: "withdrawn", decided_at: "2026-10-22T00:00:00Z" },
+            ),
+            customEmojiRequestFixture("r1", "blobcat", {
+              state: "rejected",
+              reason: "Too close to :blob:.",
+              decided_at: "2026-10-21T12:00:00Z",
+            }),
           ],
         }),
       ),
       http.post(`${apiBase}/custom_emoji_requests/:id/withdraw`, ({ params }) => {
         withdrawn = String(params["id"]);
-        return HttpResponse.json(customEmojiRequestFixture(withdrawn, "blobfox", { state: "withdrawn", decided_at: "2026-10-22T00:00:00Z" }));
+        return HttpResponse.json(
+          customEmojiRequestFixture(withdrawn, "blobfox", { state: "withdrawn", decided_at: "2026-10-22T00:00:00Z" }),
+        );
       }),
     );
     const { user } = await renderApp({ path: "/settings/custom-emojis" });
@@ -192,7 +217,13 @@ describe("the user's custom emoji page", () => {
     server.use(
       operatorHandler(["create_custom_emojis"]),
       http.get(`${apiBase}/custom_emojis/mine`, () =>
-        HttpResponse.json({ items: deleted === "" ? [ownCustomEmojiFixture("e1", "blobcat"), ownCustomEmojiFixture("e2", "blobfox")] : [ownCustomEmojiFixture("e2", "blobfox")], used: deleted === "" ? 2 : 1 }),
+        HttpResponse.json({
+          items:
+            deleted === ""
+              ? [ownCustomEmojiFixture("e1", "blobcat"), ownCustomEmojiFixture("e2", "blobfox")]
+              : [ownCustomEmojiFixture("e2", "blobfox")],
+          used: deleted === "" ? 2 : 1,
+        }),
       ),
       http.delete(`${apiBase}/custom_emojis/mine/:id`, ({ params }) => {
         deleted = String(params["id"]);
@@ -209,7 +240,9 @@ describe("the user's custom emoji page", () => {
     });
     expect(deleted).toBe("e1");
     expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
-    expect(await screen.findByText("You have 1 custom emoji, counting your pending requests. Your roles set no limit.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You have 1 custom emoji, counting your pending requests. Your roles set no limit."),
+    ).toBeInTheDocument();
   });
 
   test("requests a new image of an emoji the user made", async () => {

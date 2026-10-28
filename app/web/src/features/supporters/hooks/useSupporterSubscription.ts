@@ -60,7 +60,12 @@ export function useSupporterPage(returned: SupporterReturn): SupporterPage {
   const api = useApi();
   const inApp = isTauriApp();
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
-  const plans = useQuery({ ...supporterPlansQueryOptions(api), retry: shellQueryRetry, retryOnMount: false, enabled: !inApp });
+  const plans = useQuery({
+    ...supporterPlansQueryOptions(api),
+    retry: shellQueryRetry,
+    retryOnMount: false,
+    enabled: !inApp,
+  });
   const own = useQuery({
     ...ownSupporterSubscriptionQueryOptions(api),
     retry: shellQueryRetry,
@@ -68,7 +73,9 @@ export function useSupporterPage(returned: SupporterReturn): SupporterPage {
     enabled: !inApp,
     // After the checkout, the provider's confirmation reaches the server in a few seconds: read it again meanwhile.
     refetchInterval: (query) =>
-      returned === "checkout-success" && query.state.data?.subscription?.state === "pending" && query.state.dataUpdateCount < pendingPollLimit
+      returned === "checkout-success" &&
+      query.state.data?.subscription?.state === "pending" &&
+      query.state.dataUpdateCount < pendingPollLimit
         ? pendingPollInterval
         : false,
   });

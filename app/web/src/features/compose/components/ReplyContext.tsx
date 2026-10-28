@@ -12,8 +12,16 @@ export type ReplyContextProps = {
 };
 
 const messages = {
-  reply: { label: "client:compose.reply.label", unavailable: "client:compose.reply.unavailable", cancel: "client:compose.reply.cancel" },
-  quote: { label: "client:compose.quote.label", unavailable: "client:compose.quote.unavailable", cancel: "client:compose.quote.cancel" },
+  reply: {
+    label: "client:compose.reply.label",
+    unavailable: "client:compose.reply.unavailable",
+    cancel: "client:compose.reply.cancel",
+  },
+  quote: {
+    label: "client:compose.quote.label",
+    unavailable: "client:compose.quote.unavailable",
+    cancel: "client:compose.quote.cancel",
+  },
 } as const;
 
 /**
@@ -33,7 +41,12 @@ export function ReplyContext({ replyTo, onCancel, isDisabled = false, kind = "re
             {t(m.label, { name: replyTo.post.account.display_name || `@${replyTo.post.account.acct}` })}
           </Text>
           {replyTo.post.spoiler_text === "" ? (
-            <PostContent html={serverSanitizedHtml(replyTo.post.content)} lang={replyTo.post.language} size="sm" lineClamp={3} />
+            <PostContent
+              html={serverSanitizedHtml(replyTo.post.content)}
+              lang={replyTo.post.language}
+              size="sm"
+              lineClamp={3}
+            />
           ) : (
             <Text as="p" dir="auto" lang={replyTo.post.language} size="sm" wrap="anywhere">
               {replyTo.post.spoiler_text}

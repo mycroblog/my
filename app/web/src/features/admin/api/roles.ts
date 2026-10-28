@@ -40,11 +40,32 @@ export const roleKeyPattern = /^[a-z0-9_-]+$/;
  * The permissions by the area they belong to (ADR-0058, ADR-0070, `Permission.Category` of the server),
  * each in the order of the API's `Permission`.
  */
-export const permissionCategories: readonly { category: "moderation" | "server" | "member"; permissions: readonly Permission[] }[] = [
-  { category: "moderation", permissions: ["manage_reports", "manage_accounts", "manage_domains", "manage_invites", "view_audit"] },
+export const permissionCategories: readonly {
+  category: "moderation" | "server" | "member";
+  permissions: readonly Permission[];
+}[] = [
+  {
+    category: "moderation",
+    permissions: ["manage_reports", "manage_accounts", "manage_domains", "manage_invites", "view_audit"],
+  },
   {
     category: "server",
-    permissions: ["manage_rules", "manage_settings", "manage_roles", "manage_jobs", "manage_login_recovery", "manage_custom_emojis", "manage_webhooks", "manage_announcements", "manage_finance", "manage_supporters", "manage_oauth_apps", "manage_service_closure", "manage_errors", "manage_login_providers"],
+    permissions: [
+      "manage_rules",
+      "manage_settings",
+      "manage_roles",
+      "manage_jobs",
+      "manage_login_recovery",
+      "manage_custom_emojis",
+      "manage_webhooks",
+      "manage_announcements",
+      "manage_finance",
+      "manage_supporters",
+      "manage_oauth_apps",
+      "manage_service_closure",
+      "manage_errors",
+      "manage_login_providers",
+    ],
   },
   { category: "member", permissions: ["view_finance", "create_custom_emojis", "start_voice_rooms"] },
 ];
@@ -104,7 +125,10 @@ export function updateRoleMutation(api: Api) {
   return {
     mutationKey: ["patch", "/admin/roles/{role}"] as const,
     mutationFn: async ({ key, change }: { key: string; change: RoleChange }): Promise<AdminRole> => {
-      const { data, error } = await api.fetch.PATCH("/admin/roles/{role}", { params: { path: { role: key } }, body: change });
+      const { data, error } = await api.fetch.PATCH("/admin/roles/{role}", {
+        params: { path: { role: key } },
+        body: change,
+      });
       if (data === undefined) throw new ApiError(error);
       return data;
     },

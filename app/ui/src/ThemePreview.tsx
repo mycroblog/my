@@ -9,8 +9,7 @@ const themePreview = tv({
     heading: "text-lg font-semibold",
     muted: "text-sm text-fg-muted",
     link: "text-accent underline underline-offset-2",
-    button:
-      "self-start rounded-md bg-accent px-4 py-2 font-medium text-accent-fg",
+    button: "self-start rounded-md bg-accent px-4 py-2 font-medium text-accent-fg",
     danger: "text-danger",
   },
 });
@@ -29,15 +28,7 @@ export type ThemePreviewProps = {
 };
 
 /** How a theme looks: a surface with a card, text, a link, a button and an error, drawn with the overridden tokens. */
-export function ThemePreview({
-  tokens,
-  heading,
-  text,
-  muted,
-  link,
-  button,
-  danger,
-}: ThemePreviewProps) {
+export function ThemePreview({ tokens, heading, text, muted, link, button, danger }: ThemePreviewProps) {
   const styles = themePreview();
   return (
     <div style={tokens} className={styles.root()}>

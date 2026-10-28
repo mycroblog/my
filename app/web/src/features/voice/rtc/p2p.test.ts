@@ -5,7 +5,15 @@
 // refused signals, stale candidates, and refused configurations. A relay between the
 // connections plays the server: it passes each signal on, after checking it as the server does.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { FakeLevelMeter, FakePeerConnection, FakeRemoteAudio, FakeStream, resetFakeRtc, sdpDirections, settle } from "../test/fakeRtc";
+import {
+  FakeLevelMeter,
+  FakePeerConnection,
+  FakeRemoteAudio,
+  FakeStream,
+  resetFakeRtc,
+  sdpDirections,
+  settle,
+} from "../test/fakeRtc";
 import { connectVoice, UnsupportedVoiceMethodError } from "./connect";
 import { offerWait, resendWait } from "./p2p";
 import { talkingSample, talkingThreshold } from "./talking";
@@ -72,7 +80,12 @@ function room() {
             }
           }
           const deliver = () => {
-            const incoming: IncomingVoiceSignal = { from: session, kind: signal.kind, sdp: signal.sdp, candidate: signal.candidate };
+            const incoming: IncomingVoiceSignal = {
+              from: session,
+              kind: signal.kind,
+              sdp: signal.sdp,
+              candidate: signal.candidate,
+            };
             connections.get(signal.to)?.receive(incoming);
           };
           if (paused) held.push(deliver);
@@ -89,7 +102,11 @@ function room() {
   const state = (members: Record<string, boolean>) => {
     speakers.clear();
     for (const [session, speaker] of Object.entries(members)) if (speaker) speakers.add(session);
-    const list: VoiceMember[] = Object.entries(members).map(([session, speaker]) => ({ session, account: `a-${session}`, speaker }));
+    const list: VoiceMember[] = Object.entries(members).map(([session, speaker]) => ({
+      session,
+      account: `a-${session}`,
+      speaker,
+    }));
     for (const [session, connection] of connections) {
       connection.update({ speaker: members[session] ?? false, members: list.filter((m) => m.session !== session) });
     }
@@ -141,7 +158,9 @@ describe("whom a session connects to (P1)", () => {
     expect(r.pcs("a")).toHaveLength(2);
     expect(r.pcs("b")).toHaveLength(1);
     expect(r.pcs("c")).toHaveLength(1);
-    const pairs = new Set(r.sent.filter((s) => s.kind === "offer" || s.kind === "answer").map((s) => [s.from, s.to].toSorted().join("-")));
+    const pairs = new Set(
+      r.sent.filter((s) => s.kind === "offer" || s.kind === "answer").map((s) => [s.from, s.to].toSorted().join("-")),
+    );
     expect(pairs).toEqual(new Set(["a-b", "a-c"]));
   });
 
@@ -322,7 +341,9 @@ describe("who is talking", () => {
 
     await a.setMicrophone(true);
     const sent = r.pcs("a")[0]?.transceivers[0]?.sender.track;
-    const microphone = r.meters("a").find((meter) => (meter.stream as FakeStream).tracks.some((track) => track === sent));
+    const microphone = r
+      .meters("a")
+      .find((meter) => (meter.stream as FakeStream).tracks.some((track) => track === sent));
     if (microphone === undefined) throw new Error("no meter of the microphone");
     microphone.value = talkingThreshold * 5;
     await vi.advanceTimersByTimeAsync(talkingSample);
@@ -423,16 +444,27 @@ describe("the grant", () => {
     r.join("c");
     r.state({ a: true, b: false, c: false });
     await settle();
-    const renewed = { ...grant, iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], relayOnly: true };
+    const renewed = {
+      ...grant,
+      iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }],
+      relayOnly: true,
+    };
     a.renew(renewed);
     await settle();
 
     for (const pc of r.pcs("a")) {
-      expect(pc.configurations).toEqual([{ iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }], iceTransportPolicy: "relay" }]);
+      expect(pc.configurations).toEqual([
+        {
+          iceServers: [{ urls: ["turn:turn.example"], username: "u2", credential: "c2" }],
+          iceTransportPolicy: "relay",
+        },
+      ]);
       expect(pc.restarts).toBe(1);
       expect(pc.signalingState).toBe("stable");
     }
-    expect(r.sent.filter((s) => s.from === "a" && s.kind === "offer" && (s.sdp ?? "").includes("ice-options:restart"))).toHaveLength(2);
+    expect(
+      r.sent.filter((s) => s.from === "a" && s.kind === "offer" && (s.sdp ?? "").includes("ice-options:restart")),
+    ).toHaveLength(2);
   });
 
   test("reconnects with a new grant by connecting again", async () => {
@@ -453,7 +485,11 @@ describe("the grant", () => {
       connectVoice({
         session: "s1",
         grant: { ...grant, kind: "mystery" },
-        environment: { createPeerConnection: () => new RTCPeerConnection(), getMicrophone: () => Promise.reject(new Error("no")), createRemoteAudio: () => new FakeRemoteAudio() },
+        environment: {
+          createPeerConnection: () => new RTCPeerConnection(),
+          getMicrophone: () => Promise.reject(new Error("no")),
+          createRemoteAudio: () => new FakeRemoteAudio(),
+        },
         events: { sendSignal: () => Promise.resolve(), onPlaybackBlocked: () => undefined },
       }),
     ).toThrow(UnsupportedVoiceMethodError);
@@ -511,9 +547,31 @@ describe("lost and refused signals", () => {
     const s1 = r.join("s1");
     r.state({ s1: false, s2: true });
     await settle();
-    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment: "old" }) });
-    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:new\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
-    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:8 1 udp 1 192.0.2.8 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment: "new" }) });
+    s1.receive({
+      from: "s2",
+      kind: "candidate",
+      candidate: JSON.stringify({
+        candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host",
+        sdpMid: "0",
+        sdpMLineIndex: 0,
+        usernameFragment: "old",
+      }),
+    });
+    s1.receive({
+      from: "s2",
+      kind: "offer",
+      sdp: "v=0\r\na=ice-ufrag:new\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
+    });
+    s1.receive({
+      from: "s2",
+      kind: "candidate",
+      candidate: JSON.stringify({
+        candidate: "candidate:8 1 udp 1 192.0.2.8 9 typ host",
+        sdpMid: "0",
+        sdpMLineIndex: 0,
+        usernameFragment: "new",
+      }),
+    });
     await settle();
     expect(r.pcs("s1")[0]?.signalingState).toBe("stable");
     expect(r.pcs("s1")[0]?.candidates.map((c) => c.usernameFragment)).toEqual(["new"]);
@@ -525,13 +583,29 @@ describe("lost and refused signals", () => {
     const s1 = r.join("s1");
     r.state({ s1: false, s2: true });
     await settle();
-    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:g1\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    s1.receive({
+      from: "s2",
+      kind: "offer",
+      sdp: "v=0\r\na=ice-ufrag:g1\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
+    });
     // No usernameFragment, but of a generation the browser does not know: it rejects it.
     const pc = r.pcs("s1")[0];
     if (pc === undefined) throw new Error("no connection");
     pc.addIceCandidate = () => Promise.reject(new DOMException("unknown", "OperationError"));
-    s1.receive({ from: "s2", kind: "candidate", candidate: JSON.stringify({ candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host", sdpMid: "0", sdpMLineIndex: 0 }) });
-    s1.receive({ from: "s2", kind: "offer", sdp: "v=0\r\na=ice-ufrag:g2\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
+    s1.receive({
+      from: "s2",
+      kind: "candidate",
+      candidate: JSON.stringify({
+        candidate: "candidate:9 1 udp 1 192.0.2.9 9 typ host",
+        sdpMid: "0",
+        sdpMLineIndex: 0,
+      }),
+    });
+    s1.receive({
+      from: "s2",
+      kind: "offer",
+      sdp: "v=0\r\na=ice-ufrag:g2\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n",
+    });
     await settle();
     expect(r.sent.filter((s) => s.kind === "answer")).toHaveLength(2);
   });

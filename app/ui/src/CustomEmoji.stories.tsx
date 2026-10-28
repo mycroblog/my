@@ -5,8 +5,10 @@ import { type CustomEmojiImage, EmojiText } from "./CustomEmoji";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
 
 // Plain squares stand in for emoji images: an orange still image and a blue "animated" one.
-const orange = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
-const blue = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==";
+const orange =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==";
+const blue =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGPQ6LnznxLMMGrAqAGjBgwXAwBfb48fVw/D1AAAAABJRU5ErkJggg==";
 
 const emojis: CustomEmojiImage[] = [
   { shortcode: "blobcat", url: orange, static_url: orange },
@@ -51,7 +53,11 @@ export const StillOnly: Story = {
 /** Emoji in the sanitized body of a post, drawn into its text with the DOM API. */
 export const InPostBody: Story = {
   render: () => (
-    <PostContent html={serverSanitizedHtml("<p>Hello :blobcat: world :party:</p><p><code>:blobcat:</code> stays code.</p>")} emojis={emojis} lang="en" />
+    <PostContent
+      html={serverSanitizedHtml("<p>Hello :blobcat: world :party:</p><p><code>:blobcat:</code> stays code.</p>")}
+      emojis={emojis}
+      lang="en"
+    />
   ),
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("img", { name: ":blobcat:" })).toHaveLength(1);

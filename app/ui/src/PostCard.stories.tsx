@@ -6,7 +6,14 @@ import { Button } from "./Button";
 import { ContentWarning } from "./ContentWarning";
 import { MediaGrid } from "./MediaGrid";
 import { PostCard } from "./PostCard";
-import { PostCardAuthorLink, PostCardAvatarLink, PostCardBoostContext, PostCardNameLink, PostCardOrigin, PostCardTimeLink } from "./PostCardParts";
+import {
+  PostCardAuthorLink,
+  PostCardAvatarLink,
+  PostCardBoostContext,
+  PostCardNameLink,
+  PostCardOrigin,
+  PostCardTimeLink,
+} from "./PostCardParts";
 import { AutoplayContext } from "./Picture";
 import { Text } from "./Text";
 import { PostContent, serverSanitizedHtml } from "./PostContent";
@@ -76,7 +83,14 @@ const meta = {
     ),
     author: <Author name="Alice" handle="@alice" />,
     time: <Time />,
-    content: <PostContent html={serverSanitizedHtml("<p>Hello from the local timeline! Containers decide this layout, not the viewport.</p>")} lang="en" />,
+    content: (
+      <PostContent
+        html={serverSanitizedHtml(
+          "<p>Hello from the local timeline! Containers decide this layout, not the viewport.</p>",
+        )}
+        lang="en"
+      />
+    ),
     actions: <Actions />,
   },
 } satisfies Meta<typeof PostCard>;
@@ -117,7 +131,11 @@ export const AutoplayOff: Story = {
   args: {
     avatar: (
       <PostCardAvatarLink href="#profile">
-        <Avatar sources={{ still: [{ url: picture("#4f6d8f") }], animated: [{ url: picture("#b3261e") }] }} name="Alice" decorative />
+        <Avatar
+          sources={{ still: [{ url: picture("#4f6d8f") }], animated: [{ url: picture("#b3261e") }] }}
+          name="Alice"
+          decorative
+        />
       </PostCardAvatarLink>
     ),
   },
@@ -134,7 +152,11 @@ export const AutoplayOff: Story = {
     await expect(moving()).toHaveAttribute("media", "(prefers-reduced-motion: no-preference)");
     await userEvent.unhover(article);
     await expect(moving()).toBeNull();
-    const tap = () => userEvent.pointer([{ keys: "[TouchA>]", target: article }, { keys: "[/TouchA]", target: article }]);
+    const tap = () =>
+      userEvent.pointer([
+        { keys: "[TouchA>]", target: article },
+        { keys: "[/TouchA]", target: article },
+      ]);
     await tap();
     await expect(moving()).not.toBeNull();
     await tap();
@@ -168,7 +190,7 @@ export const WithContentWarning: Story = {
           sensitive
           noDescriptionLabel="No description"
           revealLabel="Show sensitive media"
-        audioLabels={{ play: "Play", pause: "Pause", seek: "Position" }}
+          audioLabels={{ play: "Play", pause: "Pause", seek: "Position" }}
         />
       </ContentWarning>
     ),
@@ -201,11 +223,18 @@ export const Boosted: Story = {
 export const LongNames: Story = {
   args: {
     avatar: <Avatar name="Bartholomew" decorative />,
-    author: <Author name="Bartholomew Montgomery-Fitzwilliam the Third" handle="@bartholomew_montgomery_fitzwilliam@social.example.com" />,
+    author: (
+      <Author
+        name="Bartholomew Montgomery-Fitzwilliam the Third"
+        handle="@bartholomew_montgomery_fitzwilliam@social.example.com"
+      />
+    ),
   },
   play: async ({ canvas, canvasElement }) => {
     await expect(
-      canvas.getByRole("link", { name: "Bartholomew Montgomery-Fitzwilliam the Third @bartholomew_montgomery_fitzwilliam@social.example.com" }),
+      canvas.getByRole("link", {
+        name: "Bartholomew Montgomery-Fitzwilliam the Third @bartholomew_montgomery_fitzwilliam@social.example.com",
+      }),
     ).toBeInTheDocument();
     await expectHeaderInTwoLines(canvasElement);
   },
@@ -218,7 +247,9 @@ export const LongDomain: Story = {
     author: <Author name="Carol" handle="@carol@a-rather-long-community-server-name.social.example.com" />,
   },
   play: async ({ canvas, canvasElement }) => {
-    await expect(canvas.getByRole("link", { name: "Carol @carol@a-rather-long-community-server-name.social.example.com" })).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("link", { name: "Carol @carol@a-rather-long-community-server-name.social.example.com" }),
+    ).toBeInTheDocument();
     await expectHeaderInTwoLines(canvasElement);
   },
 };
@@ -252,7 +283,13 @@ export const Highlighted: Story = {
     label: "Selected post",
     highlighted: true,
     time: <time dateTime="2026-10-16T09:00:00Z">2h</time>,
-    content: <PostContent html={serverSanitizedHtml("<p>The post this page is about, in larger text.</p>")} lang="en" size="lg" />,
+    content: (
+      <PostContent
+        html={serverSanitizedHtml("<p>The post this page is about, in larger text.</p>")}
+        lang="en"
+        size="lg"
+      />
+    ),
     details: (
       <>
         <time dateTime="2026-10-16T09:00:00Z">Friday, October 16, 2026 at 9:00 AM</time>
@@ -262,7 +299,9 @@ export const Highlighted: Story = {
     ),
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("article", { name: /^Selected post\s+Alice\s+@alice\s+2h$/ })).toHaveAccessibleDescription(/The post this page is about/);
+    await expect(
+      canvas.getByRole("article", { name: /^Selected post\s+Alice\s+@alice\s+2h$/ }),
+    ).toHaveAccessibleDescription(/The post this page is about/);
     await expect(canvas.getByText("3 boosts")).toBeVisible();
   },
 };
@@ -279,13 +318,23 @@ export const Thread: Story = {
         {...args}
         avatar={<Avatar name="Bob" decorative />}
         author={<Author name="Bob" handle="@bob" />}
-        content={<PostContent html={serverSanitizedHtml("<p>A reply, and the post this page is about.</p>")} lang="en" size="lg" />}
+        content={
+          <PostContent
+            html={serverSanitizedHtml("<p>A reply, and the post this page is about.</p>")}
+            lang="en"
+            size="lg"
+          />
+        }
         label="Selected post"
         highlighted
         lineAbove
         lineBelow
       />
-      <PostCard {...args} content={<PostContent html={serverSanitizedHtml("<p>A reply to the reply.</p>")} lang="en" />} lineAbove />
+      <PostCard
+        {...args}
+        content={<PostContent html={serverSanitizedHtml("<p>A reply to the reply.</p>")} lang="en" />}
+        lineAbove
+      />
     </div>
   ),
   play: async ({ canvas }) => {
@@ -308,12 +357,19 @@ export const WithOrigin: Story = {
     actions: (
       <>
         <Actions />
-        <PostCardOrigin href="https://social.example/@alice/1" host="social.example" label="Open the post on social.example" />
+        <PostCardOrigin
+          href="https://social.example/@alice/1"
+          host="social.example"
+          label="Open the post on social.example"
+        />
       </>
     ),
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: "Open the post on social.example" })).toHaveAttribute("href", "https://social.example/@alice/1");
+    await expect(canvas.getByRole("link", { name: "Open the post on social.example" })).toHaveAttribute(
+      "href",
+      "https://social.example/@alice/1",
+    );
   },
 };
 

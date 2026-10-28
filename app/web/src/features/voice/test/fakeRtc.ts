@@ -202,7 +202,16 @@ export class FakePeerConnection {
     queueMicrotask(() => {
       if (this.closed) return;
       const usernameFragment = this.#ufrag();
-      this.onicecandidate?.({ candidate: { toJSON: () => ({ candidate: "candidate:1 1 udp 1 192.0.2.1 9 typ host", sdpMid: "0", sdpMLineIndex: 0, usernameFragment }) } });
+      this.onicecandidate?.({
+        candidate: {
+          toJSON: () => ({
+            candidate: "candidate:1 1 udp 1 192.0.2.1 9 typ host",
+            sdpMid: "0",
+            sdpMLineIndex: 0,
+            usernameFragment,
+          }),
+        },
+      });
     });
   }
 
@@ -212,11 +221,13 @@ export class FakePeerConnection {
     if (description.type === "offer") {
       // An offer in have-local-offer rolls the local one back first (JSEP §5.10).
       if (this.signalingState === "have-local-offer") this.localDescription = null;
-      while (this.transceivers.length < directions.length) this.transceivers.push(new FakeTransceiver(this, "recvonly"));
+      while (this.transceivers.length < directions.length)
+        this.transceivers.push(new FakeTransceiver(this, "recvonly"));
       this.remoteDescription = description;
       this.signalingState = "have-remote-offer";
     } else {
-      if (this.signalingState !== "have-local-offer") return Promise.reject(new DOMException("no offer", "InvalidStateError"));
+      if (this.signalingState !== "have-local-offer")
+        return Promise.reject(new DOMException("no offer", "InvalidStateError"));
       this.remoteDescription = description;
       this.signalingState = "stable";
       for (const t of this.transceivers) t.negotiated = true;
@@ -232,10 +243,15 @@ export class FakePeerConnection {
   }
 
   addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-    if (this.remoteDescription === null) return Promise.reject(new DOMException("no remote description", "InvalidStateError"));
+    if (this.remoteDescription === null)
+      return Promise.reject(new DOMException("no remote description", "InvalidStateError"));
     // A candidate of another ICE generation than the remote description's (RFC 8839 §5.4, JSEP §4.1.17).
     const remote = /^a=ice-ufrag:(\S+)/mu.exec(this.remoteDescription.sdp)?.[1];
-    if (candidate.usernameFragment !== undefined && candidate.usernameFragment !== null && candidate.usernameFragment !== remote) {
+    if (
+      candidate.usernameFragment !== undefined &&
+      candidate.usernameFragment !== null &&
+      candidate.usernameFragment !== remote
+    ) {
       return Promise.reject(new DOMException("unknown ufrag", "OperationError"));
     }
     this.candidates.push(candidate);

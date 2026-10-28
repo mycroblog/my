@@ -10,7 +10,12 @@ const ignore = () => undefined;
 
 function Warning({ onExpandedChange = ignore }: { onExpandedChange?: (expanded: boolean) => void }) {
   return (
-    <ContentWarning summary="Spoilers for the finale" summaryLang="en" toggleLabel="Show content" onExpandedChange={onExpandedChange}>
+    <ContentWarning
+      summary="Spoilers for the finale"
+      summaryLang="en"
+      toggleLabel="Show content"
+      onExpandedChange={onExpandedChange}
+    >
       <p>The butler did it.</p>
       <a href="#more">Read more</a>
     </ContentWarning>
@@ -22,7 +27,11 @@ describe("ContentWarning", () => {
     const user = userEvent.setup();
     const { container } = render(<Warning />);
     expect(ariaSnapshot(container)).toBe(
-      [`- generic [lang=en] [dir=auto]:`, `  - text: "Spoilers for the finale"`, `- button "Show content" [expanded=false]`].join("\n"),
+      [
+        `- generic [lang=en] [dir=auto]:`,
+        `  - text: "Spoilers for the finale"`,
+        `- button "Show content" [expanded=false]`,
+      ].join("\n"),
     );
     const button = screen.getByRole("button", { name: "Show content" });
     expect(button).toHaveAttribute("aria-controls", expect.any(String));

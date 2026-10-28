@@ -6,7 +6,11 @@ import { ExternalLink, ExternalLinkContext } from "./ExternalLink";
 const meta = {
   title: "Forms/ExternalLink",
   component: ExternalLink,
-  args: { href: "https://remote.example/@carol", variant: "standalone", children: "Open the original profile on remote.example" },
+  args: {
+    href: "https://remote.example/@carol",
+    variant: "standalone",
+    children: "Open the original profile on remote.example",
+  },
   // The app gives the "opens in a new tab" text once, at its root.
   decorators: [
     (Story) => (
@@ -41,10 +45,9 @@ export const Inline: Story = {
     </p>
   ),
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: "the rules of remote.example (opens in a new tab)" })).toHaveAttribute(
-      "rel",
-      "noopener noreferrer nofollow ugc",
-    );
+    await expect(
+      canvas.getByRole("link", { name: "the rules of remote.example (opens in a new tab)" }),
+    ).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
   },
 };
 
@@ -56,6 +59,8 @@ export const Labelled: Story = {
     children: <span dir="ltr">remote.example</span>,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" })).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
+    ).toBeVisible();
   },
 };

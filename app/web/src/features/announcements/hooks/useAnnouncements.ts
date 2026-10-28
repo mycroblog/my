@@ -7,7 +7,12 @@ import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { shellQueryRetry } from "../../../lib/query";
-import { type Announcement, announcementsQueryOptions, cacheAnnouncement, markAnnouncementReadMutation } from "../api/announcements";
+import {
+  type Announcement,
+  announcementsQueryOptions,
+  cacheAnnouncement,
+  markAnnouncementReadMutation,
+} from "../api/announcements";
 
 export type Announcements = {
   /** The announcements, the latest first; empty while they load or when they cannot be loaded. */

@@ -53,7 +53,9 @@ describe("TextArea", () => {
   it("is controlled with value and onChange", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<TextArea label="Bio" value="fixed" onChange={onChange} characterLimit={10} formatRemaining={formatRemaining} />);
+    render(
+      <TextArea label="Bio" value="fixed" onChange={onChange} characterLimit={10} formatRemaining={formatRemaining} />,
+    );
     const textArea = screen.getByRole("textbox", { name: "Bio" });
     await user.type(textArea, "!");
     expect(onChange).toHaveBeenCalledWith("fixed!");
@@ -152,7 +154,14 @@ describe("TextArea", () => {
 
   it("puts the end action after the text area in the tab order, without changing its name or description", async () => {
     const user = userEvent.setup();
-    render(<TextArea label="Post" characterLimit={5} formatRemaining={formatRemaining} endAction={<button type="button">Add emoji</button>} />);
+    render(
+      <TextArea
+        label="Post"
+        characterLimit={5}
+        formatRemaining={formatRemaining}
+        endAction={<button type="button">Add emoji</button>}
+      />,
+    );
     await user.tab();
     const textArea = screen.getByRole("textbox", { name: "Post" });
     expect(textArea).toHaveFocus();

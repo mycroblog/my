@@ -21,8 +21,21 @@ const labels: MediaViewerLabels = {
   next: "Next image",
 };
 
-const sunset = { id: "1", sources: { still: [{ url: picture("#9f9fd2", "#fbbd92") }] }, alt: "Dusk on the way home: pink clouds over a hill and a setting sun.", lang: "en", width: 800, height: 450 };
-const meadow = { id: "2", sources: { still: [{ url: picture("#b4d4c6", "#ffc5aa") }] }, alt: null, width: 800, height: 450 };
+const sunset = {
+  id: "1",
+  sources: { still: [{ url: picture("#9f9fd2", "#fbbd92") }] },
+  alt: "Dusk on the way home: pink clouds over a hill and a setting sun.",
+  lang: "en",
+  width: 800,
+  height: 450,
+};
+const meadow = {
+  id: "2",
+  sources: { still: [{ url: picture("#b4d4c6", "#ffc5aa") }] },
+  alt: null,
+  width: 800,
+  height: 450,
+};
 const animation = {
   id: "3",
   // The moving rendition is the picture's own and plays without a reduced-motion preference; the still one stands in otherwise.
@@ -43,7 +56,15 @@ const meta = {
   title: "Timeline/MediaViewer",
   component: MediaViewer,
   parameters: { layout: "fullscreen" },
-  args: { items: [sunset], index: 0, isOpen: true, labels, noDescriptionLabel: "No description", onIndexChange: fn(), onOpenChange: fn() },
+  args: {
+    items: [sunset],
+    index: 0,
+    isOpen: true,
+    labels,
+    noDescriptionLabel: "No description",
+    onIndexChange: fn(),
+    onOpenChange: fn(),
+  },
   render: (args) => <Controlled {...args} />,
   decorators: [
     (Story) => (
@@ -66,7 +87,9 @@ export const Multiple: Story = {
   play: async ({ canvasElement }) => {
     const dialog = await within(canvasElement.ownerDocument.body).findByRole("dialog", { name: "Image 2 of 3" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Next image" }));
-    await expect(within(canvasElement.ownerDocument.body).getByRole("dialog", { name: "Image 3 of 3" })).toBeInTheDocument();
+    await expect(
+      within(canvasElement.ownerDocument.body).getByRole("dialog", { name: "Image 3 of 3" }),
+    ).toBeInTheDocument();
   },
 };
 

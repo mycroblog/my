@@ -100,7 +100,9 @@ test.describe("the landing page", () => {
     await expect(page.getByRole("main").getByRole("article")).toHaveCount(2);
   });
 
-  test("welcomes the visitor at the root address with the server, its recent posts, its rules and documents, in the order of the information page", async ({ page }) => {
+  test("welcomes the visitor at the root address with the server, its recent posts, its rules and documents, in the order of the information page", async ({
+    page,
+  }) => {
     await expect(page).toHaveURL(/\/$/);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toContainText("my example");
@@ -176,7 +178,11 @@ test.describe("the landing page", () => {
   });
 });
 
-test("the landing page of a server that takes no new accounts and has no local timeline", async ({ page, baseURL, makeAxeBuilder }) => {
+test("the landing page of a server that takes no new accounts and has no local timeline", async ({
+  page,
+  baseURL,
+  makeAxeBuilder,
+}) => {
   await serveInstance(page, new URL(baseURL ?? "").origin, {
     registrations: { mode: "closed" },
     timelines: { local: "off", federated: "off" },

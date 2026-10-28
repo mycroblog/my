@@ -105,7 +105,11 @@ export function useRelayForm() {
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (mutation.isPending) return;
-      mutation.mutate({ url: draft.url.trim(), receive: draft.receive, ...(draft.protocol === "auto" ? {} : { protocol: draft.protocol }) });
+      mutation.mutate({
+        url: draft.url.trim(),
+        receive: draft.receive,
+        ...(draft.protocol === "auto" ? {} : { protocol: draft.protocol }),
+      });
     },
     isPending: mutation.isPending,
     /** Why registering failed; the draft stays. */
@@ -159,7 +163,9 @@ export function useRelayActions(onDeleted: (id: string) => void): RelayActions {
         {
           onSuccess: (saved) => {
             void refreshRelays(queryClient).then(() => {
-              report(t(join ? "client:admin.relays.followed" : "client:admin.relays.unfollowed", { name: relayName(saved) }));
+              report(
+                t(join ? "client:admin.relays.followed" : "client:admin.relays.unfollowed", { name: relayName(saved) }),
+              );
             });
           },
         },

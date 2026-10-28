@@ -21,7 +21,11 @@ afterEach(() => {
   removePasskeys();
 });
 
-const phone: Schemas["Passkey"] = { id: "019a0000-0000-7000-8000-0000000000a1", name: "Phone", created_at: "2026-10-01T09:00:00Z" };
+const phone: Schemas["Passkey"] = {
+  id: "019a0000-0000-7000-8000-0000000000a1",
+  name: "Phone",
+  created_at: "2026-10-01T09:00:00Z",
+};
 
 /** The server's passkeys of the viewer, which the operations change, with the requests they received. */
 function passkeyServer(initial: Schemas["Passkey"][]) {
@@ -52,7 +56,11 @@ function passkeyServer(initial: Schemas["Passkey"][]) {
     http.post(`${apiBase}/passkeys`, async ({ request }) => {
       const body = (await request.json()) as Schemas["CreatePasskeyRequest"];
       created.push(body);
-      const added = { id: "019a0000-0000-7000-8000-0000000000a2", name: registrations.at(-1)?.name ?? "", created_at: "2026-10-20T00:00:00Z" };
+      const added = {
+        id: "019a0000-0000-7000-8000-0000000000a2",
+        name: registrations.at(-1)?.name ?? "",
+        created_at: "2026-10-20T00:00:00Z",
+      };
       items = [...items, added];
       return HttpResponse.json(added, { status: 201 });
     }),
@@ -130,17 +138,29 @@ describe("passkeys", () => {
     await user.type(within(form).getByRole("textbox", { name: "Name" }), "Laptop");
     await user.type(within(form).getByLabelText(/^Current password/), "correct horse");
     await user.click(within(form).getByRole("button", { name: "Add passkey" }));
-    expect(await within(form).findByRole("alert")).toHaveTextContent("No passkey was added: the browser's prompt was closed or timed out.");
+    expect(await within(form).findByRole("alert")).toHaveTextContent(
+      "No passkey was added: the browser's prompt was closed or timed out.",
+    );
 
-    server.use(http.post(`${apiBase}/passkeys`, () => problem(422, "/api/v1/problems/invalid-passkey", "The passkey could not be verified.")));
+    server.use(
+      http.post(`${apiBase}/passkeys`, () =>
+        problem(422, "/api/v1/problems/invalid-passkey", "The passkey could not be verified."),
+      ),
+    );
     await user.click(within(form).getByRole("button", { name: "Add passkey" }));
-    expect(await within(form).findByRole("alert")).toHaveTextContent("The passkey could not be verified. Try again with another device");
+    expect(await within(form).findByRole("alert")).toHaveTextContent(
+      "The passkey could not be verified. Try again with another device",
+    );
   });
 
   test("tells a browser without passkeys that it cannot add one", async () => {
     passkeyServer([phone]);
     await renderApp({ path: "/settings/passkeys" });
-    expect(await screen.findByText("This browser cannot create passkeys. Open this page in a browser that supports them to add one.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "This browser cannot create passkeys. Open this page in a browser that supports them to add one.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add passkey" })).not.toBeInTheDocument();
     expect(screen.getByText("Phone")).toBeInTheDocument();
   });
@@ -167,7 +187,11 @@ describe("passkeys", () => {
     const { user } = await renderApp({ path: "/settings/passkeys" });
 
     const form = await screen.findByRole("region", { name: "Add a passkey" });
-    expect(within(form).getByText(/^Name the passkey so that you can tell it apart. Your browser asks for one of your passkeys/)).toBeInTheDocument();
+    expect(
+      within(form).getByText(
+        /^Name the passkey so that you can tell it apart. Your browser asks for one of your passkeys/,
+      ),
+    ).toBeInTheDocument();
     expect(within(form).queryByLabelText(/^Current password/)).not.toBeInTheDocument();
     await user.type(within(form).getByRole("textbox", { name: "Name" }), "Laptop");
     await user.click(within(form).getByRole("button", { name: "Add passkey" }));

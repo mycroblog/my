@@ -17,7 +17,15 @@
 //   token, counts as a failed refresh, or signs out, on a request or on the refresh after a 401.
 //
 // `stream` opens the event stream (lib/sse) with the same origin, token, and locale.
-import { createClient, type Api as MykitApi, NetworkError as MykitNetworkError, type paths, runStream, type StreamOptions, type TokenSource } from "@mycroblog/mykit";
+import {
+  createClient,
+  type Api as MykitApi,
+  NetworkError as MykitNetworkError,
+  type paths,
+  runStream,
+  type StreamOptions,
+  type TokenSource,
+} from "@mycroblog/mykit";
 import type { Middleware } from "openapi-fetch";
 import createQueryClient, { type OpenapiQueryClient } from "openapi-react-query";
 import type { Session } from "../auth/session";
@@ -101,7 +109,9 @@ function errorMiddleware(locale: Pick<AppLocale, "t">, maintenance: Maintenance)
         return error;
       }
       reportNetworkFailure();
-      return new NetworkError(locale.t(isBrowserOffline() ? "client:api.error.offline" : "client:api.error.network"), { cause: error });
+      return new NetworkError(locale.t(isBrowserOffline() ? "client:api.error.offline" : "client:api.error.network"), {
+        cause: error,
+      });
     },
   };
 }
@@ -117,7 +127,8 @@ function streamTokenSource(session: Session, apiOrigin: string): TokenSource {
       try {
         return await session.refresh(refused);
       } catch (error) {
-        if (error instanceof NetworkError || error instanceof MaintenanceError) throw new MykitNetworkError("POST", new URL("/oauth/token/refresh", apiOrigin).href, error);
+        if (error instanceof NetworkError || error instanceof MaintenanceError)
+          throw new MykitNetworkError("POST", new URL("/oauth/token/refresh", apiOrigin).href, error);
         throw error;
       }
     },

@@ -40,9 +40,13 @@ export function applicantInText(t: Translate, registration: Registration): strin
 function resultMessage(t: Translate, registration: Registration, decision: RegistrationDecision): string {
   const applicant = applicantInText(t, registration);
   if (registration.state === "approved") {
-    return decision === "approve" ? t("client:admin.registrations.approved", { applicant }) : t("client:admin.registrations.already_approved", { applicant });
+    return decision === "approve"
+      ? t("client:admin.registrations.approved", { applicant })
+      : t("client:admin.registrations.already_approved", { applicant });
   }
-  return decision === "reject" ? t("client:admin.registrations.rejected", { applicant }) : t("client:admin.registrations.already_rejected", { applicant });
+  return decision === "reject"
+    ? t("client:admin.registrations.rejected", { applicant })
+    : t("client:admin.registrations.already_rejected", { applicant });
 }
 
 /** The decision being confirmed: on which registration, which, and the note typed so far. */

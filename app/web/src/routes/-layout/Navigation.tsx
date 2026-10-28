@@ -165,8 +165,24 @@ const voiceItem: NavigationItem = {
 
 /** The staff's areas, after the user's items in the rail and in the menu's sheet, never in the tab bar. */
 const staffItems: readonly NavigationItem[] = [
-  { id: "moderation", href: "/moderation", section: "/moderation", label: "client:shell.nav.moderation", icon: <ModerationIcon />, shows: "rail", staff: "moderation" },
-  { id: "admin", href: "/admin", section: "/admin", label: "client:shell.nav.admin", icon: <AdminIcon />, shows: "rail", staff: "admin" },
+  {
+    id: "moderation",
+    href: "/moderation",
+    section: "/moderation",
+    label: "client:shell.nav.moderation",
+    icon: <ModerationIcon />,
+    shows: "rail",
+    staff: "moderation",
+  },
+  {
+    id: "admin",
+    href: "/admin",
+    section: "/admin",
+    label: "client:shell.nav.admin",
+    icon: <AdminIcon />,
+    shows: "rail",
+    staff: "admin",
+  },
 ];
 
 /**
@@ -175,14 +191,59 @@ const staffItems: readonly NavigationItem[] = [
  */
 function signedOutItems(signInHref: string, signUpHref: string | undefined): NavigationItem[] {
   return [
-    { id: "local", href: "/local", section: "/local", label: navigationEntryLabels.local, icon: navigationEntryIcons.local, shows: "always", timeline: "local" },
-    { id: "public", href: "/public", section: "/public", label: navigationEntryLabels.public, icon: navigationEntryIcons.public, shows: "always", timeline: "federated" },
-    { id: "search", href: "/search", section: "/search", label: navigationEntryLabels.search, icon: navigationEntryIcons.search, shows: "always" },
-    { id: "about", href: aboutPath, section: "/about", label: "client:shell.nav.about", icon: <AboutIcon />, shows: "always" },
-    { id: "sign-in", href: signInHref, section: "/login", label: "client:shell.nav.sign_in", icon: <SignInIcon />, shows: "always" },
+    {
+      id: "local",
+      href: "/local",
+      section: "/local",
+      label: navigationEntryLabels.local,
+      icon: navigationEntryIcons.local,
+      shows: "always",
+      timeline: "local",
+    },
+    {
+      id: "public",
+      href: "/public",
+      section: "/public",
+      label: navigationEntryLabels.public,
+      icon: navigationEntryIcons.public,
+      shows: "always",
+      timeline: "federated",
+    },
+    {
+      id: "search",
+      href: "/search",
+      section: "/search",
+      label: navigationEntryLabels.search,
+      icon: navigationEntryIcons.search,
+      shows: "always",
+    },
+    {
+      id: "about",
+      href: aboutPath,
+      section: "/about",
+      label: "client:shell.nav.about",
+      icon: <AboutIcon />,
+      shows: "always",
+    },
+    {
+      id: "sign-in",
+      href: signInHref,
+      section: "/login",
+      label: "client:shell.nav.sign_in",
+      icon: <SignInIcon />,
+      shows: "always",
+    },
     ...(signUpHref === undefined
       ? []
-      : [{ id: "sign-up", href: signUpHref, label: "client:shell.nav.sign_up", icon: <SignUpIcon />, shows: "rail" } satisfies NavigationItem]),
+      : [
+          {
+            id: "sign-up",
+            href: signUpHref,
+            label: "client:shell.nav.sign_up",
+            icon: <SignUpIcon />,
+            shows: "rail",
+          } satisfies NavigationItem,
+        ]),
   ];
 }
 
@@ -205,7 +266,9 @@ function isUnder(pathname: string, path: string): boolean {
 function inSection(pathname: string, section: Section, ownAcct: string | null): boolean {
   if (isUnder(pathname, section)) return true;
   if (section !== "/profile" || ownAcct === null) return false;
-  return [profilePath(ownAcct), followListPath(ownAcct, "followers"), followListPath(ownAcct, "following")].includes(pathname);
+  return [profilePath(ownAcct), followListPath(ownAcct, "followers"), followListPath(ownAcct, "following")].includes(
+    pathname,
+  );
 }
 
 /** The badge of an item and the name of its link while it shows one, or undefined for an item without a count now. */
@@ -238,29 +301,43 @@ export function Navigation() {
   // The user's shown items in their order, the first ones in the tab bar, then the staff's areas.
   const userItems = useNavigationEntries()
     .filter((entry) => entry.shown)
-    .map(
-      (entry, index): NavigationItem => ({
-        ...entryTargets[entry.id],
-        id: entry.id,
-        href: entryTargets[entry.id].section,
-        label: navigationEntryLabels[entry.id],
-        icon: navigationEntryIcons[entry.id],
-        shows: index < tabBarLimit ? "always" : "rail",
-      }),
-    );
+    .map((entry, index): NavigationItem => ({
+      ...entryTargets[entry.id],
+      id: entry.id,
+      href: entryTargets[entry.id].section,
+      label: navigationEntryLabels[entry.id],
+      icon: navigationEntryIcons[entry.id],
+      shows: index < tabBarLimit ? "always" : "rail",
+    }));
   // Offline, a session that could not be resumed is most likely still there: the user's items stay (web-client/11-pwa.md §11).
   const signedOut = useSignedOut();
   let items: readonly NavigationItem[] = [];
   if (signedOut) items = signedOutItems(signInHref, signUpHref);
-  else if (status !== "unknown") items = [...userItems, ...(voiceAvailable ? [voiceItem] : []), ...(financeEntry.available ? [financeItem] : []), ...staffItems];
-  const shown = items.filter((item) => (item.timeline === undefined || timelines[item.timeline]) && staffAvailable(item));
+  else if (status !== "unknown")
+    items = [
+      ...userItems,
+      ...(voiceAvailable ? [voiceItem] : []),
+      ...(financeEntry.available ? [financeItem] : []),
+      ...staffItems,
+    ];
+  const shown = items.filter(
+    (item) => (item.timeline === undefined || timelines[item.timeline]) && staffAvailable(item),
+  );
   const badgeOf = (section: Section | undefined): ItemBadge => {
     if (section === "/notifications" && unread > 0) {
-      return { count: unread, label: t("client:notifications.unread_count", { count: unread }), name: t("client:shell.nav.notifications_unread", { count: unread }) };
+      return {
+        count: unread,
+        label: t("client:notifications.unread_count", { count: unread }),
+        name: t("client:shell.nav.notifications_unread", { count: unread }),
+      };
     }
     if (section === "/moderation" && moderationEntry.available && moderationEntry.pending > 0) {
       const count = moderationEntry.pending;
-      return { count, label: t("client:admin.pending_count", { count }), name: t("client:shell.nav.moderation_pending", { count }) };
+      return {
+        count,
+        label: t("client:admin.pending_count", { count }),
+        name: t("client:shell.nav.moderation_pending", { count }),
+      };
     }
     return undefined;
   };
@@ -276,7 +353,11 @@ export function Navigation() {
       }
       // Signed out, the navigation is a light bar along the top (AppLayout puts it above the page).
       placement={signedOut ? "top" : "side"}
-      action={openCompose === null ? undefined : <AppNavAction label={t("client:compose.open")} icon={<PlusIcon />} onPress={openCompose} />}
+      action={
+        openCompose === null ? undefined : (
+          <AppNavAction label={t("client:compose.open")} icon={<PlusIcon />} onPress={openCompose} />
+        )
+      }
       footer={<ViewerLink />}
     >
       {shown.map((item) => {
@@ -291,10 +372,12 @@ export function Navigation() {
             shows={item.shows}
             {...(item.id === "sign-up" && { prominent: true })}
             {...(badge !== undefined && { badge })}
-            />
+          />
         );
       })}
-      {status !== "unknown" && <NavigationMenu items={shown.filter((item) => item.shows === "rail")} current={current} badgeOf={badgeOf} />}
+      {status !== "unknown" && (
+        <NavigationMenu items={shown.filter((item) => item.shows === "rail")} current={current} badgeOf={badgeOf} />
+      )}
     </AppNav>
   );
 }
@@ -359,7 +442,11 @@ function NavigationMenu({ items, current, badgeOf }: NavigationMenuProps) {
     <AppNavMenu
       label={t("client:shell.nav.menu")}
       {...(pending > 0 && {
-        badge: { count: pending, label: t("client:admin.pending_count", { count: pending }), name: t("client:shell.nav.menu_pending", { count: pending }) },
+        badge: {
+          count: pending,
+          label: t("client:admin.pending_count", { count: pending }),
+          name: t("client:shell.nav.menu_pending", { count: pending }),
+        },
       })}
       isOpen={isOpen}
       onOpenChange={setIsOpen}

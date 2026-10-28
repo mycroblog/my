@@ -86,7 +86,10 @@ const toast = tv({
   },
   variants: {
     clearsTabBar: {
-      true: { region: "bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] pb-4 short:bottom-[calc(3rem+1px+env(safe-area-inset-bottom))] md:bottom-0 md:pb-[max(--spacing(4),env(safe-area-inset-bottom))] with-compose-fab:bottom-[calc(8rem+env(safe-area-inset-bottom))] with-compose-fab:short:bottom-[calc(6.5rem+env(safe-area-inset-bottom))] with-compose-fab:md:bottom-0" },
+      true: {
+        region:
+          "bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] pb-4 short:bottom-[calc(3rem+1px+env(safe-area-inset-bottom))] md:bottom-0 md:pb-[max(--spacing(4),env(safe-area-inset-bottom))] with-compose-fab:bottom-[calc(8rem+env(safe-area-inset-bottom))] with-compose-fab:short:bottom-[calc(6.5rem+env(safe-area-inset-bottom))] with-compose-fab:md:bottom-0",
+      },
     },
     tone: {
       neutral: {},
@@ -116,7 +119,13 @@ export type ToastProviderProps = {
 /**
  * Renders the toasts and gives `useToast()` to its children. Mount it once, inside the AnnouncerProvider.
  */
-export function ToastProvider({ children, regionLabel, dismissLabel, defaultTimeout = 5000, clearsTabBar = false }: ToastProviderProps) {
+export function ToastProvider({
+  children,
+  regionLabel,
+  dismissLabel,
+  defaultTimeout = 5000,
+  clearsTabBar = false,
+}: ToastProviderProps) {
   const announce = useAnnouncer();
   const [toasts, setToasts] = useState<readonly QueuedToast[]>([]);
   const nextIdRef = useRef(0);
@@ -171,7 +180,8 @@ export function ToastProvider({ children, regionLabel, dismissLabel, defaultTime
     const id = nextIdRef.current++;
     setToasts((list) => [...list, { ...options, id }]);
     announce(options.message, options.tone === "danger" ? "assertive" : "polite");
-    const timeout = options.timeout === undefined ? (options.action === undefined ? defaultTimeout : null) : options.timeout;
+    const timeout =
+      options.timeout === undefined ? (options.action === undefined ? defaultTimeout : null) : options.timeout;
     if (timeout !== null) {
       const timer = new PausableTimer(timeout, () => {
         dismiss(id);
@@ -202,7 +212,11 @@ export function ToastProvider({ children, regionLabel, dismissLabel, defaultTime
             resume();
           }}
           onFocus={(event) => {
-            if (!holdRef.current.focused && event.relatedTarget instanceof HTMLElement && !event.currentTarget.contains(event.relatedTarget)) {
+            if (
+              !holdRef.current.focused &&
+              event.relatedTarget instanceof HTMLElement &&
+              !event.currentTarget.contains(event.relatedTarget)
+            ) {
               returnFocusRef.current = event.relatedTarget;
             }
             holdRef.current.focused = true;

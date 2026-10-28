@@ -81,7 +81,10 @@ export function useMovementDates(filter: IncomeMovementFilter, onFilterChange: (
     setShown({ from: filter.from, to: filter.to });
     setDraft({ from: filter.from ?? "", to: filter.to ?? "" });
   }
-  const toError = draft.from !== "" && draft.to !== "" && draft.to < draft.from ? t("client:admin.finance.movements.filter.to_before_from") : undefined;
+  const toError =
+    draft.from !== "" && draft.to !== "" && draft.to < draft.from
+      ? t("client:admin.finance.movements.filter.to_before_from")
+      : undefined;
   return {
     draft,
     change: (patch: Partial<MovementDatesDraft>) => {
@@ -91,7 +94,11 @@ export function useMovementDates(filter: IncomeMovementFilter, onFilterChange: (
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (toError !== undefined) return;
-      onFilterChange({ ...filter, from: draft.from === "" ? undefined : draft.from, to: draft.to === "" ? undefined : draft.to });
+      onFilterChange({
+        ...filter,
+        from: draft.from === "" ? undefined : draft.from,
+        to: draft.to === "" ? undefined : draft.to,
+      });
     },
   };
 }
@@ -132,20 +139,40 @@ function useLabelErrors() {
   return (label: LabelDraft): { name?: string; provider?: string; memo?: string } => {
     const line = (value: string) => {
       if (value.trim() === "") return t("client:admin.finance.required");
-      if (characterCount(value.trim()) > costNameLimit) return t("client:admin.finance.too_long", { max: String(costNameLimit) });
+      if (characterCount(value.trim()) > costNameLimit)
+        return t("client:admin.finance.too_long", { max: String(costNameLimit) });
       return undefined;
     };
     const name = line(label.name);
     const provider = line(label.provider);
-    const memo = characterCount(label.memo) > costMemoLimit ? t("client:admin.finance.too_long", { max: String(costMemoLimit) }) : undefined;
-    return { ...(name === undefined ? {} : { name }), ...(provider === undefined ? {} : { provider }), ...(memo === undefined ? {} : { memo }) };
+    const memo =
+      characterCount(label.memo) > costMemoLimit
+        ? t("client:admin.finance.too_long", { max: String(costMemoLimit) })
+        : undefined;
+    return {
+      ...(name === undefined ? {} : { name }),
+      ...(provider === undefined ? {} : { provider }),
+      ...(memo === undefined ? {} : { memo }),
+    };
   };
 }
 
-type NewCostDraft = LabelDraft & PriceDraft & { schedule: CostSchedule; interval: string; startsOn: string; endsOn: string };
+type NewCostDraft = LabelDraft &
+  PriceDraft & { schedule: CostSchedule; interval: string; startsOn: string; endsOn: string };
 
 function emptyDraft(currency: string): NewCostDraft {
-  return { name: "", provider: "", category: "other", memo: "", schedule: "months", interval: "1", startsOn: "", endsOn: "", amount: "", currency };
+  return {
+    name: "",
+    provider: "",
+    category: "other",
+    memo: "",
+    schedule: "months",
+    interval: "1",
+    startsOn: "",
+    endsOn: "",
+    amount: "",
+    currency,
+  };
 }
 
 /** The form of a new cost item; the currency starts as that of the newest item. It empties once the list shows the item. */
@@ -177,7 +204,10 @@ export function useNewCostItemForm(defaultCurrency: string) {
         ? t("client:admin.finance.interval.invalid", { max: String(maxCostInterval) })
         : undefined;
     const startsOn = value.startsOn === "" ? t("client:admin.finance.required") : undefined;
-    const endsOn = value.endsOn !== "" && value.startsOn !== "" && value.endsOn < value.startsOn ? t("client:admin.finance.ends_on.before_start") : undefined;
+    const endsOn =
+      value.endsOn !== "" && value.startsOn !== "" && value.endsOn < value.startsOn
+        ? t("client:admin.finance.ends_on.before_start")
+        : undefined;
     return {
       ...labelErrors(value),
       ...priceErrors(value),
@@ -234,7 +264,9 @@ export type CostItemActions = {
  * shows it (the items and the totals are fetched again first), so that the screen can move focus and keep the status
  * next to the list.
  */
-export function useCostItemActions(onDone: (item: CostItem, status: string, removed: boolean) => void): CostItemActions {
+export function useCostItemActions(
+  onDone: (item: CostItem, status: string, removed: boolean) => void,
+): CostItemActions {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -245,7 +277,12 @@ export function useCostItemActions(onDone: (item: CostItem, status: string, remo
   const revise = useMutation({ ...reviseCostItemPriceMutation(api) });
   const end = useMutation({ ...setCostItemEndMutation(api) });
   const cancel = useMutation({ ...cancelCostItemMutation(api) });
-  const run = async (item: CostItem, work: () => Promise<unknown>, status: string, removed = false): Promise<boolean> => {
+  const run = async (
+    item: CostItem,
+    work: () => Promise<unknown>,
+    status: string,
+    removed = false,
+  ): Promise<boolean> => {
     setError(undefined);
     try {
       await work();
@@ -264,23 +301,38 @@ export function useCostItemActions(onDone: (item: CostItem, status: string, remo
         () =>
           update.mutateAsync({
             id: item.id,
-            body: { name: label.name.trim(), provider: label.provider.trim(), category: label.category, memo: label.memo.trim() },
+            body: {
+              name: label.name.trim(),
+              provider: label.provider.trim(),
+              category: label.category,
+              memo: label.memo.trim(),
+            },
           }),
         t("client:admin.finance.relabeled", { name: label.name.trim() }),
       ),
     revise: (item, effectiveOn, price) =>
       run(
         item,
-        () => revise.mutateAsync({ id: item.id, body: { effective_on: effectiveOn, price: { amount: price.amount.trim(), currency: price.currency.trim() } } }),
+        () =>
+          revise.mutateAsync({
+            id: item.id,
+            body: {
+              effective_on: effectiveOn,
+              price: { amount: price.amount.trim(), currency: price.currency.trim() },
+            },
+          }),
         t("client:admin.finance.revised", { name: item.name }),
       ),
     setEnd: (item, endsOn) =>
       run(
         item,
         () => end.mutateAsync({ id: item.id, endsOn }),
-        t(endsOn === undefined ? "client:admin.finance.end_removed" : "client:admin.finance.ended", { name: item.name }),
+        t(endsOn === undefined ? "client:admin.finance.end_removed" : "client:admin.finance.ended", {
+          name: item.name,
+        }),
       ),
-    cancel: (item) => run(item, () => cancel.mutateAsync(item.id), t("client:admin.finance.canceled", { name: item.name }), true),
+    cancel: (item) =>
+      run(item, () => cancel.mutateAsync(item.id), t("client:admin.finance.canceled", { name: item.name }), true),
     labelErrors,
     priceErrors,
     error,
@@ -306,7 +358,11 @@ export function useRunBillingImport() {
     },
     onError: (failure) => {
       const tooSoon = failure instanceof ApiError && failure.status === 429;
-      setResult({ error: tooSoon ? t("client:admin.finance.imports.too_soon") : t("client:admin.finance.imports.failed", { reason: errorMessage(failure) }) });
+      setResult({
+        error: tooSoon
+          ? t("client:admin.finance.imports.too_soon")
+          : t("client:admin.finance.imports.failed", { reason: errorMessage(failure) }),
+      });
     },
   });
   return {

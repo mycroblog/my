@@ -80,7 +80,10 @@ export function VoiceStage({ room, isHost, renderHeading }: VoiceStageProps) {
   const moderation = useVoiceModeration(room);
   const stage = useVoiceStage(room, inCall, controls?.micOn ?? false);
   const [removing, setRemoving] = useState<VoiceRoomParticipant | undefined>(undefined);
-  const removingName = removing === undefined ? "" : (stage.speakers.concat(stage.listeners).find((entry) => entry.participant === removing)?.name ?? "");
+  const removingName =
+    removing === undefined
+      ? ""
+      : (stage.speakers.concat(stage.listeners).find((entry) => entry.participant === removing)?.name ?? "");
   const onOperate = (participant: VoiceRoomParticipant, operation: VoiceParticipantOperation) => {
     if (operation === "remove") setRemoving(participant);
     else moderation.operate(participant, operation);
@@ -96,7 +99,12 @@ export function VoiceStage({ room, isHost, renderHeading }: VoiceStageProps) {
     <>
       <Card padding="4">
         <Stack gap="6">
-          <RoomHead room={room} isHost={isHost} renderHeading={renderHeading} phase={controls === null ? undefined : callPhaseText(t, controls)} />
+          <RoomHead
+            room={room}
+            isHost={isHost}
+            renderHeading={renderHeading}
+            phase={controls === null ? undefined : callPhaseText(t, controls)}
+          />
           {moderation.error !== undefined && (
             <InlineError size="inherit" alert>
               {t("client:voice.call.action_failed", { reason: moderation.error })}
@@ -141,7 +149,13 @@ export function VoiceStage({ room, isHost, renderHeading }: VoiceStageProps) {
         {inCall === undefined || controls === null ? (
           call.status === "outside" && <JoinDock call={call} />
         ) : (
-          <CallDockControls room={room} call={inCall} controls={controls} moderation={moderation}hands={raisedHands(room)} />
+          <CallDockControls
+            room={room}
+            call={inCall}
+            controls={controls}
+            moderation={moderation}
+            hands={raisedHands(room)}
+          />
         )}
       </ShellDock>
     </>
@@ -160,7 +174,10 @@ function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { ph
         <Cluster gap="2" align="center">
           <LivePill label={t("client:voice.room.live")} />
           <Hint as="span">
-            {t("client:voice.room.stats", { people: t("client:voice.room.participants_count", { count: room.participants.length }), duration: openFor })}
+            {t("client:voice.room.stats", {
+              people: t("client:voice.room.participants_count", { count: room.participants.length }),
+              duration: openFor,
+            })}
           </Hint>
           {phase !== undefined && <Hint as="span">{phase}</Hint>}
         </Cluster>
@@ -244,7 +261,12 @@ function RoomMenu({ room }: { room: VoiceRoom }) {
           </MenuItem>
         </Menu>
       </MenuTrigger>
-      <ReportDialog account={room.host} voiceRoom={{ id: room.id, name: room.name }} isOpen={isReporting} onOpenChange={setIsReporting} />
+      <ReportDialog
+        account={room.host}
+        voiceRoom={{ id: room.id, name: room.name }}
+        isOpen={isReporting}
+        onOpenChange={setIsReporting}
+      />
     </>
   );
 }
@@ -285,12 +307,23 @@ function StageGroup({ heading, size, entries, onOperate, onListen }: StageGroupP
             speaking={entry.speaking}
             muted={entry.muted}
             handRaised={entry.handRaised}
-            reaction={entry.reaction === undefined ? undefined : { content: <ReactionContent reaction={entry.reaction} images={images} />, label: t("client:voice.participant.reacted_with", { emoji: entry.reaction.emoji }) }}
+            reaction={
+              entry.reaction === undefined
+                ? undefined
+                : {
+                    content: <ReactionContent reaction={entry.reaction} images={images} />,
+                    label: t("client:voice.participant.reacted_with", { emoji: entry.reaction.emoji }),
+                  }
+            }
             labels={labels}
             menu={
               <Menu aria-label={t("client:voice.moderate.menu", { name: entry.name })} placement="bottom">
-                <MenuItem href={profilePath(entry.participant.account.acct)}>{t("client:voice.participant.profile")}</MenuItem>
-                {entry.isSelf && onListen !== undefined && <MenuItem onAction={onListen}>{t("client:voice.call.listen")}</MenuItem>}
+                <MenuItem href={profilePath(entry.participant.account.acct)}>
+                  {t("client:voice.participant.profile")}
+                </MenuItem>
+                {entry.isSelf && onListen !== undefined && (
+                  <MenuItem onAction={onListen}>{t("client:voice.call.listen")}</MenuItem>
+                )}
                 {entry.operations.map((operation) => (
                   <MenuItem
                     key={operation}
@@ -311,7 +344,13 @@ function StageGroup({ heading, size, entries, onOperate, onListen }: StageGroupP
 }
 
 /** A reaction as it is drawn: the server's custom emoji, or the Unicode emoji as text. */
-function ReactionContent({ reaction, images }: { reaction: VoiceReactionShown; images: ReturnType<typeof useCustomEmojiImages> }) {
+function ReactionContent({
+  reaction,
+  images,
+}: {
+  reaction: VoiceReactionShown;
+  images: ReturnType<typeof useCustomEmojiImages>;
+}) {
   const shortcode = /^:([^\s:]+):$/u.exec(reaction.emoji)?.[1];
   const image = shortcode === undefined ? undefined : images.get(shortcode);
   return image === undefined ? <span dir="auto">{reaction.emoji}</span> : <CustomEmoji emoji={image} />;

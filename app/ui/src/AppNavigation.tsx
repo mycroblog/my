@@ -21,9 +21,7 @@ import { RailItem, type RailItemBadge } from "./RailItem";
 
 const appNav = tv({
   slots: {
-    base: [
-      "z-10 bg-surface-raised px-[max(env(safe-area-inset-left),env(safe-area-inset-right))]",
-    ],
+    base: ["z-10 bg-surface-raised px-[max(env(safe-area-inset-left),env(safe-area-inset-right))]"],
     header: "mx-2 hidden px-3 pt-4 pb-2 lg:block",
     list: "flex",
     // The rail's main action (from md); below md the page floats its own button (`AppShell` `floating`).
@@ -154,7 +152,15 @@ export type AppNavItemProps = {
 };
 
 /** One item of the navigation: a `RailItem` in a list item. */
-export function AppNavItem({ href, icon, label, current = false, badge, shows = "always", prominent }: AppNavItemProps) {
+export function AppNavItem({
+  href,
+  icon,
+  label,
+  current = false,
+  badge,
+  shows = "always",
+  prominent,
+}: AppNavItemProps) {
   const placement = use(PlacementContext);
   const slots = appNavItem({ shows, placement });
   const side = placement === "side";
@@ -166,7 +172,14 @@ export function AppNavItem({ href, icon, label, current = false, badge, shows = 
         label={label}
         current={current}
         form={side ? "tab" : "top"}
-        {...(side && { classNames: { item: slots.railItem(), pill: slots.railPill(), badge: slots.railBadge(), label: slots.railLabel() } })}
+        {...(side && {
+          classNames: {
+            item: slots.railItem(),
+            pill: slots.railPill(),
+            badge: slots.railBadge(),
+            label: slots.railLabel(),
+          },
+        })}
         {...(badge !== undefined && { badge })}
         {...(prominent !== undefined && { prominent })}
       />

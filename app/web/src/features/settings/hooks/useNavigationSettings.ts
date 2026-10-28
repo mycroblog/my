@@ -8,7 +8,16 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { navigationKey, type StoredNavigation, useStorage } from "../../../lib/storage";
 
 /** The items the user arranges, in their default order. The staff's areas (ADR-0058) follow them and are not arranged. */
-const navigationEntryIds = ["home", "local", "public", "notifications", "search", "profile", "bookmarks", "settings"] as const;
+const navigationEntryIds = [
+  "home",
+  "local",
+  "public",
+  "notifications",
+  "search",
+  "profile",
+  "bookmarks",
+  "settings",
+] as const;
 
 export type NavigationEntryId = (typeof navigationEntryIds)[number];
 
@@ -54,7 +63,10 @@ function save(entries: readonly NavigationEntry[]): void {
     navigationKey.remove();
     return;
   }
-  navigationKey.write({ order: entries.map((entry) => entry.id), hidden: entries.filter((entry) => !entry.shown).map((entry) => entry.id) });
+  navigationKey.write({
+    order: entries.map((entry) => entry.id),
+    hidden: entries.filter((entry) => !entry.shown).map((entry) => entry.id),
+  });
 }
 
 /** The navigation's items in the user's order, rendering again when they change here or in another tab. */
@@ -91,7 +103,13 @@ export function useNavigationSettings(): NavigationSettings {
       if (moved === undefined || to < 0 || to >= entries.length) return;
       const next = entries.toSpliced(from, 1).toSpliced(to, 0, moved);
       save(next);
-      announce(t("client:settings.navigation.moved", { name: t(navigationEntryLabels[id]), position: to + 1, count: next.length }));
+      announce(
+        t("client:settings.navigation.moved", {
+          name: t(navigationEntryLabels[id]),
+          position: to + 1,
+          count: next.length,
+        }),
+      );
     },
     setShown: (id, shown) => {
       if (id === alwaysShownEntry) return;

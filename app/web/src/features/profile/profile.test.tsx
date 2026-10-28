@@ -7,7 +7,14 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, problem, resumableSession } from "../../test/msw/http";
-import { imageFixture, otherAccountFixture, relationshipFixture, statusPage, timelineStatusFixture, viewerFixture } from "../../test/fixtures";
+import {
+  imageFixture,
+  otherAccountFixture,
+  relationshipFixture,
+  statusPage,
+  timelineStatusFixture,
+  viewerFixture,
+} from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
@@ -20,7 +27,9 @@ function bobServer(relationship: Partial<Relationship> = {}, account: Partial<ty
   const changes: string[] = [];
   server.use(
     http.get(`${apiBase}/accounts/lookup`, ({ request }) =>
-      new URL(request.url).searchParams.get("acct") === "bob" ? HttpResponse.json({ ...bob, ...account }) : problem(404, "about:blank", "Not Found"),
+      new URL(request.url).searchParams.get("acct") === "bob"
+        ? HttpResponse.json({ ...bob, ...account })
+        : problem(404, "about:blank", "Not Found"),
     ),
     http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([relationshipFixture(bob.id, relationship)])),
     http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
@@ -49,7 +58,13 @@ function main() {
 
 describe("a profile", () => {
   test("shows the account's header, its counts and its posts", async () => {
-    bobServer({}, { note: "<p>I bake bread.</p>", fields: [{ name: "Site", value: '<a href="https://bob.example">bob.example</a>' }] });
+    bobServer(
+      {},
+      {
+        note: "<p>I bake bread.</p>",
+        fields: [{ name: "Site", value: '<a href="https://bob.example">bob.example</a>' }],
+      },
+    );
     await renderApp({ path: "/@bob" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Bob" })).toBeInTheDocument();
@@ -70,7 +85,11 @@ describe("a profile", () => {
   });
 
   test("draws the custom emoji of the name, the profile text and the fields, read as their shortcodes", async () => {
-    const blobcat = { shortcode: "blobcat", url: "https://my.example/media/proxy/e1/full", static_url: "https://my.example/media/proxy/e1/full" };
+    const blobcat = {
+      shortcode: "blobcat",
+      url: "https://my.example/media/proxy/e1/full",
+      static_url: "https://my.example/media/proxy/e1/full",
+    };
     bobServer(
       {},
       {
@@ -90,23 +109,38 @@ describe("a profile", () => {
   });
 
   test("tells that the account moved, with a link to the new account", async () => {
-    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example" };
+    const carol = {
+      ...otherAccountFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000c9",
+      username: "carol",
+      acct: "carol@new.example",
+    };
     bobServer({}, { moved: carol });
     await renderApp({ path: "/@bob" });
 
     await screen.findByRole("heading", { level: 1, name: "Bob" });
     const note = within(main()).getByText(/moved to/);
-    expect(within(note).getByRole("link", { name: "@carol@new.example" })).toHaveAttribute("href", "/@carol@new.example");
+    expect(within(note).getByRole("link", { name: "@carol@new.example" })).toHaveAttribute(
+      "href",
+      "/@carol@new.example",
+    );
     // The link to manage the move is for the moved account itself.
     expect(within(main()).queryByRole("link", { name: "Manage the move" })).not.toBeInTheDocument();
   });
 
   test("shows the viewer's own moved profile with the way to manage the move", async () => {
-    const carol = { ...otherAccountFixture, id: "0192f0c4-7a8e-7000-8000-0000000000c9", username: "carol", acct: "carol@new.example" };
+    const carol = {
+      ...otherAccountFixture,
+      id: "0192f0c4-7a8e-7000-8000-0000000000c9",
+      username: "carol",
+      acct: "carol@new.example",
+    };
     server.use(
       resumableSession(),
       http.get(`${apiBase}/accounts/verify_credentials`, () => HttpResponse.json({ ...viewerFixture, moved: carol })),
-      http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json({ ...viewerFixture, moved: carol, followers_count: 0, following_count: 0 })),
+      http.get(`${apiBase}/accounts/lookup`, () =>
+        HttpResponse.json({ ...viewerFixture, moved: carol, followers_count: 0, following_count: 0 }),
+      ),
     );
     await renderApp({ path: "/@alice" });
 
@@ -130,7 +164,11 @@ describe("a profile", () => {
     if (headerImage === undefined) throw new Error("no header image");
     fireEvent.error(headerImage);
     await waitFor(() => {
-      expect(within(main()).getAllByRole("presentation").map((image) => image.getAttribute("src"))).not.toContain(header);
+      expect(
+        within(main())
+          .getAllByRole("presentation")
+          .map((image) => image.getAttribute("src")),
+      ).not.toContain(header);
     });
   });
 
@@ -161,9 +199,14 @@ describe("a profile", () => {
     server.use(resumableSession());
     await renderApp({ path: "/@alice" });
 
-    expect(await within(await screen.findByRole("main")).findByRole("link", { name: "Edit profile" })).toHaveAttribute("href", "/settings/profile");
+    expect(await within(await screen.findByRole("main")).findByRole("link", { name: "Edit profile" })).toHaveAttribute(
+      "href",
+      "/settings/profile",
+    );
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
+    expect(
+      within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Profile" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   test("opens from the navigation's Profile at the viewer's own address", async () => {
@@ -195,7 +238,12 @@ describe("a profile", () => {
     await user.click(screen.getByRole("tab", { name: "Without boosts" }));
     expect(await screen.findByRole("feed", { name: "Without boosts" })).toBeInTheDocument();
     // The posts tab also reads the pinned posts (FR-403); the other tabs do not.
-    expect(queries.toSorted()).toEqual(["", "exclude_replies=true", "exclude_replies=true&exclude_boosts=true", "pinned=true"]);
+    expect(queries.toSorted()).toEqual([
+      "",
+      "exclude_replies=true",
+      "exclude_replies=true&exclude_boosts=true",
+      "pinned=true",
+    ]);
   });
 });
 
@@ -291,7 +339,9 @@ describe("the follow button", () => {
 
     await user.click(await screen.findByRole("button", { name: "Follow" }));
 
-    expect(await screen.findAllByText("Could not change your relationship with the account: Service Unavailable")).not.toHaveLength(0);
+    expect(
+      await screen.findAllByText("Could not change your relationship with the account: Service Unavailable"),
+    ).not.toHaveLength(0);
     expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
   });
 });
@@ -341,7 +391,17 @@ describe("the follow lists", () => {
         return HttpResponse.json(
           cursor === null
             ? { accounts: [viewerFixture], next_cursor: "page-2" }
-            : { accounts: [{ ...viewerFixture, id: "0192f0c4-7a8e-7000-8000-000000000003", username: "carol", acct: "carol@remote.example", display_name: "" }] },
+            : {
+                accounts: [
+                  {
+                    ...viewerFixture,
+                    id: "0192f0c4-7a8e-7000-8000-000000000003",
+                    username: "carol",
+                    acct: "carol@remote.example",
+                    display_name: "",
+                  },
+                ],
+              },
         );
       }),
     );
@@ -349,11 +409,17 @@ describe("the follow lists", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Followers of \u2068Bob\u2069" })).toBeInTheDocument();
     expect(within(main()).getByRole("link", { name: "Alice @alice" })).toHaveAttribute("href", "/@alice");
-    expect(within(main()).getByRole("link", { name: "Back to the profile of \u2068Bob\u2069" })).toHaveAttribute("href", "/@bob");
+    expect(within(main()).getByRole("link", { name: "Back to the profile of \u2068Bob\u2069" })).toHaveAttribute(
+      "href",
+      "/@bob",
+    );
 
     await user.click(screen.getByRole("button", { name: "Show more" }));
 
-    expect(await within(main()).findByRole("link", { name: "carol @carol@remote.example" })).toHaveAttribute("href", "/@carol@remote.example");
+    expect(await within(main()).findByRole("link", { name: "carol @carol@remote.example" })).toHaveAttribute(
+      "href",
+      "/@carol@remote.example",
+    );
     expect(cursors).toEqual([null, "page-2"]);
     expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
   });
@@ -389,7 +455,9 @@ describe("the follow lists", () => {
     server.use(http.get(`${apiBase}/accounts/:id/following`, () => HttpResponse.json({ accounts: [] })));
     await renderApp({ path: "/@bob/following" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Accounts \u2068Bob\u2069 follows" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Accounts \u2068Bob\u2069 follows" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Not following anyone yet" })).toBeInTheDocument();
   });
 });
@@ -409,10 +477,9 @@ describe("a profile of another server", () => {
     const feed = await screen.findByRole("feed", { name: "Posts" });
     const article = within(feed).getByRole("article", { name: /^Carol @carol@remote\.example / });
     // Signed out: no actions, but the link to the post on its server.
-    expect(within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" })).toHaveAttribute(
-      "href",
-      "https://remote.example/@carol/1",
-    );
+    expect(
+      within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
+    ).toHaveAttribute("href", "https://remote.example/@carol/1");
     expect(within(article).getByText("Cats")).toBeVisible();
     await user.click(within(article).getByRole("button", { name: "Show content", expanded: false }));
     expect(within(article).getByText("Hello from another server!")).toBeVisible();
@@ -457,14 +524,22 @@ describe("the badges of a profile", () => {
     server.use(
       http.get(`${apiBase}/accounts/:id/statuses`, ({ request }) =>
         HttpResponse.json(
-          statusPage(new URL(request.url).searchParams.get("pinned") === "true" ? [] : [{ ...timelineStatusFixture, account: { ...bob, badges: [...badges] } }]),
+          statusPage(
+            new URL(request.url).searchParams.get("pinned") === "true"
+              ? []
+              : [{ ...timelineStatusFixture, account: { ...bob, badges: [...badges] } }],
+          ),
         ),
       ),
     );
     await renderApp({ path: "/@bob" });
 
     const list = await screen.findByRole("list", { name: "Badges" });
-    expect(within(list).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Staff", "داعم"]);
+    expect(
+      within(list)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["Staff", "داعم"]);
     // The label is the staff's text in any script and no recorded language (web-client/README.md Y10).
     expect(within(list).getByText("داعم")).toHaveAttribute("dir", "auto");
     expect(within(list).getByText("داعم")).toHaveAttribute("lang", "");

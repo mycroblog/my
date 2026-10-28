@@ -16,7 +16,8 @@ beforeEach(() => {
   document.documentElement.dir = "ltr";
 });
 
-const invalidCode = () => problem(422, "/api/v1/problems/invalid-two-factor-code", "The code is incorrect or was already used.");
+const invalidCode = () =>
+  problem(422, "/api/v1/problems/invalid-two-factor-code", "The code is incorrect or was already used.");
 
 /** The server's two-factor authentication of the viewer, which the operations change, with the codes they received. */
 function twoFactorServer(initial: Schemas["TwoFactor"]) {
@@ -65,7 +66,10 @@ describe("two-factor authentication", () => {
     await user.click(screen.getByRole("button", { name: "Set up" }));
 
     const qr = await screen.findByRole("img", { name: "QR code for your authenticator app" });
-    expect(qr).toHaveAttribute("viewBox", `0 0 ${String(totpSetupFixture.qr_code.size)} ${String(totpSetupFixture.qr_code.size)}`);
+    expect(qr).toHaveAttribute(
+      "viewBox",
+      `0 0 ${String(totpSetupFixture.qr_code.size)} ${String(totpSetupFixture.qr_code.size)}`,
+    );
     expect(screen.getByText("JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP")).toHaveAttribute("dir", "ltr");
 
     const code = screen.getByRole("textbox", { name: "Authentication code" });
@@ -80,7 +84,11 @@ describe("two-factor authentication", () => {
 
     expect(await screen.findByText("Two-factor authentication is on.")).toBeInTheDocument();
     const saved = screen.getByRole("region", { name: "Save your recovery codes" });
-    expect(within(saved).getAllByRole("listitem").map((item) => item.textContent)).toEqual(recoveryCodesFixture.recovery_codes);
+    expect(
+      within(saved)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(recoveryCodesFixture.recovery_codes);
     expect(screen.getByText("On")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "QR code for your authenticator app" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Turn off two-factor authentication" })).toBeInTheDocument();
@@ -89,7 +97,9 @@ describe("two-factor authentication", () => {
 
   test("an expired setup gives way to a new one", async () => {
     twoFactorServer({ enabled: false });
-    server.use(http.post(`${apiBase}/two_factor/totp`, () => problem(422, "/api/v1/problems/totp-setup-expired", "Expired")));
+    server.use(
+      http.post(`${apiBase}/two_factor/totp`, () => problem(422, "/api/v1/problems/totp-setup-expired", "Expired")),
+    );
     const { user } = await renderApp({ path: "/settings/two-factor" });
 
     await user.click(await screen.findByRole("button", { name: "Set up" }));
@@ -112,7 +122,9 @@ describe("two-factor authentication", () => {
     await user.type(within(recovery).getByRole("textbox", { name: "Authentication code" }), "123456");
     await user.click(within(recovery).getByRole("button", { name: "Replace recovery codes" }));
     expect(await screen.findByText("New recovery codes are ready. The old ones no longer work.")).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Save your recovery codes" })).getByText("2222-3333-4444-5555")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Save your recovery codes" })).getByText("2222-3333-4444-5555"),
+    ).toBeInTheDocument();
 
     const off = screen.getByRole("region", { name: "Turn off two-factor authentication" });
     await user.type(within(off).getByRole("textbox", { name: "Authentication code" }), "wrong");
@@ -145,6 +157,8 @@ describe("two-factor authentication", () => {
     const off = await screen.findByRole("region", { name: "Turn off two-factor authentication" });
     await user.type(within(off).getByRole("textbox", { name: "Authentication code" }), "123456");
     await user.click(within(off).getByRole("button", { name: "Turn off" }));
-    expect(await within(off).findByRole("alert")).toHaveTextContent("Too many incorrect codes: Try again in 60 seconds.");
+    expect(await within(off).findByRole("alert")).toHaveTextContent(
+      "Too many incorrect codes: Try again in 60 seconds.",
+    );
   });
 });

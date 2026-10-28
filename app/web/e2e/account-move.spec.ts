@@ -46,7 +46,12 @@ const target = {
 };
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: { "Cache-Control": "no-store" },
+    body: JSON.stringify(body),
+  });
 }
 
 /** Plays the client API of a signed-in user who has one alias; returns what the move calls received. */
@@ -55,22 +60,46 @@ async function userServer(page: Page) {
   let moved = false;
   const moves: string[] = [];
   const cancellations: string[] = [];
-  await page.route("**/oauth/token/refresh", (route) => json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }));
+  await page.route("**/oauth/token/refresh", (route) =>
+    json(route, { access_token: "e2e-token", token_type: "Bearer", expires_in: 3600, scope: "read write follow" }),
+  );
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
-    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance") return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
+    if (request.headers()["authorization"] !== "Bearer e2e-token" && path !== "/instance")
+      return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     const key = `${request.method()} ${path}`;
     if (key === "GET /instance") {
-      return json(route, { domain: "my.example", name: "my example", version: "0.0.0", source_url: "https://github.com/mycroblog/my", registrations: { mode: "open" }, federation: { mode: "both" }, limits: { max_post_characters: 500, require_media_description: false }, timelines: { local: "everyone", federated: "everyone" }, rules: [] });
+      return json(route, {
+        domain: "my.example",
+        name: "my example",
+        version: "0.0.0",
+        source_url: "https://github.com/mycroblog/my",
+        registrations: { mode: "open" },
+        federation: { mode: "both" },
+        limits: { max_post_characters: 500, require_media_description: false },
+        timelines: { local: "everyone", federated: "everyone" },
+        rules: [],
+      });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moved ? { ...viewer, moved: target } : viewer);
     if (key === "GET /preferences") {
-      return json(route, { locale, time_zone: "UTC", default_visibility: "public", default_post_language: "und", require_media_description: false, timeline_languages: [] });
+      return json(route, {
+        locale,
+        time_zone: "UTC",
+        default_visibility: "public",
+        default_post_language: "und",
+        require_media_description: false,
+        timeline_languages: [],
+      });
     }
     if (key === "GET /accounts/aliases") {
-      return json(route, { aliases: [{ uri: "https://old.example/users/alice", acct: "alice@old.example", created_at: "2026-10-01T09:00:00Z" }] });
+      return json(route, {
+        aliases: [
+          { uri: "https://old.example/users/alice", acct: "alice@old.example", created_at: "2026-10-01T09:00:00Z" },
+        ],
+      });
     }
     if (key === "GET /accounts/password") return json(route, { has_password: true });
     // The page also loads the passkeys and the linked accounts, which decide how the move is confirmed.
@@ -113,7 +142,10 @@ for (const path of ["/settings/aliases", "/settings/move"]) {
 }
 
 test.describe("moving the account", () => {
-  test("moves by keyboard through the dialog that asks for the password, then cancels the move", async ({ page, makeAxeBuilder }) => {
+  test("moves by keyboard through the dialog that asks for the password, then cancels the move", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     const locale = test.info().project.use.locale ?? "en";
     const catalog = readCatalog(locale);
     const api = await userServer(page);
@@ -136,7 +168,9 @@ test.describe("moving the account", () => {
     await expectNoHorizontalScroll(page);
     expect(api.moves).toEqual([]);
 
-    await expect(dialog.getByRole("link", { name: catalog["account_move.move.confirm.export"]?.defaultMessage ?? "" })).toHaveAttribute("href", "/settings/import-export");
+    await expect(
+      dialog.getByRole("link", { name: catalog["account_move.move.confirm.export"]?.defaultMessage ?? "" }),
+    ).toHaveAttribute("href", "/settings/import-export");
     await page.keyboard.type("secret");
     await page.keyboard.press("Enter");
     await expect(dialog).toBeHidden();
@@ -164,7 +198,10 @@ test.describe("moving the account", () => {
   test("moves with a pointer after an attempt without the password", async ({ page }) => {
     const api = await userServer(page);
     await page.goto("/settings/move");
-    await page.getByRole("main").getByRole("textbox").fill("@carol@a-rather-long-server-name-for-the-new-account.example");
+    await page
+      .getByRole("main")
+      .getByRole("textbox")
+      .fill("@carol@a-rather-long-server-name-for-the-new-account.example");
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("alertdialog");
     const password = dialog.locator('input[type="password"]');

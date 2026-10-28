@@ -95,7 +95,10 @@ export function useAnnounceForm(current: AdminServiceClosure, onDone: (status: s
         : opens !== undefined && until !== undefined && until < opens
           ? t("client:admin.closure.export_until.before")
           : undefined,
-    message: characterCount(message) > closureMessageLimit ? t("client:admin.closure.message.too_long", { max: String(closureMessageLimit) }) : undefined,
+    message:
+      characterCount(message) > closureMessageLimit
+        ? t("client:admin.closure.message.too_long", { max: String(closureMessageLimit) })
+        : undefined,
   };
   return {
     closesAt,
@@ -111,7 +114,8 @@ export function useAnnounceForm(current: AdminServiceClosure, onDone: (status: s
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       setSubmitted(true);
-      if (announce.isPending || opens === undefined || errors.exportUntil !== undefined || errors.message !== undefined) return;
+      if (announce.isPending || opens === undefined || errors.exportUntil !== undefined || errors.message !== undefined)
+        return;
       const body: AnnounceServiceClosure = {
         closes_at: opens.toISOString(),
         ...(until === undefined ? {} : { export_until: until.toISOString() }),

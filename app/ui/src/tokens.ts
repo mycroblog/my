@@ -39,7 +39,7 @@ export type AvatarTint = (typeof avatarTints)[number];
 /** The kinds of the highlight layer behind a text field (ADR-0092 §4); each is a token `highlight-<kind>` under fg text. */
 const highlightKinds = ["mention", "hashtag", "url", "shortcode", "over"] as const;
 
-const onEverySurface =(fg: string, use: ContrastUse): ColorPair[] => surfaces.map((bg) => ({ fg, bg, use }));
+const onEverySurface = (fg: string, use: ContrastUse): ColorPair[] => surfaces.map((bg) => ({ fg, bg, use }));
 
 export const colorPairs: readonly ColorPair[] = [
   ...onEverySurface("fg", "text"),
@@ -130,7 +130,14 @@ export const tokenRules: readonly TokenRule[] = [
  * pairs keep their contrast only as they are (ADR-0071), the mango of a raised hand in a voice chat call, a brand mark
  * like the logo's spark, and `--radius-avatar`, a percentage of the avatar's side.
  */
-export const fixedTokens: readonly RegExp[] = [/^palette-/, /^shadow-/, /^color-badge-/, /^color-avatar-/, /^color-hand(?:-fg)?$/, /^radius-avatar$/];
+export const fixedTokens: readonly RegExp[] = [
+  /^palette-/,
+  /^shadow-/,
+  /^color-badge-/,
+  /^color-avatar-/,
+  /^color-hand(?:-fg)?$/,
+  /^radius-avatar$/,
+];
 
 /**
  * The pairs of colorPairs that a server theme can change, which the server checks when it saves a theme

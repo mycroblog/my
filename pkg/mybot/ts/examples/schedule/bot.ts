@@ -20,7 +20,13 @@ export function createBot(options: BotOptions, timeZone = "UTC"): Bot {
 
 /** The text of the post of the morning at (milliseconds since the Unix epoch) in timeZone. */
 function greeting(at: number, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(at);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).formatToParts(at);
   const part = (type: Intl.DateTimeFormatPartTypes): string => parts.find((p) => p.type === type)?.value ?? "";
   return `Good morning! Today is ${part("weekday")}, ${part("day")} ${part("month")} ${part("year")}.`;
 }

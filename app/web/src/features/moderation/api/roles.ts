@@ -44,7 +44,9 @@ export function changeRoleMutation(api: Api) {
     mutationFn: async ({ accountId, role, kind }: RoleChange): Promise<AdminRoleList> => {
       const init = { params: { path: { id: accountId, role } } };
       const { data, error } =
-        kind === "grant" ? await api.fetch.PUT("/admin/accounts/{id}/roles/{role}", init) : await api.fetch.DELETE("/admin/accounts/{id}/roles/{role}", init);
+        kind === "grant"
+          ? await api.fetch.PUT("/admin/accounts/{id}/roles/{role}", init)
+          : await api.fetch.DELETE("/admin/accounts/{id}/roles/{role}", init);
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -59,7 +61,13 @@ export function changeRoleMutation(api: Api) {
  * answered go into the cache. A change of the viewer's own
  * roles (`viewerId`) also marks the viewer, whose permissions decide what the app offers.
  */
-export async function cacheChangedRoles(api: Api, queryClient: QueryClient, accountId: string, roles: AdminRoleList, viewerId: string): Promise<void> {
+export async function cacheChangedRoles(
+  api: Api,
+  queryClient: QueryClient,
+  accountId: string,
+  roles: AdminRoleList,
+  viewerId: string,
+): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: adminAccountQueryOptions(api, accountId).queryKey }),
     queryClient.invalidateQueries({ predicate: (query) => isAuditLogQuery(query.queryKey) }),
