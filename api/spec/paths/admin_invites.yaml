@@ -3,8 +3,10 @@ get:
   operationId: listInvites
   summary: List the invites
   description: |
-    The invites that let people sign up while the registration mode is `invite` (FR-001),
-    newest first, with how they have been used. Needs the `manage_invites` permission.
+    The invites that let people sign up while the registration mode is `open`, `approval`,
+    or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+    created them: the staff's and the members' own invites. Needs the `manage_invites`
+    permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
@@ -27,9 +29,12 @@ post:
   operationId: createInvite
   summary: Create an invite
   description: |
-    Creates an invite with a new random code. It works only while the registration mode is
-    `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-    years is a 422 naming it. Needs the `manage_invites` permission.
+    Creates an invite of the staff with a new random code; the caps of the members' invites
+    do not apply to it. People sign up with it while the registration mode is `open`,
+    `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+    409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+    `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+    permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]

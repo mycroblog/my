@@ -844,21 +844,35 @@ func (l *Localizer) ServerAuthSignUpErrorSummary() string {
 	return l.format("server:auth.sign_up.error_summary", nil)
 }
 
-// ServerAuthSignUpInviteHint formats "server:auth.sign_up.invite_hint". Hint under the invite code field.
+// ServerAuthSignUpInviteHint formats "server:auth.sign_up.invite_hint". Hint under the invite code field, while the server accepts sign-ups by invitation only.
 //
 //	en: This server accepts new accounts by invitation only.
 func (l *Localizer) ServerAuthSignUpInviteHint() string {
 	return l.format("server:auth.sign_up.invite_hint", nil)
 }
 
-// ServerAuthSignUpInviteInvalid formats "server:auth.sign_up.invite_invalid". Error under the invite code field when the code is unknown, expired, revoked, or used up. Must not say which.
+// ServerAuthSignUpInviteHintApproval formats "server:auth.sign_up.invite_hint_approval". Hint under the optional invite code field, while new accounts wait for a moderator's review unless the applicant has an invite.
+//
+//	en: If someone invited you, enter the invite code: your account can be used at once, without waiting for review. You can also sign up without one.
+func (l *Localizer) ServerAuthSignUpInviteHintApproval() string {
+	return l.format("server:auth.sign_up.invite_hint_approval", nil)
+}
+
+// ServerAuthSignUpInviteHintOptional formats "server:auth.sign_up.invite_hint_optional". Hint under the optional invite code field, while the server accepts sign-ups without an invite.
+//
+//	en: If someone invited you, enter the invite code. You can also sign up without one.
+func (l *Localizer) ServerAuthSignUpInviteHintOptional() string {
+	return l.format("server:auth.sign_up.invite_hint_optional", nil)
+}
+
+// ServerAuthSignUpInviteInvalid formats "server:auth.sign_up.invite_invalid". Error under the invite code field when the code is unknown, expired, revoked, used up, or of a member who can no longer invite. Must not say which.
 //
 //	en: This invite code is not valid. It may have expired or been used up.
 func (l *Localizer) ServerAuthSignUpInviteInvalid() string {
 	return l.format("server:auth.sign_up.invite_invalid", nil)
 }
 
-// ServerAuthSignUpInviteLabel formats "server:auth.sign_up.invite_label". Label of the invite code field, shown when the server accepts sign-ups by invitation only.
+// ServerAuthSignUpInviteLabel formats "server:auth.sign_up.invite_label". Label of the invite code field of the registration form, required while the server accepts sign-ups by invitation only and optional otherwise.
 //
 //	en: Invite code
 func (l *Localizer) ServerAuthSignUpInviteLabel() string {
@@ -1570,6 +1584,27 @@ func (l *Localizer) ServerErrorsInvalidToken() string {
 //	en: The value of {name} is invalid.
 func (l *Localizer) ServerErrorsInvalidValue(name string) string {
 	return l.format("server:errors.invalid_value", map[string]any{"name": name})
+}
+
+// ServerErrorsInvitesNotAllowed formats "server:errors.invites.not_allowed". Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts.
+//
+//	en: You can't create invites.
+func (l *Localizer) ServerErrorsInvitesNotAllowed() string {
+	return l.format("server:errors.invites.not_allowed", nil)
+}
+
+// ServerErrorsInvitesRegistrationClosed formats "server:errors.invites.registration_closed". Title of the HTTP 409 API error when a staff member creates an invite while the registration mode is closed.
+//
+//	en: This server takes no new accounts now, so no invite can be created.
+func (l *Localizer) ServerErrorsInvitesRegistrationClosed() string {
+	return l.format("server:errors.invites.registration_closed", nil)
+}
+
+// ServerErrorsInvitesTooMany formats "server:errors.invites.too_many". Title of the HTTP 409 API error when the user creates an invite while holding as many usable invites as the server allows.
+//
+//	en: You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.
+func (l *Localizer) ServerErrorsInvitesTooMany() string {
+	return l.format("server:errors.invites.too_many", nil)
 }
 
 // ServerErrorsLoginProviderLinked formats "server:errors.login_provider.linked". Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account.

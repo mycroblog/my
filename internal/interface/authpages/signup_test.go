@@ -43,9 +43,22 @@ func TestSignUpPageFollowsTheMode(t *testing.T) {
 		status       int
 		want, unwant []string
 	}{
-		{identity.RegistrationOpen, http.StatusOK, []string{`name="username"`, `name="email"`, `name="password"`}, []string{`name="invite_code"`, `name="reason"`}},
-		{identity.RegistrationApproval, http.StatusOK, []string{`<textarea id="sign-up-reason" name="reason"`, `maxlength="1000" dir="auto"`}, []string{`name="invite_code"`}},
-		{identity.RegistrationInvite, http.StatusOK, []string{`id="sign-up-invite" name="invite_code" type="text" value="ABCD"`}, []string{`name="reason"`}},
+		// Every mode but closed takes an invite (ADR-0108 §4): optional in open and approval mode,
+		// required in invite mode, and filled in from ?invite=.
+		{identity.RegistrationOpen, http.StatusOK, []string{
+			`name="username"`, `name="email"`, `name="password"`,
+			`name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby`,
+			"You can also sign up without one.",
+		}, []string{`name="reason"`}},
+		{identity.RegistrationApproval, http.StatusOK, []string{
+			`<textarea id="sign-up-reason" name="reason"`, `maxlength="1000" dir="auto"`,
+			`name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby`,
+			"without waiting for review",
+		}, nil},
+		{identity.RegistrationInvite, http.StatusOK, []string{
+			`id="sign-up-invite" name="invite_code" type="text" value="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false" required`,
+			"This server accepts new accounts by invitation only.",
+		}, []string{`name="reason"`}},
 		{identity.RegistrationClosed, http.StatusForbidden, []string{"This server is not accepting new accounts."}, []string{"<form", `name="username"`}},
 	} {
 		id.mode = tc.mode

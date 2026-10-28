@@ -68,6 +68,10 @@ default locale, who can see the timelines, the instance name, description, terms
 | `user_app_registration` | `true` / `false` | `true` | Whether signed-in users can register their own OAuth apps (public or confidential) with the client API (`POST /api/v1/oauth_apps`). When `false`, registering answers 403. Listing, changing, and deleting registered apps, reissuing secrets, issuing a token to yourself, and authorization by other users keep working |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Who can open voice chat rooms, while the configuration `voice` is not `off` ([configuration](../reference/configuration.md#voice)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `start_voice_rooms`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
+| `invite_creators` | `everyone` / `permitted` | `permitted` | Who can create invites of their own besides the staff with `manage_invites` ([member invites](registration.md#member-invites)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_invites`, which only the built-in `admin` role has by default and which a role of a supporter plan may have. In `approval` mode, a usable invite approves the new user at once, so `everyone` lets every user skip the review |
+| `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
+| `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
+| `member_invite_max_expires_in` | integer 3600-31536000 (seconds) | `2592000` (30 days) | How long one invite that a member creates may work at most. Lowering it does not shorten existing invites |
 | `retention_voice_participants` | integer 30-3650 (days) | `90` | How many days after a voice chat room ended to keep the records of who took part in it: the participations, the speakers and listeners, the raised hands, the invitations, and the removals. The room itself (its name, description, hosts, and how it ended) is kept. The records of a reported room are kept as long as the report, and holds apply as to the other records |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
@@ -235,8 +239,9 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   `{"values": {"<key>": "<value>", ...}}`. All values are strings, normalized and stored as with the CLI. If a single key is
   unknown or a value is invalid, the answer is a 422 that names the key and nothing changes. The changed keys are recorded as
   revisions and in the audit log in the same transaction.
-- Invitations, when the registration mode is `invite`, are created on the moderation screen ("Invites", `/moderation/invites`,
-  permission `manage_invites`; see [invite codes](registration.md#invite-codes)).
+- Invitations, which work in the `open`, `approval`, and `invite` modes, are created on the moderation screen ("Invites",
+  `/moderation/invites`, permission `manage_invites`; see [invite codes](registration.md#invite-codes)), and by members
+  as `invite_creators` allows ([member invites](registration.md#member-invites)).
 
 ## Rules
 

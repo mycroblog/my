@@ -479,15 +479,6 @@ type InstanceThemeRevision struct {
 	RevisedAt       time.Time
 }
 
-type Invite struct {
-	ID              string
-	Code            string
-	CreatedByUserID *string
-	MaxUses         *int32
-	ExpiresAt       *time.Time
-	CreatedAt       time.Time
-}
-
 type LinkCard struct {
 	Url              string
 	CardUrl          string

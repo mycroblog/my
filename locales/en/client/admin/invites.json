@@ -68,8 +68,8 @@
     "description": "Help of the number of sign-ups of an invite."
   },
   "admin.invites.mode_notice": {
-    "defaultMessage": "The server does not take sign-ups with an invite now, so invites let nobody sign up. An administrator changes who may sign up in the server settings.",
-    "description": "Notice on the invites screen when the registration mode is not invite."
+    "defaultMessage": "The server takes no new accounts now, so invites let nobody sign up. An administrator changes who may sign up in the server settings.",
+    "description": "Notice on the invites screen when the registration mode is closed: invites work in the open, approval, and invite modes."
   },
   "admin.invites.never": {
     "defaultMessage": "Never",
@@ -114,6 +114,10 @@
   "admin.invites.state.usable": {
     "defaultMessage": "Usable",
     "description": "State of an invite that people may sign up with."
+  },
+  "admin.invites.state.creator_ineligible": {
+    "defaultMessage": "Inviter can no longer invite",
+    "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
   },
   "admin.invites.summary": {
     "defaultMessage": "Codes that let people sign up when the server takes invites.",

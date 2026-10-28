@@ -61,7 +61,7 @@ describe("the invites", () => {
     await renderApp({ path: "/moderation/invites" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Invites" })).toBeInTheDocument();
-    expect(screen.queryByText(/does not take sign-ups with an invite/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/takes no new accounts now/)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Invites" })).toBeInTheDocument();
     const [exhausted, unlimited] = within(screen.getByRole("table", { name: "Invites" }))
       .getAllByRole("row")
@@ -131,11 +131,23 @@ describe("the invites", () => {
   });
 });
 
-test("says that invites let nobody sign up while the registration mode is not invite", async () => {
+test("says that invites let nobody sign up while the registration mode is closed", async () => {
+  server.use(
+    signedInHandler,
+    operatorHandler(["manage_invites"]),
+    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } })),
+  );
+  await renderApp({ path: "/moderation/invites" });
+
+  expect(await screen.findByText(/takes no new accounts now/)).toBeInTheDocument();
+});
+
+test("invites work in approval mode too, so the screen does not say they let nobody sign up", async () => {
   server.use(signedInHandler, operatorHandler(["manage_invites"]));
   await renderApp({ path: "/moderation/invites" });
 
-  expect(await screen.findByText(/does not take sign-ups with an invite now/)).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: "Invites" })).toBeInTheDocument();
+  expect(screen.queryByText(/takes no new accounts now/)).not.toBeInTheDocument();
 });
 
 test("a viewer without manage_invites sees why instead of the invites, and nothing is read", async () => {

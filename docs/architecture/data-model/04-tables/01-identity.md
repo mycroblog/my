@@ -107,13 +107,14 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `registration_applications` | リソース | `id`, `user_id`, `reason`（`text`、NULL 可）, `invite_id`（NULL 可）, `submitted_at` | 一意 `(user_id)` |
-| `registration_decisions` | イベント | `id`, `application_id`, `decision`（`enum(approved, rejected)`）, `decided_by`（`enum(moderator, system, service_closure)`）, `decided_by_user_id`（NULL 可 = `system`・`service_closure` または CLI による決定）, `note`（NULL 可。1,000 文字まで）, `decided_at` | インデックス `(application_id, id DESC)`。`open` / `invite` モードでは `system` が即時に承認する。サービスの終了の予告の開始で、審査待ちの申請を `service_closure` が却下する（ADR-0088 §2） |
+| `registration_decisions` | イベント | `id`, `application_id`, `decision`（`enum(approved, rejected)`）, `decided_by`（`enum(moderator, system, service_closure)`）, `decided_by_user_id`（NULL 可 = `system`・`service_closure` または CLI による決定）, `note`（NULL 可。1,000 文字まで）, `decided_at` | インデックス `(application_id, id DESC)`。`open` / `invite` モードと、使える招待のある `approval` モードの登録は `system` が即時に承認する。サービスの終了の予告の開始で、審査待ちの申請を `service_closure` が却下する（ADR-0088 §2） |
 | `user_registration_states` | 投影 | `user_id`（PK）, `state`（`enum(pending, approved, rejected)`）, `since` | インデックス `(state, since)`（承認待ち一覧）。行の無い利用者（CLI で作った管理者など）は承認済み |
 | `registration_origins` | リソース | `user_id`（PK）, `ip`, `recorded_at` | インデックス `(ip)`, `(recorded_at)`。登録画面からの登録だけが作る。登録の拒否リスト（FR-719）と同じ IP のアカウントの検索に使い、保持期間（ADR-0038、既定 180 日）を過ぎた行を消去ジョブが消す |
 
 - 登録画面からの登録は、登録モード（インスタンス設定 `registration_mode`、§4.9）に従います。
-  `open` は `system` が即時に承認し、`approval` はモデレーターの決定まで `pending` のまま、`invite` は有効な招待があれば `system` が即時に承認し、`closed` は受け付けません。
-  `approval` モードでだけ `reason` を受け取り、`invite` モードでだけ `invite_id` を記録します。
+  `open` は `system` が即時に承認し、`approval` はモデレーターの決定まで `pending` のまま（使える招待があれば `system` が即時に承認）、`invite` は使える招待があれば `system` が即時に承認し、`closed` は受け付けません。
+  `approval` モードでだけ `reason` を受け取ります。招待は `closed` 以外のどのモードでも受け取り、`invite_id` を記録します（[ADR-0108](../../../adr/0108-member-invites.md) §4）。`open` と `approval` では招待は任意ですが、入力された招待が使えなければ招待なしとして通さずに断ります。
+  登録の制限（§4.3、`require_approval`）に当たる登録は、招待があっても `pending` で始まります。
 - メールを届けられない構成（`mail = none`）では、メール確認の代わりにモデレーターの承認を求めます（FR-002）。このとき `open` モードの登録も `pending` で始まり、確認済みでないことはアプリの利用を妨げません。
 - アプリ（クライアント API と OAuth の認可）を使えるのは、`user_registration_states` が `approved`（または行が無い）で、メール確認が必要な構成では主アドレスが確認済みの利用者だけです。
   承認待ち・却下・未確認の利用者もサーバーが返す画面にはログインでき、何を待っているかが表示されます。
@@ -127,12 +128,17 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)` |
+| `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `creator_kind`（`enum(staff, member)`、既定 `staff`）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)`、インデックス `(created_by_user_id, id)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
 | `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum(email_moderator_notifications)`。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は利用者設定のメールの項目の列名で、使うとその設定を off にする |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
+- 招待の作成の経路は `creator_kind` に記録します（[ADR-0108](../../../adr/0108-member-invites.md) §3）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。
+  `member` は利用者が自分の招待として作ったもので、インスタンス設定 `member_invite_max_*`（§4.9）の上限の中で回数と期限をいつも持ちます。
+  同時に持てる使える招待の数は、作成のトランザクションで `(created_by_user_id, id)` の索引から数えます（同時の作成が上限を 1 つ越えることは許す）。
+  利用者の招待での登録は、そのたびに作成者がまだ作れる（`invite_creators` と `create_invites`、凍結・制限・削除されていない、登録が承認済み）かを確かめ、作れなければ使えない招待として断ります。行は変えないので、資格が戻れば期限の中でまた使えます。
+  作成と取り消しは、スタッフと同じく監査ログの `invite_created`・`invite_revoked` に残し、利用者の操作の実行者はその利用者です。
 - パスワードリセットのトークン（FR-002）は、期限内で使われておらず、発行がパスワードの最後の変化（`password_credentials` の最新行の `set_at`、削除されていればその `removed_at`）より前でないときだけ使えます。
   リセット・変更・管理者の発行など、どの経路でもパスワードが新しくなるか削除されれば、それより前に発行したリンクは使えなくなります。状態の列は持たず、これらのイベントから求めます。パスワードを削除した利用者も、リセットのリンクで新しいパスワードを設定できます。
 - リセットのリンクは、メールを送るサーバー（`mail` が `none` でない）ではログインの画面から本人がメールで受け取り、どのサーバーでも管理者が管理画面（権限 `manage_login_recovery`）か CLI（`my admin account password-reset-link`）で発行できます。
@@ -144,13 +150,13 @@
 `admin`（`position` 1000）はすべての権限、`moderator`（`position` 100）は最初 `manage_reports`・`manage_accounts`・`view_audit` を持ちます。
 組み込みロールは `my serve` の起動時（どの `role` のプロセスでも）、`my admin create`、`my admin role` のたびに作り直すので、版を上げても手作業は要りません。作り直すときは、ない組み込みロールを足し、`admin` にすべての権限（新しい版で増えた権限を含む）を持たせ、`moderator` の権限と位置は管理者が変えたまま残します。
 権限は区分（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)、[ADR-0070](../../../adr/0070-permission-split-emoji-finance.md)）を持ちます。モデレーションは `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`、
-利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
+利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`・`create_invites`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
 （Web クライアントのナビゲーションの出し分けと `my admin role list` の表示が使う）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers, create_invites)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |

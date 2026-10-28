@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
-description: An invite that lets people sign up while the registration mode is `invite`.
+description: An invite that lets people sign up while the registration mode is `open`, `approval`, or `invite`.
 type: object
-required: [id, code, url, uses, state, created_at]
+required: [id, code, url, uses, state, creator_kind, created_by_deleted, created_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -22,6 +22,16 @@ properties:
     minimum: 0
   state:
     $ref: ./AdminInviteState.yaml
+  creator_kind:
+    $ref: ./InviteCreatorKind.yaml
+  created_by:
+    description: |
+      The account of the user who created the invite. Absent for an invite created with the
+      CLI and one whose creator's account is deleted (`created_by_deleted`).
+    $ref: ./Account.yaml
+  created_by_deleted:
+    description: Whether a user created the invite whose account no longer exists.
+    type: boolean
   expires_at:
     description: When the invite stops working; omitted when it never does.
     type: string

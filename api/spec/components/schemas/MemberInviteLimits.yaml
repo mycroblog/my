@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The caps and defaults of the invites that members create, from the instance settings
+  `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+type: object
+required: [max_active, max_uses, max_expires_in, default_max_uses, default_expires_in]
+properties:
+  max_active:
+    description: How many usable invites one member may hold at once; 0 lets members create none.
+    type: integer
+    minimum: 0
+  max_uses:
+    description: The most sign-ups one invite may allow.
+    type: integer
+    minimum: 1
+  max_expires_in:
+    description: The longest time, in seconds, that one invite may work.
+    type: integer
+    minimum: 1
+  default_max_uses:
+    description: The sign-ups of an invite created without `max_uses`.
+    type: integer
+    minimum: 1
+  default_expires_in:
+    description: The seconds an invite created without `expires_in` works.
+    type: integer
+    minimum: 1

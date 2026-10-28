@@ -135,6 +135,10 @@
     "defaultMessage": "通話のルームを開く",
     "description": "Name of the permission start_voice_rooms: opening voice chat rooms and hosting them, while the server lets only the holders of this permission open them."
   },
+  "admin.roles.permission.create_invites": {
+    "defaultMessage": "招待の作成",
+    "description": "Name of the permission create_invites: creating, listing, and revoking invites of one's own, while the server lets only the holders of this permission create them."
+  },
   "admin.roles.permission.manage_errors": {
     "defaultMessage": "エラー",
     "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."

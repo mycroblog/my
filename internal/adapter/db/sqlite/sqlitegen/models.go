@@ -477,15 +477,6 @@ type InstanceThemeRevision struct {
 	RevisedAt       int64
 }
 
-type Invite struct {
-	ID              string
-	Code            string
-	CreatedByUserID sql.NullString
-	MaxUses         sql.NullInt64
-	ExpiresAt       sql.NullInt64
-	CreatedAt       int64
-}
-
 type LinkCard struct {
 	Url              string
 	CardUrl          string

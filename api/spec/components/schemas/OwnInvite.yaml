@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+description: An invite that the user created as a member, which always has a limit of uses and an expiry.
+type: object
+required: [id, code, url, max_uses, uses, state, expires_at, created_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  code:
+    description: The code people enter on the registration page, 16 characters.
+    type: string
+  url:
+    description: The registration page with the code filled in, to send to people.
+    type: string
+    format: uri
+  max_uses:
+    description: How many sign-ups the invite allows.
+    type: integer
+    minimum: 1
+  uses:
+    description: How many people have signed up with the invite.
+    type: integer
+    minimum: 0
+  state:
+    $ref: ./AdminInviteState.yaml
+  expires_at:
+    description: When the invite stops working.
+    type: string
+    format: date-time
+  created_at:
+    type: string
+    format: date-time

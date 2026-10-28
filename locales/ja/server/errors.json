@@ -467,6 +467,18 @@
     "defaultMessage": "登録できるアプリの数の上限に達しています。先にどれかを削除してください。",
     "description": "Title of the HTTP 409 API error when the user registers an OAuth app while having the most apps allowed (25)."
   },
+  "errors.invites.not_allowed": {
+    "defaultMessage": "招待を作れません。",
+    "description": "Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts."
+  },
+  "errors.invites.too_many": {
+    "defaultMessage": "使える招待の数の上限に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。",
+    "description": "Title of the HTTP 409 API error when the user creates an invite while holding as many usable invites as the server allows."
+  },
+  "errors.invites.registration_closed": {
+    "defaultMessage": "このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。",
+    "description": "Title of the HTTP 409 API error when a staff member creates an invite while the registration mode is closed."
+  },
   "errors.oauth_app.registration_disabled": {
     "defaultMessage": "このサーバーでは、利用者がアプリを登録できません。",
     "description": "Title of the HTTP 403 API error when the user registers an OAuth app while the server's administrators have turned off app registration by users."

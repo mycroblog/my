@@ -5806,6 +5806,71 @@ export interface paths {
         patch: operations["updateInstanceSettings"];
         trace?: never;
     };
+    "/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the user's own invites
+         * @description The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+         *     have been used, and what the user may do: whether they may create an invite now
+         *     (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+         *     A user who may no longer create invites still lists and revokes the ones they made; an
+         *     otherwise usable one is then `creator_ineligible`. Invites of the staff
+         *     (`/admin/invites`) are not listed.
+         */
+        get: operations["listOwnInvites"];
+        put?: never;
+        /**
+         * Create an invite of the user's own
+         * @description Creates an invite with a new random code that people use to sign up while the
+         *     registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+         *     person who signs up with it is approved at once. The user may create one when the
+         *     instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+         *     their account is neither suspended nor limited, their registration is approved, and the
+         *     registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+         *     `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+         *     value over the cap of the instance settings (`member_invite_max_uses`,
+         *     `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+         *     `member_invite_max_active` usable invites gets a 409
+         *     `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+         *     user as the actor. Every sign-up with the invite checks again that the user may create
+         *     invites; while they may not, the invite does not work.
+         */
+        post: operations["createOwnInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invites/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke an invite of the user's own
+         * @description The invite stops working at once; the people who signed up with it keep their accounts.
+         *     Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+         *     with the user as the actor. A user revokes their own invites even when they may no longer
+         *     create invites. An unknown ID, or an invite that the user did not create as a member, is
+         *     a 404.
+         */
+        post: operations["revokeOwnInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invites": {
         parameters: {
             query?: never;
@@ -5815,16 +5880,21 @@ export interface paths {
         };
         /**
          * List the invites
-         * @description The invites that let people sign up while the registration mode is `invite` (FR-001),
-         *     newest first, with how they have been used. Needs the `manage_invites` permission.
+         * @description The invites that let people sign up while the registration mode is `open`, `approval`,
+         *     or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+         *     created them: the staff's and the members' own invites. Needs the `manage_invites`
+         *     permission.
          */
         get: operations["listInvites"];
         put?: never;
         /**
          * Create an invite
-         * @description Creates an invite with a new random code. It works only while the registration mode is
-         *     `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-         *     years is a 422 naming it. Needs the `manage_invites` permission.
+         * @description Creates an invite of the staff with a new random code; the caps of the members' invites
+         *     do not apply to it. People sign up with it while the registration mode is `open`,
+         *     `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+         *     409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+         *     `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+         *     permission.
          */
         post: operations["createInvite"];
         delete?: never;
@@ -7138,11 +7208,24 @@ export interface components {
             /** @description Why the applicant wants to join; omitted when not asked or not given. */
             reason?: string;
             invite_id?: components["schemas"]["Id"];
+            invite?: components["schemas"]["AdminAccountInvite"];
             /**
              * Format: date-time
              * @description When the registration entered its `registration_state`.
              */
             state_changed_at: string;
+        };
+        /** @description The invite that a local account signed up with, and who created it, which invited the user. */
+        AdminAccountInvite: {
+            id: components["schemas"]["Id"];
+            creator_kind: components["schemas"]["InviteCreatorKind"];
+            /**
+             * @description The account of the user who created the invite. Absent for an invite created with the
+             *     CLI and one whose creator's account is deleted (`created_by_deleted`).
+             */
+            created_by?: components["schemas"]["Account"];
+            /** @description Whether a user created the invite whose account no longer exists. */
+            created_by_deleted: boolean;
         };
         /**
          * @description An external login provider that users sign in, sign up, and link their accounts with.
@@ -7756,7 +7839,7 @@ export interface components {
         AdminInstanceTextList: {
             items: components["schemas"]["AdminInstanceText"][];
         };
-        /** @description An invite that lets people sign up while the registration mode is `invite`. */
+        /** @description An invite that lets people sign up while the registration mode is `open`, `approval`, or `invite`. */
         AdminInvite: {
             id: components["schemas"]["Id"];
             /** @description The code people enter on the registration page, 16 characters. */
@@ -7771,6 +7854,14 @@ export interface components {
             /** @description How many people have signed up with the invite. */
             uses: number;
             state: components["schemas"]["AdminInviteState"];
+            creator_kind: components["schemas"]["InviteCreatorKind"];
+            /**
+             * @description The account of the user who created the invite. Absent for an invite created with the
+             *     CLI and one whose creator's account is deleted (`created_by_deleted`).
+             */
+            created_by?: components["schemas"]["Account"];
+            /** @description Whether a user created the invite whose account no longer exists. */
+            created_by_deleted: boolean;
             /**
              * Format: date-time
              * @description When the invite stops working; omitted when it never does.
@@ -7877,12 +7968,75 @@ export interface components {
          */
         OAuthClientRegistration: "first_party" | "user" | "metadata_document" | "dynamic";
         /**
-         * @description What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-         *     member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-         *     `max_uses` times.
+         * @description What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+         *     revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+         *     `creator_ineligible`: a member created it who may no longer create invites (their
+         *     permission or plan ended, the instance setting `invite_creators` changed, or the account is
+         *     suspended, limited, or deleted); it works again when the member may.
          * @enum {string}
          */
-        AdminInviteState: "usable" | "revoked" | "expired" | "exhausted";
+        AdminInviteState: "usable" | "revoked" | "expired" | "exhausted" | "creator_ineligible";
+        /**
+         * @description How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+         *     applies and its creator is not checked. `member`: by a member through their own invites,
+         *     under the caps of the instance settings; it works only while its creator may create invites.
+         * @enum {string}
+         */
+        InviteCreatorKind: "staff" | "member";
+        /** @description An invite that the user created as a member, which always has a limit of uses and an expiry. */
+        OwnInvite: {
+            id: components["schemas"]["Id"];
+            /** @description The code people enter on the registration page, 16 characters. */
+            code: string;
+            /**
+             * Format: uri
+             * @description The registration page with the code filled in, to send to people.
+             */
+            url: string;
+            /** @description How many sign-ups the invite allows. */
+            max_uses: number;
+            /** @description How many people have signed up with the invite. */
+            uses: number;
+            state: components["schemas"]["AdminInviteState"];
+            /**
+             * Format: date-time
+             * @description When the invite stops working.
+             */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** @description A page of the user's own invites, newest first, with what the user may do. */
+        OwnInvitePage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["OwnInvite"][];
+            /**
+             * @description Whether the user may create invites now: the instance setting `invite_creators` is
+             *     `everyone` or the user's roles have `create_invites`, the account is neither
+             *     suspended nor limited, its registration is approved, and the registration mode is
+             *     not `closed`. It does not count the cap of usable invites (`usable` against
+             *     `limits.max_active`).
+             */
+            can_create: boolean;
+            /** @description How many usable invites the user holds now, which `limits.max_active` bounds. */
+            usable: number;
+            limits: components["schemas"]["MemberInviteLimits"];
+        };
+        /**
+         * @description The caps and defaults of the invites that members create, from the instance settings
+         *     `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+         */
+        MemberInviteLimits: {
+            /** @description How many usable invites one member may hold at once; 0 lets members create none. */
+            max_active: number;
+            /** @description The most sign-ups one invite may allow. */
+            max_uses: number;
+            /** @description The longest time, in seconds, that one invite may work. */
+            max_expires_in: number;
+            /** @description The sign-ups of an invite created without `max_uses`. */
+            default_max_uses: number;
+            /** @description The seconds an invite created without `expires_in` works. */
+            default_expires_in: number;
+        };
         /** @description A job of the job queue. */
         AdminJob: {
             id: components["schemas"]["Id"];
@@ -9264,6 +9418,13 @@ export interface components {
             /** @description How many seconds the invite works; omitted for an invite that never expires. */
             expires_in?: number;
         };
+        /** @description A new invite of the user's own, within the caps of the instance settings. */
+        CreateOwnInviteRequest: {
+            /** @description How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted. */
+            max_uses?: number;
+            /** @description How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted. */
+            expires_in?: number;
+        };
         /** @description A new OAuth app. */
         CreateOAuthAppRequest: {
             /** @description The app's name, 1 to 100 characters on one line. */
@@ -10405,7 +10566,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -11329,10 +11490,13 @@ export interface components {
          *     and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
          *     the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
          *     `manage_login_providers`: the external identity providers that users sign in with (only the
-         *     built-in admin role by default, ADR-0106). The others guard no client API operation yet.
+         *     built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+         *     invites of one's own on `/invites` while the instance setting `invite_creators` is
+         *     `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+         *     others guard no client API operation yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites";
         /**
          * @description A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
          *     `:shortcode:` into the text.
@@ -11627,6 +11791,15 @@ export interface components {
          *     - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
          *     - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
          *       the room.
+         *     - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
+         *       own now: the instance setting `invite_creators` and the user's roles do not let them, the
+         *       account is suspended or limited, its registration is not approved, or the registration is
+         *       `closed`.
+         *     - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
+         *       as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
+         *       expire or be used up.
+         *     - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
+         *       takes no invite.
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
          *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`POST /accounts/move/cancel`).
@@ -13226,6 +13399,16 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminInvite"];
+            };
+        };
+        /** @description The invite. */
+        OwnInvite: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["OwnInvite"];
             };
         };
         /** @description The OAuth client. */
@@ -19867,6 +20050,66 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminSettingList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOwnInvites: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the user's invites. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnInvitePage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createOwnInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOwnInviteRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["OwnInvite"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeOwnInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the invite. */
+                id: components["parameters"]["InviteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OwnInvite"];
             default: components["responses"]["Problem"];
         };
     };

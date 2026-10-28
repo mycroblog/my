@@ -26,7 +26,10 @@ description: |
   and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
   the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
   `manage_login_providers`: the external identity providers that users sign in with (only the
-  built-in admin role by default, ADR-0106). The others guard no client API operation yet.
+  built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+  invites of one's own on `/invites` while the instance setting `invite_creators` is
+  `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+  others guard no client API operation yet.
 type: string
 enum:
   - manage_reports
@@ -51,3 +54,4 @@ enum:
   - start_voice_rooms
   - manage_errors
   - manage_login_providers
+  - create_invites

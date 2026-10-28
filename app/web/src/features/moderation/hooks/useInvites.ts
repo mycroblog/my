@@ -41,10 +41,10 @@ export function useInvites(): PagedPages<Invite> {
   return toPagedList(useSuspenseInfiniteQuery(invitesQueryOptions(api)));
 }
 
-/** Whether the server lets people sign up with an invite now: its registration mode is `invite`. */
+/** Whether the server lets people sign up with an invite now: its registration mode is not `closed` (an invite works in `open`, `approval`, and `invite`). */
 export function useInvitesWork(): boolean {
   const api = useApi();
-  return useSuspenseQuery(instanceInfoQueryOptions(api)).data.registrations.mode === "invite";
+  return useSuspenseQuery(instanceInfoQueryOptions(api)).data.registrations.mode !== "closed";
 }
 
 /** The form of a new invite: how many sign-ups it allows (null: no limit) and how long it works (null: forever). */

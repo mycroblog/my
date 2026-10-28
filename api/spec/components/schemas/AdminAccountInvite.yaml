@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: The invite that a local account signed up with, and who created it, which invited the user.
+type: object
+required: [id, creator_kind, created_by_deleted]
+properties:
+  id:
+    $ref: ./Id.yaml
+  creator_kind:
+    $ref: ./InviteCreatorKind.yaml
+  created_by:
+    description: |
+      The account of the user who created the invite. Absent for an invite created with the
+      CLI and one whose creator's account is deleted (`created_by_deleted`).
+    $ref: ./Account.yaml
+  created_by_deleted:
+    description: Whether a user created the invite whose account no longer exists.
+    type: boolean

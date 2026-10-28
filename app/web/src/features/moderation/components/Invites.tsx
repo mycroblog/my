@@ -44,6 +44,7 @@ const stateLabels: Readonly<Record<InviteState, ClientMessageKey>> = {
   revoked: "client:admin.invites.state.revoked",
   expired: "client:admin.invites.state.expired",
   exhausted: "client:admin.invites.state.exhausted",
+  creator_ineligible: "client:admin.invites.state.creator_ineligible",
 };
 
 /** The Select's key of "no limit", which is not a number of uses. */
@@ -64,7 +65,7 @@ export function Invites() {
   );
 }
 
-/** Why the invites do not let anyone sign up now, unless the registration mode is `invite`. */
+/** Why the invites do not let anyone sign up now, while the registration mode is `closed`. */
 function ModeNotice() {
   const t = useT();
   if (useInvitesWork()) return null;

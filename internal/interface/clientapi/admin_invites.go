@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
@@ -15,8 +14,9 @@ import (
 )
 
 // The invites (FR-001, manage_invites): the admin operations that create, list, and revoke the
-// codes that let people sign up while the registration mode is invite. The CLI's `my invite`
-// runs the same use cases.
+// codes that let people sign up while the registration mode is open, approval, or invite
+// (ADR-0108 §4): the staff's invites and those that members created (invites.go). The CLI's
+// `my invite` runs the same use cases.
 
 // Invites runs the use cases of the invites. *appidentity.Service implements it.
 type Invites interface {
@@ -30,8 +30,8 @@ const maxInviteExpiry = 10 * 365 * 24 * time.Hour
 
 func (s *Server) newAdminInvite(st appidentity.InviteStatus) AdminInvite {
 	out := AdminInvite{
-		Id: st.ID, Code: st.Code, Url: s.origin() + s.o.SignUpPath + "?invite=" + url.QueryEscape(st.Code),
-		Uses: st.Uses, State: AdminInviteState(st.State), CreatedAt: st.CreatedAt.UTC(),
+		Id: st.ID, Code: st.Code, Url: s.inviteURL(st.Code), Uses: st.Uses, State: AdminInviteState(st.State),
+		CreatorKind: newInviteCreatorKind(st.CreatorKind), CreatedAt: st.CreatedAt.UTC(),
 	}
 	if st.MaxUses > 0 {
 		out.MaxUses = &st.MaxUses
@@ -43,9 +43,53 @@ func (s *Server) newAdminInvite(st appidentity.InviteStatus) AdminInvite {
 	return out
 }
 
-func (s *Server) adminInviteResponse(st appidentity.InviteStatus) AdminInviteJSONResponse {
+// newInviteCreatorKind presents how an invite was created; staff unless a member created it.
+func newInviteCreatorKind(k identity.InviteCreatorKind) InviteCreatorKind {
+	if k == identity.InviteByMember {
+		return InviteCreatorKindMember
+	}
+	return InviteCreatorKindStaff
+}
+
+// withInviteCreators presents invites to the staff with the accounts of their creators
+// (ADR-0108 §5), read once for all of them.
+func (s *Server) withInviteCreators(ctx context.Context, list []appidentity.InviteStatus) ([]AdminInvite, error) {
+	if s.o.UserAccounts == nil || s.o.Accounts == nil {
+		out := make([]AdminInvite, len(list))
+		for i, st := range list {
+			out[i] = s.newAdminInvite(st)
+		}
+		return out, nil
+	}
+	ids := make([]string, len(list))
+	for i, st := range list {
+		ids[i] = st.CreatedByUserID
+	}
+	accounts, err := s.userAccounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AdminInvite, len(list))
+	for i, st := range list {
+		out[i] = s.newAdminInvite(st)
+		if u := st.CreatedByUserID; u != "" {
+			if a, ok := accounts[u]; ok {
+				out[i].CreatedBy = &a
+			} else {
+				out[i].CreatedByDeleted = true
+			}
+		}
+	}
+	return out, nil
+}
+
+func (s *Server) adminInviteResponse(ctx context.Context, st appidentity.InviteStatus) (AdminInviteJSONResponse, error) {
+	presented, err := s.withInviteCreators(ctx, []appidentity.InviteStatus{st})
+	if err != nil {
+		return AdminInviteJSONResponse{}, err
+	}
 	cache := cacheNoStore
-	return AdminInviteJSONResponse{Body: s.newAdminInvite(st), Headers: AdminInviteResponseHeaders{CacheControl: &cache}}
+	return AdminInviteJSONResponse{Body: presented[0], Headers: AdminInviteResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // ListInvites serves GET /api/v1/admin/invites, newest first. The cursor is the ID of the last
@@ -65,10 +109,11 @@ func (s *Server) ListInvites(ctx context.Context, req ListInvitesRequestObject) 
 		return nil, fmt.Errorf("clientapi: list invites: %w", err)
 	}
 	list, last := trim(list, q.limit)
-	page := AdminInvitePage{Items: make([]AdminInvite, 0, len(list))}
-	for _, st := range list {
-		page.Items = append(page.Items, s.newAdminInvite(st))
+	items, err := s.withInviteCreators(ctx, list)
+	if err != nil {
+		return nil, err
 	}
+	page := AdminInvitePage{Items: items}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(list[last].ID)
 	}
@@ -108,10 +153,17 @@ func (s *Server) CreateInvite(ctx context.Context, req CreateInviteRequestObject
 		}
 	}
 	inv, err := s.o.Invites.CreateInvite(ctx, in)
+	if errors.Is(err, appidentity.ErrRegistrationClosed) {
+		return CreateInvitedefaultApplicationProblemPlusJSONResponse(*s.inviteProblem(ctx, err)), nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create invite: %w", err)
 	}
-	return CreateInvite200JSONResponse{s.adminInviteResponse(appidentity.InviteStatus{Invite: inv, State: appidentity.InviteUsable})}, nil
+	resp, err := s.adminInviteResponse(ctx, appidentity.InviteStatus{Invite: inv, State: appidentity.InviteUsable})
+	if err != nil {
+		return nil, err
+	}
+	return CreateInvite200JSONResponse{resp}, nil
 }
 
 // RevokeInvite serves POST /api/v1/admin/invites/{id}/revoke.
@@ -132,5 +184,9 @@ func (s *Server) RevokeInvite(ctx context.Context, req RevokeInviteRequestObject
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: revoke invite %s: %w", req.Id, err)
 	}
-	return RevokeInvite200JSONResponse{s.adminInviteResponse(st)}, nil
+	resp, err := s.adminInviteResponse(ctx, st)
+	if err != nil {
+		return nil, err
+	}
+	return RevokeInvite200JSONResponse{resp}, nil
 }

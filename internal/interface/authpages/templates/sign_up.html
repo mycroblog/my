@@ -27,11 +27,11 @@
 {{with .Errors.password}}<p id="sign-up-password-error" class="field-error">{{.}}</p>{{end}}
 <input id="sign-up-password" name="password" type="password" autocomplete="new-password" required minlength="{{.PasswordMin}}" maxlength="{{.PasswordMax}}" aria-describedby="sign-up-password-hint{{if .Errors.password}} sign-up-password-error{{end}}"{{if .Errors.password}} aria-invalid="true"{{end}}>
 </div>{{end}}
-{{if .NeedInvite}}<div class="field">
+{{if .AskInvite}}<div class="field">
 <label for="sign-up-invite">{{$.L.ServerAuthSignUpInviteLabel}}</label>
-<p id="sign-up-invite-hint" class="hint">{{$.L.ServerAuthSignUpInviteHint}}</p>
+<p id="sign-up-invite-hint" class="hint">{{.InviteHint}}</p>
 {{with .Errors.invite_code}}<p id="sign-up-invite-error" class="field-error">{{.}}</p>{{end}}
-<input id="sign-up-invite" name="invite_code" type="text" value="{{.InviteCode}}" autocomplete="off" autocapitalize="characters" spellcheck="false" required aria-describedby="sign-up-invite-hint{{if .Errors.invite_code}} sign-up-invite-error{{end}}"{{if .Errors.invite_code}} aria-invalid="true"{{end}}>
+<input id="sign-up-invite" name="invite_code" type="text" value="{{.InviteCode}}" autocomplete="off" autocapitalize="characters" spellcheck="false"{{if .NeedInvite}} required{{end}} aria-describedby="sign-up-invite-hint{{if .Errors.invite_code}} sign-up-invite-error{{end}}"{{if .Errors.invite_code}} aria-invalid="true"{{end}}>
 </div>{{end}}
 {{if .AskReason}}<div class="field">
 <label for="sign-up-reason">{{$.L.ServerAuthSignUpReasonLabel}}</label>

@@ -11,6 +11,8 @@ properties:
     type: string
   invite_id:
     $ref: ./Id.yaml
+  invite:
+    $ref: ./AdminAccountInvite.yaml
   state_changed_at:
     description: When the registration entered its `registration_state`.
     type: string

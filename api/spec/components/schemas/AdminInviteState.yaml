@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
 description: |
-  What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-  member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-  `max_uses` times.
+  What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+  revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+  `creator_ineligible`: a member created it who may no longer create invites (their
+  permission or plan ended, the instance setting `invite_creators` changed, or the account is
+  suspended, limited, or deleted); it works again when the member may.
 type: string
-enum: [usable, revoked, expired, exhausted]
+enum: [usable, revoked, expired, exhausted, creator_ineligible]

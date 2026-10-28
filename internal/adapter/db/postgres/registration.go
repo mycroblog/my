@@ -125,8 +125,8 @@ func (r *IdentityRepository) InsertInvite(ctx context.Context, tx uow.Tx, i iden
 		maxUses = &n
 	}
 	err = q.InsertInvite(ctx, postgresgen.InsertInviteParams{
-		ID: i.ID, Code: i.Code, CreatedByUserID: toNullString(i.CreatedByUserID), MaxUses: maxUses,
-		ExpiresAt: i.ExpiresAt, CreatedAt: i.CreatedAt,
+		ID: i.ID, Code: i.Code, CreatedByUserID: toNullString(i.CreatedByUserID), CreatorKind: string(inviteCreatorKind(i.CreatorKind)),
+		MaxUses: maxUses, ExpiresAt: i.ExpiresAt, CreatedAt: i.CreatedAt,
 	})
 	if isUniqueViolation(err, "invites_code") {
 		return fmt.Errorf("insert invite: %w", appidentity.ErrInviteCodeTaken)
@@ -134,9 +134,19 @@ func (r *IdentityRepository) InsertInvite(ctx context.Context, tx uow.Tx, i iden
 	return wrap(err, "insert invite")
 }
 
-func inviteFrom(id, code string, createdBy *string, maxUses *int32, expiresAt *time.Time, createdAt time.Time) identity.Invite {
+// inviteCreatorKind returns the creator kind an invite is stored with: staff unless a member
+// created it.
+func inviteCreatorKind(k identity.InviteCreatorKind) identity.InviteCreatorKind {
+	if k == identity.InviteByMember {
+		return k
+	}
+	return identity.InviteByStaff
+}
+
+func inviteFrom(id, code string, createdBy *string, creatorKind string, maxUses *int32, expiresAt *time.Time, createdAt time.Time) identity.Invite {
 	inv := identity.Invite{
-		ID: id, Code: code, CreatedByUserID: fromNullString(createdBy), ExpiresAt: utcPtr(expiresAt), CreatedAt: utc(createdAt),
+		ID: id, Code: code, CreatedByUserID: fromNullString(createdBy), CreatorKind: identity.InviteCreatorKind(creatorKind),
+		ExpiresAt: utcPtr(expiresAt), CreatedAt: utc(createdAt),
 	}
 	if maxUses != nil {
 		inv.MaxUses = int(*maxUses)
@@ -150,7 +160,7 @@ func (r *IdentityRepository) FindInviteByCode(ctx context.Context, code string) 
 	if err != nil {
 		return identity.Invite{}, notFound(err, appidentity.ErrNotFound, "invite")
 	}
-	return inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.MaxUses, row.ExpiresAt, row.CreatedAt), nil
+	return inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.CreatorKind, row.MaxUses, row.ExpiresAt, row.CreatedAt), nil
 }
 
 // FindInviteByID implements identity.Repository.
@@ -159,7 +169,7 @@ func (r *IdentityRepository) FindInviteByID(ctx context.Context, id string) (ide
 	if err != nil {
 		return identity.Invite{}, notFound(err, appidentity.ErrNotFound, "invite")
 	}
-	return inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.MaxUses, row.ExpiresAt, row.CreatedAt), nil
+	return inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.CreatorKind, row.MaxUses, row.ExpiresAt, row.CreatedAt), nil
 }
 
 // InviteUsage implements identity.Repository.
@@ -219,11 +229,46 @@ func (r *IdentityRepository) ListInvites(ctx context.Context, before string, lim
 	out := make([]appidentity.InviteStatus, len(rows))
 	for i, row := range rows {
 		out[i] = appidentity.InviteStatus{
-			Invite: inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.MaxUses, row.ExpiresAt, row.CreatedAt),
+			Invite: inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.CreatorKind, row.MaxUses, row.ExpiresAt, row.CreatedAt),
 			Uses:   int(row.Uses), Revoked: row.Revoked,
 		}
 	}
 	return out, nil
+}
+
+// ListMemberInvites implements identity.Repository.
+func (r *IdentityRepository) ListMemberInvites(ctx context.Context, creatorUserID, before string, limit int) ([]appidentity.InviteStatus, error) {
+	n, err := toInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListMemberInvitesByCreator(ctx, postgresgen.ListMemberInvitesByCreatorParams{
+		Creator: &creatorUserID, Before: toNullString(before), PageLimit: n,
+	})
+	if err != nil {
+		return nil, wrap(err, "list member invites")
+	}
+	out := make([]appidentity.InviteStatus, len(rows))
+	for i, row := range rows {
+		out[i] = appidentity.InviteStatus{
+			Invite: inviteFrom(row.ID, row.Code, row.CreatedByUserID, row.CreatorKind, row.MaxUses, row.ExpiresAt, row.CreatedAt),
+			Uses:   int(row.Uses), Revoked: row.Revoked,
+		}
+	}
+	return out, nil
+}
+
+// CountUsableMemberInvites implements identity.Repository.
+func (r *IdentityRepository) CountUsableMemberInvites(ctx context.Context, tx uow.Tx, creatorUserID string, now time.Time) (int, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.CountUsableMemberInvites(ctx, postgresgen.CountUsableMemberInvitesParams{Creator: &creatorUserID, Now: &now})
+	if err != nil {
+		return 0, wrap(err, "count usable member invites")
+	}
+	return int(n), nil
 }
 
 // InsertUserToken implements identity.Repository.

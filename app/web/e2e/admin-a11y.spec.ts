@@ -411,6 +411,8 @@ const invite: Schemas["AdminInvite"] = {
   url: "https://my.example/auth/sign_up?invite=ABCDEFGHJKLMNPQR",
   uses: 2,
   state: "usable",
+  creator_kind: "staff",
+  created_by_deleted: false,
   expires_at: "2026-10-23T00:00:00Z",
   created_at: "2026-10-16T00:00:00Z",
 };

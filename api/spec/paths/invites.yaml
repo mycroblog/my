@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listOwnInvites
+  summary: List the user's own invites
+  description: |
+    The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+    have been used, and what the user may do: whether they may create an invite now
+    (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+    A user who may no longer create invites still lists and revokes the ones they made; an
+    otherwise usable one is then `creator_ineligible`. Invites of the staff
+    (`/admin/invites`) are not listed.
+  tags: [invites]
+  security:
+    - oauth2: ["read:accounts"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the user's invites.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/OwnInvitePage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createOwnInvite
+  summary: Create an invite of the user's own
+  description: |
+    Creates an invite with a new random code that people use to sign up while the
+    registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+    person who signs up with it is approved at once. The user may create one when the
+    instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+    their account is neither suspended nor limited, their registration is approved, and the
+    registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+    `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+    value over the cap of the instance settings (`member_invite_max_uses`,
+    `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+    `member_invite_max_active` usable invites gets a 409
+    `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+    user as the actor. Every sign-up with the invite checks again that the user may create
+    invites; while they may not, the invite does not work.
+  tags: [invites]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateOwnInviteRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/OwnInvite.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

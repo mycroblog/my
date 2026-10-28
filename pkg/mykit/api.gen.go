@@ -808,15 +808,18 @@ func (e AdminInstanceState) Valid() bool {
 
 // Defines values for AdminInviteState.
 const (
-	AdminInviteStateExhausted AdminInviteState = "exhausted"
-	AdminInviteStateExpired   AdminInviteState = "expired"
-	AdminInviteStateRevoked   AdminInviteState = "revoked"
-	AdminInviteStateUsable    AdminInviteState = "usable"
+	AdminInviteStateCreatorIneligible AdminInviteState = "creator_ineligible"
+	AdminInviteStateExhausted         AdminInviteState = "exhausted"
+	AdminInviteStateExpired           AdminInviteState = "expired"
+	AdminInviteStateRevoked           AdminInviteState = "revoked"
+	AdminInviteStateUsable            AdminInviteState = "usable"
 )
 
 // Valid indicates whether the value is a known member of the AdminInviteState enum.
 func (e AdminInviteState) Valid() bool {
 	switch e {
+	case AdminInviteStateCreatorIneligible:
+		return true
 	case AdminInviteStateExhausted:
 		return true
 	case AdminInviteStateExpired:
@@ -2088,9 +2091,13 @@ const (
 	InstanceSettingKeyFinanceVisibility                InstanceSettingKey = "finance_visibility"
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
+	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
 	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
 	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
+	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
+	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
@@ -2149,11 +2156,19 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyIndexableDefault:
 		return true
+	case InstanceSettingKeyInviteCreators:
+		return true
 	case InstanceSettingKeyLinkCardsEnabled:
 		return true
 	case InstanceSettingKeyLocalTimelineAccess:
 		return true
 	case InstanceSettingKeyMaxStatusLength:
+		return true
+	case InstanceSettingKeyMemberInviteMaxActive:
+		return true
+	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+		return true
+	case InstanceSettingKeyMemberInviteMaxUses:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2264,6 +2279,24 @@ func (e InstanceTextKey) Valid() bool {
 	case InstanceTextKeyTerms:
 		return true
 	case InstanceTextKeyThumbnailAlt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InviteCreatorKind.
+const (
+	InviteCreatorKindMember InviteCreatorKind = "member"
+	InviteCreatorKindStaff  InviteCreatorKind = "staff"
+)
+
+// Valid indicates whether the value is a known member of the InviteCreatorKind enum.
+func (e InviteCreatorKind) Valid() bool {
+	switch e {
+	case InviteCreatorKindMember:
+		return true
+	case InviteCreatorKindStaff:
 		return true
 	default:
 		return false
@@ -2705,6 +2738,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 // Defines values for Permission.
 const (
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionCreateInvites        Permission = "create_invites"
 	PermissionManageAccounts       Permission = "manage_accounts"
 	PermissionManageAnnouncements  Permission = "manage_announcements"
 	PermissionManageCustomEmojis   Permission = "manage_custom_emojis"
@@ -2732,6 +2766,8 @@ const (
 func (e Permission) Valid() bool {
 	switch e {
 	case PermissionCreateCustomEmojis:
+		return true
+	case PermissionCreateInvites:
 		return true
 	case PermissionManageAccounts:
 		return true
@@ -4141,6 +4177,25 @@ type AdminAccountDetail struct {
 	TwoFactorEnabled *bool `json:"two_factor_enabled,omitempty"`
 }
 
+// AdminAccountInvite The invite that a local account signed up with, and who created it, which invited the user.
+type AdminAccountInvite struct {
+	// CreatedBy An account, as clients show it (FR-006).
+	CreatedBy *Account `json:"created_by,omitempty"`
+
+	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
+	CreatedByDeleted bool `json:"created_by_deleted"`
+
+	// CreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+	// applies and its creator is not checked. `member`: by a member through their own invites,
+	// under the caps of the instance settings; it works only while its creator may create invites.
+	CreatorKind InviteCreatorKind `json:"creator_kind"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+}
+
 // AdminAccountPage A page of accounts, newest first.
 type AdminAccountPage struct {
 	Items []AdminAccount `json:"items"`
@@ -4175,6 +4230,9 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// Invite The invite that a local account signed up with, and who created it, which invited the user.
+	Invite *AdminAccountInvite `json:"invite,omitempty"`
+
 	// InviteId The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -4825,11 +4883,22 @@ type AdminInstanceTextList struct {
 	Items []AdminInstanceText `json:"items"`
 }
 
-// AdminInvite An invite that lets people sign up while the registration mode is `invite`.
+// AdminInvite An invite that lets people sign up while the registration mode is `open`, `approval`, or `invite`.
 type AdminInvite struct {
 	// Code The code people enter on the registration page, 16 characters.
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
+
+	// CreatedBy An account, as clients show it (FR-006).
+	CreatedBy *Account `json:"created_by,omitempty"`
+
+	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
+	CreatedByDeleted bool `json:"created_by_deleted"`
+
+	// CreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+	// applies and its creator is not checked. `member`: by a member through their own invites,
+	// under the caps of the instance settings; it works only while its creator may create invites.
+	CreatorKind InviteCreatorKind `json:"creator_kind"`
 
 	// ExpiresAt When the invite stops working; omitted when it never does.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
@@ -4842,9 +4911,11 @@ type AdminInvite struct {
 	// MaxUses How many sign-ups the invite allows; omitted when there is no limit.
 	MaxUses *int `json:"max_uses,omitempty"`
 
-	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-	// member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-	// `max_uses` times.
+	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+	// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+	// `creator_ineligible`: a member created it who may no longer create invites (their
+	// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+	// suspended, limited, or deleted); it works again when the member may.
 	State AdminInviteState `json:"state"`
 
 	// Url The registration page with the code filled in, to send to people.
@@ -4862,9 +4933,11 @@ type AdminInvitePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminInviteState What the invite allows now. `usable`: people may sign up with it. `revoked`: a staff
-// member revoked it. `expired`: it passed `expires_at`. `exhausted`: it was used
-// `max_uses` times.
+// AdminInviteState What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+// `creator_ineligible`: a member created it who may no longer create invites (their
+// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+// suspended, limited, or deleted); it works again when the member may.
 type AdminInviteState string
 
 // AdminJob A job of the job queue.
@@ -6862,6 +6935,15 @@ type CreateOAuthAppRequest struct {
 	Website *string `json:"website,omitempty"`
 }
 
+// CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
+type CreateOwnInviteRequest struct {
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	ExpiresIn *int `json:"expires_in,omitempty"`
+
+	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
+	MaxUses *int `json:"max_uses,omitempty"`
+}
+
 // CreatePasskeyRequest The browser's answer to a passkey registration.
 type CreatePasskeyRequest struct {
 	// Credential The `RegistrationResponseJSON` of WebAuthn Level 3 (§5.1): what
@@ -8488,6 +8570,11 @@ type InstanceTimelines struct {
 	Local TimelineAccess `json:"local"`
 }
 
+// InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
+// applies and its creator is not checked. `member`: by a member through their own invites,
+// under the caps of the instance settings; it works only while its creator may create invites.
+type InviteCreatorKind string
+
 // IssueOAuthAppTokenRequest The scope of the tokens of an app for the authenticated user.
 type IssueOAuthAppTokenRequest struct {
 	// Scope Space-separated scopes within the app's; omitted or empty, the app's whole scope.
@@ -8892,6 +8979,25 @@ type MediaVariants struct {
 	// for an upload, and absent where unknown for a remote file served through the media
 	// proxy.
 	Small MediaVariant `json:"small"`
+}
+
+// MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+type MemberInviteLimits struct {
+	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
+	DefaultExpiresIn int `json:"default_expires_in"`
+
+	// DefaultMaxUses The sign-ups of an invite created without `max_uses`.
+	DefaultMaxUses int `json:"default_max_uses"`
+
+	// MaxActive How many usable invites one member may hold at once; 0 lets members create none.
+	MaxActive int `json:"max_active"`
+
+	// MaxExpiresIn The longest time, in seconds, that one invite may work.
+	MaxExpiresIn int `json:"max_expires_in"`
+
+	// MaxUses The most sign-ups one invite may allow.
+	MaxUses int `json:"max_uses"`
 }
 
 // ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
@@ -9464,6 +9570,58 @@ type OwnCustomEmojiPage struct {
 	Used int `json:"used"`
 }
 
+// OwnInvite An invite that the user created as a member, which always has a limit of uses and an expiry.
+type OwnInvite struct {
+	// Code The code people enter on the registration page, 16 characters.
+	Code      string    `json:"code"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt When the invite stops working.
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// MaxUses How many sign-ups the invite allows.
+	MaxUses int `json:"max_uses"`
+
+	// State What the invite allows now. `usable`: people may sign up with it. `revoked`: it was
+	// revoked. `expired`: it passed `expires_at`. `exhausted`: it was used `max_uses` times.
+	// `creator_ineligible`: a member created it who may no longer create invites (their
+	// permission or plan ended, the instance setting `invite_creators` changed, or the account is
+	// suspended, limited, or deleted); it works again when the member may.
+	State AdminInviteState `json:"state"`
+
+	// Url The registration page with the code filled in, to send to people.
+	Url string `json:"url"`
+
+	// Uses How many people have signed up with the invite.
+	Uses int `json:"uses"`
+}
+
+// OwnInvitePage A page of the user's own invites, newest first, with what the user may do.
+type OwnInvitePage struct {
+	// CanCreate Whether the user may create invites now: the instance setting `invite_creators` is
+	// `everyone` or the user's roles have `create_invites`, the account is neither
+	// suspended nor limited, its registration is approved, and the registration mode is
+	// not `closed`. It does not count the cap of usable invites (`usable` against
+	// `limits.max_active`).
+	CanCreate bool        `json:"can_create"`
+	Items     []OwnInvite `json:"items"`
+
+	// Limits The caps and defaults of the invites that members create, from the instance settings
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	Limits MemberInviteLimits `json:"limits"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+
+	// Usable How many usable invites the user holds now, which `limits.max_active` bounds.
+	Usable int `json:"usable"`
+}
+
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
 	// IneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
@@ -9657,7 +9815,10 @@ type PaymentStatusWarnings string
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
 // the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
 // `manage_login_providers`: the external identity providers that users sign in with (only the
-// built-in admin role by default, ADR-0106). The others guard no client API operation yet.
+// built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+// invites of one's own on `/invites` while the instance setting `invite_creators` is
+// `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+// others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
@@ -9968,6 +10129,15 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-conflict` (409): the room changed meanwhile; try again.
 //   - `/api/v1/problems/voice-unavailable` (503): the server could not prepare the connection to
 //     the room.
+//   - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
+//     own now: the instance setting `invite_creators` and the user's roles do not let them, the
+//     account is suspended or limited, its registration is not approved, or the registration is
+//     `closed`.
+//   - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
+//     as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
+//     expire or be used up.
+//   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
+//     takes no invite.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
@@ -12671,6 +12841,15 @@ type ListInstanceSupportersParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListOwnInvitesParams defines parameters for ListOwnInvites.
+type ListOwnInvitesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListOwnModerationActionsParams defines parameters for ListOwnModerationActions.
 type ListOwnModerationActionsParams struct {
 	// Active Keep only the actions in effect now, neither lifted nor expired.
@@ -13007,6 +13186,9 @@ type StartDataImportJSONRequestBody = DataImportRequest
 
 // PreviewDataImportJSONRequestBody defines body for PreviewDataImport for application/json ContentType.
 type PreviewDataImportJSONRequestBody = DataImportRequest
+
+// CreateOwnInviteJSONRequestBody defines body for CreateOwnInvite for application/json ContentType.
+type CreateOwnInviteJSONRequestBody = CreateOwnInviteRequest
 
 // BeginLinkIdentityJSONRequestBody defines body for BeginLinkIdentity for application/json ContentType.
 type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
@@ -16107,17 +16289,22 @@ type ClientInterface interface {
 
 	// ListInvites List the invites
 	//
-	// The invites that let people sign up while the registration mode is `invite` (FR-001),
-	// newest first, with how they have been used. Needs the `manage_invites` permission.
+	// The invites that let people sign up while the registration mode is `open`, `approval`,
+	// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+	// created them: the staff's and the members' own invites. Needs the `manage_invites`
+	// permission.
 	//
 	// Corresponds with GET /admin/invites (the `ListInvites` operationId).
 	ListInvites(ctx context.Context, params *ListInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateInviteWithBody Create an invite
 	//
-	// Creates an invite with a new random code. It works only while the registration mode is
-	// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-	// years is a 422 naming it. Needs the `manage_invites` permission.
+	// Creates an invite of the staff with a new random code; the caps of the members' invites
+	// do not apply to it. People sign up with it while the registration mode is `open`,
+	// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+	// permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -16126,9 +16313,12 @@ type ClientInterface interface {
 
 	// CreateInvite Create an invite
 	//
-	// Creates an invite with a new random code. It works only while the registration mode is
-	// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-	// years is a 422 naming it. Needs the `manage_invites` permission.
+	// Creates an invite of the staff with a new random code; the caps of the members' invites
+	// do not apply to it. People sign up with it while the registration mode is `open`,
+	// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+	// permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -17796,6 +17986,71 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /instance/supporters (the `ListInstanceSupporters` operationId).
 	ListInstanceSupporters(ctx context.Context, params *ListInstanceSupportersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListOwnInvites List the user's own invites
+	//
+	// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+	// have been used, and what the user may do: whether they may create an invite now
+	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+	// A user who may no longer create invites still lists and revokes the ones they made; an
+	// otherwise usable one is then `creator_ineligible`. Invites of the staff
+	// (`/admin/invites`) are not listed.
+	//
+	// Corresponds with GET /invites (the `ListOwnInvites` operationId).
+	ListOwnInvites(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateOwnInviteWithBody Create an invite of the user's own
+	//
+	// Creates an invite with a new random code that people use to sign up while the
+	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// person who signs up with it is approved at once. The user may create one when the
+	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+	// their account is neither suspended nor limited, their registration is approved, and the
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+	// value over the cap of the instance settings (`member_invite_max_uses`,
+	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_active` usable invites gets a 409
+	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+	// user as the actor. Every sign-up with the invite checks again that the user may create
+	// invites; while they may not, the invite does not work.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+	CreateOwnInviteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateOwnInvite Create an invite of the user's own
+	//
+	// Creates an invite with a new random code that people use to sign up while the
+	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// person who signs up with it is approved at once. The user may create one when the
+	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+	// their account is neither suspended nor limited, their registration is approved, and the
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+	// value over the cap of the instance settings (`member_invite_max_uses`,
+	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_active` usable invites gets a 409
+	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+	// user as the actor. Every sign-up with the invite checks again that the user may create
+	// invites; while they may not, the invite does not work.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+	CreateOwnInvite(ctx context.Context, body CreateOwnInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeOwnInvite Revoke an invite of the user's own
+	//
+	// The invite stops working at once; the people who signed up with it keep their accounts.
+	// Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+	// with the user as the actor. A user revokes their own invites even when they may no longer
+	// create invites. An unknown ID, or an invite that the user did not create as a member, is
+	// a 404.
+	//
+	// Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
+	RevokeOwnInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListLinkedIdentities List the authenticated user's linked accounts and the login providers
 	//
@@ -22365,8 +22620,10 @@ func (c *Client) RefetchInstanceStatuses(ctx context.Context, domain InstanceDom
 
 // ListInvites List the invites
 //
-// The invites that let people sign up while the registration mode is `invite` (FR-001),
-// newest first, with how they have been used. Needs the `manage_invites` permission.
+// The invites that let people sign up while the registration mode is `open`, `approval`,
+// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+// created them: the staff's and the members' own invites. Needs the `manage_invites`
+// permission.
 //
 // Corresponds with GET /admin/invites (the `ListInvites` operationId).
 func (c *Client) ListInvites(ctx context.Context, params *ListInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -22383,9 +22640,12 @@ func (c *Client) ListInvites(ctx context.Context, params *ListInvitesParams, req
 
 // CreateInviteWithBody Create an invite
 //
-// Creates an invite with a new random code. It works only while the registration mode is
-// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-// years is a 422 naming it. Needs the `manage_invites` permission.
+// Creates an invite of the staff with a new random code; the caps of the members' invites
+// do not apply to it. People sign up with it while the registration mode is `open`,
+// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+// permission.
 //
 // Takes any type of body and a specified content type.
 //
@@ -22404,9 +22664,12 @@ func (c *Client) CreateInviteWithBody(ctx context.Context, contentType string, b
 
 // CreateInvite Create an invite
 //
-// Creates an invite with a new random code. It works only while the registration mode is
-// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-// years is a 422 naming it. Needs the `manage_invites` permission.
+// Creates an invite of the staff with a new random code; the caps of the members' invites
+// do not apply to it. People sign up with it while the registration mode is `open`,
+// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+// permission.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -25485,6 +25748,111 @@ func (c *Client) ListSupporterPlans(ctx context.Context, reqEditors ...RequestEd
 // Corresponds with GET /instance/supporters (the `ListInstanceSupporters` operationId).
 func (c *Client) ListInstanceSupporters(ctx context.Context, params *ListInstanceSupportersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListInstanceSupportersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListOwnInvites List the user's own invites
+//
+// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+// have been used, and what the user may do: whether they may create an invite now
+// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+// A user who may no longer create invites still lists and revokes the ones they made; an
+// otherwise usable one is then `creator_ineligible`. Invites of the staff
+// (`/admin/invites`) are not listed.
+//
+// Corresponds with GET /invites (the `ListOwnInvites` operationId).
+func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListOwnInvitesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateOwnInviteWithBody Create an invite of the user's own
+//
+// Creates an invite with a new random code that people use to sign up while the
+// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// person who signs up with it is approved at once. The user may create one when the
+// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+// their account is neither suspended nor limited, their registration is approved, and the
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+// value over the cap of the instance settings (`member_invite_max_uses`,
+// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_active` usable invites gets a 409
+// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+// user as the actor. Every sign-up with the invite checks again that the user may create
+// invites; while they may not, the invite does not work.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateOwnInviteRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateOwnInvite Create an invite of the user's own
+//
+// Creates an invite with a new random code that people use to sign up while the
+// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// person who signs up with it is approved at once. The user may create one when the
+// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+// their account is neither suspended nor limited, their registration is approved, and the
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+// value over the cap of the instance settings (`member_invite_max_uses`,
+// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_active` usable invites gets a 409
+// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+// user as the actor. Every sign-up with the invite checks again that the user may create
+// invites; while they may not, the invite does not work.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+func (c *Client) CreateOwnInvite(ctx context.Context, body CreateOwnInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateOwnInviteRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeOwnInvite Revoke an invite of the user's own
+//
+// The invite stops working at once; the people who signed up with it keep their accounts.
+// Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+// with the user as the actor. A user revokes their own invites even when they may no longer
+// create invites. An unknown ID, or an invite that the user did not create as a member, is
+// a 404.
+//
+// Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
+func (c *Client) RevokeOwnInvite(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeOwnInviteRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -37966,6 +38334,146 @@ func NewListInstanceSupportersRequest(server string, params *ListInstanceSupport
 	return req, nil
 }
 
+// NewListOwnInvitesRequest constructs an http.Request for the ListOwnInvites method
+func NewListOwnInvitesRequest(server string, params *ListOwnInvitesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invites")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateOwnInviteRequest calls the generic CreateOwnInvite builder with application/json body
+func NewCreateOwnInviteRequest(server string, body CreateOwnInviteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateOwnInviteRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateOwnInviteRequestWithBody constructs an http.Request for the CreateOwnInvite method, with any body, and a specified content type
+func NewCreateOwnInviteRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invites")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRevokeOwnInviteRequest constructs an http.Request for the RevokeOwnInvite method
+func NewRevokeOwnInviteRequest(server string, id InviteId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invites/%s/revoke", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListLinkedIdentitiesRequest constructs an http.Request for the ListLinkedIdentities method
 func NewListLinkedIdentitiesRequest(server string) (*http.Request, error) {
 	var err error
@@ -44269,8 +44777,10 @@ type ClientWithResponsesInterface interface {
 
 	// ListInvitesWithResponse List the invites
 	//
-	// The invites that let people sign up while the registration mode is `invite` (FR-001),
-	// newest first, with how they have been used. Needs the `manage_invites` permission.
+	// The invites that let people sign up while the registration mode is `open`, `approval`,
+	// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+	// created them: the staff's and the members' own invites. Needs the `manage_invites`
+	// permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -44279,9 +44789,12 @@ type ClientWithResponsesInterface interface {
 
 	// CreateInviteWithBodyWithResponse Create an invite
 	//
-	// Creates an invite with a new random code. It works only while the registration mode is
-	// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-	// years is a 422 naming it. Needs the `manage_invites` permission.
+	// Creates an invite of the staff with a new random code; the caps of the members' invites
+	// do not apply to it. People sign up with it while the registration mode is `open`,
+	// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+	// permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -44290,9 +44803,12 @@ type ClientWithResponsesInterface interface {
 
 	// CreateInviteWithResponse Create an invite
 	//
-	// Creates an invite with a new random code. It works only while the registration mode is
-	// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-	// years is a 422 naming it. Needs the `manage_invites` permission.
+	// Creates an invite of the staff with a new random code; the caps of the members' invites
+	// do not apply to it. People sign up with it while the registration mode is `open`,
+	// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+	// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+	// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+	// permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -46126,6 +46642,75 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /instance/supporters (the `ListInstanceSupporters` operationId).
 	ListInstanceSupportersWithResponse(ctx context.Context, params *ListInstanceSupportersParams, reqEditors ...RequestEditorFn) (*ListInstanceSupportersResponse, error)
+
+	// ListOwnInvitesWithResponse List the user's own invites
+	//
+	// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+	// have been used, and what the user may do: whether they may create an invite now
+	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+	// A user who may no longer create invites still lists and revokes the ones they made; an
+	// otherwise usable one is then `creator_ineligible`. Invites of the staff
+	// (`/admin/invites`) are not listed.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /invites (the `ListOwnInvites` operationId).
+	ListOwnInvitesWithResponse(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*ListOwnInvitesResponse, error)
+
+	// CreateOwnInviteWithBodyWithResponse Create an invite of the user's own
+	//
+	// Creates an invite with a new random code that people use to sign up while the
+	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// person who signs up with it is approved at once. The user may create one when the
+	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+	// their account is neither suspended nor limited, their registration is approved, and the
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+	// value over the cap of the instance settings (`member_invite_max_uses`,
+	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_active` usable invites gets a 409
+	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+	// user as the actor. Every sign-up with the invite checks again that the user may create
+	// invites; while they may not, the invite does not work.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+	CreateOwnInviteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOwnInviteResponse, error)
+
+	// CreateOwnInviteWithResponse Create an invite of the user's own
+	//
+	// Creates an invite with a new random code that people use to sign up while the
+	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// person who signs up with it is approved at once. The user may create one when the
+	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+	// their account is neither suspended nor limited, their registration is approved, and the
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+	// value over the cap of the instance settings (`member_invite_max_uses`,
+	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_active` usable invites gets a 409
+	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+	// user as the actor. Every sign-up with the invite checks again that the user may create
+	// invites; while they may not, the invite does not work.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+	CreateOwnInviteWithResponse(ctx context.Context, body CreateOwnInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOwnInviteResponse, error)
+
+	// RevokeOwnInviteWithResponse Revoke an invite of the user's own
+	//
+	// The invite stops working at once; the people who signed up with it keep their accounts.
+	// Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+	// with the user as the actor. A user revokes their own invites even when they may no longer
+	// create invites. An unknown ID, or an invite that the user did not create as a member, is
+	// a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
+	RevokeOwnInviteWithResponse(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*RevokeOwnInviteResponse, error)
 
 	// ListLinkedIdentitiesWithResponse List the authenticated user's linked accounts and the login providers
 	//
@@ -61637,6 +62222,201 @@ func (r ListInstanceSupportersResponse) ContentType() string {
 	return ""
 }
 
+// ListOwnInvitesResponse200Headers the declared response headers of an HTTP 200 response for ListOwnInvites
+type ListOwnInvitesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListOwnInvitesResponseDefaultHeaders the declared response headers of an HTTP default response for ListOwnInvites
+type ListOwnInvitesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListOwnInvitesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *OwnInvitePage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListOwnInvitesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListOwnInvitesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListOwnInvitesResponse) GetJSON200() *OwnInvitePage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListOwnInvitesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListOwnInvitesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListOwnInvitesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListOwnInvitesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListOwnInvitesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateOwnInviteResponse200Headers the declared response headers of an HTTP 200 response for CreateOwnInvite
+type CreateOwnInviteResponse200Headers struct {
+	CacheControl *string
+}
+
+// CreateOwnInviteResponseDefaultHeaders the declared response headers of an HTTP default response for CreateOwnInvite
+type CreateOwnInviteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateOwnInviteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *OwnInvite
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CreateOwnInviteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateOwnInviteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CreateOwnInviteResponse) GetJSON200() *OwnInvite {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateOwnInviteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateOwnInviteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateOwnInviteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateOwnInviteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateOwnInviteResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RevokeOwnInviteResponse200Headers the declared response headers of an HTTP 200 response for RevokeOwnInvite
+type RevokeOwnInviteResponse200Headers struct {
+	CacheControl *string
+}
+
+// RevokeOwnInviteResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeOwnInvite
+type RevokeOwnInviteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RevokeOwnInviteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *OwnInvite
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RevokeOwnInviteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RevokeOwnInviteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RevokeOwnInviteResponse) GetJSON200() *OwnInvite {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RevokeOwnInviteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeOwnInviteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeOwnInviteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeOwnInviteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeOwnInviteResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListLinkedIdentitiesResponse200Headers the declared response headers of an HTTP 200 response for ListLinkedIdentities
 type ListLinkedIdentitiesResponse200Headers struct {
 	CacheControl *string
@@ -70943,8 +71723,10 @@ func (c *ClientWithResponses) RefetchInstanceStatusesWithResponse(ctx context.Co
 
 // ListInvitesWithResponse List the invites
 //
-// The invites that let people sign up while the registration mode is `invite` (FR-001),
-// newest first, with how they have been used. Needs the `manage_invites` permission.
+// The invites that let people sign up while the registration mode is `open`, `approval`,
+// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+// created them: the staff's and the members' own invites. Needs the `manage_invites`
+// permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -70959,9 +71741,12 @@ func (c *ClientWithResponses) ListInvitesWithResponse(ctx context.Context, param
 
 // CreateInviteWithBodyWithResponse Create an invite
 //
-// Creates an invite with a new random code. It works only while the registration mode is
-// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-// years is a 422 naming it. Needs the `manage_invites` permission.
+// Creates an invite of the staff with a new random code; the caps of the members' invites
+// do not apply to it. People sign up with it while the registration mode is `open`,
+// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+// permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -70976,9 +71761,12 @@ func (c *ClientWithResponses) CreateInviteWithBodyWithResponse(ctx context.Conte
 
 // CreateInviteWithResponse Create an invite
 //
-// Creates an invite with a new random code. It works only while the registration mode is
-// `invite`. `max_uses` outside 1 to 1,000,000 or `expires_in` outside 1 second to 10
-// years is a 422 naming it. Needs the `manage_invites` permission.
+// Creates an invite of the staff with a new random code; the caps of the members' invites
+// do not apply to it. People sign up with it while the registration mode is `open`,
+// `approval` (approved at once), or `invite`; while the mode is `closed`, creating one is a
+// 409 `/api/v1/problems/registration-closed`. `max_uses` outside 1 to 1,000,000 or
+// `expires_in` outside 1 second to 10 years is a 422 naming it. Needs the `manage_invites`
+// permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -73663,6 +74451,99 @@ func (c *ClientWithResponses) ListInstanceSupportersWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseListInstanceSupportersResponse(rsp)
+}
+
+// ListOwnInvitesWithResponse List the user's own invites
+//
+// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+// have been used, and what the user may do: whether they may create an invite now
+// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+// A user who may no longer create invites still lists and revokes the ones they made; an
+// otherwise usable one is then `creator_ineligible`. Invites of the staff
+// (`/admin/invites`) are not listed.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /invites (the `ListOwnInvites` operationId).
+func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, params *ListOwnInvitesParams, reqEditors ...RequestEditorFn) (*ListOwnInvitesResponse, error) {
+	rsp, err := c.ListOwnInvites(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListOwnInvitesResponse(rsp)
+}
+
+// CreateOwnInviteWithBodyWithResponse Create an invite of the user's own
+//
+// Creates an invite with a new random code that people use to sign up while the
+// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// person who signs up with it is approved at once. The user may create one when the
+// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+// their account is neither suspended nor limited, their registration is approved, and the
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+// value over the cap of the instance settings (`member_invite_max_uses`,
+// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_active` usable invites gets a 409
+// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+// user as the actor. Every sign-up with the invite checks again that the user may create
+// invites; while they may not, the invite does not work.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateOwnInviteResponse, error) {
+	rsp, err := c.CreateOwnInviteWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateOwnInviteResponse(rsp)
+}
+
+// CreateOwnInviteWithResponse Create an invite of the user's own
+//
+// Creates an invite with a new random code that people use to sign up while the
+// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// person who signs up with it is approved at once. The user may create one when the
+// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
+// their account is neither suspended nor limited, their registration is approved, and the
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
+// value over the cap of the instance settings (`member_invite_max_uses`,
+// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_active` usable invites gets a 409
+// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
+// user as the actor. Every sign-up with the invite checks again that the user may create
+// invites; while they may not, the invite does not work.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /invites (the `CreateOwnInvite` operationId).
+func (c *ClientWithResponses) CreateOwnInviteWithResponse(ctx context.Context, body CreateOwnInviteJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateOwnInviteResponse, error) {
+	rsp, err := c.CreateOwnInvite(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateOwnInviteResponse(rsp)
+}
+
+// RevokeOwnInviteWithResponse Revoke an invite of the user's own
+//
+// The invite stops working at once; the people who signed up with it keep their accounts.
+// Revoking a revoked invite changes nothing. The revocation is recorded in the audit log
+// with the user as the actor. A user revokes their own invites even when they may no longer
+// create invites. An unknown ID, or an invite that the user did not create as a member, is
+// a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /invites/{id}/revoke (the `RevokeOwnInvite` operationId).
+func (c *ClientWithResponses) RevokeOwnInviteWithResponse(ctx context.Context, id InviteId, reqEditors ...RequestEditorFn) (*RevokeOwnInviteResponse, error) {
+	rsp, err := c.RevokeOwnInvite(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeOwnInviteResponse(rsp)
 }
 
 // ListLinkedIdentitiesWithResponse List the authenticated user's linked accounts and the login providers
@@ -92794,6 +93675,237 @@ func ParseListInstanceSupportersResponse(rsp *http.Response) (*ListInstanceSuppo
 		response.Headers200 = &headers
 	case true:
 		var headers ListInstanceSupportersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListOwnInvitesResponse parses an HTTP response from a ListOwnInvitesWithResponse call
+func ParseListOwnInvitesResponse(rsp *http.Response) (*ListOwnInvitesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListOwnInvitesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OwnInvitePage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListOwnInvitesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListOwnInvitesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateOwnInviteResponse parses an HTTP response from a CreateOwnInviteWithResponse call
+func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateOwnInviteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OwnInvite
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CreateOwnInviteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers CreateOwnInviteResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRevokeOwnInviteResponse parses an HTTP response from a RevokeOwnInviteWithResponse call
+func ParseRevokeOwnInviteResponse(rsp *http.Response) (*RevokeOwnInviteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeOwnInviteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OwnInvite
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RevokeOwnInviteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RevokeOwnInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

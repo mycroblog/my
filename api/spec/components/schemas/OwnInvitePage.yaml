@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+description: A page of the user's own invites, newest first, with what the user may do.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items, can_create, usable, limits]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./OwnInvite.yaml
+      can_create:
+        description: |
+          Whether the user may create invites now: the instance setting `invite_creators` is
+          `everyone` or the user's roles have `create_invites`, the account is neither
+          suspended nor limited, its registration is approved, and the registration mode is
+          not `closed`. It does not count the cap of usable invites (`usable` against
+          `limits.max_active`).
+        type: boolean
+      usable:
+        description: How many usable invites the user holds now, which `limits.max_active` bounds.
+        type: integer
+        minimum: 0
+      limits:
+        $ref: ./MemberInviteLimits.yaml

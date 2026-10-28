@@ -43,3 +43,7 @@ enum:
   - voice_room_starters
   - voice_public_summary
   - retention_voice_participants
+  - invite_creators
+  - member_invite_max_active
+  - member_invite_max_uses
+  - member_invite_max_expires_in
