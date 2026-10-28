@@ -490,9 +490,10 @@ entries:
     checks: [ui, web]
   - name: web-client
     paths: ["app/web/**"]
-    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ"]
+    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
     checks: [web]
     notes:
+      - "A UI change needs its screen's L1 in docs/architecture/web-client/screens/ (README.md there); add the screen file to this entry's docs when written."
       - "Follow docs/architecture/web-client/ (the principles in its README.md and the section of the screen); never write React from memory. User-facing strings go through `client*` messages."
   - name: web-tests
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
