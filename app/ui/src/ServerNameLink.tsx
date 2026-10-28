@@ -40,7 +40,7 @@ export function ServerNameLink({ name, description, current = false, size }: Ser
     <p dir="auto" className={slots.base()}>
       <Link
         href="/"
-        aria-current={current ? "page" : undefined}
+        {...(current && { "aria-current": "page" as const })}
         aria-describedby={descriptionId}
         variant="standalone"
         className={slots.link()}

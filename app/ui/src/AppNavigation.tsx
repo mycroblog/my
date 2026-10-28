@@ -252,7 +252,7 @@ export function AppNavMenuLink({ href, icon, label, current = false, badge }: Ap
       <Link
         href={href}
         {...(badge !== undefined && { "aria-label": badge.name })}
-        aria-current={current ? "page" : undefined}
+        {...(current && { "aria-current": "page" as const })}
         variant="navigation"
         className={appNavMenu().link()}
       >
