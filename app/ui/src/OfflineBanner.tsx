@@ -7,8 +7,13 @@
 // already pads for that inset. On a short screen (the short: variant, such as 320 × 225 at 400% zoom) it does not stick
 // but scrolls away with the page: the tab bar and the floating new-post button already take almost half of the
 // screen's height, and what stays in place must not take more (WCAG 1.4.10; the layout of web-client/09-app-shell.md §9).
-import type { ComponentPropsWithRef, ReactNode } from "react";
+// The bar and the shell after it share the screen's height: the bar's height (0 while online) is the
+// `--offline-bar-block-size` of the document, which the shell takes off its heights that are the screen's, and by which
+// its sticky columns start under the bar, so that a short page does not scroll by the bar's height.
+import { type ComponentPropsWithRef, type ReactNode, useRef } from "react";
+import { mergeRefs } from "react-aria";
 import { tv } from "tailwind-variants";
+import { useBlockSizeProperty } from "./blockSizeProperty";
 import { WarningIcon } from "./Icons";
 
 const offlineBanner = tv({
@@ -42,11 +47,16 @@ export type OfflineBannerProps = Omit<ComponentPropsWithRef<"div">, "children" |
   action?: ReactNode;
 };
 
-/** Render it once, at the top of the app, for the whole session; switch `isOffline` as the connection changes. */
-export function OfflineBanner({ isOffline, children, action, className, ...props }: OfflineBannerProps) {
+/**
+ * Render it once, at the top of the app and before the shell (`AppShell`, `AdminShell`), for the whole session; switch
+ * `isOffline` as the connection changes.
+ */
+export function OfflineBanner({ isOffline, children, action, className, ref, ...props }: OfflineBannerProps) {
   const slots = offlineBanner({ isOffline });
+  const regionRef = useRef<HTMLDivElement>(null);
+  useBlockSizeProperty(regionRef, "--offline-bar-block-size");
   return (
-    <div {...props} className={slots.region({ className })}>
+    <div {...props} ref={mergeRefs(regionRef, ref)} className={slots.region({ className })}>
       <div role="status">
         {isOffline && (
           <p className={slots.message()}>
