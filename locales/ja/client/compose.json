@@ -370,5 +370,29 @@
   "compose.language.tooltip": {
     "defaultMessage": "言語：{value}",
     "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."
+  },
+  "compose.blocked.empty": {
+    "defaultMessage": "投稿する内容を入力してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed with an empty text: why the post was not sent. The focus moves to the text."
+  },
+  "compose.blocked.too_long": {
+    "defaultMessage": "本文が長すぎます。短くしてから投稿してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed with a text over the character limit: why the post was not sent. The counter under the text shows by how much."
+  },
+  "compose.blocked.uploading": {
+    "defaultMessage": "添付ファイルをアップロードしています。終わってから投稿してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while attached files were still uploading or being processed: why the post was not sent."
+  },
+  "compose.blocked.upload_failed": {
+    "defaultMessage": "アップロードできなかった添付ファイルがあります。外してから投稿してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while an attached file had failed: why the post was not sent."
+  },
+  "compose.blocked.poll": {
+    "defaultMessage": "投票の選択肢を直してから投稿してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the poll had an empty or repeated option: why the post was not sent. The poll shows which."
+  },
+  "compose.blocked.loading_target": {
+    "defaultMessage": "返信先・引用元の投稿を読み込んでいます。表示されてから投稿してください。",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
   }
 }

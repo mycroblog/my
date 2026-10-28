@@ -154,7 +154,7 @@ describe("the new-post form", () => {
     expect(isCelebrating(second)).toBe(false);
   });
 
-  test("puts images, the content warning, visibility and language in one row of tools under the text, each with its current value", async () => {
+  test("puts the visibility first and the other tools after it under the text, each with its current value", async () => {
     signedIn();
     const { user } = await renderApp();
     const sheet = await openSheet(user);
@@ -172,10 +172,12 @@ describe("the new-post form", () => {
     expect(visibility).toHaveTextContent("Public");
     expect(visibility).toHaveAccessibleDescription("Anyone, here and on other servers. Shown on the public timelines.");
     expect(within(sheet).getByRole("button", { name: "English Language" })).toHaveTextContent("English");
-    // In the order of reading: the text, then the tools, then the submit button.
+    // In the order of reading: the text, then the visibility, which decides most about the post, then the other
+    // tools, then the submit button (screens/compose.md).
     const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-    expect(follows(text, images)).toBe(true);
-    expect(follows(visibility, within(sheet).getByRole("button", { name: "Post" }))).toBe(true);
+    expect(follows(text, visibility)).toBe(true);
+    expect(follows(visibility, images)).toBe(true);
+    expect(follows(images, within(sheet).getByRole("button", { name: "Post" }))).toBe(true);
 
     // Keyboard focus shows the tooltip of an icon-only button, and the button keeps its description. React
     // Aria hides what is outside the modal sheet from the accessibility tree, the tooltip's container with it.
@@ -184,6 +186,8 @@ describe("the new-post form", () => {
     await user.tab();
     expect(within(sheet).getByRole("button", { name: "Add emoji" })).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Add emoji");
+    await user.tab();
+    expect(visibility).toHaveFocus();
     await user.tab();
     expect(images).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Add images, video, or audio");
@@ -201,8 +205,8 @@ describe("the new-post form", () => {
     await within(sheet).findByRole("textbox", { name: "Your post" });
 
     const visibility = within(sheet).getByRole("button", { name: "Visibility: Public" });
-    // From the text: the emoji button, images, poll and content warning come first.
-    for (let i = 0; i < 5; i++) await user.tab();
+    // From the text: the emoji button comes first, then the visibility.
+    for (let i = 0; i < 2; i++) await user.tab();
     expect(visibility).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Visibility: Public");
     // Opening the popover hides it, and the choice updates it.
@@ -221,7 +225,8 @@ describe("the new-post form", () => {
     expect(within(sheet).getByRole("button", { name: "Visibility: Followers" })).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Visibility: Followers");
 
-    await user.tab();
+    // Past images, poll and content warning.
+    for (let i = 0; i < 4; i++) await user.tab();
     expect(within(sheet).getByRole("button", { name: /Who can quote/ })).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent(/^Quote: /);
     await user.tab();
@@ -245,16 +250,18 @@ describe("the new-post form", () => {
     // A post with a poll attaches no files.
     expect(within(sheet).getByRole("button", { name: "Add images, video, or audio" })).toBeDisabled();
     const poll = within(sheet).getByRole("group", { name: "Poll" });
-    // Two empty options: the post waits for them.
+    // Two empty options: the post waits for them, and says so beside the button when it is pressed (G23).
     const post = within(sheet).getByRole("button", { name: "Post" });
-    expect(post).toBeDisabled();
+    expect(post).toBeEnabled();
+    await user.click(post);
+    expect(within(sheet).getByText("Fix the poll's options to post.")).toBeInTheDocument();
     await user.type(within(poll).getByRole("textbox", { name: "Option 1" }), "Tea");
     await user.type(within(poll).getByRole("textbox", { name: "Option 2" }), "tea ");
-    expect(post).toBeEnabled();
+    // The reason goes once it no longer holds.
+    expect(within(sheet).queryByText("Fix the poll's options to post.")).not.toBeInTheDocument();
     await user.clear(within(poll).getByRole("textbox", { name: "Option 2" }));
     await user.type(within(poll).getByRole("textbox", { name: "Option 2" }), "Tea ");
     expect(within(poll).getByText("Each option must be different.")).toBeInTheDocument();
-    expect(post).toBeDisabled();
     await user.clear(within(poll).getByRole("textbox", { name: "Option 2" }));
     await user.type(within(poll).getByRole("textbox", { name: "Option 2" }), "Coffee");
 
@@ -320,7 +327,9 @@ describe("the new-post form", () => {
 
     expect(await within(sheet).findByText("Could not send the post: The server is busy")).toBeInTheDocument();
     expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveValue("Do not lose me");
-    expect(screen.getByRole("alert")).toHaveTextContent("Could not send the post: The server is busy");
+    expect(
+      screen.getAllByRole("alert").some((alert) => alert.textContent === "Could not send the post: The server is busy"),
+    ).toBe(true);
 
     await user.click(within(sheet).getByRole("button", { name: "Post" }));
 
@@ -395,7 +404,30 @@ describe("the new-post form", () => {
 
     expect(within(sheet).getByText("2 characters too many")).toBeInTheDocument();
     expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveAttribute("aria-invalid", "true");
-    expect(within(sheet).getByRole("button", { name: "Post" })).toBeDisabled();
+    // The button stays pressable (G23): pressed, the field's own validation stops the post and takes the person
+    // back to the text, whose error says by how much.
+    const sent = recordPosts();
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveFocus();
+    expect(sent).toHaveLength(0);
+  });
+
+  test("says why an empty post is not sent, beside the button, and sends it once written (C11)", async () => {
+    signedIn();
+    const sent = recordPosts();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    expect(within(sheet).getByText("Write something to post.")).toBeInTheDocument();
+    expect(text).toHaveFocus();
+    expect(sent).toHaveLength(0);
+
+    await user.type(text, "Hello");
+    expect(within(sheet).queryByText("Write something to post.")).not.toBeInTheDocument();
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    expect(await findToast("Posted.")).toBeInTheDocument();
   });
 
   test("highlights mentions, hashtags, URLs, known shortcodes and the text over the limit on a layer hidden from assistive technology", async () => {
@@ -645,7 +677,11 @@ describe("images", () => {
     expect(within(sheet).getByRole("button", { name: "Add images, video, or audio" })).toHaveAccessibleDescription(
       /^1 file attached Up to 4 files/,
     );
-    expect(within(sheet).getByRole("button", { name: "Post" })).toBeDisabled();
+    // Pressed while the file uploads, the button says to wait (G23); it is never disabled by the input.
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    expect(
+      within(sheet).getByText("The attachments are still uploading. Post once they are ready."),
+    ).toBeInTheDocument();
     // 6000 × 4000 is more than 3840 × 2160 pixels of area: scaled to fit, with the aspect ratio kept.
     await waitFor(() => {
       expect(uploads).toHaveLength(1);
@@ -660,7 +696,7 @@ describe("images", () => {
     // The upload was processing; the poll finds it ready.
     const post = within(sheet).getByRole("button", { name: "Post" });
     await waitFor(() => {
-      expect(post).toBeEnabled();
+      expect(within(sheet).queryByText(/^(Uploading|Processing)…$/)).not.toBeInTheDocument();
     });
     await user.click(post);
 
@@ -691,7 +727,7 @@ describe("images", () => {
     expect(description).toHaveAccessibleDescription(/Your settings ask for a description of every attachment\./);
     const post = within(sheet).getByRole("button", { name: "Post" });
     await waitFor(() => {
-      expect(post).toBeEnabled();
+      expect(within(sheet).queryByText(/^(Uploading|Processing)…$/)).not.toBeInTheDocument();
     });
 
     await user.click(post);
@@ -735,7 +771,7 @@ describe("images", () => {
     expect(description).toHaveAccessibleDescription(/This server requires a description of every attachment\./);
     const post = within(sheet).getByRole("button", { name: "Post" });
     await waitFor(() => {
-      expect(post).toBeEnabled();
+      expect(within(sheet).queryByText(/^(Uploading|Processing)…$/)).not.toBeInTheDocument();
     });
 
     await user.type(description, "   ");

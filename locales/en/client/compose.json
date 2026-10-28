@@ -370,5 +370,29 @@
   "compose.language.tooltip": {
     "defaultMessage": "Language: {value}",
     "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."
+  },
+  "compose.blocked.empty": {
+    "defaultMessage": "Write something to post.",
+    "description": "Beside the submit button of the new-post form, after it was pressed with an empty text: why the post was not sent. The focus moves to the text."
+  },
+  "compose.blocked.too_long": {
+    "defaultMessage": "The text is too long. Shorten it to post.",
+    "description": "Beside the submit button of the new-post form, after it was pressed with a text over the character limit: why the post was not sent. The counter under the text shows by how much."
+  },
+  "compose.blocked.uploading": {
+    "defaultMessage": "The attachments are still uploading. Post once they are ready.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while attached files were still uploading or being processed: why the post was not sent."
+  },
+  "compose.blocked.upload_failed": {
+    "defaultMessage": "An attachment could not be uploaded. Remove it to post.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while an attached file had failed: why the post was not sent."
+  },
+  "compose.blocked.poll": {
+    "defaultMessage": "Fix the poll's options to post.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the poll had an empty or repeated option: why the post was not sent. The poll shows which."
+  },
+  "compose.blocked.loading_target": {
+    "defaultMessage": "The post you reply to or quote is still loading. Post once it shows.",
+    "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
   }
 }

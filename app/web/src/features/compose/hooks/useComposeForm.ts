@@ -97,7 +97,15 @@ export type ReadyComposeForm = {
    */
   isDescriptionRequired: boolean;
   canSubmit: boolean;
-  /** Sends the draft, or asks first when images lack a description that the preferences ask for. */
+  /**
+   * Why the draft cannot be sent, once the person pressed the submit button while it could not (G23: the button is
+   * never disabled by the input): shown beside the button until the reason is gone. Null otherwise.
+   */
+  blocked: ComposeBlocker | null;
+  /**
+   * Sends the draft, or asks first when images lack a description that the preferences ask for. While the draft cannot
+   * be sent it shows why (`blocked`) and moves the focus to the text when the text is the reason.
+   */
   submit: () => void;
   /** Whether the question about images without a description is open, and how many lack one. */
   confirmation: { isOpen: boolean; missing: number };
@@ -110,6 +118,26 @@ export type ReadyComposeForm = {
   canEditOutbox: boolean;
   discard: (idempotencyKey: string) => void;
 };
+
+/** What keeps a draft from being sent, in the order the form checks it. */
+export type ComposeBlocker = "empty" | "too_long" | "uploading" | "upload_failed" | "poll" | "loading_target";
+
+/** The reason of `blocker`, the first that holds; null when the draft can be sent. */
+function blockerOf(facts: {
+  text: string;
+  textLimit: number;
+  attachments: { isBusy: boolean; hasFailed: boolean };
+  pollProblem: PollForm["problem"];
+  targetsLoading: boolean;
+}): ComposeBlocker | null {
+  if (facts.text.trim() === "") return "empty";
+  if (countCharacters(facts.text) > facts.textLimit) return "too_long";
+  if (facts.attachments.hasFailed) return "upload_failed";
+  if (facts.attachments.isBusy) return "uploading";
+  if (facts.pollProblem !== null) return "poll";
+  if (facts.targetsLoading) return "loading_target";
+  return null;
+}
 
 /** The poll of the draft and its editing (FR-112). */
 export type PollForm = {
@@ -202,6 +230,8 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const { accountDomain } = useConfig();
   const attachments = useAttachments(store, draft.attachments);
   const [isConfirming, setIsConfirming] = useState(false);
+  // Whether the person pressed the submit button while the draft could not be sent; the reason shows until it is gone.
+  const [triedBlocked, setTriedBlocked] = useState(false);
 
   const send = useMutation({
     mutationKey: createStatusMutationKey,
@@ -277,14 +307,14 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const textLimit = maxCharacters - warningLength;
   const missing = attachments.items.filter((item) => item.description.trim() === "").length;
   const problem = draft.poll === null ? null : pollProblem(draft.poll);
-  const canSubmit =
-    draft.text.trim() !== "" &&
-    countCharacters(draft.text) <= textLimit &&
-    !attachments.isBusy &&
-    !attachments.hasFailed &&
-    problem === null &&
-    replyTo.status !== "loading" &&
-    quoteOf.status !== "loading";
+  const blocker = blockerOf({
+    text: draft.text,
+    textLimit,
+    attachments,
+    pollProblem: problem,
+    targetsLoading: replyTo.status === "loading" || quoteOf.status === "loading",
+  });
+  const canSubmit = blocker === null;
   const editPoll = (change: (poll: PollDraft) => PollDraft) => {
     if (draft.poll !== null) store.edit({ poll: change(draft.poll) });
   };
@@ -356,8 +386,15 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     requireDescriptions,
     isDescriptionRequired,
     canSubmit,
+    blocked: triedBlocked ? blocker : null,
     submit: () => {
-      if (!canSubmit) return;
+      if (blocker !== null) {
+        setTriedBlocked(true);
+        // The text is what to fix: the focus goes there (G23). The other reasons are fixed elsewhere or pass by themselves.
+        if (blocker === "empty" || blocker === "too_long") document.getElementById(composeTextId)?.focus();
+        return;
+      }
+      setTriedBlocked(false);
       // The browser's validation of the required description fields keeps the form from being sent first; the server
       // would refuse the post anyway.
       if (isDescriptionRequired && missing > 0) return;

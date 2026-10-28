@@ -1,12 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Checkbox, Cluster, Dialog, DialogActions, Hint, InlineError, Spinner, Stack, Text } from "@my/ui";
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  FormActionBar,
+  Hint,
+  InlineError,
+  Spinner,
+  Stack,
+  Text,
+} from "@my/ui";
 import type { SubmitEvent } from "react";
 import { useLocale, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import { maxAttachments } from "../hooks/policy";
 import { type ComposeController, composeTextId } from "../hooks/useCompose";
-import { type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
+import { type ComposeBlocker, type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
+import type { ClientMessageKey } from "../../../lib/i18n";
 import { useFormatRemaining } from "../hooks/useFormatRemaining";
 import { AttachmentList } from "./AttachmentList";
 import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
@@ -45,6 +57,16 @@ export function ComposeForm({ controller, labelledBy, autoFocus = false }: Compo
 }
 
 type ReadyFormProps = { form: ReadyComposeForm; labelledBy: string; autoFocus: boolean };
+
+/** What the send bar says while the draft cannot be sent: the reason and what to do about it. */
+const blockerMessages: Readonly<Record<ComposeBlocker, ClientMessageKey>> = {
+  empty: "client:compose.blocked.empty",
+  too_long: "client:compose.blocked.too_long",
+  uploading: "client:compose.blocked.uploading",
+  upload_failed: "client:compose.blocked.upload_failed",
+  poll: "client:compose.blocked.poll",
+  loading_target: "client:compose.blocked.loading_target",
+};
 
 function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
   const t = useT();
@@ -133,15 +155,18 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           </Text>
         )}
         {form.error !== null && <InlineError size="inherit">{form.error}</InlineError>}
-        {/* The tools and the submit button share the row under the text, so that the button stays on the first screen at 320 px. */}
-        <Cluster align="center" gap="2">
-          <ComposeTools form={form} />
-          <Box pushEnd>
-            <Button type="submit" variant="primary" isDisabled={!form.canSubmit}>
-              {t(form.replyTo.status === "none" ? "client:compose.submit" : "client:compose.submit.reply")}
-            </Button>
-          </Box>
-        </Cluster>
+        <ComposeTools form={form} />
+        {/* The send bar: the button is never disabled by the input (G23); pressed while the draft cannot be sent, it
+            says why beside it, until the reason is gone. */}
+        <FormActionBar
+          {...(form.blocked !== null && {
+            result: { tone: "danger" as const, message: t(blockerMessages[form.blocked]) },
+          })}
+        >
+          <Button type="submit" variant="primary">
+            {t(form.replyTo.status === "none" ? "client:compose.submit" : "client:compose.submit.reply")}
+          </Button>
+        </FormActionBar>
       </Stack>
       <Outbox
         items={form.outbox}
