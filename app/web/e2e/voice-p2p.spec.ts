@@ -102,8 +102,8 @@ async function expectReceivesAudio(page: Page): Promise<void> {
 
 /** Signs in to the app through the server's sign-in screen (OAuth 2.0 with PKCE) and waits for the home page. */
 async function signIn(page: Page, user: User): Promise<void> {
+  // /login is not a page: it opens the server's sign-in screen at once.
   await page.goto("/login");
-  await page.getByRole("main").getByRole("button").click();
   await page.locator('input[type="email"][autocomplete="username"]').fill(user.email);
   await page.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);
   await page.locator('main button[type="submit"]').first().click();

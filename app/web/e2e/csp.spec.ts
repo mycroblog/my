@@ -45,10 +45,8 @@ test("the app signs in and reaches the client API with no CSP violation", async 
     if (new URL(request.url()).origin !== serverURL) elsewhere.push(request.url());
   });
 
-  // The app's sign-in page: the button sends the browser to the server's sign-in screen (ADR-0030).
+  // /login is not a page: it opens the server's sign-in screen at once.
   await page.goto("/login");
-  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-  await page.getByRole("main").getByRole("button").click();
 
   await page.locator('input[type="email"][autocomplete="username"]').fill(admin.email);
   await page.locator('input[type="password"][autocomplete="current-password"]').fill(admin.password);

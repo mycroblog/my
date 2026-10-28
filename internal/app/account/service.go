@@ -160,7 +160,7 @@ func (s *Service) prepareKeys(ctx context.Context, a account.Account, now time.T
 			Fingerprint:  fingerprint,
 			CreatedAt:    now,
 		}
-		sealed, err := s.d.Sealer.Seal(ctx, der, privateKeyAAD(k.ID))
+		sealed, err := s.d.Sealer.Seal(ctx, der, PrivateKeyAAD(k.ID))
 		if err != nil {
 			return nil, fmt.Errorf("account: seal %s private key: %w", alg, err)
 		}
@@ -707,7 +707,7 @@ func (s *Service) PrivateKey(ctx context.Context, k account.Key) (crypto.Signer,
 	if err != nil {
 		return nil, err
 	}
-	der, err := s.d.Sealer.Open(ctx, sealed, privateKeyAAD(k.ID))
+	der, err := s.d.Sealer.Open(ctx, sealed, PrivateKeyAAD(k.ID))
 	if err != nil {
 		return nil, fmt.Errorf("account: open private key %s: %w", k.KeyID, err)
 	}

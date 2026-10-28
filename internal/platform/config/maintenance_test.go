@@ -84,3 +84,24 @@ func TestMaintenanceRequested(t *testing.T) {
 		t.Error("MaintenanceRequested accepted on")
 	}
 }
+
+func TestProfileRequested(t *testing.T) {
+	for _, tt := range []struct {
+		env   map[string]string
+		files map[string]string
+		want  string
+	}{
+		{map[string]string{}, nil, "production"},
+		{map[string]string{"MY_PROFILE": "development", "MY_DB": "nosuchdb"}, nil, "development"},
+		{map[string]string{"MY_CONFIG": "my.toml"}, map[string]string{"my.toml": "profile = \"development\"\n"}, "development"},
+		{map[string]string{"MY_CONFIG": "my.toml", "MY_PROFILE": "production"}, map[string]string{"my.toml": "profile = \"development\"\n"}, "production"},
+	} {
+		got, err := ProfileRequested(source(tt.env, tt.files))
+		if err != nil || got != tt.want {
+			t.Errorf("%v %v: ProfileRequested = %q, %v; want %q", tt.env, tt.files, got, err, tt.want)
+		}
+	}
+	if _, err := ProfileRequested(source(map[string]string{"MY_PROFILE": "staging"}, nil)); err == nil {
+		t.Error("ProfileRequested accepted staging")
+	}
+}

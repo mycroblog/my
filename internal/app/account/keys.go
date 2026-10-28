@@ -39,8 +39,8 @@ func GenerateKey(alg account.KeyAlgorithm) (crypto.Signer, error) {
 	}
 }
 
-// privateKeyAAD binds a sealed private key to its row and column (ADR-0019 §6).
-func privateKeyAAD(accountKeyID string) []byte {
+// PrivateKeyAAD binds a sealed private key to its row and column (ADR-0019 §6).
+func PrivateKeyAAD(accountKeyID string) []byte {
 	return kernel.AAD(accountKeyID, "local_account_private_keys.private_key_enc")
 }
 

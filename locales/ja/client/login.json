@@ -1,8 +1,4 @@
 {
-  "login.body": {
-    "defaultMessage": "{instance} にログインすると、投稿したり、ほかの人をフォローしたり、ホームタイムラインを読んだりできます。",
-    "description": "Text on the sign-in page. {instance} is the name of this server."
-  },
   "login.failed.denied": {
     "defaultMessage": "サーバーの画面でログインが取り消されました。",
     "description": "Why signing in failed: the user declined on the server's authorization screen."
@@ -23,12 +19,8 @@
     "defaultMessage": "ログインできませんでした",
     "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
   },
-  "login.submit": {
-    "defaultMessage": "ログインに進む",
-    "description": "Button on the sign-in page that opens the server's sign-in screen."
-  },
   "login.title": {
     "defaultMessage": "ログイン",
-    "description": "Heading and document title of the page that starts signing in."
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
   }
 }

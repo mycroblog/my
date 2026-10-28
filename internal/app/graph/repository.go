@@ -134,6 +134,8 @@ type Repository interface {
 	FindPreferences(ctx context.Context, followID string) (graph.Preferences, error)
 	// FindCounters returns an account's counters; ErrNotFound means both are zero.
 	FindCounters(ctx context.Context, accountID string) (graph.Counters, error)
+	// CountFollowers returns the number of edges into followeeAccountID in state.
+	CountFollowers(ctx context.Context, followeeAccountID string, state graph.State) (int64, error)
 	// ListFollowers returns the edges into followeeAccountID in state, newest follow first,
 	// starting after the follow ID before ("" for the newest) and returning at most limit edges.
 	ListFollowers(ctx context.Context, followeeAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)

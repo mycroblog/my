@@ -34,6 +34,7 @@ import { useStatusPageUrl } from "../../../lib/statusPage";
 import { type Permission, useViewerPermissions } from "../../moderation";
 import { useSupporterEntry } from "../../supporters";
 import { useVoiceAvailable } from "../../voice";
+import { useFollowRequestCount } from "../hooks/useFollowRequestCount";
 import { useOwnInvitesEntry } from "../hooks/useOwnInvites";
 
 /**
@@ -125,7 +126,8 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
 ];
 
 /**
- * The links to the pages of the settings, in named groups (`NavMenu`); the page the user is on is current. Below
+ * The links to the pages of the settings, in named groups (`NavMenu`); the page the user is on is current, and the
+ * follow requests show how many await the user's approval. Below
  * them, set apart by a line, the help: the link to the instance's status page (FR-810, ADR-0085 §6), which leaves the
  * app (web-client/README.md Y12); none when the instance has no status page.
  */
@@ -136,6 +138,7 @@ export function SettingsMenu({ pathname }: { pathname: string }) {
   const voice = useVoiceAvailable();
   const invites = useOwnInvitesEntry();
   const statusPageUrl = useStatusPageUrl();
+  const followRequests = useFollowRequestCount();
   const shown = (page: SettingsPage) =>
     (page.permission === undefined || permissions.includes(page.permission)) &&
     (page.supporters === undefined || supporters) &&
@@ -147,12 +150,19 @@ export function SettingsMenu({ pathname }: { pathname: string }) {
         groups={groups.map((group) => ({
           id: group.id,
           heading: t(group.heading),
-          items: group.pages.filter(shown).map(({ href, label, icon: Icon }) => ({
-            href,
-            icon: <Icon />,
-            label: t(label),
-            current: pathname === href,
-          })),
+          items: group.pages.filter(shown).map(({ href, label, icon: Icon }) => {
+            const name = t(label);
+            // What awaits the user there: the follow requests to approve, none at zero.
+            const count = href === "/settings/follow-requests" ? followRequests : 0;
+            const waiting = t("client:settings.follow_requests.waiting", { count });
+            return {
+              href,
+              icon: <Icon />,
+              label: name,
+              current: pathname === href,
+              ...(count > 0 && { badge: { count, label: waiting, name: `${name} ${waiting}` } }),
+            };
+          }),
         }))}
       />
       {statusPageUrl !== undefined && (

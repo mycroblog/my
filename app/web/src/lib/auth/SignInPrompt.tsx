@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { type HeadingLevel, SignInState } from "@my/ui";
 import { useT } from "../i18n";
+import { signInPath } from "../paths";
 
 export type SignInPromptProps = {
   /** The short fact ("You are not signed in"). */
@@ -23,7 +24,7 @@ export function SignInPrompt({ heading, description, returnTo, headingLevel }: S
       heading={heading}
       description={description}
       {...(headingLevel !== undefined && { headingLevel })}
-      signInHref={`/login?${new URLSearchParams({ return_to: returnTo }).toString()}`}
+      signInHref={signInPath(returnTo)}
       signInLabel={t("client:shell.sign_in_required.sign_in")}
     />
   );

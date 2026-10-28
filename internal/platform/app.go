@@ -37,6 +37,7 @@ import (
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/projection"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/rewrap"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
@@ -199,6 +200,9 @@ type App struct {
 	// DataUpgrades runs and checks the data upgrade steps (`my db upgrade`, ADR-0087 §4); the
 	// readiness check requires every step that it registers.
 	DataUpgrades *dbupgrade.Service
+	// Rewrap reports and re-wraps the stored sealed values under the current KEK (`my kek`,
+	// ADR-0019 §6).
+	Rewrap *rewrap.Service
 	// FanOut turns the outbound activities that the federation projectors record into
 	// deliveries (docs/architecture/federation.md §7).
 	FanOut *federation.FanOut
@@ -438,6 +442,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpDataUpgrades(repos.dataUpgrades, opts.DataUpgrades); err != nil {
 		return nil, err
 	}
+	a.setUpRewrap(repos.sealedValues)
 	if err := a.setUpStreams(ctx, cfg, opts.StreamBus); err != nil {
 		return nil, err
 	}

@@ -23,9 +23,9 @@ const announced = {
 };
 
 describe("the notice of the closure", () => {
-  test("shows on the sign-in page and the information page, with the dates, the message and the way to the export", async () => {
+  test("shows on the signed-out pages and the information page, with the dates, the message and the way to the export", async () => {
     serveClosure(announced);
-    await renderApp({ path: "/login" });
+    await renderApp({ path: "/search" });
 
     const notice = await screen.findByRole("region", { name: "Notice of the server's closure" });
     expect(notice).toHaveTextContent("my example will close on December 1, 2026.");
@@ -46,7 +46,7 @@ describe("the notice of the closure", () => {
   });
 
   test("is absent when no closure is announced", async () => {
-    await renderApp({ path: "/login" });
+    await renderApp({ path: "/search" });
     await screen.findByRole("heading", { level: 1 });
     expect(screen.queryByRole("region", { name: "Notice of the server's closure" })).not.toBeInTheDocument();
   });
@@ -57,7 +57,7 @@ describe("a closed server", () => {
 
   test("tells a visitor who is not signed in that it has closed, and until when signing in takes the data out", async () => {
     serveClosure(closed);
-    await renderApp({ path: "/login" });
+    await renderApp({ path: "/search" });
     const notice = await screen.findByRole("region", { name: "Notice of the server's closure" });
     expect(notice).toHaveTextContent("my example has closed.");
     expect(notice).toHaveTextContent("until January 15, 2027");

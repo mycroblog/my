@@ -2,6 +2,8 @@
 // The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the open voice chat
 // rooms (on a room's page, its raised hands and about the room instead) and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// Signed out, the navigation is a bar along the top and the pages are one column at every width, with no third
+// column: they end with a footer that links to the server's information and documents instead.
 import { AppShell } from "@my/ui";
 import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useRef } from "react";
@@ -18,6 +20,7 @@ import { AdminLayout, isStaffMode } from "./AdminLayout";
 import { ConnectionBanner } from "./ConnectionBanner";
 import { Navigation, useSignedOut } from "./Navigation";
 import { ServerInfo } from "./ServerInfo";
+import { SiteFooter } from "./SiteFooter";
 import { useLiveUpdates } from "./useLiveUpdates";
 import { useMediaQuery } from "./useMediaQuery";
 import { useViewChange } from "./useViewChange";
@@ -102,27 +105,29 @@ export function AppLayout() {
         // Above the tab bar on phones (only its icon, named by its label). It always holds the new-post sheet, which pages
         // without a feed keep for replies; the button shows only on pages with a feed.
         floating={<ComposeEntry trigger={showButton ? "icon" : "none"} />}
-        {...(wide && {
-          aside: (
-            // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The open voice
-            // chat rooms come first, while there are any (web-client/09-app-shell.md §9).
-            <>
-              {!onVoicePage && (
+        {...(signedOut && { footer: <SiteFooter /> })}
+        {...(wide &&
+          !signedOut && {
+            aside: (
+              // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The open voice
+              // chat rooms come first, while there are any (web-client/09-app-shell.md §9).
+              <>
+                {!onVoicePage && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <VoiceRail />
+                  </ErrorBoundary>
+                )}
+                {voiceRoomId !== undefined && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <VoiceRoomAside id={voiceRoomId} />
+                  </ErrorBoundary>
+                )}
                 <ErrorBoundary fallback={null} onError={reportBoundaryError}>
-                  <VoiceRail />
+                  <ServerInfo />
                 </ErrorBoundary>
-              )}
-              {voiceRoomId !== undefined && (
-                <ErrorBoundary fallback={null} onError={reportBoundaryError}>
-                  <VoiceRoomAside id={voiceRoomId} />
-                </ErrorBoundary>
-              )}
-              <ErrorBoundary fallback={null} onError={reportBoundaryError}>
-                <ServerInfo />
-              </ErrorBoundary>
-            </>
-          ),
-        })}
+              </>
+            ),
+          })}
       >
         <Outlet />
         {/* The call goes on across pages: its bar ends every page while it lasts (web-client/09-app-shell.md §9). */}
