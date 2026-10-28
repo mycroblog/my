@@ -80,7 +80,8 @@ const appNavTop = tv({
     // The bar's call to action and its menu button: phones only.
     action: "flex-none lg:hidden",
     // The bar's own controls after the items (`AppNav` `topTools`): a row of the panel below lg, set apart by a line.
-    tools: "mt-1 border-t border-border px-3 pt-3 pb-1 lg:mt-0 lg:border-t-0 lg:p-0 lg:ps-2",
+    tools:
+      "mt-1 border-t border-border px-3 pt-3 pb-1 lg:mt-0 lg:border-t-0 lg:p-0 lg:ps-2 lg:*:flex-row lg:*:items-center lg:*:gap-3 lg:*:whitespace-nowrap lg:[&_[role=radiogroup]>div]:flex-nowrap lg:[&_[role=radiogroup]>div]:gap-x-3",
     menuButton: "min-h-11 min-w-11 flex-none lg:hidden [&_svg]:size-6",
   },
 });
