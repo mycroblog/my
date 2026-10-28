@@ -4,13 +4,14 @@
 // screens the third column adds the raised hands and about the room (VoiceRoomAside). To a visitor who does not see
 // the room, its summary: that only the users of this server join, with the way to sign in; a room that ended says
 // so, by its name when the summary has one, with the way to the rooms open now.
-import { ButtonLink, Callout, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
+import { ButtonLink, Callout, Link, RegionError, Stack, Text } from "@my/ui";
 import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
 import { signInPath } from "../../../lib/paths";
 import { voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
 import { AccountLink } from "./VoiceRoomAside";
+import { VoiceStageSkeleton } from "./VoiceSkeletons";
 import { VoiceStage } from "./VoiceStage";
 
 export type VoiceRoomViewProps = {
@@ -27,9 +28,7 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       return (
         <>
           {renderHeading(t("client:voice.room.title"))}
-          <div aria-busy="true">
-            <Spinner label={t("client:voice.room.loading")} />
-          </div>
+          <VoiceStageSkeleton />
         </>
       );
     case "error":

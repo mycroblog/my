@@ -21,7 +21,7 @@
   },
   "voice.list.loading": {
     "defaultMessage": "Loading the rooms",
-    "description": "Accessible name of the spinner while the voice chat rooms load."
+    "description": "Visually hidden name of the busy list while the voice chat rooms or the voice chat history load."
   },
   "voice.list.failed": {
     "defaultMessage": "Couldn't load the rooms",
@@ -325,7 +325,7 @@
   },
   "voice.room.loading": {
     "defaultMessage": "Loading the room",
-    "description": "Accessible name of the spinner while a voice chat room loads."
+    "description": "Visually hidden name of the busy page while a voice chat room loads."
   },
   "voice.history.title": {
     "defaultMessage": "Voice chat history",

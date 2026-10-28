@@ -19,5 +19,6 @@ export { VoiceRoomAside } from "./components/VoiceRoomAside";
 export { speakerLabels, visibilityLabels } from "./components/VoiceRoomFormDialog";
 export { TagVoiceRooms, VoiceRail, VoiceRoomList } from "./components/VoiceRooms";
 export { VoiceRoomView } from "./components/VoiceRoomView";
+export { VoiceHistorySkeleton, VoiceRoomsSkeleton, VoiceStageSkeleton } from "./components/VoiceSkeletons";
 export { voiceEndReasonLabel } from "./hooks/useVoiceHistory";
 export { useVoiceAvailable } from "./hooks/useVoiceRooms";
