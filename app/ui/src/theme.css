@@ -302,11 +302,19 @@
   --elevation-sm: 0 1px 2px 0 #502e2614;
   --elevation-md: 0 7px 28px 0 #502e2614;
   --elevation-lg: 0 16px 40px 0 #502e2624;
+  /* The soft surfaces (ADR-0111 §3): a raised face (soft-raised) and a sunken one (soft-inset, fields and grooves). These
+     are the values without relative colour; where the browser has it, the rule after this block derives them from the
+     surface colours instead, so a server theme that changes the surfaces moves its shadows too. A server theme may
+     still set either outright, which wins over both (one value for both themes, like the other elevations). */
+  --elevation-soft-raised: 0 1px 2px 0 #502e2614, 0 7px 28px 0 #502e260b;
+  --elevation-soft-inset: inset 0 1px 3px 0 #502e2614;
   --shadow-*: initial;
   --shadow-card: var(--elevation-card);
   --shadow-sm: var(--elevation-sm);
   --shadow-md: var(--elevation-md);
   --shadow-lg: var(--elevation-lg);
+  --shadow-soft-raised: var(--elevation-soft-raised);
+  --shadow-soft-inset: var(--elevation-soft-inset);
 
   /* --- Motion (only ever applied under motion-safe:, web-client/README.md D6) ----------------------- */
   --ease-*: initial;
@@ -326,7 +334,28 @@
   --animate-celebrate: celebrate var(--transition-duration-slow) var(--ease-celebrate);
 }
 
-/* Outside @theme: scripts/theme-source.ts reads @theme blocks without nested braces. */
+/* The soft elevations from the surface colours (ADR-0111 §3), where relative colour of a light-dark() colour parses;
+   elsewhere the @theme values above stay. Only the lightness moves, so the shadows keep the surface's hue. In the light
+   theme a raised face has a lighter shadow above and a darker one below; in the dark theme a light shadow would only
+   look muddy, so the raised face has a 1px lighter line inside its top edge and the dark shadow, and the sunken one only
+   its inner dark shadow. In the theme layer after Tailwind's tokens, so a server theme's unlayered :root rule still wins.
+   Outside @theme: scripts/theme-source.ts reads @theme blocks without nested braces. */
+@layer theme {
+  @supports (color: oklch(from light-dark(white, black) l c h)) {
+    :root,
+    :host {
+      --elevation-soft-raised:
+        -2px -2px 6px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent),
+        inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.08) c h)),
+        0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.12),
+        0 8px 24px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.1);
+      --elevation-soft-inset:
+        inset 0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.14),
+        inset 0 -1px 0 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent);
+    }
+  }
+}
+
 @keyframes celebrate {
   from {
     scale: 0.6;
