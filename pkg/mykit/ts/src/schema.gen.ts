@@ -11964,7 +11964,7 @@ export interface components {
             /** @description The push service URL (`PushSubscription.endpoint`), an `https` URL. */
             endpoint: string;
             keys: components["schemas"]["PushSubscriptionKeys"];
-            /** @description The notification types to push; empty pushes none. */
+            /** @description The notification types to push, each at most once; empty pushes none. */
             alerts: components["schemas"]["NotificationType"][];
         };
         /**

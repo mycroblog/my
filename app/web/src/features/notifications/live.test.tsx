@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Notifications from the event stream through the whole app (web-client/README.md S10, T4; FR-207): they update
-// the unread badge of the navigation.
+// the unread badge of the navigation, and play the notification sound where this device has it on (ADR-0109 §5).
 import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+import { notificationSoundKey } from "../../lib/storage";
 import { apiBase, resumableSession } from "../../test/msw/http";
 import { notificationsFixture } from "./test/handlers";
 import { otherAccountFixture } from "../../test/fixtures";
@@ -65,5 +66,33 @@ describe("a notification from the stream", () => {
     expect(
       await screen.findByRole("link", { name: "Notifications, 3 unread" }, { timeout: 3_000 }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("the notification sound", () => {
+  test("plays once for a burst of notifications of a type whose sound is on, and not for the others", async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
+    notificationSoundKey.write({ enabled: true, types: ["follow"] });
+    const streams = streamingServer();
+    const marker: NotificationMarker = { last_read_id: notificationsFixture[1]?.id ?? "", unread_count: 1 };
+    server.use(
+      resumableSession(),
+      streams.handler,
+      http.get(`${apiBase}/notifications/marker`, () => HttpResponse.json(marker)),
+    );
+    await renderApp({ path: "/home" });
+    expect(await screen.findByRole("link", { name: "Notifications, 1 unread" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(streams.connections()).toBe(1);
+    });
+
+    streams.current().send("notification", { ...newNotification, type: "boost" });
+    expect(await screen.findByRole("link", { name: "Notifications, 2 unread" })).toBeInTheDocument();
+    expect(play).not.toHaveBeenCalled();
+    streams.current().send("notification", newNotification);
+    streams.current().send("notification", { ...newNotification, id: "0192f0c4-7a8e-7000-8000-0000000000c2" });
+
+    expect(await screen.findByRole("link", { name: "Notifications, 4 unread" })).toBeInTheDocument();
+    expect(play).toHaveBeenCalledOnce();
   });
 });

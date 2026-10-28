@@ -30,9 +30,9 @@ Web App Manifest と HTML は Go が返すので、プラグインはどちら�
 - **ステータスページの URL**（FR-810、[ADR-0085](../../adr/0085-uptime-monitoring-status-page.md) §6、`lib/statusPage.ts` の `useStatusPageUrl`）: サーバーが答えないときは `GET /instance` を読めないので、ホームのタイムラインと同じくアプリが残す。
   `GET /instance` が答えるたびに、その `status_page_url` を localStorage の `my:instance:status-page`（インスタンスの設定で、利用者のデータではない）に書き、無ければ消す。
   `GET /instance` が答えるまでと読めないときは残した URL を使う。オフラインの帯（§9）・情報ページ（`/about` の「サーバーの状態」）・設定のメニューの下のリンクがこれを読み、URL が無ければ出さない。
-- **Web Push**（FR-206）: 設定の「表示と投稿」の「プッシュ通知」（`features/settings` の `usePushNotifications`）で、この端末で受け取るかと通知の種類を選ぶ。インスタンスが `push_server_key` を返さないときは区画を出さない。
-  - 有効にするとき（スイッチの操作の中）だけ `Notification.requestPermission()` で許可を求め、Service Worker の登録の `PushManager.subscribe`（`userVisibleOnly`、`applicationServerKey` はサーバーの鍵）で購読し、`PUT /push/subscription` で種類と一緒に登録する。
-    別の鍵で作った購読が残っていれば解除してから購読し直す。種類を変えると登録し直し、無効にすると `DELETE /push/subscription` とブラウザの購読の解除を行う。
+- **Web Push**（FR-206）: 設定の「通知」（`/settings/notifications`、§9）の「プッシュ通知」の区画（`features/settings` の `usePushNotifications`）で、この端末で受け取るかを選び、通知の種類は表の「プッシュ」の列（オンの間だけ出す）で選ぶ。インスタンスが `push_server_key` を返さないときは区画も列も出さない。
+  - 有効にするとき（スイッチの操作の中）だけ `Notification.requestPermission()` で許可を求め、Service Worker の登録の `PushManager.subscribe`（`userVisibleOnly`、`applicationServerKey` はサーバーの鍵）で購読し、`PUT /push/subscription` で表のすべての行の種類と一緒に登録する。
+    別の鍵で作った購読が残っていれば解除してから購読し直す。表の行のセルを変えると、その行の種類（`NotificationSettingRow` の `types`）を足すか除いて登録し直し、無効にすると `DELETE /push/subscription` とブラウザの購読の解除を行う。
   - Push API のないブラウザ（iOS / iPadOS ではホーム画面に追加していない Safari を含む）と、サイトの通知をブロックしたブラウザでは、スイッチの代わりに理由を出す。
   - Service Worker（`sw/push.ts`）は、サーバーが利用者の言語で書いた題を、通知の ID を `tag` にして表示する（同じ通知の再送は表示を置き換える）。押すと、開いているアプリの窓（フォーカスのある窓、なければどれか）をメッセージのパスに移し、窓がなければ新しく開く。
     パスは同じオリジンのものだけを開き、それ以外と読めないメッセージは通知の画面を開く。

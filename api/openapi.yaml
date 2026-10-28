@@ -18549,9 +18549,9 @@ components:
         keys:
           $ref: '#/components/schemas/PushSubscriptionKeys'
         alerts:
-          description: The notification types to push; empty pushes none.
+          description: The notification types to push, each at most once; empty pushes none.
           type: array
-          maxItems: 14
+          maxItems: 30
           items:
             $ref: '#/components/schemas/NotificationType'
     QrCode:

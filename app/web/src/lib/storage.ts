@@ -251,6 +251,20 @@ export const autoplayKey = declareKey<boolean>("my:display:autoplay", {
   userData: false,
 });
 
+/**
+ * The notification sound of this browser (lib/notificationSound, ADR-0109 §5): the switch of the whole sound, off by
+ * default, and the notification types that sound while it is on. It is how this device behaves, not the user's data.
+ */
+export type NotificationSoundSettings = { enabled: boolean; types: readonly string[] };
+
+export const notificationSoundKey = declareKey<NotificationSoundSettings>("my:notifications:sound", {
+  area: "local",
+  version: 1,
+  defaultValue: { enabled: false, types: [] },
+  parse: schemaParser(z.object({ enabled: z.boolean(), types: z.array(z.string().max(64)).max(64) })),
+  userData: false,
+});
+
 /** Which public timelines the instance served when GET /instance last answered (features/timeline). */
 /** Who may read a public timeline (the instance settings `local_timeline_access` and `federated_timeline_access`). */
 const timelineAccess = z.enum(["off", "logged_in", "everyone"]);

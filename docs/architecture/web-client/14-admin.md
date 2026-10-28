@@ -340,5 +340,5 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `report_resolved` は通報したアカウントの名前（そのプロフィールへのリンク、アバターなし）を文に入れ、`admin_report` は通報（`/moderation/reports/{id}`）へ、`admin_sign_up` は登録の審査（`/moderation/registrations`）へ、`admin_appeal` は異議申し立て（`/moderation/appeals/{id}`）へ、
   `admin_custom_emoji_request` は申請の `:shortcode:`（`dir="ltr"`）と内容を文に入れてカスタム絵文字の画面の申請のタブ（`/admin/custom-emojis?tab=requests`）へ、`custom_emoji_request_decided` は承認か却下かと `:shortcode:` を文に、却下の理由（`dir="auto"`）を本文に出して自分のカスタム絵文字の画面（`/settings/custom-emojis`）へリンクし、
   サポーターの通知（`supporter_payment_failed`・`supporter_subscription_ended`・`supporter_plan_retired`）はプランの名前（管理者の文章なので `dir="auto"`・`lang=""`）と、支払いの失敗には猶予の終わりの日時（加入がまだ `past_due` のとき）、加入の終わりには理由、廃止には加入が更新されないことを本文に出し、加入の画面（`/settings/supporter`）へリンクする。
-  Tauri のアプリではこのリンクを出さず、Web Push の種類の選択にもサポーターの通知を出さない（ADR-0072 §14）。
+  Tauri のアプリではこのリンクを出さず、通知の設定（§9）にもサポーターの行を出さない（ADR-0072 §14）。
   `relationships_severed` は自分のフォロワーとフォローの一覧へリンクする。

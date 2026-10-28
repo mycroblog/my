@@ -303,8 +303,8 @@ New reports, registrations waiting for approval and appeals reach people with th
   `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`), which need `manage_errors`.
 - Who receives a notification is decided by their permission when the notification is created. A person who later loses the permission no longer sees that kind in their list and unread count. If the permission comes back, they see it again.
 - Each kind of notification above also comes by email, on by default. Each person turns each kind on or off in the app and by
-  email in their notification settings (`GET` and `PATCH /api/v1/preferences/notifications`), which list only the kinds their
-  role receives. A kind turned off in the app is not created for them, so it is neither pushed nor emailed; the counts of
+  email on the **Notifications** page of the settings (`/settings/notifications` in the web client), which lists only the
+  kinds their role receives. A kind turned off in the app is not created for them, so it is neither pushed nor emailed; the counts of
   `GET /api/v1/admin/counts` do not change, because they count the reports, registrations, and appeals themselves.
   The server enqueues the email job in the transaction that records the notification, and the job sends the mail right after the
   commit, without waiting for the notification to be read. If the person has lost the permission or turned that kind's email

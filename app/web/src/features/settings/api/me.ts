@@ -13,7 +13,6 @@ export type PreferencesChange = Schemas["UpdatePreferencesRequest"];
 export type Visibility = Schemas["Visibility"];
 export type CredentialAccount = Schemas["CredentialAccount"];
 export type ProfileChange = Schemas["UpdateCredentialsRequest"];
-export type Permission = Schemas["Permission"];
 export type SearchIndexing = Schemas["SearchIndexing"];
 export type AIUsage = Schemas["AIUsage"];
 

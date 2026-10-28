@@ -5,6 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, configure } from "@testing-library/react";
 import { destroyAnnouncer } from "react-aria/private/live-announcer/LiveAnnouncer";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
+import { resetNotificationSound } from "../lib/notificationSound";
 import { forgetUnsavedStorage } from "../lib/storage";
 import { server } from "./msw/server";
 
@@ -63,6 +64,8 @@ afterEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   forgetUnsavedStorage();
+  // The notification sound keeps its audio element and the time of the last notification (lib/notificationSound).
+  resetNotificationSound();
   // The tests share one document; a theme chosen in one (lib/theme) must not color the next.
   delete document.documentElement.dataset["theme"];
 });

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout keeps the one event stream of the app open (web-client/README.md S10, FR-207) and routes its events
 // to the features that own the cached data: new home entries wait behind the home timeline's "N new
-// posts" button (or join its cache while no page shows it), notifications update the unread badge, and a moderator's notifications of a new report or
+// posts" button (or join its cache while no page shows it), notifications update the unread badge and play the
+// notification sound where this device has it on for their type (lib/notificationSound), and a moderator's notifications of a new report or
 // registration read the Moderation entry's counts again, and the server's announcements join, change, or leave
 // the list above the home timeline. After a reconnect, all of them read again what the
 // gap may have missed, since the server replays nothing (client-api.md §5).
@@ -11,6 +12,7 @@ import { refreshAdminCounts } from "../../features/moderation";
 import { catchUpNotifications, receiveNotification } from "../../features/notifications";
 import { catchUpHome, receiveHomeStatus } from "../../features/timeline";
 import { useApi } from "../../lib/auth/SessionProvider";
+import { playNotificationSound } from "../../lib/notificationSound";
 import { useEventStream } from "../../lib/sse/useEventStream";
 
 export function useLiveUpdates(): void {
@@ -25,6 +27,7 @@ export function useLiveUpdates(): void {
         case "notification":
           receiveNotification(queryClient, api, event.notification);
           refreshAdminCounts(queryClient, api, event.notification.type);
+          playNotificationSound(event.notification.type);
           break;
         case "announcement":
           receiveAnnouncement(queryClient, api, event.announcement);

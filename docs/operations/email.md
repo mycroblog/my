@@ -22,9 +22,9 @@ Notification emails for supporters (`notification.supporter_email`) go through t
 
 ### Which notifications are emailed
 
-Each user chooses, per kind of notification, whether it arrives in the app and by email, in the notification settings
-(`GET` and `PATCH /api/v1/preferences/notifications`). A kind turned off in the app is not created at all, so it is not emailed
-or pushed either.
+Each user chooses, per kind of notification, whether it arrives in the app and by email, on the **Notifications** page of
+the settings (`/settings/notifications` in the web client). The Email column appears there only while the server sends
+email. A kind turned off in the app is not created at all, so it is not emailed or pushed either.
 
 | Kind | Email by default | When it is sent |
 | --- | --- | --- |
@@ -279,7 +279,7 @@ List-Unsubscribe=One-Click` (RFC 8058). The "unsubscribe" button of email client
     expires, sending it again gives the same result.
 - **Transactional email cannot be unsubscribed from.** Confirmation, reset, and the notice of a password change would stop
   security-relevant notices from arriving. These emails carry no such headers either.
-- Users can switch the same setting in their notification settings.
+- Users can switch the same setting on the **Notifications** page of the settings.
 
 ## The HTML version
 
