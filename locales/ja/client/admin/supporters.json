@@ -592,7 +592,7 @@
     "description": "Error of ending a subscription, with the server's reason."
   },
   "admin.supporters.list_visibility": {
-    "defaultMessage": "{visibility, select, public {サポーターの一覧は誰でも読めます。} signed_in {サポーターの一覧はサインインした人が読めます。} other {サポーターの一覧は誰も読めません。}}",
+    "defaultMessage": "{visibility, select, public {サポーターの一覧は誰でも読めます。} signed_in {サポーターの一覧はログインした人が読めます。} other {サポーターの一覧は誰も読めません。}}",
     "description": "Who may read the supporter list, on the supporters screen, by the server setting supporter_list_visibility (off, public, or signed_in); shown to viewers who may not change the server settings."
   }
 }
