@@ -4,6 +4,7 @@
 // is inside it, and from a tap on it until another tap or until it leaves the screen. They still never move while the
 // system asks for reduced motion: the scope only lets the moving renditions in, behind the same media query.
 import { type FocusEvent, type PointerEvent, type RefObject, use, useEffect, useRef, useState } from "react";
+import { useFocusRing } from "react-aria";
 import { AnimationsPlayContext, AutoplayContext } from "./Picture";
 
 /** How far a finger may move between down and up, in CSS pixels, for a tap rather than a drag or a scroll. */
@@ -45,16 +46,6 @@ function onControl(target: EventTarget, scope: Element): boolean {
   return control !== null && control !== scope && scope.contains(control);
 }
 
-/** Whether a focus came from the keyboard: the platform shows a focus ring (`:focus-visible`) only then. */
-function focusVisible(element: Element): boolean {
-  try {
-    return element.matches(":focus-visible");
-  } catch {
-    // A browser without `:focus-visible` counts every focus.
-    return true;
-  }
-}
-
 /** The ref and the handlers the element of an animation scope takes. */
 export type AnimationScopeProps<T extends HTMLElement> = {
   ref: RefObject<T | null>;
@@ -80,7 +71,8 @@ export function useAnimationScope<T extends HTMLElement>(): { playing: boolean; 
   const autoplay = use(AutoplayContext);
   const outer = use(AnimationsPlayContext);
   const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
+  // Keyboard focus inside the scope, as React Aria tells it for the focus rings of its components (`data-focus-visible`).
+  const { focusProps, isFocusVisible: focused } = useFocusRing({ within: true });
   const [tapped, setTapped] = useState(false);
   const elementRef = useRef<T | null>(null);
   const pressRef = useRef<Press | undefined>(undefined);
@@ -130,11 +122,10 @@ export function useAnimationScope<T extends HTMLElement>(): { playing: boolean; 
       pressRef.current = undefined;
     },
     onFocus: (event) => {
-      if (!autoplay && focusVisible(event.target)) setFocused(true);
+      focusProps.onFocus?.(event);
     },
     onBlur: (event) => {
-      if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)))
-        setFocused(false);
+      focusProps.onBlur?.(event);
     },
   };
   return { playing: outer || (!autoplay && (hovered || focused || tapped)), props };
