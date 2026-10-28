@@ -3,7 +3,8 @@ import { http, HttpResponse } from "msw";
 import { expect, test } from "vitest";
 import { instanceFixture } from "../fixtures";
 import { apiBase } from "./http";
-import { defaultHandlers, server } from "./server";
+import { defaultHandlers } from "./defaultHandlers";
+import { server } from "./server";
 
 const instanceURL = new URL(`${apiBase}/instance`, window.location.href);
 

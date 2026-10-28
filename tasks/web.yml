@@ -200,6 +200,31 @@ tasks:
   # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
   # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
   # E2E_BASE_URL / E2E_SERVER_URL test servers started elsewhere instead.
+  # The screen stories (ADR-0112 §1): each renders the whole app at a route, with MSW in the browser playing the server
+  # with the features' default handlers. The Storybook composes the @my/ui Storybook: ui:storybook on port 6006 in
+  # development, and the static build of web:storybook-build carries the kit's build under ui/.
+  storybook:
+    desc: Start the app/web Storybook of the screens on http://localhost:6007 (start ui:storybook too for the components)
+    deps: [generate]
+    dir: app/web
+    cmds:
+      - bun run storybook
+
+  storybook-build:
+    desc: Build the static Storybook of the screens into app/web/storybook-static, with the @my/ui Storybook under ui/
+    deps: [generate, ":ui:storybook-build"]
+    cmds:
+      - cd app/web && bun run build-storybook
+      - rm -rf app/web/storybook-static/ui
+      - cp -R app/ui/storybook-static app/web/storybook-static/ui
+
+  story-test:
+    desc: Run the app/web screen stories in Chromium with their play functions and axe (no screenshots; ui:test-install installs it)
+    deps: [generate]
+    dir: app/web
+    cmds:
+      - bun run test:stories
+
   e2e:
     desc: Run the web E2E tests with Playwright (E2E_MATRIX=full for the whole matrix)
     deps: [":go:bin"]
