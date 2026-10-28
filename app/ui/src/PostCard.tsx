@@ -4,7 +4,9 @@ import { mergeProps, mergeRefs } from "react-aria";
 import { tv } from "tailwind-variants";
 import { useAnimationScope } from "./AnimationScope";
 import { FeedArticle, type FeedArticleProps } from "./Feed";
+import type { PostVisibility } from "./Icons";
 import { AnimationsPlayContext } from "./Picture";
+import { VisibilityMark } from "./StatusBadge";
 import { VisuallyHidden } from "./VisuallyHidden";
 
 const postCard = tv({
@@ -22,7 +24,8 @@ const postCard = tv({
     // (a full date) wraps inside at most half of the row instead of pushing the card wider.
     header: "flex min-w-0 items-baseline gap-x-2 self-center",
     author: "min-w-0 flex-1 wrap-anywhere @sm:flex-initial",
-    time: "max-w-1/2 shrink-0 text-sm text-fg-muted",
+    // The time, and under it the visibility, both at the end of the row.
+    time: "flex max-w-1/2 shrink-0 flex-col items-end text-sm text-fg-muted",
     body: "col-span-2 min-w-0 @md:col-span-1 @md:col-start-2",
     details: "col-span-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-sm text-fg-muted @md:col-span-1 @md:col-start-2",
     reactions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 @md:col-span-1 @md:col-start-2",
@@ -72,6 +75,12 @@ export type PostCardProps = Omit<FeedArticleProps, "children" | "content" | "ari
   author: ReactNode;
   /** When it was posted: a `<time>` element, usually a link to the post. */
   time: ReactNode;
+  /**
+   * Who can see the post: its level and the level's name, shown under the time with the level's own icon
+   * (VisibilityMark) and read at the end of the article's name. It is required so that no post goes without it;
+   * null is for a card that is not a post, such as a notification of a follow.
+   */
+  visibility: { level: PostVisibility; label: string } | null;
   /** The post body (PostContent), or a ContentWarning around it. It is the article's description. */
   content: ReactNode;
   /** The attachments (MediaGrid). */
@@ -99,7 +108,7 @@ export type PostCardProps = Omit<FeedArticleProps, "children" | "content" | "ari
 };
 
 /**
- * The layout of one post: an optional context line, avatar, author and time, body, media and actions in
+ * The layout of one post: an optional context line, avatar, author, time and visibility, body, media and actions in
  * slots, with the post's reactions in a row above the actions. The card knows nothing about posts; the caller fills the slots. It is an `<article>` labelled by
  * the context, author and time and described by the content, and inside a Feed it is one of the feed's
  * articles. The header is one row of the author and the time (with a PostCardAuthor, the handle goes to a
@@ -120,6 +129,7 @@ export function PostCard({
   avatar,
   author,
   time,
+  visibility,
   content,
   media,
   details,
@@ -171,6 +181,12 @@ export function PostCard({
             </div>
             <div id={timeId} className={slots.time()}>
               {time}
+              {visibility !== null && (
+                <>
+                  {/* The space keeps the time and the visibility apart in the accessible name. */}{" "}
+                  <VisibilityMark visibility={visibility.level} label={visibility.label} />
+                </>
+              )}
             </div>
           </header>
           <div id={contentId} className={slots.body()}>

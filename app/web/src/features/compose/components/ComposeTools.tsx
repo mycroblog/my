@@ -3,13 +3,13 @@ import {
   Button,
   Cluster,
   FileTrigger,
+  IconToggleButton,
   ImageIcon,
   LanguageIcon,
   PollIcon,
   QuoteIcon,
   Select,
   SelectItem,
-  ToggleButton,
   Tooltip,
   TooltipTrigger,
   VisuallyHidden,
@@ -67,29 +67,23 @@ export function ComposeTools({ form }: ComposeToolsProps) {
       </TooltipTrigger>
       {count > 0 && <VisuallyHidden id={countId}>{t("client:compose.media.count", { count })}</VisuallyHidden>}
       <VisuallyHidden id={hintId}>{t("client:compose.media.hint", { max: maxAttachments })}</VisuallyHidden>
-      <TooltipTrigger>
-        <ToggleButton
-          aria-label={pollLabel}
-          isSelected={form.poll.draft !== null}
-          isDisabled={!form.poll.canAdd}
-          onChange={form.poll.toggle}
-        >
-          <PollIcon filled={form.poll.draft !== null} />
-        </ToggleButton>
-        <Tooltip>{pollLabel}</Tooltip>
-      </TooltipTrigger>
-      <TooltipTrigger>
-        <ToggleButton
-          aria-label={warningLabel}
-          isSelected={draft.hasWarning}
-          onChange={(hasWarning) => {
-            form.edit({ hasWarning });
-          }}
-        >
-          <WarningIcon filled={draft.hasWarning} />
-        </ToggleButton>
-        <Tooltip>{warningLabel}</Tooltip>
-      </TooltipTrigger>
+      <IconToggleButton
+        label={pollLabel}
+        isSelected={form.poll.draft !== null}
+        isDisabled={!form.poll.canAdd}
+        onChange={form.poll.toggle}
+      >
+        <PollIcon filled={form.poll.draft !== null} />
+      </IconToggleButton>
+      <IconToggleButton
+        label={warningLabel}
+        isSelected={draft.hasWarning}
+        onChange={(hasWarning) => {
+          form.edit({ hasWarning });
+        }}
+      >
+        <WarningIcon filled={draft.hasWarning} />
+      </IconToggleButton>
       <VisibilityPicker
         value={form.visibility}
         limits={form.limits}

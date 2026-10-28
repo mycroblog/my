@@ -8,6 +8,7 @@ import type { ReactNode, Ref } from "react";
 import { Button, Dialog as AriaDialog, DialogTrigger, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { CloseIcon } from "./Icons";
+import { Tooltip, TooltipTrigger } from "./Tooltip";
 
 export { DialogTrigger };
 export type { DialogTriggerProps } from "react-aria-components";
@@ -117,9 +118,12 @@ function ModalDialog({
                   {title}
                 </Heading>
                 {closeLabel !== null && (
-                  <Button slot="close" aria-label={closeLabel} className={styles.close()}>
-                    <CloseIcon />
-                  </Button>
+                  <TooltipTrigger>
+                    <Button slot="close" aria-label={closeLabel} className={styles.close()}>
+                      <CloseIcon />
+                    </Button>
+                    <Tooltip>{closeLabel}</Tooltip>
+                  </TooltipTrigger>
                 )}
               </div>
               <div className={styles.body()}>{typeof children === "function" ? children({ close }) : children}</div>

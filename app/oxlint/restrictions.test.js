@@ -96,6 +96,12 @@ describe("where the restrictions apply", () => {
     for (const file of [files.component, files.story, files.route, files.featureHook, files.featureComponentTest])
       assert.equal(ruleValue("restrict/pattern", file), undefined);
   });
+  it("gives every icon-only button of the kit and the client a tooltip, and leaves stories and tests alone (G12)", () => {
+    for (const file of [files.featureComponent, files.route, files.component, files.shell])
+      assert.ok(ruleOptions("restrict/icons", file).length > 0);
+    for (const file of [files.story, files.featureComponentTest, files.featureTest])
+      assert.equal(ruleValue("restrict/icons", file), undefined);
+  });
   it("allows the API client and fetch in features/<x>/api and lib/ (S1)", () => {
     for (const file of [files.featureApi, files.lib]) {
       assert.equal(ruleValue("no-restricted-globals", file), "off");
@@ -249,6 +255,49 @@ ruleTester.run("restrict/pattern (G5)", restrict.rules.pattern, {
       ...fails("<li><RailItem form='section' href={page.href} icon={null} label={t(page.label)} /></li>"),
       options: pattern,
     },
+  ],
+});
+
+const icons = ruleOptions("restrict/icons", files.featureComponent);
+ruleTester.run("restrict/icons (G12)", restrict.rules.icons, {
+  valid: [
+    // The kit's icon buttons take the name once and show it as a tooltip.
+    { code: "<IconButton label={label} onPress={reply}><ReplyIcon /></IconButton>", options: icons },
+    {
+      code: "<IconToggleButton label={label} isSelected={on}><StarIcon filled={on} />{count}</IconToggleButton>",
+      options: icons,
+    },
+    // A trigger of the kit's TooltipTrigger, also inside the trigger of a menu or a file picker.
+    {
+      code: "<TooltipTrigger><Button aria-label={label}><MoreIcon /></Button><Tooltip>{label}</Tooltip></TooltipTrigger>",
+      options: icons,
+    },
+    {
+      code: "<TooltipTrigger><FileTrigger><Button aria-label={label}><ImageIcon /></Button></FileTrigger><Tooltip>{label}</Tooltip></TooltipTrigger>",
+      options: icons,
+    },
+    // Words beside the icon name the button.
+    { code: "<Button><PlusIcon />{t('client:voice.start')}</Button>", options: icons },
+    { code: "<Button variant='primary'><NewItemsIcon />{label}</Button>", options: icons },
+    { code: "<Button><PlusIcon />Add</Button>", options: icons },
+    { code: "<Button>{item.name}</Button>", options: icons },
+  ],
+  invalid: [
+    { ...fails("<Button variant='subtle' size='toolbar' aria-label={label}><QuoteIcon /></Button>"), options: icons },
+    {
+      ...fails("<ToggleButton aria-label={label} isSelected={on}><StarIcon filled={on} /></ToggleButton>"),
+      options: icons,
+    },
+    // An icon and a count, with no words.
+    { ...fails("<Button aria-label={label}><ReplyIcon /><Count value={n} /></Button>"), options: icons },
+    {
+      ...fails("<ToggleButton aria-label={label}><BoostIcon />{n > 0 && <Count value={n} />}</ToggleButton>"),
+      options: icons,
+    },
+    // React Aria's own button, as the kit's overlays use it.
+    { ...fails("<AriaButton slot='close' aria-label={label}><CloseIcon /></AriaButton>"), options: icons },
+    // A menu's trigger is not a tooltip's.
+    { ...fails("<MenuTrigger><Button aria-label={label}><MoreIcon /></Button><Menu /></MenuTrigger>"), options: icons },
   ],
 });
 

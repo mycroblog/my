@@ -53,6 +53,16 @@ describe.each([
       await user.tab();
       expectFocusInside(dialog);
     }
+    // Four presses of Tab come round to the × again (×, Cancel, Save, ×), which shows its name as a tooltip (G12).
+    // Esc closes the innermost layer first, the tooltip, and then the dialog. The modal hides what is outside it from
+    // assistive technology, the tooltip's portal among it; the × keeps its own name.
+    expect(screen.getByRole("button", { name: "Close" })).toHaveFocus();
+    expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Close");
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("tooltip", { hidden: true })).not.toBeInTheDocument();
+    });
+    expect(dialog).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

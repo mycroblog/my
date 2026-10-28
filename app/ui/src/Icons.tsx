@@ -38,7 +38,7 @@ import {
   PiPlugsConnected,
   PiCode,
   PiArrowsDownUp,
-  PiAt,
+  PiAddressBook,
   PiSuitcaseRolling,
   PiClipboardText,
   PiArchive,
@@ -62,6 +62,11 @@ import {
   PiBug,
   PiPower,
   PiArrowBendUpLeft,
+  PiAt,
+  PiBuildings,
+  PiGlobeHemisphereWest,
+  PiLockSimple,
+  PiLockSimpleOpen,
   PiArrowLeft,
   PiArrowSquareOut,
   PiArrowDown,
@@ -176,6 +181,13 @@ export const iconTable = {
   // Filled, the exclamation mark stays cut out of the triangle.
   WarningIcon: { off: glyph(PiWarning, "PiWarning"), on: glyph(PiWarningFill, "PiWarningFill") },
   EyeIcon: { off: glyph(PiEye, "PiEye") },
+  // The visibilities of a post (ADR-0017), one shape each from the widest to the narrowest: the world, this
+  // server's buildings, an open lock, a closed lock, and the at sign of a mention. None has a direction.
+  PublicVisibilityIcon: { off: glyph(PiGlobeHemisphereWest, "PiGlobeHemisphereWest") },
+  LocalVisibilityIcon: { off: glyph(PiBuildings, "PiBuildings") },
+  UnlistedVisibilityIcon: { off: glyph(PiLockSimpleOpen, "PiLockSimpleOpen") },
+  PrivateVisibilityIcon: { off: glyph(PiLockSimple, "PiLockSimple") },
+  DirectVisibilityIcon: { off: glyph(PiAt, "PiAt") },
   LanguageIcon: { off: glyph(PiTranslate, "PiTranslate") },
   EmojiIcon: { off: glyph(PiSmiley, "PiSmiley") },
   // The category buttons of the emoji picker (ADR-0091 §3): drawn with Phosphor and not with an emoji, whose shape and
@@ -226,7 +238,7 @@ export const iconTable = {
   AuthorizedAppIcon: { off: glyph(PiPlugsConnected, "PiPlugsConnected") },
   DeveloperIcon: { off: glyph(PiCode, "PiCode") },
   ImportExportIcon: { off: glyph(PiArrowsDownUp, "PiArrowsDownUp") },
-  AliasIcon: { off: glyph(PiAt, "PiAt") },
+  AliasIcon: { off: glyph(PiAddressBook, "PiAddressBook") },
   MoveAccountIcon: { off: glyph(PiSuitcaseRolling, "PiSuitcaseRolling") },
   AccountStatusIcon: { off: glyph(PiClipboardText, "PiClipboardText") },
   ArchiveIcon: { off: glyph(PiArchive, "PiArchive") },
@@ -393,9 +405,55 @@ export function WarningIcon({ filled = false }: ToggleIconProps) {
   return renderIcon(iconTable.WarningIcon, filled);
 }
 
-/** An eye, for who can see a post (its visibility). */
+/** An eye, for showing something that was hidden. A post's visibility has an icon per level (VisibilityIcon). */
 export function EyeIcon() {
   return renderIcon(iconTable.EyeIcon);
+}
+
+/** The visibilities of a post from the widest to the narrowest (ADR-0017). */
+export type PostVisibility = "public" | "local" | "unlisted" | "private" | "direct";
+
+/** A globe, for a public post: anyone, listed on the public timelines. */
+export function PublicVisibilityIcon() {
+  return renderIcon(iconTable.PublicVisibilityIcon);
+}
+
+/** Buildings, for a post to this server: its signed-in people and the author's followers. */
+export function LocalVisibilityIcon() {
+  return renderIcon(iconTable.LocalVisibilityIcon);
+}
+
+/** An open lock, for an unlisted post: anyone, kept off the public timelines. */
+export function UnlistedVisibilityIcon() {
+  return renderIcon(iconTable.UnlistedVisibilityIcon);
+}
+
+/** A closed lock, for a post to the followers. */
+export function PrivateVisibilityIcon() {
+  return renderIcon(iconTable.PrivateVisibilityIcon);
+}
+
+/** An at sign, for a post to the mentioned people only. */
+export function DirectVisibilityIcon() {
+  return renderIcon(iconTable.DirectVisibilityIcon);
+}
+
+const visibilityIcons = {
+  public: iconTable.PublicVisibilityIcon,
+  local: iconTable.LocalVisibilityIcon,
+  unlisted: iconTable.UnlistedVisibilityIcon,
+  private: iconTable.PrivateVisibilityIcon,
+  direct: iconTable.DirectVisibilityIcon,
+} as const satisfies Record<PostVisibility, IconEntry>;
+
+export type VisibilityIconProps = {
+  /** The level whose icon to draw. */
+  visibility: PostVisibility;
+};
+
+/** The icon of a visibility: a different shape for each level, so that they are told apart without color. */
+export function VisibilityIcon({ visibility }: VisibilityIconProps) {
+  return renderIcon(visibilityIcons[visibility]);
 }
 
 /** Two scripts side by side, for the language of a post. */
@@ -595,7 +653,7 @@ export function ImportExportIcon() {
   return renderIcon(iconTable.ImportExportIcon);
 }
 
-/** An at sign, for the other addresses of the account (its aliases). */
+/** An address book, for the other addresses of the account (its aliases). */
 export function AliasIcon() {
   return renderIcon(iconTable.AliasIcon);
 }

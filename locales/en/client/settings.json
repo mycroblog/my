@@ -1215,46 +1215,6 @@
     "defaultMessage": "Confirming with the passkey took too long. Try again.",
     "description": "Alert when the passkey that confirms an operation was given after the confirmation expired (5 minutes)."
   },
-  "settings.visibility.direct": {
-    "defaultMessage": "Mentioned people",
-    "description": "Visibility option: only the mentioned accounts."
-  },
-  "settings.visibility.direct.description": {
-    "defaultMessage": "Only the people you mention",
-    "description": "Description of the 'Mentioned people' visibility option."
-  },
-  "settings.visibility.local": {
-    "defaultMessage": "This server",
-    "description": "Visibility option: signed-in users of this server and followers."
-  },
-  "settings.visibility.local.description": {
-    "defaultMessage": "People signed in to this server, and your followers",
-    "description": "Description of the 'This server' visibility option."
-  },
-  "settings.visibility.private": {
-    "defaultMessage": "Followers",
-    "description": "Visibility option: followers and mentioned accounts."
-  },
-  "settings.visibility.private.description": {
-    "defaultMessage": "Your followers and the people you mention",
-    "description": "Description of the 'Followers' visibility option."
-  },
-  "settings.visibility.public": {
-    "defaultMessage": "Public",
-    "description": "Visibility option: everyone, listed on public timelines."
-  },
-  "settings.visibility.public.description": {
-    "defaultMessage": "Everyone, and shown on public timelines",
-    "description": "Description of the 'Public' visibility option."
-  },
-  "settings.visibility.unlisted": {
-    "defaultMessage": "Unlisted",
-    "description": "Visibility option: everyone, but kept off public timelines."
-  },
-  "settings.visibility.unlisted.description": {
-    "defaultMessage": "Everyone, but kept off public timelines",
-    "description": "Description of the 'Unlisted' visibility option."
-  },
   "settings.profile.display_name.emoji": {
     "defaultMessage": "Add emoji to the display name",
     "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the display name."

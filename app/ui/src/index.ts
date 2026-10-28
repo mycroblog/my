@@ -35,6 +35,7 @@ export {
 export type { TextHighlight, TextHighlightKind } from "./TextAreaMirror";
 export { TextField, type TextFieldProps } from "./TextField";
 export { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
+export { IconButton, IconToggleButton, type IconButtonProps, type IconToggleButtonProps } from "./IconButton";
 export { Segmented, SegmentedItem, type SegmentedItemProps, type SegmentedProps } from "./Segmented";
 
 // Overlays, tabs and announcements.
@@ -196,6 +197,8 @@ export {
   ClosureIcon,
   CustomEmojiIcon,
 } from "./Icons";
+export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
+export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
 
 // Timeline.
 export { ContentWarning, type ContentWarningProps } from "./ContentWarning";

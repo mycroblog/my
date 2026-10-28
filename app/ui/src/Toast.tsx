@@ -12,6 +12,7 @@ import { Button } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { useAnnouncer } from "./Announcer";
 import { AboutIcon, CheckIcon, CloseIcon, WarningIcon } from "./Icons";
+import { Tooltip, TooltipTrigger } from "./Tooltip";
 
 export type ToastTone = "neutral" | "success" | "danger";
 
@@ -246,15 +247,18 @@ export function ToastProvider({
                     {t.action.label}
                   </Button>
                 )}
-                <Button
-                  aria-label={dismissLabel}
-                  className={styles.dismiss()}
-                  onPress={() => {
-                    dismiss(t.id);
-                  }}
-                >
-                  <CloseIcon />
-                </Button>
+                <TooltipTrigger>
+                  <Button
+                    aria-label={dismissLabel}
+                    className={styles.dismiss()}
+                    onPress={() => {
+                      dismiss(t.id);
+                    }}
+                  >
+                    <CloseIcon />
+                  </Button>
+                  <Tooltip>{dismissLabel}</Tooltip>
+                </TooltipTrigger>
               </li>
             ))}
           </ol>
