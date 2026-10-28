@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/blob"
@@ -57,7 +58,8 @@ type MediaFiles interface {
 	CheckImage(ctx context.Context, mediaID string) error
 }
 
-// LocalAccounts checks the local accounts that account settings (contact_account) name. The
+// LocalAccounts checks the local accounts that account settings (contact_account,
+// featured_accounts) name. The
 // account module implements it.
 type LocalAccounts interface {
 	// CheckLocalAccount fails when username names no local account.
@@ -238,9 +240,11 @@ func (s *Service) parseSetting(ctx context.Context, in SetSettingInput) (string,
 			return "", fmt.Errorf("setting %s: media %s: %w: %w", in.Key, value, instance.ErrInvalidValue, err)
 		}
 	}
-	if def.Kind == instance.KindAccount && value != "" && s.d.Accounts != nil {
-		if err := s.d.Accounts.CheckLocalAccount(ctx, value); err != nil {
-			return "", fmt.Errorf("setting %s: account %s: %w: %w", in.Key, value, instance.ErrInvalidValue, err)
+	if (def.Kind == instance.KindAccount || def.Kind == instance.KindAccounts) && s.d.Accounts != nil {
+		for _, username := range strings.Fields(value) {
+			if err := s.d.Accounts.CheckLocalAccount(ctx, username); err != nil {
+				return "", fmt.Errorf("setting %s: account %s: %w: %w", in.Key, username, instance.ErrInvalidValue, err)
+			}
 		}
 	}
 	return value, nil
