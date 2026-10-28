@@ -15,6 +15,7 @@ func (a *App) setUpAuthPages(cfg *config.Config) {
 	authpages.New(authpages.Options{
 		Identity: a.Identity, OAuth: a.Identity, Issuer: cfg.ServerOrigin(), FormActionOrigins: []string{cfg.WebOrigin},
 		Locales: a.Locales, Stylesheet: a.webStylesheet, StatusPageURL: cfg.StatusPageURL, Logger: a.Logger, Errors: a.ErrorReporter,
+		Clock:      a.Clock,
 		Moderation: a.Moderation, UserLocales: a.Identity, Documents: a.Instance,
 		InstanceName: func(ctx context.Context) string {
 			if name := a.instanceName(ctx); name != "" {

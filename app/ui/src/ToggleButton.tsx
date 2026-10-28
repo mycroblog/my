@@ -5,6 +5,7 @@ import {
   type ToggleButtonProps as RACToggleButtonProps,
 } from "react-aria-components";
 import { tv, type VariantProps } from "tailwind-variants";
+import { celebrationClasses, useCelebration } from "./celebration";
 
 const toggleButton = tv({
   base: [
@@ -22,6 +23,8 @@ const toggleButton = tv({
     },
     /** A rule around the button, which turns to the accent color while selected (a reaction chip). */
     outlined: { true: "border border-border data-selected:border-accent" },
+    /** Turning it on is a celebrated moment (web-client/21-experience-principles.md §21.5): the icon bounces a little. */
+    celebrate: { true: celebrationClasses },
   },
   defaultVariants: { tone: "accent" },
 });
@@ -34,12 +37,25 @@ export type ToggleButtonProps = RACToggleButtonProps & VariantProps<typeof toggl
  * states ("Favourite", not "Unfavourite"). When its children are an icon and a count it is an
  * `IconToggleButton`, which names it and shows the name as a tooltip (G12); describe it with the count
  * (`aria-describedby`) if the count matters. Control it with `isSelected` / `onChange`.
+ *
+ * `celebrate` is only for the toggles listed as celebrated moments in §21.5 (a favourite): when the person turns it on,
+ * its icon grows in with the small overshoot of `ease-celebrate`, or, with reduced motion, the button takes the `soft`
+ * fill for a moment. Turning it off, and a toggle that is already on when it appears, stay quiet.
  */
-export function ToggleButton({ tone, outlined, className, ...props }: ToggleButtonProps) {
+export function ToggleButton({ tone, outlined, celebrate, className, onChange, ...props }: ToggleButtonProps) {
+  const celebration = useCelebration();
   return (
     <RACToggleButton
       {...props}
-      className={composeRenderProps(className, (className) => toggleButton({ tone, outlined, className }))}
+      {...(celebrate === true && props.isSelected !== false && celebration.celebrationProps)}
+      onChange={(isSelected) => {
+        if (celebrate === true) {
+          if (isSelected) celebration.celebrate();
+          else celebration.stop();
+        }
+        onChange?.(isSelected);
+      }}
+      className={composeRenderProps(className, (className) => toggleButton({ tone, outlined, celebrate, className }))}
     />
   );
 }

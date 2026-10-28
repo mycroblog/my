@@ -82,6 +82,7 @@ var themeTokens = []ThemeToken{
 	{Name: "ease-standard", Kind: ThemeTokenEasing, Default: "cubic-bezier(0.2, 0, 0, 1)"},
 	{Name: "ease-enter", Kind: ThemeTokenEasing, Default: "cubic-bezier(0, 0, 0, 1)"},
 	{Name: "ease-exit", Kind: ThemeTokenEasing, Default: "cubic-bezier(0.3, 0, 1, 1)"},
+	{Name: "ease-celebrate", Kind: ThemeTokenEasing, Default: "cubic-bezier(0.34, 1.56, 0.64, 1)"},
 	{Name: "transition-duration-fast", Kind: ThemeTokenDuration, Default: "100ms", Min: 0, Max: 1000},
 	{Name: "transition-duration-normal", Kind: ThemeTokenDuration, Default: "200ms", Min: 0, Max: 1000},
 	{Name: "transition-duration-slow", Kind: ThemeTokenDuration, Default: "300ms", Min: 0, Max: 1000},
