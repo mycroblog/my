@@ -6,7 +6,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { instanceFixture, type Schemas } from "../../test/fixtures";
+import { instanceFixture, otherAccountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -74,6 +74,31 @@ describe("the invites", () => {
     expect(within(unlimited).getByRole("rowheader", { name: "ZZZZYYYYXXXXWWWW" })).toBeInTheDocument();
     expect(within(unlimited).getByText("3 (no limit)")).toBeInTheDocument();
     expect(within(unlimited).getByText("Never")).toBeInTheDocument();
+  });
+
+  test("says who created each invite: a member, a moderator, the command line, or a deleted account", async () => {
+    invitesServer([
+      inviteFixture({ creator_kind: "member", created_by: otherAccountFixture }),
+      inviteFixture({ id: "0192f0c4-7a8e-7000-8000-0000000006a2", code: "ZZZZYYYYXXXXWWWW" }),
+      inviteFixture({
+        id: "0192f0c4-7a8e-7000-8000-0000000006a3",
+        code: "QQQQRRRRSSSSTTTT",
+        creator_kind: "member",
+        created_by_deleted: true,
+      }),
+    ]);
+    await renderApp({ path: "/moderation/invites" });
+
+    const table = await screen.findByRole("table", { name: "Invites" });
+    expect(within(table).getByRole("columnheader", { name: "Created by" })).toBeInTheDocument();
+    const [member, cli, deleted] = within(table).getAllByRole("row").slice(1);
+    if (member === undefined || cli === undefined || deleted === undefined) throw new Error("expected three invites");
+    expect(within(member).getByText("@bob")).toHaveAttribute("dir", "ltr");
+    expect(within(member).getByText("Member invite")).toBeInTheDocument();
+    expect(within(cli).getByText("Command line")).toBeInTheDocument();
+    expect(within(cli).getByText("Moderator invite")).toBeInTheDocument();
+    expect(within(deleted).getByText("Deleted account")).toBeInTheDocument();
+    expect(within(deleted).getByText("Member invite")).toBeInTheDocument();
   });
 
   test("creates an invite for one person within a week by default, and shows its code and link", async () => {

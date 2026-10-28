@@ -1974,5 +1974,161 @@
   "settings.account.delete.confirm.description_external": {
     "defaultMessage": "アカウントはすぐに削除され、ログアウトします。元に戻すことはできません。",
     "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
+  },
+  "settings.invites.title": {
+    "defaultMessage": "招待",
+    "description": "Title of the settings page of the invites that the user created, and its item in the settings menu."
+  },
+  "settings.invites.description": {
+    "defaultMessage": "知り合いをこのサーバーに招待できます。招待ごとのリンクで、決まった人数が一定の期間だけ登録できます。サーバーが登録を承認制にしているときも、招待した人は承認を待たずに使い始められます。",
+    "description": "Explanation at the top of the user's invites page."
+  },
+  "settings.invites.new.title": {
+    "defaultMessage": "招待を作成",
+    "description": "Heading of the region of the form of a new invite on the user's invites page."
+  },
+  "settings.invites.not_allowed": {
+    "defaultMessage": "いまは招待を作成できません。使える招待のリンクのコピーと失効はできます。",
+    "description": "Shown instead of the form of a new invite when the user may not create invites: the server or their roles do not let them, their account is restricted, or the server takes no new accounts."
+  },
+  "settings.invites.usage": {
+    "defaultMessage": "使える招待：{max, number} 件中 {usable, number} 件",
+    "description": "How many usable invites the user holds, and how many the server lets one person hold at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "同時に持てる数の招待を持っています。新しく作成するには、どれかを失効させるか、期限切れか使い切りになるのを待ってください。",
+    "description": "Shown above the form of a new invite when the user already holds as many usable invites as the server allows."
+  },
+  "settings.invites.max_uses": {
+    "defaultMessage": "登録できる人数",
+    "description": "Label of the choice of how many people may sign up with a new invite."
+  },
+  "settings.invites.max_uses.description": {
+    "defaultMessage": "この招待で登録できる人数です（{max, number} 人まで）。",
+    "description": "Help of the number of sign-ups of a new invite. {max} is the most the server allows."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "An option of the number of sign-ups of a new invite."
+  },
+  "settings.invites.expires_in": {
+    "defaultMessage": "有効期間",
+    "description": "Label of the choice of how long a new invite works."
+  },
+  "settings.invites.expires_in.description": {
+    "defaultMessage": "この期間が過ぎると招待は使えなくなります（最長 {max}）。",
+    "description": "Help of how long a new invite works. {max} is the longest time the server allows, formatted like the options (for example \"30 days\")."
+  },
+  "settings.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, other {# 分}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "settings.invites.duration.hours": {
+    "defaultMessage": "{count, plural, other {# 時間}}",
+    "description": "An option of how long an invite works, in hours."
+  },
+  "settings.invites.duration.days": {
+    "defaultMessage": "{count, plural, other {# 日}}",
+    "description": "An option of how long an invite works, in days."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "招待を作成する",
+    "description": "Button that creates a new invite on the user's invites page."
+  },
+  "settings.invites.create_failed": {
+    "defaultMessage": "招待を作成できませんでした：{reason}",
+    "description": "Error when creating an invite failed. {reason} is the server's reason."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "招待 {code} を作成しました。",
+    "description": "Status after the user created an invite. {code} is its code."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "招待する人に次のリンクを送ってください：",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "settings.invites.list.title": {
+    "defaultMessage": "作成した招待",
+    "description": "Heading of the list of the user's invites."
+  },
+  "settings.invites.empty": {
+    "defaultMessage": "招待はまだありません",
+    "description": "Heading of the empty list of the user's invites."
+  },
+  "settings.invites.empty.description": {
+    "defaultMessage": "作成した招待が、使われた人数とともにここに並びます。",
+    "description": "Description of the empty list of the user's invites."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "状態",
+    "description": "Term of an invite in the user's list: what it allows now."
+  },
+  "settings.invites.state.usable": {
+    "defaultMessage": "使える",
+    "description": "State of an invite that people may sign up with."
+  },
+  "settings.invites.state.revoked": {
+    "defaultMessage": "失効",
+    "description": "State of an invite that was revoked."
+  },
+  "settings.invites.state.expired": {
+    "defaultMessage": "期限切れ",
+    "description": "State of an invite whose time ran out."
+  },
+  "settings.invites.state.exhausted": {
+    "defaultMessage": "使い切り",
+    "description": "State of an invite that as many people signed up with as it allows."
+  },
+  "settings.invites.state.creator_ineligible": {
+    "defaultMessage": "招待できない間は使えない",
+    "description": "State of the user's invite while the user may not create invites (their permission ended, or their account is restricted). It works again when they may."
+  },
+  "settings.invites.used": {
+    "defaultMessage": "登録した人数",
+    "description": "Term of an invite in the user's list: how many people signed up with it."
+  },
+  "settings.invites.used.value": {
+    "defaultMessage": "{max, number} 人中 {uses, number} 人",
+    "description": "How many people signed up with an invite, and how many it allows."
+  },
+  "settings.invites.expires_at": {
+    "defaultMessage": "期限",
+    "description": "Term of an invite in the user's list: when it stops working."
+  },
+  "settings.invites.created_at": {
+    "defaultMessage": "作成日時",
+    "description": "Term of an invite in the user's list: when it was created."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "リンクをコピー",
+    "description": "Button that copies the sign-up link of an invite."
+  },
+  "settings.invites.copy_invite": {
+    "defaultMessage": "招待 {code} のリンクをコピー",
+    "description": "Accessible name of the copy button of an invite. {code} is its code."
+  },
+  "settings.invites.copied": {
+    "defaultMessage": "招待 {code} のリンクをコピーしました。",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "settings.invites.copy_failed": {
+    "defaultMessage": "リンクをコピーできませんでした。リンクを選択してコピーしてください。",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "失効",
+    "description": "Button that revokes an invite at once."
+  },
+  "settings.invites.revoke_invite": {
+    "defaultMessage": "失効：招待 {code}（{date} に作成）",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "settings.invites.revoked": {
+    "defaultMessage": "招待 {code} を失効させました。この招待で登録した人のアカウントはそのままです。",
+    "description": "Status after the user revoked an invite. {code} is its code."
+  },
+  "settings.invites.revoke_failed": {
+    "defaultMessage": "招待を失効させられませんでした：{reason}",
+    "description": "Toast when revoking an invite failed. {reason} is the server's reason."
   }
 }

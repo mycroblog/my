@@ -404,14 +404,15 @@ const rule: Schemas["AdminRule"] = {
   revised_at: "2026-10-16T00:00:00Z",
 };
 
-/** A usable invite without a limit, as GET /admin/invites lists it. */
+/** A usable invite without a limit that the target created as a member, as GET /admin/invites lists it. */
 const invite: Schemas["AdminInvite"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f3",
   code: "ABCDEFGHJKLMNPQR",
   url: "https://my.example/auth/sign_up?invite=ABCDEFGHJKLMNPQR",
   uses: 2,
   state: "usable",
-  creator_kind: "staff",
+  creator_kind: "member",
+  created_by: target,
   created_by_deleted: false,
   expires_at: "2026-10-23T00:00:00Z",
   created_at: "2026-10-16T00:00:00Z",
@@ -491,6 +492,33 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
     { key: "link_cards_enabled", kind: "bool", value: "true", default: "true", stored: false },
+    {
+      key: "invite_creators",
+      kind: "enum",
+      value: "permitted",
+      default: "permitted",
+      stored: false,
+      choices: ["everyone", "permitted"],
+    },
+    { key: "member_invite_max_active", kind: "int", value: "5", default: "5", stored: false, minimum: 0, maximum: 100 },
+    {
+      key: "member_invite_max_uses",
+      kind: "int",
+      value: "10",
+      default: "10",
+      stored: false,
+      minimum: 1,
+      maximum: 1000,
+    },
+    {
+      key: "member_invite_max_expires_in",
+      kind: "int",
+      value: "2592000",
+      default: "2592000",
+      stored: false,
+      minimum: 3600,
+      maximum: 31536000,
+    },
   ],
 };
 
@@ -581,7 +609,13 @@ async function moderatorServer(page: Page) {
     state: "active",
     restrictions: [],
     registration_state: "approved",
-    registration: { submitted_at: "2026-10-01T00:00:00Z", state_changed_at: "2026-10-01T01:00:00Z" },
+    // Invited by the moderator through a member invite, which the page names and links.
+    registration: {
+      submitted_at: "2026-10-01T00:00:00Z",
+      state_changed_at: "2026-10-01T01:00:00Z",
+      invite_id: invite.id,
+      invite: { id: invite.id, creator_kind: "member", created_by: moderator, created_by_deleted: false },
+    },
     email_verified: true,
     roles: [],
     actions,
