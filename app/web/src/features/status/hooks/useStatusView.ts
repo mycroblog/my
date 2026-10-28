@@ -74,7 +74,7 @@ export type StatusView = {
   /** The card of the first link in the post (ADR-0062), or null when it has none. */
   card: LinkCardView | null;
   /** How many times the post was boosted and favourited. */
-  counts: { boosts: number; favourites: number };
+  counts: { replies: number; boosts: number; favourites: number };
 };
 
 /** What the link card of a post shows, for @my/ui's LinkCard. */
@@ -222,6 +222,6 @@ export function useStatusView(status: Status): StatusView {
     media: mediaItems(post.media_attachments, lang),
     sensitive: post.sensitive,
     card,
-    counts: { boosts: post.boosts_count, favourites: post.favourites_count },
+    counts: { replies: post.replies_count, boosts: post.boosts_count, favourites: post.favourites_count },
   };
 }

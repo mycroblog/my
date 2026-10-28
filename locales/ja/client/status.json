@@ -295,17 +295,13 @@
     "defaultMessage": "スレッドの前の投稿",
     "description": "Heading above the posts that the post of the page replies to, oldest first."
   },
-  "status.thread.failed": {
-    "defaultMessage": "返信を読み込めませんでした：{reason}",
-    "description": "Shown under the post of the page when its thread failed to load. {reason} is the error message, a full sentence."
-  },
   "status.thread.loading": {
     "defaultMessage": "返信を読み込んでいます",
     "description": "Visually hidden text that names the busy replies section while the thread around a post loads."
   },
   "status.thread.no_replies": {
-    "defaultMessage": "まだ返信はありません。",
-    "description": "Shown under the Replies heading when the post has no replies."
+    "defaultMessage": "まだ返信はありません",
+    "description": "Heading of the empty state of the Replies section of a post's page when the post has no replies."
   },
   "status.thread.replies": {
     "defaultMessage": "返信",
@@ -426,5 +422,25 @@
   "status.edit.remove_quote.description": {
     "defaultMessage": "外した引用は元に戻せません。",
     "description": "Description of the checkbox that removes the quote of a post in its edit dialog."
+  },
+  "status.action.read_replies": {
+    "defaultMessage": "{count, plural, other {返信 # 件を読む}}",
+    "description": "Name and tooltip of the link in a post's action bar that opens the post's page to read its replies; the link shows a speech bubble and the number. {count} is the number of replies (at least 1)."
+  },
+  "status.thread.failed.heading": {
+    "defaultMessage": "返信を読み込めませんでした",
+    "description": "Heading of the error shown in the Replies section of a post's page when the thread failed to load, above the reason and the button to try again."
+  },
+  "status.thread.no_replies.description": {
+    "defaultMessage": "最初の返信で会話を始めましょう。",
+    "description": "Description of the empty state of the Replies section of a post's page, above the button that starts a reply; shown to signed-in users."
+  },
+  "status.thread.no_replies.action": {
+    "defaultMessage": "返信する",
+    "description": "Button in the empty state of the Replies section of a post's page that opens the form to reply to the post."
+  },
+  "status.focused.replies": {
+    "defaultMessage": "{count, plural, other {返信 # 件}}",
+    "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
   }
 }

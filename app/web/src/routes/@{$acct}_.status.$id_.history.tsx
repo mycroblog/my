@@ -16,7 +16,7 @@ const paramsSchema = z.object({ acct: z.string().min(1), id: z.string().min(1) }
 
 /** The edit history of a post (FR-109): every revision, newest first. */
 export const Route = createFileRoute("/@{$acct}_/status/$id_/history")({
-  staticData: { title: "client:status.history.title" },
+  staticData: { title: "client:status.history.title", back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   loader: async ({ context: { queryClient, api }, params: { id } }) => {
     await Promise.all([

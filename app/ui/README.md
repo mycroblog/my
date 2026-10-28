@@ -256,7 +256,10 @@ Icons are part of the kit, so that every screen draws the same shapes at the sam
 - They are decorative: `aria-hidden="true"` and `focusable="false"`. The meaning is in the visible label or the accessible
   name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text: `IconButton` and
   `IconToggleButton` take the text once as `label` and give it to both (`ghost` and `icon` by default for `IconButton`; any
-  `variant` and `size` of `Button`, such as `subtle` and `toolbar` in a post's action bar). Oxlint (`restrict/icons`)
+  `variant` and `size` of `Button`, such as `subtle` and `toolbar` in a post's action bar), and `IconButtonLink` is the
+  same for a link (`subtle` and `toolbar` by default: the replies of a post in its action bar). A count beside the icon of
+  a post's action is an `ActionCount`, which slides the new number in when it changes. Every `Button` and
+  `ToggleButton` dents (`scale-95`) while pressed, or, with reduced motion, takes its pressed fill. Oxlint (`restrict/icons`)
   rejects a `Button` or `ToggleButton` whose children are an icon and no words outside a `TooltipTrigger`; a description
   the caller passes (a count's `aria-describedby`) stays while the tooltip, which repeats the name, is open.
 - The control sizes its icon: `Button`, `ToggleButton` and `Link` size a child `svg` (`size-5` in buttons, also in a

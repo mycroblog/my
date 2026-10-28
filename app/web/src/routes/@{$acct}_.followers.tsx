@@ -8,6 +8,7 @@ import { ProfileNotFound } from "./-profile/ProfileNotFound";
 
 /** The accounts that follow an account (FR-301). */
 export const Route = createFileRoute("/@{$acct}_/followers")({
+  staticData: { back: true },
   params: { parse: (params) => profileParamsSchema.parse(params) },
   loader: async ({ context, params: { acct } }) => {
     const account = await loadAccount(context, acct);

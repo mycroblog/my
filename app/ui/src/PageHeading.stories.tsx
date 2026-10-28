@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 import { BackLinkHeading, PageHeading } from "./PageHeading";
 import { Text } from "./Text";
 
@@ -33,6 +33,19 @@ export const VisuallyHidden: Story = {
   ),
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("heading", { level: 1, name: "Home timeline" })).toHaveClass("sr-only");
+  },
+};
+
+/**
+ * On a page that is not an item of the navigation (a post): the way back before the heading, for the installed app,
+ * which has no browser back button.
+ */
+export const WithBack: Story = {
+  args: { children: "Post", back: { label: "Back", onPress: fn() } },
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByRole("heading", { level: 1, name: "Post" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Back" }));
+    await expect(args.back?.onPress).toHaveBeenCalledOnce();
   },
 };
 

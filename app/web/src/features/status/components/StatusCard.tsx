@@ -149,6 +149,9 @@ export function StatusCard({
         details: (
           <>
             <time dateTime={view.time.dateTime}>{view.time.absolute}</time>
+            {view.counts.replies > 0 && (
+              <Text numeric>{t("client:status.focused.replies", { count: view.counts.replies })}</Text>
+            )}
             {view.counts.boosts > 0 && (
               <Text numeric>{t("client:status.focused.boosts", { count: view.counts.boosts })}</Text>
             )}
@@ -230,7 +233,14 @@ export function StatusCard({
       {...((withActions || view.original !== null) && {
         actions: (
           <>
-            {withActions && <StatusActions status={status} {...(onDeleted !== undefined && { onDeleted })} />}
+            {withActions && (
+              <StatusActions
+                status={status}
+                {...(onDeleted !== undefined && { onDeleted })}
+                // The focused post's replies are below it on its own page.
+                {...(variant === "compact" && { repliesHref: view.path })}
+              />
+            )}
             {view.original !== null && (
               // The post's page on its own server, shown also while nobody is signed in. The host is what it
               // shows; the name says where it leads, and contains the host (WCAG 2.5.3, label in name).

@@ -11,7 +11,9 @@ const toggleButton = tv({
   base: [
     "inline-flex min-h-8 min-w-8 cursor-default items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium text-fg-muted select-none",
     "data-hovered:bg-surface-sunken data-hovered:text-fg data-pressed:bg-surface-sunken",
-    "data-disabled:opacity-50 data-focus-visible:focus-ring motion-safe:transition-colors",
+    "data-disabled:opacity-50 data-focus-visible:focus-ring",
+    // Pressed, it dents at once (web-client/21-experience-principles.md P2); with reduced motion the sunken fill above answers.
+    "motion-safe:transition-[color,background-color,scale] motion-safe:duration-fast motion-safe:ease-standard motion-safe:data-pressed:scale-95",
     "pointer-coarse:min-h-11 pointer-coarse:min-w-11 [&>svg]:size-5 [&>svg]:shrink-0",
   ],
   variants: {

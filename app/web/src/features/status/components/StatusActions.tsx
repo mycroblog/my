@@ -5,8 +5,10 @@ import {
   Button,
   Dialog,
   DialogActions,
+  ActionCount,
   Hint,
   IconButton,
+  IconButtonLink,
   IconToggleButton,
   type IconToggleButtonProps,
   Menu,
@@ -14,13 +16,12 @@ import {
   MenuTrigger,
   MoreIcon,
   QuoteIcon,
+  RepliesIcon,
   ReplyIcon,
   Stack,
   StarIcon,
-  Text,
 } from "@my/ui";
 import { type ReactNode, useId, useState } from "react";
-import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { type ReactionChoice, ReactionPickerButton } from "../../emoji";
 import { ReportDialog } from "../../report";
@@ -33,6 +34,11 @@ export type StatusActionsProps = {
   status: Status;
   /** Called after the post is deleted, for a page that shows only this post. */
   onDeleted?: () => void;
+  /**
+   * The post's page, where its replies are read: the bar then has a link to it with the number of replies, apart from
+   * the reply button, which writes one. Left out on that page itself.
+   */
+  repliesHref?: string | undefined;
 };
 
 /** The emoji of a reaction picked in the picker: a Unicode emoji, or a custom emoji of this server. */
@@ -52,9 +58,8 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
  * instance sends nothing out (ADR-0076), quoting is not offered and a note at the end of the bar, which also
  * describes the reply, boost and favourite, says that the actions do not reach that server.
  */
-export function StatusActions({ status, onDeleted }: StatusActionsProps) {
+export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsProps) {
   const t = useT();
-  const repliesId = useId();
   const staysLocalId = useId();
   const actions = useStatusActions(status);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -66,9 +71,6 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
   const remove = actions.delete;
   // The note that the actions on a post of another server do not reach it (ADR-0076) describes each of them.
   const note = actions.staysLocal ? staysLocalId : undefined;
-  const replyDescription = [post.replies_count > 0 ? repliesId : undefined, note]
-    .filter((id) => id !== undefined)
-    .join(" ");
 
   return (
     <>
@@ -76,12 +78,20 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
         variant="subtle"
         size="toolbar"
         label={t("client:status.action.reply")}
-        {...(replyDescription !== "" && { "aria-describedby": replyDescription })}
+        {...(note !== undefined && { "aria-describedby": note })}
         onPress={actions.reply}
       >
         <ReplyIcon />
-        <Count id={repliesId} value={post.replies_count} />
       </IconButton>
+      {repliesHref !== undefined && post.replies_count > 0 && (
+        <IconButtonLink
+          href={repliesHref}
+          label={t("client:status.action.read_replies", { count: post.replies_count })}
+        >
+          <RepliesIcon />
+          <ActionCount value={post.replies_count} />
+        </IconButtonLink>
+      )}
       <RelationButton
         label={t("client:status.action.boost")}
         toggle={actions.boost}
@@ -258,18 +268,7 @@ function RelationButton({ label, toggle, tone, icon, describedBy, celebrate = fa
       onChange={toggle.onChange}
     >
       {icon(toggle.isSelected)}
-      {toggle.count !== null && <Count id={countId} value={toggle.count} />}
+      {toggle.count !== null && <ActionCount id={countId} value={toggle.count} />}
     </IconToggleButton>
-  );
-}
-
-/** A count next to an icon, compact ("1.2K") in the page's locale; nothing for zero. */
-function Count({ value, id }: { value: number; id?: string }) {
-  const intl = useIntl();
-  if (value === 0) return null;
-  return (
-    <Text id={id} numeric>
-      {intl.formatNumber(value, { notation: "compact" })}
-    </Text>
   );
 }

@@ -76,6 +76,12 @@ declare module "@tanstack/react-router" {
      * shows (from `md`): on a phone the heading says which of the timelines this is (screens/home.md).
      */
     hideHeading?: boolean | "wide";
+    /**
+     * The page is not an item of the navigation (a post, its history and quotes, a follow list): PageHeading puts a
+     * back button before its h1, since the installed app has no browser back button (screens/status.md). It goes back
+     * in the history, or, on a page opened directly, to the home timeline (the landing page while signed out).
+     */
+    back?: boolean;
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**

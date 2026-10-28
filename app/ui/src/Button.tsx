@@ -11,7 +11,9 @@ import { tv, type VariantProps } from "tailwind-variants";
 const button = tv({
   base: [
     "inline-flex cursor-default items-center justify-center gap-2 rounded-full text-center font-extrabold select-none",
-    "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:transition-[color,background-color,translate]",
+    "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:transition-[color,background-color,translate,scale]",
+    // Pressed, it dents at once (web-client/21-experience-principles.md P2); with reduced motion each variant's pressed fill answers.
+    "motion-safe:data-pressed:scale-95",
     // The button sizes a child icon, which sets no size of its own (web-client/16-look-states-and-wording.md G11).
     "pointer-coarse:min-h-11 [&>svg]:shrink-0",
   ],

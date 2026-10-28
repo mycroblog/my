@@ -41,6 +41,7 @@
 - [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
 - [サーバーの設定（`/admin/settings`）](admin-settings.md)
 - [ホームタイムライン（`/home`）](home.md)
+- [投稿の詳細（`/@{acct}/status/{id}`）](status.md)
 - [ランディングページ（`/`、サインインしていない人）](landing.md)
 - [ローカルタイムライン（`/local`）](local.md)
 - [連合タイムライン（`/public`）](public.md)

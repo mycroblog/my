@@ -181,7 +181,7 @@ describe("a post's page", () => {
     const scrolled = vi.spyOn(Element.prototype, "scrollIntoView");
     await renderApp({ path: `/@bob/status/${postId}` });
 
-    expect(await screen.findByText("No replies yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: "No replies yet" })).toBeInTheDocument();
     expect(scrolled).not.toHaveBeenCalled();
   });
 
@@ -210,7 +210,12 @@ describe("a post's page", () => {
     );
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
 
-    expect(await screen.findByText("Could not load the replies: Service Unavailable")).toBeInTheDocument();
+    // The section's error (G16): what happened, why, and the way to try again, under the Replies heading.
+    const replies = await screen.findByRole("region", { name: "Replies" });
+    expect(
+      await within(replies).findByRole("heading", { level: 3, name: "Could not load the replies" }),
+    ).toBeInTheDocument();
+    expect(within(replies).getByText("Service Unavailable")).toBeInTheDocument();
     expect(await findFocusedPost()).toBeInTheDocument();
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
@@ -238,8 +243,53 @@ describe("a post's page", () => {
   test("says so when there are no replies", async () => {
     await renderApp({ path: `/@bob/status/${postId}` });
 
-    expect(await screen.findByText("No replies yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: "No replies yet" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Earlier in the thread" })).not.toBeInTheDocument();
+    // Nobody is signed in: nothing to reply with.
+    expect(screen.queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
+  });
+
+  test("leads a signed-in viewer from no replies to the first reply (G14)", async () => {
+    signedIn();
+    const { user } = await renderApp({ path: `/@bob/status/${postId}` });
+
+    const replies = await screen.findByRole("region", { name: "Replies" });
+    await within(replies).findByRole("heading", { level: 3, name: "No replies yet" });
+    await user.click(await within(replies).findByRole("button", { name: "Reply" }));
+
+    const sheet = await screen.findByRole("dialog", { name: "New post" });
+    expect(within(sheet).getByText(/^Replying to /)).toBeInTheDocument();
+  });
+
+  // The installed app has no browser back button (C3): a page that is not an item of the navigation has its own.
+  test("goes back to where the reader came from with the back button before the heading", async () => {
+    signedIn();
+    serveThread();
+    server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([post]))));
+    const { user, router } = await renderApp({ path: "/local" });
+
+    const card = await screen.findByRole("article", { description: "The post" });
+    // Reading the replies is a link of its own, apart from the reply button, which writes one (C5).
+    const read = await within(card).findByRole("link", { name: "Read 1 reply" });
+    expect(read).toHaveAttribute("href", `/@${post.account.acct}/status/${postId}`);
+    await user.click(read);
+    await findFocusedPost();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/local");
+    });
+  });
+
+  test("goes to the landing page from the back button of a page opened directly while signed out", async () => {
+    serveThread();
+    const { user, router } = await renderApp({ path: `/@bob/status/${postId}` });
+
+    await findFocusedPost();
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/");
+    });
   });
 
   test("says that a post that does not exist, or that the viewer may not see, is not found", async () => {
@@ -248,6 +298,8 @@ describe("a post's page", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Post not found" })).toBeInTheDocument();
     expect(screen.getByText("This post does not exist, or you cannot see it.")).toBeInTheDocument();
+    // A way on, rather than a dead end (G16).
+    expect(screen.getByRole("link", { name: "Go to the top page" })).toHaveAttribute("href", "/");
   });
 
   test("offers no actions while signed out", async () => {

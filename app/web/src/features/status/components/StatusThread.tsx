@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, PostSkeleton, Section, Stack, Text, VisuallyHidden } from "@my/ui";
+import { Button, EmptyState, PostSkeleton, RegionError, ReplyIcon, Section, Stack, VisuallyHidden } from "@my/ui";
 import { useRef } from "react";
 import { useT } from "../../../lib/i18n";
+import { useReply } from "../../compose";
+import type { Status } from "../api/status";
 import { useRevealOnce } from "../hooks/useRevealOnce";
 import { type ThreadPost, type ThreadState, useStatusThread } from "../hooks/useStatusThread";
 import { StatusCard } from "./StatusCard";
@@ -42,7 +44,7 @@ export function StatusThread({ id, onDeleted }: StatusThreadProps) {
         onDeleted={onDeleted}
       />
       <Section surface="rows" title={t("client:status.thread.replies")} busy={thread.status === "loading"}>
-        <ThreadReplies thread={thread} />
+        <ThreadReplies thread={thread} status={status} />
       </Section>
     </Stack>
   );
@@ -51,8 +53,9 @@ export function StatusThread({ id, onDeleted }: StatusThreadProps) {
 /** Placeholder replies, for as long as the thread loads. */
 const replyPlaceholders = ["first", "second"] as const;
 
-function ThreadReplies({ thread }: { thread: ThreadState }) {
+function ThreadReplies({ thread, status }: { thread: ThreadState; status: Status }) {
   const t = useT();
+  const reply = useReply();
   switch (thread.status) {
     case "loading":
       // The section is busy meanwhile; the hidden text names what it waits for, once (web-client/16-look-states-and-wording.md G15).
@@ -65,19 +68,37 @@ function ThreadReplies({ thread }: { thread: ThreadState }) {
         </>
       );
     case "error":
+      // The section's failure in its one form (G16); the post above stays.
       return (
-        <Stack align="center" gap="3" padding="4">
-          <Text as="p" align="center">
-            {t("client:status.thread.failed", { reason: thread.message })}
-          </Text>
-          <Button onPress={thread.retry}>{t("client:status.thread.retry")}</Button>
-        </Stack>
+        <RegionError
+          headingLevel={3}
+          heading={t("client:status.thread.failed.heading")}
+          reason={thread.message}
+          retryLabel={t("client:status.thread.retry")}
+          onRetry={thread.retry}
+          isRetrying={thread.isRetrying}
+        />
       );
     case "loaded":
+      // No replies yet: what comes next on this page is a reply (G14), offered while someone is signed in.
       return thread.descendants.length === 0 ? (
-        <Box as="p" paddingX="4" paddingBottom="4" tone="muted">
-          {t("client:status.thread.no_replies")}
-        </Box>
+        <EmptyState
+          headingLevel={3}
+          heading={t("client:status.thread.no_replies")}
+          {...(reply !== null && {
+            description: t("client:status.thread.no_replies.description"),
+            action: (
+              <Button
+                onPress={() => {
+                  reply(status.boost ?? status);
+                }}
+              >
+                <ReplyIcon />
+                {t("client:status.thread.no_replies.action")}
+              </Button>
+            ),
+          })}
+        />
       ) : (
         <StatusList posts={thread.descendants} />
       );
