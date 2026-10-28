@@ -333,7 +333,7 @@ test.describe("accounts", () => {
     await expect(page.getByText(privateData.email ?? "")).toHaveCount(0);
 
     // The email and IP addresses, by keyboard: the region's heading takes focus once they show.
-    const privateRegion = main.getByRole("region").nth(2);
+    const privateRegion = main.getByRole("region", { name: message("admin.account.private.title"), exact: true });
     await privateRegion.getByRole("button").focus();
     await page.keyboard.press("Enter");
     await expect(privateRegion.getByText(privateData.email ?? "")).toBeVisible();
@@ -350,7 +350,7 @@ test.describe("accounts", () => {
     await expectNoHorizontalScroll(page);
 
     // The lift of the limit asks first, with the reason's field focused.
-    const history = main.getByRole("region").nth(3);
+    const history = main.getByRole("region", { name: message("admin.account.actions.title"), exact: true });
     await history.getByRole("button").click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
@@ -398,8 +398,8 @@ test.describe("accounts", () => {
     await expect(form.locator('input[type="radio"][value="limit"]')).toHaveCount(1);
     await expect(form.locator('input[type="radio"][value="suspend"]')).toHaveCount(1);
     await expect(form.locator('input[type="checkbox"]')).toHaveCount(0);
-    // Account, restrictions, actions, reports, action: no region of email and IP addresses.
-    await expect(main.getByRole("region")).toHaveCount(5);
+    // Account (with its restrictions), action, actions, reports: no region of email and IP addresses.
+    await expect(main.getByRole("region")).toHaveCount(4);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
@@ -485,8 +485,7 @@ test.describe("accounts", () => {
     await expect(main.getByRole("heading", { level: 3 }).first()).toBeVisible();
     await expect(page.getByText(resetLink)).toHaveCount(0);
 
-    // Account, restrictions, two-factor authentication, password reset: the fourth region.
-    const reset = main.getByRole("region").nth(3);
+    const reset = main.getByRole("region", { name: message("admin.account.password_reset.title"), exact: true });
     await reset.getByRole("button").focus();
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("alertdialog");

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The room's page as a stage (ADR-0100 §9, §10). A card with the room's head: the "Live" pill, how many are in it and
-// how long it has been open (and, in the call, the call's state), share, and the host's button to the settings or,
+// how long it has been open (and, in the call, the badge of the user's connection, with the pill as an outline while
+// it reconnects), share, and the host's button to the settings or,
 // to anyone else, a menu with "Report room"; the room's name as the page's heading, its description and hashtags.
 // Under it the speakers as large avatars and the listeners as small ones (StageAvatar), the host and the co-hosts
 // first, each with the role under the name, the ring of who is talking, a speaker's microphone that is off, a raised
-// hand, and the reaction they just sent. Each avatar opens a menu: the participant's profile, for the host and the
-// co-hosts what they may do to the participant, and on the user's own avatar as a speaker "Just listen". The page
-// ends with the dock (VoiceCallDock).
+// hand, and the reaction they just sent. Each avatar opens a menu (it shows a surface under the pointer and a caret):
+// the participant's profile, for the host and the co-hosts what they may do to the participant, and on the user's own
+// avatar as a speaker "Just listen", which the dock has too. The page ends with the dock (VoiceCallDock).
 import {
   Card,
   Cluster,
@@ -39,14 +40,14 @@ import { profilePath } from "../../../lib/paths";
 import { useCustomEmojiImages } from "../../emoji";
 import { ReportDialog } from "../../report";
 import type { VoiceParticipantOperation } from "../api/call";
-import type { VoiceRoom, VoiceRoomParticipant } from "../api/voice";
+import { hashtagPath, type VoiceRoom, type VoiceRoomParticipant } from "../api/voice";
 import { useVoiceCall } from "../hooks/useVoiceCall";
-import { useVoiceCallControls } from "../hooks/useVoiceCallControls";
+import { useVoiceCallControls, type VoiceCallControls } from "../hooks/useVoiceCallControls";
 import { useVoiceModeration } from "../hooks/useVoiceModeration";
 import { raisedHands, useOpenFor, useShareRoom, useVoiceStage, type VoiceStageEntry } from "../hooks/useVoiceStage";
 import type { VoiceReactionShown } from "../hooks/voiceCall";
 import { CallDockControls, JoinDock } from "./VoiceCallDock";
-import { callPhaseText } from "./VoiceCallParts";
+import { CallConnection } from "./VoiceCallParts";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
 
 const operationLabels: Readonly<Record<VoiceParticipantOperation, ClientMessageKey>> = {
@@ -97,12 +98,7 @@ export function VoiceStage({ room, isHost, renderHeading }: VoiceStageProps) {
     <>
       <Card padding="4">
         <Stack gap="6">
-          <RoomHead
-            room={room}
-            isHost={isHost}
-            renderHeading={renderHeading}
-            phase={controls === null ? undefined : callPhaseText(t, controls)}
-          />
+          <RoomHead room={room} isHost={isHost} renderHeading={renderHeading} controls={controls} />
           {moderation.error !== undefined && (
             <InlineError size="inherit" alert>
               {t("client:voice.call.action_failed", { reason: moderation.error })}
@@ -161,7 +157,7 @@ export function VoiceStage({ room, isHost, renderHeading }: VoiceStageProps) {
 }
 
 /** The head of the room: its state, its name as the page's heading, its description and hashtags, and its actions. */
-function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { phase: string | undefined }) {
+function RoomHead({ room, isHost, renderHeading, controls }: VoiceStageProps & { controls: VoiceCallControls | null }) {
   const t = useT();
   const openFor = useOpenFor(room.opened_at);
   const share = useShareRoom(room);
@@ -170,14 +166,15 @@ function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { ph
       {/* The actions keep the end of the line; the state wraps before them on narrow screens. */}
       <Cluster gap="2" align="start" justify="between" wrap={false}>
         <Cluster gap="2" align="center">
-          <LivePill label={t("client:voice.room.live")} />
+          {/* While the user's call reconnects, the pill turns to an outline and the badge beside it says why. */}
+          <LivePill label={t("client:voice.room.live")} interrupted={controls?.phase === "reconnecting"} />
+          {controls !== null && <CallConnection controls={controls} />}
           <Hint as="span">
             {t("client:voice.room.stats", {
               people: t("client:voice.room.participants_count", { count: room.participants.length }),
               duration: openFor,
             })}
           </Hint>
-          {phase !== undefined && <Hint as="span">{phase}</Hint>}
         </Cluster>
         <Cluster gap="1" align="center" wrap={false}>
           <IconButton label={t("client:voice.room.share")} onPress={share}>
@@ -196,7 +193,7 @@ function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { ph
         <Cluster as="ul" gap="1" aria-label={t("client:voice.form.hashtags")}>
           {room.hashtags.map((tag) => (
             <Tag key={tag} as="li" variant="pill" dir="auto">
-              <Link href={`/tags/${encodeURIComponent(tag)}`} variant="standalone">
+              <Link href={hashtagPath(tag)} variant="standalone">
                 {t("client:tag.title", { tag })}
               </Link>
             </Tag>

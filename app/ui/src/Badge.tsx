@@ -22,23 +22,46 @@ export type BadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
   VariantProps<typeof badge> & {
     /** The number to show. Hiding the badge at zero is the caller's decision. */
     count: number;
-    /**
-     * What the number means, read instead of the drawn digits ("12 unread notifications"). It is
-     * required because a bare number has no meaning out of context; the caller formats it with the full count.
-     */
-    label: string;
     /** The largest number drawn as is; above it the badge shows `max` followed by a plus sign. */
     max?: number;
-  };
+  } & (
+    | {
+        /**
+         * What the number means, read instead of the drawn digits ("12 unread notifications"). It is
+         * required because a bare number has no meaning out of context; the caller formats it with the full count.
+         */
+        label: string;
+        decorative?: false;
+      }
+    | {
+        /**
+         * The badge sits in a control that is named elsewhere (`aria-label`, with the count in it): the digits are
+         * drawn as generated content, so that they are neither text of the control nor read, and the control's
+         * visible text stays its label (WCAG 2.5.3).
+         */
+        decorative: true;
+        label?: never;
+      }
+  );
 
 /**
  * A small count, such as unread notifications. The digits are drawn for sighted users and hidden
  * from assistive technology, which reads `label` instead, so a capped "99+" never hides the real count.
  */
-export function Badge({ count, label, max = 99, tone, className, ...props }: BadgeProps) {
+export function Badge({ count, label, decorative = false, max = 99, tone, className, ...props }: BadgeProps) {
   const { locale } = useLocale();
   const format = new Intl.NumberFormat(locale);
   const shown = count > max ? `${format.format(max)}+` : format.format(count);
+  if (decorative) {
+    return (
+      <span
+        {...props}
+        aria-hidden="true"
+        data-count={shown}
+        className={badge({ tone, className: ["after:content-[attr(data-count)]", className] })}
+      />
+    );
+  }
   return (
     <span {...props} className={badge({ tone, className })}>
       <span aria-hidden="true">{shown}</span>

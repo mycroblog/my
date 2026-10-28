@@ -161,8 +161,19 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setSessionCookie(w, signedUp.Session)
+	// A user who can use the account at once goes on to the app's welcome step; one who waits
+	// for the email confirmation or a moderator sees on the sign-in page what is missing.
+	access, err := h.o.Identity.UserAccess(r.Context(), signedUp.Session.Session.UserID)
+	if err != nil {
+		h.internalError(w, r, err)
+		return
+	}
+	next := PathSignIn
+	if access.Allowed() {
+		next = PathWelcome
+	}
 	w.Header().Set("Cache-Control", "no-store")
-	http.Redirect(w, r, PathSignIn, http.StatusSeeOther)
+	http.Redirect(w, r, next, http.StatusSeeOther)
 }
 
 // check sets the error of every field that the identity module would reject.

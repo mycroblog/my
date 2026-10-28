@@ -64,6 +64,11 @@ export function voiceRoomPath(id: string): string {
   return `/voice/${id}`;
 }
 
+/** The page of a room's hashtag (without its `#`), which links from the stage and from every card of the room. */
+export function hashtagPath(tag: string): string {
+  return `/tags/${encodeURIComponent(tag)}`;
+}
+
 /** The instance, which says whether voice chat is on (`voice_enabled`) and who may open rooms (`voice_room_starters`). */
 export function instanceQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/instance");

@@ -929,7 +929,16 @@ func moderationHandlesReports(t *testing.T, e *moderationEnv) {
 		}
 		return r
 	}
+	oldest := func(want *time.Time) {
+		t.Helper()
+		got, err := e.svc.OldestOpenReportFiledAt(ctx)
+		if err != nil || (got == nil) != (want == nil) || (got != nil && !got.Equal(*want)) {
+			t.Errorf("OldestOpenReportFiledAt = %v, %v; want %v", got, err, want)
+		}
+	}
+	oldest(nil)
 	a, b, c := file("1"), file("2"), file("3")
+	oldest(&a.FiledAt)
 	list := func(q appmoderation.ReportQuery, limit int, want ...string) []moderation.ReportRecord {
 		t.Helper()
 		got, err := e.svc.Reports(ctx, q, limit)
@@ -947,7 +956,7 @@ func moderationHandlesReports(t *testing.T, e *moderationEnv) {
 		t.Errorf("listed report = %+v, want %+v, open", all[2], a)
 	}
 	list(appmoderation.ReportQuery{}, 2, c.ID, b.ID)
-	list(appmoderation.ReportQuery{Before: b.ID}, 2, a.ID)
+	list(appmoderation.ReportQuery{After: b.ID}, 2, a.ID)
 
 	// Assigning records the assignee; assigning it again changes nothing.
 	r, err := e.svc.AssignReport(ctx, b.ID, NamedID("mod-1"), NamedID("mod-1"))
@@ -962,6 +971,21 @@ func moderationHandlesReports(t *testing.T, e *moderationEnv) {
 	}
 	if r, err = e.svc.AssignReport(ctx, b.ID, NamedID("mod-2"), NamedID("mod-2")); err != nil || r.Status.AssigneeUserID != NamedID("mod-2") {
 		t.Errorf("AssignReport(mod-2) = %+v, %v", r.Status, err)
+	}
+
+	// The list filters by assignee and category, and orders oldest first.
+	list(appmoderation.ReportQuery{AssigneeUserID: NamedID("mod-2")}, 10, b.ID)
+	list(appmoderation.ReportQuery{AssigneeUserID: NamedID("mod-1")}, 10)
+	list(appmoderation.ReportQuery{Unassigned: true}, 10, c.ID, a.ID)
+	list(appmoderation.ReportQuery{Category: a.Category}, 10, c.ID, b.ID, a.ID)
+	list(appmoderation.ReportQuery{Category: moderation.CategorySpam}, 10)
+	list(appmoderation.ReportQuery{OldestFirst: true}, 2, a.ID, b.ID)
+	list(appmoderation.ReportQuery{OldestFirst: true, After: b.ID}, 2, c.ID)
+	list(appmoderation.ReportQuery{OldestFirst: true, Unassigned: true, State: moderation.ReportOpen}, 10, a.ID, c.ID)
+	for _, q := range []appmoderation.ReportQuery{{AssigneeUserID: NamedID("mod-1"), Unassigned: true}, {Category: "rude"}} {
+		if _, err := e.svc.Reports(ctx, q, 10); !errors.Is(err, appmoderation.ErrInvalidQuery) {
+			t.Errorf("Reports(%+v) = %v, want ErrInvalidQuery", q, err)
+		}
 	}
 
 	// Resolving records the outcome; resolving again keeps it.
@@ -980,6 +1004,7 @@ func moderationHandlesReports(t *testing.T, e *moderationEnv) {
 		t.Fatal(err)
 	}
 	list(appmoderation.ReportQuery{State: moderation.ReportOpen}, 10, c.ID)
+	oldest(&c.FiledAt)
 	resolved := list(appmoderation.ReportQuery{State: moderation.ReportResolved}, 10, b.ID, a.ID)
 	if len(resolved) == 2 && resolved[1].Status.Outcome != moderation.OutcomeActioned {
 		t.Errorf("resolved report = %+v, want actioned", resolved[1].Status)

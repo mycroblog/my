@@ -17,7 +17,8 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 | Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), costs and billing import (`/admin/finance`, `manage_finance`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) appears in a section of the account page (`/moderation/accounts/{id}`, which also needs `manage_accounts`) |
 
 - The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
-- Each group opens on an overview; the screens themselves are in the menu beside it. The Moderation overview has a tile for each queue your role counts (open reports, registrations awaiting approval, appeals awaiting a decision), each a link to its queue, and lists the open reports to handle first: illegal content first, then the ones that have waited longest, with how long each has waited and who handles it.
+- Each group opens on an overview; the screens themselves are in the menu beside it. The Moderation overview has a tile for each queue your role counts (open reports, registrations awaiting approval, appeals awaiting a decision), each a link to its queue, a tile with how long the oldest open report has waited (a link to the report list, oldest first), and lists the open reports to handle first from the whole queue: illegal content first, then the ones that have waited longest, with how long each has waited and who handles it.
+  The report list filters by state, category, and assignee (yours or nobody's) and lists the newest or the oldest first; the filters stay in the page's address.
   The Administration overview shows the server's health: the failed jobs, how long the job queue has kept its oldest job waiting, and the open errors, each tile a link to its screen and marked when it needs attention.
 - The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
   so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
@@ -263,7 +264,7 @@ my admin report note <report id> "Same person as an earlier report"
 my admin report reopen <report id>
 ```
 
-In the admin API: `GET /api/v1/admin/reports` (filter with `state`), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
+In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, and `assignee`: `me`, `none`, or a local account's ID; `order=oldest` lists the longest-waiting report first instead of the newest), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
 `POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`) and `POST .../{id}/reopen`.
 
 - An assignment (`assign`) can go only to a local user whose role has `manage_reports`. In the admin API you assign yourself.
@@ -308,6 +309,7 @@ New reports, registrations waiting for approval and appeals reach people with th
   email on the **Notifications** page of the settings (`/settings/notifications` in the web client), which lists only the
   kinds their role receives. A kind turned off in the app is not created for them, so it is neither pushed nor emailed; the counts of
   `GET /api/v1/admin/counts` do not change, because they count the reports, registrations, and appeals themselves.
+  With the open reports, the counts also return when the oldest open report was filed (`oldest_open_report_filed_at`).
   The server enqueues the email job in the transaction that records the notification, and the job sends the mail right after the
   commit, without waiting for the notification to be read. If the person has lost the permission or turned that kind's email
   off by the time of sending, or their primary address is not confirmed or its emails are stopped, nothing is sent.

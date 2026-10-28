@@ -50,6 +50,7 @@ const policyKeys = [
   "supporter_list_visibility",
   "public_counts",
   "public_operators",
+  "featured_accounts",
   "search_indexing",
   "indexable_default",
   "ai_usage",

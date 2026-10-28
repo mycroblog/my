@@ -250,5 +250,13 @@
   "admin.account_actions.too_long": {
     "defaultMessage": "Use at most {max, number} characters",
     "description": "Error of a text of an account action that is too long."
+  },
+  "admin.account_actions.severity": {
+    "defaultMessage": "Severity {level, number} of {max, number}",
+    "description": "Hidden words after the name of a kind of moderation action: where it stands on the scale from the lightest (1) to the heaviest; level and max are numbers."
+  },
+  "admin.account_actions.irreversible": {
+    "defaultMessage": "Cannot be undone",
+    "description": "Badge after the name of a kind of moderation action that cannot be undone (a ban, deleting posts)."
   }
 }

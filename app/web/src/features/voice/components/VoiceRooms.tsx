@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The lists of open rooms (ADR-0100 §8): the list page's body with the button that starts a room, the panel of the
 // third column on wide screens, and the section at the top of a hashtag's page. Each room is a card in the look of its
-// stage: the "Live" pill with how many people are in it and how long it has been open, its name (a link to its page),
-// the stacked avatars of its speakers (the host first) beside the host, and on the pages its description and
-// hashtags. Every list shows nothing while the server has voice chat off.
+// stage: the "Live" pill with how many people are in it and how long it has been open ("Joined" for the room of the
+// user's call), its name (a link to its page), the stacked avatars of its speakers (the host first) beside the host,
+// and on the pages its description and hashtags (links to their pages). Every list shows nothing while the server has
+// voice chat off.
 import {
   AsidePanel,
   type AvatarStackItem,
@@ -23,7 +24,8 @@ import { useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
-import { type VoiceAccount, type VoiceRoom, voiceRoomPath } from "../api/voice";
+import { hashtagPath, type VoiceAccount, type VoiceRoom, voiceRoomPath } from "../api/voice";
+import { useJoinedVoiceRoomId } from "../hooks/useVoiceCallControls";
 import { useCanStartVoiceRoom, useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
 import { useOpenFor } from "../hooks/useVoiceStage";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
@@ -59,6 +61,7 @@ function speakerStack(room: VoiceRoom): AvatarStackItem[] {
 function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemProps) {
   const t = useT();
   const openFor = useOpenFor(room.opened_at);
+  const joinedRoomId = useJoinedVoiceRoomId();
   return (
     <VoiceRoomCard
       name={room.name}
@@ -70,6 +73,7 @@ function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemPr
         people: t("client:voice.room.participants_count", { count: room.participants_count }),
         duration: openFor,
       })}
+      joinedLabel={joinedRoomId === room.id ? t("client:voice.room.joined_badge") : undefined}
       speakers={speakerStack(room)}
       host={
         <Link href={profilePath(room.host.acct)} variant="standalone">
@@ -78,7 +82,7 @@ function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemPr
       }
       hostLabel={t("client:voice.role.host")}
       description={room.description}
-      tags={room.hashtags.map((tag) => t("client:tag.title", { tag }))}
+      tags={room.hashtags.map((tag) => ({ label: t("client:tag.title", { tag }), href: hashtagPath(tag) }))}
       tagsLabel={t("client:voice.form.hashtags")}
     />
   );

@@ -1,3 +1,11 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+push: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "layla"}
+notes: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "Judged by the harness: the server holds the browser's subscription, and the fake push service receives and decrypts the notification of a reply by layla after the task. Not measured: the agent sees neither OS notifications nor the browser's permission prompt (notifications are granted beforehand), and opening a notification (notificationclick) is not exercised."}
+---
+
 ## 通知（`/settings/notifications`）
 
 通知の種類ごとに、届く経路（アプリ内・プッシュ・メール・音）を選ぶ設定の画面（FR-210、ADR-0109）。どの操作も、変えるとすぐ保存する。

@@ -103,6 +103,63 @@ export function payloadsOf(messages: readonly FakeMessage[]): PushPayload[] {
   );
 }
 
+/**
+ * The init script that replaces PushManager.prototype.subscribe, getSubscription, and permissionState in the page with
+ * the bindings `__e2ePushSubscribe`, `__e2ePushGetSubscription`, and `__e2ePushUnsubscribe`, which the Node side
+ * exposes (installPushShim here, and the init page of the L4 harness, l4/mcp.ts, which inlines its source).
+ * It is self-contained, so that its source runs as it is in the page.
+ */
+export function pushManagerShim(): void {
+  type Issued = { endpoint: string; expirationTime: number | null; keys: { p256dh: string; auth: string } };
+  type Current = { subscription: Issued; applicationServerKey: string };
+  type Bindings = {
+    __e2ePushSubscribe: (key: string) => Promise<Current>;
+    __e2ePushGetSubscription: () => Promise<Current | null>;
+    __e2ePushUnsubscribe: () => Promise<boolean>;
+  };
+  const bindings = window as unknown as Window & Bindings;
+  if (typeof PushManager === "undefined") return;
+  const toBase64Url = (bytes: Uint8Array) =>
+    btoa(String.fromCharCode(...bytes))
+      .replaceAll("+", "-")
+      .replaceAll("/", "_")
+      .replace(/=+$/, "");
+  const fromBase64Url = (text: string) =>
+    Uint8Array.from(atob(text.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0)).buffer;
+  const keyText = (key: BufferSource | string | null | undefined): string => {
+    if (key === null || key === undefined) throw new TypeError("applicationServerKey is required");
+    if (typeof key === "string") return key;
+    const view =
+      key instanceof ArrayBuffer ? new Uint8Array(key) : new Uint8Array(key.buffer, key.byteOffset, key.byteLength);
+    return toBase64Url(view);
+  };
+  const shaped = (issued: Issued, applicationServerKey: string) => ({
+    endpoint: issued.endpoint,
+    expirationTime: issued.expirationTime,
+    options: { userVisibleOnly: true, applicationServerKey: fromBase64Url(applicationServerKey) },
+    getKey: (name: string) => {
+      if (name === "p256dh") return fromBase64Url(issued.keys.p256dh);
+      if (name === "auth") return fromBase64Url(issued.keys.auth);
+      return null;
+    },
+    toJSON: () => ({ endpoint: issued.endpoint, expirationTime: issued.expirationTime, keys: { ...issued.keys } }),
+    unsubscribe: () => bindings.__e2ePushUnsubscribe(),
+  });
+  PushManager.prototype.subscribe = async function subscribe(options?: PushSubscriptionOptionsInit) {
+    const key = keyText(options?.applicationServerKey);
+    const { subscription } = await bindings.__e2ePushSubscribe(key);
+    return shaped(subscription, key);
+  };
+  PushManager.prototype.getSubscription = async function getSubscription() {
+    const current = await bindings.__e2ePushGetSubscription();
+    if (current === null) return null;
+    return shaped(current.subscription, current.applicationServerKey);
+  };
+  PushManager.prototype.permissionState = function permissionState() {
+    return Promise.resolve("granted" as PermissionState);
+  };
+}
+
 /** The browser's side of Web Push in one context: its subscription, which the shim keeps in this process. */
 export type PushShim = {
   /** The subscription that the page subscribed, if any and not unsubscribed. */
@@ -126,56 +183,7 @@ export async function installPushShim(context: BrowserContext, origin: string): 
     current = undefined;
     return true;
   });
-  await context.addInitScript(() => {
-    type Issued = { endpoint: string; expirationTime: number | null; keys: { p256dh: string; auth: string } };
-    type Current = { subscription: Issued; applicationServerKey: string };
-    type Bindings = {
-      __e2ePushSubscribe: (key: string) => Promise<Current>;
-      __e2ePushGetSubscription: () => Promise<Current | null>;
-      __e2ePushUnsubscribe: () => Promise<boolean>;
-    };
-    const bindings = window as unknown as Window & Bindings;
-    if (typeof PushManager === "undefined") return;
-    const toBase64Url = (bytes: Uint8Array) =>
-      btoa(String.fromCharCode(...bytes))
-        .replaceAll("+", "-")
-        .replaceAll("/", "_")
-        .replace(/=+$/, "");
-    const fromBase64Url = (text: string) =>
-      Uint8Array.from(atob(text.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0)).buffer;
-    const keyText = (key: BufferSource | string | null | undefined): string => {
-      if (key === null || key === undefined) throw new TypeError("applicationServerKey is required");
-      if (typeof key === "string") return key;
-      const view =
-        key instanceof ArrayBuffer ? new Uint8Array(key) : new Uint8Array(key.buffer, key.byteOffset, key.byteLength);
-      return toBase64Url(view);
-    };
-    const shaped = (issued: Issued, applicationServerKey: string) => ({
-      endpoint: issued.endpoint,
-      expirationTime: issued.expirationTime,
-      options: { userVisibleOnly: true, applicationServerKey: fromBase64Url(applicationServerKey) },
-      getKey: (name: string) => {
-        if (name === "p256dh") return fromBase64Url(issued.keys.p256dh);
-        if (name === "auth") return fromBase64Url(issued.keys.auth);
-        return null;
-      },
-      toJSON: () => ({ endpoint: issued.endpoint, expirationTime: issued.expirationTime, keys: { ...issued.keys } }),
-      unsubscribe: () => bindings.__e2ePushUnsubscribe(),
-    });
-    PushManager.prototype.subscribe = async function subscribe(options?: PushSubscriptionOptionsInit) {
-      const key = keyText(options?.applicationServerKey);
-      const { subscription } = await bindings.__e2ePushSubscribe(key);
-      return shaped(subscription, key);
-    };
-    PushManager.prototype.getSubscription = async function getSubscription() {
-      const current = await bindings.__e2ePushGetSubscription();
-      if (current === null) return null;
-      return shaped(current.subscription, current.applicationServerKey);
-    };
-    PushManager.prototype.permissionState = function permissionState() {
-      return Promise.resolve("granted" as PermissionState);
-    };
-  });
+  await context.addInitScript(pushManagerShim);
   return { subscription: () => current?.subscription };
 }
 

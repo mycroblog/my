@@ -1,3 +1,10 @@
+---
+start: "/welcome"
+persona: "yuki"
+paths: ["app/web/src/routes/welcome.tsx", "app/web/src/features/settings/components/WelcomeForm.tsx", "app/web/src/features/settings/hooks/useWelcomeForm.ts", "internal/interface/authpages/**"]
+unavailable: {"アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none", "ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
+---
+
 ## ようこそ（`/welcome`、アカウントを作った直後）
 
 アカウントを作った人が最初に見る画面。最初の実行（ランディングページ → アカウントを作る → プロフィールの基本 → 最初のフォロー → ホーム）の 3 つ目の場所で、

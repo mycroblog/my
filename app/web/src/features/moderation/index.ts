@@ -71,7 +71,13 @@ export { invitesQueryOptions } from "./api/invites";
 export { instanceInfoQueryOptions as moderationInstanceQueryOptions } from "./api/reports";
 export { Invites } from "./components/Invites";
 // The report queue and a report's page (FR-701, FR-710, NFR-MOD-4), for manage_reports.
-export { type ReportFilter, reportQueryOptions, reportsQueryOptions } from "./api/reports";
+export {
+  reportAssigneeFilters,
+  reportCategories,
+  type ReportListQuery,
+  reportQueryOptions,
+  reportsQueryOptions,
+} from "./api/reports";
 export { ReportDetailView } from "./components/ReportDetail";
 export { ReportQueue } from "./components/ReportQueue";
 // The account search and an account's page with its moderation actions (FR-714, FR-703, FR-713), for manage_accounts.

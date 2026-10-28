@@ -2,7 +2,7 @@
 // The call as a room's page shows it (ADR-0101 §2–§7; ADR-0100 §5, §6, §10): the app's call (VoiceCallProvider) when
 // it is this room's, with the user's operations that only the page has (speaking and listening, a raised hand,
 // reactions); otherwise the way to join, and how the last call of this room ended. Joining here leaves the call of
-// another room.
+// another room, which the page says before the user joins (`otherRoom`).
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -22,6 +22,8 @@ export type VoiceCallControl =
       supported: boolean;
       /** Whether the user is in the room from another device or tab. */
       inRoomElsewhere: boolean;
+      /** The room of the call the user is in now, another room's: joining this one leaves it. */
+      otherRoom: VoiceRoom | undefined;
       join: () => void;
       isJoining: boolean;
       joinError: string | undefined;
@@ -95,6 +97,13 @@ export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
       supported: voiceSupported(),
       inRoomElsewhere:
         call === null && room.participants.some((p) => p.account.id === viewerId) && state.call?.roomId !== room.id,
+      otherRoom:
+        state.call !== null &&
+        state.call.roomId !== room.id &&
+        state.snapshot !== undefined &&
+        state.snapshot.phase !== "ended"
+          ? state.snapshot.room
+          : undefined,
       join: () => {
         state.join(room.id, viewerId);
       },

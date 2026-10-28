@@ -259,6 +259,18 @@
     "defaultMessage": "You are in this room.",
     "description": "Shown on the page of a voice chat room that the user is in."
   },
+  "voice.room.joined_badge": {
+    "defaultMessage": "Joined",
+    "description": "Badge on the card of the voice chat room whose call the user is in, in the lists of rooms."
+  },
+  "voice.room.move_notice": {
+    "defaultMessage": "You are in {room}. Joining this room leaves it.",
+    "description": "Shown before joining a voice chat room while the user is in the call of another room. {room} is the other room's name."
+  },
+  "voice.room.move": {
+    "defaultMessage": "Move here",
+    "description": "Button that leaves the voice chat room the user is in and joins this one."
+  },
   "voice.room.details": {
     "defaultMessage": "About the room",
     "description": "Heading of the panel about a voice chat room (its host, visibility, and speakers) in the third column of its page."
@@ -295,6 +307,10 @@
     "defaultMessage": "This room has ended",
     "description": "Heading of the page of a voice chat room that ended."
   },
+  "voice.room.ended.next": {
+    "defaultMessage": "See the rooms that are open now, or start one.",
+    "description": "Under the heading of the page of a voice chat room that ended: what the user can do next."
+  },
   "voice.room.hidden": {
     "defaultMessage": "You can't see this room.",
     "description": "Shown on the page of an open voice chat room that the user may not see."
@@ -310,14 +326,6 @@
   "voice.room.loading": {
     "defaultMessage": "Loading the room",
     "description": "Accessible name of the spinner while a voice chat room loads."
-  },
-  "voice.profile.host": {
-    "defaultMessage": "{name} is hosting a voice chat room: {room}",
-    "description": "Note on a profile while the account hosts an open voice chat room. {name} is the account's name, {room} the room's name as a link."
-  },
-  "voice.profile.speaker": {
-    "defaultMessage": "{name} is speaking in a voice chat room: {room}",
-    "description": "Note on a profile while the account speaks in an open voice chat room. {name} is the account's name, {room} the room's name as a link."
   },
   "voice.history.title": {
     "defaultMessage": "Voice chat history",
@@ -411,9 +419,13 @@
     "defaultMessage": "Play the sound",
     "description": "Button that starts the audio of the call after the browser blocked it."
   },
-  "voice.call.microphone": {
-    "defaultMessage": "Microphone",
-    "description": "Label of the switch that turns the user's microphone on or off in a voice chat call."
+  "voice.call.microphone.turn_on": {
+    "defaultMessage": "Turn microphone on",
+    "description": "Button in a voice chat call while the user's microphone is off: it turns the microphone on. Its icon is a slashed microphone."
+  },
+  "voice.call.microphone.turn_off": {
+    "defaultMessage": "Turn microphone off",
+    "description": "Button in a voice chat call while the user's microphone is on: it turns the microphone off. Its icon is a filled microphone."
   },
   "voice.call.microphone_failed": {
     "defaultMessage": "Couldn't use the microphone. Try again.",
@@ -438,6 +450,14 @@
   "voice.call.stay": {
     "defaultMessage": "Stay",
     "description": "Button of the dialogs about leaving a voice chat room that keeps the user in it."
+  },
+  "voice.call.leave_confirm.title": {
+    "defaultMessage": "Leave {room}?",
+    "description": "Title of the dialog that asks before leaving a voice chat call from the mini-player. {room} is the room's name."
+  },
+  "voice.call.leave_confirm.description": {
+    "defaultMessage": "Your call ends. You can join again while the room is open.",
+    "description": "Explanation in the dialog that asks before leaving a voice chat call from the mini-player."
   },
   "voice.call.cancel": {
     "defaultMessage": "Cancel",

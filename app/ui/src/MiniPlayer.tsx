@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The floating card of a voice chat call that the user is in, on every page but the room's own while the call lasts
 // (web-client/09-app-shell.md §9): the stacked avatars of the speakers (the one talking ringed), the room's name (a
-// link back to its page) over who is talking or the call's state, its controls (the microphone, leaving), and a
+// link back to its page) over who is talking or the call's state, its controls (the microphone; leaving last, past a
+// rule), and a
 // notice of what failed. It takes the place of `CallBar` and keeps its contract: a region named by `label`, so that
 // assistive technology lists it with the landmarks, placed at the end of the page in the shell's `ShellDock`, and
 // while it shows its height is the `--call-bar-block-size` of the document, from which the app's stylesheet keeps
@@ -21,6 +22,9 @@ const miniPlayer = tv({
     title: "flex min-w-0 text-sm font-extrabold *:min-w-0 [&>*>*]:truncate",
     status: "truncate text-xs text-fg-muted",
     actions: "flex shrink-0 items-center gap-2",
+    // Leaving sits apart from the other controls, past a rule, so that a press meant for the microphone does not end
+    // the call (ADR-0110 P1).
+    end: "flex shrink-0 items-center border-s border-border ps-3",
     notice: "basis-full",
   },
 });
@@ -37,14 +41,16 @@ export type MiniPlayerProps = {
   title: ReactNode;
   /** Who is talking ("Haruka is talking"), or the call's state while it is not connected ("Reconnecting…"). */
   status?: ReactNode;
-  /** The controls: `CallDockButton`s with `size="sm"` (the microphone, leaving); none once the call has ended. */
+  /** The controls: `CallDockButton`s with `size="sm"` (the microphone); none once the call has ended. */
   children?: ReactNode;
+  /** Leaving the call, last and apart from the other controls; none once the call has ended. */
+  end?: ReactNode;
   /** What failed (the microphone, leaving), on a row of its own; nothing for none. */
   notice?: ReactNode;
 };
 
 /** The floating card of the call, in `ShellDock`. */
-export function MiniPlayer({ label, avatars, title, status, children, notice }: MiniPlayerProps) {
+export function MiniPlayer({ label, avatars, title, status, children, end, notice }: MiniPlayerProps) {
   const slots = miniPlayer();
   const ref = useRef<HTMLElement>(null);
   useCallBarBlockSize(ref);
@@ -57,6 +63,7 @@ export function MiniPlayer({ label, avatars, title, status, children, notice }: 
         {status !== undefined && status !== null && <div className={slots.status()}>{status}</div>}
       </div>
       {children !== undefined && children !== null && <div className={slots.actions()}>{children}</div>}
+      {end !== undefined && end !== null && <div className={slots.end()}>{end}</div>}
       {notice !== undefined && notice !== null && notice !== false && <div className={slots.notice()}>{notice}</div>}
     </section>
   );

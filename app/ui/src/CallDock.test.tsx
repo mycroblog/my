@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { CallDock, CallDockButton } from "./CallDock";
+import { CallDock, CallDockButton, CallMicrophoneButton } from "./CallDock";
 import { EmojiIcon, LeaveIcon, MicrophoneIcon, RaiseHandIcon } from "./Icons";
 
 describe("CallDock", () => {
@@ -40,6 +40,32 @@ describe("CallDock", () => {
   });
 });
 
+describe("CallMicrophoneButton", () => {
+  const labels = { turnOn: "Turn microphone on", turnOff: "Turn microphone off" };
+
+  it("is named by what a press does, without aria-pressed, and asks for the other state", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const { rerender } = render(<CallMicrophoneButton isOn={false} onChange={onChange} labels={labels} showLabel />);
+    const button = screen.getByRole("button", { name: "Turn microphone on" });
+    expect(button).not.toHaveAttribute("aria-pressed");
+    await user.click(button);
+    expect(onChange).toHaveBeenCalledWith(true);
+    rerender(<CallMicrophoneButton isOn onChange={onChange} labels={labels} showLabel />);
+    expect(screen.getByRole("button", { name: "Turn microphone off" })).toBe(button);
+    await user.click(button);
+    expect(onChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("ignores presses while it waits", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<CallMicrophoneButton isOn={false} onChange={onChange} labels={labels} isPending />);
+    await user.click(screen.getByRole("button", { name: "Turn microphone on" }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
 describe("CallDockButton", () => {
   it("is a toggle with aria-pressed and the same name in both states", async () => {
     const user = userEvent.setup();
@@ -54,6 +80,11 @@ describe("CallDockButton", () => {
       <CallDockButton label="Microphone" icon={<MicrophoneIcon filled />} showLabel isSelected onChange={onChange} />,
     );
     expect(screen.getByRole("button", { name: "Microphone", pressed: true })).toBe(button);
+  });
+
+  it("pulses while it waits for its action", () => {
+    render(<CallDockButton label="Speak" icon={<RaiseHandIcon />} showLabel isPending />);
+    expect(screen.getByRole("button", { name: "Speak" })).toHaveAttribute("data-pending", "true");
   });
 
   it("is a plain button without isSelected", async () => {

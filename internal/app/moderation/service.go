@@ -750,6 +750,19 @@ func (s *Service) CountOpenReports(ctx context.Context) (int64, error) {
 	return s.d.Repository.CountReports(ctx, moderation.ReportOpen)
 }
 
+// OldestOpenReportFiledAt returns when the open report that has waited longest was filed, and
+// nil when no report is open (GET /api/v1/admin/counts).
+func (s *Service) OldestOpenReportFiledAt(ctx context.Context) (*time.Time, error) {
+	t, err := s.d.Repository.OldestReportFiledAt(ctx, moderation.ReportOpen)
+	if errors.Is(err, ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
 func uniqueSorted(ids []string) []string {
 	out := append([]string{}, ids...)
 	slices.Sort(out)

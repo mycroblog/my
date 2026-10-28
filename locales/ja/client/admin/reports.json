@@ -1,8 +1,4 @@
 {
-  "admin.reports.column.report": {
-    "defaultMessage": "通報",
-    "description": "Header of the column of the reports table that names the reported account and links to the report."
-  },
   "admin.reports.category.legal": {
     "defaultMessage": "違法な内容",
     "description": "Category of a report, and of the reason of an account action: content against the law."
@@ -19,6 +15,18 @@
     "defaultMessage": "サーバーのルール違反",
     "description": "Category of a report, and of the reason of an account action: a rule violation."
   },
+  "admin.reports.column.report": {
+    "defaultMessage": "通報",
+    "description": "Header of the column of the reports table that names the reported account and links to the report."
+  },
+  "admin.reports.column.waiting": {
+    "defaultMessage": "待ち時間",
+    "description": "Header of the column of the open reports' queue with how long each report has waited since it was filed."
+  },
+  "admin.reports.empty.filtered": {
+    "defaultMessage": "条件に合う通報はありません",
+    "description": "Empty state of the report queue when a category or an assignee filter is chosen."
+  },
   "admin.reports.empty.open": {
     "defaultMessage": "未解決の通報はありません",
     "description": "Empty state of the open reports."
@@ -31,6 +39,30 @@
     "defaultMessage": "解決済みの通報はありません",
     "description": "Empty state of the resolved reports."
   },
+  "admin.reports.filter.assignee": {
+    "defaultMessage": "担当",
+    "description": "Accessible name of the filter of the report queue by who handles the report."
+  },
+  "admin.reports.filter.assignee.all": {
+    "defaultMessage": "すべての担当",
+    "description": "Option of the assignee filter of the report queue that keeps every report."
+  },
+  "admin.reports.filter.assignee.me": {
+    "defaultMessage": "自分の担当",
+    "description": "Option of the assignee filter of the report queue: the reports the viewer handles."
+  },
+  "admin.reports.filter.assignee.none": {
+    "defaultMessage": "未担当",
+    "description": "Option of the assignee filter of the report queue: the reports nobody handles."
+  },
+  "admin.reports.filter.category": {
+    "defaultMessage": "カテゴリ",
+    "description": "Accessible name of the filter of the report queue by the report's category."
+  },
+  "admin.reports.filter.category.all": {
+    "defaultMessage": "すべてのカテゴリ",
+    "description": "Option of the category filter of the report queue that keeps every category."
+  },
   "admin.reports.filter.label": {
     "defaultMessage": "通報",
     "description": "Accessible name of the tabs of the report queue."
@@ -38,6 +70,18 @@
   "admin.reports.filter.open": {
     "defaultMessage": "未解決",
     "description": "Tab of the reports that await the moderators, and that state of a report."
+  },
+  "admin.reports.filter.order": {
+    "defaultMessage": "並び順",
+    "description": "Accessible name of the choice of the order of the report queue."
+  },
+  "admin.reports.filter.order.newest": {
+    "defaultMessage": "新しい順",
+    "description": "Order of the report queue: the most recently filed report first."
+  },
+  "admin.reports.filter.order.oldest": {
+    "defaultMessage": "古い順",
+    "description": "Order of the report queue: the report that has waited longest first."
   },
   "admin.reports.filter.resolved": {
     "defaultMessage": "解決済み",
@@ -70,9 +114,5 @@
   "admin.reports.wait.minutes": {
     "defaultMessage": "{count, plural, other {# 分待ち}}",
     "description": "Badge of an item of a queue (a report): how long it has waited, in whole minutes."
-  },
-  "admin.reports.column.waiting": {
-    "defaultMessage": "待ち時間",
-    "description": "Header of the column of the open reports' queue with how long each report has waited since it was filed."
   }
 }

@@ -11,6 +11,30 @@
     "defaultMessage": "Registrations awaiting approval",
     "description": "Name of the tile of the moderation overview with how many registrations await approval; the tile links to the registrations."
   },
+  "admin.overview.awaiting.report_wait": {
+    "defaultMessage": "Longest report wait",
+    "description": "Name of the tile of the moderation overview with how long the oldest open report has waited; the tile links to the report queue, oldest first."
+  },
+  "admin.overview.awaiting.report_wait.days": {
+    "defaultMessage": "{count, plural, one {# day} other {# days}}",
+    "description": "Value of the longest report wait tile: whole days."
+  },
+  "admin.overview.awaiting.report_wait.hours": {
+    "defaultMessage": "{count, plural, one {# hr.} other {# hr.}}",
+    "description": "Value of the longest report wait tile: whole hours."
+  },
+  "admin.overview.awaiting.report_wait.minutes": {
+    "defaultMessage": "{count, plural, one {# min.} other {# min.}}",
+    "description": "Value of the longest report wait tile: whole minutes."
+  },
+  "admin.overview.awaiting.report_wait.none": {
+    "defaultMessage": "No wait",
+    "description": "Value of the longest report wait tile when no report is open."
+  },
+  "admin.overview.awaiting.report_wait.status": {
+    "defaultMessage": "Waiting long",
+    "description": "Word beside a warning icon on the longest report wait tile when the oldest open report has waited a day or more."
+  },
   "admin.overview.awaiting.status": {
     "defaultMessage": "Waiting",
     "description": "Word beside a warning icon on a tile of the moderation overview whose queue has items waiting."
@@ -28,7 +52,7 @@
     "description": "Link under the reports to handle first on the moderation overview, to the whole report queue."
   },
   "admin.overview.first_reports.description": {
-    "defaultMessage": "Legal reports first, then the ones waiting longest, from the newest open reports.",
+    "defaultMessage": "Legal reports first, then the ones waiting longest.",
     "description": "Note under the heading of the reports to handle first on the moderation overview: how they are ordered."
   },
   "admin.overview.first_reports.title": {

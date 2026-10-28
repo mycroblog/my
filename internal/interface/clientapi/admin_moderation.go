@@ -307,8 +307,8 @@ func (s *Server) reportResponse(ctx context.Context, rec moderation.ReportRecord
 	return s.reportDetailResponse(ctx, d)
 }
 
-// ListReports serves GET /api/v1/admin/reports, newest first. The cursor is the ID of the last
-// report of the previous page.
+// ListReports serves GET /api/v1/admin/reports, newest first unless the order is oldest. The
+// cursor is the ID of the last report of the previous page.
 func (s *Server) ListReports(ctx context.Context, req ListReportsRequestObject) (ListReportsResponseObject, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageReports); err != nil {
 		return nil, err
@@ -319,10 +319,14 @@ func (s *Server) ListReports(ctx context.Context, req ListReportsRequestObject) 
 	if q.problem != nil {
 		return ListReportsdefaultApplicationProblemPlusJSONResponse(*q.problem), nil
 	}
-	rq := appmoderation.ReportQuery{Before: q.before}
-	if req.Params.State != nil {
-		rq.State = moderation.ReportState(*req.Params.State)
+	rq, param, err := s.reportQuery(ctx, req.Params)
+	if err != nil {
+		return nil, err
 	}
+	if param != "" {
+		return ListReportsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+	}
+	rq.After = q.before
 	recs, err := s.o.Moderation.Reports(ctx, rq, q.limit+1)
 	if errors.Is(err, appmoderation.ErrInvalidQuery) {
 		return ListReportsdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "state")), nil
@@ -341,6 +345,51 @@ func (s *Server) ListReports(ctx context.Context, req ListReportsRequestObject) 
 	}
 	cache := cacheNoStore
 	return ListReports200JSONResponse{Body: page, Headers: ListReports200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// reportQuery reads the filters and the order of GET /api/v1/admin/reports, and names the
+// parameter that is invalid: an unknown state, category, or order, or an assignee that is
+// neither me, none, nor a local account.
+func (s *Server) reportQuery(ctx context.Context, p ListReportsParams) (appmoderation.ReportQuery, string, error) {
+	var rq appmoderation.ReportQuery
+	switch {
+	case p.State != nil && !p.State.Valid():
+		return rq, "state", nil
+	case p.Category != nil && !p.Category.Valid():
+		return rq, "category", nil
+	case p.Order != nil && !p.Order.Valid():
+		return rq, "order", nil
+	}
+	if p.State != nil {
+		rq.State = moderation.ReportState(*p.State)
+	}
+	if p.Category != nil {
+		rq.Category = moderation.Category(*p.Category)
+	}
+	rq.OldestFirst = p.Order != nil && *p.Order == ListReportsParamsOrderOldest
+	if p.Assignee == nil {
+		return rq, "", nil
+	}
+	switch *p.Assignee {
+	case "me":
+		v, err := requireViewer(ctx)
+		if err != nil {
+			return rq, "", err
+		}
+		rq.AssigneeUserID = v.UserID
+	case "none":
+		rq.Unassigned = true
+	default:
+		userID, ok, err := s.localUser(ctx, *p.Assignee)
+		if err != nil {
+			return rq, "", err
+		}
+		if !ok {
+			return rq, "assignee", nil
+		}
+		rq.AssigneeUserID = userID
+	}
+	return rq, "", nil
 }
 
 // GetReport serves GET /api/v1/admin/reports/{id}.

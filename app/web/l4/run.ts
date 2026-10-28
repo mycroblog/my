@@ -2,19 +2,20 @@
 // Runs the L4 task tests (ADR-0110 §7, ADR-0114): an agent (Claude Code, non-interactive) does each task of the
 // screens' L1 files in a browser it sees only through ARIA snapshots (the Playwright MCP server), against the demo
 // server (`node e2e/server.ts demo`, ADR-0117 §4: the test build with the demo scenario of demo/scenario.ts and its
-// email in Mailpit), signed in as the person of the scenario that screens.ts names for the screen, and the run writes
-// the steps, backtracks, and lostness of every task to one JSON file (transcript.ts says how they are measured). A task
-// that reads email gets the person's mailbox, Mailpit's web UI, in a second tab, and its steps there are recorded
-// apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and the test build of `bin/my`; the Nightly
-// workflow runs it on main with the agent authenticated by Workload Identity Federation (ADR-0115).
+// email in Mailpit), signed in as the person of the scenario that the front matter of the screen's L1 file names
+// (screens.ts), and the run writes the steps, backtracks, and lostness of every task to one JSON file (transcript.ts
+// says how they are measured). A task that reads email gets the person's mailbox, Mailpit's web UI, in a second
+// tab, and its steps there are recorded apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and
+// the test build of `bin/my`; the Nightly workflow runs it on main with the agent authenticated by Workload Identity
+// Federation (ADR-0115).
 //
 //   node l4/run.ts [--screen <name>]... [--since <commit>] [--cap <n>] [--dry-run] [--out <file>]
 //
-// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or
-// context-map paths changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
+// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or the
+// paths of its front matter changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
 // the run. --dry-run does everything but call the agent: it selects the tasks, starts and seeds the demo server,
 // signs in, and opens each task's start (and mailbox) through the Playwright MCP server as the agent would, then
-// records the tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
+// records the tasks with no measures; it does a task that turns Web Push on itself and judges it (push.ts). L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
 // L4_NO_SANDBOX=1 starts the agent's Chromium without its sandbox (mcp.ts).
 import { execFileSync, spawn } from "node:child_process";
 import { createWriteStream, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -22,11 +23,12 @@ import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium } from "@playwright/test";
 import { type Persona, personas } from "../demo/scenario.ts";
-import { mailpit, runMy } from "../e2e/server-cli.ts";
+import { mailpit, pushService, runMy, serverDatabaseOf } from "../e2e/server-cli.ts";
 import { demoServerDir, demoServerURL, serverDir, voiceServerDir } from "../e2e/server-origin.ts";
-import { MCPClient, mcpCommand } from "./mcp.ts";
-import { type SetupContext, setupOf } from "./screens.ts";
-import { capTasks, parseContextMap, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
+import { MCPClient, mcpCommand, type PushShimOptions } from "./mcp.ts";
+import { judgePush, type PushJudgement, postconditionCode, turnPushOnCode } from "./push.ts";
+import { applySeed, parseSetup, type ScreenSetup, type SetupContext } from "./screens.ts";
+import { capTasks, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
 import { lostnessThreshold, type RunResult, type TaskResult } from "./results.ts";
 import { failureOf, mcpPrefix, measure, parseTranscript, readTools, stepTools, tabTool } from "./transcript.ts";
 
@@ -60,10 +62,15 @@ function git(...args: string[]): string {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 }
 
+/** The setup of `screen`, from the front matter of its L1 file. */
+function setupOf(screen: string): ScreenSetup {
+  return parseSetup(screen, readFileSync(join(root, screensDir, `${screen}.md`), "utf8"));
+}
+
 function personaOf(username: string): Persona {
   const p = personas.find((x) => x.username === username);
   if (p === undefined) {
-    throw new Error(`l4/screens.ts: no person ${username} in demo/scenario.ts`);
+    throw new Error(`l4: no person ${username} in demo/scenario.ts`);
   }
   return p;
 }
@@ -92,8 +99,7 @@ function selectTasks(): { tasks: Task[]; selection: RunResult["selection"] } {
       console.log(`l4: ${values.since} is not in the history; measuring every screen.`);
     }
     if (changed !== undefined) {
-      const entries = parseContextMap(readFileSync(join(root, "tools/agentkit/context-map.yaml"), "utf8"));
-      screens = all.filter((screen) => screenChanged(screen, changed, entries));
+      screens = all.filter((screen) => screenChanged(screen, changed, setupOf(screen).paths));
       selection = { mode: "since", since: values.since };
     }
   }
@@ -222,6 +228,8 @@ function setupContext(): SetupContext {
       if (!response.ok) {
         throw new Error(`${method} /api/v1${path} as ${username}: ${String(response.status)}`);
       }
+      const text = await response.text();
+      return text === "" ? undefined : (JSON.parse(text) as unknown);
     },
   };
 }
@@ -326,9 +334,10 @@ async function runAgent(task: Task, roles: Roles, dir: string, mcpArgs: string[]
 
 /**
  * Opens `start` through the Playwright MCP server as the agent's first snapshot would, and checks it, and the
- * mailbox's tab of a task that reads email.
+ * mailbox's tab of a task that reads email; then runs `act`, the Playwright code that does a task the harness judges
+ * (push.ts), in the agent's place.
  */
-async function probe(dir: string, mcpArgs: string[], start: string, mail: boolean): Promise<void> {
+async function probe(dir: string, mcpArgs: string[], start: string, mail: boolean, act?: string): Promise<void> {
   const client = new MCPClient("npx", mcpArgs, dir);
   try {
     await client.start();
@@ -355,9 +364,65 @@ async function probe(dir: string, mcpArgs: string[], start: string, mail: boolea
     console.log(
       `l4: ${start} opens (${String(snapshot.split("\n").length)} lines of ARIA snapshot)${mail ? ", with the mailbox in a second tab" : ""}.`,
     );
+    if (act !== undefined) {
+      await client.call("browser_run_code_unsafe", { code: act });
+    }
   } finally {
     client.stop();
   }
+}
+
+/**
+ * Judges a task that turns Web Push on (push.ts) and, when it passed, checks the postcondition in a browser session of
+ * its own on the same subscription (the agent's browser closed with its session): the reply's message reaches the
+ * app's Service Worker over CDP, which shows its notification.
+ */
+async function judgePushTask(options: {
+  dir: string;
+  start: string;
+  persona: Persona;
+  replier: string;
+  push: PushShimOptions;
+  context: SetupContext;
+  executablePath: string;
+}): Promise<PushJudgement> {
+  const { dir, start, persona, push } = options;
+  const judgement = await judgePush({
+    state: push.state,
+    database: serverDatabaseOf("demo"),
+    persona: persona.username,
+    replier: options.replier,
+    api: options.context.api,
+  });
+  console.log(`l4:   push: ${judgement.detail}.`);
+  if (judgement.delivered === undefined) {
+    return judgement;
+  }
+  const postDir = join(dir, "postcondition");
+  mkdirSync(postDir, { recursive: true });
+  const storageState = join(postDir, "storage-state.json");
+  await signIn(persona, storageState);
+  const client = new MCPClient(
+    "npx",
+    mcpCommand({
+      dir: postDir,
+      startURL: demoServerURL + start,
+      storageState,
+      executablePath: options.executablePath,
+      sandbox,
+      push,
+    }),
+    postDir,
+  );
+  try {
+    await client.start();
+    const { data, tag } = judgement.delivered;
+    await client.call("browser_run_code_unsafe", { code: postconditionCode(demoServerURL, data, tag) });
+  } finally {
+    client.stop();
+  }
+  console.log("l4:   push: the Service Worker shows the reply's notification.");
+  return judgement;
 }
 
 function emptyResult(task: Task, start: string, status: TaskResult["status"], reason?: string): TaskResult {
@@ -412,9 +477,14 @@ async function main(): Promise<number> {
     for (const [index, task] of tasks.entries()) {
       const setup = setupOf(task.screen);
       const start = setup.starts?.[task.task] ?? setup.start;
+      const notes = setup.notes?.[task.task];
+      const blank = (status: TaskResult["status"], reason?: string): TaskResult => ({
+        ...emptyResult(task, start, status, reason),
+        ...(notes === undefined ? {} : { notes }),
+      });
       const unavailable = setup.unavailable?.[task.task];
       if (unavailable !== undefined) {
-        result.tasks.push(emptyResult(task, start, "unavailable", unavailable));
+        result.tasks.push(blank("unavailable", unavailable));
         continue;
       }
       console.log(`l4: ${task.screen}: ${task.task}`);
@@ -424,7 +494,7 @@ async function main(): Promise<number> {
       try {
         if (!seeded.has(task.screen)) {
           seeded.add(task.screen);
-          await setup.seed?.(context);
+          await applySeed(setup.seed ?? [], context);
         }
         const mailUser = setup.mail?.[task.task];
         const roles: Roles = {
@@ -440,6 +510,21 @@ async function main(): Promise<number> {
           storageState = join(dir, "storage-state.json");
           await signIn(roles.signedIn, storageState);
         }
+        // A task that turns Web Push on: the browser subscribes with the fake push service, and the harness judges it.
+        const replier = setup.push?.[task.task];
+        const push: PushShimOptions | undefined =
+          replier === undefined
+            ? undefined
+            : { origin: pushService.origin, ca: mailpit.ca, state: join(dir, "push-subscription.json") };
+        const judge = async (): Promise<PushJudgement | undefined> => {
+          if (push === undefined || replier === undefined) {
+            return undefined;
+          }
+          if (roles.signedIn === undefined) {
+            throw new Error("a task that turns Web Push on needs a signed-in person (persona)");
+          }
+          return judgePushTask({ dir, start, persona: roles.signedIn, replier, push, context, executablePath });
+        };
         const mcpArgs = mcpCommand({
           dir,
           startURL: demoServerURL + start,
@@ -447,10 +532,19 @@ async function main(): Promise<number> {
           ...(roles.mail === undefined ? {} : { mailURL: `${mailOrigin}/` }),
           executablePath,
           sandbox,
+          ...(push === undefined ? {} : { push }),
         });
         if (dryRun) {
-          await probe(dir, mcpArgs, start, roles.mail !== undefined);
-          result.tasks.push(emptyResult(task, start, "dry-run"));
+          // The dry run turns Web Push on itself, so that the judging runs as it does after the agent.
+          await probe(dir, mcpArgs, start, roles.mail !== undefined, push && turnPushOnCode(demoServerURL));
+          const judgement = await judge();
+          if (judgement !== undefined && !judgement.passed) {
+            throw new Error(`the dry run's own path failed the judging: ${judgement.detail}`);
+          }
+          result.tasks.push({
+            ...blank("dry-run"),
+            ...(judgement === undefined ? {} : { judgement: { passed: judgement.passed, detail: judgement.detail } }),
+          });
           continue;
         }
         const transcript = parseTranscript(
@@ -463,10 +557,14 @@ async function main(): Promise<number> {
           throw new Error(failure);
         }
         const measures = measure(transcript.path, task.shortest, start);
+        // The harness's verdict, where there is one, decides whether the task is done; the agent's is in the summary.
+        const judgement = await judge();
+        const completed = judgement?.passed ?? transcript.completed;
         result.tasks.push({
-          ...emptyResult(task, start, "measured"),
+          ...blank("measured"),
+          ...(judgement === undefined ? {} : { judgement: { passed: judgement.passed, detail: judgement.detail } }),
           ...measures,
-          completed: transcript.completed,
+          completed,
           ending: transcript.ending,
           summary: transcript.summary,
           costUSD: transcript.costUSD,
@@ -474,14 +572,14 @@ async function main(): Promise<number> {
           mailPath: transcript.mailPath,
         });
         console.log(
-          `l4:   ${transcript.completed ? "done" : "not done"} in ${String(measures.steps)} step(s), lostness ${String(measures.lostness)}` +
+          `l4:   ${completed ? "done" : "not done"} in ${String(measures.steps)} step(s), lostness ${String(measures.lostness)}` +
             `${transcript.mailPath.length > 0 ? `, and ${String(transcript.mailPath.length)} step(s) in the mailbox` : ""}.`,
         );
       } catch (error) {
         failed = true;
         const reason = error instanceof Error ? error.message : String(error);
         console.error(`l4:   error: ${reason}`);
-        result.tasks.push(emptyResult(task, start, "error", reason));
+        result.tasks.push(blank("error", reason));
       } finally {
         write();
       }

@@ -1,3 +1,10 @@
+---
+start: "/admin"
+persona: "hana"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+unavailable: {"アイコンを設定する（SVG を選び、プレビューを見て保存する）": "the agent has no file to choose: the browser tools give it none", "ロゴを設定する": "the agent has no file to choose: the browser tools give it none", "アイコンを組み込みのものに戻す": "the demo scenario sets no icon of its own, and setting one needs the PNG renditions that the web client draws from a chosen file"}
+---
+
 ## サーバーの設定（`/admin/settings`）
 
 `manage_settings` を持つ管理者が、サーバーの名前・説明・連絡先とサムネイル・アイコンとロゴ・方針を決める画面（FR-705、[§14](../14-admin.md)）。
@@ -27,7 +34,7 @@
 3. 連絡先とサムネイル: 連絡先のアカウントとメールアドレス、サムネイルと画像の説明。
 4. アイコンとロゴ: アイコン・ロゴ・暗い背景のロゴの 3 つのフォーム（`h3`）。それぞれ、今の絵か組み込みを使っていること、選んだ SVG とその使われる場所のプレビュー、
    サーバーが取り除いたもの、ファイルを選ぶボタン（拒まれた理由はその下）、アイコンだけ背景の色。
-5. 登録・言語・タイムライン・投稿・連合・制限・凍結したサーバー・運営の費用・収入・サポーターの一覧・検索エンジンと AI・通話（サーバーが通話を出しているとき）: 1 つのフォームの区画。
+5. 登録・言語・タイムライン・投稿・連合・制限・凍結したサーバー・運営の費用・収入・サポーターの一覧・ランディングページ・おすすめのアカウント（おすすめに先に出すアカウントのユーザー名を並べた欄、FR-308）・検索エンジンと AI・通話（サーバーが通話を出しているとき）: 1 つのフォームの区画。
 
 ### 4. 主な操作と保存の仕方
 
@@ -38,7 +45,7 @@
 
 | 操作 | 結果（その場・トースト・画面の遷移） |
 | --- | --- |
-| 名前・説明・連絡先とサムネイル・方針の保存 | その場。区画の `StatusMessage` に結果を出し、失敗はボタンの上に出して入力を残す |
+| 名前・説明・連絡先とサムネイル・方針の保存 | その場。フォームごとの `FormActionBar`（保存のボタンの横）に結果を出し、失敗も同じ場所に出して入力を残す。方針のフォームは画面より長いので、バーを画面の下に固定する |
 | SVG を選ぶ | その場。ボタンが確かめている間の状態になり、終わるとプレビューと取り除いたものが出て、その件数を読み上げる。拒まれたら理由と直し方をボタンの下に出す |
 | アイコンの背景の色を変える | その場。不透明な版のプレビューが新しい色で描き直される |
 | アイコン・ロゴの保存 | その場。ボタンの横（`FormActionBar`）に結果を出し、プレビューは「使用中」の絵に替わる。外枠・ランディングページ・サーバーの画面は `GET /instance` を取り直して新しい絵を出す |

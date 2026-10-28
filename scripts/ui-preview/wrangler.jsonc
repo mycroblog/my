@@ -14,5 +14,7 @@
   "preview_urls": true,
   "assets": {
     "directory": "./site"
-  }
+  },
+  // `wrangler preview` refuses a config without this block; the Preview takes everything else from the top level.
+  "previews": {}
 }
