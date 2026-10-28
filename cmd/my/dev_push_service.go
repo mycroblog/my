@@ -20,6 +20,7 @@ import (
 	"time"
 
 	pushfake "github.com/mycroblog/my/internal/adapter/pushservice/fake"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -121,7 +122,7 @@ func runDevPushService(ctx context.Context, args []string, stdout, stderr io.Wri
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
 	}
 	done := make(chan error, 1)
-	go func() { done <- srv.ServeTLS(ln, "", "") }()
+	kernel.Go(ctx, "cli.dev.push_service.serve", nil, func(context.Context) { done <- srv.ServeTLS(ln, "", "") })
 	_, _ = fmt.Fprintf(stdout, "my dev push-service: listening on %s (origin %s)\n", ln.Addr(), *origin)
 	select {
 	case err := <-done:
