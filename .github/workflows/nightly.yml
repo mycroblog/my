@@ -98,6 +98,10 @@ jobs:
         run: apt-get update && apt-get install -y --no-install-recommends unzip
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The job runs as root in the container, and the workspace belongs to the runner's user: git refuses the
+      # checkout as of dubious ownership, and go build cannot stamp the VCS information of bin/my without it.
+      - name: Trust the workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun and Node
@@ -152,6 +156,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    outputs:
+      results: ${{ steps.results.outputs.found }}
     # The official Playwright image, pinned by digest, provides the Chromium of @playwright/test, which the sign-in
     # and the Playwright MCP server drive, with its system libraries. On the runner itself Chromium finds no usable
     # sandbox (Ubuntu 24.04 restricts unprivileged user namespaces). Must equal PLAYWRIGHT_IMAGE in Taskfile.yml
@@ -168,6 +174,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # The job runs as root in the container, and the workspace belongs to the runner's user: git refuses the
+      # checkout as of dubious ownership, and go build cannot stamp the VCS information of bin/my without it.
+      - name: Trust the workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun and Node
@@ -212,6 +222,16 @@ jobs:
             trap 'kill "$refresher"' EXIT
           fi
           scripts/task.sh web:l4 CAP=10 SINCE="$SINCE" SCREEN="$SCREEN" DRY_RUN="$DRY_RUN"
+      # l4-issues runs only when the tests wrote their results, not after a failure before them.
+      - name: Find the results
+        id: results
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f .tmp/l4/results.json ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::web:l4 wrote no .tmp/l4/results.json: no issues are filed."
+          fi
       # The results, the agent's transcripts, and the server's log; never the identity token, which is outside .tmp.
       - name: Upload the results
         if: ${{ !cancelled() }}
@@ -224,10 +244,11 @@ jobs:
           retention-days: 30
 
   # Files or updates one issue per screen for the tasks with lostness above 0.4, apart from the job that holds the
-  # identity token. It runs when the tests ran, also after some of them failed, so the measured tasks still count.
+  # identity token. It runs when the tests wrote their results, also after some of them failed, so the measured tasks
+  # still count, and is skipped when the l4 job stopped before them.
   l4-issues:
     needs: l4
-    if: ${{ !cancelled() && (needs.l4.result == 'success' || needs.l4.result == 'failure') && !inputs.l4_dry_run }}
+    if: ${{ !cancelled() && needs.l4.outputs.results == 'true' && !inputs.l4_dry_run }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
