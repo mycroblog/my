@@ -3931,12 +3931,9 @@ type Account struct {
 	// Acct The username for local accounts, `username@domain` for remote ones.
 	Acct string `json:"acct"`
 
-	// Avatar The renditions of a ready media file within the sizes of its purpose (see
-	// `MediaUpload.purpose`), never larger than the file. `small`, `medium`, and `large` are
-	// still: for an animation, its first frame, and for a video or audio file, its poster
-	// (absent without one). Clients pick one by its width (`srcset`), and
-	// show `animated` instead only when the user lets animations play and does not prefer
-	// reduced motion.
+	// Avatar The avatar image, square; omitted when the account has none, or its image is not
+	// processed yet or could not be processed. Clients show a placeholder instead. For a
+	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
 	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
@@ -3975,12 +3972,7 @@ type Account struct {
 	// FollowingCount The number of accounts that the account actively follows; present where `followers_count` is.
 	FollowingCount *int `json:"following_count,omitempty"`
 
-	// Header The renditions of a ready media file within the sizes of its purpose (see
-	// `MediaUpload.purpose`), never larger than the file. `small`, `medium`, and `large` are
-	// still: for an animation, its first frame, and for a video or audio file, its poster
-	// (absent without one). Clients pick one by its width (`srcset`), and
-	// show `animated` instead only when the user lets animations play and does not prefer
-	// reduced motion.
+	// Header The header image; omitted when there is none, as `avatar` is.
 	Header *MediaVariants `json:"header,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -3991,7 +3983,10 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved An account, as clients show it (FR-006).
+	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// moved, with a link to this one. Present on the account's own endpoints, where
+	// `followers_count` is, and without a `moved` of its own (moves are not followed in
+	// chains).
 	Moved *Account `json:"moved,omitempty"`
 
 	// Note The profile text as sanitized HTML; empty when there is none.
@@ -4007,8 +4002,8 @@ type Account struct {
 	// Username The username, without the domain.
 	Username string `json:"username"`
 
-	// VoiceRoom The open voice chat room where an account is the host or a speaker, on its profile. Only a
-	// user who sees the room gets it; a listener's profile shows no room.
+	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
+	// it. Present only on `GET /accounts/{id}`.
 	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
@@ -4070,7 +4065,7 @@ type AccountMove struct {
 	// the user mutes the server of `target` (`domain_muted`).
 	Outcome *AccountMoveOutcome `json:"outcome,omitempty"`
 
-	// Target An account, as clients show it (FR-006).
+	// Target The account that the moved account moved to; omitted when it is gone.
 	Target *Account `json:"target,omitempty"`
 }
 
@@ -4296,7 +4291,8 @@ type AdminAccountDetail struct {
 
 // AdminAccountInvite The invite that a local account signed up with, and who created it, which invited the user.
 type AdminAccountInvite struct {
-	// CreatedBy An account, as clients show it (FR-006).
+	// CreatedBy The account of the user who created the invite. Absent for an invite created with the
+	// CLI and one whose creator's account is deleted (`created_by_deleted`).
 	CreatedBy *Account `json:"created_by,omitempty"`
 
 	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
@@ -4746,7 +4742,10 @@ type AdminCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy An account, as clients show it (FR-006).
+	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// approved request, or the administrator who registered or copied it. Absent for an emoji
+	// made with the CLI, a remote one, and one whose creator's account is deleted
+	// (`created_by_deleted`).
 	CreatedBy *Account `json:"created_by,omitempty"`
 
 	// CreatedByDeleted Whether a user made the emoji whose account no longer exists.
@@ -5006,7 +5005,8 @@ type AdminInvite struct {
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy An account, as clients show it (FR-006).
+	// CreatedBy The account of the user who created the invite. Absent for an invite created with the
+	// CLI and one whose creator's account is deleted (`created_by_deleted`).
 	CreatedBy *Account `json:"created_by,omitempty"`
 
 	// CreatedByDeleted Whether a user created the invite whose account no longer exists.
@@ -5652,9 +5652,7 @@ type AdminReportVoiceRoom struct {
 // a user may grant, revoke, create, change, and delete only the roles at or below their
 // highest one, and give or take only the permissions they hold.
 type AdminRole struct {
-	// Badge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
-	// the staff's own text, the same in every locale: clients show it as user content
-	// (`dir="auto"`), never translated.
+	// Badge The badge of the role, which its holders may show on their profile; omitted when it has none.
 	Badge *RoleBadge `json:"badge,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6389,7 +6387,7 @@ type AuthorizedApp struct {
 	// FirstParty Whether the app is one of the server's own clients.
 	FirstParty bool `json:"first_party"`
 
-	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	// Id The ID of the client, which `DELETE /authorized_apps/{id}` takes.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
@@ -7220,12 +7218,9 @@ type CredentialAccount struct {
 	// pages of this instance only; other servers and the media files do not carry it.
 	AiOptOut bool `json:"ai_opt_out"`
 
-	// Avatar The renditions of a ready media file within the sizes of its purpose (see
-	// `MediaUpload.purpose`), never larger than the file. `small`, `medium`, and `large` are
-	// still: for an animation, its first frame, and for a video or audio file, its poster
-	// (absent without one). Clients pick one by its width (`srcset`), and
-	// show `animated` instead only when the user lets animations play and does not prefer
-	// reduced motion.
+	// Avatar The avatar image, square; omitted when the account has none, or its image is not
+	// processed yet or could not be processed. Clients show a placeholder instead. For a
+	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
 	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
@@ -7267,12 +7262,7 @@ type CredentialAccount struct {
 	// FollowingCount The number of accounts that the account actively follows; present where `followers_count` is.
 	FollowingCount *int `json:"following_count,omitempty"`
 
-	// Header The renditions of a ready media file within the sizes of its purpose (see
-	// `MediaUpload.purpose`), never larger than the file. `small`, `medium`, and `large` are
-	// still: for an animation, its first frame, and for a video or audio file, its poster
-	// (absent without one). Clients pick one by its width (`srcset`), and
-	// show `animated` instead only when the user lets animations play and does not prefer
-	// reduced motion.
+	// Header The header image; omitted when there is none, as `avatar` is.
 	Header *MediaVariants `json:"header,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -7288,7 +7278,10 @@ type CredentialAccount struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved An account, as clients show it (FR-006).
+	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// moved, with a link to this one. Present on the account's own endpoints, where
+	// `followers_count` is, and without a `moved` of its own (moves are not followed in
+	// chains).
 	Moved *Account `json:"moved,omitempty"`
 
 	// Note The profile text as sanitized HTML; empty when there is none.
@@ -7317,8 +7310,8 @@ type CredentialAccount struct {
 	// Username The username, without the domain.
 	Username string `json:"username"`
 
-	// VoiceRoom The open voice chat room where an account is the host or a speaker, on its profile. Only a
-	// user who sees the room gets it; a listener's profile shows no room.
+	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
+	// it. Present only on `GET /accounts/{id}`.
 	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
@@ -7684,8 +7677,8 @@ type DomainBlockImportResult struct {
 
 // DomainBlockImportRow A row of a domain block CSV and what importing it would do.
 type DomainBlockImportRow struct {
-	// Block A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
-	// such as `例え.jp` is accepted) and the public comment (at most 5,000 characters).
+	// Block The row, with its domain normalized (IDNA A-labels in lower case); absent when
+	// the row is `invalid`. The import takes it as it is.
 	Block *DomainBlock `json:"block,omitempty"`
 
 	// Issue The kinds of the actions the import would issue; empty unless `importable`.
@@ -7710,11 +7703,7 @@ type DomainBlockImportSkipped struct {
 	// Domain The domain as sent.
 	Domain string `json:"domain"`
 
-	// Reason What importing a row would do. `importable`: it issues the actions of `issue`.
-	// `already_applied`: an action in effect of each of the row's kinds covers the domain
-	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
-	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// Reason Why it issued nothing; never `importable`.
 	Reason DomainBlockImportStatus `json:"reason"`
 }
 
@@ -8714,7 +8703,8 @@ type LiftAccountActionRequest struct {
 // warning is opened. When the status is `sensitive`, the image is hidden until the viewer
 // shows it.
 type LinkCard struct {
-	// Author An account, as clients show it (FR-006).
+	// Author The account that the page names as its creator (`fediverse:creator`), given only when
+	// the account's server lists the page's domain among its `attributionDomains`.
 	Author *Account `json:"author,omitempty"`
 
 	// AuthorName The author that the page names, as plain text; omitted when it names none.
@@ -9079,22 +9069,13 @@ type MediaVariants struct {
 	// `small` and `medium`, and a GIF for `large`.
 	Animated *MediaAnimatedVariants `json:"animated,omitempty"`
 
-	// Large A rendition of a media file, without metadata. Its URL never serves other content, so
-	// it may be cached for good. `content_type`, `width`, `height`, and `size` are present
-	// for an upload, and absent where unknown for a remote file served through the media
-	// proxy.
+	// Large The largest still rendition, JPEG or PNG for an upload.
 	Large MediaVariant `json:"large"`
 
-	// Medium A rendition of a media file, without metadata. Its URL never serves other content, so
-	// it may be cached for good. `content_type`, `width`, `height`, and `size` are present
-	// for an upload, and absent where unknown for a remote file served through the media
-	// proxy.
+	// Medium The still rendition for views across a screen; WebP for an upload.
 	Medium MediaVariant `json:"medium"`
 
-	// Small A rendition of a media file, without metadata. Its URL never serves other content, so
-	// it may be cached for good. `content_type`, `width`, `height`, and `size` are present
-	// for an upload, and absent where unknown for a remote file served through the media
-	// proxy.
+	// Small The still rendition for small views; WebP for an upload.
 	Small MediaVariant `json:"small"`
 }
 
@@ -9121,8 +9102,7 @@ type MemberInviteLimits struct {
 // user sees it. It never carries the moderators' private note, the report the action
 // follows from, or who filed the report or issued the action.
 type ModerationAction struct {
-	// Appeal The authenticated user's appeal of an action on their account. It never names the
-	// moderator who decided it.
+	// Appeal The user's appeal of the action; omitted when there is none.
 	Appeal *ModerationAppeal `json:"appeal,omitempty"`
 
 	// AppealDeadline The last moment the action can be appealed: the instance's appeal window from the
@@ -9313,16 +9293,11 @@ type Notification struct {
 	// CreatedAt When it happened.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CustomEmojiRequest A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-	// image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-	// (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
-	// its image until it is approved.
+	// CustomEmojiRequest The custom emoji request that an `admin_custom_emoji_request` or a
+	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
 	CustomEmojiRequest *CustomEmojiRequest `json:"custom_emoji_request,omitempty"`
 
-	// ErrorGroup What an `admin_error_group` tells of: a new error group (`created`, with `group_id`), a
-	// resolved group that happened again on another version (`regressed`, with `group_id`), or the
-	// new and regressed groups of an hour beyond the 10 that the server notifies of one by one
-	// (`others`, with how many so far in `count`).
+	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -9330,13 +9305,11 @@ type Notification struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
-	// user sees it. It never carries the moderators' private note, the report the action
-	// follows from, or who filed the report or issued the action.
+	// ModerationAction The action on the user's account that a `moderation_notice` tells of, or whose
+	// appeal an `appeal_decided` tells of, with the appeal.
 	ModerationAction *ModerationAction `json:"moderation_action,omitempty"`
 
-	// Reaction The emoji of a reaction: a Unicode emoji, or a custom emoji with its image. A custom
-	// emoji of another server is shown as it is and cannot be used to react from here.
+	// Reaction The emoji of a `reaction`; omitted for the other types.
 	Reaction *ReactionEmoji `json:"reaction,omitempty"`
 
 	// RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
@@ -9346,8 +9319,7 @@ type Notification struct {
 	// the counts are of the accepted follows.
 	RelationshipSeverance *RelationshipSeverance `json:"relationship_severance,omitempty"`
 
-	// Report A report that the user filed. It never names the reporter, and tells only whether the
-	// moderators resolved it, never how.
+	// Report The user's report that a `report_resolved` tells of.
 	Report *Report `json:"report,omitempty"`
 
 	// ReportId The report that an `admin_report` is about.
@@ -9361,21 +9333,13 @@ type Notification struct {
 	// notification tells of, omitted for a withdrawal. The current state is in `GET /instance`.
 	ServiceClosure *ServiceClosureNotice `json:"service_closure,omitempty"`
 
-	// Status A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-	// describe the authenticated user's relation to it and are omitted for anonymous
-	// requests; `pinned` is only given to the author.
-	//
-	// In a timeline, a boost is a status of the booster with `boost` set to the boosted
-	// status: its `id` and `uri` are those of the boost, `created_at` is when it was boosted,
-	// `visibility` and `language` are those of the boosted status, its `content`,
-	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
-	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	// Status The post that the notification is about, as the user sees it; omitted when the user
+	// may not see it.
 	Status *Status `json:"status,omitempty"`
 
-	// SupporterSubscription The authenticated user's subscription to a supporter plan. `price` is what it renews at,
-	// which may be lower than the plan's current price (a price change does not apply to the
-	// subscriptions that go on). The plan's name is written by the administrators in any
-	// language; render it with `dir="auto"`.
+	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a
+	// `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
+	// absent when it no longer exists.
 	SupporterSubscription *SupporterSubscription `json:"supporter_subscription,omitempty"`
 
 	// Type The kind of a notification. `account` is the account that acted: the follower
@@ -9435,8 +9399,8 @@ type Notification struct {
 	// rest of the hour folded into one; its `error_group` says which, and it has no `account`.
 	Type NotificationType `json:"type"`
 
-	// VoiceRoom An open voice chat room: its settings, its host, and its participants in the order they
-	// joined. Everyone who sees the room sees its participants.
+	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
+	// it is open and the user sees it; omitted otherwise.
 	VoiceRoom *VoiceRoom `json:"voice_room,omitempty"`
 
 	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
@@ -9474,7 +9438,7 @@ type NotificationGroup string
 
 // NotificationMarker How far the authenticated user has read the notifications.
 type NotificationMarker struct {
-	// LastReadId The ID of a resource, a UUIDv7 in its canonical string form.
+	// LastReadId The newest notification read; omitted when the user has read none.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	LastReadId *Id `json:"last_read_id,omitempty"`
@@ -10480,11 +10444,8 @@ type ReactionEmoji struct {
 	// Domain The server of a custom emoji of another server; omitted otherwise.
 	Domain *string `json:"domain,omitempty"`
 
-	// Emoji A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
-	// An emoji that is disabled or deleted, or whose images come from a domain whose media the
-	// instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
-	// `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
-	// otherwise.
+	// Emoji The custom emoji with its image; omitted for a Unicode emoji and when the image cannot
+	// be shown (as `CustomEmoji` leaves such an emoji out).
 	Emoji *CustomEmoji `json:"emoji,omitempty"`
 
 	// Name The emoji as `listStatusReactions` takes it: the Unicode emoji, the shortcode of a
@@ -11138,11 +11099,8 @@ type StatusReaction struct {
 	// Domain The server of a custom emoji of another server; omitted otherwise.
 	Domain *string `json:"domain,omitempty"`
 
-	// Emoji A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
-	// An emoji that is disabled or deleted, or whose images come from a domain whose media the
-	// instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
-	// `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
-	// otherwise.
+	// Emoji The custom emoji with its image; omitted for a Unicode emoji and when the image cannot
+	// be shown (as `CustomEmoji` leaves such an emoji out).
 	Emoji *CustomEmoji `json:"emoji,omitempty"`
 
 	// Me Whether the authenticated user reacted with the emoji; omitted for anonymous
@@ -11718,9 +11676,7 @@ type UpdatePreferencesRequest struct {
 
 // UpdateRoleRequest The changes to a role; what is omitted stays.
 type UpdateRoleRequest struct {
-	// Badge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
-	// the staff's own text, the same in every locale: clients show it as user content
-	// (`dir="auto"`), never translated.
+	// Badge The new badge of the role (ADR-0071). Its holders keep their choice to show it.
 	Badge *RoleBadge `json:"badge,omitempty"`
 
 	// Permissions The new permissions of the role, each once; empty removes them all.
@@ -12199,7 +12155,10 @@ type WebhookCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy An account, as clients show it (FR-006).
+	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// approved request, or the administrator who registered or copied it. Absent for an emoji
+	// made with the CLI, a remote one, and one whose creator's account is deleted
+	// (`created_by_deleted`).
 	CreatedBy *Account `json:"created_by,omitempty"`
 
 	// CreatedByDeleted Whether a user made the emoji whose account no longer exists.

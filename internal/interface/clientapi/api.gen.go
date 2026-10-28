@@ -3985,7 +3985,10 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved An account, as clients show it (FR-006).
+	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// moved, with a link to this one. Present on the account's own endpoints, where
+	// `followers_count` is, and without a `moved` of its own (moves are not followed in
+	// chains).
 	Moved *Account `json:"moved,omitempty"`
 
 	// Note The profile text as sanitized HTML; empty when there is none.
@@ -7277,7 +7280,10 @@ type CredentialAccount struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved An account, as clients show it (FR-006).
+	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// moved, with a link to this one. Present on the account's own endpoints, where
+	// `followers_count` is, and without a `moved` of its own (moves are not followed in
+	// chains).
 	Moved *Account `json:"moved,omitempty"`
 
 	// Note The profile text as sanitized HTML; empty when there is none.
