@@ -71,6 +71,7 @@ Colors have two layers in [src/theme.css](src/theme.css):
 | `hand` / `hand-fg` | A raised hand in a voice chat call: the mango badge of `StageAvatar` and the count of raised hands (`Badge tone="hand"`), with charcoal on it in both themes; fixed, a server theme cannot override them |
 | `pressed` / `pressed-fg` | The pressed button of `Segmented`: charcoal with white in light, coral with charcoal in dark |
 | `badge-<color>` / `badge-<color>-fg` | The background and the text of a role badge (`RoleBadge`, ADR-0071), for each of `neutral`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink` (`badgeColors`) |
+| `data-1` / `data-2` / `data-3` | The series of a chart in order (coral, blue, amber; `dataSeries`): the lines and bars of `TrendChart`, `Sparkline` and the first three parts of `BreakdownBar` (ADR-0113). Each is a meaningful graphic, 3:1 on `surface` and `surface-raised`; a server theme can override them |
 
 ### Using the colors
 
@@ -86,6 +87,7 @@ verifies each against WCAG 2.2 AA in both themes: 4.5:1 for text, 3:1 for contro
 
 - On each of `surface`, `surface-raised`, `surface-sunken`:
   `fg`, `fg-muted`, `accent`, `accent-hover`, `danger`, `success`, `warning` (text) and `border-strong`, `focus` (UI).
+- `data-1`, `data-2`, `data-3` on `surface` and `surface-raised` (UI): a chart sits on a region's raised surface or on the page.
 - `accent-fg` on `accent` and `accent-hover`; `accent-fill-fg` on `accent-fill` and `accent-fill-hover`; `danger-fg` on `danger`; `success-fg` on `success`; `warning-fg` on `warning` (text).
 - `fg`, `fg-muted`, `accent` on `soft`; `fg` and the status text on `danger-bg` / `success-bg` / `warning-bg`; `hand-fg` on `hand` (text); `toast-fg`, `toast-action`
   (text) and `toast-muted`, `toast-success`, `toast-danger` (UI) on `toast`.
@@ -242,7 +244,8 @@ Icons are part of the kit, so that every screen draws the same shapes at the sam
   the other SVG elements in JSX); a missing icon is a new row of the table (look the shape up by name in the Phosphor
   catalog) and a new export, which the gallery then shows. The exceptions, listed with their reasons in
   `app/.oxlintrc.json`, are the marks of a control's own drawing (the check of `Checkbox`, the chevrons of `Select`
-  and `ContentWarning`, the arrow of `Tooltip`, the silhouette of `Avatar`) and stand-in content in tests and stories.
+  and `ContentWarning`, the arrow of `Tooltip`, the silhouette of `Avatar`), the data drawn by `QrCode` and by the
+  charts `TrendChart` and `Sparkline` ([Data visualisation](#data-visualisation)), and stand-in content in tests and stories.
 - They are decorative: `aria-hidden="true"` and `focusable="false"`. The meaning is in the visible label or the accessible
   name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text: `IconButton` and
   `IconToggleButton` take the text once as `label` and give it to both (`ghost` and `icon` by default for `IconButton`; any
@@ -467,6 +470,31 @@ announces only changes made after it is in the page. A failure is not a status; 
 | `VisibilityMark`, `VisibilityIcon` | A post's visibility (ADR-0017): one Phosphor shape per level (`public` globe, `local` buildings, `unlisted` open lock, `private` closed lock, `direct` at sign) and the level's `label`, in muted `text-xs`. `PostCard` shows it under the time from its required `visibility` (`{ level, label }`, or `null` for a row that is not a post) and ends the article's name with it; `VisibilityIcon` alone draws the icon of a control's current level. |
 | `ProfileHeader`, `ProfileHeaderImage`, `ProfileFields` / `ProfileField` | The heading of a profile: header image (or band), overlapping avatar, actions slot, name, handle, badges, tag pills, text, metadata fields, joined line and counts; `ProfileHeaderImage size="preview"` is the 3:1 image of the profile form. |
 | `Poll`, `PollResults`, `PollChoices`, `PollSummary`, `PollHint` | A poll (FR-112): `Poll` is the named section; `PollResults` the list of shares with a decorative bar (`aria-hidden`; the percentage and the "your vote" word carry the meaning); `PollChoices` the radio or checkbox form with the vote button; `PollSummary` the total and deadline line; `PollHint` a note. Titles take `dir="auto"`, `lang` and custom emoji. |
+
+## Data visualisation
+
+Numbers, trends, shares and amounts ([ADR-0113](../../docs/adr/0113-data-visualisation-parts.md)), drawn by hand: `TrendChart` and
+`Sparkline` in SVG (the two chart exceptions to `restrict/svg`), the others in HTML. The kit has no catalog, so the caller passes every
+string formatted (values, periods, the summary sentence) or a formatting function. Every value is also in text: a chart is never the only
+way to read it (WCAG 1.4.1).
+
+| Component | Notes |
+| --- | --- |
+| `StatTile` | One number of a summary: `label`, `value`, and `change` (`direction` `up` / `down` / `flat`, its `text` such as "+12%", the `period` it is measured against, and `tone` `positive` / `negative` / `neutral`, since more errors is bad news although it goes up). The change shows by an arrow (`IncreaseIcon` / `DecreaseIcon`) and its text, never by color alone. `status` `warning` / `danger` with `statusLabel` adds a pill in the status colors with the warning icon. `children` go under the change (a `Sparkline`). |
+| `TrendChart` | Up to three series (`series`, values per period, `null` for a missing one) over `periods` (the oldest first), as `kind` `line` (default) or `bar`. The chart is one `role="img"` named by `title` and described by `summary`, a sentence the caller writes (the largest, the latest, the change). A `Segmented` switches it to a `Table` of the same values (`view` / `onViewChange`: the screen keeps the view, in the URL or `lib/storage`); `labels` holds the switch's words, the table's period header, the word for a missing value and the sentence shown instead of the chart when there is no period. The value axis holds zero and steps by 1, 2 or 5 × 10ⁿ; the time axis labels the first, the last and every k-th period. Series differ by color, dash (solid, dashed, dotted) and the legend's text. |
+| `Sparkline` | A small line inside a row of a list, `aria-hidden`: the row says the number in text. `values` the oldest first, `series` 1–3 for the color; the newest point is marked. |
+| `BreakdownBar` | The shares of a whole (`items` with `value` and its `valueText`, the largest first, up to four: fold the rest into "Other", drawn in `fg-muted`) as one decorative bar, and a legend list named by `label` that says each part's name, value and share. |
+| `ProgressMeter` | A known amount as a bar: `kind` `progress` (React Aria's `ProgressBar`, a task with an end) or `meter` (`Meter`, how full something is), with a visible `label` and `valueText` ("1,234 / 5,000 items"), which is also the `aria-valuetext`. A meter's `tone` `warning` / `danger` colors the fill; say the level in `valueText` too. |
+
+- **Direction**: the time axis runs along the line, so in right-to-left text the newest period is on the left. SVG does not follow `dir`,
+  so the charts mirror their positions by React Aria's `useLocale().direction`; the bars of `BreakdownBar` and `ProgressMeter` are flex
+  items and logical sizes, which mirror by themselves. Numbers and dates are in `<bdi dir="ltr">`.
+- **Forced colors**: the series lose their colors, so lines and bars are `CanvasText` and keep their dashes (the bars of the second and
+  third series become dashed outlines), the newest points and a meter's fill are `Highlight`, and the bars keep their borders.
+- **Surfaces and motion**: a chart sits on a region's `surface-raised` with grid lines in `border`, and no shadow (ADR-0111). Nothing
+  animates as it first draws; the bars of `BreakdownBar` and `ProgressMeter` move to a new value under `motion-safe:` with `duration-fast`
+  and `ease-standard`.
+- The geometry (ticks, positions, line paths) is in `src/chartScale.ts`, with its unit tests.
 
 ## Layout and text
 

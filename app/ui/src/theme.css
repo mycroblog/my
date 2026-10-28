@@ -47,6 +47,11 @@
   --palette-cocoa-900: #241f20;
   --palette-cocoa-950: #1c1819;
 
+  /* Data series (ADR-0113): the second series of a chart, a blue far in hue from the coral and the amber
+     of the first and the third. */
+  --palette-data-blue-600: oklch(52% 0.13 245);
+  --palette-data-blue-300: oklch(76% 0.1 245);
+
   /* Rose (decorative: the waveform of AudioPlayer) */
   --palette-rose-400: #d97c7c;
 
@@ -202,6 +207,12 @@
   --color-wave: var(--palette-rose-400);
   /* The spark after a heading: mango, a decoration only. */
   --color-spark: var(--palette-mango-400);
+  /* The series of a chart (ADR-0113: TrendChart, Sparkline, BreakdownBar), in order: coral, blue, amber. Each is a
+     meaningful graphic, 3:1 against surface and surface-raised (WCAG 1.4.11); a series is also told apart by its line's
+     dash and its legend's text, never by the color alone. Forced-colors mode draws every series in CanvasText. */
+  --color-data-1: light-dark(var(--palette-coral-700), var(--palette-coral-350));
+  --color-data-2: light-dark(var(--palette-data-blue-600), var(--palette-data-blue-300));
+  --color-data-3: light-dark(var(--palette-amber-800), var(--palette-amber-300));
   /* A raised hand in a voice chat call: the mango badge on a listener's avatar and the count of raised hands, with
      the charcoal hand or digits on it, the same in both themes. */
   --color-hand: var(--palette-mango-400);
