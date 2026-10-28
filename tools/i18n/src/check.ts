@@ -13,6 +13,7 @@
 // checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
 //   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
 //          in any non-pseudo locale; an ASCII colon or comma in Japanese text (use "：" and "、")
+//   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
@@ -33,6 +34,7 @@ import {
   SOURCE,
 } from "./catalog";
 import { generate, goName, pseudoPart } from "./generate";
+import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
 
 let errors = 0;
@@ -44,6 +46,7 @@ const NAMESPACE = /^[a-z][a-z0-9]*$/;
 /** "locales/<locale>/<namespace>/<area>.json <key>", where a finding about a key points. */
 const at = (locale: string, ns: string, key: string): string => `${rel(catalogFile(locale, ns, key))} ${key}`;
 const KEY = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
+const glossary = loadGlossary();
 
 function analyze(locale: string, ns: string, key: string, message: unknown): Args | undefined {
   const where = at(locale, ns, key);
@@ -71,10 +74,10 @@ function analyze(locale: string, ns: string, key: string, message: unknown): Arg
   }
 }
 
-/** Punctuation that web-client/16-look-states-and-wording.md G19 / G20 rule out, found in the message's own text (not its ICU syntax). */
+/** The glossary variants (G21) and the punctuation that web-client/16-look-states-and-wording.md G19 / G20 rule out, found in the message's own text (not its ICU syntax). */
 function copyStyleFindings(locale: string, text: string): string[] {
   if (isPseudo(locale)) return [];
-  const out: string[] = [];
+  const out: string[] = glossaryFindings(glossary, locale, text);
   if (/[!！]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
   if (new Intl.Locale(locale).language === "ja") {
     if (text.includes(":"))

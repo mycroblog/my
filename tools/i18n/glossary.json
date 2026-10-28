@@ -1,0 +1,41 @@
+{
+  "en": [
+    {
+      "use": "sign in / sign-in",
+      "avoid": ["\\b[Ll]og(?:ged|ging|s)?[ -]?ins?\\b(?! providers?\\b)"],
+      "note": "Starting a session. \"Login provider\", the name of the admin feature, stays."
+    },
+    {
+      "use": "sign out",
+      "avoid": ["\\b[Ll]og(?:ged|ging|s)?[ -]?outs?\\b"],
+      "note": "Ending a session."
+    },
+    {
+      "use": "Create an account",
+      "avoid": ["\\bCreate account\\b"],
+      "note": "The label of the action that creates an account."
+    }
+  ],
+  "ja": [
+    {
+      "use": "ログイン",
+      "avoid": ["サインイン"],
+      "note": "Starting a session."
+    },
+    {
+      "use": "ログアウト",
+      "avoid": ["サインアウト"],
+      "note": "Ending a session."
+    },
+    {
+      "use": "アカウントを作成",
+      "avoid": ["アカウントを作[らりるれろっ]"],
+      "note": "The label and wording of the action that creates an account."
+    },
+    {
+      "use": "試してください",
+      "avoid": ["お試し"],
+      "note": "Matches the retry button もう一度試す (web-client G16, G18)."
+    }
+  ]
+}

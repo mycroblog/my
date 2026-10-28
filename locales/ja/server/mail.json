@@ -128,7 +128,7 @@
     "description": "Label of the button of a service closure email that opens the page where the user exports their data."
   },
   "mail.service_closure.export": {
-    "defaultMessage": "{exportUntil} まで、サインインしてデータをエクスポートできます。その後、運営者がサーバーのデータを消します。",
+    "defaultMessage": "{exportUntil} まで、ログインしてデータをエクスポートできます。その後、運営者がサーバーのデータを消します。",
     "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure.message": {
@@ -144,7 +144,7 @@
     "description": "Sentence of the signature of a service closure email: why it comes, and that the user cannot unsubscribe from it. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.service_closure_announced.body": {
-    "defaultMessage": "{instance} の運営者が、サーバーを {closesAt} に終了すると告知しました。その後は、サインインしてデータをエクスポートすることだけができます。",
+    "defaultMessage": "{instance} の運営者が、サーバーを {closesAt} に終了すると告知しました。その後は、ログインしてデータをエクスポートすることだけができます。",
     "description": "First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_announced.subject": {
@@ -152,7 +152,7 @@
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_closed.body": {
-    "defaultMessage": "{instance} は終了しました。{exportUntil} までは、サインインしてデータをエクスポートできます。ほかの操作はできません。",
+    "defaultMessage": "{instance} は終了しました。{exportUntil} までは、ログインしてデータをエクスポートできます。ほかの操作はできません。",
     "description": "First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_closed.detail": {

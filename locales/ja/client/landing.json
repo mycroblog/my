@@ -8,7 +8,7 @@
     "description": "Button on the landing page that opens the server's sign-in screen."
   },
   "landing.sign_up.open": {
-    "defaultMessage": "アカウントを作る",
+    "defaultMessage": "アカウントを作成",
     "description": "Link on the landing page to the server's registration page, when anyone may sign up."
   },
   "landing.sign_up.approval": {
@@ -16,7 +16,7 @@
     "description": "Link on the landing page to the server's registration page, when moderators approve each sign-up."
   },
   "landing.sign_up.invite": {
-    "defaultMessage": "招待でアカウントを作る",
+    "defaultMessage": "招待でアカウントを作成",
     "description": "Link on the landing page to the server's registration page, when only people with an invite may sign up."
   },
   "landing.registrations.approval": {
@@ -24,7 +24,7 @@
     "description": "Note next to the landing page's registration link, when moderators approve each sign-up."
   },
   "landing.registrations.invite": {
-    "defaultMessage": "招待を受けた人だけがアカウントを作れます。",
+    "defaultMessage": "招待を受けた人だけがアカウントを作成できます。",
     "description": "Note next to the landing page's registration link, when only people with an invite may sign up."
   },
   "landing.registrations.closed": {

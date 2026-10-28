@@ -4,7 +4,7 @@
     "description": "Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category."
   },
   "moderation.action.kind": {
-    "defaultMessage": "{kind, select, warn {Warning} mark_statuses_sensitive {Posts marked as sensitive} delete_statuses {Posts deleted} force_sensitive {Media always marked as sensitive} limit {Limited: posts shown to followers only and kept off the public timelines} restrict_posting {No posting, replying, boosting, or editing} restrict_interaction {No following, favouriting, boosting, or replying} disable_login {Login disabled} suspend {Suspended: no use of the app, and the profile and posts are hidden} ban {Banned: the account is deleted} other {Moderation action}}",
+    "defaultMessage": "{kind, select, warn {Warning} mark_statuses_sensitive {Posts marked as sensitive} delete_statuses {Posts deleted} force_sensitive {Media always marked as sensitive} limit {Limited: posts shown to followers only and kept off the public timelines} restrict_posting {No posting, replying, boosting, or editing} restrict_interaction {No following, favouriting, boosting, or replying} disable_login {Sign-in disabled} suspend {Suspended: no use of the app, and the profile and posts are hidden} ban {Banned: the account is deleted} other {Moderation action}}",
     "description": "Label of the kind of a moderation action on the user's own account, in the notice of the action and the list of the user's actions. {kind} is the kind; the label must make sense whether or not the action is still in effect."
   }
 }

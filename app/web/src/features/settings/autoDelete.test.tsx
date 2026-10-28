@@ -44,7 +44,7 @@ describe("automatic deletion of old posts", () => {
     const { user } = await renderApp({ path: "/settings/auto-delete" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Delete old posts" })).toBeInTheDocument();
-    const enabled = screen.getByRole("switch", { name: /Delete old posts automatically/ });
+    const enabled = screen.getByRole("checkbox", { name: /Delete old posts automatically/ });
     expect(enabled).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Pinned to your profile" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "With a poll" })).not.toBeChecked();
@@ -90,11 +90,11 @@ describe("automatic deletion of old posts", () => {
       ),
     );
     const { user } = await renderApp({ path: "/settings/auto-delete" });
-    await user.click(await screen.findByRole("switch", { name: /Delete old posts automatically/ }));
+    await user.click(await screen.findByRole("checkbox", { name: /Delete old posts automatically/ }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText(/^The settings could not be saved: /)).toHaveAttribute("role", "alert");
-    expect(screen.getByRole("switch", { name: /Delete old posts automatically/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Delete old posts automatically/ })).toBeChecked();
   });
 
   test("asks before leaving with unsaved changes", async () => {

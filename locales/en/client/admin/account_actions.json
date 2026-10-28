@@ -100,11 +100,11 @@
     "description": "What deleting posts does, under its choice."
   },
   "admin.account_actions.kind.disable_login": {
-    "defaultMessage": "Disable login",
+    "defaultMessage": "Disable sign-in",
     "description": "Kind of account action: the account cannot log in."
   },
   "admin.account_actions.kind.disable_login.description": {
-    "defaultMessage": "Ends the account's sessions and stops it logging in.",
+    "defaultMessage": "Ends the account's sessions and stops it signing in.",
     "description": "What disabling login does, under its choice."
   },
   "admin.account_actions.kind.force_sensitive": {

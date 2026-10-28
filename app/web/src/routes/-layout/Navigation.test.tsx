@@ -447,7 +447,7 @@ describe("the sidebar's server and viewer", () => {
     await renderApp({ path: "/home", locale: "ja" });
     const nav = await screen.findByRole("navigation", { name: "メイン" });
     expect(await within(nav).findByRole("link", { name: "Alice @alice" })).toHaveAccessibleDescription(
-      "サインインしているアカウント",
+      "ログインしているアカウント",
     );
     expect(within(nav).getByRole("link", { name: "my example" })).toHaveAccessibleDescription(
       "このサーバーのトップページ",

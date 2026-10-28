@@ -36,7 +36,7 @@
     "description": "Label of the field of the email address to contact about the server."
   },
   "admin.settings.contact.email.description": {
-    "defaultMessage": "サインインしていない人も含め、誰でも見られます。",
+    "defaultMessage": "ログインしていない人も含め、誰でも見られます。",
     "description": "Help under the field of the contact email address: who can see it."
   },
   "admin.settings.contact.email.invalid": {
@@ -264,15 +264,15 @@
     "description": "Choice: everyone may read the supporter list."
   },
   "admin.settings.supporter_list.public.description": {
-    "defaultMessage": "サインインしているかによらず、誰でも一覧を見られます。",
+    "defaultMessage": "ログインしているかによらず、誰でも一覧を見られます。",
     "description": "Description of publishing the supporter list to everyone."
   },
   "admin.settings.supporter_list.signed_in": {
-    "defaultMessage": "サインインした人",
+    "defaultMessage": "ログインした人",
     "description": "Choice: only signed-in users may read the supporter list."
   },
   "admin.settings.supporter_list.signed_in.description": {
-    "defaultMessage": "このサーバーにサインインした人だけが一覧を見られます。",
+    "defaultMessage": "このサーバーにログインした人だけが一覧を見られます。",
     "description": "Description of publishing the supporter list to signed-in users only."
   },
   "admin.settings.crawlers.title": {
@@ -724,7 +724,7 @@
     "description": "Checkbox of letting apps register themselves."
   },
   "admin.settings.oauth_apps.dynamic.description": {
-    "defaultMessage": "アプリがサインインなしで自分を登録します（RFC 7591）。メタデータ文書を使えないツール向けです。",
+    "defaultMessage": "アプリがログインなしで自分を登録します（RFC 7591）。メタデータ文書を使えないツール向けです。",
     "description": "Description of the checkbox of dynamic client registration."
   },
   "admin.settings.voice.title": {

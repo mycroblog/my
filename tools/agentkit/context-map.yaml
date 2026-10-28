@@ -154,6 +154,7 @@ entries:
     notes:
       - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0082); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
+      - "Call each thing by the term of tools/i18n/glossary.json (web-client G21); `i18n:check` rejects the variants it lists, and a new term goes there."
   - name: mail-templates
     paths: ["app/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
@@ -534,10 +535,10 @@ entries:
     docs: ["docs/architecture/web-client/17-reports.md#17-通報", "docs/architecture/web-client/18-account-status-and-appeals.md#18-アカウントの状態と異議申し立て"]
   - name: web-feature-settings
     paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
-    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証"]
+    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/architecture/web-client/screens/badges.md"]
   - name: web-feature-supporters
     paths: ["app/web/src/features/supporters/**"]
-    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md"]
+    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md", "docs/architecture/web-client/screens/badges.md"]
   - name: web-feature-public
     paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
     docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md"]

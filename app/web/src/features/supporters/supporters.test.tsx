@@ -396,7 +396,7 @@ describe("the supporter list", () => {
 });
 
 describe("the choice to be on the supporter list", () => {
-  test("is a switch on the profile settings of a member while the list is published", async () => {
+  test("is a switch on the badges settings page of a member while the list is published", async () => {
     const saved: boolean[] = [];
     server.use(
       enabledInstance("signed_in"),
@@ -406,7 +406,7 @@ describe("the choice to be on the supporter list", () => {
         return withViewer(request, () => HttpResponse.json({ listed }));
       }),
     );
-    const { user } = await renderApp({ path: "/settings/profile" });
+    const { user } = await renderApp({ path: "/settings/badges" });
 
     const section = await screen.findByRole("region", { name: "Supporter list" });
     expect(within(section).getByText(/never an amount or a date/u)).toBeInTheDocument();
@@ -425,9 +425,9 @@ describe("the choice to be on the supporter list", () => {
       enabledInstance("public"),
       http.get(`${apiBase}/preferences/supporter_listing`, () => problem(404, "about:blank", "Not Found")),
     );
-    await renderApp({ path: "/settings/profile" });
+    await renderApp({ path: "/settings/badges" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Profile" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Badges and supporter list" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Supporter list" })).not.toBeInTheDocument();
   });
 });
