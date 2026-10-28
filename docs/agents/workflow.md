@@ -118,6 +118,9 @@ EOF
   (`gh run rerun <run> --failed`), since an edit does not start CI.
 - Wait for the PR's CI and fix failures until it is green: run `scripts/agentkit.sh pr wait <PR>` in the background. It
   prints one line when CI passes, or the failing lines of the failed jobs, and exits 3 when the PR conflicts.
+- Wait for a long local command (`check`, tests, `web:e2e`) the same way: start it in the background and act on its
+  completion notification. Never poll for it with a loop that sleeps or with `pgrep` (`pgrep -f` matches the polling
+  shell's own command line, so the loop never ends); the agentkit hook refuses such commands.
 
 ## 7. Merge through the merge queue
 
