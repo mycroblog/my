@@ -7,6 +7,7 @@ import { ExternalLink } from "./ExternalLink";
 import { Heading } from "./Heading";
 import { Link } from "./Link";
 import { ProfileField, ProfileFields, ProfileHeader, ProfileHeaderImage } from "./ProfileHeader";
+import { Wordmark } from "./Wordmark";
 
 /** A stand-in image, inline so the story does not depend on the network. */
 function svgImage(width: number, height: number, fill: string): { still: { url: string; width: number }[] } {
@@ -183,6 +184,30 @@ export const Narrow: Story = {
       </div>
     ),
   ],
+};
+
+/** A server's calling card on its landing page: its mark in the avatar's place, its domain as the handle, no joined line. */
+export const Server: Story = {
+  args: {
+    avatar: undefined,
+    mark: <Wordmark name="my" decorative size="sm" />,
+    name: "Garden Club",
+    heading: (
+      <Heading level={1}>
+        <span dir="auto">Garden Club</span>
+      </Heading>
+    ),
+    handle: "garden.example",
+    actions: <Button variant="secondary">Sign in</Button>,
+    tags: [],
+    note: <p>A small server for gardeners and everyone who likes to grow things.</p>,
+    fields: undefined,
+    joined: undefined,
+    counts: [
+      { key: "members", content: "120 members" },
+      { key: "since", content: "Since March 2026" },
+    ],
+  },
 };
 
 /** The 3:1 preview of a form. */
