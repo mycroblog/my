@@ -24,7 +24,7 @@
       :root { color-scheme: light dark; supported-color-schemes: light dark; }
       @media (prefers-color-scheme: dark) {
         body, .mail-body { background-color: %color-surface:dark% !important; }
-        .mail-card, .mail-card > table { background-color: %color-surface-raised:dark% !important; }
+        .mail-card, .mail-card > table, .mail-card > table > tbody > tr > td { background-color: %color-surface-raised:dark% !important; }
         .mail-text div { color: %color-fg:dark% !important; }
         .mail-muted div { color: %color-fg-muted:dark% !important; }
         .mail-button td, .mail-button a { background-color: %color-accent:dark% !important; color: %color-accent-fg:dark% !important; }
