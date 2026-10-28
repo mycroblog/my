@@ -269,10 +269,11 @@ api/                 # spec/（クライアント API の正。パス・componen
 schema/              # 目標スキーマ sqlite/・postgres/（モジュールごとのファイル。Atlas で宣言的に適用）と準備 SQL postgres.bootstrap.sql（ADR-0023・ADR-0082）
 queries/             # sqlc 用クエリ（方言別。設定は sqlc.yaml、生成先は internal/adapter/db/<dialect>/。queue/ は internal/adapter/queue/db 用）
 locales/             # ICU MessageFormat カタログ（en がソース。Go と TS で共有。en-XA / ar-XB は生成物）
-tools/               # 開発ツール（Go ツールの go.mod、i18n の生成器・検査を持つ Bun パッケージ tools/i18n、HTML のメールの外枠を MJML で html/template にする Bun パッケージ tools/mail）
+tools/               # 開発ツール（Go ツールの go.mod、i18n の生成器・検査を持つ Bun パッケージ tools/i18n）
 app/                 # クライアントの Bun ワークスペース（アプリと共有パッケージ。ADR-0026）
   ui/                # 共有 UI キット @my/ui（React Aria Components を包む部品、デザイントークン、Storybook）
   web/               # Web クライアント（PWA、TypeScript）
+  mail/              # HTML のメールの外枠を MJML で html/template にする開発時のパッケージ @my/mail（ADR-0086 §2）
   mobile/            # モバイルアプリ（Tauri 2）
 deploy/
   docker/ k8s/ gcp/ aws/

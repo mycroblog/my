@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "//": "The compiler of the email layout (src/frame.ts), which runs on Bun at development time only.",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["bun"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts"]
+}

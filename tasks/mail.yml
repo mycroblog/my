@@ -1,57 +1,41 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The layout of the HTML emails in tools/mail (ADR-0086 §2; the mail context of scripts/changed-contexts.sh): MJML
-# compiles tools/mail/frame.mjml into the Go html/template internal/app/kernel/mail_frame.gen.html, which is committed
-# because Go embeds it (ADR-0081). MJML runs at development time only, so Go builds and tests need no Bun.
+# The layout of the HTML emails in app/mail (@my/mail, a package of the client workspace; ADR-0086 §2; the mail context
+# of scripts/changed-contexts.sh): MJML compiles app/mail/frame.mjml into the Go html/template
+# internal/app/kernel/mail_frame.gen.html, which is committed because Go embeds it (ADR-0081). MJML runs at development
+# time only, so Go builds and tests need no Bun. Its npm packages are installed by web:install from app/bun.lock, and
+# web:licenses checks their licenses with the rest of the workspace.
 version: "3"
 
 tasks:
-  # It skips while node_modules exists and the manifests are unchanged, as web:install does.
-  install:
-    desc: Install the pinned email template dependencies (tools/mail/bun.lock)
-    run: once
-    dir: tools/mail
-    sources: [bun.lock, bunfig.toml, package.json]
-    status:
-      - test -d node_modules
-    cmds:
-      - bun install --frozen-lockfile
-
   gen:
-    desc: Regenerate internal/app/kernel/mail_frame.gen.html from tools/mail/frame.mjml with MJML (commit it)
-    deps: [install]
+    desc: Regenerate internal/app/kernel/mail_frame.gen.html from app/mail/frame.mjml with MJML (commit it)
+    deps: [":web:install"]
     run: once
     sources:
-      - tools/mail/frame.mjml
-      - tools/mail/src/*.ts
-      - tools/mail/bun.lock
+      - app/mail/frame.mjml
+      - app/mail/src/*.ts
+      - app/bun.lock
       - internal/domain/instance/theme_tokens.gen.go
     generates:
       - internal/app/kernel/mail_frame.gen.html
     cmds:
-      - cd tools/mail && bun run src/frame.ts
+      - cd app/mail && bun run src/frame.ts
 
   check:
-    desc: Fail on a stale email layout, check the npm licenses of tools/mail, type-check it, and check the TS formatting (web:fmt-check), in parallel
-    deps: [gen-check, licenses, typecheck, ":web:fmt-check"]
+    desc: Fail on a stale email layout, type-check app/mail, and check the TS formatting (web:fmt-check), in parallel
+    deps: [gen-check, typecheck, ":web:fmt-check"]
 
   gen-check:
-    desc: Fail if the committed internal/app/kernel/mail_frame.gen.html differs from what tools/mail/frame.mjml compiles to
-    deps: [install]
-    dir: tools/mail
+    desc: Fail if the committed internal/app/kernel/mail_frame.gen.html differs from what app/mail/frame.mjml compiles to
+    deps: [":web:install"]
+    dir: app/mail
     cmds:
       - bun run src/frame.ts --check
 
-  licenses:
-    desc: Fail on tools/mail npm dependency licenses incompatible with AGPL-3.0
-    deps: [install, ":i18n:install"]
-    dir: tools/i18n
-    cmds:
-      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}} ../mail/node_modules
-
   typecheck:
-    desc: Type-check tools/mail with tsc
-    deps: [install]
-    dir: tools/mail
+    desc: Type-check app/mail with tsc
+    deps: [":web:install"]
+    dir: app/mail
     cmds:
-      - bun --bun run tsc --noEmit -p .
+      - bun run typecheck

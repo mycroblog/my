@@ -2,7 +2,7 @@
 #
 # Dependabot version updates (ADR-0046). Security alerts come from the repository's Dependabot Alerts.
 # The 3-day cooldown matches the rule that no dependency version younger than three days is installed
-# (app/bunfig.toml, tools/i18n/bunfig.toml, tools/mail/bunfig.toml). Cooldown applies to version updates only, so security updates
+# (app/bunfig.toml, tools/i18n/bunfig.toml). Cooldown applies to version updates only, so security updates
 # still open immediately.
 version: 2
 updates:

@@ -155,12 +155,12 @@ entries:
       - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0082); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
   - name: mail-templates
-    paths: ["tools/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
+    paths: ["app/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
     userdocs: ["docs/operations/email.md#the-html-version"]
-    checks: [mail, go]
+    checks: [mail, web, go]
     notes:
-      - "Edit tools/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
+      - "Edit app/mail/frame.mjml, never mail_frame.gen.html; then `scripts/task.sh mail:gen` and commit the generated template."
       - "Every value goes through html/template; the HTML links to https URLs only and loads no external font, image or style sheet."
   - name: platform
     paths: ["internal/platform/**", "cmd/my/**"]

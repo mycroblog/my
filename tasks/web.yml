@@ -16,7 +16,7 @@ vars:
   # .gitignore's.
   FMT_FILES: >-
     'app/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
-    'tools/i18n/**/*.{ts,tsx,js,mjs}' 'tools/mail/**/*.{ts,tsx,js,mjs}'
+    'tools/i18n/**/*.{ts,tsx,js,mjs}'
 
 tasks:
   # web:lint-rules copies its violation fixtures into app/web/src while it runs, so the tasks that read app/web/src
@@ -135,7 +135,7 @@ tasks:
 
   # Bun only: it reads no node_modules, so it needs no install.
   fmt:
-    desc: Format the TypeScript and JavaScript of app/, pkg/mykit/ts, pkg/mybot/ts, tools/i18n, and tools/mail with bun fmt (run it before committing them)
+    desc: Format the TypeScript and JavaScript of app/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (run it before committing them)
     cmds:
       - bun fmt {{.FMT_FILES}}
 
