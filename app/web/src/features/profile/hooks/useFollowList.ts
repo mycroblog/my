@@ -6,11 +6,32 @@ import { errorMessage } from "../../../lib/errors";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { profilePath } from "../../../lib/paths";
-import { type FollowList, followListQueryOptions } from "../api/accounts";
+import { type Account, type FollowList, followListQueryOptions } from "../api/accounts";
 import { nameOf } from "./useProfile";
 
 /** One account of a follow list, as its row shows it. */
-type FollowListItem = { id: string; name: string; handle: string; href: string };
+type FollowListItem = {
+  id: string;
+  name: string;
+  handle: string;
+  href: string;
+  /** The profile text as one line of plain text, or "" when there is none. */
+  noteLine: string;
+  /** The account, for its follow button. */
+  account: Account;
+};
+
+/**
+ * The profile text (sanitized HTML from the server) as plain text on one line: the paragraphs and line breaks become
+ * spaces. DOMParser builds an inert document, which runs no script and loads nothing.
+ */
+export function noteLineOf(html: string): string {
+  if (html === "") return "";
+  const document = new DOMParser().parseFromString(html, "text/html");
+  for (const br of document.body.querySelectorAll("br")) br.replaceWith(" ");
+  for (const paragraph of document.body.querySelectorAll("p")) paragraph.append(" ");
+  return document.body.textContent.replace(/\s+/gu, " ").trim();
+}
 
 export type FollowListState = {
   /** The loaded accounts, newest follow first; read from the query cache on every render (S2). */
@@ -43,15 +64,21 @@ export function useFollowList(id: string, list: FollowList): FollowListState {
     });
   };
 
+  // React Compiler derives the rows again only when the pages change (web-client/README.md R4), so the profile texts
+  // are parsed once per page.
+  const items = query.data.pages
+    .flatMap((page) => page.accounts)
+    .map((account) => ({
+      id: account.id,
+      name: nameOf(account),
+      handle: handleOf(account.acct),
+      href: profilePath(account.acct),
+      noteLine: noteLineOf(account.note),
+      account,
+    }));
+
   return {
-    items: query.data.pages
-      .flatMap((page) => page.accounts)
-      .map((account) => ({
-        id: account.id,
-        name: nameOf(account),
-        handle: handleOf(account.acct),
-        href: profilePath(account.acct),
-      })),
+    items,
     hasMore: query.hasNextPage,
     isLoadingMore: query.isFetchingNextPage,
     loadMore,

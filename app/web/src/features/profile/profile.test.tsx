@@ -450,6 +450,53 @@ describe("the follow lists", () => {
     expect(screen.queryByText("Loading accounts")).not.toBeInTheDocument();
   });
 
+  test("say who each account is and follow it from its row, asking for every row's relationship at once", async () => {
+    server.use(resumableSession());
+    bobServer();
+    const carol = {
+      ...viewerFixture,
+      id: "0192f0c4-7a8e-7000-8000-000000000003",
+      username: "carol",
+      acct: "carol",
+      display_name: "Carol",
+      note: "<p>Grows tomatoes.</p><p>Bakes bread.</p>",
+    };
+    const dave = { ...carol, id: "0192f0c4-7a8e-7000-8000-000000000004", username: "dave", acct: "dave", note: "" };
+    const requested: string[][] = [];
+    const follows: string[] = [];
+    server.use(
+      http.get(`${apiBase}/accounts/:id/followers`, () => HttpResponse.json({ accounts: [viewerFixture, carol, dave] })),
+      http.get(`${apiBase}/accounts/relationships`, ({ request }) => {
+        const ids = new URL(request.url).searchParams.getAll("id");
+        requested.push(ids);
+        return HttpResponse.json(ids.map((id) => relationshipFixture(id, id === carol.id ? { followed_by: true } : {})));
+      }),
+      http.post(`${apiBase}/accounts/:id/follow`, ({ params }) => {
+        follows.push(String(params["id"]));
+        return HttpResponse.json(relationshipFixture(String(params["id"]), { following: true }));
+      }),
+    );
+    const { user } = await renderApp({ path: "/@bob/followers" });
+    await screen.findByRole("heading", { level: 1, name: "Followers of \u2068Bob\u2069" });
+
+    // eslint-disable-next-line testing-library/no-node-access -- the row of a link is its list item.
+    const carolRow = within(main()).getByRole("link", { name: "Carol @carol" }).closest("li");
+    if (carolRow === null) throw new Error("no row of Carol");
+    expect(within(carolRow).getByText("Grows tomatoes. Bakes bread.")).toBeInTheDocument();
+    expect(await within(carolRow).findByText("Follows you")).toBeInTheDocument();
+    // The viewer's own row has no button.
+    // eslint-disable-next-line testing-library/no-node-access -- the row of a link is its list item.
+    const ownRow = within(main()).getByRole("link", { name: "Alice @alice" }).closest("li");
+    if (ownRow === null) throw new Error("no row of the viewer");
+    expect(within(ownRow).queryByRole("button")).not.toBeInTheDocument();
+    expect(requested.filter((ids) => ids.includes(carol.id))).toEqual([[carol.id, dave.id]]);
+
+    await user.click(within(carolRow).getByRole("button", { name: "Follow back" }));
+
+    expect(await within(carolRow).findByRole("button", { name: "Following" })).toBeInTheDocument();
+    expect(follows).toEqual([carol.id]);
+  });
+
   test("say so when an account follows nobody", async () => {
     bobServer();
     server.use(http.get(`${apiBase}/accounts/:id/following`, () => HttpResponse.json({ accounts: [] })));

@@ -15,6 +15,8 @@ const accountItem = tv({
     name: "font-extrabold align-match-parent",
     handle: "text-start text-sm font-normal text-fg-muted",
     details: "flex flex-col text-sm text-fg-muted",
+    // Under a linked account, outside the link: lined up with the name, past the avatar (size-10) and the gap.
+    linkDetails: "flex min-w-0 flex-col gap-1 ps-13 text-sm text-fg-muted",
     trailing: "flex shrink-0 flex-wrap items-center gap-2",
   },
   variants: {
@@ -22,7 +24,10 @@ const accountItem = tv({
       /** Fills the width it is in. */
       row: { body: "w-full text-fg data-hovered:text-fg" },
       /** A row of a list that is a whole target: padded, with a hover background. */
-      padded: { body: "w-full rounded-md px-4 py-3 text-fg data-hovered:bg-surface-sunken data-hovered:text-fg" },
+      padded: {
+        body: "w-full rounded-md px-4 py-3 text-fg data-hovered:bg-surface-sunken data-hovered:text-fg",
+        linkDetails: "-mt-2 ps-17 pe-4 pb-3",
+      },
       /** Only as wide as its text, for an account named in running content. */
       inline: { body: "inline-grid max-w-full" },
     },
@@ -57,7 +62,10 @@ export type AccountItemProps = {
   href?: string | undefined;
   /** `row` fills the width, `padded` is a whole-row target with a hover background, `inline` is as wide as its text. */
   layout?: "row" | "padded" | "inline";
-  /** More lines under the handle (not in a link). */
+  /**
+   * More lines under the handle. With `href` they stand under the link, outside it, so that the link's name stays the
+   * account's name (a line of the profile text, a mark of the relationship).
+   */
   details?: ReactNode;
   /** An action or a badge at the end. */
   trailing?: ReactNode;
@@ -114,10 +122,20 @@ export function AccountItem({
       {showDetails && <span className={slots.details()}>{details}</span>}
     </>
   );
-  const body = isLink ? (
+  const link = isLink && (
     <Link href={href} variant="standalone" className={slots.body()}>
       <>{content}</>
     </Link>
+  );
+  const body = isLink ? (
+    details === undefined ? (
+      link
+    ) : (
+      <div className="flex min-w-0 flex-col">
+        {link}
+        <div className={slots.linkDetails()}>{details}</div>
+      </div>
+    )
   ) : paragraph ? (
     <p className={slots.body()}>{content}</p>
   ) : (

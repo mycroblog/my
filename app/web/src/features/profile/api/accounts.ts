@@ -22,13 +22,65 @@ export function accountQueryOptions(api: Api, acct: string) {
   return api.query.queryOptions("get", "/accounts/lookup", { params: { query: { acct } } });
 }
 
+/** The most accounts one GET /accounts/relationships takes (its `maxItems`). */
+const relationshipBatchLimit = 40;
+
+type RelationshipRequest = {
+  id: string;
+  resolve: (relationships: Relationship[]) => void;
+  reject: (reason: unknown) => void;
+};
+
+/** The relationships each client was asked for in this task, sent together after it. */
+const pendingRelationships = new WeakMap<Api, RelationshipRequest[]>();
+
+/**
+ * Asks for the viewer's relationship with the account `id` together with every other one asked for in the same task:
+ * a list of accounts (the follow lists, the notifications) mounts a follow button per row, and their queries become
+ * one request per 40 accounts instead of one each.
+ */
+function loadRelationship(api: Api, id: string): Promise<Relationship[]> {
+  return new Promise((resolve, reject) => {
+    let queue = pendingRelationships.get(api);
+    if (queue === undefined) {
+      queue = [];
+      pendingRelationships.set(api, queue);
+      setTimeout(() => {
+        sendRelationships(api);
+      }, 0);
+    }
+    queue.push({ id, resolve, reject });
+  });
+}
+
+function sendRelationships(api: Api) {
+  const queue = pendingRelationships.get(api) ?? [];
+  pendingRelationships.delete(api);
+  const ids = [...new Set(queue.map((request) => request.id))];
+  for (let start = 0; start < ids.length; start += relationshipBatchLimit) {
+    const batch = ids.slice(start, start + relationshipBatchLimit);
+    const waiting = queue.filter((request) => batch.includes(request.id));
+    api.fetch
+      .GET("/accounts/relationships", { params: { query: { id: batch } } })
+      .then(({ data, error }) => {
+        // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
+        if (data === undefined) throw new ApiError(error);
+        for (const request of waiting) request.resolve(data.filter((relationship) => relationship.id === request.id));
+      })
+      .catch((reason: unknown) => {
+        for (const request of waiting) request.reject(reason);
+      });
+  }
+}
+
 /**
  * The viewer's relationship with the account `id` (GET /accounts/relationships), or null when the server
- * left it out (the account is gone or blocks the viewer).
+ * left it out (the account is gone or blocks the viewer). The relationships asked for at once go in one request.
  */
 export function relationshipQueryOptions(api: Api, id: string) {
   return {
     ...api.query.queryOptions("get", "/accounts/relationships", { params: { query: { id: [id] } } }),
+    queryFn: () => loadRelationship(api, id),
     select: (relationships: Relationship[]): Relationship | null =>
       relationships.find((relationship) => relationship.id === id) ?? null,
   };
