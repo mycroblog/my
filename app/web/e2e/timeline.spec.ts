@@ -275,14 +275,14 @@ test.describe("the hashtag timeline", () => {
   });
 });
 
-test("the home timeline sends to sign in without a session, to come back afterwards", async ({
+test("the home timeline sends to sign in without a session, straight to the server's sign-in screen", async ({
   page,
-  makeAxeBuilder,
 }) => {
+  // /login is no page: the server's sign-in screen opens at once (vite preview has none: an empty one).
+  const authorize = page.waitForRequest((request) => new URL(request.url()).pathname === "/oauth/authorize");
+  await page.route("**/oauth/authorize?*", (route) =>
+    route.fulfill({ status: 200, contentType: "text/html", body: "<title>Sign in</title>" }),
+  );
   await page.goto("/home");
-  await expect(page).toHaveURL(/\/login\?/);
-  expect(new URL(page.url()).searchParams.get("return_to")).toBe("/home");
-  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-  await expectNoAxeViolations(makeAxeBuilder);
-  await expectNoHorizontalScroll(page);
+  await authorize;
 });

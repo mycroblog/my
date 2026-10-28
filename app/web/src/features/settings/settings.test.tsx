@@ -22,6 +22,7 @@ import { nodeUploadFile } from "../../test/multipart";
 import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
+import { expectSignInStarted } from "../../test/signIn";
 
 /**
  * Makes `zone` the time zone of this device: the zone of every Intl.DateTimeFormat that names none, as in a
@@ -877,10 +878,9 @@ describe("blocks, mutes and follow requests", () => {
 describe("signed out", () => {
   test("a settings page sends the browser to sign in first, and back afterwards", async () => {
     server.resetHandlers();
-    const { router } = await renderApp({ path: "/settings/blocks" });
+    const { leftTo } = await renderApp({ path: "/settings/blocks" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ return_to: "/settings/blocks" });
+    await expectSignInStarted(leftTo, "/settings/blocks");
   });
 });
 

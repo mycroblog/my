@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { instanceFixture, preferencesFixture } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
-import { navigationKey, themeKey } from "../../lib/storage";
+import { navigationKey, signInKey, themeKey } from "../../lib/storage";
 import { renderApp } from "../../test/render";
 
 /** GET /instance with the given public timelines turned on or off. */
@@ -116,20 +116,29 @@ describe("while signed out", () => {
     expect(within(navigation()).getByRole("link", { name: "Federated" })).toBeInTheDocument();
   });
 
-  test("signs in from the page it is on, and comes back there", async () => {
-    const { user, router } = await renderApp({ path: "/tags/cats" });
+  test("signs in from the page it is on, straight to the server's sign-in screen, and comes back there", async () => {
+    const { user, leftTo } = await renderApp({ path: "/tags/cats" });
     await screen.findByRole("heading", { level: 1, name: "#cats" });
 
     const signIn = within(navigation()).getByRole("link", { name: "Sign in" });
     expect(signIn).toHaveAttribute("href", "/login?return_to=%2Ftags%2Fcats");
+    expect(signIn).not.toHaveAttribute("aria-current");
     await user.click(signIn);
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ return_to: "/tags/cats" });
-    // On the sign-in page, the item is the place, and keeps where to come back to.
-    const current = within(navigation()).getByRole("link", { name: "Sign in" });
-    expect(current).toHaveAttribute("aria-current", "page");
-    expect(current).toHaveAttribute("href", "/login?return_to=%2Ftags%2Fcats");
+    // No page in between: the browser goes to the authorization screen, and the callback returns to the page.
+    await waitFor(() => {
+      expect(leftTo.map((url) => url.pathname)).toEqual(["/oauth/authorize"]);
+    });
+    expect(signInKey.read()?.returnTo).toBe("/tags/cats");
+    expect(screen.queryByRole("heading", { level: 1, name: "Sign in" })).not.toBeInTheDocument();
+  });
+
+  test("drops a return_to that is not a path of this app", async () => {
+    const { leftTo } = await renderApp({ path: "/login?return_to=%2F%2Fevil.example%2Fhome" });
+    await waitFor(() => {
+      expect(leftTo).toHaveLength(1);
+    });
+    expect(signInKey.read()?.returnTo).toBe("/");
   });
 
   test("leaves out Sign up while the server takes no new accounts", async () => {
@@ -148,10 +157,12 @@ describe("while signed out", () => {
 
   test("sends the pages that need a session to sign in first, and back afterwards", async () => {
     for (const path of ["/home", "/notifications", "/profile", "/bookmarks", "/settings"]) {
-      const { router, unmount } = await renderApp({ path });
-      expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+      const { router, leftTo, unmount } = await renderApp({ path });
+      await waitFor(() => {
+        expect(leftTo.map((url) => url.pathname)).toEqual(["/oauth/authorize"]);
+      });
       expect(router.state.location.pathname).toBe("/login");
-      expect(router.state.location.search).toEqual({ return_to: path });
+      expect(signInKey.read()?.returnTo).toBe(path);
       unmount();
     }
   });

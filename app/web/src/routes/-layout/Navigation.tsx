@@ -41,7 +41,7 @@
 // The items above need a session, so people who are not signed in get other ones (web-client/09-app-shell.md §9, "signed-out
 // navigation"), in a bar along the top: Local, Federated, Search, About and Sign in, and Sign up while the server takes
 // new accounts. Below lg the items are behind the bar's menu button and the last one (Sign up, or Sign in) stays in
-// the bar as its call to action. Sign in opens the sign-in page, which comes back to the
+// the bar as its call to action. Sign in starts the server's sign-in at once (/login), which comes back to the
 // page it was opened from. While the session resumes, the list has no items yet, so that neither set shows to the
 // wrong person; a session that cannot be resumed because the server is not reached (offline) keeps the user's items.
 import {
@@ -91,7 +91,7 @@ import { useVoiceAvailable } from "../../features/voice";
 import { useSessionStatus, useSessionUnreachable } from "../../lib/auth/SessionProvider";
 import { handleOf } from "../../lib/handle";
 import { type ClientMessageKey, useT } from "../../lib/i18n";
-import { aboutPath, followListPath, profilePath } from "../../lib/paths";
+import { aboutPath, followListPath, profilePath, signInPath } from "../../lib/paths";
 import { imageSources } from "../../lib/images";
 import { ServerNameLink } from "./ServerNameLink";
 
@@ -108,8 +108,7 @@ type Section =
   | "/finance"
   | "/moderation"
   | "/admin"
-  | "/about"
-  | "/login";
+  | "/about";
 
 type NavigationItem = {
   /** The item's key in the list. */
@@ -233,7 +232,6 @@ function signedOutItems(signInHref: string, signUpHref: string | undefined): Nav
     {
       id: "sign-in",
       href: signInHref,
-      section: "/login",
       label: "client:shell.nav.sign_in",
       icon: <SignInIcon />,
       // While the server takes no new accounts, signing in is the call to action.
@@ -251,12 +249,6 @@ function signedOutItems(signInHref: string, signUpHref: string | undefined): Nav
           } satisfies NavigationItem,
         ]),
   ];
-}
-
-/** The sign-in page, which returns to `location` afterwards; on the sign-in page itself, that page as it is. */
-function signInHrefOf(location: { pathname: string; href: string }): string {
-  if (location.pathname === "/login") return location.href;
-  return `/login?${new URLSearchParams({ return_to: location.href }).toString()}`;
 }
 
 /** Whether `pathname` is `path` or a page below it. */
@@ -290,7 +282,8 @@ export function useSignedOut(): boolean {
 export function Navigation() {
   const t = useT();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const signInHref = useLocation({ select: signInHrefOf });
+  // Signing in starts the server's sign-in at once (/login) and comes back to this page.
+  const signInHref = useLocation({ select: (location) => signInPath(location.href) });
   const signUpHref = useSignUpHref();
   const status = useSessionStatus();
   const unread = useUnreadNotificationCount();

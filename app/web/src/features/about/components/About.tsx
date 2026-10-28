@@ -18,7 +18,7 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
-import { profilePath } from "../../../lib/paths";
+import { profilePath, signInPath } from "../../../lib/paths";
 import { useStatusPageUrl } from "../../../lib/statusPage";
 import { DocumentLink, DocumentsSection } from "../../documents";
 import { AboutSupportersSection } from "../../supporters";
@@ -351,7 +351,7 @@ function ModeratedDomainsBody({ domains }: { domains: Exclude<ModeratedDomains, 
       return (
         <Cluster as="p" gap="1" rowGap="0">
           <span>{t("client:about.domains.signed_in_only")}</span>
-          <Link href={`/login?${new URLSearchParams({ return_to: "/about" }).toString()}`} variant="standalone">
+          <Link href={signInPath("/about")} variant="standalone">
             {t("client:about.domains.sign_in")}
           </Link>
         </Cluster>

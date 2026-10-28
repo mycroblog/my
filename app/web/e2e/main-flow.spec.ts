@@ -109,21 +109,20 @@ async function expectQuality(page: Page): Promise<void> {
 const pageHeading = (page: Page) => page.getByRole("main").getByRole("heading", { level: 1 });
 
 /**
- * Signs in to the app: the app's sign-in page sends the browser to the server's sign-in screen, which
+ * Signs in to the app: /login sends the browser to the server's sign-in screen at once, which
  * returns to the app's callback with a code (OAuth 2.0 with PKCE; the web client is first party, so no
  * consent page). When the browser already has a session on the server, the screen is skipped. Then the
  * user's display language becomes the project's locale (PATCH /api/v1/preferences with the app's access
  * token), and the app reloads in it.
  */
 async function signInToApp(page: Page, user: User, { hasSession = false } = {}): Promise<void> {
-  await page.goto("/login");
-  await expect(pageHeading(page)).toBeVisible();
   const authorized = page.waitForRequest(
     (request) =>
       new URL(request.url()).pathname.startsWith("/api/") &&
       request.headers()["authorization"]?.startsWith("Bearer ") === true,
   );
-  await page.getByRole("main").getByRole("button").click();
+  // /login is not a page: it opens the server's sign-in screen at once.
+  await page.goto("/login");
   if (!hasSession) {
     await page.locator('input[type="email"][autocomplete="username"]').fill(user.email);
     await page.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);

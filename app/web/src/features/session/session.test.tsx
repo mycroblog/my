@@ -11,6 +11,7 @@ import { preferencesFixture, viewerFixture } from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { localeKey } from "../../lib/storage";
 import { renderApp } from "../../test/render";
+import { expectSignInStarted } from "../../test/signIn";
 
 const origin = window.location.origin;
 
@@ -108,10 +109,8 @@ describe("signing in and out", () => {
     const cacheNames = stubCacheStorage();
     const idb = stubIndexedDB();
 
-    // 1. The sign-in page sends the browser to the authorization screen.
+    // 1. /login sends the browser to the authorization screen at once, with no page in between.
     const view = await renderApp({ path: "/login?return_to=/settings" });
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    await view.user.click(screen.getByRole("button", { name: "Continue to sign in" }));
     await waitFor(() => {
       expect(view.leftTo).toHaveLength(1);
     });
@@ -151,15 +150,17 @@ describe("signing in and out", () => {
     // 4. Signing out revokes the token and forgets the user's data.
     const account = screen.getByRole("region", { name: "Account" });
     await user.click(within(account).getByRole("button", { name: "Sign out" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    // The landing page opens: /login would start signing in again.
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(oauth.seen.revoked).toEqual([{ token: "access-2", token_type_hint: "access_token", client_id: "my-web" }]);
     expect(session.status).toBe("signed-out");
     // No query keeps the account (an observer that was still mounted may leave an empty, disabled one).
-    // The navigation reads the public GET /instance again at once, as anyone may; it holds nothing of the user.
+    // The navigation reads the public GET /instance again at once, as anyone may, and the landing page it opens reads
+    // the server's public overview and local posts: none of them hold anything of the user.
     const userQueries = queryClient
       .getQueryCache()
       .getAll()
-      .filter((query) => query.queryKey[1] !== "/instance");
+      .filter((query) => !["/instance", "/instance/overview", "/timelines/local"].includes(String(query.queryKey[1])));
     expect(userQueries.map((query) => query.state.data)).not.toContainEqual(expect.anything());
     await waitFor(() => {
       expect([...cacheNames]).toEqual([]);
@@ -176,10 +177,9 @@ describe("signing in and out", () => {
   });
 
   test("the settings page sends to sign in when no session resumes", async () => {
-    const { router } = await renderApp({ path: "/settings" });
+    const { leftTo } = await renderApp({ path: "/settings" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.search).toEqual({ return_to: "/settings" });
+    await expectSignInStarted(leftTo, "/settings");
   });
 });
 
@@ -200,7 +200,6 @@ describe("a callback that is not for this tab's sign-in", () => {
   test("reports a sign-in declined on the authorization screen", async () => {
     const oauth = oauthServer();
     const view = await renderApp({ path: "/login" });
-    await view.user.click(await screen.findByRole("button", { name: "Continue to sign in" }));
     await waitFor(() => {
       expect(view.leftTo).toHaveLength(1);
     });
