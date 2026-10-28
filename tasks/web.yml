@@ -250,18 +250,23 @@ tasks:
         ignore_error: true
 
   # The L4 task tests (ADR-0110 §7, ADR-0114; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
-  # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against `my serve` with the E2E
-  # fixtures, and the steps, backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>]
-  # picks screens, SINCE=<commit> the screens changed since then, neither every screen; CAP bounds the tasks.
-  # DRY_RUN=1 does everything but call the agent. It needs `claude` on PATH, signed in or with the Workload Identity
-  # Federation variables (Nightly), and the Chromium of web:e2e-install.
+  # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against the demo server of web:demo
+  # (`node e2e/server.ts demo`: the test build with the demo scenario, its email in Mailpit), and the steps,
+  # backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>] picks screens,
+  # SINCE=<commit> the screens changed since then, neither every screen; CAP bounds the tasks. DRY_RUN=1 does
+  # everything but call the agent. It starts Mailpit as web:demo does (needs Docker), unless MAILPIT_RUNNING=1 says
+  # that it already runs (the Nightly job starts it with .github/actions/start-mailpit). It needs `claude` on PATH,
+  # signed in or with the Workload Identity Federation variables (Nightly), and the Chromium of web:e2e-install.
   l4:
-    desc: Run the L4 task tests of the screens' L1 with Claude Code (SCREEN=<name>, DRY_RUN=1 without the agent)
-    deps: [":go:bin"]
-    dir: app/web
+    desc: Run the L4 task tests of the screens' L1 with Claude Code on the demo server (SCREEN=<name>, DRY_RUN=1 without the agent; needs Docker for Mailpit)
+    deps: [install]
     cmds:
+      - task: :docker:mailpit
+        if: '[ "{{.MAILPIT_RUNNING}}" != 1 ]'
+      - task: :go:bin
+        vars: { GO_TAGS: e2e_fakes }
       - >-
-        node l4/run.ts --cap {{.CAP | default "10"}} --out "{{.ROOT_DIR}}/.tmp/l4/results.json"
+        cd app/web && node l4/run.ts --cap {{.CAP | default "10"}} --out "{{.ROOT_DIR}}/.tmp/l4/results.json"
         {{if .SCREEN}}--screen {{.SCREEN}}{{end}} {{if .SINCE}}--since {{.SINCE}}{{end}} {{if .DRY_RUN}}--dry-run{{end}}
 
   # Files or updates one issue per screen for the tasks of .tmp/l4/results.json over lostness 0.4 or not completed (app/web/l4/issues.ts),
