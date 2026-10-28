@@ -1,11 +1,11 @@
 {
   "extends": "../tsconfig.base.json",
-  "//": "Tool configs, the scripts of scripts/, the Vite plugins of vite-plugins/, the E2E specs and the L4 task tests of l4/, which run on Node.js. DOM is for the callbacks E2E specs run in the page with page.evaluate.",
+  "//": "Tool configs, the scripts of scripts/, the Vite plugins of vite-plugins/, the E2E specs, the L4 task tests of l4/, and the demo scenario of demo/ (its seed runs on Bun), which run on Node.js. DOM is for the callbacks E2E specs run in the page with page.evaluate.",
   "compilerOptions": {
     "customConditions": ["@mycroblog/source"],
     "lib": ["ES2023", "DOM"],
     "types": ["node"],
     "allowImportingTsExtensions": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts", "scripts", "vite-plugins", "e2e", "l4"]
+  "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts", "scripts", "vite-plugins", "e2e", "l4", "demo"]
 }

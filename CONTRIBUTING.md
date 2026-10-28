@@ -216,6 +216,21 @@ MY_HOST=localhost:8080 MY_DATABASE_URL=my.db MY_KEK="$(openssl rand -base64 32)"
 - The runtime configuration's `apiOrigin` is `http://{host}` only in development and when `MY_WEB_ORIGIN` is the
   `http` origin of `host` (such as `http://localhost:8080`).
 
+To look at the screens with data in them, start the demo server: `scripts/task.sh web:demo` (needs Docker)
+starts the development Mailpit, builds the test build of `bin/my`, creates a fresh database under `.tmp/demo/`, and
+fills it with the demo scenario of `app/web/demo/`: people, posts with images and a thread, follows and a follow
+request, reactions and boosts, an open report and an appeal, roles with badges, a supporter plan with a subscriber who
+paid through the fake payment provider, cost items, invites, and announcements. It prints the URL
+(`http://localhost:8787`, or `DEMO_PORT`), Mailpit's web UI (`http://127.0.0.1:8025`, where the server's email
+arrives), and every person's email address and password. The scenario is created through `bin/my` and the client and
+admin APIs only, never SQL (ADR-0117): an item that no command or API can make is an API to add. When you change the
+API, keep `app/web/demo/` working; with the test build and Mailpit running, its specs (`e2e/demo-*.spec.ts`) run alone:
+
+```sh
+scripts/task.sh docker:mailpit && scripts/task.sh go:bin GO_TAGS=e2e_fakes
+cd app/web && E2E_DEMO=1 bun run e2e --project=demo-chromium
+```
+
 ## SQL and database tests
 
 - Queries are written per dialect in `queries/<dialect>/*.sql`, and [sqlc](https://sqlc.dev/) generates the Go code.

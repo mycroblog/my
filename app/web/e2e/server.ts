@@ -6,21 +6,69 @@
 // With the argument `voice` (`node e2e/server.ts voice`) it starts the server of e2e/voice-p2p.spec.ts instead:
 // `voice = p2p` on a database and a port of its own, where every user may start a voice chat room
 // (`voice_room_starters = everyone`), so that the other specs keep a server with voice chat off.
-// Playwright runs both as webServers with Node.js, from the binary `scripts/task.sh go:bin` writes (override with
+// With the argument `demo` it starts the demo server (ADR-0117 §3, §4): the test build (`GO_TAGS=e2e_fakes`) with the
+// fake payment provider and its email sent to the development Mailpit, on a fresh database and a port of its own.
+// Once the server answers, demo/seed.ts (run by Bun, which reads @mycroblog/mykit from its sources) applies the demo
+// scenario, and the script prints "demo: ready", which Playwright and `scripts/task.sh web:demo` wait for. It needs
+// Mailpit (`scripts/task.sh docker:mailpit`) and stops at once without it.
+// Playwright runs them as webServers with Node.js, from the binary `scripts/task.sh go:bin` writes (override with
 // E2E_MY_BIN), in the environment of e2e/server-cli.ts.
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { connect } from "node:net";
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { type E2EServer, myBin, runMy, serverDatabaseOf, serverDirOf, serverEnv } from "./server-cli.ts";
-import { admin, documents, thirdPartyClient } from "./server-origin.ts";
+import { personas } from "../demo/scenario.ts";
+import {
+  demoKEKFile,
+  type E2EServer,
+  mailpit,
+  myBin,
+  runMy,
+  serverDatabaseOf,
+  serverDirOf,
+  serverEnv,
+} from "./server-cli.ts";
+import { admin, demoServerURL, documents, serverKEK, thirdPartyClient } from "./server-origin.ts";
 
-const which: E2EServer = process.argv[2] === "voice" ? "voice" : "main";
+const argument = process.argv[2];
+const which: E2EServer = argument === "voice" || argument === "demo" ? argument : "main";
 const root = resolve(import.meta.dirname, "../../..");
 const database = serverDatabaseOf(which);
 const env = serverEnv(which);
+
+/** Whether something accepts TCP connections on 127.0.0.1:port. */
+function listening(port: number): Promise<boolean> {
+  return new Promise((done) => {
+    const socket = connect({ host: "127.0.0.1", port });
+    socket.setTimeout(2000);
+    socket.once("connect", () => {
+      socket.destroy();
+      done(true);
+    });
+    socket.once("error", () => {
+      done(false);
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      done(false);
+    });
+  });
+}
+
+if (which === "demo") {
+  if (!existsSync(mailpit.ca) || !(await listening(mailpit.smtpPort)) || !(await listening(mailpit.uiPort))) {
+    console.error(
+      `e2e/server.ts demo: the demo server sends its email to Mailpit, but nothing listens on 127.0.0.1:${String(mailpit.smtpPort)} (SMTP) and :${String(mailpit.uiPort)} (web UI), or ${mailpit.ca} is missing; start it with scripts/task.sh docker:mailpit`,
+    );
+    process.exit(1);
+  }
+  // A fresh database on every start: the fake provider keeps its side in the server's memory only (ADR-0117 §4).
+  rmSync(serverDirOf(which), { recursive: true, force: true });
+}
 mkdirSync(env["MY_BLOB_FS_DIR"] ?? "", { recursive: true });
+if (which === "demo") writeFileSync(demoKEKFile, serverKEK, { mode: 0o600 });
 
 // The schema files are plain SQL, executed in name order as Atlas does in production (ADR-0023, ADR-0082).
 const schemaDir = join(root, "schema/sqlite");
@@ -35,7 +83,7 @@ db.close();
 if (which === "voice") {
   // The spec creates its users with `bin/my`; any of them may open a room.
   runMy(["instance", "set", "voice_room_starters", "everyone"], "", which);
-} else {
+} else if (which === "main") {
   runMy(["admin", "create", "-username", "alice", "-email", admin.email], `${admin.password}\n`);
 
   // The documents, one text each that every locale shows, so that every project's pages link to them (#489).
@@ -57,7 +105,8 @@ if (which === "voice") {
   seed.close();
 }
 
-const server = spawn(myBin, ["serve", "-pseudo-locales"], { env, stdio: "inherit" });
+// The demo server keeps the pseudo-locales off: it is what people see.
+const server = spawn(myBin, which === "demo" ? ["serve"] : ["serve", "-pseudo-locales"], { env, stdio: "inherit" });
 const stop = () => {
   server.kill("SIGTERM");
 };
@@ -67,3 +116,46 @@ server.on("exit", (code, signal) => {
   rmSync(serverDirOf(which), { recursive: true, force: true });
   process.exit(signal === null ? (code ?? 1) : 0);
 });
+
+/** Waits until the demo server answers /readyz, for at most a minute. */
+async function ready(): Promise<boolean> {
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    try {
+      if ((await fetch(`${demoServerURL}/readyz`)).ok) return true;
+    } catch {
+      // Not listening yet.
+    }
+    await new Promise((done) => setTimeout(done, 200));
+  }
+  return false;
+}
+
+if (which === "demo") {
+  if (!(await ready())) {
+    console.error("e2e/server.ts demo: my serve did not answer /readyz within a minute");
+    stop();
+  } else {
+    const seeder = spawn(
+      "bun",
+      ["--conditions=@mycroblog/source", join(import.meta.dirname, "../demo/seed.ts"), "--server", demoServerURL],
+      { env: { ...env, DEMO_MY_BIN: myBin }, stdio: "inherit" },
+    );
+    seeder.on("exit", (code) => {
+      if (code === 0) {
+        const logins = personas.map((p) => `  ${p.username.padEnd(12)} ${p.email.padEnd(24)} ${p.password}`);
+        console.log(
+          [
+            `demo: ready at ${demoServerURL}`,
+            `Mailpit (the server's email): http://127.0.0.1:${String(mailpit.uiPort)}`,
+            "Sign in as (email, password):",
+            ...logins,
+          ].join("\n"),
+        );
+      } else {
+        console.error("e2e/server.ts demo: demo/seed.ts failed to apply the demo scenario");
+        stop();
+      }
+    });
+  }
+}
