@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The external login providers of the admin screens (ADR-0106, manage_login_providers): the list, setting one up,
 // changing, enabling, disabling and deleting it, and giving it a new client secret. The form edits the settings as
-// text (scopes and Organizations as lists in one field, the claims of the conditions one per row) and sends only
+// text (scopes, Organizations and Discord servers as lists in one field, the claims of the conditions one per row) and sends only
 // what the kind takes. What each change did is announced and kept in a StatusMessage; a refused setting stays next
 // to its field.
 import { useAnnouncer, useToast } from "@my/ui";
@@ -74,6 +74,8 @@ export type LoginProviderDraft = {
   claims: readonly ClaimDraft[];
   /** The GitHub Organizations, separated by commas or spaces. */
   organizations: string;
+  /** The Discord server (guild) IDs, separated by commas or spaces. */
+  guilds: string;
 };
 
 const emptyDraft: LoginProviderDraft = {
@@ -87,6 +89,7 @@ const emptyDraft: LoginProviderDraft = {
   allowLink: true,
   claims: [],
   organizations: "",
+  guilds: "",
 };
 
 /** The draft of an existing provider. */
@@ -102,6 +105,7 @@ export function draftOf(provider: LoginProvider): LoginProviderDraft {
     allowLink: provider.allow_link,
     claims: provider.claims.map((condition) => newClaimDraft(condition.claim, condition.values.join(", "))),
     organizations: provider.organizations.join(", "),
+    guilds: provider.guilds.join(", "),
   };
 }
 
@@ -130,14 +134,14 @@ function claimsOf(draft: LoginProviderDraft): LoginProviderClaimCondition[] | un
  * The settings of the draft that both a setup and a change send, only the ones its kind takes; or the field error
  * of a condition row that lacks its claim or its values.
  */
-function settingsOf(draft: LoginProviderDraft, incomplete: string): LoginProviderChange | LoginProviderFieldError {
+function settingsOf(draft: LoginProviderDraft, incomplete: string, badGuild: string): LoginProviderChange | LoginProviderFieldError {
   const settings: LoginProviderChange = {
     display_name: draft.displayName.trim(),
     client_id: draft.clientId.trim(),
     allow_signup: draft.allowSignup,
     allow_link: draft.allowLink,
   };
-  if (draft.kind !== "github") settings.issuer = draft.issuer.trim();
+  if (draft.kind === "oidc" || draft.kind === "mastodon") settings.issuer = draft.issuer.trim();
   if (draft.kind !== "mastodon") settings.scopes = items(draft.scopes, /\s+/u);
   if (draft.kind === "oidc") {
     const claims = claimsOf(draft);
@@ -145,8 +149,16 @@ function settingsOf(draft: LoginProviderDraft, incomplete: string): LoginProvide
     settings.claims = claims;
   }
   if (draft.kind === "github") settings.organizations = items(draft.organizations, /[\s,]+/u);
+  if (draft.kind === "discord") {
+    const guilds = items(draft.guilds, /[\s,]+/u);
+    if (!guilds.every((id) => guildId.test(id))) return { field: "conditions", message: badGuild };
+    settings.guilds = guilds;
+  }
   return settings;
 }
+
+/** A Discord server ID: a decimal number of up to 20 digits. */
+const guildId = /^\d{1,20}$/u;
 
 function isFieldError(value: LoginProviderChange | LoginProviderFieldError): value is LoginProviderFieldError {
   return "field" in value;
@@ -179,7 +191,7 @@ export function useLoginProviderForm() {
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (mutation.isPending) return;
-      const settings = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"));
+      const settings = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"), t("client:admin.login_providers.guilds.invalid"));
       if (isFieldError(settings)) {
         mutation.reset();
         setInvalid(settings);
@@ -272,7 +284,7 @@ export function useLoginProviderActions(onDeleted: (id: string) => void): LoginP
   return {
     update: async (provider, draft) => {
       resetAll();
-      const change = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"));
+      const change = settingsOf(draft, t("client:admin.login_providers.conditions.incomplete"), t("client:admin.login_providers.guilds.invalid"));
       if (isFieldError(change)) return change;
       try {
         const saved = await update.mutateAsync({ id: provider.id, change });

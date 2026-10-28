@@ -191,6 +191,18 @@
     "defaultMessage": "{name} を有効にしました。",
     "description": "Status after enabling a login provider."
   },
+  "admin.login_providers.guilds": {
+    "defaultMessage": "Discord サーバー",
+    "description": "Label of the Discord servers (guilds) a user must belong to."
+  },
+  "admin.login_providers.guilds.description": {
+    "defaultMessage": "いずれかの Discord サーバーに参加している利用者だけがサインインできます。サーバー ID をカンマか空白で区切ってください。空にすると Discord の利用者すべてがサインインできます。",
+    "description": "Description of the Discord servers field."
+  },
+  "admin.login_providers.guilds.invalid": {
+    "defaultMessage": "Discord のサーバー ID は 20 桁までの数字です。",
+    "description": "Error of a Discord server ID that is not a number."
+  },
   "admin.login_providers.issuer": {
     "defaultMessage": "Issuer",
     "description": "Label of the OpenID Connect issuer URL of a login provider."
@@ -324,7 +336,7 @@
     "description": "Button that sets up a login provider."
   },
   "admin.login_providers.summary": {
-    "defaultMessage": "OpenID Connect・GitHub・Mastodon サーバーでのサインインを設定する。",
+    "defaultMessage": "OpenID Connect・GitHub・Discord・Mastodon サーバーでのサインインを設定する。",
     "description": "Description of the login providers screen in the administration menu."
   },
   "admin.login_providers.title": {

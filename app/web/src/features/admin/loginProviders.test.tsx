@@ -142,6 +142,94 @@ describe("the login providers screen", () => {
     });
   });
 
+  test("sends the servers of a Discord provider and no issuer", async () => {
+    let sent: Schemas["CreateLoginProviderRequest"] | undefined;
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
+        sent = (await request.json()) as Schemas["CreateLoginProviderRequest"];
+        return HttpResponse.json(loginProviderFixture(providerId, { kind: "discord", display_name: "Discord" }));
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/login-providers" });
+    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+
+    await user.click(within(form).getByRole("radio", { name: "Discord" }));
+    expect(within(form).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
+    expect(within(form).queryByRole("textbox", { name: "Organizations" })).not.toBeInTheDocument();
+    await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Discord");
+    await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "1234");
+    await user.type(within(form).getByLabelText(/^Client secret/u), "s3cret");
+    await user.type(within(form).getByRole("textbox", { name: "Discord servers" }), "1234567890, 987654321");
+    await user.click(within(form).getByRole("button", { name: "Set up" }));
+
+    expect(await within(form).findByRole("status")).toHaveTextContent("is set up.");
+    expect(sent).toEqual({
+      kind: "discord",
+      display_name: "Discord",
+      client_id: "1234",
+      client_secret: "s3cret",
+      scopes: [],
+      allow_signup: false,
+      allow_link: true,
+      guilds: ["1234567890", "987654321"],
+    });
+  });
+
+  test("refuses a Discord server ID that is not a number before sending", async () => {
+    let called = false;
+    server.use(
+      http.post(`${apiBase}/admin/login_providers`, () => {
+        called = true;
+        return HttpResponse.json(loginProviderFixture(providerId, { kind: "discord" }));
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/login-providers" });
+    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    await user.click(within(form).getByRole("radio", { name: "Discord" }));
+    await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Discord");
+    await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "1234");
+    await user.type(within(form).getByLabelText(/^Client secret/u), "s3cret");
+    const guilds = within(form).getByRole("textbox", { name: "Discord servers" });
+    await user.type(guilds, "12345, my-server");
+    await user.click(within(form).getByRole("button", { name: "Set up" }));
+
+    await waitFor(() => {
+      expect(guilds).toBeInvalid();
+    });
+    expect(guilds).toHaveAccessibleDescription(/A Discord server ID is a number of up to 20 digits\./u);
+    expect(guilds).toHaveValue("12345, my-server");
+    expect(called).toBe(false);
+  });
+
+  test("shows the server's refusal of the servers on their field", async () => {
+    server.use(http.post(`${apiBase}/admin/login_providers`, () => problem("conditions", "The server IDs are not valid.")));
+    const { user } = await renderApp({ path: "/admin/login-providers" });
+    const form = await screen.findByRole("region", { name: "Set up a login provider" });
+    await user.click(within(form).getByRole("radio", { name: "Discord" }));
+    await user.type(within(form).getByRole("textbox", { name: "Display name" }), "Discord");
+    await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "1234");
+    await user.type(within(form).getByLabelText(/^Client secret/u), "s3cret");
+    await user.type(within(form).getByRole("textbox", { name: "Discord servers" }), "123");
+    await user.click(within(form).getByRole("button", { name: "Set up" }));
+
+    const guilds = within(form).getByRole("textbox", { name: "Discord servers" });
+    await waitFor(() => {
+      expect(guilds).toBeInvalid();
+    });
+    expect(guilds).toHaveAccessibleDescription(/The server IDs are not valid\./u);
+  });
+
+  test("keeps the secret of a Discord provider out of its edit form", async () => {
+    server.use(http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [loginProviderFixture("p3", { kind: "discord", display_name: "Discord", guilds: ["42"] })] })));
+    const { user } = await renderApp({ path: "/admin/login-providers" });
+    const list = await screen.findByRole("region", { name: "Login providers of this server" });
+    await user.click(within(list).getByRole("button", { name: /^Edit/u }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("textbox", { name: "Discord servers" })).toHaveValue("42");
+    expect(within(dialog).queryByLabelText(/^Client secret/u)).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("textbox", { name: "Issuer" })).not.toBeInTheDocument();
+  });
+
   test("asks a Mastodon provider for its server, and lets the server register its client", async () => {
     let sent: Schemas["CreateLoginProviderRequest"] | undefined;
     server.use(

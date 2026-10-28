@@ -33,10 +33,11 @@ export const loginProviderLimits = {
   claimName: 100,
   claimValues: 50,
   organizations: 50,
+  guilds: 50,
 } as const;
 
 /** The kinds of provider, in the order of the form (LoginProviderKind). */
-export const loginProviderKinds = ["oidc", "github", "mastodon"] as const satisfies readonly LoginProviderKind[];
+export const loginProviderKinds = ["oidc", "github", "discord", "mastodon"] as const satisfies readonly LoginProviderKind[];
 
 /** The login providers that are not deleted, newest first. */
 export function loginProvidersQueryOptions(api: Api) {
