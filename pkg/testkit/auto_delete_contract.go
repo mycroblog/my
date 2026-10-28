@@ -31,9 +31,10 @@ type AutoDeleteFactory func(t *testing.T, opts uow.Options) AutoDeleteHarness
 
 // AutoDeleteContract verifies the automatic deletion of local accounts' own old posts (FR-118)
 // on a database adapter, with the content module's projectors and use cases: the policies are
-// saved and read back (the default one before any is saved) and listed while enabled; a run
-// deletes the account's local posts published before the policy's age with origin auto_delete
-// and a content.status_deleted event, and keeps the newer ones, other accounts' posts, and the
+// saved and read back (the default one before any is saved) and listed while enabled; a preview
+// counts what an unsaved policy would delete without deleting it; a run deletes the account's
+// local posts published before the policy's age with origin auto_delete and a
+// content.status_deleted event, and keeps the newer ones, other accounts' posts, and the
 // posts that an exception keeps (a pin, the author's bookmark or favourite, media, a poll, a
 // kept visibility, or the boosts or favourites thresholds); it deletes nothing of a disabled
 // policy or of an account that is not active; and it deletes a bounded number of posts per
@@ -254,6 +255,31 @@ func autoDeleteDeletesOldPosts(t *testing.T, e *autoDeleteEnv) {
 		KeepPinned: true, KeepBookmarked: true, KeepFavourited: true, KeepMedia: true, KeepPolls: true,
 		KeepVisibilities: []content.Visibility{content.VisibilityDirect}, KeepMinBoosts: 2, KeepMinFavourites: 2,
 	}
+	// The preview of the unsaved, disabled policy counts what it would delete, and deletes nothing.
+	draft := policy
+	draft.Enabled = false
+	preview, err := e.service(0, 0).PreviewAutoDeletePolicy(ctx, author, draft)
+	must(err)
+	if preview.Count != 4 || preview.More {
+		t.Errorf("preview = %d posts (more %v), want 4", preview.Count, preview.More)
+	}
+	var examples []string
+	for _, st := range preview.Examples {
+		examples = append(examples, st.ID)
+	}
+	if want := []string{plain.ID, followersOnly.ID, bookmarkedByOther.ID}; !slices.Equal(examples, want) {
+		t.Errorf("preview examples = %v, want the oldest %v", examples, want)
+	}
+	if all, err := e.service(0, 0).PreviewAutoDeletePolicy(ctx, author, content.AutoDeletePolicy{MinAgeDays: 30}); err != nil || all.Count != 11 {
+		t.Errorf("preview without exceptions = %+v, %v; want 11 posts", all, err)
+	}
+	if _, err := e.service(0, 0).PreviewAutoDeletePolicy(ctx, author, content.AutoDeletePolicy{MinAgeDays: 0}); err == nil {
+		t.Error("PreviewAutoDeletePolicy accepted a policy of 0 days")
+	}
+	if e.deleted(t, plain.ID) {
+		t.Error("the preview deleted a post")
+	}
+
 	e.save(t, policy)
 	e.takeDeletions()
 	s := e.service(2, 0)
