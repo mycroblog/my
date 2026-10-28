@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -30,8 +31,9 @@ type consent struct {
 	// Impersonation warns that the answer goes to an address that another app may claim; ""
 	// when the redirect URI is a claimed https URL or the client was registered by a user.
 	Impersonation string
-	// Scopes describes each requested scope.
-	Scopes []consentScope
+	// ScopeGroups are the requested scopes by their weight, the heaviest first; a weight with
+	// no requested scope has no group.
+	ScopeGroups []consentScopeGroup
 
 	ResponseType        string
 	ClientID            string
@@ -46,6 +48,57 @@ type consent struct {
 type consentScope struct {
 	Text     string
 	Cautions []string
+}
+
+// consentScopeGroup is the requested scopes of one weight under its heading: Risk is
+// riskCaution, riskWrite, or riskRead, which also names its look.
+type consentScopeGroup struct {
+	Risk, Title string
+	Scopes      []consentScope
+}
+
+// The weights of the scopes on the consent page, the heaviest first.
+const (
+	riskCaution = "caution"
+	riskWrite   = "write"
+	riskRead    = "read"
+)
+
+// scopeRisk is the weight of the scope s on the consent page: a scope with a caution or of
+// the administration needs the user's attention, one that writes changes things, and the
+// rest only read.
+func scopeRisk(s string) string {
+	switch {
+	case len(scopeCautions[s]) > 0, s == identity.ScopeAdmin, strings.HasPrefix(s, identity.ScopeAdmin+":"):
+		return riskCaution
+	case s == identity.ScopeWrite, strings.HasPrefix(s, identity.ScopeWrite+":"), s == identity.ScopeFollow, s == identity.ScopePush:
+		return riskWrite
+	default:
+		return riskRead
+	}
+}
+
+// groupScopes puts the scopes in their groups, the heaviest first, keeping their order
+// within a group.
+func groupScopes(l *i18n.Localizer, tokens []string) []consentScopeGroup {
+	var groups []consentScopeGroup
+	for _, risk := range []string{riskCaution, riskWrite, riskRead} {
+		g := consentScopeGroup{Risk: risk, Title: l.ServerAuthAuthorizeGroup(risk)}
+		for _, s := range tokens {
+			if scopeRisk(s) != risk {
+				continue
+			}
+			cs := consentScope{Text: scopeDescription(l, s)}
+			for _, caution := range scopeCautions[s] {
+				cs.Cautions = append(cs.Cautions, caution(l))
+			}
+			g.Scopes = append(g.Scopes, cs)
+		}
+		if len(g.Scopes) > 0 {
+			groups = append(groups, g)
+		}
+	}
+	return groups
 }
 
 // The form's answers to the consent page.
@@ -216,13 +269,7 @@ func (h *Handler) renderConsent(w http.ResponseWriter, r *http.Request, a appide
 	if impersonable(a.Client, u) {
 		c.Impersonation = p.L.ServerAuthAuthorizeImpersonation(c.RedirectHost)
 	}
-	for _, s := range a.Scope.Tokens() {
-		cs := consentScope{Text: scopeDescription(p.L, s)}
-		for _, caution := range scopeCautions[s] {
-			cs.Cautions = append(cs.Cautions, caution(p.L))
-		}
-		c.Scopes = append(c.Scopes, cs)
-	}
+	c.ScopeGroups = groupScopes(p.L, a.Scope.Tokens())
 	p.Consent = c
 	p.formAction = []string{redirectSource(u)}
 	h.render(w, r, http.StatusOK, pageAuthorize, p)

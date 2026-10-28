@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's page of their custom emoji (`/settings/custom-emojis`, ADR-0070 §1–§4, create_custom_emojis), below its
-// heading: three regions. "Request a custom emoji" says how many emoji the user has against their limit and holds the
-// form of a request (an image file and a shortcode); an administrator approves it before the emoji exists. "Your
-// requests" lists the requests in every state, newest first, with the reason of a rejection and withdrawing a pending
-// one. "Your custom emoji" lists the emoji the user made: their settings change in a dialog, a new image is requested
-// by choosing another file, and deleting one asks first in an alert dialog (it cannot be undone). What a change did
+// heading: three regions. "Your custom emoji" shows how many emoji the user has against their limit in a meter, and
+// lists the emoji the user made: their settings change in a dialog, a new image is requested by choosing another file,
+// and deleting one asks first in an alert dialog (it cannot be undone). "Your requests" lists the requests in every
+// state, newest first, with the reason of a rejection and withdrawing a pending one. "Request a custom emoji" holds
+// the form of a request (an image file and a shortcode); an administrator approves it before the emoji exists. What a change did
 // stays in a StatusMessage (role="status") of its region, and a failure stays there too (role="alert").
 import {
   Button,
@@ -21,6 +21,7 @@ import {
   Heading,
   Hint,
   InlineError,
+  ProgressMeter,
   Stack,
   StatusMessage,
   Text,
@@ -63,31 +64,40 @@ export function OwnCustomEmojis() {
     <RequirePermission permission="create_custom_emojis">
       <Stack gap="8">
         <Hint size="inherit">{t("client:custom_emojis.description")}</Hint>
-        <Section surface="card" title={t("client:custom_emojis.new.title")}>
+        {/* What the user has comes first, with what they used of their limit; asking for more comes after it. */}
+        <Section surface="card" title={t("client:custom_emojis.list.title")}>
           <Usage />
-          <RequestForm />
+          <EmojiList />
         </Section>
         <Section surface="card" title={t("client:custom_emojis.requests.title")}>
           <RequestList />
         </Section>
-        <Section surface="card" title={t("client:custom_emojis.list.title")}>
-          <EmojiList />
+        <Section surface="card" title={t("client:custom_emojis.new.title")}>
+          <RequestForm />
         </Section>
       </Stack>
     </RequirePermission>
   );
 }
 
-/** How many emoji the user has (with their pending requests to create one) against their limit. */
+/**
+ * How many emoji the user has (with their pending requests to create one) against their limit: a meter, in the danger
+ * tone once the limit is reached; without a limit, a line that says so.
+ */
 function Usage() {
   const t = useT();
   const { used, limit } = useOwnCustomEmojis();
+  if (limit === undefined) return <Hint>{t("client:custom_emojis.usage.unlimited", { used })}</Hint>;
+  const full = used >= limit;
   return (
-    <Hint>
-      {limit === undefined
-        ? t("client:custom_emojis.usage.unlimited", { used })
-        : t("client:custom_emojis.usage", { used, limit: String(limit) })}
-    </Hint>
+    <ProgressMeter
+      kind="meter"
+      label={t("client:custom_emojis.usage.label")}
+      value={Math.min(used, limit)}
+      maxValue={Math.max(limit, 1)}
+      valueText={t("client:custom_emojis.usage.value", { used, limit, full: full ? "true" : "false" })}
+      tone={full ? "danger" : "normal"}
+    />
   );
 }
 

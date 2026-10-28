@@ -237,6 +237,8 @@ export {
 export { AssignedIcon, LegalIcon, SpamIcon, UnassignedIcon, WaitingIcon } from "./Icons";
 export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
 export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
+// The follow button of a profile and of a row of accounts.
+export { FollowButton, type FollowButtonProps, type FollowStatus } from "./FollowButton";
 
 // Timeline.
 export { ContentWarning, type ContentWarningProps } from "./ContentWarning";
@@ -322,6 +324,10 @@ export { InfoPage, type InfoPageProps } from "./InfoPage";
 // The landing page's parts read in order, and the steps that follow an action (web-client/screens/landing.md).
 export { SectionProgress, type SectionProgressPart, type SectionProgressProps } from "./SectionProgress";
 export { Steps, type Step, type StepsProps } from "./Steps";
+// Where a flow of steps stands (the report dialog).
+export { Stepper, type StepperProps } from "./Stepper";
+// Details folded under their summary (the about page).
+export { Disclosure, type DisclosureProps } from "./Disclosure";
 export { Grid, type GridProps } from "./Grid";
 export type { LayoutElement, Space } from "./layout";
 export { Stack, type StackProps } from "./Stack";

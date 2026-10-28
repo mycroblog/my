@@ -66,9 +66,9 @@ type statusAction struct {
 
 // statusAppeal is the user's appeal of an action on the status page.
 type statusAppeal struct {
-	// State says where the appeal stands.
-	State string
-	Text  string
+	// State says where the appeal stands; StateLabel names it in a word or two, for its badge.
+	State, StateLabel string
+	Text              string
 	// Answer is the moderators' explanation of their decision; empty for none.
 	Answer string
 }
@@ -139,7 +139,12 @@ func (h *Handler) restrictionActions(ctx context.Context, l *i18n.Localizer, acc
 func describeAppeal(a *statusAction, l *i18n.Localizer, v appmoderation.TargetActionView, now time.Time) {
 	switch {
 	case v.Appeal != nil:
-		a.Appeal = &statusAppeal{State: l.ServerAuthStatusAppealState(string(v.Appeal.State)), Text: v.Appeal.Text, Answer: v.Appeal.DecisionReason}
+		a.Appeal = &statusAppeal{
+			State:      l.ServerAuthStatusAppealState(string(v.Appeal.State)),
+			StateLabel: l.ServerAuthStatusAppealStateLabel(string(v.Appeal.State)),
+			Text:       v.Appeal.Text,
+			Answer:     v.Appeal.DecisionReason,
+		}
 	case v.Appealable && v.AppealDeadline != nil:
 		a.CanAppeal, a.AppealMax = true, moderation.MaxAppealText
 		a.AppealHint = l.ServerAuthStatusAppealHint(i18n.ServerAuthStatusAppealHintArgs{Days: daysUntil(now, *v.AppealDeadline), Max: float64(moderation.MaxAppealText)})

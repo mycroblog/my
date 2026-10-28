@@ -91,6 +91,10 @@
     "defaultMessage": "{setting, select, allow {このサーバーは AI に対して何も留保していません。拒否したアカウントのページを除き、AI はページを学習にも利用にも使えます。} deny_training {このサーバーは、ページを AI のモデルの学習に使うことを拒否しています。拒否したアカウントのページを除き、AI の検索やアシスタントによる利用は拒否していません。} other {このサーバーは、ページを AI のモデルの学習に使うことと、AI の検索・アシスタント・エージェントで利用することを拒否しています。}}",
     "description": "What the server states to AI crawlers, by the server setting ai_usage (allow, deny_training, or deny)."
   },
+  "about.crawlers.details": {
+    "defaultMessage": "表明の仕方と法的な扱い",
+    "description": "Summary of the folded details under the server's statements to search engines and AI: how it states them, the accounts' own choices, and their legal meaning."
+  },
   "about.crawlers.how": {
     "defaultMessage": "このサーバーは、この表明を robots.txt（既知の AI クローラーの一覧を含む）、ページの robots の meta タグと X-Robots-Tag・Content-Usage・tdm-reservation のヘッダー、/.well-known/tdmrep.json で示します。これらは要請です。主要なクローラーの多くは一部に従うとしていますが、従わないクローラーを技術的に止めるものではありません。",
     "description": "How the server states its search and AI settings: the machine-readable means it uses."

@@ -165,9 +165,37 @@
     @apply inline-flex items-center pointer-coarse:min-h-11;
   }
 
+  /* The requested permissions of the consent page, by their weight: the heaviest first, with a rule at the start of
+     its list in the warning color, and each caution on a line of its own with a warning mark (web-client/README.md G12:
+     the mark is text, so the color is not the only cue). */
+  .scope-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .scope-group h2 {
+    @apply text-base font-bold text-fg;
+  }
+
   .scopes {
     @apply flex flex-col gap-1 rounded-md bg-surface-sunken py-3 ps-8 pe-4;
     list-style: disc;
+  }
+
+  .scope-group-caution .scopes {
+    @apply border-s-4 border-warning;
+  }
+
+  .caution {
+    @apply block font-semibold text-warning;
+  }
+
+  .caution::before {
+    content: "⚠ " / "";
+  }
+
+  /* A warning about the whole page that is no failure: an application this server has not verified. */
+  .caution-note {
+    @apply rounded-md border border-warning bg-warning-bg px-4 py-3 text-sm text-warning;
   }
 
   /* The moderation actions on the status page of an account that moderation keeps out. */
@@ -177,6 +205,21 @@
 
   .moderation-actions li {
     @apply flex flex-col gap-1 rounded-md bg-surface-sunken px-4 py-3;
+  }
+
+  /* An action's name and its state's badge: the shape of the app's StatusBadge (the account status page says the
+     same in the same order, web-client/screens/account-status.md). */
+  .action-title {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center rounded-full bg-surface-raised px-2 py-0.5 text-xs font-semibold text-fg wrap-anywhere;
+    @apply forced-colors:border forced-colors:border-[CanvasText];
+  }
+
+  .status-badge-warning {
+    @apply bg-warning-bg text-warning;
   }
 
   /* An action's appeal, or the form that appeals it, under the action. */

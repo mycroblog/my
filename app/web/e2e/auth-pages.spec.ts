@@ -516,12 +516,14 @@ test.describe("OAuth consent page", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("lists the scopes and offers to approve or deny", async ({ page }) => {
+  test("lists the scopes under the heading of their weight and offers to approve or deny", async ({ page }) => {
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - main:
         - heading [level=1]
-        - list:
-          - listitem
+        - region:
+          - heading [level=2]
+          - list:
+            - listitem
         - button
         - button
     `);
@@ -532,7 +534,7 @@ test.describe("OAuth consent page", () => {
     // unverified notice, the origin, the impersonation alert, and the redirect host.
     const main = page.getByRole("main");
     const host = new URL(thirdPartyClient.redirectURI).host;
-    await expect(main.locator("p.notice")).toHaveCount(1);
+    await expect(main.locator("p.caution-note")).toHaveCount(1);
     await expect(main.locator("p.alert")).toHaveCount(1);
     await expect(main.locator("p.alert")).toContainText(host);
     await expect(main.locator("p.hint")).toContainText(host);
@@ -542,7 +544,7 @@ test.describe("OAuth consent page", () => {
     test.use({ javaScriptEnabled: false });
 
     test("shows the unverified notice, and approving redirects to the client with a code", async ({ page }) => {
-      await expect(page.getByRole("main").locator("p.notice")).toHaveCount(1);
+      await expect(page.getByRole("main").locator("p.caution-note")).toHaveCount(1);
       await page.locator('button[name="decision"][value="approve"]').click();
       await expect(page).toHaveURL((url) => `${url.origin}${url.pathname}` === thirdPartyClient.redirectURI);
       const query = new URL(page.url()).searchParams;

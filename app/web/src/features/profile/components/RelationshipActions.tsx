@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The buttons of a profile that change the viewer's relationship with its account (FR-301 to FR-303):
-// the follow button, whose label is where the follow stands (Follow, Requested, Following, Blocked), and
+// the follow button (@my/ui FollowButton), whose look and label are where the follow stands (Follow, the filled main
+// action; Requested, Following, Blocked, quiet with their icons), and that keeps its place while the relationship
+// loads, and
 // a menu button (WAI-ARIA APG, menu button pattern) with mute, block and report (features/report). Undoing
 // a follow or a request, blocking and unblocking ask first in an alert dialog (WAI-ARIA APG, alert dialog
 // pattern). A follow request to an account of another server says which server it waits for, and no new follow of
@@ -13,6 +15,7 @@ import {
   Cluster,
   Dialog,
   DialogActions,
+  FollowButton,
   Hint,
   IconButton,
   Link,
@@ -39,9 +42,11 @@ export type RelationshipActionsProps = {
   state: RelationshipState;
   /** Whether to show the menu with mute and block next to the follow button (the default). */
   showMenu?: boolean;
+  /** `sm` in a row of a list; `md` (the default) on a profile. */
+  size?: "sm" | "md";
 };
 
-export function RelationshipActions({ account, name, state, showMenu = true }: RelationshipActionsProps) {
+export function RelationshipActions({ account, name, state, showMenu = true, size = "md" }: RelationshipActionsProps) {
   const t = useT();
   switch (state.kind) {
     case "signed-out":
@@ -57,11 +62,12 @@ export function RelationshipActions({ account, name, state, showMenu = true }: R
         </Link>
       );
     case "loading":
-      return null;
+      // The button's place, so that nothing moves when the relationship arrives.
+      return <FollowButton status="loading" label="" size={size} />;
     case "error":
       return <Hint>{t("client:profile.relationship_failed", { reason: state.message })}</Hint>;
     case "other":
-      return <OtherActions account={account} name={name} state={state} showMenu={showMenu} />;
+      return <OtherActions account={account} name={name} state={state} showMenu={showMenu} size={size} />;
   }
 }
 
@@ -70,9 +76,10 @@ type OtherActionsProps = {
   name: string;
   state: Extract<RelationshipState, { kind: "other" }>;
   showMenu: boolean;
+  size: "sm" | "md";
 };
 
-/** The follow button's label and variant, and the change it asks for, for where the follow stands. */
+/** The follow button's label, and the change it asks for, for where the follow stands. */
 function followButtonOf(t: Translate, account: Account, state: OtherActionsProps["state"]) {
   switch (state.follow) {
     case "none": {
@@ -81,18 +88,18 @@ function followButtonOf(t: Translate, account: Account, state: OtherActionsProps
         : state.relationship.followed_by
           ? t("client:profile.follow.back")
           : t("client:profile.follow");
-      return { label, variant: "outline", press: "follow" } as const;
+      return { label, press: "follow" } as const;
     }
     case "requested":
-      return { label: t("client:profile.follow.requested"), variant: "outline", press: "withdraw" } as const;
+      return { label: t("client:profile.follow.requested"), press: "withdraw" } as const;
     case "following":
-      return { label: t("client:profile.follow.following"), variant: "outline", press: "unfollow" } as const;
+      return { label: t("client:profile.follow.following"), press: "unfollow" } as const;
     case "blocking":
-      return { label: t("client:profile.follow.blocked"), variant: "outline", press: "unblock" } as const;
+      return { label: t("client:profile.follow.blocked"), press: "unblock" } as const;
   }
 }
 
-function OtherActions({ account, name, state, showMenu }: OtherActionsProps) {
+function OtherActions({ account, name, state, showMenu, size }: OtherActionsProps) {
   const t = useT();
   // The kind stays while the dialog closes, so that it shows what it asked until it is gone.
   const [dialog, setDialog] = useState<{ isOpen: boolean; kind: Confirmable }>({ isOpen: false, kind: "unfollow" });
@@ -117,17 +124,17 @@ function OtherActions({ account, name, state, showMenu }: OtherActionsProps) {
       <Cluster align="center" gap="2">
         {/* One button for every state, so that it keeps the focus when its label changes. */}
         {offersFollow ? (
-          <Button
-            variant={followButton.variant}
+          <FollowButton
+            status={state.follow}
+            label={followButton.label}
+            size={size}
             isPending={isPending}
-            {...(pendingRemote ? { "aria-describedby": pendingId } : {})}
+            aria-describedby={pendingRemote ? pendingId : undefined}
             onPress={() => {
               if (followButton.press === "follow") change("follow");
               else confirm(followButton.press);
             }}
-          >
-            {followButton.label}
-          </Button>
+          />
         ) : (
           <Hint as="span">{t("client:profile.follow.federation_restricted")}</Hint>
         )}

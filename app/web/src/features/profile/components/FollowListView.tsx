@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The accounts that follow an account, or that it follows: a list of links to their profiles, with a
-// button that loads the next page. A button rather than loading at the end of the scroll keeps the end of
+// The accounts that follow an account, or that it follows: a list where people are found, so each row says who the
+// account is (its name, a line of its profile text, whether it follows the viewer) and can be followed from there
+// (ADR-0110 P1, web-client/screens/profile-follows.md), with a button that loads the next page. A button rather than loading at the end of the scroll keeps the end of
 // the list reachable for keyboard users and the following content in reach (WCAG 2.1.1).
-import { AccountItem, BackIcon, Box, Button, Cluster, EmptyState, Link, Stack, Text } from "@my/ui";
+import { AccountItem, BackIcon, Box, Button, Cluster, EmptyState, Link, Stack, Tag, Text } from "@my/ui";
 import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
+import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
 import type { FollowList } from "../api/accounts";
-import { useFollowList } from "../hooks/useFollowList";
+import { type FollowListState, useFollowList } from "../hooks/useFollowList";
 import { isolate, useProfile } from "../hooks/useProfile";
+import { useRelationship } from "../hooks/useRelationship";
+import { RelationshipActions } from "./RelationshipActions";
 
 export type FollowListViewProps = {
   /** The handle in the address: `username`, or `username@domain`. */
@@ -49,14 +53,7 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
         <Stack as="ul" divided border="y">
           {items.map((item) => (
             <Box as="li" key={item.id}>
-              {/* A right-to-left name lines up with the other rows; only its text runs right to left (web-client/16-look-states-and-wording.md G9). */}
-              <AccountItem
-                name={item.name}
-                avatarSeed={item.id}
-                handle={item.handle}
-                href={item.href}
-                layout="padded"
-              />
+              <FollowListRow item={item} />
             </Box>
           ))}
         </Stack>
@@ -75,5 +72,58 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
         </Cluster>
       )}
     </Stack>
+  );
+}
+
+/**
+ * One account of the list: a link to its profile, with a line of its profile text and whether it follows the viewer
+ * under it, and its follow button (the profile's, without the menu) at the end. The viewer's own row and a signed-out
+ * viewer's rows have no button: the profile offers editing and signing in.
+ */
+function FollowListRow({ item }: { item: FollowListState["items"][number] }) {
+  const t = useT();
+  const relationship = useRelationship(item.account);
+  const followsViewer = relationship.kind === "other" && relationship.relationship.followed_by;
+  const hasButton = relationship.kind === "other" || relationship.kind === "loading";
+  const details =
+    followsViewer || item.noteLine !== "" ? (
+      <>
+        {followsViewer && (
+          <span>
+            <Tag variant="pill">{t("client:profile.tag.follows_you")}</Tag>
+          </span>
+        )}
+        {item.noteLine !== "" && (
+          // The account's own text, in a language the app does not know (web-client/README.md Y10).
+          <Text as="p" dir="auto" lang="" wrap="truncate">
+            {item.noteLine}
+          </Text>
+        )}
+      </>
+    ) : undefined;
+  return (
+    // A right-to-left name lines up with the other rows; only its text runs right to left (web-client/16-look-states-and-wording.md G9).
+    <AccountItem
+      name={item.name}
+      avatar={imageSources(item.account.avatar)}
+      avatarSeed={item.id}
+      handle={item.handle}
+      href={item.href}
+      layout="padded"
+      details={details}
+      trailing={
+        hasButton && (
+          <Box paddingX="4">
+            <RelationshipActions
+              account={item.account}
+              name={item.name}
+              state={relationship}
+              showMenu={false}
+              size="sm"
+            />
+          </Box>
+        )
+      }
+    />
   );
 }

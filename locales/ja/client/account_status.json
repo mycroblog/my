@@ -1,6 +1,6 @@
 {
   "account_status.active.empty": {
-    "defaultMessage": "アカウントに効いている処分はありません",
+    "defaultMessage": "アカウントに適用中の処分はありません",
     "description": "Shown when no moderation action is in effect on the user's account."
   },
   "account_status.active.empty.description": {
@@ -8,7 +8,7 @@
     "description": "Under the heading shown when no moderation action is in effect on the user's account."
   },
   "account_status.active.title": {
-    "defaultMessage": "効いている処分",
+    "defaultMessage": "適用中の処分",
     "description": "Heading of the account status page's region with the moderation actions in effect now."
   },
   "account_status.appeal.cancel": {
@@ -63,10 +63,6 @@
     "defaultMessage": "「{kind}」に異議を申し立てました。モデレーターが決めたら、結果を通知でお知らせします。",
     "description": "Status shown after the user appealed a moderation action. {kind} is what the action does, as the server names it."
   },
-  "account_status.appeal.state": {
-    "defaultMessage": "状態",
-    "description": "Term of the user's appeal of a moderation action: where it stands."
-  },
   "account_status.appeal.state.overturned": {
     "defaultMessage": "処分は撤回されました",
     "description": "State of an appeal after which the moderators lifted the action."
@@ -112,8 +108,16 @@
     "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
   },
   "account_status.appeal.until": {
-    "defaultMessage": "{date}までこの処分に異議を申し立てられます。",
-    "description": "Above the button that appeals a moderation action. {date} is a formatted date and time."
+    "defaultMessage": "{days, plural, other {異議の申し立ては 1 回だけ、あと # 日以内（{date}まで）にできます。}}",
+    "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
+  },
+  "account_status.ends_in": {
+    "defaultMessage": "{days, plural, other {あと # 日で終わります}}",
+    "description": "Under a moderation action in effect on the user's account: when it ends. {days} is the time left, rounded up to whole days. The server's status page says the same."
+  },
+  "account_status.until_lifted": {
+    "defaultMessage": "モデレーターが解除するまで続きます",
+    "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
   },
   "account_status.expires_at": {
     "defaultMessage": "期限",
@@ -167,12 +171,8 @@
     "defaultMessage": "理由の区分",
     "description": "Term of a moderation action on the user's account: the kind of reason the moderators gave."
   },
-  "account_status.state": {
-    "defaultMessage": "状態",
-    "description": "Term of a moderation action on the user's account: whether it is in effect."
-  },
   "account_status.state.active": {
-    "defaultMessage": "効いている",
+    "defaultMessage": "適用中",
     "description": "State of a moderation action that is in effect now."
   },
   "account_status.state.expired": {

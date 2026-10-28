@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The account status page below its heading (FR-715, FR-707): the moderation actions in effect on the user's
-// account and the past ones, each with what it does, its reason, when it was taken and when it ends, the
-// moderators' explanation, the posts it acted on, and its appeal. An action that can still be appealed has a
+// account and the past ones, each with what it does and its state's badge, how long it lasts (in the words of the
+// server's status page, web-client/screens/account-status.md), its reason, when it was taken and when it ends, the
+// moderators' explanation, the posts it acted on, and its appeal with its state's badge. An action that can still be appealed has a
 // button that opens the appeal in an alert dialog (ConfirmDialog: an action is appealed once, and the appeal
 // cannot be changed); one appealed already shows the appeal's state instead, and one whose window closed
 // says so. Dates are in the user's locale and time zone (react-intl's, from the preferences).
 import {
+  AppealIcon,
   Box,
   Button,
+  CheckIcon,
+  Cluster,
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
@@ -18,11 +22,16 @@ import {
   ReasonField,
   Spinner,
   Stack,
+  StatusBadge,
+  type StatusBadgeProps,
   StatusMessage,
   Text,
+  WaitingIcon,
+  WarningIcon,
 } from "@my/ui";
 import { type ReactNode, useId } from "react";
 import { useIntl } from "react-intl";
+import { useNow } from "../../../lib/clock";
 import { type ClientMessageKey, type Translate, useT } from "../../../lib/i18n";
 import { StatusCard } from "../../status";
 import {
@@ -54,6 +63,29 @@ const appealStateLabels: Readonly<Record<ModerationAppealState, ClientMessageKey
   upheld: "client:account_status.appeal.state.upheld",
   overturned: "client:account_status.appeal.state.overturned",
 };
+
+type Badge = { icon: StatusBadgeProps["icon"]; tone: StatusBadgeProps["tone"] };
+
+/** The shape of each state of an action: in effect is a warning; ended waits no more; lifted is done. */
+const stateBadges: Readonly<Record<ModerationActionState, Badge>> = {
+  active: { icon: <WarningIcon />, tone: "warning" },
+  expired: { icon: <WaitingIcon />, tone: "neutral" },
+  lifted: { icon: <CheckIcon />, tone: "success" },
+};
+
+/** The shape of each state of an appeal. */
+const appealStateBadges: Readonly<Record<ModerationAppealState, Badge>> = {
+  pending: { icon: <WaitingIcon />, tone: "accent" },
+  upheld: { icon: <AppealIcon />, tone: "neutral" },
+  overturned: { icon: <CheckIcon />, tone: "success" },
+};
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+/** The whole days left until `value` from `now`, rounded up, as the server's status page counts them. */
+function daysUntil(now: number, value: string): number {
+  return Math.max(0, Math.ceil((Date.parse(value) - now) / dayMs));
+}
 
 /**
  * The kinds that can last for a time; the others (a notice, the actions on posts, a ban) have no end. One of
@@ -139,14 +171,30 @@ function ActionListView({ list, form, empty }: { list: ActionList; form: AppealF
 
 function ActionRow({ action, form }: { action: ModerationAction; form: AppealForm }) {
   const t = useT();
+  const now = useNow();
+  const badge = stateBadges[action.state];
+  // How long an action in effect lasts, first, as the server's status page says it.
+  const lasts =
+    action.state !== "active"
+      ? undefined
+      : action.expires_at !== undefined
+        ? t("client:account_status.ends_in", { days: daysUntil(now, action.expires_at) })
+        : timedKinds.has(action.kind)
+          ? t("client:account_status.until_lifted")
+          : undefined;
   return (
     <Stack as="article" aria-labelledby={`action-${action.id}`} gap="3">
-      {/* The kind in the user's language, as the server names it. */}
-      <Heading level={3} id={`action-${action.id}`} wrap="anywhere">
-        {action.kind_label}
-      </Heading>
+      <Stack gap="1">
+        <Cluster align="center" gap="2" rowGap="1">
+          {/* The kind in the user's language, as the server names it. */}
+          <Heading level={3} id={`action-${action.id}`} wrap="anywhere">
+            {action.kind_label}
+          </Heading>
+          <StatusBadge icon={badge.icon} tone={badge.tone} label={t(stateLabels[action.state])} />
+        </Cluster>
+        {lasts !== undefined && <p>{lasts}</p>}
+      </Stack>
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:account_status.state")}>{t(stateLabels[action.state])}</DescriptionItem>
         <DescriptionItem term={t("client:account_status.reason_category")}>
           {action.reason_category_label}
         </DescriptionItem>
@@ -224,16 +272,23 @@ function ActionPosts({ statusIds }: { statusIds: readonly string[] }) {
 function AppealPart({ action, form }: { action: ModerationAction; form: AppealForm }) {
   const t = useT();
   const intl = useIntl();
+  const now = useNow();
   const headingId = appealHeadingId(action.id);
   let body: ReactNode;
   if (action.appeal !== undefined) {
     body = <AppealFacts appeal={action.appeal} />;
   } else if (action.appealable) {
-    const deadline =
-      action.appeal_deadline === undefined ? undefined : intl.formatDate(action.appeal_deadline, dateTimeFormat);
+    const deadline = action.appeal_deadline;
     body = (
       <Stack align="start" gap="2">
-        {deadline !== undefined && <p>{t("client:account_status.appeal.until", { date: deadline })}</p>}
+        {deadline !== undefined && (
+          <p>
+            {t("client:account_status.appeal.until", {
+              days: daysUntil(now, deadline),
+              date: intl.formatDate(deadline, dateTimeFormat),
+            })}
+          </p>
+        )}
         <Button
           size="sm"
           aria-label={t("client:account_status.appeal.open_of", {
@@ -269,12 +324,13 @@ function AppealPart({ action, form }: { action: ModerationAction; form: AppealFo
 
 function AppealFacts({ appeal }: { appeal: ModerationAppeal }) {
   const t = useT();
+  const badge = appealStateBadges[appeal.state];
   return (
     <Stack gap="3">
+      <div>
+        <StatusBadge icon={badge.icon} tone={badge.tone} label={t(appealStateLabels[appeal.state])} />
+      </div>
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:account_status.appeal.state")}>
-          {t(appealStateLabels[appeal.state])}
-        </DescriptionItem>
         <DescriptionItem term={t("client:account_status.appeal.submitted_at")}>
           <DateTime value={appeal.submitted_at} />
         </DescriptionItem>
