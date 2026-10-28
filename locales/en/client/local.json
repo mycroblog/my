@@ -9,11 +9,11 @@
   },
   "local.sign_in_required.body": {
     "defaultMessage": "Sign in to read the public posts of this server's accounts.",
-    "description": "Text below the heading of the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+    "description": "Description of the sign-in state on the local timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
   },
   "local.sign_in_required.title": {
     "defaultMessage": "The local timeline is for signed-in users",
-    "description": "Heading and document title of the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+    "description": "Heading of the sign-in state on the local timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
   },
   "local.title": {
     "defaultMessage": "Local timeline",

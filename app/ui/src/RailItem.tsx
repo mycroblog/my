@@ -2,7 +2,8 @@
 // One item of the app's navigation (brand kit `RailItem`): an icon, a label and an optional count. It is a link in the
 // bottom tab bar (`form="tab"`: icon over a small label), in the side rail (`row`: icon, label and the count at the
 // end), in the grouped menus of the settings and the admin mode (`section`) and in the signed-out top bar (`top`:
-// text only). The current item is `aria-current="page"`. It knows no
+// text only). The current item is `aria-current="page"` and differs by shape, not by color alone (WCAG 1.4.1): in the tab
+// bar a filled pill stands behind its icon, and in the rows the soft fill covers the whole row. It knows no
 // viewport: AppNavigation chooses between the forms by width (web-client/README.md D2), through `className`.
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
@@ -28,6 +29,9 @@ const railItem = tv({
           "flex min-h-16 w-full flex-col items-center justify-center gap-1 rounded-none bg-transparent px-0.5 text-xs font-bold text-fg-muted",
           "data-current:rounded-none data-current:bg-transparent data-current:text-accent data-hovered:bg-surface-sunken pointer-coarse:min-h-16",
         ],
+        // The pill is drawn behind the icon of the current item only; its room is kept on every item, so that the labels
+        // stay level.
+        pill: "rounded-full px-4 py-0.5 motion-safe:transition-colors",
         badge: "absolute -top-1.5 -inset-e-1 ring-2 ring-surface-raised",
       },
       // A row of the rail: the icon, the label and the count at the end.
@@ -62,8 +66,11 @@ const railItem = tv({
     },
     // The call to action of the top bar (create an account): the brand's coral pill.
     prominent: { true: {} },
+    current: { true: {} },
   },
   compoundVariants: [
+    // The current tab's shape: the filled pill behind its icon.
+    { form: "tab", current: true, class: { pill: "bg-soft" } },
     {
       form: "top",
       prominent: true,
@@ -90,7 +97,10 @@ export type RailItemProps = {
   icon: ReactNode;
   /** The visible label, the link's name without a count. */
   label: string;
-  /** Whether the link is the place the user is in: `aria-current="page"`, the soft fill and the accent label. */
+  /**
+   * Whether the link is the place the user is in: `aria-current="page"`, the accent label, and a shape the other items
+   * lack: the filled pill behind the icon in the tab bar, the soft fill of the whole row elsewhere.
+   */
   current?: boolean;
   /** The count on the icon's corner (at the end of the row from lg), or nothing for an item without a count now. */
   badge?: RailItemBadge;
@@ -102,9 +112,9 @@ export type RailItemProps = {
   prominent?: boolean;
 };
 
-/** A navigation link: icon, label and an optional count; the current one is soft-filled with an accent label. */
+/** A navigation link: icon, label and an optional count; the current one is filled (its icon's pill or its row) with an accent label. */
 export function RailItem({ href, icon, label, current = false, badge, form, prominent, classNames }: RailItemProps) {
-  const slots = railItem({ form, prominent });
+  const slots = railItem({ form, prominent, current });
   return (
     <Link
       href={href}

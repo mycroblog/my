@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, EmptyState, Link, NewItemsButton, Stack } from "@my/ui";
+import { Box, NewItemsButton, Stack } from "@my/ui";
 import { useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useApi, useSessionStatus, useSessionUnreachable } from "../../../lib/auth/SessionProvider";
+import { SignInPrompt } from "../../../lib/auth/SignInPrompt";
 import { useT } from "../../../lib/i18n";
 import { useIsOffline } from "../../../lib/network";
 import { keepHomeTimelineSaved } from "../api/savedHome";
@@ -39,14 +40,10 @@ export function HomeTimeline({ "aria-labelledby": labelledBy, saved = false }: H
     );
   }
   return (
-    <EmptyState
+    <SignInPrompt
       heading={t("client:timeline.signed_out.heading")}
       description={t("client:timeline.signed_out.description")}
-      action={
-        <Link href={`/login?${new URLSearchParams({ return_to: "/home" }).toString()}`} variant="standalone">
-          {t("client:timeline.signed_out.action")}
-        </Link>
-      }
+      returnTo="/home"
     />
   );
 }

@@ -128,6 +128,9 @@ describe("the local timeline", () => {
       await within(screen.getByRole("alert")).findByText("Could not load more posts: Service Unavailable"),
     ).toBeInTheDocument();
     expect(within(feed).getAllByRole("article")).toHaveLength(1);
+    // Shown under the posts as the region's error: what happened, why, and the way to try again (G16).
+    expect(screen.getByText("Could not load more posts")).toBeVisible();
+    expect(screen.getByText("Service Unavailable")).toBeVisible();
     // The feed stops loading by itself; only the retry button asks again.
     expect(screen.queryByRole("button", { name: "Load more posts" })).not.toBeInTheDocument();
 

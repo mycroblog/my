@@ -2,12 +2,12 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { useId } from "react";
 import { TimelineFeed, TimelineSkeleton, timelineQueryOptions } from "../features/timeline";
+import { SignInPrompt } from "../lib/auth/SignInPrompt";
 import { ApiError } from "../lib/errors";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";
 import { RouteError } from "./-layout/RouteStates";
 import { HomeLink } from "./-layout/HomeLink";
-import { SignInLink } from "./-layout/SignInLink";
 
 /**
  * The local timeline (FR-202): the public posts of this server's accounts, and their local posts for a signed-in
@@ -15,7 +15,7 @@ import { SignInLink } from "./-layout/SignInLink";
  */
 export const Route = createFileRoute("/local")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { title: "client:local.title", hideHeading: true, composeButton: true },
+  staticData: { title: "client:local.title", hideHeading: "wide", composeButton: true },
   loader: async ({ context: { queryClient, api } }) => {
     // Cached pages that no write has marked stale are shown at once (and refetched in the background once
     // old); marked or missing ones are fetched and waited for (web-client/README.md S7).
@@ -57,9 +57,12 @@ function LocalError(props: ErrorComponentProps) {
   if (props.error instanceof ApiError && props.error.status === 401) {
     return (
       <>
-        <PageHeading visuallyHidden={false}>{t("client:local.sign_in_required.title")}</PageHeading>
-        <p>{t("client:local.sign_in_required.body")}</p>
-        <SignInLink returnTo="/local" />
+        <PageHeading visuallyHidden={false}>{t("client:local.title")}</PageHeading>
+        <SignInPrompt
+          heading={t("client:local.sign_in_required.title")}
+          description={t("client:local.sign_in_required.body")}
+          returnTo="/local"
+        />
       </>
     );
   }

@@ -72,9 +72,10 @@ declare module "@tanstack/react-router" {
     /**
      * The page's h1 only says where the user is, which the navigation already shows (an item of the navigation
      * with nothing beside its heading): PageHeading hides it visually and keeps it for assistive technology, on
-     * the page and on its pending and error states (web-client/README.md Y5).
+     * the page and on its pending and error states (web-client/README.md Y5). `wide` hides it only where the rail
+     * shows (from `md`): on a phone the heading says which of the timelines this is (screens/home.md).
      */
-    hideHeading?: boolean;
+    hideHeading?: boolean | "wide";
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**

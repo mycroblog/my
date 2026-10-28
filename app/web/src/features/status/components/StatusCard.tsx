@@ -9,7 +9,7 @@ import {
   PostCard,
   PostCardAuthorLink,
   PostCardAvatarLink,
-  PostCardBoostContext,
+  PostCardContext,
   PostCardNameLink,
   PostCardOrigin,
   PostCardTimeLink,
@@ -162,12 +162,12 @@ export function StatusCard({
       {...(variant === "compact" && edited !== null && { details: edited })}
       {...(pinned && {
         // Part of the article's name, so that a reader of the feed hears it before the author.
-        context: <span>{t("client:status.pin.label")}</span>,
+        context: <PostCardContext kind="pin">{t("client:status.pin.label")}</PostCardContext>,
       })}
       {...(!pinned &&
         view.boostedBy !== null && {
           context: (
-            <PostCardBoostContext>
+            <PostCardContext kind="boost">
               {/* The booster's name is the user's text, isolated from the sentence around it (Y10). */}
               {intl.formatMessage(
                 { id: "client:timeline.boosted_by" },
@@ -179,7 +179,7 @@ export function StatusCard({
                   ),
                 },
               )}
-            </PostCardBoostContext>
+            </PostCardContext>
           ),
         })}
       avatar={

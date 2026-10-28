@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Cluster, EmptyState, Feed, Link, Stack, Text, VisuallyHidden } from "@my/ui";
+import { Box, Cluster, EmptyState, Feed, Link, RegionError, Stack, VisuallyHidden } from "@my/ui";
 import type { ReactNode, Ref } from "react";
 import { useT } from "../../../lib/i18n";
 import type { Status, Timeline } from "../api/timelines";
@@ -87,13 +87,17 @@ export function TimelineFeed({
         loadingLabel={t("client:timeline.loading")}
       />
       {loadMoreError !== null && (
-        <Stack align="center" gap="3" padding="4">
-          {/* Announced by useTimeline when it fails; shown here for everyone. */}
-          <Text as="p" align="center">
-            {t("client:timeline.load_more.failed", { reason: loadMoreError })}
-          </Text>
-          <Button onPress={loadMore}>{t("client:timeline.retry")}</Button>
-        </Stack>
+        // Announced by useTimeline when it fails; shown here, under the posts already loaded, in the one form of a
+        // region's failure (web-client/16-look-states-and-wording.md G16).
+        <Box padding="4">
+          <RegionError
+            heading={t("client:timeline.load_more.failed.heading")}
+            reason={loadMoreError}
+            retryLabel={t("client:timeline.retry")}
+            onRetry={loadMore}
+            isRetrying={isLoadingMore}
+          />
+        </Box>
       )}
     </Stack>
   );

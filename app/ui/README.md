@@ -292,6 +292,7 @@ The kit gives every region of data the same four states
 | State | Component | Notes |
 | --- | --- | --- |
 | Empty | `EmptyState` | A heading of one short fact, a description of what appears here, and an action that leads on. `headingLevel` is one below the region's heading. |
+| Signed out | `SignInState` | The empty state of a region that needs a session: the sign-in icon, the fact, what signing in shows, and the link to sign in. Every such region uses it. |
 | Loading | `PostSkeleton`, `AccountRowSkeleton`, `NotificationRowSkeleton` (or `Skeleton` shapes) for the first page of a list; `Spinner` for a button or a small region | Never both in one region. The region carries `aria-busy` and one loading label. |
 | Error | `RegionError` | What happened (`heading`), the reason (`reason`) and the retry button (`retryLabel`, `onRetry`, `isRetrying`). It replaces only the region; content already loaded stays. |
 | Offline | `OfflineBanner` | One `role="status"` bar from the app layout; regions show their own error only when a request fails. |
@@ -734,7 +735,7 @@ The test procedure is in [web-client/README.md §7](../../docs/architecture/web-
 | `PostCardTimeLink` | `time`, `details` | The muted link on a `<time>` or on the mark of an edited post; `dense` drops the 24 px minimum height (QuoteCard's header). |
 | `PostCardAvatarLink` | `avatar` | The avatar as a second link to the profile: out of the tab order, `aria-hidden`. |
 | `PostCardNameLink` | `context`, a sentence | A name inside a sentence ("Bob boosted"), in a `<bdi>`; notification rows use it too. |
-| `PostCardBoostContext` | `context` | The boost icon and the sentence. |
+| `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`) and the sentence; every context line uses it. |
 | `PostCardOrigin` | `actions` | The link from a post of another server to its own page (`href`, `host`, `label`). |
 
 Counts in `details` are `<Text numeric>`; several parts under a body are a `<Stack gap="3" shrink>`; `PostContent` takes `size="lg"` for the post a page is about.

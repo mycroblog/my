@@ -151,13 +151,9 @@
     "defaultMessage": "もう一度試す",
     "description": "Button at the end of a timeline that tries again to load older posts after a failure."
   },
-  "timeline.signed_out.action": {
-    "defaultMessage": "ログイン",
-    "description": "Link on the home page, when nobody is signed in, that opens the sign-in page."
-  },
   "timeline.signed_out.description": {
     "defaultMessage": "ログインすると、フォローしている人の投稿を読めます。",
-    "description": "Text on the home page when nobody is signed in."
+    "description": "Description of the sign-in state that the home page shows when nobody is signed in, under its heading and above the link to sign in."
   },
   "timeline.signed_out.heading": {
     "defaultMessage": "ログインしていません",
@@ -170,5 +166,9 @@
   "timeline.empty.quotes.description": {
     "defaultMessage": "この投稿を引用した投稿がここに表示されます。",
     "description": "Description of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.load_more.failed.heading": {
+    "defaultMessage": "続きの投稿を読み込めませんでした",
+    "description": "Heading of the error shown at the end of a timeline when older posts failed to load, above the reason and the button to try again."
   }
 }
