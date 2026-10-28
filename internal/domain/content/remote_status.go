@@ -32,11 +32,13 @@ func DeclaredMediaType(as2Type, mediaType string) MediaType {
 }
 
 // RemoteRevisionSource is the remote subtype of a revision (remote_status_revisions): the
-// activity that carried it, "" for a revision made from a fetch, and the version of the HTML
-// policy that sanitized its bodies (ADR-0019 §2).
+// activity that carried it, "" for a revision made from a fetch, the version of the HTML
+// policy that sanitized its bodies (ADR-0019 §2), and the number of media attachments of the
+// received post after the first MaxAttachments, which are left out.
 type RemoteRevisionSource struct {
-	ActivityURI       string
-	HTMLPolicyVersion int
+	ActivityURI        string
+	HTMLPolicyVersion  int
+	OmittedAttachments int
 }
 
 // CustomEmoji is a custom emoji, unique by Shortcode on Domain ("" for this instance). URI is

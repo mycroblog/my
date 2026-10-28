@@ -54,6 +54,23 @@ describe("MediaGrid", () => {
     expect(screen.getAllByRole("img")).toHaveLength(4);
   });
 
+  it("marks the attachments it leaves out with a link to the post that has them", () => {
+    const props = { items, noDescriptionLabel: "No description", revealLabel: "Show sensitive media", audioLabels };
+    const { rerender } = render(<MediaGrid {...props} />);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    rerender(
+      <MediaGrid
+        {...props}
+        more={{ text: "+2", label: "+2 more — see the original post", href: "https://remote.example/@carol/1" }}
+      />,
+    );
+    const link = screen.getByRole("link", { name: "+2 more — see the original post" });
+    expect(link).toHaveTextContent("+2");
+    expect(link).toHaveAttribute("href", "https://remote.example/@carol/1");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("conceals sensitive media until the toggle is pressed, keeping focus on it", async () => {
     const user = userEvent.setup();
     const onRevealedChange = vi.fn();

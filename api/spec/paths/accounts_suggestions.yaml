@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAccountSuggestions
+  summary: Suggest accounts to follow
+  description: |
+    Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+    administrators feature (the instance setting `featured_accounts`), in the order they gave,
+    then the accounts that published a public or local post in the last 30 days, the one that
+    posted last first. Each account comes once.
+
+    Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+    it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+    deactivated, deleted, or suspended are left out. There is no paging.
+  tags: [accounts]
+  security:
+    - oauth2: ["read:accounts"]
+  parameters:
+    - name: limit
+      in: query
+      required: false
+      description: The maximum number of suggestions.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 40
+        default: 10
+  responses:
+    "200":
+      description: The suggestions, featured accounts first.
+      headers:
+        Cache-Control:
+          description: "`no-store`: the suggestions depend on the viewer and change as it follows."
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/AccountSuggestion.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

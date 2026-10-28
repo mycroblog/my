@@ -76,6 +76,19 @@ async function openForm(
   return { sheet, text: await within(sheet).findByRole("textbox", { name: label }) };
 }
 
+/**
+ * Waits for the Unicode emoji to fill the grid of `picker`: its dialog, search field and section buttons are there at
+ * once, and the grid is busy until the data has loaded, which takes longer on a loaded machine.
+ */
+async function emojiLoaded(picker: HTMLElement) {
+  await waitFor(
+    () => {
+      expect(within(picker).getByRole("grid")).not.toHaveAttribute("aria-busy");
+    },
+    { timeout: 5000 },
+  );
+}
+
 describe("the picker of the post form", () => {
   test("offers the Unicode emoji on a server without custom emoji, found by a Japanese keyword", async () => {
     server.use(
@@ -91,7 +104,8 @@ describe("the picker of the post form", () => {
     expect(buttons).toHaveLength(1);
     await user.click(buttons[0] as HTMLElement);
     const picker = await screen.findByRole("dialog", { name: "絵文字" });
-    const search = await within(picker).findByRole("searchbox", { name: "絵文字を検索" }, { timeout: 5000 });
+    const search = await within(picker).findByRole("searchbox", { name: "絵文字を検索" });
+    await emojiLoaded(picker);
     await waitFor(() => {
       expect(search).toHaveFocus();
     });
@@ -133,9 +147,10 @@ describe("the picker of the post form", () => {
     const { sheet, text } = await openForm(user);
 
     await user.click(within(sheet).getByRole("button", { name: "Add emoji" }));
-    const picker = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
+    const picker = await screen.findByRole("dialog", { name: "Emoji" });
     // Nothing used yet: the default reactions come first.
-    await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 });
+    await within(picker).findByRole("searchbox", { name: "Search emoji" });
+    await emojiLoaded(picker);
     expect(within(picker).getAllByRole("gridcell")[0]).toHaveAccessibleName("thumbs up");
 
     await user.click(within(picker).getByRole("button", { name: "Skin tone" }));
@@ -152,7 +167,7 @@ describe("the picker of the post form", () => {
     expect(frequentEmojisKey.read().map((use) => use.emoji)).toEqual(["👋"]);
 
     await user.click(within(sheet).getByRole("button", { name: "Add emoji" }));
-    const again = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
+    const again = await screen.findByRole("dialog", { name: "Emoji" });
     const headings = within(again).getAllByRole("rowheader");
     const cells = within(again).getAllByRole("gridcell");
     expect(headings[0]).toHaveTextContent("Frequently used");
@@ -166,8 +181,9 @@ describe("the picker of the post form", () => {
     await user.type(text, "Hi");
 
     await user.click(within(sheet).getByRole("button", { name: "Add emoji" }));
-    const picker = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
-    await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 });
+    const picker = await screen.findByRole("dialog", { name: "Emoji" });
+    await within(picker).findByRole("searchbox", { name: "Search emoji" });
+    await emojiLoaded(picker);
     await user.keyboard("{Shift>}");
     await user.click(within(picker).getAllByRole("gridcell", { name: "thumbs up" })[0] as HTMLElement);
     await user.keyboard("{/Shift}");
@@ -196,8 +212,9 @@ describe("the picker of the post form", () => {
     await user.type(text, "Hi");
 
     await user.click(within(sheet).getByRole("button", { name: "Add emoji" }));
-    const picker = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
-    const search = await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 });
+    const picker = await screen.findByRole("dialog", { name: "Emoji" });
+    const search = await within(picker).findByRole("searchbox", { name: "Search emoji" });
+    await emojiLoaded(picker);
     await waitFor(() => {
       expect(search).toHaveFocus();
     });
@@ -213,7 +230,7 @@ describe("the picker of the post form", () => {
     });
 
     await user.click(within(sheet).getByRole("button", { name: "Add emoji" }));
-    const again = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
+    const again = await screen.findByRole("dialog", { name: "Emoji" });
     const headings = within(again).getAllByRole("rowheader");
     const cells = within(again).getAllByRole("gridcell");
     expect(headings[0]).toHaveTextContent("Frequently used");
@@ -238,8 +255,9 @@ describe("the picker of the profile", () => {
     await user.type(name, "Alice");
 
     await user.click(await screen.findByRole("button", { name: "Add emoji to the display name" }));
-    const picker = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
-    await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 });
+    const picker = await screen.findByRole("dialog", { name: "Emoji" });
+    await within(picker).findByRole("searchbox", { name: "Search emoji" });
+    await emojiLoaded(picker);
     await user.click(within(picker).getByRole("gridcell", { name: ":blobcat:" }));
     await waitFor(() => {
       expect(name).toHaveValue("Alice :blobcat: ");
@@ -248,7 +266,7 @@ describe("the picker of the profile", () => {
     const bio = screen.getByRole("textbox", { name: "Bio" });
     await user.clear(bio);
     await user.click(screen.getByRole("button", { name: "Add emoji to the bio" }));
-    const again = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
+    const again = await screen.findByRole("dialog", { name: "Emoji" });
     await user.type(await within(again).findByRole("searchbox", { name: "Search emoji" }), "grinning face");
     await user.click(within(again).getByRole("gridcell", { name: "grinning face" }));
     await waitFor(() => {

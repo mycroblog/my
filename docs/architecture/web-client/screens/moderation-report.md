@@ -1,3 +1,9 @@
+---
+start: "/moderation/reports"
+persona: "marco"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+---
+
 ## 通報の詳細（`/moderation/reports/{id}`）
 
 `manage_reports` を持つモデレーターが、1 つの通報の内容と証拠を読み、処分するか処分せずに解決する画面（FR-710、NFR-MOD-4、[§14](../14-admin.md)）。

@@ -54,7 +54,11 @@ type RemoteStatusInput struct {
 	Hashtags    []string
 	Emojis      []RemoteEmojiInput
 	Attachments []RemoteAttachmentInput
-	Poll        *RemotePollInput
+	// OmittedAttachments is the number of media attachments that the post has after
+	// Attachments and that were left out; the attachments of Attachments after the first
+	// MaxAttachments are left out and counted too.
+	OmittedAttachments int
+	Poll               *RemotePollInput
 	// Quote is the post that the post quotes, nil for none (ADR-0069). It is recorded with the
 	// status; a revision without one takes the quote away, and one with another is ignored.
 	Quote *RemoteQuoteInput
@@ -353,7 +357,7 @@ func (s *Service) remoteRevision(ctx context.Context, tx uow.Tx, in RemoteStatus
 	if rev.EmojiIDs, err = s.RecordRemoteEmojis(ctx, tx, in.AuthorAccountID, in.AuthorDomain, in.Emojis); err != nil {
 		return content.Revision{}, err
 	}
-	if rev.Attachments, err = s.remoteAttachments(ctx, tx, in); err != nil {
+	if rev.Attachments, rev.Remote.OmittedAttachments, err = s.remoteAttachments(ctx, tx, in); err != nil {
 		return content.Revision{}, err
 	}
 	if p := in.Poll; p != nil && len(p.Options) > 0 {
@@ -428,21 +432,24 @@ func hasHost(uri, domain string) bool {
 	return err == nil && u.Host != "" && strings.EqualFold(u.Host, domain)
 }
 
-// remoteAttachments records the attachments of a remote post as remote media files of the
-// author, with their declared values (federation.md §9).
-func (s *Service) remoteAttachments(ctx context.Context, tx uow.Tx, in RemoteStatusInput) ([]content.Attachment, error) {
+// remoteAttachments records the first MaxAttachments attachments of a remote post as remote
+// media files of the author, with their declared values (federation.md §9), and returns them
+// with the number of the attachments left out.
+func (s *Service) remoteAttachments(ctx context.Context, tx uow.Tx, in RemoteStatusInput) ([]content.Attachment, int, error) {
+	omitted := max(in.OmittedAttachments, 0)
 	if len(in.Attachments) == 0 {
-		return nil, nil
+		return nil, omitted, nil
 	}
 	if s.d.RemoteMedia == nil {
-		return nil, errors.New("content: remote statuses need a remote media recorder")
+		return nil, 0, errors.New("content: remote statuses need a remote media recorder")
 	}
 	var out []content.Attachment
 	for _, a := range in.Attachments {
-		if len(out) == MaxAttachments {
-			break
-		}
 		if a.URL == "" {
+			continue
+		}
+		if len(out) == MaxAttachments {
+			omitted++
 			continue
 		}
 		description := truncateRunes(strings.TrimSpace(s.d.Sanitizer.PlainText(a.Description)), MaxMediaDescription)
@@ -456,14 +463,14 @@ func (s *Service) remoteAttachments(ctx context.Context, tx uow.Tx, in RemoteSta
 			Width:   max(a.Width, 0), Height: max(a.Height, 0), Blurhash: a.Blurhash, Focus: focus, Description: description,
 		})
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if slices.ContainsFunc(out, func(o content.Attachment) bool { return o.MediaID == m.MediaID }) {
 			continue
 		}
 		out = append(out, content.Attachment{Position: len(out), MediaID: m.MediaID, Description: description})
 	}
-	return out, nil
+	return out, omitted, nil
 }
 
 // observePoll records the counts of a remote poll when they supersede the newest observation

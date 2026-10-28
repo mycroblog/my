@@ -3,8 +3,8 @@ get:
   operationId: listReports
   summary: List the reports
   description: |
-    The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-    permission.
+    The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+    Needs the `manage_reports` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]
@@ -15,6 +15,32 @@ get:
       description: Keep only the reports in this state; omitted keeps both.
       schema:
         $ref: ../components/schemas/AdminReportState.yaml
+    - name: category
+      in: query
+      required: false
+      description: Keep only the reports of this category; omitted keeps every category.
+      schema:
+        $ref: ../components/schemas/ReportCategory.yaml
+    - name: assignee
+      in: query
+      required: false
+      description: |
+        Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+        that nobody handles, or the ID of a local account. Omitted keeps every report; any
+        other value is a `400`.
+      schema:
+        type: string
+        minLength: 1
+    - name: order
+      in: query
+      required: false
+      description: |
+        `newest` (the default) lists the most recently filed report first; `oldest` lists the
+        report that has waited longest first. The cursor continues the page in the same order.
+      schema:
+        type: string
+        enum: [newest, oldest]
+        default: newest
     - $ref: ../components/parameters/Cursor.yaml
     - $ref: ../components/parameters/Limit.yaml
   responses:

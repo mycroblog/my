@@ -191,7 +191,7 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 	if obj.Mentions, obj.Hashtags, obj.Emojis, err = n.tags(o.get("tag")); err != nil {
 		return nil, err
 	}
-	obj.Attachments = n.attachments(o.get("attachment"))
+	obj.Attachments, obj.OmittedAttachments = n.attachments(o.get("attachment"))
 	if t == ObjectQuestion {
 		obj.Poll = n.poll(o)
 	}
@@ -533,13 +533,12 @@ func (n normalizer) tags(v any) (mentions []Mention, hashtags []string, emojis [
 
 var attachmentTypes = []string{"Document", "Image", "Video", "Audio"}
 
-// attachments reads up to MaxAttachments media attachments. A bare Link is not an attachment.
-func (n normalizer) attachments(v any) []Attachment {
+// attachments reads up to MaxAttachments media attachments and counts the media attachments
+// after them, which are left out. A bare Link is not an attachment.
+func (n normalizer) attachments(v any) ([]Attachment, int) {
 	var out []Attachment
+	omitted := 0
 	for _, v := range list(v) {
-		if len(out) == MaxAttachments {
-			break
-		}
 		o, ok := v.(object)
 		if !ok {
 			continue
@@ -550,6 +549,10 @@ func (n normalizer) attachments(v any) []Attachment {
 		}
 		l := n.firstLink(o.get("url"))
 		if l.Href == "" {
+			continue
+		}
+		if len(out) == MaxAttachments {
+			omitted++
 			continue
 		}
 		a := Attachment{
@@ -573,7 +576,7 @@ func (n normalizer) attachments(v any) []Attachment {
 		}
 		out = append(out, a)
 	}
-	return out
+	return out, omitted
 }
 
 // links reads a property whose values are IRIs or Links.

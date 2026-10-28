@@ -1,3 +1,10 @@
+---
+start: "/settings"
+persona: "hana"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+starts: {"ナビゲーションから設定を開き、二要素認証がオンかを確かめる": "/home"}
+---
+
 ## 設定のトップ（`/settings`）
 
 設定のメニュー（[settings-menu.md](settings-menu.md)）と並ぶ本文。広い画面ではメニューの横、`md` 未満ではメニューの下に出る。
