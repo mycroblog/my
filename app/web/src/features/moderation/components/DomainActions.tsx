@@ -56,7 +56,7 @@ import {
   useLiftDomainAction,
 } from "../hooks/useDomainActions";
 import { DomainBlockCsv } from "./DomainBlockCsv";
-import { DateTime, DetailSection, DomainName, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, DomainName, RecordTable, RequirePermission } from "./parts";
 
 const kindDescriptions: Readonly<Record<DomainActionKind, ClientMessageKey>> = {
   limit: "client:admin.domain_actions.kind.limit.description",
@@ -101,14 +101,14 @@ export function DomainActions(props: DomainActionsProps) {
   return (
     <RequirePermission permission="manage_domains">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.domain_actions.new.title")}>
+        <Section surface="card" title={t("client:admin.domain_actions.new.title")}>
           {/* Another domain from the URL starts another form (web-client/README.md R10). */}
           <NewDomainActionForm key={props.domain ?? ""} initialDomain={props.domain ?? ""} />
-        </DetailSection>
+        </Section>
         <DomainActionTabs {...props} />
-        <DetailSection title={t("client:admin.domain_actions.csv.title")}>
+        <Section surface="card" title={t("client:admin.domain_actions.csv.title")}>
           <DomainBlockCsv />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

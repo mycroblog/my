@@ -27,7 +27,7 @@ import {
 import { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
-import { DateTime, DetailSection, RequirePermission } from "../../moderation";
+import { DateTime, Section, RequirePermission } from "../../moderation";
 import { characterCount } from "../hooks/languages";
 import {
   type AdminServiceClosure,
@@ -67,9 +67,9 @@ export function ServiceClosureSettings() {
         {/* In the page from the first render, empty, so that what a change did is announced. */}
         <StatusMessage>{status}</StatusMessage>
         {closure.state === "none" && (
-          <DetailSection title={t("client:admin.closure.announce.title")}>
+          <Section surface="card" title={t("client:admin.closure.announce.title")}>
             <AnnounceForm closure={closure} onDone={setStatus} />
-          </DetailSection>
+          </Section>
         )}
         {closure.state === "announced" && <Announced closure={closure} onDone={setStatus} />}
         {(closure.state === "closed" || closure.state === "delivery_completed") && <Closed closure={closure} />}
@@ -86,24 +86,24 @@ function Announced({ closure, onDone }: { closure: AdminServiceClosure; onDone: 
   const due = closure.closes_at !== undefined && new Date(closure.closes_at).getTime() <= now;
   return (
     <>
-      <DetailSection title={t("client:admin.closure.current.title")}>
+      <Section surface="card" title={t("client:admin.closure.current.title")}>
         <Stack gap="4">
           <Schedule closure={closure} />
           {closure.short_notice && <ShortNotice />}
           {due && <Callout>{t("client:admin.closure.due")}</Callout>}
           <Withdraw onDone={onDone} />
         </Stack>
-      </DetailSection>
-      <DetailSection title={t("client:admin.closure.change.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.closure.change.title")}>
         <AnnounceForm closure={closure} onDone={onDone} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.closure.close.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.closure.close.title")}>
         <Stack gap="4">
           <Hint size="inherit">{t("client:admin.closure.close.description")}</Hint>
           <ClosureCheck />
           <CloseService due={due} closesAt={closure.closes_at} onDone={onDone} />
         </Stack>
-      </DetailSection>
+      </Section>
     </>
   );
 }
@@ -336,10 +336,10 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
   const completed = closure.state === "delivery_completed";
   return (
     <>
-      <DetailSection title={t("client:admin.closure.closed.title")}>
+      <Section surface="card" title={t("client:admin.closure.closed.title")}>
         <Schedule closure={closure} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.closure.progress.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.closure.progress.title")}>
         <Stack gap="4">
           <Callout>
             {t(completed ? "client:admin.closure.progress.completed" : "client:admin.closure.progress.running")}
@@ -350,7 +350,7 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
             <Progress progress={closure.progress} />
           )}
         </Stack>
-      </DetailSection>
+      </Section>
     </>
   );
 }

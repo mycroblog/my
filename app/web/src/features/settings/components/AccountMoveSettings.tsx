@@ -6,8 +6,8 @@
 // export takes along), and asks for the password, or a passkey for a user without one. An account that has moved gets
 // where it moved to and the dialog that cancels the move. What a move or its cancellation did stays on the page in one
 // StatusMessage (role="status") at its top, which stays in place when the page turns from one kind into the other.
-import { Box, Button, ConfirmDialog, Heading, InlineError, Link, Stack, StatusMessage, Text, TextField } from "@my/ui";
-import { type ReactNode, useId, useState } from "react";
+import { Box, Button, ConfirmDialog, InlineError, Link, Section, Stack, StatusMessage, Text, TextField } from "@my/ui";
+import { useState } from "react";
 import { useIntl } from "react-intl";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
@@ -35,19 +35,6 @@ export function AccountMoveSettings() {
       ) : (
         <MovedAccount target={movedTo} onStatus={setStatus} />
       )}
-    </Stack>
-  );
-}
-
-/** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
     </Stack>
   );
 }

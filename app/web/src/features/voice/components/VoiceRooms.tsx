@@ -9,17 +9,17 @@ import {
   type AvatarStackItem,
   Button,
   EmptyState,
-  Heading,
   Link,
   MicrophoneIcon,
   RegionError,
+  Section,
   Spinner,
   Stack,
   Text,
   VoiceIcon,
   VoiceRoomCard,
 } from "@my/ui";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
@@ -194,20 +194,16 @@ export function VoiceRail() {
 /** The open rooms with `tag`, at the top of the hashtag's page (回答 10); absent when there are none. */
 export function TagVoiceRooms({ tag }: { tag: string }) {
   const t = useT();
-  const headingId = useId();
   const rooms = useTagVoiceRooms(tag);
   if (rooms.length === 0) return null;
+  // The hashtag is the user's text, in any script (web-client/README.md Y10).
   return (
-    <Stack as="section" gap="3" aria-labelledby={headingId}>
-      <Heading level={2} id={headingId}>
-        {/* The hashtag is the user's text, in any script (web-client/README.md Y10). */}
-        <span dir="auto">{t("client:voice.tag.title", { tag })}</span>
-      </Heading>
+    <Section title={<span dir="auto">{t("client:voice.tag.title", { tag })}</span>}>
       <Stack as="ul" gap="3">
         {rooms.map((room) => (
           <VoiceRoomItem key={room.id} room={room} headingLevel={3} />
         ))}
       </Stack>
-    </Stack>
+    </Section>
   );
 }

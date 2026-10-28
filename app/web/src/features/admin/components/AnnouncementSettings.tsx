@@ -29,7 +29,7 @@ import {
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
-import { DateTime, DetailSection, RequirePermission } from "../../moderation";
+import { DateTime, Section, RequirePermission } from "../../moderation";
 import { type AdminAnnouncement, type AnnouncementState, announcementTextLimit } from "../api/announcements";
 import {
   type AnnouncementActions,
@@ -52,12 +52,12 @@ export function AnnouncementSettings() {
     <RequirePermission permission="manage_announcements">
       <Stack gap="8">
         <Hint size="inherit">{t("client:admin.announcements.description")}</Hint>
-        <DetailSection title={t("client:admin.announcements.new.title")}>
+        <Section surface="card" title={t("client:admin.announcements.new.title")}>
           <NewAnnouncementForm />
-        </DetailSection>
-        <DetailSection title={t("client:admin.announcements.list.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.announcements.list.title")}>
           <AnnouncementList />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );

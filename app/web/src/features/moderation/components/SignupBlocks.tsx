@@ -54,7 +54,7 @@ import {
   useSignupBlockForm,
   useSignupBlocks,
 } from "../hooks/useSignupBlocks";
-import { DateTime, DetailSection, DomainName, RecordTable, RequirePermission } from "./parts";
+import { DateTime, Section, DomainName, RecordTable, RequirePermission } from "./parts";
 import { SignupBlockImportForm } from "./SignupBlockImport";
 import {
   day,
@@ -111,12 +111,12 @@ export function SignupBlocks(props: SignupBlocksProps) {
   return (
     <RequirePermission permission="manage_accounts">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.signup_blocks.new.title")}>
+        <Section surface="card" title={t("client:admin.signup_blocks.new.title")}>
           <NewSignupBlockForm />
-        </DetailSection>
-        <DetailSection title={t("client:admin.signup_blocks.import.title")}>
+        </Section>
+        <Section surface="card" title={t("client:admin.signup_blocks.import.title")}>
           <SignupBlockImportForm />
-        </DetailSection>
+        </Section>
         <SignupBlockTabs {...props} />
       </Stack>
     </RequirePermission>

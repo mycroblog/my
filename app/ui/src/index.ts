@@ -370,7 +370,7 @@ export {
   type ReactionEmojiProps,
   type ReactionRowProps,
 } from "./ReactionChip";
-export { DetailSection, type DetailSectionProps } from "./DetailSection";
+export { Section, type SectionProps } from "./Section";
 export { BannerImage, type BannerImageProps } from "./BannerImage";
 export { IconLabel, type IconLabelProps } from "./IconLabel";
 export { Callout, type CalloutProps } from "./Callout";

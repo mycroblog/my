@@ -12,7 +12,7 @@ import {
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
-  DetailSection,
+  Section,
   Hint,
   Link,
   ReasonField,
@@ -44,16 +44,16 @@ function AppealPage({ id }: { id: string }) {
   const review = useAppealReview(id, focusDecision);
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.appeal.appeal.title")}>
+      <Section surface="card" title={t("client:admin.appeal.appeal.title")}>
         <AppealSummary appeal={appeal} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.appeal.action.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.appeal.action.title")}>
         <ActionSummary appeal={appeal} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.appeal.decision.title")} headingRef={decisionHeadingRef}>
+      </Section>
+      <Section surface="card" title={t("client:admin.appeal.decision.title")} headingRef={decisionHeadingRef}>
         <StatusMessage>{review.status}</StatusMessage>
         {appeal.state === "pending" ? <PendingDecision review={review} /> : <Decision appeal={appeal} />}
-      </DetailSection>
+      </Section>
       <DecisionDialog review={review} appeal={appeal} />
     </Stack>
   );

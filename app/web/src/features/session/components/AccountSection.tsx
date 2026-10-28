@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, Heading, Hint, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
-import { useId, useState } from "react";
+import { Button, Hint, Link, RegionError, Section, Spinner, Stack, Text } from "@my/ui";
+import { useState } from "react";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { useSignOut } from "../hooks/useSignOut";
@@ -9,14 +9,10 @@ import { useViewer } from "../hooks/useViewer";
 /** The account section of the settings page: who is signed in and the sign-out button, or a link to sign in. */
 export function AccountSection() {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:session.account.title")}
-      </Heading>
+    <Section title={t("client:session.account.title")}>
       <AccountStatus />
-    </Stack>
+    </Section>
   );
 }
 

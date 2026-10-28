@@ -8,18 +8,18 @@ import {
   DescriptionList,
   DialogTrigger,
   EmptyState,
-  Heading,
   Hint,
   InlineError,
   Radio,
   RadioGroup,
   RegionError,
+  Section,
   Spinner,
   Stack,
   StatusMessage,
   Text,
 } from "@my/ui";
-import { type ReactNode, useId, useState } from "react";
+import { useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFormatMoney } from "../../costs";
@@ -112,19 +112,6 @@ function ReturnMessage({
     <StatusMessage tone={returned === "checkout-success" && !confirming ? "success" : "neutral"}>
       {message}
     </StatusMessage>
-  );
-}
-
-/** A section of the page: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" gap="4" aria-labelledby={headingId}>
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
-    </Stack>
   );
 }
 

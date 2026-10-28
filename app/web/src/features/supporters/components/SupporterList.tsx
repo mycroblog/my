@@ -4,16 +4,15 @@ import {
   Button,
   Cluster,
   EmptyState,
-  Heading,
   Hint,
   Link,
   RegionError,
+  Section,
   Spinner,
   Stack,
   Switch,
   Text,
 } from "@my/ui";
-import { type ReactNode, useId } from "react";
 import { handleOf } from "../../../lib/handle";
 import { useT } from "../../../lib/i18n";
 import { imageSources } from "../../../lib/images";
@@ -26,19 +25,6 @@ import {
   useSupporterList,
   useSupporterListing,
 } from "../hooks/useSupporterList";
-
-/** A section: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" gap="3" aria-labelledby={headingId}>
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
-    </Stack>
-  );
-}
 
 /**
  * The body of the supporter list (`/about/supporters`, ADR-0071 §4): the members who chose to be listed, under a
@@ -113,13 +99,15 @@ export function SupporterListView() {
 }
 
 function PlanGroup({ group }: { group: SupporterGroup }) {
-  const headingId = useId();
+  // The administrators' name of the plan, in a language the app does not know (web-client/README.md Y10).
   return (
-    <Stack as="section" gap="3" aria-labelledby={headingId}>
-      {/* The administrators' name of the plan, in a language the app does not know (web-client/README.md Y10). */}
-      <Heading level={2} id={headingId} dir="auto" lang="">
-        {group.plan.name}
-      </Heading>
+    <Section
+      title={
+        <span dir="auto" lang="">
+          {group.plan.name}
+        </span>
+      }
+    >
       <Stack as="ul" gap="3">
         {group.members.map((member) => (
           <li key={member.account.id}>
@@ -127,7 +115,7 @@ function PlanGroup({ group }: { group: SupporterGroup }) {
           </li>
         ))}
       </Stack>
-    </Stack>
+    </Section>
   );
 }
 

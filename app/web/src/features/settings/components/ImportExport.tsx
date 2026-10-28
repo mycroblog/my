@@ -14,11 +14,12 @@ import {
   InlineError,
   Radio,
   RadioGroup,
+  Section,
   Stack,
   StatusMessage,
   Text,
 } from "@my/ui";
-import { type ReactNode, useId } from "react";
+import { useId } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
@@ -98,19 +99,6 @@ export function CsvExportsSection() {
     <Section title={t("client:settings.import_export.export.title")}>
       <ExportsView exports={exports} />
     </Section>
-  );
-}
-
-/** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
-    </Stack>
   );
 }
 

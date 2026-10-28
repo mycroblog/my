@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The links to the server's terms of service and privacy policy. Their pages are routes of the app (information
 // pages, readable without signing in), so a link opens them in the same tab (web-client/README.md Y12).
-import { Box, Cluster, Heading, Stack } from "@my/ui";
+import { Box, Cluster, Section } from "@my/ui";
 import { useId } from "react";
 import { useT } from "../../../lib/i18n";
 import { useDocumentLinks } from "../hooks/useDocumentLinks";
@@ -45,11 +45,8 @@ export function DocumentsSection() {
   const links = useDocumentLinks();
   if (links.length === 0) return null;
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:documents.label")}
-      </Heading>
+    <Section title={t("client:documents.label")} headingId={headingId}>
       <DocumentLinks labelledBy={headingId} />
-    </Stack>
+    </Section>
   );
 }

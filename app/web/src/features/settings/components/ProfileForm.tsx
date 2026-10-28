@@ -6,10 +6,10 @@ import {
   Cluster,
   ConfirmDialog,
   FileTrigger,
-  Heading,
   Hint,
   InlineError,
   ProfileHeaderImage,
+  Section,
   Stack,
   Text,
   TextField,
@@ -183,12 +183,8 @@ type CrawlerSettingsProps = {
  */
 function CrawlerSettings({ indexable, aiOptOut, serverPolicy }: CrawlerSettingsProps) {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="2">
-      <Heading level={2} id={headingId} size="label" tone="fg">
-        {t("client:settings.profile.crawlers")}
-      </Heading>
+    <Section title={t("client:settings.profile.crawlers")}>
       <Checkbox {...indexable} description={t("client:settings.profile.indexable.description")}>
         {t("client:settings.profile.indexable")}
       </Checkbox>
@@ -203,7 +199,7 @@ function CrawlerSettings({ indexable, aiOptOut, serverPolicy }: CrawlerSettingsP
           })}
         </Hint>
       )}
-    </Stack>
+    </Section>
   );
 }
 
@@ -215,10 +211,7 @@ function ImageSection({ titleKey, control, preview }: ImageSectionProps) {
   const headingId = useId();
   const errorId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} aria-busy={control.isUploading} gap="2">
-      <Heading level={2} id={headingId} size="label" tone="fg">
-        {t(titleKey)}
-      </Heading>
+    <Section title={t(titleKey)} headingId={headingId} busy={control.isUploading}>
       {preview}
       <Cluster gap="2">
         <FileTrigger
@@ -253,7 +246,7 @@ function ImageSection({ titleKey, control, preview }: ImageSectionProps) {
           {control.error}
         </InlineError>
       )}
-    </Stack>
+    </Section>
   );
 }
 
@@ -268,17 +261,11 @@ type ProfileFieldsProps = {
 /** The metadata fields: up to four label and content pairs, each its own group. */
 function ProfileFields({ fields, lengthCheck }: ProfileFieldsProps) {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId} size="label" tone="fg">
-        {t("client:settings.profile.fields")}
-      </Heading>
-      <Hint>
-        {t("client:settings.profile.fields.description", {
-          max: String(profileLimits.fields),
-        })}
-      </Hint>
+    <Section
+      title={t("client:settings.profile.fields")}
+      description={t("client:settings.profile.fields.description", { max: String(profileLimits.fields) })}
+    >
       {fields.rows.map((field, index) => (
         <FieldRow
           key={field.key}
@@ -298,7 +285,7 @@ function ProfileFields({ fields, lengthCheck }: ProfileFieldsProps) {
           {t("client:settings.profile.fields.add")}
         </Button>
       </div>
-    </Stack>
+    </Section>
   );
 }
 

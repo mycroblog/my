@@ -6,16 +6,16 @@ import {
   EmojiIcon,
   EmptyState,
   FeatureCard,
-  Feed,
   FederatedIcon,
+  Feed,
   Grid,
-  Heading,
   Hero,
   Hint,
   LanguageIcon,
   Link,
   PostSkeleton,
   RegionError,
+  Section,
   Stack,
   Text,
   VisuallyHidden,
@@ -74,12 +74,8 @@ export function Landing({ heading }: LandingProps) {
 /** What the software can do, in three cards: the same on every server. */
 function Features() {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="4">
-      <Heading level={2} id={headingId}>
-        {t("client:landing.features.title")}
-      </Heading>
+    <Section title={t("client:landing.features.title")}>
       <Box container>
         <Grid as="ul" columns={3} at="md" gap="4">
           <FeatureCard icon={<FederatedIcon />} heading={t("client:landing.features.federation.title")}>
@@ -93,7 +89,7 @@ function Features() {
           </FeatureCard>
         </Grid>
       </Box>
-    </Stack>
+    </Section>
   );
 }
 
@@ -175,30 +171,22 @@ function LandingHero({ heading, landing }: { heading: ReactNode; landing: Landin
 
 function About({ paragraphs }: { paragraphs: readonly string[] }) {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:landing.about.title")}
-      </Heading>
+    <Section title={t("client:landing.about.title")}>
       {paragraphs.map((paragraph) => (
         // Paragraphs of one text have no IDs; the text itself is the key (two equal paragraphs are not expected).
         <Text as="p" key={paragraph} dir="auto" lang="" whitespace="preLine">
           {paragraph}
         </Text>
       ))}
-    </Stack>
+    </Section>
   );
 }
 
 function Rules({ rules }: { rules: LandingData["rules"] }) {
   const t = useT();
-  const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:landing.rules.title")}
-      </Heading>
+    <Section title={t("client:landing.rules.title")}>
       <Stack as="ol" marker="decimal" gap="2">
         {rules.map((rule) => (
           // The item follows the page's direction, so that its number stays in the list's padding; the rule's text
@@ -211,7 +199,7 @@ function Rules({ rules }: { rules: LandingData["rules"] }) {
           </li>
         ))}
       </Stack>
-    </Stack>
+    </Section>
   );
 }
 
@@ -222,17 +210,14 @@ function RecentPostsSection({ posts }: { posts: Exclude<RecentPosts, { status: "
   const t = useT();
   const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:landing.posts.title")}
-      </Heading>
+    <Section title={t("client:landing.posts.title")} headingId={headingId}>
       <RecentPostsBody posts={posts} headingId={headingId} />
       <p>
         <Link href="/local" variant="standalone">
           {t("client:landing.posts.more")}
         </Link>
       </p>
-    </Stack>
+    </Section>
   );
 }
 

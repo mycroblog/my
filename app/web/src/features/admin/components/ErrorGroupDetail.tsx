@@ -27,7 +27,7 @@ import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   DateTime,
-  DetailSection,
+  Section,
   type PagedPages,
   RecordTable,
   RequirePermission,
@@ -67,22 +67,22 @@ function ErrorGroupView({ id }: { id: string }) {
   return (
     <Stack gap="8">
       <StateSection group={group} />
-      <DetailSection title={t("client:admin.errors.details")}>
+      <Section surface="card" title={t("client:admin.errors.details")}>
         <Facts group={group} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.errors.sample")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.errors.sample")}>
         {group.sample === undefined ? (
           <Hint size="inherit">{t("client:admin.errors.sample.none")}</Hint>
         ) : (
           <Sample sample={group.sample} />
         )}
-      </DetailSection>
-      <DetailSection title={t("client:admin.errors.hourly")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.errors.hourly")}>
         <HourlyCounts counts={group.hourly_counts} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.errors.history")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.errors.history")}>
         <History events={group.events} />
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }
@@ -93,7 +93,7 @@ function StateSection({ group }: { group: Detail }) {
   const focusHeading = useFocusAfterChange(headingRef, group.state);
   const actions = useErrorGroupActions(group.id, focusHeading);
   return (
-    <DetailSection title={t("client:admin.errors.state")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.errors.state")} headingRef={headingRef}>
       <Stack gap="4">
         <StatusMessage>{actions.status}</StatusMessage>
         <DescriptionList columns={3}>
@@ -113,7 +113,7 @@ function StateSection({ group }: { group: Detail }) {
         </DescriptionList>
         <Actions group={group} actions={actions} />
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }
 

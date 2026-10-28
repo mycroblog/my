@@ -8,15 +8,15 @@ import {
   Button,
   Cluster,
   EmptyState,
-  Heading,
   Hint,
   InlineError,
+  Section,
   Stack,
   StatusMessage,
   Text,
   TextField,
 } from "@my/ui";
-import { useId, useRef } from "react";
+import { useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { domainToUnicode } from "../../../lib/idn";
@@ -26,23 +26,15 @@ import { type UnmuteDomain, useDomainMuteList, useMuteDomainForm, useUnmuteDomai
 
 export function DomainMutes() {
   const t = useT();
-  const formHeadingId = useId();
-  const listHeadingId = useId();
   return (
     <Stack gap="8">
       <p>{t("client:settings.domain_mutes.description")}</p>
-      <Stack as="section" aria-labelledby={formHeadingId} gap="3">
-        <Heading level={2} id={formHeadingId}>
-          {t("client:settings.domain_mutes.new.title")}
-        </Heading>
+      <Section title={t("client:settings.domain_mutes.new.title")}>
         <MuteDomainForm />
-      </Stack>
-      <Stack as="section" aria-labelledby={listHeadingId} gap="3">
-        <Heading level={2} id={listHeadingId}>
-          {t("client:settings.domain_mutes.list.title")}
-        </Heading>
+      </Section>
+      <Section title={t("client:settings.domain_mutes.list.title")}>
         <DomainMuteList />
-      </Stack>
+      </Section>
     </Stack>
   );
 }

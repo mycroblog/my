@@ -13,7 +13,7 @@ import {
   Cluster,
   DescriptionItem,
   DescriptionList,
-  DetailSection,
+  Section,
   EmptyState,
   Heading,
   Hint,
@@ -86,17 +86,17 @@ function ReportPage({ id }: { id: string }) {
   const target = report.target_account;
   return (
     <Stack gap="8">
-      <DetailSection title={t("client:admin.report.summary.title")}>
+      <Section surface="card" title={t("client:admin.report.summary.title")}>
         <ReportSummary report={report} />
-      </DetailSection>
+      </Section>
       {report.voice_room !== undefined && <ReportVoiceRoom report={report} room={report.voice_room} />}
       {/* A room's report points at no posts. */}
       {report.voice_room === undefined && (
-        <DetailSection title={t("client:admin.report.posts.title")}>
+        <Section surface="card" title={t("client:admin.report.posts.title")}>
           <ReportedPosts posts={posts} />
-        </DetailSection>
+        </Section>
       )}
-      <DetailSection title={t("client:admin.report.target.title")}>
+      <Section surface="card" title={t("client:admin.report.target.title")}>
         {target === undefined ? (
           <p>{t("client:admin.report.target.deleted")}</p>
         ) : (
@@ -145,13 +145,13 @@ function ReportPage({ id }: { id: string }) {
             </Text>
           </DescriptionItem>
         </DescriptionList>
-      </DetailSection>
+      </Section>
       {canAct && target !== undefined && (
-        <DetailSection title={t("client:admin.report.history.title")}>
+        <Section surface="card" title={t("client:admin.report.history.title")}>
           <TargetActions accountId={target.id} reportId={report.id} />
-        </DetailSection>
+        </Section>
       )}
-      <DetailSection title={t("client:admin.report.assignee.title")}>
+      <Section surface="card" title={t("client:admin.report.assignee.title")}>
         <Assignee
           report={report}
           pending={changes.pending !== undefined}
@@ -161,11 +161,11 @@ function ReportPage({ id }: { id: string }) {
           isUnassigning={changes.pending?.operation === "unassign"}
         />
         <StatusMessage>{message?.region === "assignee" ? message.text : undefined}</StatusMessage>
-      </DetailSection>
-      <DetailSection title={t("client:admin.report.notes.title")}>
+      </Section>
+      <Section surface="card" title={t("client:admin.report.notes.title")}>
         <Notes report={report} />
-      </DetailSection>
-      <DetailSection title={t("client:admin.report.resolution.title")} headingRef={resolutionHeadingRef}>
+      </Section>
+      <Section surface="card" title={t("client:admin.report.resolution.title")} headingRef={resolutionHeadingRef}>
         <StatusMessage>{message?.region === "resolution" ? message.text : undefined}</StatusMessage>
         {report.state === "resolved" ? (
           <Stack align="start" gap="3">
@@ -237,7 +237,7 @@ function ReportPage({ id }: { id: string }) {
             </Stack>
           </Stack>
         )}
-      </DetailSection>
+      </Section>
     </Stack>
   );
 }

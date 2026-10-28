@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Heading, Hint, RoleBadge, Stack, Switch } from "@my/ui";
-import { useId } from "react";
+import { Hint, RoleBadge, Section, Stack, Switch } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type BadgeSwitch, useBadgeChoices } from "../hooks/useBadgeChoices";
 
@@ -11,13 +10,9 @@ import { type BadgeSwitch, useBadgeChoices } from "../hooks/useBadgeChoices";
  */
 export function BadgeSettings() {
   const t = useT();
-  const headingId = useId();
   const badges = useBadgeChoices();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.profile.badges")}
-      </Heading>
+    <Section title={t("client:settings.profile.badges")}>
       {badges.length === 0 ? (
         <Hint>{t("client:settings.badges.none")}</Hint>
       ) : (
@@ -26,7 +21,7 @@ export function BadgeSettings() {
           <BadgeSwitches badges={badges} />
         </>
       )}
-    </Stack>
+    </Section>
   );
 }
 

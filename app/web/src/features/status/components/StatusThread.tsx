@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, Button, Heading, PostSkeleton, Stack, Text, VisuallyHidden } from "@my/ui";
-import { useId, useRef } from "react";
+import { Box, Button, PostSkeleton, Section, Stack, Text, VisuallyHidden } from "@my/ui";
+import { useRef } from "react";
 import { useT } from "../../../lib/i18n";
 import { useRevealOnce } from "../hooks/useRevealOnce";
 import { type ThreadPost, type ThreadState, useStatusThread } from "../hooks/useStatusThread";
@@ -23,8 +23,6 @@ export type StatusThreadProps = {
 export function StatusThread({ id, onDeleted }: StatusThreadProps) {
   const t = useT();
   const { status, thread } = useStatusThread(id);
-  const ancestorsId = useId();
-  const repliesId = useId();
   const focusedRef = useRef<HTMLElement>(null);
   const hasAncestors = thread.status === "loaded" && thread.ancestors.length > 0;
   useRevealOnce(focusedRef, hasAncestors);
@@ -32,14 +30,9 @@ export function StatusThread({ id, onDeleted }: StatusThreadProps) {
   return (
     <Stack>
       {thread.status === "loaded" && thread.ancestors.length > 0 && (
-        <section aria-labelledby={ancestorsId}>
-          <Box paddingX="4" paddingTop="2">
-            <Heading level={2} id={ancestorsId} size="subsection" tone="muted">
-              <Text size="sm">{t("client:status.thread.ancestors")}</Text>
-            </Heading>
-          </Box>
+        <Section surface="rows" title={t("client:status.thread.ancestors")}>
           <StatusList posts={thread.ancestors} />
-        </section>
+        </Section>
       )}
       <StatusCard
         ref={focusedRef}
@@ -48,14 +41,9 @@ export function StatusThread({ id, onDeleted }: StatusThreadProps) {
         thread={{ lineAbove: thread.status === "loaded" && thread.repliesToAncestor, lineBelow: false }}
         onDeleted={onDeleted}
       />
-      <section aria-labelledby={repliesId} aria-busy={thread.status === "loading"}>
-        <Box paddingX="4" paddingTop="4" paddingBottom="2">
-          <Heading level={2} id={repliesId}>
-            {t("client:status.thread.replies")}
-          </Heading>
-        </Box>
+      <Section surface="rows" title={t("client:status.thread.replies")} busy={thread.status === "loading"}>
         <ThreadReplies thread={thread} />
-      </section>
+      </Section>
     </Stack>
   );
 }

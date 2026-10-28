@@ -12,15 +12,15 @@ import {
   Cluster,
   ConfirmDialog,
   EmptyState,
-  Heading,
   Hint,
   InlineError,
+  Section,
   Stack,
   StatusMessage,
   Text,
   TextField,
 } from "@my/ui";
-import { type ReactNode, useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
@@ -39,19 +39,6 @@ export function PasskeySettings() {
       <Section title={t("client:settings.passkeys.list.title")}>
         <PasskeyList />
       </Section>
-    </Stack>
-  );
-}
-
-/** A titled region of the page below its `h1`: an `h2` that names a `<section>`. */
-function Section({ title, children }: { title: ReactNode; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
-      {children}
     </Stack>
   );
 }

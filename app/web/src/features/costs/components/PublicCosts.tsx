@@ -5,7 +5,7 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
 import { instanceQueryOptions } from "../../about";
-import { DetailSection } from "../../moderation";
+import { Section } from "../../moderation";
 import { usePublicIncome } from "../hooks/useIncome";
 import { usePublicCosts } from "../hooks/usePublicCosts";
 import { CostTotalsPanel, type CostTotalsPanelProps, CostTotalsView } from "./CostTotals";
@@ -50,7 +50,7 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
       <CostTotalsPanel {...panel}>
         <Stack gap="8">
           {costs.status !== "hidden" && (
-            <DetailSection title={t("client:costs.public.costs")}>
+            <Section surface="card" title={t("client:costs.public.costs")}>
               {instance?.finance_visibility === "totals" && (
                 <Hint size="inherit">{t("client:costs.public.totals_only")}</Hint>
               )}
@@ -69,14 +69,14 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
                 />
               )}
               {costs.status === "ready" && <CostTotalsView totals={costs.totals} breakdown={costs.breakdown} />}
-            </DetailSection>
+            </Section>
           )}
           {income.status !== "hidden" && (
-            <DetailSection title={t("client:income.title")}>
+            <Section surface="card" title={t("client:income.title")}>
               {/* The balance would tell the costs that the instance keeps to itself (ADR-0073 §7). */}
               {costs.status === "hidden" && <Hint size="inherit">{t("client:income.public.no_balance")}</Hint>}
               <IncomeState income={income} />
-            </DetailSection>
+            </Section>
           )}
         </Stack>
       </CostTotalsPanel>

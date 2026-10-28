@@ -3,9 +3,9 @@ import {
   Button,
   Callout,
   Checkbox,
-  Heading,
   Hint,
   InlineError,
+  Section,
   Stack,
   Switch,
   Table,
@@ -78,10 +78,7 @@ function NotificationTable({
   const t = useT();
   const headingId = useId();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="2">
-      <Heading level={2} id={headingId}>
-        {t(section.label)}
-      </Heading>
+    <Section title={t(section.label)} headingId={headingId}>
       <Table density="compact" aria-labelledby={headingId} aria-describedby={describedBy}>
         <TableHead>
           <TableColumnHeader>{t("client:settings.notifications.column.type")}</TableColumnHeader>
@@ -115,7 +112,7 @@ function NotificationTable({
           ))}
         </TableBody>
       </Table>
-    </Stack>
+    </Section>
   );
 }
 
@@ -125,13 +122,9 @@ function NotificationTable({
  */
 function PushNotifications({ push }: { push: NotificationSettingsView["push"] }) {
   const t = useT();
-  const headingId = useId();
   if (push.status === "hidden") return null;
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.push.title")}
-      </Heading>
+    <Section title={t("client:settings.push.title")}>
       {push.status === "unsupported" && <Hint>{t("client:settings.push.unsupported")}</Hint>}
       {push.status === "denied" && <Hint>{t("client:settings.push.denied")}</Hint>}
       {push.status === "available" && (
@@ -147,7 +140,7 @@ function PushNotifications({ push }: { push: NotificationSettingsView["push"] })
           {push.error !== undefined && <InlineError alert>{push.error}</InlineError>}
         </>
       )}
-    </Stack>
+    </Section>
   );
 }
 
@@ -158,13 +151,9 @@ function PushNotifications({ push }: { push: NotificationSettingsView["push"] })
  */
 function NotificationSound({ sound }: { sound: NotificationSettingsView["sound"] }) {
   const t = useT();
-  const headingId = useId();
   const test = useNotificationSoundTest();
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.notifications.sound.title")}
-      </Heading>
+    <Section title={t("client:settings.notifications.sound.title")}>
       <Switch
         isSelected={sound.enabled}
         onChange={sound.setEnabled}
@@ -180,7 +169,7 @@ function NotificationSound({ sound }: { sound: NotificationSettingsView["sound"]
           <InlineError alert>{t("client:settings.notifications.sound.blocked")}</InlineError>
         )}
       </Stack>
-    </Stack>
+    </Section>
   );
 }
 
@@ -191,14 +180,10 @@ function NotificationSound({ sound }: { sound: NotificationSettingsView["sound"]
 function EmailDelivery({ suppression }: { suppression: Preferences["email_suppression"] }) {
   const t = useT();
   const intl = useIntl();
-  const headingId = useId();
   if (suppression === undefined) return null;
   const since = intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" });
   return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.email_suppression.title")}
-      </Heading>
+    <Section title={t("client:settings.email_suppression.title")}>
       <Callout>
         <Text as="p" size="sm" tone="fg">
           {suppression.kind === "hard_bounce"
@@ -212,6 +197,6 @@ function EmailDelivery({ suppression }: { suppression: Preferences["email_suppre
           </Text>
         )}
       </Callout>
-    </Stack>
+    </Section>
   );
 }

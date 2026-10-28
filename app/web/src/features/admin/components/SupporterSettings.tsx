@@ -41,7 +41,7 @@ import { type SubmitEvent, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFormatMoney } from "../../costs";
-import { DateTime, DetailSection, type Permission, RecordList, RecordTable, RequirePermission } from "../../moderation";
+import { DateTime, Section, type Permission, RecordList, RecordTable, RequirePermission } from "../../moderation";
 import {
   type PaymentReconcileRun,
   type PaymentStatus,
@@ -143,21 +143,21 @@ export function SupporterSettings({ filter, onFilterChange }: SupporterSettingsP
   return (
     <RequirePermission permission="manage_supporters">
       <Stack gap="8">
-        <DetailSection title={t("client:admin.supporters.program.title")}>
+        <Section surface="card" title={t("client:admin.supporters.program.title")}>
           <Card>
             <Program />
           </Card>
-        </DetailSection>
+        </Section>
         <PaymentProvider />
-        <DetailSection title={t("client:admin.supporters.new.title")}>
+        <Section surface="card" title={t("client:admin.supporters.new.title")}>
           <Card>
             <NewPlanForm />
           </Card>
-        </DetailSection>
+        </Section>
         <Plans />
-        <DetailSection title={t("client:admin.supporters.subscriptions.title")}>
+        <Section surface="card" title={t("client:admin.supporters.subscriptions.title")}>
           <Subscriptions filter={filter} onFilterChange={onFilterChange} />
-        </DetailSection>
+        </Section>
       </Stack>
     </RequirePermission>
   );
@@ -229,11 +229,11 @@ function PaymentProvider() {
   const provider = useConfiguredPaymentProvider();
   if (provider === undefined) return null;
   return (
-    <DetailSection title={t("client:admin.supporters.payment.title")}>
+    <Section surface="card" title={t("client:admin.supporters.payment.title")}>
       <Card>
         <PaymentStatusView />
       </Card>
-    </DetailSection>
+    </Section>
   );
 }
 
@@ -507,7 +507,7 @@ function Plans() {
   const list = (items: SupporterPlan[]) => ({ items, hasMore: false, isLoadingMore: false, loadMore: () => undefined });
   return (
     <>
-      <DetailSection title={t("client:admin.supporters.plans.title")}>
+      <Section surface="card" title={t("client:admin.supporters.plans.title")}>
         <Stack gap="3">
           <StatusMessage>{actions.status}</StatusMessage>
           {actions.error !== undefined && (
@@ -531,15 +531,15 @@ function Plans() {
             </RecordList>
           </Card>
         </Stack>
-      </DetailSection>
+      </Section>
       {retired.length > 0 && (
-        <DetailSection title={t("client:admin.supporters.retired.title")}>
+        <Section surface="card" title={t("client:admin.supporters.retired.title")}>
           <Card>
             <RecordList list={list(retired)} getId={(plan) => plan.id} empty={null}>
               {(plan) => <PlanRow plan={plan} actions={actions} />}
             </RecordList>
           </Card>
-        </DetailSection>
+        </Section>
       )}
     </>
   );

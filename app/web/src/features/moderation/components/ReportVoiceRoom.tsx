@@ -32,7 +32,7 @@ import {
   voiceRoomEndReasonLimit,
 } from "../api/reports";
 import { type EndVoiceRoom, useEndVoiceRoom } from "../hooks/useEndVoiceRoom";
-import { DateTime, DetailSection, useFocusAfterChange } from "./parts";
+import { DateTime, Section, useFocusAfterChange } from "./parts";
 import { AccountByIdLabel, AssigneeName } from "./reportParts";
 
 /** The sentence of each reason a participation ended (api/spec AdminVoiceRoomParticipation); another reads as `other`. */
@@ -57,7 +57,7 @@ export function ReportVoiceRoom({ report, room }: { report: ReportDetail; room: 
   const focusHeading = useFocusAfterChange(headingRef, room.ended_at);
   const end = useEndVoiceRoom(report, room.id, focusHeading);
   return (
-    <DetailSection title={t("client:admin.report.voice.title")} headingRef={headingRef}>
+    <Section surface="card" title={t("client:admin.report.voice.title")} headingRef={headingRef}>
       <Stack gap="6">
         <Hint size="inherit">{t("client:admin.report.voice.records")}</Hint>
         <StatusMessage>{end.status}</StatusMessage>
@@ -67,7 +67,7 @@ export function ReportVoiceRoom({ report, room }: { report: ReportDetail; room: 
         <Participations participations={room.participations} />
         <Bans bans={room.bans} />
       </Stack>
-    </DetailSection>
+    </Section>
   );
 }
 
