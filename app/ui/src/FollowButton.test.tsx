@@ -16,7 +16,7 @@ describe("FollowButton", () => {
   it("keeps its place while the relationship loads, without a control", () => {
     const { container } = render(<FollowButton status="loading" label="" />);
     expect(screen.queryByRole("button")).toBeNull();
-    // eslint-disable-next-line testing-library/no-node-access -- the placeholder is decorative and has no role.
+    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- the placeholder is decorative and has no role.
     const placeholder = container.querySelector("[data-follow-placeholder]");
     expect(placeholder).toHaveAttribute("aria-hidden", "true");
     expect(placeholder).toHaveClass("h-10");

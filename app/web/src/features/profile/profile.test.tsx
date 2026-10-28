@@ -465,11 +465,15 @@ describe("the follow lists", () => {
     const requested: string[][] = [];
     const follows: string[] = [];
     server.use(
-      http.get(`${apiBase}/accounts/:id/followers`, () => HttpResponse.json({ accounts: [viewerFixture, carol, dave] })),
+      http.get(`${apiBase}/accounts/:id/followers`, () =>
+        HttpResponse.json({ accounts: [viewerFixture, carol, dave] }),
+      ),
       http.get(`${apiBase}/accounts/relationships`, ({ request }) => {
         const ids = new URL(request.url).searchParams.getAll("id");
         requested.push(ids);
-        return HttpResponse.json(ids.map((id) => relationshipFixture(id, id === carol.id ? { followed_by: true } : {})));
+        return HttpResponse.json(
+          ids.map((id) => relationshipFixture(id, id === carol.id ? { followed_by: true } : {})),
+        );
       }),
       http.post(`${apiBase}/accounts/:id/follow`, ({ params }) => {
         follows.push(String(params["id"]));

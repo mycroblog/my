@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useNotice } from "@my/ui";
+import { sanitizedHtmlText, serverSanitizedHtml, useNotice } from "@my/ui";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -21,16 +21,10 @@ type FollowListItem = {
   account: Account;
 };
 
-/**
- * The profile text (sanitized HTML from the server) as plain text on one line: the paragraphs and line breaks become
- * spaces. DOMParser builds an inert document, which runs no script and loads nothing.
- */
-export function noteLineOf(html: string): string {
+/** The profile text (sanitized HTML from the server) as plain text on one line: its paragraphs and line breaks become spaces. */
+function noteLineOf(html: string): string {
   if (html === "") return "";
-  const document = new DOMParser().parseFromString(html, "text/html");
-  for (const br of document.body.querySelectorAll("br")) br.replaceWith(" ");
-  for (const paragraph of document.body.querySelectorAll("p")) paragraph.append(" ");
-  return document.body.textContent.replace(/\s+/gu, " ").trim();
+  return sanitizedHtmlText(serverSanitizedHtml(html)).replace(/\s+/gu, " ").trim();
 }
 
 export type FollowListState = {
