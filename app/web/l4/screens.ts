@@ -65,6 +65,27 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
   // The staff overviews start from the app, whose navigation has the entries into the mode.
   moderation: { start: "/home" },
   admin: { start: "/home" },
+  "moderation-reports": {
+    start: "/moderation",
+    unavailable: {
+      いちばん長く待っている未解決の通報を開く:
+        "the E2E fixtures have no report, and bin/my has no command that files one",
+      違法な内容の通報を開く: "the E2E fixtures have no report, and bin/my has no command that files one",
+      解決済みの通報を見る: "the E2E fixtures have no report, and bin/my has no command that files one",
+    },
+  },
+  "moderation-report": {
+    start: "/moderation/reports",
+    unavailable: {
+      担当になる: "the E2E fixtures have no report, and bin/my has no command that files one",
+      "警告して解決する（処分の種類を選び、処分を出す）":
+        "the E2E fixtures have no report, and bin/my has no command that files one",
+      "処分せずに解決する（対応不要）": "the E2E fixtures have no report, and bin/my has no command that files one",
+      ほかの画面で処分済みとして解決する: "the E2E fixtures have no report, and bin/my has no command that files one",
+      メモを残す: "the E2E fixtures have no report, and bin/my has no command that files one",
+      解決済みの通報を再開する: "the E2E fixtures have no report, and bin/my has no command that files one",
+    },
+  },
 };
 
 /** The setup of `screen`: its entry, or a start at `/` with nothing more. */

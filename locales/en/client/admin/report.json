@@ -216,19 +216,19 @@
     "description": "Heading of the region of a report's page where it is resolved or reopened."
   },
   "admin.report.resolve.actioned": {
-    "defaultMessage": "Resolve as actioned",
+    "defaultMessage": "Mark as acted on elsewhere",
     "description": "Button that resolves a report as actioned, with the action taken elsewhere."
   },
   "admin.report.resolve.description": {
-    "defaultMessage": "Without taking an action here: there was nothing to act on, or the action was taken elsewhere.",
+    "defaultMessage": "Dismiss the report when nothing needs an action. Mark it as acted on when the action was taken on another screen, such as the account's page.",
     "description": "Help of the buttons that resolve a report without an action."
   },
   "admin.report.resolve.dismissed": {
-    "defaultMessage": "Resolve without action",
+    "defaultMessage": "Dismiss the report",
     "description": "Button that resolves a report as dismissed."
   },
   "admin.report.resolve.title": {
-    "defaultMessage": "Resolve without an action",
+    "defaultMessage": "Resolve without an action here",
     "description": "Heading of the buttons that resolve a report without an action."
   },
   "admin.report.resolve_failed": {
