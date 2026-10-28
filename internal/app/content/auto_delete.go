@@ -31,7 +31,19 @@ const (
 	AutoDeleteBatch          = 20
 	AutoDeletePerAccount     = 100
 	autoDeleteAccountsPerJob = 20
+	// AutoDeletePreviewCap is the most posts that a preview counts, and AutoDeletePreviewExamples
+	// the posts it shows: the count stays cheap enough to repeat as the user edits a policy.
+	AutoDeletePreviewCap      = 1000
+	AutoDeletePreviewExamples = 3
 )
+
+// AutoDeletePreview is what a policy would delete now: Count posts up to AutoDeletePreviewCap,
+// More when there are more, and the oldest of them.
+type AutoDeletePreview struct {
+	Count    int
+	More     bool
+	Examples []content.Status
+}
 
 // AutoDeleteRepository is the part of the content module's persistence that the automatic
 // deletion of old posts uses. The database adapters' status repositories implement it and pass
@@ -117,6 +129,31 @@ func (a *AutoDelete) UpdateAutoDeletePolicy(ctx context.Context, accountID strin
 // autoDeletePayload is the payload of JobAutoDeleteStatuses: the cursor of the run.
 type autoDeletePayload struct {
 	After string `json:"after,omitempty"`
+}
+
+// PreviewAutoDeletePolicy returns what p would delete of the account's posts now if it were
+// enabled, without saving it. It fails with a *content.AutoDeletePolicyError for an invalid
+// value.
+func (a *AutoDelete) PreviewAutoDeletePolicy(ctx context.Context, accountID string, p content.AutoDeletePolicy) (AutoDeletePreview, error) {
+	p.AccountID = accountID
+	p, err := p.Normalize()
+	if err != nil {
+		return AutoDeletePreview{}, err
+	}
+	before := p.Cutoff(kernel.Normalize(a.d.Clock.Now()))
+	var statuses []content.Status
+	// A read in one short transaction: the repository lists the posts as the job would.
+	err = a.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		statuses, err = a.d.AutoDeletes.ListStatusesToAutoDelete(ctx, tx, p, before, AutoDeletePreviewCap+1)
+		return err
+	})
+	if err != nil {
+		return AutoDeletePreview{}, err
+	}
+	out := AutoDeletePreview{Count: min(len(statuses), AutoDeletePreviewCap), More: len(statuses) > AutoDeletePreviewCap}
+	out.Examples = statuses[:min(len(statuses), AutoDeletePreviewExamples)]
+	return out, nil
 }
 
 // RegisterJobs registers the JobAutoDeleteStatuses handler and its hourly schedule.

@@ -1,11 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automatic deletion of the user's own old posts (FR-118): turning it on, the age after which posts go, and the
 // exceptions that keep them. The form saves the whole policy at once; the server deletes the posts in its hourly job.
-import { Button, Checkbox, ConfirmDialog, FormActionBar, Grid, Hint, Section, Select, SelectItem, Stack } from "@my/ui";
+import {
+  Button,
+  Checkbox,
+  ConfirmDialog,
+  FormActionBar,
+  Grid,
+  Heading,
+  Hint,
+  InlineError,
+  Section,
+  Select,
+  SelectItem,
+  Stack,
+  StatTile,
+} from "@my/ui";
 import { useId } from "react";
 import { visibilities, visibilityLabel } from "../../compose";
+import { CompactStatus } from "../../status";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import type { AutoDeletePolicy } from "../api/autoDelete";
 import { type AutoDeleteFlag, useAutoDeleteForm } from "../hooks/useAutoDeleteForm";
+import { useAutoDeletePreview } from "../hooks/useAutoDeletePreview";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 /** The exceptions that keep a post the author marked or that has something in it, in the order of the form. */
@@ -19,7 +36,8 @@ const flags: readonly { id: AutoDeleteFlag; label: ClientMessageKey }[] = [
 
 /**
  * The automatic deletion in the sections of its screen requirements (web-client/screens/settings-auto-delete.md): what
- * it deletes and when, the kinds of posts kept, the visibilities kept, and the posts kept for their reactions. The
+ * it deletes and when, the kinds of posts kept, the visibilities kept, the posts kept for their reactions, and what
+ * those conditions delete now. The
  * save button and the policy it saved stay at the bottom edge of the screen (`FormActionBar` `sticky`).
  */
 export function AutoDeleteSettings() {
@@ -118,6 +136,7 @@ export function AutoDeleteSettings() {
             </Select>
           </Stack>
         </Section>
+        <AutoDeletePreviewSection policy={form.policy} />
         <FormActionBar sticky result={form.result}>
           <Button type="submit" variant="primary" isPending={form.isSaving}>
             {t("client:settings.auto_delete.save")}
@@ -127,6 +146,53 @@ export function AutoDeleteSettings() {
       {/* Outside the form: React bubbles the dialog's own submit event through its portal to an enclosing form. */}
       <UnsavedChangesDialog hasChanges={form.hasChanges} />
     </>
+  );
+}
+
+/**
+ * What the conditions above delete now, before they are saved (ADR-0110 P3): the count as a figure, then the oldest of
+ * those posts. The figure is a live region, so a change of a condition is answered where it is read; while the next
+ * count is on its way the previous one stays, and the section is busy.
+ */
+function AutoDeletePreviewSection({ policy }: { policy: AutoDeletePolicy }) {
+  const t = useT();
+  const preview = useAutoDeletePreview(policy);
+  const examplesId = useId();
+  let value = t("client:settings.auto_delete.preview.counting");
+  if (preview.status === "done")
+    value = t("client:settings.auto_delete.preview.value", { count: preview.count, more: String(preview.more) });
+  return (
+    <Section
+      title={t("client:settings.auto_delete.preview")}
+      description={t("client:settings.auto_delete.preview.description")}
+      busy={preview.status === "loading" || (preview.status === "done" && preview.pending)}
+    >
+      <Stack gap="4">
+        {preview.status === "error" ? (
+          <InlineError alert size="inherit">
+            {t("client:settings.auto_delete.preview.failed", { reason: preview.message })}
+          </InlineError>
+        ) : (
+          <div role="status" aria-atomic="true">
+            <StatTile label={t("client:settings.auto_delete.preview.count")} value={value} />
+          </div>
+        )}
+        {preview.status === "done" && preview.examples.length > 0 && (
+          <Stack gap="2">
+            <Heading level={3} id={examplesId}>
+              {t("client:settings.auto_delete.preview.examples")}
+            </Heading>
+            <Stack as="ul" aria-labelledby={examplesId} gap="2">
+              {preview.examples.map((status) => (
+                <li key={status.id}>
+                  <CompactStatus status={status} label={t("client:settings.auto_delete.preview.example")} />
+                </li>
+              ))}
+            </Stack>
+          </Stack>
+        )}
+      </Stack>
+    </Section>
   );
 }
 

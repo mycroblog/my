@@ -291,6 +291,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/passkeys":                                               {Operation: "createPasskey", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/passkeys/confirmation":                                  {Operation: "beginPasskeyConfirmation", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
 	"POST /api/v1/passkeys/registration":                                  {Operation: "beginPasskeyRegistration", FirstPartyOnly: true, Scopes: []string{"write:accounts"}},
+	"POST /api/v1/preferences/auto_delete/preview":                        {Operation: "previewAutoDeletePolicy", Scopes: []string{"read:accounts"}},
 	"POST /api/v1/reports":                                                {Operation: "createReport", Scopes: []string{"write:reports"}},
 	"POST /api/v1/statuses":                                               {Operation: "createStatus", Scopes: []string{"write:statuses"}},
 	"POST /api/v1/statuses/{id}/bookmark":                                 {Operation: "bookmarkStatus", Scopes: []string{"write:bookmarks"}},

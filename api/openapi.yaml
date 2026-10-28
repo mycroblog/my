@@ -869,6 +869,40 @@ paths:
                 $ref: '#/components/schemas/AutoDeletePolicy'
         default:
           $ref: '#/components/responses/Problem'
+  /preferences/auto_delete/preview:
+    post:
+      operationId: previewAutoDeletePolicy
+      summary: Estimate what a draft automatic deletion of old posts would delete
+      description: |
+        Counts the user's posts that the given policy, which is not saved, would delete now,
+        as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+        days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+        true), so the call stays cheap enough to repeat as the user edits the policy. The
+        response also shows the oldest of those posts. A 422 problem names the property that
+        is invalid in `detail`.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - read:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDeletePolicy'
+      responses:
+        '200':
+          description: The estimate.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoDeletePreview'
+        default:
+          $ref: '#/components/responses/Problem'
   /preferences/badges:
     get:
       operationId: listBadgeChoices
@@ -14376,6 +14410,30 @@ components:
           type: integer
           minimum: 0
           maximum: 1000000
+    AutoDeletePreview:
+      description: |
+        What a draft automatic deletion policy would delete now: how many of the user's posts, up
+        to a cap, and the oldest of them.
+      type: object
+      required:
+        - count
+        - more
+        - examples
+      properties:
+        count:
+          description: How many posts the policy would delete, at most 1000.
+          type: integer
+          minimum: 0
+          maximum: 1000
+        more:
+          description: Whether the policy would delete more posts than `count`.
+          type: boolean
+        examples:
+          description: Up to 3 of those posts, oldest first.
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/Status'
     BadgeChoice:
       description: |
         A role that the authenticated user holds and that has a badge, with whether the user shows

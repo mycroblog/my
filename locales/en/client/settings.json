@@ -2295,6 +2295,38 @@
     "defaultMessage": "Posts with many reactions",
     "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
   },
+  "settings.auto_delete.preview": {
+    "defaultMessage": "Posts these conditions delete",
+    "description": "Heading of the section of the auto-delete settings with how many posts the conditions above would delete now, before saving."
+  },
+  "settings.auto_delete.preview.description": {
+    "defaultMessage": "Counted now from the conditions above, before you save them and whether or not automatic deletion is on.",
+    "description": "Help of the estimate of the posts that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.count": {
+    "defaultMessage": "Posts to delete now",
+    "description": "Label of the number of posts that the conditions of the automatic deletion would delete now."
+  },
+  "settings.auto_delete.preview.value": {
+    "defaultMessage": "{more, select, true {{count, number}+} other {{count, number}}}",
+    "description": "The number of posts that the automatic deletion would delete now; with more, the count stopped at its limit and there are more."
+  },
+  "settings.auto_delete.preview.counting": {
+    "defaultMessage": "Counting…",
+    "description": "Value of the estimate of the automatic deletion while the server counts the posts."
+  },
+  "settings.auto_delete.preview.examples": {
+    "defaultMessage": "The oldest of them",
+    "description": "Heading of the list of example posts that the automatic deletion would delete, oldest first."
+  },
+  "settings.auto_delete.preview.example": {
+    "defaultMessage": "Post to delete",
+    "description": "Accessible name of the box of an example post that the automatic deletion would delete."
+  },
+  "settings.auto_delete.preview.failed": {
+    "defaultMessage": "The posts could not be counted: {reason}",
+    "description": "Error in place of the estimate of the automatic deletion. {reason} is the localized reason."
+  },
   "settings.security.title": {
     "defaultMessage": "Security",
     "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."

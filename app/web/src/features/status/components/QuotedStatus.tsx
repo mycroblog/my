@@ -25,10 +25,18 @@ export function QuotedStatus({ quote }: { quote: StatusQuote }) {
   const t = useT();
   const view = useQuoteView(quote);
   if (view.kind === "notice") return <QuoteCard label={t("client:status.quote.label")} notice={view.notice} />;
-  return <QuotedPost status={view.status} notice={view.notice} />;
+  return <QuotedPost label={t("client:status.quote.label")} status={view.status} notice={view.notice} />;
 }
 
-function QuotedPost({ status, notice }: { status: Status; notice: string | null }) {
+/**
+ * A post in the compact box of a quote, without the viewer's actions, named by `label`: one example among other posts
+ * (the posts that the automatic deletion would delete).
+ */
+export function CompactStatus({ status, label }: { status: Status; label: string }) {
+  return <QuotedPost label={label} status={status} notice={null} />;
+}
+
+function QuotedPost({ label, status, notice }: { label: string; status: Status; notice: string | null }) {
   const t = useT();
   const view = useStatusView(status);
   const viewerLabels = useMediaViewerLabels();
@@ -51,7 +59,7 @@ function QuotedPost({ status, notice }: { status: Status; notice: string | null 
   );
   return (
     <QuoteCard
-      label={t("client:status.quote.label")}
+      label={label}
       avatar={
         <Avatar sources={view.author.avatar} name={view.author.name} seed={view.author.id} size="xs" decorative />
       }

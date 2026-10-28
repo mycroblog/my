@@ -159,6 +159,8 @@ paths:
     $ref: ./paths/preferences.yaml
   /preferences/auto_delete:
     $ref: ./paths/preferences_auto_delete.yaml
+  /preferences/auto_delete/preview:
+    $ref: ./paths/preferences_auto_delete_preview.yaml
   /preferences/badges:
     $ref: ./paths/preferences_badges.yaml
   /preferences/badges/{role_id}:
@@ -1216,6 +1218,8 @@ components:
       $ref: ./components/schemas/AppealModerationActionRequest.yaml
     AutoDeletePolicy:
       $ref: ./components/schemas/AutoDeletePolicy.yaml
+    AutoDeletePreview:
+      $ref: ./components/schemas/AutoDeletePreview.yaml
     BadgeChoice:
       $ref: ./components/schemas/BadgeChoice.yaml
     BadgeChoiceList:

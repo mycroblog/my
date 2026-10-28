@@ -3,7 +3,7 @@
 // of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import {
@@ -16,7 +16,7 @@ import {
   screenLoader,
   settled,
 } from "../../test/stories";
-import { autoDeletePolicyFixture } from "./test/handlers";
+import { autoDeletePolicyFixture, autoDeletePreviewOf } from "./test/handlers";
 
 /** The server's policy of the viewer, which PUT replaces. */
 function autoDeletePolicy(initial: Schemas["AutoDeletePolicy"]) {
@@ -52,12 +52,27 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Posts older than 90 days are deleted; keeping media too and saving says what will be deleted. */
+/** The live region of the estimate, with the count of the posts it would delete. */
+function previewCount(canvasElement: HTMLElement): HTMLElement {
+  const section = within(canvasElement).getByRole("region", { name: "Posts these conditions delete" });
+  return within(section).getByRole("status");
+}
+
+/**
+ * Posts older than 90 days are deleted; keeping media too counts one post fewer before the save, and saving says what
+ * will be deleted.
+ */
 export const Normal: Story = {
   play: async (context) => {
     const { canvas, userEvent } = context;
     await settled(context);
+    await waitFor(async () => {
+      await expect(previewCount(context.canvasElement)).toHaveTextContent(/Posts to delete now\s*2$/);
+    });
     await userEvent.click(canvas.getByRole("checkbox", { name: "With images or other media" }));
+    await waitFor(async () => {
+      await expect(previewCount(context.canvasElement)).toHaveTextContent(/Posts to delete now\s*1$/);
+    });
     await userEvent.click(canvas.getByRole("button", { name: "Save" }));
     await expect(
       await canvas.findByText("Saved. Posts older than 90 days will be deleted, except those you keep."),
@@ -73,6 +88,28 @@ export const Loading: Story = loadingOn("get", "/preferences/auto_delete");
 
 /** The server failed to answer the policy. */
 export const ServerError: Story = failingOn("get", "/preferences/auto_delete");
+
+/** The posts are still being counted. */
+export const PreviewLoading: Story = loadingOn("post", "/preferences/auto_delete/preview");
+
+/** The server failed to count the posts: the form stays, and the estimate says why. */
+export const PreviewError: Story = {
+  ...failingOn("post", "/preferences/auto_delete/preview"),
+  play: async (context) => {
+    await settled(context);
+    await expect(
+      await context.canvas.findByText(/^The posts could not be counted: /, {}, { timeout: 10_000 }),
+    ).toBeVisible();
+  },
+};
+
+/** More posts than the server counts: the count stops at its limit and says there are more. */
+export const PreviewMany: Story = answering(
+  http.post(`${apiBase}/preferences/auto_delete/preview`, async ({ request }) => {
+    const policy = (await request.clone().json()) as Schemas["AutoDeletePolicy"];
+    return withViewer(request, () => HttpResponse.json({ ...autoDeletePreviewOf(policy), count: 1000, more: true }));
+  }),
+);
 
 /** In Japanese. */
 export const Japanese: Story = inLocale("ja");
