@@ -88,7 +88,6 @@ import {
   PiMicrophoneSlash,
   PiSignOut,
   PiDotsThreeBold,
-  PiEye,
   PiEyeSlash,
   PiGlobe,
   PiHouse,
@@ -180,7 +179,6 @@ export const iconTable = {
   ImageIcon: { off: glyph(PiImage, "PiImage") },
   // Filled, the exclamation mark stays cut out of the triangle.
   WarningIcon: { off: glyph(PiWarning, "PiWarning"), on: glyph(PiWarningFill, "PiWarningFill") },
-  EyeIcon: { off: glyph(PiEye, "PiEye") },
   // The visibilities of a post (ADR-0017), one shape each from the widest to the narrowest: the world, this
   // server's buildings, an open lock, a closed lock, and the at sign of a mention. None has a direction.
   PublicVisibilityIcon: { off: glyph(PiGlobeHemisphereWest, "PiGlobeHemisphereWest") },
@@ -407,11 +405,6 @@ export function ImageIcon() {
 /** A triangle with an exclamation mark, for a content warning; filled while on. */
 export function WarningIcon({ filled = false }: ToggleIconProps) {
   return renderIcon(iconTable.WarningIcon, filled);
-}
-
-/** An eye, for showing something that was hidden. A post's visibility has an icon per level (VisibilityIcon). */
-export function EyeIcon() {
-  return renderIcon(iconTable.EyeIcon);
 }
 
 /** The visibilities of a post from the widest to the narrowest (ADR-0017). */

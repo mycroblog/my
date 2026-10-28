@@ -145,7 +145,6 @@ export {
   CloseIcon,
   EmojiIcon,
   ExternalLinkIcon,
-  EyeIcon,
   FederatedIcon,
   FinanceIcon,
   HomeIcon,
