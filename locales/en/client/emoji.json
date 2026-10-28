@@ -17,7 +17,7 @@
   },
   "emoji.picker.loading": {
     "defaultMessage": "Loading emoji",
-    "description": "Accessible name of the spinner the emoji picker shows while its emoji load, the first time it opens."
+    "description": "What the emoji picker tells assistive technology while its emoji load, the first time it opens."
   },
   "emoji.picker.load_failed": {
     "defaultMessage": "The emoji could not be loaded. Close the picker and open it again to retry.",

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { EmojiPicker, type EmojiPickerSelection, InlineError, Spinner } from "@my/ui";
+import { EmojiPicker, type EmojiPickerSelection, InlineError } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import type { EmojiPickerContent } from "../hooks/emojiPickerContent";
 
@@ -9,17 +9,18 @@ export type EmojiPickerPanelProps = {
 };
 
 /**
- * The inside of the popover of an emoji picker (ADR-0091 §4): a spinner until the Unicode emoji arrive, then the picker
- * with its search field focused, under an error line when they could not be loaded (the custom emoji are still offered).
+ * The inside of the popover of an emoji picker (ADR-0091 §4): the picker with its search field focused at once, with
+ * skeleton rows in its grid until the Unicode emoji arrive (web-client/16-look-states-and-wording.md G15), under an
+ * error line when they could not be loaded (the custom emoji are still offered).
  */
 export function EmojiPickerPanel({ picker, onSelect }: EmojiPickerPanelProps) {
   const t = useT();
-  if (picker.status === "loading") return <Spinner label={t("client:emoji.picker.loading")} />;
   return (
     <>
       {picker.status === "error" && <InlineError>{t("client:emoji.picker.load_failed")}</InlineError>}
       <EmojiPicker
         sections={picker.sections}
+        loading={picker.status === "loading"}
         labels={picker.labels}
         skinTone={picker.skinTone}
         onSkinToneChange={picker.setSkinTone}
