@@ -202,6 +202,12 @@ The utility is not named `text-*` because `tailwind-merge` would read that as a 
   shadows of the design are not used.
   Tailwind copies a `--shadow-*` value into its utilities, so the values live in `--elevation-sm|md|lg`, which the `--shadow-*` tokens refer to
   and a server theme overrides (`--elevation-card`, `--elevation-sm|md|lg`).
+- Soft surfaces (ADR-0111): `shadow-soft-raised` (a raised face) and `shadow-soft-inset` (a well: fields, a switch's groove), from
+  `--elevation-soft-raised|inset`. Where the browser has relative colour of a `light-dark()` colour, `theme.css` derives them from
+  `surface` and `surface-raised` (a lighter and a darker shadow in the light theme; a 1px inner top highlight and a darker shadow in the dark one),
+  so a theme that changes the surfaces moves them too; elsewhere they are plain warm shadows, and a server theme may set either outright.
+  No component uses them yet: the story "Foundations/Soft surfaces" compares three prototype directions (`src/softDirections.css`,
+  Storybook only) with the current style, and the chosen one is applied to the tokens and the parts later.
 - Radius, shadow, duration, and easing utilities take tokens only: no arbitrary values (`rounded-[3px]`, `shadow-[…]`, `duration-[…]`).
 
 ## Shape, elevation and states

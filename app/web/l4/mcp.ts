@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The Playwright MCP server the agent drives (ADR-0114): its command line, which gives the agent ARIA snapshots and
 // no images, and a minimal MCP client over its standard input and output that the dry run uses to check, without
-// the agent, that the server opens the start page signed in.
+// the agent, that the server opens the start page signed in (or signed out) and the mailbox of a task that reads email.
 import { type ChildProcess, spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -15,41 +15,62 @@ export function mcpCommand(options: {
   dir: string;
   /** The absolute URL the browser opens before the agent's first call. */
   startURL: string;
-  /** The storage state of the signed-in user (cookies and local storage). */
-  storageState: string;
+  /** The storage state of the signed-in user (cookies and local storage); none for a task that starts signed out. */
+  storageState?: string;
+  /**
+   * The absolute URL of Mailpit's web UI for a task that reads email: the browser opens it in a second tab, the
+   * user's mailbox, and the agent switches to it with browser_tabs.
+   */
+  mailURL?: string;
   /** The Chromium executable. */
   executablePath: string;
   /**
    * Whether Chromium runs in its sandbox. Only for a container that runs as root, where Chromium refuses to start in
-   * it (`L4_NO_SANDBOX=1`); the browser loads only the app of `my serve` on localhost.
+   * it (`L4_NO_SANDBOX=1`); the browser loads only the app of `my serve` and Mailpit on localhost.
    */
   sandbox: boolean;
 }): string[] {
-  // The init page runs on every new page of the browser, before the first tool call returns: it opens the start,
-  // so the agent never types an address, and waits until the client has drawn the screen's heading, so that the
-  // first snapshot shows the screen rather than the loading state. Playwright MCP loads it with require().
+  // The init page runs on every new page of the browser, before the first tool call returns. On the first page it
+  // opens the mailbox in a second tab when the task reads email, then the start, so the agent never types an
+  // address, and waits until the client has drawn the screen's heading, so that the first snapshot shows the screen
+  // rather than the loading state. A page opened later (the mailbox, or a link of an email that opens a tab) keeps
+  // its own address. Playwright MCP loads it with require().
   const initPage = join(options.dir, "init-page.cjs");
   writeFileSync(
     initPage,
     [
       "exports.default = async ({ page }) => {",
+      "  const context = page.context();",
+      "  if (context.pages()[0] !== page) return;",
+      ...(options.mailURL === undefined
+        ? []
+        : [
+            `  await (await context.newPage()).goto(${JSON.stringify(options.mailURL)});`,
+            "  await page.bringToFront();",
+          ]),
       `  await page.goto(${JSON.stringify(options.startURL)});`,
       '  await page.locator("h1").first().waitFor({ timeout: 30000 });',
       "};",
       "",
     ].join("\n"),
   );
+  // The browser reaches the app and the mailbox only.
+  const origins = [new URL(options.startURL).origin];
+  if (options.mailURL !== undefined) {
+    origins.push(new URL(options.mailURL).origin);
+  }
   return [
     "-y",
     playwrightMCP,
     "--headless",
     "--isolated",
-    "--storage-state",
-    options.storageState,
+    ...(options.storageState === undefined ? [] : ["--storage-state", options.storageState]),
     "--executable-path",
     options.executablePath,
     "--init-page",
     initPage,
+    "--allowed-origins",
+    origins.join(";"),
     // ARIA snapshots only: no image ever reaches the agent.
     "--image-responses",
     "omit",

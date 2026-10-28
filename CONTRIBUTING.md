@@ -47,7 +47,7 @@ the web client (type checks, build, dependency licenses).
   `scripts/task.sh docker:smoke`. CI runs it on pull requests that change the Docker setup, `cmd/`, or
   `internal/platform/`, and nightly; it builds the linux/arm64 image on pull requests that change the Docker setup and
   nightly.
-- The live interoperability tests against Mastodon, GoToSocial, and Misskey are not part of `scripts/task.sh check`
+- The live interoperability tests against Mastodon, GoToSocial, Misskey, and Akkoma are not part of `scripts/task.sh check`
   either: run them with `scripts/task.sh docker:federation-live` (CI runs them nightly; see
   [deploy/docker/federation-live/README.md](deploy/docker/federation-live/README.md)).
 - The license is AGPL-3.0-only, except for `api/spec/`, `api/openapi.yaml`, `pkg/mykit/`, and `pkg/mybot/`, which are

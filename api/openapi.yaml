@@ -1240,6 +1240,30 @@ paths:
           description: The user has no password.
         default:
           $ref: '#/components/responses/Problem'
+  /accounts/email/verification:
+    post:
+      operationId: resendVerificationEmail
+      x-first-party-only: true
+      summary: Send the authenticated user a new verification email
+      description: |
+        Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+        such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+        following its link shows that the address works and lifts the suppression. Earlier links
+        keep working until they expire. The email is queued and sent in the background, so a 202
+        does not tell whether it arrived. A user whose address is verified and not suppressed by a
+        hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+        address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+        emails per user are sent every hour; more get a 429 with `Retry-After`.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
+      responses:
+        '202':
+          description: The verification email is queued.
+        default:
+          $ref: '#/components/responses/Problem'
   /exports:
     get:
       operationId: listDataExports
@@ -18740,8 +18764,8 @@ components:
         email_suppression:
           description: |
             Whether emails no longer reach the primary address, read-only; omitted when they do.
-            After a `hard_bounce`, the user asks for the verification email again to show that the
-            address works.
+            After a `hard_bounce`, the user asks for the verification email again
+            (`POST /accounts/email/verification`) to show that the address works.
           readOnly: true
           allOf:
             - $ref: '#/components/schemas/EmailSuppression'

@@ -53,7 +53,7 @@ The KEK is a secret setting, so it can be passed only through the environment va
 - Keep the KEK somewhere other than where the database backups live (a password manager, offline media, a secret store in another account, and so on).
   If both are in one place, a leak of that place makes the database encryption pointless.
 - During a rotation, include the `kek_previous` keys in the backup for as long as ciphertext wrapped with them remains in the database.
-- Include the KEK in your restore procedure, and test restores regularly. After restoring a database, set the KEK (and `kek_previous`) that was in use at backup time to the same values.
+- Include the KEK in your restore procedure, and test restores regularly ([Backup and restore](backup.md#recovery-drill)). After restoring a database, set the KEK (and `kek_previous`) that was in use at backup time to the same values.
   With a different KEK, anything that reads a secret fails with an `unknown key-encryption key` error that names the key ID.
 
 ## Rotate the KEK

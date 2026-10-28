@@ -177,6 +177,8 @@ paths:
     $ref: ./paths/accounts_password.yaml
   /accounts/password/remove:
     $ref: ./paths/accounts_password_remove.yaml
+  /accounts/email/verification:
+    $ref: ./paths/accounts_email_verification.yaml
   /exports:
     $ref: ./paths/exports.yaml
   /exports/{id}/archive:

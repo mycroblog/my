@@ -43,6 +43,7 @@ const (
 	gtsUser      = "carol"
 	misskeyHost  = "misskey.test"
 	misskeyUser  = "grace"
+	akkomaHost   = "akkoma.test"
 
 	// The users who never follow alice: the mentioned non-followers of TestVisibilityAudiences.
 	mastodonStranger = "dave"
@@ -105,7 +106,7 @@ func setup() (*env, error) {
 				return nil, err
 			}
 			switch host {
-			case localHost, mastodonHost, gtsHost, misskeyHost:
+			case localHost, mastodonHost, gtsHost, misskeyHost, akkomaHost:
 				return dialer.DialContext(ctx, network, proxy)
 			}
 			return nil, fmt.Errorf("%s is not a host of the stack", host)

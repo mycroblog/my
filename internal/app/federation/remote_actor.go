@@ -204,9 +204,14 @@ func (r *RemoteActors) fetchActor(ctx context.Context, uri string) (*federation.
 	return usableActor(got)
 }
 
-// usableActor returns a fetched actor that can be stored: one with an inbox.
+// usableActor returns a fetched actor that can be stored: one with an inbox. An actor with a
+// shared inbox but no inbox of its own, as the service actors of Pleroma and Akkoma (the relay
+// actor /relay, whose inbox is null) are, receives at its shared inbox.
 func usableActor(got *Fetched) (*federation.Actor, []byte, error) {
 	a := got.Document.Actor
+	if a.Inbox == "" {
+		a.Inbox = a.SharedInbox
+	}
 	if a.Inbox == "" || a.ID.Host() == "" {
 		return nil, nil, fmt.Errorf("%w: the actor %s has no inbox", ErrFetchNotFound, a.ID)
 	}

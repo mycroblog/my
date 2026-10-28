@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # Live interoperability test (ADR-0006, ADR-0015, docs/architecture/federation.md §12): start
-# deploy/docker/federation-live/compose.yaml (this server, Mastodon, GoToSocial, Misskey, Activity-Relay, a
-# private CA), create
+# deploy/docker/federation-live/compose.yaml (this server, Mastodon, GoToSocial, Misskey, Akkoma, Activity-Relay,
+# a private CA), create
 # the users on each server, and run the scenarios in deploy/docker/federation-live (go test -tags federationlive).
 #
 # Whatever the outcome, it writes to $FEDERATION_LIVE_OUT (default .tmp/federation-live/out):
@@ -41,7 +41,7 @@ printf '%s\n' \
 	'basicConstraints=critical,CA:FALSE' \
 	'keyUsage=critical,digitalSignature' \
 	'extendedKeyUsage=serverAuth' \
-	'subjectAltName=DNS:my.test,DNS:mastodon.test,DNS:gts.test,DNS:misskey.test,DNS:relay.test' >"$certs/server.ext"
+	'subjectAltName=DNS:my.test,DNS:mastodon.test,DNS:gts.test,DNS:misskey.test,DNS:akkoma.test,DNS:relay.test' >"$certs/server.ext"
 openssl x509 -req -in "$certs/server.csr" -CA "$certs/ca.pem" -CAkey "$certs/ca.key" -CAcreateserial \
 	-days 2 -extfile "$certs/server.ext" -out "$certs/server.pem" 2>/dev/null
 # The actor key of the relay: Activity-Relay reads a PKCS #1 RSA key.
@@ -54,6 +54,7 @@ rand() { openssl rand -hex "$1"; }
 my_password="$(rand 16)"
 gts_password="Aa1!$(rand 16)"
 misskey_password="$(rand 16)"
+akkoma_password="$(rand 16)"
 export FEDERATION_LIVE_CERTS="$certs"
 export FEDERATION_LIVE_HTTPS_PORT="$port"
 export FEDERATION_LIVE_DB_PORT="$db_port"
@@ -64,6 +65,9 @@ MASTODON_OTP_SECRET="$(rand 64)"
 MASTODON_AR_DETERMINISTIC_KEY="$(rand 16)"
 MASTODON_AR_KEY_DERIVATION_SALT="$(rand 16)"
 MASTODON_AR_PRIMARY_KEY="$(rand 16)"
+AKKOMA_SECRET_KEY_BASE="$(rand 64)"
+AKKOMA_SIGNING_SALT="$(rand 8)"
+export AKKOMA_SECRET_KEY_BASE AKKOMA_SIGNING_SALT
 export MY_KEK MASTODON_SECRET_KEY_BASE MASTODON_OTP_SECRET MASTODON_AR_DETERMINISTIC_KEY \
 	MASTODON_AR_KEY_DERIVATION_SALT MASTODON_AR_PRIMARY_KEY
 
@@ -137,6 +141,7 @@ wait_ready my.test /readyz
 wait_ready mastodon.test /health
 wait_ready gts.test /readyz
 wait_ready misskey.test /healthz
+wait_ready akkoma.test /api/v1/instance
 wait_ready relay.test /actor
 
 # --- Users --------------------------------------------------------------------------------------
@@ -223,6 +228,19 @@ misskey admin/update-meta "$(jq -nc --arg i "$misskey_token_admin" '{i: $i, fede
 misskey admin/roles/update-default-policies \
 	"$(jq -nc --arg i "$misskey_token_admin" '{i: $i, policies: {rateLimitFactor: 0}}')" >/dev/null
 
+# Akkoma: kate posts what its relay actor announces to the servers that follow it (TestRelayLitePub). The
+# password grant of its OAuth API issues her token.
+log "creating kate@akkoma.test"
+"${compose[@]}" exec -T akkoma /opt/akkoma/bin/pleroma_ctl user new kate kate@akkoma.test \
+	--password "$akkoma_password" -y >/dev/null
+akkoma_app="$(https akkoma.test /api/v1/apps -X POST -H 'Content-Type: application/json' \
+	-d '{"client_name":"federation-live","redirect_uris":"urn:ietf:wg:oauth:2.0:oob","scopes":"read write follow"}')"
+akkoma_token="$(https akkoma.test /oauth/token -X POST -H 'Content-Type: application/json' -d "$(jq -nc \
+	--argjson app "$akkoma_app" --arg p "$akkoma_password" \
+	'{grant_type: "password", client_id: $app.client_id, client_secret: $app.client_secret,
+	  username: "kate", password: $p, scope: "read write follow"}')" | jq -r '.access_token // empty')"
+[[ -n "$akkoma_token" ]] || fail "could not issue the access token of kate@akkoma.test"
+
 # --- Scenarios ----------------------------------------------------------------------------------
 log "running the scenarios"
 # Also written to $work/scenarios.env, to rerun the scenarios against a stack kept with FEDERATION_LIVE_KEEP=1
@@ -241,6 +259,7 @@ export FEDERATION_LIVE_MISSKEY_TOKEN_HEIDI="$misskey_token_heidi"
 export FEDERATION_LIVE_MISSKEY_TOKEN_ARRIVE="$misskey_token_arrive"
 export FEDERATION_LIVE_MISSKEY_TOKEN_LEAVE="$misskey_token_leave"
 export FEDERATION_LIVE_MISSKEY_ADMIN_TOKEN="$misskey_token_admin"
+export FEDERATION_LIVE_AKKOMA_TOKEN="$akkoma_token"
 env | grep '^FEDERATION_LIVE_' >"$work/scenarios.env"
 cd "$root"
 # The scenarios take longer than go test's default 10 minutes: TestClosure alone waits up to 15 for
