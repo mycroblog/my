@@ -25,7 +25,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/kaptinlin/messageformat-go/mf1 v0.8.6
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/oapi-codegen/runtime v1.7.0
+	github.com/oapi-codegen/runtime v1.8.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/piprate/json-gold v0.9.1
 	github.com/prometheus/client_golang v1.25.0
