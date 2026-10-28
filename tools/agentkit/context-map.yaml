@@ -191,10 +191,10 @@ entries:
     userdocs: ["docs/reference/build-tags.md"]
   - name: fake-push-service
     paths: ["internal/adapter/pushservice/**", "cmd/my/dev_push_service.go"]
-    docs: ["docs/reference/build-tags.md"]
-    userdocs: ["docs/reference/build-tags.md#test-builds"]
+    docs: ["docs/adr/0118-demo-web-push.md", "docs/adr/0117-demo-environment.md", "docs/reference/build-tags.md"]
+    userdocs: ["docs/reference/build-tags.md#the-fake-push-service"]
     notes:
-      - "ADR-0118 §1 and ADR-0117 §2: only the test builds (build tag e2e_fakes) link it, through cmd/my/dev_push_service.go; scripts/go-build-tags.sh and depguard check it."
+      - "Only the test builds (build tag e2e_fakes) link it, through cmd/my/dev_push_service.go; scripts/go-build-tags.sh and depguard check it."
       - "Its receiving side (VAPID verification, RFC 8291 decryption) is written apart from internal/adapter/webpush; both are tested against RFC 8291 Appendix A."
   - name: server-process
     paths: ["cmd/my/main.go", "cmd/my/serve.go", "cmd/my/job.go", "internal/platform/serve.go", "internal/platform/http.go", "internal/platform/log.go", "internal/platform/health.go"]
