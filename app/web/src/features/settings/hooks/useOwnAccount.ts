@@ -116,7 +116,7 @@ export function useAccountDeletion(): AccountDeletion {
       setPassword("");
       // The server has ended every session and token of the account; this forgets them in every tab.
       await session.signOut().catch(() => undefined);
-      await navigate({ to: "/login" });
+      await navigate({ to: "/" });
     },
   });
   const failure = mutation.isError ? confirmationFailure(mutation.error) : undefined;

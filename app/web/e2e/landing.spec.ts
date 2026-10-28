@@ -202,7 +202,7 @@ test.describe("the landing page", () => {
   });
 
   test("leads to the information page", async ({ page }) => {
-    await page.getByRole("main").locator('footer a[href="/about"]').click();
+    await page.getByRole("contentinfo").locator('a[href="/about"]').click();
     await expect(page).toHaveURL(/\/about$/);
   });
 

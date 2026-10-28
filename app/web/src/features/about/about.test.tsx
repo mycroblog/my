@@ -296,8 +296,36 @@ describe("the information page", () => {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }));
+    server.use(signedInHandler);
     await renderApp({ path: "/home" });
     const aside = await screen.findByRole("complementary", { name: "About this server" });
     expect(within(aside).getByRole("link", { name: "More about this server" })).toHaveAttribute("href", "/about");
+  });
+
+  test("is linked from the footer of signed-out pages, which have no column about the server at any width", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(min-width: 80rem)",
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({
+          ...instanceFixture,
+          source_url: "https://git.example.org/fork/my",
+          terms_url: "http://localhost:3000/about/terms",
+        }),
+      ),
+    );
+    await renderApp({ path: "/local" });
+    const footer = await screen.findByRole("contentinfo");
+    expect(within(footer).getByRole("link", { name: "More about this server" })).toHaveAttribute("href", "/about");
+    expect(await within(footer).findByRole("link", { name: "Terms of service" })).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: newTabName("View the source code") })).toHaveAttribute(
+      "href",
+      "https://git.example.org/fork/my",
+    );
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   });
 });

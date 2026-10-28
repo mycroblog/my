@@ -473,7 +473,7 @@ func (s *Service) loginProviderClientSecret(ctx context.Context, providerID stri
 	if err != nil {
 		return "", fmt.Errorf("identity: the client secret of login provider %s: %w", providerID, err)
 	}
-	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, kernel.AAD(sec.ID, identity.LoginProviderSecretColumn))
+	plain, err := s.d.Sealer.Open(ctx, sec.Sealed, LoginProviderSecretAAD(sec.ID))
 	if err != nil {
 		return "", fmt.Errorf("identity: open the client secret of login provider %s: %w", providerID, err)
 	}

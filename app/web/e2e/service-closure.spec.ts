@@ -98,7 +98,7 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
 }
 
 test.describe("the announced closure", () => {
-  for (const path of ["/login", "/about"]) {
+  for (const path of ["/search", "/about"]) {
     test(`shows its notice on ${path}, and the keyboard reaches the export and the move`, async ({
       page,
       makeAxeBuilder,
@@ -129,7 +129,7 @@ test.describe("the announced closure", () => {
 test.describe("the closed server", () => {
   test("tells a visitor to sign in to take the data out", async ({ page, makeAxeBuilder }) => {
     await server(page, "closed", { signedIn: false });
-    await page.goto("/login");
+    await page.goto("/search");
     const notice = page.getByRole("region", { name: message("closure.label"), exact: true });
     await expect(notice).toBeVisible();
     await expect(notice.getByRole("link")).toHaveCount(0);

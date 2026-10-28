@@ -108,7 +108,7 @@ type secondFactor struct {
 // or something shaped like a recovery code, which only useRecoveryCode can tell is valid. It
 // fails with ErrInvalidSecondFactor.
 func (s *Service) verifySecondFactor(ctx context.Context, e identity.TOTPEnrollment, code string, now time.Time) (secondFactor, error) {
-	secret, err := s.d.Sealer.Open(ctx, e.SecretEnc, totpSecretAAD(e.ID))
+	secret, err := s.d.Sealer.Open(ctx, e.SecretEnc, TOTPSecretAAD(e.ID))
 	if err != nil {
 		return secondFactor{}, fmt.Errorf("identity: open the TOTP secret of enrollment %s: %w", e.ID, err)
 	}

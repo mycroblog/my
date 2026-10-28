@@ -54,5 +54,6 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 			autoDeletes: d.StatusRepository(),
 		},
 		projections: d.ProjectionStore(), dataUpgrades: d.DataUpgradeRepository(),
+		sealedValues: d.SealedValueStore(),
 	}, nil
 }
