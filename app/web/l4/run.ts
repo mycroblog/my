@@ -11,7 +11,8 @@
 // context-map paths changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
 // the run. --dry-run does everything but call the agent: it selects the tasks, starts the server with the fixtures,
 // signs in, and opens each screen's start through the Playwright MCP server as the agent would, then records the
-// tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent.
+// tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
+// L4_NO_SANDBOX=1 starts the agent's Chromium without its sandbox (mcp.ts).
 import { execFileSync, spawn } from "node:child_process";
 import { createWriteStream, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -23,7 +24,7 @@ import { MCPClient, mcpCommand } from "./mcp.ts";
 import { setupOf } from "./screens.ts";
 import { capTasks, parseContextMap, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
 import { lostnessThreshold, type RunResult, type TaskResult } from "./results.ts";
-import { mcpPrefix, measure, parseTranscript, readTools, stepTools } from "./transcript.ts";
+import { failureOf, mcpPrefix, measure, parseTranscript, readTools, stepTools } from "./transcript.ts";
 
 const webDir = resolve(import.meta.dirname, "..");
 const root = resolve(webDir, "../..");
@@ -46,6 +47,7 @@ const model = process.env["L4_MODEL"] ?? "sonnet";
 const maxTurns = process.env["L4_MAX_TURNS"] ?? "40";
 const budgetUSD = process.env["L4_BUDGET_USD"] ?? "1";
 const timeoutMs = Number(process.env["L4_TIMEOUT_MINUTES"] ?? "10") * 60_000;
+const sandbox = process.env["L4_NO_SANDBOX"] !== "1";
 
 function git(...args: string[]): string {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
@@ -325,16 +327,23 @@ async function main(): Promise<number> {
         // A sign-in of its own for every task: the client rotates the refresh token, so a storage state works once.
         const storageState = join(dir, "storage-state.json");
         await signIn(storageState);
-        const mcpArgs = mcpCommand({ dir, startURL: serverURL + setup.start, storageState, executablePath });
+        const mcpArgs = mcpCommand({
+          dir,
+          startURL: serverURL + setup.start,
+          storageState,
+          executablePath,
+          sandbox,
+        });
         if (dryRun) {
           await probe(dir, mcpArgs, setup.start);
           result.tasks.push(emptyResult(task, setup.start, "dry-run"));
           continue;
         }
         const transcript = parseTranscript(await runAgent(task, dir, mcpArgs));
-        if (transcript.apiError !== null) {
+        const failure = failureOf(transcript);
+        if (failure !== null) {
           // Not a measure of the screen: recorded as `error` (no issue), and the run exits non-zero.
-          throw new Error(`agent run failed: ${transcript.apiError}`);
+          throw new Error(failure);
         }
         const measures = measure(transcript.path, task.shortest, setup.start);
         result.tasks.push({

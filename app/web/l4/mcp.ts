@@ -19,6 +19,11 @@ export function mcpCommand(options: {
   storageState: string;
   /** The Chromium executable. */
   executablePath: string;
+  /**
+   * Whether Chromium runs in its sandbox. Only for a container that runs as root, where Chromium refuses to start in
+   * it (`L4_NO_SANDBOX=1`); the browser loads only the app of `my serve` on localhost.
+   */
+  sandbox: boolean;
 }): string[] {
   // The init page runs on every new page of the browser, before the first tool call returns: it opens the start,
   // so the agent never types an address, and waits until the client has drawn the screen's heading, so that the
@@ -52,6 +57,7 @@ export function mcpCommand(options: {
     "1280x900",
     "--output-dir",
     join(options.dir, "mcp-output"),
+    ...(options.sandbox ? [] : ["--no-sandbox"]),
   ];
 }
 

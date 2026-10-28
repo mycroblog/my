@@ -62,6 +62,11 @@ export type Transcript = {
   ending: string;
   /** The message of an API, authentication or transport error that ended the session (`is_error` of the result event). */
   apiError: string | null;
+  /**
+   * Why the agent never got a page: no browser tool call returned one (the browser failed to start, say). Then the
+   * session measured nothing of the screen. The first browser error, or that the agent called no browser tool.
+   */
+  browserError: string | null;
   /** The cost of the session in US dollars, when the result event gives it. */
   costUSD: number | null;
 };
@@ -138,7 +143,17 @@ export function parseTranscript(output: string): Transcript {
   let refs = new Map<string, string>();
   let url = "";
   const path: Step[] = [];
-  const transcript: Transcript = { path, completed: false, summary: "", ending: "none", apiError: null, costUSD: null };
+  const transcript: Transcript = {
+    path,
+    completed: false,
+    summary: "",
+    ending: "none",
+    apiError: null,
+    browserError: null,
+    costUSD: null,
+  };
+  let gotPage = false;
+  let firstBrowserError: string | null = null;
   for (const line of output.split("\n")) {
     if (line.trim() === "") {
       continue;
@@ -172,6 +187,11 @@ export function parseTranscript(output: string): Transcript {
         if (page !== undefined) {
           url = pathOf(page);
         }
+        if (block["is_error"] !== true && page !== undefined) {
+          gotPage = true;
+        } else if (!gotPage && firstBrowserError === null && (block["is_error"] === true || /^### Error/m.test(text))) {
+          firstBrowserError = text.trim().split("\n").slice(0, 3).join(" ").slice(0, 500);
+        }
         if (use.name === "browser_snapshot") {
           refs = snapshotRefs(text);
         }
@@ -193,7 +213,24 @@ export function parseTranscript(output: string): Transcript {
       }
     }
   }
+  if (!gotPage) {
+    transcript.browserError = firstBrowserError ?? "the agent called no browser tool";
+  }
   return transcript;
+}
+
+/**
+ * Why the session measured nothing of the screen, or null when it did. run.ts records such a task as `error`, which
+ * files no issue and makes the run exit non-zero: an API error, or a browser that never gave the agent a page.
+ */
+export function failureOf(transcript: Transcript): string | null {
+  if (transcript.apiError !== null) {
+    return `agent run failed: ${transcript.apiError}`;
+  }
+  if (transcript.browserError !== null) {
+    return `the agent never got a page: ${transcript.browserError}`;
+  }
+  return null;
 }
 
 /** The agent's verdict: the structured output of the result event, or a JSON object at the end of its text. */

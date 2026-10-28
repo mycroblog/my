@@ -11,6 +11,7 @@ import { useLocale, useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
 import {
   cachePostedStatus,
+  countPostedStatus,
   createStatus,
   type CreateStatusRequest,
   credentialsQueryOptions,
@@ -209,17 +210,26 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       // The post is done once the lists it appears in are fetched again (it stays in the outbox as sending
       // until then), so that a list opened next shows it at once (web-client/README.md S1). A failed refetch does
       // not fail the post: that list fetches again when it is shown.
+      const isFirstPost = countPostedStatus(api, queryClient) === 1;
       await cachePostedStatus(api, queryClient, status);
       store.remove(idempotencyKey);
       // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
       const narrowed = status.visibility !== body.visibility;
-      toast.show({
-        message: narrowed
-          ? t("client:compose.visibility.limited", { visibility: t(visibilityLabel[status.visibility]) })
-          : t("client:compose.posted"),
-        tone: narrowed ? "neutral" : "success",
-        ...(narrowed ? { timeout: null } : {}),
-      });
+      if (narrowed) {
+        toast.show({
+          message: t("client:compose.visibility.limited", { visibility: t(visibilityLabel[status.visibility]) }),
+          tone: "neutral",
+          timeout: null,
+        });
+      } else {
+        // The account's first post is a celebrated moment (web-client/21-experience-principles.md §21.5): the result
+        // of the post, its toast, says so and its icon bounces a little.
+        toast.show({
+          message: t(isFirstPost ? "client:compose.posted.first" : "client:compose.posted"),
+          tone: "success",
+          ...(isFirstPost && { celebrate: true }),
+        });
+      }
       if (store.getSnapshot().outbox.length === 0 && isEmptyDraft(store.getSnapshot().draft)) {
         controller.setSheetOpen(false);
       }

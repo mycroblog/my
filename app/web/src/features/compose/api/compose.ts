@@ -15,6 +15,7 @@ export type Visibility = components["schemas"]["Visibility"];
 export type QuotePolicy = components["schemas"]["QuotePolicy"];
 export type CreateStatusRequest = components["schemas"]["CreateStatusRequest"];
 export type PostingLimits = components["schemas"]["PostingLimits"];
+type CredentialAccount = components["schemas"]["CredentialAccount"];
 
 /** The instance, for `limits.max_post_characters`. */
 export function instanceQueryOptions(api: Api) {
@@ -114,6 +115,19 @@ export async function cachePostedStatus(api: Api, queryClient: QueryClient, stat
  */
 export function credentialsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/accounts/verify_credentials");
+}
+
+/**
+ * Adds a new post to the viewer's own post count (`statuses_count`) in the cache and returns the new count, or null
+ * while the account is not in the cache. A count of 1 after the create is the account's first post (web-client §21.5).
+ */
+export function countPostedStatus(api: Api, queryClient: QueryClient): number | null {
+  const { queryKey } = credentialsQueryOptions(api);
+  const viewer = queryClient.getQueryData<CredentialAccount>(queryKey);
+  if (viewer === undefined) return null;
+  const count = viewer.statuses_count + 1;
+  queryClient.setQueryData(queryKey, { ...viewer, statuses_count: count });
+  return count;
 }
 
 /**

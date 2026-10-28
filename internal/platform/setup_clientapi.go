@@ -40,7 +40,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The counts and the operators of the landing page, read again every few minutes.
 		Overview:      instance.NewOverview(overviewSources{a}, a.Clock),
 		SendsEmail:    sendsEmail(cfg),
-		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
+		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, PostCounts: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, InstanceThumbnail: a.instanceThumbnail,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,

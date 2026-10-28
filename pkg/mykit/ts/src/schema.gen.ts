@@ -9845,6 +9845,13 @@ export interface components {
             source: components["schemas"]["AccountSource"];
             posting: components["schemas"]["PostingLimits"];
             /**
+             * Format: int64
+             * @description The number of the account's own posts that are not deleted, of every visibility.
+             *     Only the owner sees it; other accounts do not carry it. A client that creates a post
+             *     adds one to it, so a count of 1 after the create is the account's first post.
+             */
+            statuses_count: number;
+            /**
              * @description The permissions that the user's roles grant, which the admin operations need; empty
              *     for a user without roles. Clients show the admin screens by them; the server checks
              *     the permission of each admin operation regardless.
