@@ -226,5 +226,9 @@
   "shell.notice.dismiss": {
     "defaultMessage": "Dismiss",
     "description": "Name and tooltip of the button that closes a notice of a change made elsewhere, such as the host turning the microphone off in a voice chat call."
+  },
+  "shell.back": {
+    "defaultMessage": "Back",
+    "description": "Icon button before the heading of a page that is not an item of the navigation (a post, a follow list); it goes back to the previous page, or to the home page when the page was opened directly. Shown as its tooltip too."
   }
 }

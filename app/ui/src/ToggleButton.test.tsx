@@ -39,4 +39,21 @@ describe("ToggleButton", () => {
     render(<ToggleButton aria-label="Boost" tone="success" isSelected />);
     expect(screen.getByRole("button", { name: "Boost" })).toHaveClass("data-selected:text-success");
   });
+
+  // A press shows at once where it happened (web-client/21-experience-principles.md P2, ADR-0110 §6): the button is
+  // pressed (React Aria's data-pressed) from the pointer's down, it dents then, and it takes the sunken fill, which is
+  // the answer with reduced motion.
+  it("changes its look as soon as the pointer presses it, before the press ends", async () => {
+    const user = userEvent.setup();
+    render(<ToggleButton aria-label="Favourite" isSelected={false} />);
+    const button = screen.getByRole("button", { name: "Favourite" });
+    expect(button).not.toHaveAttribute("data-pressed");
+
+    await user.pointer({ keys: "[MouseLeft>]", target: button });
+    expect(button).toHaveAttribute("data-pressed", "true");
+    expect(button).toHaveClass("motion-safe:data-pressed:scale-95", "data-pressed:bg-surface-sunken");
+
+    await user.pointer({ keys: "[/MouseLeft]", target: button });
+    expect(button).not.toHaveAttribute("data-pressed");
+  });
 });

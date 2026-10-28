@@ -36,7 +36,15 @@ export type { TextHighlight, TextHighlightKind } from "./TextAreaMirror";
 export { TextField, type TextFieldProps } from "./TextField";
 export { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 export { celebrationClasses, celebrationMs, useCelebration, type Celebration } from "./celebration";
-export { IconButton, IconToggleButton, type IconButtonProps, type IconToggleButtonProps } from "./IconButton";
+export {
+  IconButton,
+  IconButtonLink,
+  IconToggleButton,
+  type IconButtonLinkProps,
+  type IconButtonProps,
+  type IconToggleButtonProps,
+} from "./IconButton";
+export { ActionCount, type ActionCountProps } from "./ActionCount";
 export { Segmented, SegmentedItem, type SegmentedItemProps, type SegmentedProps } from "./Segmented";
 
 // Overlays, tabs and announcements.

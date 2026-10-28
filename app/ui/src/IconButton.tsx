@@ -5,7 +5,7 @@
 // the button; it never replaces its name. Lint (restrict/icons) rejects an icon-only Button or ToggleButton outside a
 // TooltipTrigger, so a feature builds one from these.
 import type { ReactNode } from "react";
-import { Button, type ButtonProps } from "./Button";
+import { Button, ButtonLink, type ButtonLinkProps, type ButtonProps } from "./Button";
 import { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 import { Tooltip, type TooltipProps, TooltipTrigger } from "./Tooltip";
 
@@ -34,6 +34,30 @@ export function IconButton({
       <Button {...props} variant={variant} size={size} aria-label={label}>
         {children}
       </Button>
+      <Tooltip {...(tooltipPlacement !== undefined && { placement: tooltipPlacement })}>{label}</Tooltip>
+    </TooltipTrigger>
+  );
+}
+
+export type IconButtonLinkProps = Omit<ButtonLinkProps, "aria-label" | "aria-labelledby" | "children"> & IconProps;
+
+/**
+ * A link that shows only an icon (and a count), as `IconButton` does: a place to go rather than an action, such as the
+ * replies of a post (its page). Named by `label` and its tooltip; `subtle` and `toolbar` by default, for a post's action bar.
+ */
+export function IconButtonLink({
+  label,
+  children,
+  tooltipPlacement,
+  variant = "subtle",
+  size = "toolbar",
+  ...props
+}: IconButtonLinkProps) {
+  return (
+    <TooltipTrigger>
+      <ButtonLink {...props} variant={variant} size={size} aria-label={label}>
+        {children}
+      </ButtonLink>
       <Tooltip {...(tooltipPlacement !== undefined && { placement: tooltipPlacement })}>{label}</Tooltip>
     </TooltipTrigger>
   );

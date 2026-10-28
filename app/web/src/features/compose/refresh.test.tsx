@@ -116,6 +116,6 @@ describe("a reply", () => {
     await router.navigate({ to: "/@{$acct}/status/$id", params: { acct: "bob", id: parent.id } });
     // The post counts the reply from the page's first render, not as it was before the reply.
     const again = await screen.findByRole("article", { description: "The question" });
-    expect(within(again).getByRole("button", { name: "Reply" })).toHaveAccessibleDescription("1");
+    expect(within(again).getByText("1 reply")).toBeInTheDocument();
   });
 });

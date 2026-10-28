@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
+import { BackIcon } from "./Icons";
+import { IconButton } from "./IconButton";
 import { Link } from "./Link";
 import { Spark, type SparkMark } from "./Spark";
 
@@ -31,14 +33,19 @@ export type PageHeadingProps = {
   visuallyHidden?: boolean | "wide";
   /** A decorative mark (`✳` or `✧`, mango) after the text, hidden from assistive technology. */
   spark?: SparkMark;
+  /**
+   * The way back, before the heading, on a page that is not an item of the navigation (a post, a follow list): the
+   * installed app has no browser back button. `label` names the button and its tooltip ("Back").
+   */
+  back?: { label: string; onPress: () => void };
 };
 
 /**
  * The page's only level-one heading. After a navigation the app moves focus to it and names the document after its
  * text, so it is focusable by script (`tabIndex={-1}`) but not in the tab order.
  */
-export function PageHeading({ children, id, visuallyHidden = false, spark }: PageHeadingProps) {
-  return (
+export function PageHeading({ children, id, visuallyHidden = false, spark, back }: PageHeadingProps) {
+  const heading = (
     <h1
       id={id}
       tabIndex={-1}
@@ -48,6 +55,15 @@ export function PageHeading({ children, id, visuallyHidden = false, spark }: Pag
       {children}
       {spark !== undefined && visuallyHidden === false && <Spark mark={spark} />}
     </h1>
+  );
+  if (back === undefined) return heading;
+  return (
+    <div className="flex items-center gap-2">
+      <IconButton label={back.label} onPress={back.onPress} size="compact" tooltipPlacement="bottom">
+        <BackIcon />
+      </IconButton>
+      {heading}
+    </div>
   );
 }
 

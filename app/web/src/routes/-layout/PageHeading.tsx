@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { PageHeading as PageHeadingView, type PageHeadingProps as ViewProps } from "@my/ui";
-import { useMatch } from "@tanstack/react-router";
+import { useCanGoBack, useMatch, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useSessionStatus, useSessionUnreachable } from "../../lib/auth/SessionProvider";
+import { useT } from "../../lib/i18n";
 
 export type PageHeadingProps = {
   children: ReactNode;
@@ -27,9 +29,38 @@ export function PageHeading({ children, id, visuallyHidden, spark }: PageHeading
   // The heading renders inside its route's match, as do the route's pending and error components.
   const hideHeading = useMatch({ strict: false, select: (match) => match.staticData.hideHeading ?? false });
   const hidden = visuallyHidden ?? hideHeading;
+  const back = useBack();
   return (
-    <PageHeadingView {...(id !== undefined && { id })} {...(spark !== undefined && { spark })} visuallyHidden={hidden}>
+    <PageHeadingView
+      {...(id !== undefined && { id })}
+      {...(spark !== undefined && { spark })}
+      {...(back !== null && { back })}
+      visuallyHidden={hidden}
+    >
       {children}
     </PageHeadingView>
   );
+}
+
+/**
+ * The back button of a page that is not an item of the navigation (`staticData.back`): back in the history, or, when
+ * the page was opened first (a shared address), to the home timeline, or the landing page while signed out (as
+ * HomeLink). Null on the other pages.
+ */
+function useBack(): NonNullable<ViewProps["back"]> | null {
+  const t = useT();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const status = useSessionStatus();
+  const unreachable = useSessionUnreachable();
+  const back = useMatch({ strict: false, select: (match) => match.staticData.back === true });
+  if (!back) return null;
+  const signedOut = status === "signed-out" && !unreachable;
+  return {
+    label: t("client:shell.back"),
+    onPress: () => {
+      if (canGoBack) router.history.back();
+      else void router.navigate({ to: signedOut ? "/" : "/home" });
+    },
+  };
 }

@@ -2,8 +2,8 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { IconButton, IconToggleButton } from "./IconButton";
-import { StarIcon } from "./Icons";
+import { IconButton, IconButtonLink, IconToggleButton } from "./IconButton";
+import { RepliesIcon, StarIcon } from "./Icons";
 
 describe("IconButton", () => {
   it("is named by its label and shows the label as its tooltip on keyboard focus (G12)", async () => {
@@ -64,5 +64,22 @@ describe("IconToggleButton", () => {
       </IconToggleButton>,
     );
     expect(screen.getByRole("button", { name: "Favourite", pressed: true })).toBe(button);
+  });
+});
+
+describe("IconButtonLink", () => {
+  it("is a link named by its label, which its tooltip shows on keyboard focus (G12)", async () => {
+    const user = userEvent.setup();
+    render(
+      <IconButtonLink label="Read 3 replies" href="/@alice/status/1">
+        <RepliesIcon />3
+      </IconButtonLink>,
+    );
+    const link = screen.getByRole("link", { name: "Read 3 replies" });
+    expect(link).toHaveAttribute("href", "/@alice/status/1");
+
+    await user.tab();
+    expect(link).toHaveFocus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Read 3 replies");
   });
 });

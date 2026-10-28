@@ -20,7 +20,7 @@ const paramsSchema = z.object({ acct: z.string().min(1), id: z.string().min(1) }
  * the author lists them, so it needs a session; the approval of a quote is revoked from the quoting post's menu.
  */
 export const Route = createFileRoute("/@{$acct}_/status/$id_/quotes")({
-  staticData: { title: "client:status.quotes.title", hideHeading: true },
+  staticData: { title: "client:status.quotes.title", back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: ({ context: { queryClient, api }, params: { id } }) =>
