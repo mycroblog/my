@@ -61,8 +61,24 @@ const shown: ShownError[] = [];
 /** The requests of the API that no handler answered in the current story; `settled` fails the story on them. */
 const unhandled: string[] = [];
 
+/** The messages of MSW's worker that wait for a reply msw/browser never sends. */
+const unansweredMessages = new Set(["MOCKING_ENABLED", "INTEGRITY_CHECK_RESPONSE", "KEEPALIVE_RESPONSE"]);
+
+/**
+ * Replies to a message of MSW's worker in `unansweredMessages`. The worker keeps the event of each such message open
+ * until the page replies, and Chromium stops a Service Worker one of whose events is still open after 5 minutes: the
+ * restarted worker has forgotten the pages MSW mocks for, so their requests reach the dev server (its HTML as the
+ * API's answer) and those in flight fail ("Failed to fetch dynamically imported module"). A run longer than that, as
+ * in CI, broke the stories running 5 minutes after the first one started the worker.
+ */
+function acknowledgeWorker(event: MessageEvent): void {
+  const { data } = event as MessageEvent<{ type?: unknown } | null>;
+  if (typeof data?.type === "string" && unansweredMessages.has(data.type)) event.ports[0]?.postMessage({});
+}
+
 /** Starts MSW's worker once per page; later stories reuse it. */
 function startWorker(): Promise<unknown> {
+  if (started === undefined) navigator.serviceWorker.addEventListener("message", acknowledgeWorker);
   started ??= worker.start({
     quiet: true,
     // A request of the API that no handler answers is an error, as in the tests; the page's own modules pass.
