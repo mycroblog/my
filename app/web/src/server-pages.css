@@ -74,6 +74,14 @@
     }
   }
 
+  /*
+   * The instance's own logo (ADR-0116), which includes its name: an <img> of the SVG, never inline, with the dark
+   * logo as a <source> for a dark ground. As high as the built-in wordmark, and narrower when the screen is.
+   */
+  .site-own-logo {
+    @apply block h-16 w-auto max-w-full object-contain;
+  }
+
   .site-name {
     @apply text-center text-lg font-extrabold break-words text-fg;
   }

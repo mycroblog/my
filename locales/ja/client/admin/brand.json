@@ -1,0 +1,214 @@
+{
+  "admin.brand.background": {
+    "defaultMessage": "背景の色",
+    "description": "Label of the field of the color behind the icon on home screens and app icons."
+  },
+  "admin.brand.background.description": {
+    "defaultMessage": "ホーム画面とアプリのアイコンで、アイコンの後ろに塗る色です（#ffffff など）。",
+    "description": "Help under the background color field of the icon."
+  },
+  "admin.brand.background.invalid": {
+    "defaultMessage": "#ffffff のように、# と 6 桁で色を入力してください。",
+    "description": "Error under the background color field when it is not #rrggbb."
+  },
+  "admin.brand.built_in": {
+    "defaultMessage": "my の組み込みのものを使っています。",
+    "description": "Text in place of the preview while a brand image is not set."
+  },
+  "admin.brand.check_failed": {
+    "defaultMessage": "ファイルを確かめられませんでした：{reason}",
+    "description": "Error when checking the chosen SVG failed for a reason other than the file. {reason} is the server's localized reason."
+  },
+  "admin.brand.checked": {
+    "defaultMessage": "ファイルを確かめました。プレビューで見え方を確かめてください。",
+    "description": "Announcement after the chosen SVG was checked and its images drawn."
+  },
+  "admin.brand.checked_dropped": {
+    "defaultMessage": "ファイルを確かめ、{count, plural, other {# 個の部分}}を取り除きました。プレビューで見え方を確かめてください。",
+    "description": "Announcement after the chosen SVG was checked and the server removed some parts. {count} is how many."
+  },
+  "admin.brand.choose": {
+    "defaultMessage": "SVG のファイルを選ぶ",
+    "description": "Button that opens the file picker to choose the SVG of a brand image."
+  },
+  "admin.brand.clear_failed": {
+    "defaultMessage": "組み込みのものに戻せませんでした：{reason}",
+    "description": "Error beside the button that clears a brand image. {reason} is the server's localized reason."
+  },
+  "admin.brand.description": {
+    "defaultMessage": "my の組み込みの絵の代わりに使う、このサーバーの絵です。SVG のファイルを選んでください。サーバーがファイルを確かめ、動くものやほかのファイルを読むものを取り除き、このブラウザーがアプリやメールに要る PNG の画像を描きます。",
+    "description": "Explanation above the forms of the server's icon and logos."
+  },
+  "admin.brand.dropped": {
+    "defaultMessage": "ファイルから取り除いたもの（{count, number}）：",
+    "description": "Heading of the list of the elements and attributes the server removed from the chosen SVG. {count} is how many."
+  },
+  "admin.brand.error.aspect_ratio.icon": {
+    "defaultMessage": "アイコンは正方形にしてください。絵の幅と高さを同じにしてください。",
+    "description": "Error when the icon is not square."
+  },
+  "admin.brand.error.aspect_ratio.logo": {
+    "defaultMessage": "ロゴは、幅が高さの 1 倍から 8 倍にしてください。絵を切り詰めてください。",
+    "description": "Error when a logo's proportions are outside 1:1 to 8:1."
+  },
+  "admin.brand.error.doctype": {
+    "defaultMessage": "ファイルから DOCTYPE と実体の宣言を外してから、選び直してください。",
+    "description": "Error when the SVG has a DOCTYPE or entity declarations."
+  },
+  "admin.brand.error.draw": {
+    "defaultMessage": "このブラウザーで絵を描けませんでした。別のブラウザーで試すか、SVG を書き出し直してください。",
+    "description": "Error when the browser could not draw the SVG on a canvas."
+  },
+  "admin.brand.error.invalid_color": {
+    "defaultMessage": "#ffffff のように、# と 6 桁で色を入力してください。",
+    "description": "Error when the server refused the background color."
+  },
+  "admin.brand.error.malformed": {
+    "defaultMessage": "読める SVG ではありません。UTF-8 の SVG のファイルとして書き出し直してください。",
+    "description": "Error when the chosen file is not well-formed XML."
+  },
+  "admin.brand.error.no_file": {
+    "defaultMessage": "保存する SVG のファイルを選んでください。",
+    "description": "Error under the file button when the save button is pressed without a chosen file."
+  },
+  "admin.brand.error.no_viewbox": {
+    "defaultMessage": "SVG に viewBox がありません。viewBox 付きで書き出し直してください（多くの編集ソフトは付けます）。",
+    "description": "Error when the SVG has no valid viewBox."
+  },
+  "admin.brand.error.not_svg": {
+    "defaultMessage": "SVG のファイルではありません。SVG のファイルを選んでください。",
+    "description": "Error when the chosen file's root element is not svg."
+  },
+  "admin.brand.error.rendition": {
+    "defaultMessage": "このブラウザーが描いた画像を、サーバーが受け付けませんでした。ファイルを選び直してください。繰り返すときは、別のブラウザーで試してください。",
+    "description": "Error when a PNG rendition was refused."
+  },
+  "admin.brand.error.text": {
+    "defaultMessage": "絵に文字が含まれています。編集ソフトで文字をアウトライン（パス）にしてから、選び直してください。",
+    "description": "Error when the SVG has text elements."
+  },
+  "admin.brand.error.too_complex": {
+    "defaultMessage": "絵が複雑すぎます。形とグループを簡単にしてから、選び直してください。",
+    "description": "Error when the SVG has too many elements, nesting, or references."
+  },
+  "admin.brand.error.too_large": {
+    "defaultMessage": "ファイルが大きすぎます。SVG は 256 KB までです。形を簡単にするか、ファイルを最適化してください。",
+    "description": "Error when the SVG (or a drawn image) is over the size limit."
+  },
+  "admin.brand.error.unsafe_css": {
+    "defaultMessage": "ファイルの CSS がほかのファイルを読むか、使えない機能を使っています。@import・@font-face と、url(#id) 以外の url() を外してください。",
+    "description": "Error when the SVG's CSS is not allowed."
+  },
+  "admin.brand.icon.clear": {
+    "defaultMessage": "組み込みのアイコンに戻す",
+    "description": "Button that removes the server's own icon, bringing back the built-in one."
+  },
+  "admin.brand.icon.cleared": {
+    "defaultMessage": "組み込みのアイコンに戻しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's icon was cleared."
+  },
+  "admin.brand.icon.description": {
+    "defaultMessage": "正方形の絵です。ブラウザーのタブ、ホーム画面とアプリのアイコン、訪れた人を迎えるページに表示されます。小さな正方形で見分けられるように描いてください。",
+    "description": "Help about the server's icon: its shape and where it shows."
+  },
+  "admin.brand.icon.save": {
+    "defaultMessage": "アイコンを保存する",
+    "description": "Button that saves the server's icon."
+  },
+  "admin.brand.icon.saved": {
+    "defaultMessage": "アイコンを保存しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's icon was saved."
+  },
+  "admin.brand.icon.title": {
+    "defaultMessage": "アイコン",
+    "description": "Heading of the form of the server's icon."
+  },
+  "admin.brand.logo.clear": {
+    "defaultMessage": "組み込みのロゴに戻す",
+    "description": "Button that removes the server's own logo, bringing back the built-in wordmark and the name."
+  },
+  "admin.brand.logo.cleared": {
+    "defaultMessage": "組み込みのロゴに戻しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's logo was cleared."
+  },
+  "admin.brand.logo.description": {
+    "defaultMessage": "サーバーの名前を含む横長の絵です。アプリの上、ログインのページ、メール、リンクのプレビューに、名前の代わりに表示されます。",
+    "description": "Help about the server's logo: its shape and where it shows."
+  },
+  "admin.brand.logo.save": {
+    "defaultMessage": "ロゴを保存する",
+    "description": "Button that saves the server's logo."
+  },
+  "admin.brand.logo.saved": {
+    "defaultMessage": "ロゴを保存しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's logo was saved."
+  },
+  "admin.brand.logo.title": {
+    "defaultMessage": "ロゴ",
+    "description": "Heading of the form of the server's logo."
+  },
+  "admin.brand.logo_dark.clear": {
+    "defaultMessage": "暗い背景のロゴを外す",
+    "description": "Button that removes the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.cleared": {
+    "defaultMessage": "暗い背景のロゴを外しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's logo for dark backgrounds was cleared."
+  },
+  "admin.brand.logo_dark.description": {
+    "defaultMessage": "任意です。暗い背景で読める色のロゴで、ダークのテーマで使います。ないときは、上のロゴを使います。",
+    "description": "Help about the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.save": {
+    "defaultMessage": "暗い背景のロゴを保存する",
+    "description": "Button that saves the server's logo for dark backgrounds."
+  },
+  "admin.brand.logo_dark.saved": {
+    "defaultMessage": "暗い背景のロゴを保存しました。変更は監査ログに記録されます。",
+    "description": "Result after the server's logo for dark backgrounds was saved."
+  },
+  "admin.brand.logo_dark.title": {
+    "defaultMessage": "暗い背景のロゴ",
+    "description": "Heading of the form of the server's logo for dark backgrounds."
+  },
+  "admin.brand.preview.app_icon": {
+    "defaultMessage": "アプリのアイコン",
+    "description": "Caption of the preview of the icon as an installed app's icon, in a circle."
+  },
+  "admin.brand.preview.current": {
+    "defaultMessage": "使用中",
+    "description": "Caption of the preview of the brand image in use."
+  },
+  "admin.brand.preview.home_screen": {
+    "defaultMessage": "ホーム画面",
+    "description": "Caption of the preview of the icon on a phone's home screen."
+  },
+  "admin.brand.preview.link": {
+    "defaultMessage": "リンクのプレビュー",
+    "description": "Caption of the preview of the logo as the image of a link preview."
+  },
+  "admin.brand.preview.mail": {
+    "defaultMessage": "メール",
+    "description": "Caption of the preview of the logo at the top of an email."
+  },
+  "admin.brand.preview.mail_dark": {
+    "defaultMessage": "メール（暗い背景）",
+    "description": "Caption of the preview of the logo at the top of an email on a dark background."
+  },
+  "admin.brand.preview.new": {
+    "defaultMessage": "新しいファイル",
+    "description": "Caption of the preview of the chosen SVG before it is saved."
+  },
+  "admin.brand.preview.tab": {
+    "defaultMessage": "ブラウザーのタブ",
+    "description": "Caption of the preview of the icon in a browser tab."
+  },
+  "admin.brand.save_failed": {
+    "defaultMessage": "保存できませんでした：{reason}",
+    "description": "Error beside the save button of a brand image. {reason} is the server's localized reason."
+  },
+  "admin.brand.title": {
+    "defaultMessage": "アイコンとロゴ",
+    "description": "Heading of the section of the server's own icon and logos on the server settings screen."
+  }
+}

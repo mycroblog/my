@@ -24,6 +24,7 @@ import {
   useModerationBadges,
   useShownStaffPages,
 } from "../../features/moderation";
+import { useBrand } from "../../lib/brand";
 import { type ClientMessageKey, useT } from "../../lib/i18n";
 import { useInstanceName } from "../../lib/instanceName";
 
@@ -104,6 +105,7 @@ export function AdminLayout({ children, skipLinkLabel, mainId, mainRef }: AdminL
   const t = useT();
   const router = useRouter();
   const instanceName = useInstanceName();
+  const { logo } = useBrand();
   const pathname = useLocation({ select: (location) => location.pathname });
   const moderationBadges = useModerationBadges();
   const moderationGroups = useAreaGroups(
@@ -136,7 +138,7 @@ export function AdminLayout({ children, skipLinkLabel, mainId, mainRef }: AdminL
   );
   return (
     <AdminShell
-      brand={<BrandMark wordmarkName="my" instanceName={instanceName} size="sm" />}
+      brand={<BrandMark wordmarkName="my" instanceName={instanceName} size="sm" logo={logo} />}
       modeLabel={t("client:admin.mode.title")}
       navigation={<NavMenu groups={[...moderationGroups, ...adminGroups]} />}
       footer={<AdminNavBack href="/home" label={t("client:admin.mode.back")} />}

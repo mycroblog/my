@@ -64,6 +64,15 @@ describe("classify", () => {
     expect(classify(facts("/theme/0199f0e0.css", { mode: "navigate" }), origin)).toBe("network");
   });
 
+  it("caches the instance's icon and logos, whose URL names their revision", () => {
+    const image = { destination: "image", mode: "no-cors" };
+    expect(classify(facts("/brand/0199f0e0/logo.svg", image), origin)).toBe("brand");
+    expect(classify(facts("/brand/0199f0e0/favicon-32.png", image), origin)).toBe("brand");
+    expect(classify(facts("/brand/0199f0e0/logo.svg", { ...image, authorized: true }), origin)).toBe("network");
+    expect(classify(facts("/brand/0199f0e0/logo.svg", { mode: "navigate" }), origin)).toBe("network");
+    expect(classify(facts("/branding.png", image), origin)).toBe("network");
+  });
+
   it("leaves other origins and other methods to the browser", () => {
     expect(classify({ ...navigate("/"), url: "https://cdn.example/" }, origin)).toBe("network");
     expect(
