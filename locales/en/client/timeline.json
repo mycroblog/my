@@ -79,6 +79,14 @@
     "defaultMessage": "Show sensitive media",
     "description": "Toggle button over the pictures of a post that the author marked sensitive; it shows or hides them."
   },
+  "timeline.media.more": {
+    "defaultMessage": "+{count, number}",
+    "description": "Mark in the corner of the pictures of a remote post that had more attachments than the four this server keeps; it links to the original post. {count} is the number of attachments left out."
+  },
+  "timeline.media.more.label": {
+    "defaultMessage": "+{count, number} more — see the original post",
+    "description": "Accessible name of the mark of a remote post's left-out attachments, a link that opens the original post on its server. It must contain the text of timeline.media.more. {count} is the number of attachments left out."
+  },
   "timeline.media.audio.play": {
     "defaultMessage": "Play",
     "description": "Accessible name of the play button of the audio player of a post's audio attachment."
