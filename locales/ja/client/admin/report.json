@@ -510,5 +510,13 @@
   "admin.report.voice.ended": {
     "defaultMessage": "ルームを終えました。",
     "description": "Message after a moderator ended the reported voice chat room."
+  },
+  "admin.report.assignee.other": {
+    "defaultMessage": "担当あり",
+    "description": "Badge of an open report that another moderator handles; their name follows it."
+  },
+  "admin.report.assignee.unassigned": {
+    "defaultMessage": "未担当",
+    "description": "Badge of an open report that nobody handles yet."
   }
 }

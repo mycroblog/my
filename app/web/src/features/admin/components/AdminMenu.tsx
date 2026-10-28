@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The links to the server administration screens (ADR-0058): the
-// administration page that the navigation's Administration entry opens. They show no counts: what awaits the
-// staff is in the moderation.
+// The server administration screens (ADR-0058) of the admin mode's menu and the navigation's Administration entry.
+// The menu shows no counts on them: the administration overview (AdminOverview) says how the server runs.
 import {
   AnnouncementIcon,
   ClosureIcon,
@@ -20,7 +19,7 @@ import {
   ThemeIcon,
   WebhookIcon,
 } from "@my/ui";
-import { type StaffPage, StaffPages, useShownStaffPages } from "../../moderation";
+import { type StaffPage, useShownStaffPages } from "../../moderation";
 
 /**
  * The server administration screens, in the order of the menu, with the permission each needs, the icon of their
@@ -151,16 +150,6 @@ export const adminPages: readonly StaffPage[] = [
     group: "client:admin.menu.group.operations",
   },
 ];
-
-/** The administration page's links to the server administration screens, or why there are none for the viewer's roles. */
-export function AdminPages() {
-  return (
-    <StaffPages
-      pages={adminPages}
-      none={{ heading: "client:admin.home.none.heading", description: "client:admin.home.none.description" }}
-    />
-  );
-}
 
 /** The navigation's Administration entry: whether the viewer may use a server administration screen. */
 export function useAdminEntry(): { available: boolean } {

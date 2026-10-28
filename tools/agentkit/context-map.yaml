@@ -342,9 +342,11 @@ entries:
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
   - name: adapter-media
-    paths: ["internal/adapter/blob/**", "internal/adapter/media/**"]
-    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md"]
-    userdocs: ["docs/operations/cdn.md"]
+    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go"]
+    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
+    userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md"]
+    notes:
+      - "blob = s3 (internal/adapter/blob/s3) uses the AWS SDK for Amazon S3 against any S3-compatible endpoint; the bucket stays private and the server serves media/ under /media/. Its unit tests run testkit.BlobStoreContract on an in-memory fake of S3; the contract also runs on a Garage container (pkg/testkit/s3test) only with TEST_S3=container: `scripts/task.sh go:test-blob` (CI job blob-contract in the slow suite)."
   - name: adapter-federation
     paths: ["internal/adapter/httpsig/**", "internal/adapter/jsonld/**", "internal/adapter/htmlsanitizer/**", "internal/adapter/keymanager/**"]
     docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]
@@ -541,7 +543,7 @@ entries:
       - "The API client, the token refresh after a 401, problem parsing, and the event stream are @mycroblog/mykit's (pkg/mykit/ts); app/web keeps the wording, the reports to lib/network and lib/maintenance, and openapi-react-query. The API types come from `@mycroblog/mykit`."
   - name: web-feature-admin
     paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
-    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面", "docs/architecture/web-client/screens/admin-settings.md"]
+    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面", "docs/architecture/web-client/screens/admin-settings.md", "docs/architecture/web-client/screens/moderation.md", "docs/architecture/web-client/screens/admin.md"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]

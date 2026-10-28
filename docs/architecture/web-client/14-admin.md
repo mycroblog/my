@@ -13,10 +13,12 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   利用者の機能の区分の権限はスタッフの画面を出さず、`view_finance` はナビゲーションの「会計」と会計のページ（`/finance`、§9）を、`create_custom_emojis` は設定のメニューの「あなたのカスタム絵文字」と自分のカスタム絵文字の画面（`/settings/custom-emojis`、§9）を出す。
   ルートは `requireSignIn` のあと、loader で閲覧者を読み、権限があるときだけ一覧を読み込む（`routes/-admin/adminRoute.tsx`）。権限がなければ、要求を送らずに理由（権限の名前）を出す。
   守るのはサーバーで、権限が途中で外れて 403 `missing-permission` が返ったときは、ルートの `errorComponent` が同じ理由を出す。
-- **区分の画面**（`/moderation` はナビゲーションの「モデレーション」、`/admin` は「管理」）: 閲覧者のロールが使えるその区分の画面へのリンクを、設定の画面のその区分の区画と同じ一覧で並べる
-  （モデレーションは `ModerationMenu` / `ModerationPages`、サーバー管理は `AdminMenu` / `AdminPages`。どちらも `features/moderation` の `StaffMenuSection` / `StaffPages` で組む）。
-  設定の画面は「モデレーション」「管理」の順に 2 つの区画（`h2` の `section`）を出し、使える画面のない区分の区画は出さない。
-  通報（`/moderation/reports`）・登録の審査・異議申し立て（`/moderation/appeals`）のリンクは、待っている件数（未解決の通報・承認待ちの登録・審査待ちの異議申し立て）の `Badge` を持ち、その文言（「承認待ち 1 件」）はリンクの名前に入る。使える画面がないロールには、その理由を `EmptyState` で出す。
+- **区分の画面**（`/moderation` はナビゲーションの「モデレーション」、`/admin` は「管理」。[モデレーションのトップ](screens/moderation.md)・[管理のトップ](screens/admin.md)）: その区分の要約で、管理のモードのメニューの複製にしない（各画面へはメニューから行く）。
+  モデレーション（`ModerationOverview`）は、閲覧者のロールが数えられる待ち行列（未解決の通報・承認待ちの登録・審査待ちの異議申し立て）ごとの `StatTile` を `StatTileGrid` に並べ（タイル全体がその待ち行列へのリンク、1 件以上で「対応待ち」の印）、
+  `manage_reports` があれば、通報の待ち行列の最初のページの未解決の通報を、法的な通報を先に、次に長く待っている順に 5 件まで、区分の `StatusBadge`・待ち時間の `AgeBadge`・担当の印とともに出す。
+  サーバー管理（`AdminOverview`）は「サーバーの状態」の `StatTile`（`manage_jobs` の失敗したジョブとジョブの最長の待ち時間、`manage_errors` の未解決のエラー）を出す。
+  メニューの通報・登録の審査・異議申し立ての項目は、待っている件数の `Badge` を持ち、その文言（「承認待ち 1 件」）は項目の名前に入る。使える画面がないロールには、その理由を `EmptyState` で出す。
+  設定の画面は、どちらかの区分の画面を使えるロールにだけ、管理のモードへの入口（`StaffModeEntry`。待っている件数付き）を 1 つ出す。
 - **連合先**（`/moderation/instances`）: 状態のタブ（`?state=unavailable` / `available`、URL に置く。S3）と、ドメイン順の一覧。各サーバーは見出し（ドメインへのリンク）と、状態・その状態になった日時・失敗した日数・最後に失敗した日（UTC の日付）の説明リストにする。状態は文言で示し、色はそれを繰り返すだけにする。
 - **連合先の詳細**（`/moderation/instances/{domain}`）: 状態と、最新の `instance_availability_events` の理由、最後に配送を再開した日時（最新の `marked_available`）、新しい順の履歴。
   データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する。[data-model §4.8](../data-model/04-tables/08-federation.md#48-federation)）ので、「最後の成功」は配送の再開の日時で示す。

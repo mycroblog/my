@@ -237,7 +237,7 @@ var schema = []field{
 		def: "fs",
 		choices: []choice{
 			{value: "fs", inV0: true, doc: "Local file system."},
-			{value: "s3", inV0: true, doc: "S3-compatible API (AWS S3, Cloudflare R2, GCS XML API, MinIO)."},
+			{value: "s3", inV0: true, doc: "S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out."},
 			{value: "gcs", doc: "Native Google Cloud Storage API."},
 		},
 		set: func(c *Config, v string) { c.Blob = v },
@@ -259,6 +259,48 @@ var schema = []field{
 		def:   "blobs",
 		check: checkNotBlank,
 		set:   func(c *Config, v string) { c.BlobFSDir = v },
+	},
+	{
+		key:          "blob_s3_bucket",
+		doc:          "Bucket of the `s3` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).",
+		requiredWhen: "when `blob = s3`",
+		check:        checkS3Bucket,
+		set:          func(c *Config, v string) { c.BlobS3Bucket = v },
+	},
+	{
+		key:   "blob_s3_endpoint",
+		doc:   "Origin of the S3-compatible API of `blob = s3`, such as `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2), `https://storage.googleapis.com` (Google Cloud Storage with an HMAC key), or `http://minio:9000`. Empty uses Amazon S3's endpoint of `blob_s3_region`. Use `https` unless the server is on a private network that you trust: the requests carry the blobs.",
+		check: checkOrigin,
+		set:   func(c *Config, v string) { c.BlobS3Endpoint = v },
+	},
+	{
+		key:   "blob_s3_region",
+		doc:   "Region of the bucket of `blob = s3`, such as `eu-west-1`; `auto` for Cloudflare R2 and Google Cloud Storage. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`), and with `blob_s3_endpoint` set and no region there, `us-east-1`, which MinIO and most S3-compatible servers expect.",
+		check: checkS3Region,
+		set:   func(c *Config, v string) { c.BlobS3Region = v },
+	},
+	{
+		key: "blob_s3_path_style",
+		doc: "How `blob = s3` addresses the bucket.",
+		def: "false",
+		choices: []choice{
+			{value: "false", inV0: true, doc: "In the host name (`https://<bucket>.<endpoint>/<key>`), as Amazon S3, R2, and Cloud Storage take it."},
+			{value: "true", inV0: true, doc: "In the path (`https://<endpoint>/<bucket>/<key>`), for MinIO and other servers without a host name per bucket."},
+		},
+		set: func(c *Config, v string) { c.BlobS3PathStyle = v == "true" },
+	},
+	{
+		key: "blob_s3_access_key_id",
+		doc: "Access key ID of `blob = s3`, with `blob_s3_secret_access_key`. Empty takes the credentials of the AWS SDK's default chain: the environment (`AWS_ACCESS_KEY_ID`), the shared files, or the role of the instance or container, which needs no key in the configuration on AWS.",
+		set: func(c *Config, v string) { c.BlobS3AccessKeyID = v },
+	},
+	{
+		key:          "blob_s3_secret_access_key",
+		doc:          "Secret access key of `blob_s3_access_key_id`.",
+		secret:       true,
+		requiredWhen: "when `blob_s3_access_key_id` is set",
+		check:        checkNotBlank,
+		set:          func(c *Config, v string) { c.BlobS3SecretAccessKey = v },
 	},
 	{
 		key:    "media_origin",
@@ -1173,6 +1215,15 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 			seen[k] = true
 		}
 	}
+	if vals["blob"] == "s3" && !present["blob_s3_bucket"] {
+		issues = append(issues, Issue{Key: "blob_s3_bucket", Missing: true, Message: "required when blob is s3"})
+	}
+	if present["blob_s3_access_key_id"] && !present["blob_s3_secret_access_key"] {
+		issues = append(issues, Issue{Key: "blob_s3_secret_access_key", Missing: true, Message: "required when blob_s3_access_key_id is set"})
+	}
+	if present["blob_s3_secret_access_key"] && !present["blob_s3_access_key_id"] {
+		issues = append(issues, Issue{Key: "blob_s3_access_key_id", Missing: true, Message: "required when blob_s3_secret_access_key is set"})
+	}
 	if vals["kv"] == "valkey" && !present["valkey_url"] {
 		issues = append(issues, Issue{Key: "valkey_url", Missing: true, Message: "required when kv is valkey"})
 	} else if vals["stream"] == "valkey" && !present["valkey_url"] {
@@ -1626,6 +1677,30 @@ var awsRegion = regexp.MustCompile(`^[a-z]{2}(-[a-z]+)+-[0-9]+$`)
 func checkAWSRegion(v string) error {
 	if !awsRegion.MatchString(v) {
 		return errors.New("must be an AWS region such as eu-west-1")
+	}
+	return nil
+}
+
+// s3Bucket matches a bucket name of Amazon S3, R2, and Cloud Storage: 3 to 222 lower-case
+// letters, digits, dots, hyphens, and underscores, starting and ending with a letter or digit.
+var s3Bucket = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$`)
+
+// checkS3Bucket accepts the name of a bucket.
+func checkS3Bucket(v string) error {
+	if !s3Bucket.MatchString(v) {
+		return errors.New("must be a bucket name: 3 to 222 lower-case letters, digits, dots, hyphens, and underscores")
+	}
+	return nil
+}
+
+// s3Region matches the region of an S3-compatible service: an AWS region, or a name such as
+// auto (R2, Cloud Storage) or garage.
+var s3Region = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,63}$`)
+
+// checkS3Region accepts the region of an S3-compatible service.
+func checkS3Region(v string) error {
+	if !s3Region.MatchString(v) {
+		return errors.New("must be a region such as eu-west-1 or auto: lower-case letters, digits, and hyphens")
 	}
 	return nil
 }

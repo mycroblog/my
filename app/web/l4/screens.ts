@@ -88,6 +88,9 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
     unavailable: { "アイコンの画像を選び直して保存する（ファイルの選択は 1 つと数える）": noFile },
   },
   "settings-auto-delete": { start: "/settings", persona: "yuki" },
+  // The staff overviews start from the app, whose navigation has the entries into the mode.
+  moderation: { start: "/home", persona: "marco" },
+  admin: { start: "/home", persona: "hana" },
 };
 
 /** The setup of `screen`: its entry, or a start at `/home` as yuki. */
