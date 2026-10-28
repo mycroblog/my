@@ -24,7 +24,7 @@
     "description": "Error under the search field when neither this server nor the account's server knows the account."
   },
   "search.not_found_signed_out": {
-    "defaultMessage": "このサーバーはそのアカウントを知りません。サインインすると、そのアカウントのサーバーに問い合わせられます。",
+    "defaultMessage": "このサーバーはそのアカウントを知りません。ログインすると、そのアカウントのサーバーに問い合わせられます。",
     "description": "Error under the search field when nobody is signed in and this server does not know the account."
   },
   "search.not_found_known_only": {
@@ -32,7 +32,7 @@
     "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0076)."
   },
   "search.rate_limited": {
-    "defaultMessage": "検索の回数が多すぎます。数分たってからもう一度お試しください。",
+    "defaultMessage": "検索の回数が多すぎます。数分たってからもう一度試してください。",
     "description": "Error under the search field when the server limits how often the user can look up accounts on other servers."
   },
   "search.required": {
@@ -40,7 +40,7 @@
     "description": "Error under the search field when it is sent empty."
   },
   "search.sign_in": {
-    "defaultMessage": "サインインしてほかのサーバーのアカウントを探す",
+    "defaultMessage": "ログインしてほかのサーバーのアカウントを探す",
     "description": "Link on the search page while nobody is signed in; it signs in and comes back to the search."
   },
   "search.submit": {

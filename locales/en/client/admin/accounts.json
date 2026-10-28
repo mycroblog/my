@@ -64,7 +64,7 @@
     "description": "A restriction of an account by its actions."
   },
   "admin.accounts.restriction.login": {
-    "defaultMessage": "Cannot log in or use the API",
+    "defaultMessage": "Cannot sign in or use the API",
     "description": "A restriction of an account by its actions."
   },
   "admin.accounts.restriction.media_sensitive": {
@@ -196,7 +196,7 @@
     "description": "State of an account: deleted here or on its server."
   },
   "admin.accounts.state.disabled": {
-    "defaultMessage": "Login disabled",
+    "defaultMessage": "Sign-in disabled",
     "description": "State of an account: a disable-login action is in effect."
   },
   "admin.accounts.state.limited": {

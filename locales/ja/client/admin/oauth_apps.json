@@ -40,7 +40,7 @@
     "description": "Button that disables an app, and the confirming button of its dialog."
   },
   "admin.oauth_apps.disable.description": {
-    "defaultMessage": "このアプリのトークンをすべてすぐに失効させ、サインイン、トークンの交換、更新を拒否します。有効に戻しても失効したトークンは戻らず、利用者はもう一度サインインします。",
+    "defaultMessage": "このアプリのトークンをすべてすぐに失効させ、ログイン、トークンの交換、更新を拒否します。有効に戻しても失効したトークンは戻らず、利用者はもう一度ログインします。",
     "description": "Description of the dialog that confirms disabling an app."
   },
   "admin.oauth_apps.disable.title": {
@@ -136,7 +136,7 @@
     "description": "Title of the dialog that denies a host by its name."
   },
   "admin.oauth_apps.hosts.description": {
-    "defaultMessage": "拒否したホストの client_id の URL は取得も受け入れもされず、そのホストのアプリはサインインできません。",
+    "defaultMessage": "拒否したホストの client_id の URL は取得も受け入れもされず、そのホストのアプリはログインできません。",
     "description": "Explains the list of denied hosts."
   },
   "admin.oauth_apps.hosts.empty": {
@@ -160,7 +160,7 @@
     "description": "Heading of the list of denied hosts, and its table caption."
   },
   "admin.oauth_apps.list.description": {
-    "defaultMessage": "削除されていないすべてのアプリを新しい順に並べています。アプリを無効にするとトークンをすぐに失効させ、有効に戻すまでサインインを拒否します。",
+    "defaultMessage": "削除されていないすべてのアプリを新しい順に並べています。アプリを無効にするとトークンをすぐに失効させ、有効に戻すまでログインを拒否します。",
     "description": "Explains the list of OAuth apps."
   },
   "admin.oauth_apps.list.title": {
@@ -192,7 +192,7 @@
     "description": "Registration route of an app that a signed-in user registered."
   },
   "admin.oauth_apps.summary": {
-    "defaultMessage": "このサーバーにサインインできるアプリを一覧し、無効にしたり、アプリのメタデータ文書のホストを拒否したりします。",
+    "defaultMessage": "このサーバーにログインできるアプリを一覧し、無効にしたり、アプリのメタデータ文書のホストを拒否したりします。",
     "description": "Description of the OAuth apps screen in the administration menu."
   },
   "admin.oauth_apps.tabs.apps": {

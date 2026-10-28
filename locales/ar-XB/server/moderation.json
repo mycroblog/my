@@ -4,7 +4,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "moderation.action.kind": {
-    "defaultMessage": "‮{kind,select,ban{Ԑɐuuǝp: ʇɥǝ ɐɔɔonuʇ ıs pǝʅǝʇǝp} delete_statuses{Ԁosʇs pǝʅǝʇǝp} disable_login{⅂oƃıu pısɐqʅǝp} force_sensitive{Wǝpıɐ ɐʅʍɐʎs ɯɐɹʞǝp ɐs sǝusıʇıʌǝ} limit{⅂ıɯıʇǝp: dosʇs sɥoʍu ʇo ɟoʅʅoʍǝɹs ouʅʎ ɐup ʞǝdʇ oɟɟ ʇɥǝ dnqʅıɔ ʇıɯǝʅıuǝs} mark_statuses_sensitive{Ԁosʇs ɯɐɹʞǝp ɐs sǝusıʇıʌǝ} other{Wopǝɹɐʇıou ɐɔʇıou} restrict_interaction{No ɟoʅʅoʍıuƃ, ɟɐʌonɹıʇıuƃ, qoosʇıuƃ, oɹ ɹǝdʅʎıuƃ} restrict_posting{No dosʇıuƃ, ɹǝdʅʎıuƃ, qoosʇıuƃ, oɹ ǝpıʇıuƃ} suspend{Snsdǝupǝp: uo nsǝ oɟ ʇɥǝ ɐdd, ɐup ʇɥǝ dɹoɟıʅǝ ɐup dosʇs ɐɹǝ ɥıppǝu} warn{Mɐɹuıuƃ}}‬",
+    "defaultMessage": "‮{kind,select,ban{Ԑɐuuǝp: ʇɥǝ ɐɔɔonuʇ ıs pǝʅǝʇǝp} delete_statuses{Ԁosʇs pǝʅǝʇǝp} disable_login{Sıƃu-ıu pısɐqʅǝp} force_sensitive{Wǝpıɐ ɐʅʍɐʎs ɯɐɹʞǝp ɐs sǝusıʇıʌǝ} limit{⅂ıɯıʇǝp: dosʇs sɥoʍu ʇo ɟoʅʅoʍǝɹs ouʅʎ ɐup ʞǝdʇ oɟɟ ʇɥǝ dnqʅıɔ ʇıɯǝʅıuǝs} mark_statuses_sensitive{Ԁosʇs ɯɐɹʞǝp ɐs sǝusıʇıʌǝ} other{Wopǝɹɐʇıou ɐɔʇıou} restrict_interaction{No ɟoʅʅoʍıuƃ, ɟɐʌonɹıʇıuƃ, qoosʇıuƃ, oɹ ɹǝdʅʎıuƃ} restrict_posting{No dosʇıuƃ, ɹǝdʅʎıuƃ, qoosʇıuƃ, oɹ ǝpıʇıuƃ} suspend{Snsdǝupǝp: uo nsǝ oɟ ʇɥǝ ɐdd, ɐup ʇɥǝ dɹoɟıʅǝ ɐup dosʇs ɐɹǝ ɥıppǝu} warn{Mɐɹuıuƃ}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   }
 }

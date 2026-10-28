@@ -36,7 +36,7 @@
     "description": "Link back to the about page."
   },
   "supporters.list.signed_in_only": {
-    "defaultMessage": "サポーターの一覧はサインインした人だけが見られます。",
+    "defaultMessage": "サポーターの一覧はログインした人だけが見られます。",
     "description": "Shown to visitors without a session when only signed-in users may read the list."
   },
   "supporters.list.sign_in": {

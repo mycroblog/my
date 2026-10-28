@@ -256,7 +256,7 @@ func TestProblemsAreLocalized(t *testing.T) {
 				clientapi.ResponseErrorHandler(s)(w, r, context.DeadlineExceeded)
 			},
 			wantStatus: http.StatusInternalServerError,
-			wantTitle:  "予期しないエラーが発生しました。しばらくしてからもう一度お試しください。",
+			wantTitle:  "予期しないエラーが発生しました。しばらくしてからもう一度試してください。",
 		},
 	}
 	for _, tt := range tests {
