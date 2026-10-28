@@ -5,5 +5,5 @@ exact = true
 # Each workspace package resolves only the dependencies it declares, so @my/ui cannot
 # import anything outside its own package.json (ADR-0026).
 linker = "isolated"
-# Never resolve a version published less than two weeks ago, transitive ones included.
-minimumReleaseAge = 1209600
+# Never resolve a version published less than three days ago, transitive ones included.
+minimumReleaseAge = 259200

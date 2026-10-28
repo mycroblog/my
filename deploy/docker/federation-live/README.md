@@ -167,5 +167,5 @@ included; reformat it (`jq --indent 2 .`) before saving it as a fixture.
 ## Updating the peers
 
 The images are pinned by tag and digest in `compose.yaml`. To move to a new Mastodon, GoToSocial, or Misskey release, take a tag
-at least two weeks old, put its multi-arch digest (`docker buildx imagetools inspect <image>:<tag>`) next to it, and
+at least three days old, put its multi-arch digest (`docker buildx imagetools inspect <image>:<tag>`) next to it, and
 run `scripts/task.sh docker:federation-live` to see what changed.

@@ -40,8 +40,8 @@ const (
 	envRequired = "TEST_PUBSUB_REQUIRED"
 )
 
-// emulatorImage is the Pub/Sub emulator of the tests: a google-cloud-cli release at least two
-// weeks old.
+// emulatorImage is the Pub/Sub emulator of the tests: a google-cloud-cli release at least three
+// days old.
 const emulatorImage = "gcr.io/google.com/cloudsdktool/google-cloud-cli:587.0.0-emulators"
 
 const project = "test-project"

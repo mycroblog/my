@@ -82,7 +82,6 @@ Issue #1041（[ADR-0092](0092-composer-autocomplete-highlight.md)、`:` から�
   npm の依存ではないので `web:licenses` の許可リスト（`NPM_ALLOWED_LICENSES`）は変えない。
 
 A2 を選ばない理由: `emojibase-data` は MIT で AGPL-3.0 と両立し、中身は同じ Unicode と CLDR だが、版の更新がパッケージの公開に縛られ、サーバーの `EMOJI_VERSION` とずれ得る（判断基準 1）。
-Emoji 18.0 に対応する 18.0.0 は 2026-10-16 の公開で、ADR-0025 の「公開から 2 週間」の制限により 2026-10-30 まで使えない。17.0.0 の公開は 2025-11-17（2026-10-23 に npm のレジストリで確認）。
 大きさも `ja/compact.json` の 1 ファイルで gzip 後 84 KB あり、A1 の 3 つのチャンクの合計より大きい。ADR-0025 の表にない依存を足すことにもなる。
 A3 を選ばない理由: UI が React Aria と `@my/ui` の部品ではなく、ADR-0027 の品質ゲート（APG の grid、RTL、`ar-XB`、デザイントークン）を外から満たせない。ADR-0025 / ADR-0031 の外の依存になる。
 

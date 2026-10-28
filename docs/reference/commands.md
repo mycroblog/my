@@ -99,5 +99,5 @@ Go tools (go-task, go-licenses, sqlc, oapi-codegen) are pinned with `tool` direc
 `go tool -modfile=tools/go.mod <tool>` (go-task as `bin/task`, built by `scripts/task.sh`).
 The i18n generator and checks are a Bun package in `tools/i18n` with exact versions in `package.json` and a committed `bun.lock`.
 The clients live in the Bun workspace `app/` (`app/ui` = `@my/ui`, shipped as TypeScript source; `app/web`) with exact versions,
-one committed `app/bun.lock`, and `app/bunfig.toml` (isolated installs, no version younger than two weeks).
+one committed `app/bun.lock`, and `app/bunfig.toml` (isolated installs, no version younger than three days).
 Bun installs packages and runs scripts; Vite runs on Node.js — never add `--bun` ([ADR-0025](../adr/0025-web-client-stack.md)).

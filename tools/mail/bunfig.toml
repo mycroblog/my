@@ -2,5 +2,5 @@
 [install]
 # `bun add` writes exact versions; every dependency is pinned.
 exact = true
-# Never resolve a version published less than two weeks ago, transitive ones included.
-minimumReleaseAge = 1209600
+# Never resolve a version published less than three days ago, transitive ones included.
+minimumReleaseAge = 259200

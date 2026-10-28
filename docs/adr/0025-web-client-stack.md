@@ -61,7 +61,7 @@ React は、ネット上のコードや一般的な知識に古い・誤った�
   Storybook・Playwright も Node.js を前提とするので、ツールの実行環境は Node.js の 1 つにそろえる。
   パッケージのスクリプトは `bun run` で起動し、`vite` などの bin は shebang に従って Node.js で動く。
 
-具体的なバージョンは各パッケージの `package.json` と lockfile で固定する。公開から 2 週間未満の版は使わない（`app/bunfig.toml` の `minimumReleaseAge`）。
+具体的なバージョンは各パッケージの `package.json` と lockfile で固定する。公開から 3 日未満の版は使わない（`app/bunfig.toml` の `minimumReleaseAge`）。
 
 ## Consequences
 

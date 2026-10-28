@@ -31,7 +31,7 @@ Valkey の接続（`internal/adapter/valkey`）と設定は、KV の Valkey ア�
 3. 常駐ミドルウェアを必須にしない（NFR-COST-2）。Self-hosted は RDB だけで複数プロセスに配れる
 4. 公開範囲の判定をドメインの方針関数から出さない。ブローカーには内容を載せない
 5. コアはクラウドの SDK を import しない（ADR-0002）。アダプタはポートのコントラクトテストを通し、毎 PR のテストはアカウントも Docker も要らない（ADR-0041 と同じ考え方）
-6. 依存は AGPL-3.0 と両立し、`CGO_ENABLED=0` でビルドでき、公開から 2 週間以上たった版
+6. 依存は AGPL-3.0 と両立し、`CGO_ENABLED=0` でビルドでき、公開から 3 日以上たった版
 
 ## Considered Options（選択肢）
 
@@ -124,7 +124,7 @@ type Listener interface {
 - Valkey の Pub/Sub は at-most-once で、切断中の知らせは失われる。valkey-go は自動で再接続・再購読するが、その間の損失は分からないので、切断（`SetPubSubHooks` の待ちチャネルが閉じる）を `Broken` として扱う
 - 知らせは小さく、`client-output-buffer-limit pubsub 32mb 8mb 60`（既定）に当たるのは、受信の goroutine が止まったときだけ。そのときは Valkey が切断し、`Broken` になる
 - 接続は KV と同じ `internal/adapter/valkey` で作り、設定 `valkey_url`（`valkey://` / `valkeys://`、認証と DB 番号を含む）・`valkey_tls_ca_file`・`valkey_key_prefix` を共有する
-- クライアント: valkey-go（Apache-2.0、pure Go）。版は公開から 2 週間を過ぎたもの（2026-10-19 時点で v1.0.78）。KV のアダプタと同じ版を使う
+- クライアント: valkey-go（Apache-2.0、pure Go）。版は公開から 3 日を過ぎた v1.0.78。KV のアダプタと同じ版を使う
 - クラウドでは既定にしない
   - ElastiCache Serverless for Valkey は最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）。VPC のエンドポイントでは Lambda を VPC に入れる必要があり、外向きに NAT が要るうえ、**VPC の中の Lambda の Function URL はレスポンスストリーミングに対応しない**。
     公開エンドポイント（Valkey 9.0 以上、IAM 認証のみ、追加料金なし）なら VPC は要らないが、提供リージョンと valkey-go の IAM 認証の対応は要検証
@@ -199,7 +199,7 @@ type Listener interface {
 | アダプタ | 毎 PR（アカウント・Docker なし） | main への push と nightly |
 | --- | --- | --- |
 | `postgres` | pgmem（ADR-0041。pgmem は複数接続の `LISTEN` / `NOTIFY` をうたう。実装で確かめる） | `make go-test-postgres` の `postgres:18-alpine` |
-| `valkey` | miniredis（MIT、pure Go、`PUBLISH` / `SUBSCRIBE` と RESP3）。2026-10-19 時点で 2 週間を過ぎた版は v2.39.0 | testcontainers-go の `modules/valkey`（MIT）と `valkey/valkey:9.1.2-alpine` |
+| `valkey` | miniredis（MIT、pure Go、`PUBLISH` / `SUBSCRIBE` と RESP3）。公開から 3 日を過ぎた v2.39.0 | testcontainers-go の `modules/valkey`（MIT）と `valkey/valkey:9.1.2-alpine` |
 | `pubsub` | `cloud.google.com/go/pubsub/v2/pstest`（Go のプロセス内の偽サーバー、Apache-2.0） | Pub/Sub エミュレータ（`google-cloud-cli:<版>-emulators` を testcontainers-go の `modules/gcloud/pubsub` で起動。アカウント不要。エミュレータは期限切れと保持期間に対応しない） |
 | `sns` | アダプタが使う SNS / SQS の操作を狭いインターフェイスにし、testkit のメモリの偽物で確かめる | Floci 2.1.0（MIT、`floci/floci:2.1.0`。キューの `Policy`、`CreatedTimestamp`、SNS → SQS と `RawMessageDelivery`、削除済みキューの `QueueDoesNotExist` に対応）のコンテナ |
 
