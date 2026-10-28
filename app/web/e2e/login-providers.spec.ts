@@ -84,7 +84,7 @@ async function administratorServer(page: Page) {
     if (key === "GET /admin/login_providers") return json(route, { items: providers });
     if (key === "POST /admin/login_providers") {
       const body = request.postDataJSON() as Schemas["CreateLoginProviderRequest"];
-      sent.push(`create ${body.kind} ${body.issuer ?? ""} ${body.client_id ?? ""}`);
+      sent.push(`create ${body.kind} ${body.issuer ?? ""} ${body.client_id ?? ""}${(body.guilds ?? []).length > 0 ? ` guilds=${(body.guilds ?? []).join(",")}` : ""}`);
       const provider: Schemas["AdminLoginProvider"] = {
         id: providerId,
         kind: body.kind,
@@ -161,5 +161,26 @@ test.describe("login providers", () => {
     await remove.getByRole("button", { name: message("admin.login_providers.delete"), exact: true }).click();
     await expect(list.getByRole("heading", { level: 3, name: message("admin.login_providers.empty"), exact: true })).toBeVisible();
     expect(sent).toEqual(["create oidc https://sso.example my-client", "disable", "delete"]);
+  });
+
+  test("sets up a Discord provider with the servers it admits", async ({ page, makeAxeBuilder }) => {
+    const sent = await administratorServer(page);
+    await page.goto("/admin/login-providers");
+    const main = page.getByRole("main");
+    const form = main.getByRole("region", { name: message("admin.login_providers.new.title"), exact: true });
+    await expect(form).toBeVisible();
+
+    await form.getByRole("radio", { name: message("admin.login_providers.kind.discord"), exact: true }).check();
+    await expect(form.getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })).toHaveCount(0);
+    await form.getByRole("textbox", { name: message("admin.login_providers.display_name"), exact: true }).fill(displayName);
+    await form.getByRole("textbox", { name: message("admin.login_providers.client_id"), exact: true }).fill("my-client");
+    await form.getByLabel(message("admin.login_providers.client_secret"), { exact: true }).fill("s3cret");
+    await form.getByRole("textbox", { name: message("admin.login_providers.guilds"), exact: true }).fill("1234567890, 987654321");
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await form.getByRole("button", { name: message("admin.login_providers.submit"), exact: true }).click();
+
+    await expect(form.getByText(callbackUrl, { exact: true })).toBeVisible();
+    expect(sent).toEqual(["create discord  my-client guilds=1234567890,987654321"]);
   });
 });

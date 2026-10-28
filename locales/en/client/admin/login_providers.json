@@ -191,6 +191,18 @@
     "defaultMessage": "{name} is enabled.",
     "description": "Status after enabling a login provider."
   },
+  "admin.login_providers.guilds": {
+    "defaultMessage": "Discord servers",
+    "description": "Label of the Discord servers (guilds) a user must belong to."
+  },
+  "admin.login_providers.guilds.description": {
+    "defaultMessage": "Only members of one of these Discord servers sign in; enter their server IDs separated by commas or spaces. Leave it empty to let every Discord user in.",
+    "description": "Description of the Discord servers field."
+  },
+  "admin.login_providers.guilds.invalid": {
+    "defaultMessage": "A Discord server ID is a number of up to 20 digits.",
+    "description": "Error of a Discord server ID that is not a number."
+  },
   "admin.login_providers.issuer": {
     "defaultMessage": "Issuer",
     "description": "Label of the OpenID Connect issuer URL of a login provider."
@@ -324,7 +336,7 @@
     "description": "Button that sets up a login provider."
   },
   "admin.login_providers.summary": {
-    "defaultMessage": "Let users sign in with OpenID Connect, GitHub or a Mastodon server.",
+    "defaultMessage": "Let users sign in with OpenID Connect, GitHub, Discord or a Mastodon server.",
     "description": "Description of the login providers screen in the administration menu."
   },
   "admin.login_providers.title": {

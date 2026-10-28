@@ -27,7 +27,7 @@ type LoginProviderFieldsProps = {
 /**
  * The settings of a provider of the draft's kind: the display name, the issuer (`oidc`) or the server (`mastodon`),
  * the client ID, the client secret on setup, the extra scopes (not for `mastodon`), whether users may sign up and
- * link their accounts, and the conditions (claims for `oidc`, Organizations for `github`).
+ * link their accounts, and the conditions (claims for `oidc`, Organizations for `github`, servers for `discord`).
  */
 export function LoginProviderFields({ draft, change, error, withSecret, autoFocus = false }: LoginProviderFieldsProps) {
   const t = useT();
@@ -153,6 +153,20 @@ export function LoginProviderFields({ draft, change, error, withSecret, autoFocu
           }}
           autoComplete="off"
           spellCheck="false"
+          {...fieldError("conditions")}
+        />
+      )}
+      {draft.kind === "discord" && (
+        <TextField
+          label={t("client:admin.login_providers.guilds")}
+          description={t("client:admin.login_providers.guilds.description")}
+          value={draft.guilds}
+          onChange={(guilds) => {
+            change({ guilds });
+          }}
+          autoComplete="off"
+          spellCheck="false"
+          inputMode="numeric"
           {...fieldError("conditions")}
         />
       )}
