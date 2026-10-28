@@ -27,3 +27,4 @@ app/web/src/routeTree.gen.ts
 app/ui/src/themeTokens.gen.ts
 !schema/
 !scripts/install-atlas.sh
+!scripts/check-release-build.sh

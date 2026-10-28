@@ -79,6 +79,13 @@ check_order() {
 	[[ "$out" == *"ok: "*"data upgrade step"* ]] || fail "upgrade did not report ok: $out"
 }
 
+# An image is never a test build: the Dockerfile refuses the test-only build tag e2e_fakes before it compiles anything.
+echo "docker-smoke: checking that the Dockerfile refuses GO_TAGS with e2e_fakes" >&2
+if out="$(docker build --progress=plain --target build --build-arg GO_TAGS=no_valkey,e2e_fakes "$root" 2>&1)"; then
+	fail "docker build with GO_TAGS=no_valkey,e2e_fakes succeeded"
+fi
+[[ "$out" == *"which only test builds may have"* ]] || fail "docker build with GO_TAGS=no_valkey,e2e_fakes failed for another reason: $out"
+
 "${compose[@]}" up -d --build
 wait_ready
 check_order

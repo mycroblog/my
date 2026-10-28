@@ -55,6 +55,38 @@
     "defaultMessage": "‮Ԁ∀⅄.ſԀ ıs uoʇ ɐusʍǝɹıuƃ. ⊥ɹʎ ɐƃɐıu ıu ɐ ʍɥıʅǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "payments.fake.cancel": {
+    "defaultMessage": "‮Ↄɐuɔǝʅ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.fail": {
+    "defaultMessage": "‮Wɐʞǝ ʇɥǝ dɐʎɯǝuʇ ɟɐıʅ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.failed": {
+    "defaultMessage": "‮⊥ɥǝ dɐʎɯǝuʇ ɟɐıʅǝp, ɐs ɐsʞǝp. Ԁɐʎ oɹ ɔɐuɔǝʅ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.notice": {
+    "defaultMessage": "‮⊥ǝsʇ qnıʅp: ʇɥıs ɔɥǝɔʞonʇ sʇɐups ıu ɟoɹ ɐ dɐʎɯǝuʇ dɹoʌıpǝɹ, ɐup uo ɯouǝʎ ɯoʌǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.pay": {
+    "defaultMessage": "‮Ԁɐʎ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.portal": {
+    "defaultMessage": "‮⊥ɥıs ʇǝsʇ qnıʅp ɥɐs uo dɐʎɯǝuʇ ɯǝʇɥops oɹ ıuʌoıɔǝs ʇo ɯɐuɐƃǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.price_month": {
+    "defaultMessage": "‮{amount} {currency} ɐ ɯouʇɥ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.fake.price_year": {
+    "defaultMessage": "‮{amount} {currency} ɐ ʎǝɐɹ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "payments.name": {
     "defaultMessage": "‮Nɐɯǝ ou ʇɥǝ ɔɐɹp‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -51,7 +51,9 @@ const (
 	// HTTPPurposeHumanCheck posts a CAPTCHA token to the service's siteverify API (ADR-0042 §3).
 	HTTPPurposeHumanCheck
 	// HTTPPurposeWebPush posts an encrypted Web Push message to a push service (RFC 8030),
-	// whose answer has no body that the server reads.
+	// whose answer has no body that the server reads. The development profile may exempt some
+	// destinations from the guard for it alone (push_allowed_destinations, ADR-0118 §3); the
+	// client never follows a redirect from them.
 	HTTPPurposeWebPush
 	// HTTPPurposeWebhook posts a message of the instance's webhooks (ADR-0060). The client never
 	// follows a redirect for it: the 3xx answer is returned as is. The deployment configuration

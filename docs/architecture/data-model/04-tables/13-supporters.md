@@ -2,10 +2,11 @@
 
 決済の事業者の事実を運ぶ経路の記録（FR-910・FR-911、[ADR-0074](../../../adr/0074-payment-provider-port.md) §3・§4）。`internal/app/supporters` が所有します。
 加入・顧客・価格・加入の状態の表は [ADR-0072](../../../adr/0072-supporter-plans-and-roles.md) §15 が決めます。
+`provider` の `fake` は、試験用のビルド（ビルドタグ `e2e_fakes`）の fake の決済だけが書く値です（ADR-0117 §2）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `payment_webhook_receipts` | イベント | `id`, `provider`（`enum(stripe, payjp)`）, `event_id`（`string(255)`）, `event_type`（`string(100)`）, `object_id`（`string(255)`）, `received_at` | 一意 `(provider, event_id)`。インデックス `(provider, received_at)`, `(received_at)`。本文は持たない |
+| `payment_webhook_receipts` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`）, `event_id`（`string(255)`）, `event_type`（`string(100)`）, `object_id`（`string(255)`）, `received_at` | 一意 `(provider, event_id)`。インデックス `(provider, received_at)`, `(received_at)`。本文は持たない |
 | `payment_reconcile_runs` | イベント | `id`, `provider`, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, partial, failed)`）, `error_kind`（`enum(none, request_cap, permission, not_found, invalid_request, throttled, unavailable, invalid_signature, stale_signature, mode_mismatch, invalid_response)`）, `changes_until`, `changes_cursor`・`money_cursor`・`sweep_cursor`（`string(255)`。`''` は先頭）, `requests`・`checked_subscriptions`・`corrected_subscriptions`（`int`）, `occurred_at` | 一意 `(provider, run_key)`。`CHECK (outcome = 'succeeded') = (error_kind = 'none')`, `(outcome = 'partial') = (error_kind = 'request_cap')`。インデックス `(provider, occurred_at)` |
 | `payment_checkout_claims` | 現在値 | `provider`, `checkout_id`（`string(255)`。こちらの加入の ID）, `holder`（`uuid`。その投稿）, `claimed_at`, `expires_at` | PK `(provider, checkout_id)`。`CHECK (expires_at > claimed_at)`。インデックス `(expires_at)` |
 
@@ -23,7 +24,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `supporter_program_changes` | イベント | `id`, `state`（`enum(enabled, disabled)`）, `provider`（`enum('', stripe, payjp)`。有効にしたときの事業者）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | 最新の行が今の状態。行がなければ無効。`CHECK (state = 'enabled') = (provider <> '')` |
+| `supporter_program_changes` | イベント | `id`, `state`（`enum(enabled, disabled)`）, `provider`（`enum('', stripe, payjp, fake)`。有効にしたときの事業者）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | 最新の行が今の状態。行がなければ無効。`CHECK (state = 'enabled') = (provider <> '')` |
 | `supporter_plans` | リソース | `id`, `role_id`, `currency`（`string(3)`）, `created_by_user_id`（NULL 可）, `created_at` | 一意 `(role_id)` |
 | `supporter_plan_revisions` | イベント（版） | `id`, `plan_id`, `name`（`string(50)`）, `description`（`string(1000)`）, `rank`（`int`、0〜1,000,000）, `monthly_amount_minor`（`bigint`、1 以上）, `annual_discount_percent`（`int`、0〜90）, `emoji_limit`（`int`、0〜10,000）, `visibility`（`enum(public, hidden)`）, `revised_by_user_id`（NULL 可）, `revised_at` | インデックス `(plan_id, id DESC)` |
 | `supporter_plan_retirements` | イベント | `plan_id`（PK）, `retired_by_user_id`（NULL 可）, `retired_at` | |

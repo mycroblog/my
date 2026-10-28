@@ -129,6 +129,11 @@ type Config struct {
 	// (login_provider_allowed_destinations, ADR-0106 §5).
 	LoginProviderAllowedHosts    []string
 	LoginProviderAllowedPrefixes []netip.Prefix
+	// PushAllowedHosts and PushAllowedPrefixes are the destinations that the Web Push sends may
+	// reach although the SSRF guard refuses them (push_allowed_destinations, development only,
+	// ADR-0118 §3).
+	PushAllowedHosts    []string
+	PushAllowedPrefixes []netip.Prefix
 	// RemoteStatusRetention is how long an unreferenced remote post is kept after its publication;
 	// RemoteStatusMaxRetention bounds how long any remote post is kept, zero for no bound (ADR-0034).
 	RemoteStatusRetention    time.Duration
@@ -331,6 +336,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Bool("http_allow_private_networks", c.HTTPAllowPrivateNetworks),
 		slog.Any("webhook_allowed_destinations", append(slices.Clone(c.WebhookAllowedHosts), prefixStrings(c.WebhookAllowedPrefixes)...)),
 		slog.Any("login_provider_allowed_destinations", append(slices.Clone(c.LoginProviderAllowedHosts), prefixStrings(c.LoginProviderAllowedPrefixes)...)),
+		slog.Any("push_allowed_destinations", append(slices.Clone(c.PushAllowedHosts), prefixStrings(c.PushAllowedPrefixes)...)),
 		slog.Duration("remote_status_retention", c.RemoteStatusRetention),
 		slog.Duration("remote_status_max_retention", c.RemoteStatusMaxRetention),
 		slog.Duration("relay_status_retention", c.RelayStatusRetention),
@@ -684,6 +690,9 @@ func validate(f *field, v string) error {
 		if tag, ok := excludedValues[f.key][v]; ok {
 			return excludedError(v, tag)
 		}
+		if tag, ok := testOnlyValues[f.key][v]; ok {
+			return testOnlyError(v, tag)
+		}
 	}
 	if f.check != nil {
 		return f.check(v)
@@ -706,7 +715,7 @@ func redactSecret(msg, v string) string {
 func v0Values(f *field) []string {
 	var vs []string
 	for _, c := range f.choices {
-		if c.inV0 {
+		if _, testOnly := testOnlyValues[f.key][c.value]; c.inV0 && !testOnly {
 			vs = append(vs, c.value)
 		}
 	}

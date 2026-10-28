@@ -55,6 +55,38 @@
     "defaultMessage": "PAY.JP is not answering. Try again in a while.",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
+  "payments.fake.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button of the fake provider's checkout page that goes back without subscribing."
+  },
+  "payments.fake.fail": {
+    "defaultMessage": "Make the payment fail",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "payments.fake.failed": {
+    "defaultMessage": "The payment failed, as asked. Pay or cancel.",
+    "description": "Alert of the fake provider's checkout page after its fail button."
+  },
+  "payments.fake.notice": {
+    "defaultMessage": "Test build: this checkout stands in for a payment provider, and no money moves.",
+    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0117 §2)."
+  },
+  "payments.fake.pay": {
+    "defaultMessage": "Pay",
+    "description": "Button of the fake provider's checkout page that records the subscription as paid."
+  },
+  "payments.fake.portal": {
+    "defaultMessage": "This test build has no payment methods or invoices to manage.",
+    "description": "Text of the fake provider's portal page."
+  },
+  "payments.fake.price_month": {
+    "defaultMessage": "{amount} {currency} a month",
+    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
+  "payments.fake.price_year": {
+    "defaultMessage": "{amount} {currency} a year",
+    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
   "payments.name": {
     "defaultMessage": "Name on the card",
     "description": "Label of the card holder's name field of the PAY.JP checkout and card pages."

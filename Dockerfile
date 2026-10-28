@@ -52,6 +52,10 @@ ARG VERSION=dev
 ARG GO_TAGS=""
 ENV GOTOOLCHAIN=local CGO_ENABLED=0
 WORKDIR /src
+# An image is never a test build: the test-only tag e2e_fakes adds a payment provider that records payments as paid
+# without any money moving, so the build stops here when GO_TAGS has it, and the built binary is checked again below.
+RUN --mount=type=bind,source=scripts/check-release-build.sh,target=/usr/local/bin/check-release-build.sh \
+    check-release-build.sh tags "${GO_TAGS}"
 RUN --mount=type=bind,source=go.mod,target=go.mod \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=cache,target=/go/pkg/mod \
@@ -62,6 +66,7 @@ RUN --mount=type=bind,target=. \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
+    && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
 
 # Atlas Community Edition for the target platform, at the version and checksum pinned in scripts/install-atlas.sh.

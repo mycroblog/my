@@ -97,7 +97,7 @@ tasks:
       - go build ./...
 
   build-tags:
-    desc: Build (CGO_ENABLED=0) and vet with the representative sets of the build tags that leave adapters out, and fail when cmd/my still links one (docs/reference/build-tags.md)
+    desc: Build (CGO_ENABLED=0) and vet with the representative sets of the build tags, fail when cmd/my links an adapter that a tag leaves out or a test fake without e2e_fakes, and run the tests of the e2e_fakes build (docs/reference/build-tags.md)
     cmds:
       - scripts/go-build-tags.sh
 
@@ -107,7 +107,7 @@ tasks:
       - "{{.GO_TOOL}} go-licenses check --allowed_licenses={{.GO_ALLOWED_LICENSES}} ./..."
 
   bin:
-    desc: Build bin/my with the web client embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS=no_postgres,no_valkey leaves adapters out)
+    desc: Build bin/my with the web client embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS=no_postgres,no_valkey leaves adapters out; GO_TAGS=e2e_fakes makes the test build, never to be released)
     deps: [":web:build"]
     vars:
       VERSION:
