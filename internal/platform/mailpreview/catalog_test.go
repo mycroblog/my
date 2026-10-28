@@ -163,7 +163,7 @@ func TestCatalogHasEveryEmail(t *testing.T) {
 			t.Errorf("the moderator email of %s has no entry in Catalog (catalog.go)", typ)
 		}
 		p := appnotification.PushPayload{Type: typ, Title: "title", Path: "/notifications"}
-		if _, ok := appnotification.NotificationEmailDraft(l, sampleName, sampleTo, p, sampleWebOrigin, ""); ok && !has(appnotification.JobNotificationEmail, typ) {
+		if _, ok := appnotification.UnreadEmailDraft(l, sampleName, sampleTo, p, sampleWebOrigin, ""); ok && !has(appnotification.JobNotificationEmail, typ) {
 			t.Errorf("the notification email of %s has no entry in Catalog (catalog.go)", typ)
 		}
 		if _, ok := appnotification.SupporterEmailDraft(l, sampleName, sampleTo, appnotification.SupporterMail{Type: typ}, sampleWebOrigin); ok && !has(appnotification.JobSupporterEmail, typ) {

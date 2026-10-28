@@ -485,16 +485,16 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 			instance = n
 		}
 	}
-	return DescribeNotification(l, NotificationText{
+	return DescribeNotification(l, Wording{
 		NotificationID: job.NotificationID, Type: job.Type, Source: source, Recipient: recipient,
 		StatusID: job.StatusID, ReportID: job.ReportID, AppealID: job.AppealID, VoiceRoomID: job.VoiceRoomID,
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 	}, instance), l, nil
 }
 
-// NotificationText is what words a notification: its type, the accounts it names, and the
+// Wording is what words a notification: its type, the accounts it names, and the
 // objects it links to.
-type NotificationText struct {
+type Wording struct {
 	NotificationID string
 	Type           notification.Type
 	// Source is the account the notification is from, zero for none. Recipient is the
@@ -510,7 +510,7 @@ type NotificationText struct {
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
 // and the page of its Web Push message, which are also the subject and the link of its email.
-func DescribeNotification(l *i18n.Localizer, n NotificationText, instance string) PushPayload {
+func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPayload {
 	source, recipient := n.Source, n.Recipient
 	name := source.DisplayName
 	if name == "" && source.Acct != "" {

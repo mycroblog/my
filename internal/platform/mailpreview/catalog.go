@@ -58,8 +58,8 @@ var sampleGraceEndsAt = time.Date(2027, 2, 7, 9, 30, 0, 0, time.UTC)
 
 // sampleNotification is a notification of type t from a remote account to the sample
 // recipient, about one of the recipient's statuses.
-func sampleNotification(t notification.Type) appnotification.NotificationText {
-	return appnotification.NotificationText{
+func sampleNotification(t notification.Type) appnotification.Wording {
+	return appnotification.Wording{
 		NotificationID: "01JSAMPLE0NOTIFICATION00000", Type: t,
 		Source:    appnotification.PushAccount{DisplayName: "Bob", Acct: "bob@remote.example"},
 		Recipient: appnotification.PushAccount{DisplayName: "Alice", Acct: "alice"},
@@ -148,7 +148,7 @@ func Catalog() []Entry {
 		}
 		entries = append(entries, Entry{JobType: appnotification.JobNotificationEmail, Variant: string(t), Draft: func(s Sample) (kernel.MailDraft, bool) {
 			p := appnotification.DescribeNotification(s.L, sampleNotification(t), sampleName)
-			return appnotification.NotificationEmailDraft(s.L, sampleName, sampleTo, p, sampleWebOrigin, sampleUnsubscribeURL)
+			return appnotification.UnreadEmailDraft(s.L, sampleName, sampleTo, p, sampleWebOrigin, sampleUnsubscribeURL)
 		}})
 	}
 	for _, m := range []struct {

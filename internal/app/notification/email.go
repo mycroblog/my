@@ -145,7 +145,7 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 		return err
 	}
 	site := mailSite(ctx, d.Host, d.MailSite)
-	draft, ok := NotificationEmailDraft(l, site.Name, box.Address, p, d.WebOrigin, "")
+	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, p, d.WebOrigin, "")
 	if !ok {
 		return nil
 	}

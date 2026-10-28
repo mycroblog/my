@@ -53,13 +53,13 @@ func ModeratorEmailDraft(l *i18n.Localizer, name, to string, t notification.Type
 	return d, true
 }
 
-// NotificationEmailDraft is the email to to of the notification p, worded by
+// UnreadEmailDraft is the email to to of the notification p, worded by
 // DescribeNotification in the locale of l, from the instance named name: its subject is what
 // the notification's Web Push message says, and it links to the same page on webOrigin.
 // unsubscribeURL is the email's one-click unsubscribe link, which the handler issues once it
 // knows the email is sent. ok is false for a notification whose group is not emailed after
 // notification.EmailDelay (notification.GroupSpec.DelayedEmail).
-func NotificationEmailDraft(l *i18n.Localizer, name, to string, p PushPayload, webOrigin, unsubscribeURL string) (d kernel.MailDraft, ok bool) {
+func UnreadEmailDraft(l *i18n.Localizer, name, to string, p PushPayload, webOrigin, unsubscribeURL string) (d kernel.MailDraft, ok bool) {
 	g, ok := notification.GroupOf(p.Type)
 	if !ok || !g.DelayedEmail() {
 		return kernel.MailDraft{}, false
