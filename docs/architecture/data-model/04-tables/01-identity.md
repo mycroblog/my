@@ -72,7 +72,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `login_providers` | リソース | `id`, `created_by_user_id`（NULL 可 = CLI）, `created_at` | |
-| `login_provider_revisions` | イベント（版） | `id`, `provider_id`, `kind`（`enum(oidc, github, mastodon, discord)`）, `display_name`（`string(100)`）, `issuer`（NULL 可。`oidc` の issuer、`mastodon` のサーバーの URL。`github` と `discord` は NULL）, `client_id`, `scopes`（NULL 可 = 追加の scope なし。空白区切り・ソート済み）, `allow_signup`（`bool`）, `allow_link`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(provider_id, id DESC)`。CHECK `(kind IN ('github', 'discord')) = (issuer IS NULL)`。いちばん新しい行がいまの設定 |
+| `login_provider_revisions` | イベント（版） | `id`, `provider_id`, `kind`（`enum(oidc, github, mastodon, discord)`）, `display_name`（`string(100)`）, `issuer`（NULL 可。`oidc` の issuer、`mastodon` のサーバーの URL。`github` と `discord` は NULL）, `client_id`, `scopes`（NULL 可 = 追加の scope なし。空白区切り・ソート済み）, `allow_signup`（`bool`）, `allow_link`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(provider_id, id DESC)`。いちばん新しい行がいまの設定 |
 | `login_provider_revision_claims` | イベント（版の子） | `revision_id`, `claim`, `value` | PK `(revision_id, claim, value)`。`oidc` の条件。claim ごとに許す値の一覧 |
 | `login_provider_revision_organizations` | イベント（版の子） | `revision_id`, `organization`（小文字の login） | PK `(revision_id, organization)`。`github` の条件 |
 | `login_provider_revision_guilds` | イベント（版の子） | `revision_id`, `guild_id`（Discord のサーバーの ID。10 進の snowflake） | PK `(revision_id, guild_id)`。`discord` の条件 |
