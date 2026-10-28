@@ -22,13 +22,14 @@ func (o overviewSources) CountMembers(ctx context.Context) (int, error) {
 }
 
 // StartedAt is when the instance actor was made, the first thing that the setup of an
-// instance makes.
+// instance makes. An instance that has not federated yet (federation_mode = off from the start)
+// may have none, so it is made here, as federation would make it on first use.
 func (o overviewSources) StartedAt(ctx context.Context) (time.Time, error) {
-	actor, err := o.a.Accounts.InstanceActor(ctx)
+	actor, err := o.a.Accounts.EnsureInstanceActor(ctx)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return actor.Account.CreatedAt, nil
+	return actor.CreatedAt, nil
 }
 
 func (o overviewSources) DailyPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error) {
