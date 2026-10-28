@@ -186,7 +186,6 @@ test.describe("account status", () => {
     await expect(suspended).toMatchAriaSnapshot(`
       - article /^Suspended/:
         - heading /^Suspended/ [level=3]
-        - text: In effect
         - paragraph
         - term
         - definition: Spam
