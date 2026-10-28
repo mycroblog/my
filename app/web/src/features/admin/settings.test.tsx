@@ -148,7 +148,12 @@ describe("the server's name", () => {
     await user.type(english, "Example Social");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Could not save the name: body is invalid")).toHaveAttribute("role", "alert");
+    // The failure is beside the save button, in the form's action bar's alert region.
+    expect(await screen.findByText("Could not save the name: body is invalid")).toBeInTheDocument();
+    expect(screen.getAllByRole("alert").filter((alert) => alert.textContent !== "")).toEqual([expect.anything()]);
+    expect(screen.getAllByRole("alert").find((alert) => alert.textContent !== "")).toHaveTextContent(
+      "Could not save the name: body is invalid",
+    );
     expect(english).toHaveValue("Example Social");
   });
 
@@ -586,7 +591,11 @@ describe("the server's policies", () => {
 
     expect(
       await screen.findByText("Could not save the settings; nothing was changed: values.registration_mode is invalid"),
-    ).toHaveAttribute("role", "alert");
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("alert").filter((alert) => alert.textContent !== "")).toEqual([expect.anything()]);
+    expect(screen.getAllByRole("alert").find((alert) => alert.textContent !== "")).toHaveTextContent(
+      "Could not save the settings; nothing was changed: values.registration_mode is invalid",
+    );
     expect(within(registration).getByRole("radio", { name: "Nobody" })).toBeChecked();
   });
 

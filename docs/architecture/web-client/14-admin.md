@@ -195,15 +195,15 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   管理者が書く値（名前・説明・画像の説明）は、どれも 1 つの入力欄で、どのロケールの閲覧者にも同じ値を出す（ほかの言語の閲覧者は機械翻訳などで読む）。欄の名前と説明は閲覧者の言語に翻訳する。
   「名前」の区画に、名前の `TextField` を 1 つ置く。
   説明に、名前がどの言語でも同じであること、名前がドメインの代わりに出る場所と、名前がないときに何が出るか、ハンドルとリンクはドメインのままであることを書く（[名前とドメイン](../../operations/instance-settings.md#name-and-domain)）。
-  101 文字以上と空白だけの名前はフォームの中で無効にし、送らない。「保存する」は名前を変えたときだけ `PUT /admin/instance_texts/name` で送り（空は消す）、規約とポリシーと同じく `GET /admin/instance_texts`・`GET /instance`・監査ログに無効化の印を付け、表示中の `GET /instance` を取り直してから、結果を区画の `StatusMessage` に出す。
-  外枠の名前（「サーバーの名前」）はこの取り直しで変わる。変えていなければ何も送らずにその旨を出す。失敗はボタンの上（`role="alert"`）に出し、入力を残す（E2）。
+  101 文字以上と空白だけの名前はフォームの中で無効にし、送らない。「保存する」は名前を変えたときだけ `PUT /admin/instance_texts/name` で送り（空は消す）、規約とポリシーと同じく `GET /admin/instance_texts`・`GET /instance`・監査ログに無効化の印を付け、表示中の `GET /instance` を取り直してから、結果をフォームの `FormActionBar`（保存のボタンの横）に出す。
+  外枠の名前（「サーバーの名前」）はこの取り直しで変わる。変えていなければ何も送らずにその旨を出す。失敗も `FormActionBar`（`role="alert"`）に出し、入力を残す（E2）。
   - **説明**: 短い説明（500 文字）と説明（20,000 文字）の `TextArea`（文字数の表示付き）を 1 つずつ置く。上限を超えた欄があれば送らず、
-    「説明を保存する」は変えたキーだけを `PUT /admin/instance_texts/{key}` で送り、名前と同じく取り直してから区画の `StatusMessage` に出す。失敗はボタンの上（`role="alert"`）に出し、入力を残す。
+    「説明を保存する」は変えたキーだけを `PUT /admin/instance_texts/{key}` で送り、名前と同じく取り直してからフォームの `FormActionBar` に出す。失敗も `FormActionBar`（`role="alert"`）に出し、入力を残す。
   - **連絡先とサムネイル**: 連絡先のアカウント（`TextField`、このサーバーのユーザー名。前に付けた `@` は送らない）、連絡先のメールアドレス（`type="email"` の `TextField`。ブラウザの制約検証で確かめる）、
     サムネイル（今の画像か選んだ画像のプレビュー、`FileTrigger` の「画像を選ぶ」と「画像を外す」）と、画像の説明（`TextArea`、1,500 文字）を 1 つのフォームに置く。
     画像は選んだとたんに `POST /media`（`purpose=attachment`）で送り、処理が終わるまで `GET /media/{id}` をポーリングする。失敗は画像のボタンの下（`role="alert"`）に出す。
     「連絡先とサムネイルを保存する」は、変えた設定（`contact_account`・`contact_email`・`thumbnail`）を `PATCH /admin/settings` でまとめて送り、続けて画像の説明を変えたときは `PUT /admin/instance_texts/thumbnail_alt` で送る。
-    成功したら設定のキャッシュを応答で置き換え、`GET /instance`・`GET /admin/instance_texts`・監査ログを取り直してから、区画の `StatusMessage` に出す。変えたものがなければ何も送らずにその旨を出し、失敗はボタンの上（`role="alert"`）に出して入力を残す（E2）。
+    成功したら設定のキャッシュを応答で置き換え、`GET /instance`・`GET /admin/instance_texts`・監査ログを取り直してから、フォームの `FormActionBar` に出す。変えたものがなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して入力を残す（E2）。
   - **アイコンとロゴ**（[ADR-0116](../../adr/0116-custom-logo-and-icon.md)、`BrandSettings`）: アイコン・ロゴ・暗い背景のロゴを、それぞれ `h3` の見出しを持つフォームにする。
     今の絵（`GET /admin/instance/brand` の `svg_url` の `<img>`）か「my の組み込みのものを使っています」を出し、`FileTrigger` の「SVG のファイルを選ぶ」で選んだとたんに
     `POST /admin/instance/brand/sanitize` で確かめる（256 KB を超えるファイルは送らずに欄のエラーにする）。応答のサニタイズした SVG を `blob:` の URL の `<img>` で読み、応答の `renditions` の各版を `<canvas>` に描いて PNG にする
@@ -221,7 +221,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     サポーターの一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。区画の説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0071 §4）、
     「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）と運営している人を出すか（`public_operators`、`Checkbox`、既定は出す。説明に、スタッフのロールのバッジをプロフィールに出している人だけが載ることを書く）を出す。
     1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
-    結果をボタンの下の `StatusMessage` に出す。変えた設定がなければ何も送らずにその旨を出し、失敗はボタンの上（`role="alert"`）に出して選択を残す（E2）。
+    結果を `FormActionBar` に出す。フォームが画面より長いので、このバーは画面の下に固定する（`sticky`）。変えた設定がなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して選択を残す（E2）。
 - **ルール**（`/admin/rules`、`manage_rules`、FR-705）: 「ルールを追加する」と「有効なルール」の区画（`h2` の `section`）。
   - **追加**: ルール（`TextField`、1 行、300 文字、必須）と補足（`TextArea`、1,000 文字、任意）を 1 つずつ置く。どちらもどのロケールでも同じ値を出す。文が空なら文の欄のエラーにして送らない。
     成功したらルールの一覧・`GET /instance`（ルール）・監査ログを取り直し、入力を空にして結果をフォームの `StatusMessage` に出す。
