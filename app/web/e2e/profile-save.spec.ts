@@ -116,7 +116,8 @@ test("a saved display name is on the profile page from its first render", async 
   await expect(pageHeading(page)).toHaveText(message("settings.profile.title"));
   await page.getByRole("textbox", { name: message("settings.profile.display_name") }).fill(name);
   await page.getByRole("button", { name: message("settings.profile.save") }).click();
-  await expectToast(page, message("settings.profile.saved"));
+  // Beside the save button, in the status region of its bar.
+  await expect(page.getByRole("main").getByRole("status").getByText(message("settings.profile.saved"))).toBeVisible();
 
   await page.route("**/api/v1/**", async (route) => {
     if (route.request().method() === "GET" && !route.request().url().includes("/streaming"))

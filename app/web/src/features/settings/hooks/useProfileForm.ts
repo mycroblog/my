@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useToast } from "@my/ui";
+import type { FormActionResult } from "@my/ui";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -60,7 +60,6 @@ export type ServerCrawlerPolicy = { searchIndexing: SearchIndexing; aiUsage: AIU
 export function useProfileForm() {
   const api = useApi();
   const queryClient = useQueryClient();
-  const toast = useToast();
   const t = useT();
   const { data: account } = useSuspenseQuery(credentialsQueryOptions(api));
 
@@ -74,6 +73,10 @@ export function useProfileForm() {
   const [bot, setBot] = useState(account.bot);
   const [indexable, setIndexable] = useState(account.indexable);
   const [aiOptOut, setAiOptOut] = useState(account.ai_opt_out);
+  // How many edits the form has had, and how many it had when it was last submitted: the result of a save shows
+  // until the next edit.
+  const [edits, setEdits] = useState(0);
+  const [submittedAt, setSubmittedAt] = useState<number | undefined>(undefined);
   // The shell reads the instance on every page; the form shows its notes once it is there.
   const { data: instance } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const serverPolicy: ServerCrawlerPolicy =
@@ -90,7 +93,7 @@ export function useProfileForm() {
       // The saved profile has the new images from now on.
       avatar.saved();
       header.saved();
-      toast.show({ message: t("client:settings.profile.saved"), tone: "success" });
+      // The form's action bar shows it beside the button (`result`).
     },
   });
 
@@ -122,41 +125,60 @@ export function useProfileForm() {
     draft.header_media_id !== undefined ||
     !sameFields(draft.fields ?? [], account.source.fields);
 
+  let result: FormActionResult | undefined;
+  if (save.isError)
+    result = {
+      tone: "danger",
+      message: t("client:settings.profile.save_failed", { reason: errorMessage(save.error) }),
+    };
+  else if (save.isSuccess && submittedAt === edits)
+    result = { tone: "success", message: t("client:settings.profile.saved") };
+  /** Runs an edit of the form, which takes away the result of the last save. */
+  const edit =
+    <A extends unknown[]>(apply: (...args: A) => void) =>
+    (...args: A) => {
+      setEdits((count) => count + 1);
+      apply(...args);
+    };
   return {
     account,
     /** Whether the form holds changes that are not saved: leaving the page asks first. */
     hasChanges,
-    displayName: { value: displayName, onChange: setDisplayName },
-    note: { value: note, onChange: setNote },
+    displayName: { value: displayName, onChange: edit(setDisplayName) },
+    note: { value: note, onChange: edit(setNote) },
     fields: {
       rows: fields,
       canAdd: fields.length < profileLimits.fields,
-      add: () => {
+      add: edit(() => {
         setFields([...fields, { key: nextFieldKey, name: "", value: "" }]);
         setNextFieldKey(nextFieldKey + 1);
-      },
-      update: (key: number, change: Partial<Omit<FieldDraft, "key">>) => {
+      }),
+      update: edit((key: number, change: Partial<Omit<FieldDraft, "key">>) => {
         setFields(fields.map((field) => (field.key === key ? { ...field, ...change } : field)));
-      },
-      remove: (key: number) => {
+      }),
+      remove: edit((key: number) => {
         setFields(fields.filter((field) => field.key !== key));
-      },
+      }),
     },
-    locked: { isSelected: locked, onChange: setLocked },
-    bot: { isSelected: bot, onChange: setBot },
-    indexable: { isSelected: indexable, onChange: setIndexable },
-    aiOptOut: { isSelected: aiOptOut, onChange: setAiOptOut },
+    locked: { isSelected: locked, onChange: edit(setLocked) },
+    bot: { isSelected: bot, onChange: edit(setBot) },
+    indexable: { isSelected: indexable, onChange: edit(setIndexable) },
+    aiOptOut: { isSelected: aiOptOut, onChange: edit(setAiOptOut) },
     serverPolicy,
-    avatar: avatar.control,
-    header: header.control,
+    avatar: { ...avatar.control, choose: edit(avatar.control.choose), remove: edit(avatar.control.remove) },
+    header: { ...header.control, choose: edit(header.control.choose), remove: edit(header.control.remove) },
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
+      setSubmittedAt(edits);
       save.mutate(change());
     },
     isSaving: save.isPending,
     isBusy: save.isPending || avatar.control.isUploading || header.control.isUploading,
-    /** Why the last save failed, localized; the server names the invalid property in it. */
-    saveError: save.isError ? errorMessage(save.error) : undefined,
+    /**
+     * The result of the last save beside the save button (web-client/16-look-states-and-wording.md G24): saved until
+     * the form changes again, or why it failed (the server names the invalid property in it).
+     */
+    result,
   };
 }
 

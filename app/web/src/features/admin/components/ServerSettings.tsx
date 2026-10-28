@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
-// to reach its operators and its thumbnail (#663), then its policies (who may sign up, the default language, the
+// to reach its operators and its thumbnail (#663), its own icon and logos (BrandSettings, ADR-0116), then its policies (who may sign up, the default language, the
 // public timelines, who may create invites of their own and their caps (ADR-0108 §1, §2), whether images need a description, the federation, who may read the list of the domain
 // actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
@@ -43,6 +43,7 @@ import {
   useServerPolicies,
 } from "../hooks/useServerPolicies";
 import { useServerSettings } from "../hooks/useServerSettings";
+import { BrandSettings } from "./BrandSettings";
 
 export function ServerSettings() {
   return (
@@ -51,6 +52,7 @@ export function ServerSettings() {
         <NameForm />
         <DescriptionsForm />
         <ContactForm />
+        <BrandSettings />
         <PoliciesForm />
       </Stack>
     </RequirePermission>

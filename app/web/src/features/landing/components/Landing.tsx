@@ -5,6 +5,7 @@
 import {
   AccountItem,
   Box,
+  BrandIcon,
   Button,
   ButtonLink,
   Cluster,
@@ -29,6 +30,7 @@ import {
 } from "@my/ui";
 import { type ReactNode, useId, useRef } from "react";
 import { useIntl } from "react-intl";
+import { useBrand } from "../../../lib/brand";
 import { useT } from "../../../lib/i18n";
 import { useSignIn } from "../../session";
 import { StatusCard } from "../../status";
@@ -114,6 +116,7 @@ function CallingCard({ heading, landing }: { heading: ReactNode; landing: Landin
   const t = useT();
   // After signing in, the root address opens the home timeline.
   const { signIn, isPending } = useSignIn("/");
+  const { icon } = useBrand();
   const open = takesAccounts(landing);
   const { counts, operators } = landing;
   const [firstOperator] = operators;
@@ -123,8 +126,8 @@ function CallingCard({ heading, landing }: { heading: ReactNode; landing: Landin
         {...(landing.thumbnail !== undefined && {
           image: { still: [{ url: landing.thumbnail.url, width: landing.thumbnail.width }] },
         })}
-        // The server's mark: the custom icon of the server takes this place once there is one.
-        mark={<Wordmark name="my" decorative size="sm" />}
+        // The server's mark: its own icon, or the built-in wordmark.
+        mark={icon === undefined ? <Wordmark name="my" decorative size="sm" /> : <BrandIcon src={icon} />}
         name={landing.name}
         heading={heading}
         {...(landing.domain !== undefined && { handle: landing.domain })}

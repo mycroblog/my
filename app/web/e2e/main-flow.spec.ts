@@ -244,7 +244,9 @@ test.describe("the main flow", () => {
       await expect(pageHeading(bobPage)).toHaveText(message("settings.profile.title"));
       await bobPage.getByText(message("settings.profile.locked"), { exact: true }).click();
       await bobPage.getByRole("button", { name: message("settings.profile.save") }).click();
-      await expectToast(bobPage, message("settings.profile.saved"));
+      await expect(
+        bobPage.getByRole("main").getByRole("status").getByText(message("settings.profile.saved")),
+      ).toBeVisible();
       await expectQuality(bobPage);
     });
 

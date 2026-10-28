@@ -89,6 +89,7 @@ import {
 import { type TimelineAvailability, useTimelineAvailability } from "../../features/timeline";
 import { useVoiceAvailable } from "../../features/voice";
 import { useSessionStatus, useSessionUnreachable } from "../../lib/auth/SessionProvider";
+import { useBrand } from "../../lib/brand";
 import { handleOf } from "../../lib/handle";
 import { type ClientMessageKey, useT } from "../../lib/i18n";
 import { aboutPath, followListPath, profilePath, signInPath } from "../../lib/paths";
@@ -294,6 +295,7 @@ export function Navigation() {
   const staffAvailable = (item: NavigationItem) =>
     item.staff === undefined || (item.staff === "moderation" ? moderationEntry.available : adminEntry.available);
   const viewer = useViewer();
+  const brand = useBrand();
   const ownAcct = viewer.status === "signed-in" ? viewer.account.acct : null;
   const timelines = useTimelineAvailability();
   const openCompose = useOpenCompose();
@@ -351,8 +353,8 @@ export function Navigation() {
       label={t("client:shell.nav.label")}
       // The wordmark and the server's name, a link to the root address (web-client/16-look-states-and-wording.md G9).
       header={
-        <AppNavBrand>
-          <ServerNameLink size="lg" />
+        <AppNavBrand ownLogo={brand.logo !== undefined}>
+          <ServerNameLink size="lg" logo />
         </AppNavBrand>
       }
       // Signed out, the navigation is a light bar along the top (AppLayout puts it above the page).

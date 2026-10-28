@@ -9,6 +9,13 @@ import { z } from "zod";
 /** The id of the data block in the shell. */
 const configElementId = "config";
 
+/** A brand image of the instance (ADR-0116): the path of its SVG under /brand/ and the size of its viewBox. */
+const brandImageSchema = z.object({
+  url: z.string().regex(/^\/brand\//u),
+  width: z.int().positive(),
+  height: z.int().positive(),
+});
+
 const runtimeConfigSchema = z.object({
   /** The origin of the client API (ADR-0016). */
   apiOrigin: z.url({ protocol: /^https?$/ }),
@@ -18,6 +25,10 @@ const runtimeConfigSchema = z.object({
   accountDomain: z.string().min(1),
   /** The instance's default locale, the same as <html lang> in the shell. */
   defaultLocale: z.string().min(1),
+  /** The instance's own icon, logo, and dark logo; each is left out while the built-in image applies. */
+  icon: brandImageSchema.optional(),
+  logo: brandImageSchema.optional(),
+  logoDark: brandImageSchema.optional(),
 });
 
 export type RuntimeConfig = z.infer<typeof runtimeConfigSchema>;

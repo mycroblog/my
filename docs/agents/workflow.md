@@ -56,17 +56,18 @@ git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/1
 
 ```sh
 scripts/task.sh web:fmt        # first, when the change touches TypeScript or JavaScript: bun fmt over every TS package
-scripts/agentkit.sh check      # scripts/task.sh check:changed, printing the contexts, their results, and only the failing lines
+scripts/agentkit.sh check      # optional: scripts/task.sh check:changed, printing the contexts, their results, and only the failing lines
 scripts/task.sh check:changed  # the contexts changed since origin/main and their dependents, in parallel
 scripts/task.sh go:check       # or one context: docs:check, go:check, i18n:check, api:check, ui:check, web:check, docker:check, agentkit:check, mykit:check
 scripts/task.sh check          # every context, when the change touches shared configuration
 ```
 
-Must pass. `agentkit check` also lists the documents that describe the changed paths but are not changed
+No local run is required ([ADR-0119](../adr/0119-merge-queue-only-gate.md)): the merge queue's full check is the only
+gate. Run these commands to reproduce a CI failure or to iterate on what you are writing; only the formatting
+(`web:fmt`) is worth running first, because the preflight checks it. `agentkit check` also lists the documents that describe the changed paths but are not changed
 (`agentkit docs impact`): update each, or note why it stays true for the PR (§6).
 The pull request's `check` runs only the preflight (formatting, licenses, image versions, tokens); the
-compile, type, lint, and test checks of the changed contexts run in the merge queue, so the local run is what keeps a
-broken PR out of the queue. To run the full check on the PR itself (to look into a failure in the queue, or to check
+compile, type, lint, and test checks of the changed contexts run in the merge queue. To run the full check on the PR itself (to look into a failure in the queue, or to check
 an outside contributor's PR early), add the label `ci:full`.
 If a check is wrong or flaky, fix it in a separate commit and explain in the PR.
 
@@ -141,7 +142,8 @@ of `main` and of the PRs queued ahead of it) and the queue merges the group when
 - Merge `main` into the branch only when the PR conflicts or the queue drops it, never just to stay current: the queue
   already checks the PR on top of the latest `main`.
 - When the queue drops the PR (a conflict with `main`, or a failed `check` on the merge group), merge `main` into the
-  branch, regenerate the generated files instead of resolving their conflicts by hand, run the checks, and push;
+  branch, regenerate the generated files instead of resolving their conflicts by hand, and push; the owner fixes it
+  while the rest of the queue proceeds;
   the orchestrator or the decider queues it again. Only the generated files Go reads are committed (the client API
   bundle and Go code, sqlc output, the Go side of i18n, the theme token list, the configuration reference); the ones
   only the TypeScript clients read are not, so they never conflict ([ADR-0081](../adr/0081-generated-files-policy.md)):
@@ -199,8 +201,9 @@ once the milestone's implementation issues are done. Single-issue work keeps the
 
 ### Agents in the queue
 
-- The PR gate is `scripts/task.sh check:changed` locally and the PR's `check` CI, which runs only the preflight: the
-  local run is the one that catches compile, type, and test failures before the merge queue. Do not run the web E2E per PR (`scripts/task.sh web:e2e`
+- The gate is the merge queue's full check; the PR's `check` CI runs only the preflight. Do not run the full check
+  locally before opening the PR: ordering conflicts between parallel PRs are a planning concern (see Planning), and
+  local runs only compete for the machine's resources. Do not run the web E2E per PR (`scripts/task.sh web:e2e`
   or `web-e2e.yml`), not even the specs the change adds: write and update the E2E specs the change needs, but do not
   run the suite.
 - Before waiting on CI, check that the PR is mergeable (`gh pr view <PR> -R mycroblog/my --json mergeable`).

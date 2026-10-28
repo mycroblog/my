@@ -14,6 +14,7 @@ export { instanceTextsQueryOptions } from "./api/documents";
 export { DocumentSettings } from "./components/DocumentSettings";
 // The server's settings: its name and descriptions in each language, and its policies, for manage_settings.
 export { instanceQueryOptions as ownInstanceQueryOptions } from "./api/documents";
+export { brandsQueryOptions } from "./api/brand";
 export { instanceSettingsQueryOptions } from "./api/settings";
 export { ServerSettings } from "./components/ServerSettings";
 // The server's rules (FR-705), for manage_rules.
