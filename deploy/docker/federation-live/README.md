@@ -1,31 +1,32 @@
 # Live interoperability test
 
 This server, Mastodon, GoToSocial, and Misskey federating with each other over HTTPS, with an Activity-Relay relay
-between this server and Mastodon, for the live test of
+between this server and Mastodon and Akkoma's LitePub relay, for the live test of
 [federation.md §12](../../../docs/architecture/federation.md#12-テスト) ([ADR-0006](../../../docs/adr/0006-federation-protocol-scope.md),
 [ADR-0015](../../../docs/adr/0015-testing-strategy.md)). CI runs it nightly (job `federation-live` in
 `.github/workflows/nightly.yml`); it is not part of `scripts/task.sh check`.
 
 | File | What it is |
 | --- | --- |
-| `compose.yaml` | The stack: the TLS proxy, PostgreSQL (this server, Mastodon, and Misskey), Redis, this server built from the checkout, Mastodon (web and Sidekiq), GoToSocial, Misskey with its configuration file, and Activity-Relay (server and worker) |
-| `Caddyfile` | The proxy: one certificate of the private CA for `my.test`, `mastodon.test`, `gts.test`, `misskey.test`, and `relay.test`, forwarded by host name |
-| `postgres-init.sh` | The roles and databases of this server, prepared with `schema/postgres.bootstrap.sql`, and of Misskey |
+| `compose.yaml` | The stack: the TLS proxy, PostgreSQL (this server, Mastodon, Misskey, and Akkoma), Redis, this server built from the checkout, Mastodon (web and Sidekiq), GoToSocial, Misskey with its configuration file, Akkoma with its configuration file, and Activity-Relay (server and worker) |
+| `Caddyfile` | The proxy: one certificate of the private CA for `my.test`, `mastodon.test`, `gts.test`, `misskey.test`, `akkoma.test`, and `relay.test`, forwarded by host name |
+| `postgres-init.sh` | The roles and databases of this server, prepared with `schema/postgres.bootstrap.sql`, of Misskey, and of Akkoma with its extensions |
+| `akkoma/` | The image of Akkoma: its official release zip, pinned by SHA-256, on Debian; the entrypoint trusts the private CA, migrates, and starts it |
 | `*_test.go` | The scenarios (`go test -tags federationlive`), black-box clients of this server's client API, the Mastodon client API (Mastodon and GoToSocial), and the Misskey API (`misskey_test.go`) |
 | `../../../scripts/federation-live.sh` | Generates the CA and the secrets, starts the stack, creates the users, runs the scenarios, collects the logs, and removes the stack |
 
 ## How it works
 
-- **TLS**: the script creates a private CA and one certificate for the five hosts. Every server trusts only that CA
-  (`SSL_CERT_FILE`; Misskey's `NODE_EXTRA_CA_CERTS`).
-- **DNS**: the proxy holds the network aliases `my.test`, `mastodon.test`, `gts.test`, `misskey.test`, and
-  `relay.test`, so each server reaches the others, and itself, through the proxy, as on the internet. The servers may reach the private
+- **TLS**: the script creates a private CA and one certificate for the six hosts. Every server trusts only that CA
+  (`SSL_CERT_FILE`; Misskey's `NODE_EXTRA_CA_CERTS`; Akkoma reads the system store, where its entrypoint adds the CA).
+- **DNS**: the proxy holds the network aliases `my.test`, `mastodon.test`, `gts.test`, `misskey.test`,
+  `akkoma.test`, and `relay.test`, so each server reaches the others, and itself, through the proxy, as on the internet. The servers may reach the private
   addresses of the compose network only (`MY_HTTP_ALLOW_PRIVATE_NETWORKS` in the `development` profile, Mastodon's
   `ALLOWED_PRIVATE_ADDRESSES`, GoToSocial's `http-client.allow-ips`, Misskey's `allowedPrivateNetworks`).
 - **Users**: created with each server's admin CLI, and on Misskey with its API (`admin/accounts/create`: the first
   account, `mkadmin`, is the administrator and creates the others). The scenarios sign in to this server and GoToSocial
-  through their OAuth screens; the script issues the Mastodon tokens with a Rails runner, and Misskey returns each
-  user's API token when it creates the user.
+  through their OAuth screens; the script issues the Mastodon tokens with a Rails runner, Misskey returns each
+  user's API token when it creates the user, and Akkoma issues kate's token for her password (the OAuth password grant).
 
   | User | Role |
   | --- | --- |
@@ -36,6 +37,7 @@ between this server and Mastodon, for the live test of
   | `eve@mastodon.test` | `TestSignatureProfile`: the proxy refuses her draft-cavage POSTs in both directions |
   | `mod@mastodon.test`, `mkadmin@misskey.test` | The administrators whose tokens read the moderators' reports in `TestReportForwarding` |
   | `ivan@my.test`, `judy@mastodon.test` | `TestRelay`: nobody follows them, so their posts reach the other server only through the relay |
+  | `ivan@my.test`, `kate@akkoma.test` | `TestRelayLitePub`: nobody follows them, so their posts reach the other server only through Akkoma's relay |
   | `otto@my.test` | `TestFederationMode`: no peer knows him before the scenario, so his `Follow` is the first a peer learns of him |
   | `leavemastodon@my.test`, `leavegotosocial@my.test`, `leavemisskey@my.test` | `TestMove`: each moves to `arrive` of its peer, `leavemisskey` to `arrive@my.test` (Compatibility notes) |
   | `arrive@my.test` | `TestMove`: `leave` of every peer and `leavemisskey@my.test` move to her |
@@ -51,6 +53,10 @@ between this server and Mastodon, for the live test of
   makes Mastodon join it at its inbox (`Relay.create!(...).enable!` in a Rails runner); `TestRelay` makes this server
   join it through the admin API (ADR-0061). The relay forwards public posts as they are, so Mastodon takes this
   server's posts only with their linked data signature.
+- **The LitePub relay** is Akkoma's relay actor (`https://akkoma.test/relay`, `allow_relay` in its configuration),
+  which announces every public post of Akkoma's users to the servers that follow it and takes the posts that they
+  deliver to it. `TestRelayLitePub` joins it at its actor and makes it follow this server's instance actor back with
+  Akkoma's CLI (`pleroma_ctl relay follow`), which it runs with `docker compose exec`.
 - **Misskey** federates with no one until its administrator sets `federation` to `all` (`admin/update-meta`), and
   its API limits how often a user may call an endpoint (`ap/show` 30 times an hour); the script sets both, the
   latter with a rate limit factor of 0 for every user (`admin/roles/update-default-policies`).
@@ -71,7 +77,7 @@ scripts/task.sh docker:federation-live FEDERATION_LIVE_FLAGS='-run TestFollowFro
 FEDERATION_LIVE_KEEP=1 scripts/task.sh docker:federation-live  # keep the stack running afterwards
 ```
 
-It needs Docker with Compose, Go, curl, jq, and openssl. The proxy publishes port 18443 and PostgreSQL port 15432 on
+It needs Docker with Compose (and an amd64 host, or emulation, for Akkoma), Go, curl, jq, and openssl. The proxy publishes port 18443 and PostgreSQL port 15432 on
 127.0.0.1 (`FEDERATION_LIVE_HTTPS_PORT`, `FEDERATION_LIVE_DB_PORT`); the compose network is `172.29.58.0/24`
 (`FEDERATION_LIVE_SUBNET`). The output goes to `.tmp/federation-live/out` (`FEDERATION_LIVE_OUT`):
 
@@ -101,7 +107,7 @@ leave (a scenario that runs alone makes the follows it needs).
 | Scenario | Checks |
 | --- | --- |
 | `TestFederationMode` | The federation direction ([ADR-0076](../../../docs/adr/0076-federation-direction.md)), with otto, in the modes `inbound`, `outbound`, `off`, and `both` again. `inbound`: otto's follow of the peer user is accepted although his actor is the minimal document, the peer's posts reach him, and the peer user's follow of him is rejected and stays pending on neither side; the scenario logs how the peer shows otto and the GETs (WebFinger, actor) it made to this server, from the proxy's access log. `outbound`: the peer user's follow is accepted and otto's post reaches the peer; the peer's post, reply, and favourite reach the inbox and show nowhere. `off`: otto's actor, WebFinger, and NodeInfo answer 404; the peer, made to fetch otto again (Mastodon and Misskey get the 404; GoToSocial answers from what it stored and fetches nothing), keeps him and the follow. `both`: otto's next post reaches the peer. The mode is the whole server's: the scenario runs first (its file sorts first) and sets the mode back to `both` |
-| `TestMove` | The move of an account ([ADR-0089](../../../docs/adr/0089-account-migration-move.md), FR-414) in both directions. Out: the peer user follows `leave<peer>@my.test`, `arrive` of the peer names it among its aliases, it moves there (`POST /accounts/move`), and the peer user follows `arrive` instead (on Misskey, the target is `arrive@my.test`: Compatibility notes). In: alice follows `leave` of the peer, `arrive@my.test` names it among her aliases (`POST /accounts/aliases`), it moves to `arrive@my.test`, and alice follows `arrive@my.test` instead and has an `account_moved` notification with the outcome `followed`. The aliases and moves on the peer: Mastodon's settings run in a Rails runner (`AccountAlias`, `AccountMigration` and `MoveService`; it has no client API for them), GoToSocial's `POST /api/v1/accounts/alias` and `/move`, and Misskey's `i/update` (`alsoKnownAs`) and `i/move`. Akkoma, which is not in the stack, has the regression test of its `Move` with fixtures instead (`AccountMoveContract`, `pkg/testkit/fixtures/federation/akkoma/3.20/move.json`) |
+| `TestMove` | The move of an account ([ADR-0089](../../../docs/adr/0089-account-migration-move.md), FR-414) in both directions. Out: the peer user follows `leave<peer>@my.test`, `arrive` of the peer names it among its aliases, it moves there (`POST /accounts/move`), and the peer user follows `arrive` instead (on Misskey, the target is `arrive@my.test`: Compatibility notes). In: alice follows `leave` of the peer, `arrive@my.test` names it among her aliases (`POST /accounts/aliases`), it moves to `arrive@my.test`, and alice follows `arrive@my.test` instead and has an `account_moved` notification with the outcome `followed`. The aliases and moves on the peer: Mastodon's settings run in a Rails runner (`AccountAlias`, `AccountMigration` and `MoveService`; it has no client API for them), GoToSocial's `POST /api/v1/accounts/alias` and `/move`, and Misskey's `i/update` (`alsoKnownAs`) and `i/move`. Akkoma, which the stack runs for the LitePub relay only, has the regression test of its `Move` with fixtures instead (`AccountMoveContract`, `pkg/testkit/fixtures/federation/akkoma/3.20/move.json`) |
 | `TestPeerResolvesLocal` | The peer finds `alice@my.test` through WebFinger and fetches her actor |
 | `TestLocalResolvesPeer` | This server finds the peer user through WebFinger and fetches the actor with a signed GET |
 | `TestFollowFromPeer` | The peer's signed `Follow` reaches this server's inbox and is verified and recorded; then it is accepted |
@@ -115,8 +121,10 @@ leave (a scenario that runs alone makes the follows it needs).
 | `TestVisibilityAudiences` | Each visibility reaches exactly its audience in both directions; a `local` post that mentions a non-follower reaches the follower but the mentioned user can neither see it nor is notified ([ADR-0017](../../../docs/adr/0017-visibility-local.md), [ADR-0035](../../../docs/adr/0035-local-visibility-mention-tags.md)) |
 | `TestReportForwarding` | A report of the peer user that alice forwards reaches the moderators' reports of Mastodon and Misskey (a `Flag` of this server's instance actor with the comment); one that she does not forward does not. GoToSocial is skipped: the scenarios have no administrator of it |
 | `TestSignatureProfile` | The rows of [ADR-0032](../../../docs/adr/0032-http-signature-profile.md) that need a real server: draft-cavage from every peer, RFC 9421 from Mastodon after a 401, this server's RFC 9421 resend after a 401 (double-knocking), and `Accept-Signature` on an unsigned POST. It runs after the other scenarios of `scenarios_test.go`: afterwards this server signs for `mastodon.test` with RFC 9421 first |
+| `TestRelay` | The relay of the Mastodon protocol ([ADR-0061](../../../docs/adr/0061-federation-relays.md)), Activity-Relay at its inbox: alice registers it through the admin API and the relay accepts the instance actor's `Follow`; ivan's public post reaches Mastodon through the relay, which forwards it as it is, so Mastodon takes it only with ivan's linked data signature; judy's public post reaches this server's federated timeline, fetched again from Mastodon; leaving sends the `Undo`, and the left relay can be deleted |
+| `TestRelayLitePub` | The relay of the LitePub protocol (ADR-0061), Akkoma's relay actor: alice registers its URL with no protocol, which this server detects as `litepub`, and the relay actor accepts the instance actor's `Follow`; the relay actor's `Follow` of the instance actor is accepted (`pleroma_ctl relay list` shows no missing `Accept`); kate's public post reaches this server's federated timeline as the relay actor's `Announce`, taken in from Akkoma and not as a boost; ivan's public post, delivered to the relay's shared inbox with his linked data signature, reaches Akkoma's federated timeline; after leaving (`Undo`), kate's next post does not arrive, and the left relay can be deleted |
 | `TestSuspension` | Mastodon only: Mastodon shows a local user that a moderator suspends as suspended (the actor's `Update` with `suspended: true`, through Mastodon's shared inbox), and shows him again once the suspension is lifted ([ADR-0036](../../../docs/adr/0036-moderation-federation-propagation.md)) |
-| `TestClosure` | The closure of the service ([ADR-0088](../../../docs/adr/0088-service-shutdown-modes.md), FR-809). alice and the peer user follow each other and the peer stores a post of alice; alice announces a closure whose date has passed and closes the server through the admin API, and the peer user posts at once, so that the peer delivers to an inbox that answers 410. While the Deletes go out, the inbox answers 410 to an unsigned POST, WebFinger 410, and alice's actor the suspended document with its key. Each peer takes the `Delete` (Actor): alice and her post are gone there; its user posts again, and the peer sends this server nothing more (no retry of a 410, no delivery to the deleted followers); every POST it made after the closure got 410, and Misskey marks the server `goneSuspended` once one of them did. Then `delivery_completed` is recorded and the actor answers 410 with a `Tombstone`. The closure cannot be undone and ends the federation of the whole server, so the scenario runs last (its file, `zz_closure_test.go`, sorts last) and a stack kept with `FEDERATION_LIVE_KEEP=1` after it runs serves no other scenario. Akkoma, which is not in the stack, is not checked |
+| `TestClosure` | The closure of the service ([ADR-0088](../../../docs/adr/0088-service-shutdown-modes.md), FR-809). alice and the peer user follow each other and the peer stores a post of alice; alice announces a closure whose date has passed and closes the server through the admin API, and the peer user posts at once, so that the peer delivers to an inbox that answers 410. While the Deletes go out, the inbox answers 410 to an unsigned POST, WebFinger 410, and alice's actor the suspended document with its key. Each peer takes the `Delete` (Actor): alice and her post are gone there; its user posts again, and the peer sends this server nothing more (no retry of a 410, no delivery to the deleted followers); every POST it made after the closure got 410, and Misskey marks the server `goneSuspended` once one of them did. Then `delivery_completed` is recorded and the actor answers 410 with a `Tombstone`. The closure cannot be undone and ends the federation of the whole server, so the scenario runs last (its file, `zz_closure_test.go`, sorts last) and a stack kept with `FEDERATION_LIVE_KEEP=1` after it runs serves no other scenario. Akkoma, which the stack runs for the LitePub relay only, is not checked |
 
 ## Compatibility notes
 
@@ -145,6 +153,7 @@ What the scenarios show about the pinned peers, and how this server and the scen
 | Misskey 2026.10 | Fails the `Move` of a remote account to one of its own accounts: `ApPersonService.processRemoteMove` looks the local target up by `uri`, which a local user does not have (`EntityNotFoundError`, logged as `Processing Move Failed`), so its followers stay with the source, whoever sends the `Move`. A `Move` to an account of another server works | `TestMove` moves `leavemisskey@my.test` to `arrive@my.test`, an account of another server to Misskey |
 | Mastodon 4.7, GoToSocial 0.22 | Take this server's `Move` to one of their own accounts, follow the target with the follower, and end the follow of the source | Nothing to do |
 | Mastodon 4.7, GoToSocial 0.22, Misskey 2026.10 | Take the closure's `Delete` (Actor) from the suspended actor document and delete the account and its posts; do not retry a delivery that the closed inbox answered with 410. Misskey also marks the closed server `goneSuspended` (`isSuspended`, `isNotResponding`) | Nothing to do: `TestClosure` ([ADR-0088](../../../docs/adr/0088-service-shutdown-modes.md)) |
+| Akkoma 3.20 | The relay actor (`/relay`, an `Application`) has `"inbox": null` and only a shared inbox (`endpoints.sharedInbox`, `/inbox`), and signs its `Accept`, `Follow`, and `Announce` with draft-cavage (`rsa-sha256`, `{actor}#main-key`) | This server stores an actor without an inbox with its shared inbox as its inbox, so the relay's key resolves and the relay is joined at that shared inbox |
 | Every peer | None learns that alice locked her account while she has no follower there (the actor `Update` goes to followers only) | Expected: the follow request still waits for her approval on this server |
 
 ## Adding a captured activity as a fixture
@@ -169,3 +178,9 @@ included; reformat it (`jq --indent 2 .`) before saving it as a fixture.
 The images are pinned by tag and digest in `compose.yaml`. To move to a new Mastodon, GoToSocial, or Misskey release, take a tag
 at least three days old, put its multi-arch digest (`docker buildx imagetools inspect <image>:<tag>`) next to it, and
 run `scripts/task.sh docker:federation-live` to see what changed.
+
+Akkoma publishes no image: `akkoma/Dockerfile` downloads the release zip of a tag
+(`https://akkoma-updates.s3-website.fr-par.scw.cloud/<tag>/akkoma-amd64.zip`; not every tag has one) and checks its
+SHA-256. To move to a new release, set `AKKOMA_VERSION` and `AKKOMA_SHA256` (`sha256sum` of the zip) there and the tag
+of the `akkoma` image in `compose.yaml`; the zip is built for the Debian release of the base image and for
+linux/amd64 only.
