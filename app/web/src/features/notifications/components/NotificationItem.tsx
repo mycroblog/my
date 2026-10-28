@@ -28,7 +28,9 @@ import {
   Avatar,
   EmojiText,
   Hint,
+  Button,
   Link,
+  NotificationKindMark,
   NotificationLinks,
   NotificationOthers,
   NotificationSentence,
@@ -38,10 +40,12 @@ import {
   PostExcerpt,
   PostExcerptText,
   QuoteBlock,
+  ReplyIcon,
   Text,
 } from "@my/ui";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
+import { useReply } from "../../compose";
 import { isolate, RelationshipActions, useRelationship } from "../../profile";
 import type { NotificationAccount } from "../api/notifications";
 import type { NotificationGroup } from "../hooks/groupNotifications";
@@ -68,18 +72,23 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
   const t = useT();
   const intl = useIntl();
   const view = useNotificationView(group);
+  const reply = useReply();
   const { actor } = view;
   // A row without an actor names the account it is about, without its avatar.
   const named = actor ?? view.subject;
+  const replyTo = view.replyTo;
   return (
     <PostCard
-      {...(actor !== null && {
-        avatar: (
-          <PostCardAvatarLink href={actor.href}>
-            <Avatar sources={actor.avatar} name={actor.name} seed={actor.id} decorative />
-          </PostCardAvatarLink>
-        ),
-      })}
+      // The kind's mark on the avatar's corner, or alone in its place for a row without an actor (P3).
+      avatar={
+        <NotificationKindMark kind={view.kind}>
+          {actor !== null && (
+            <PostCardAvatarLink href={actor.href}>
+              <Avatar sources={actor.avatar} name={actor.name} seed={actor.id} decorative />
+            </PostCardAvatarLink>
+          )}
+        </NotificationKindMark>
+      }
       author={
         <>
           {view.others.length > 0 && <OtherAvatars others={view.others.slice(0, maxOtherAvatars)} />}
@@ -138,6 +147,22 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
         ) : null
       }
       {...(view.followBack !== null && { actions: <FollowBack account={view.followBack} /> })}
+      {...(replyTo !== null &&
+        reply !== null && {
+          // A mention most often wants an answer: the reply starts here, without opening the post first.
+          actions: (
+            <Button
+              size="sm"
+              variant="subtle"
+              onPress={() => {
+                reply(replyTo);
+              }}
+            >
+              <ReplyIcon />
+              {t("client:notifications.mention.reply")}
+            </Button>
+          ),
+        })}
       {...(view.move !== null && {
         actions: (
           <NotificationLinks>

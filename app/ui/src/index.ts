@@ -45,6 +45,7 @@ export {
   type IconToggleButtonProps,
 } from "./IconButton";
 export { ActionCount, type ActionCountProps } from "./ActionCount";
+export { NotificationKindMark, type NotificationKind, type NotificationKindMarkProps } from "./NotificationKindMark";
 export { Segmented, SegmentedItem, type SegmentedItemProps, type SegmentedProps } from "./Segmented";
 
 // Overlays, tabs and announcements.
