@@ -32,7 +32,7 @@ import {
   type Report,
   type ReportCategory,
   type ReportDetail,
-  type ReportFilter,
+  type ReportListQuery,
   type ReportOutcome,
   reportQueryOptions,
   reportsQueryOptions,
@@ -92,10 +92,10 @@ export function isRemote(account: Pick<Account, "acct">): boolean {
   return account.acct.includes("@");
 }
 
-/** The reports of a tab, newest first. */
-export function useReports(filter: ReportFilter): PagedPages<Report> {
+/** The reports that `list` selects, in its order. */
+export function useReports(list: ReportListQuery): PagedPages<Report> {
   const api = useApi();
-  return toPagedList(useSuspenseInfiniteQuery(reportsQueryOptions(api, filter)));
+  return toPagedList(useSuspenseInfiniteQuery(reportsQueryOptions(api, list)));
 }
 
 /** One report, which the route has loaded. */

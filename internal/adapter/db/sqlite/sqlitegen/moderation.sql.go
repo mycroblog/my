@@ -1171,15 +1171,21 @@ SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.co
   r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
 FROM reports r JOIN report_states s ON s.report_id = r.id
 WHERE (CAST(?1 AS TEXT) = '' OR s.state = ?1)
-  AND (CAST(?2 AS TEXT) = '' OR r.id < ?2)
+  AND (CAST(?2 AS TEXT) = '' OR r.category = ?2)
+  AND (CAST(?3 AS TEXT) = '' OR s.assignee_user_id = ?3)
+  AND (CAST(?4 AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
+  AND (CAST(?5 AS TEXT) = '' OR r.id < ?5)
 ORDER BY r.id DESC
-LIMIT ?3
+LIMIT ?6
 `
 
 type ListReportsParams struct {
-	State  string
-	Before string
-	Lim    int64
+	State      string
+	Category   string
+	Assignee   string
+	Unassigned int64
+	Before     string
+	Lim        int64
 }
 
 type ListReportsRow struct {
@@ -1197,10 +1203,18 @@ type ListReportsRow struct {
 	Since             int64
 }
 
-// ListReports returns the reports in a state (empty for any) with their state, newest first,
-// those before the report before (empty for the first page).
+// ListReports returns the reports with their state, newest first: those in a state (empty for
+// any), of a category (empty for any), assigned to a user (empty for anyone) or to nobody when
+// unassigned is 1, and those before the report before (empty for the first page).
 func (q *Queries) ListReports(ctx context.Context, arg ListReportsParams) ([]ListReportsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listReports, arg.State, arg.Before, arg.Lim)
+	rows, err := q.db.QueryContext(ctx, listReports,
+		arg.State,
+		arg.Category,
+		arg.Assignee,
+		arg.Unassigned,
+		arg.Before,
+		arg.Lim,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1340,6 +1354,103 @@ func (q *Queries) ListReportsOfTarget(ctx context.Context, targetAccountID strin
 		return nil, err
 	}
 	return items, nil
+}
+
+const listReportsOldestFirst = `-- name: ListReportsOldestFirst :many
+SELECT r.id, r.uri, r.reporter_account_id, r.target_account_id, r.category, r.comment, r.forwarded,
+  r.filed_at, s.state, s.outcome, s.assignee_user_id, s.since
+FROM reports r JOIN report_states s ON s.report_id = r.id
+WHERE (CAST(?1 AS TEXT) = '' OR s.state = ?1)
+  AND (CAST(?2 AS TEXT) = '' OR r.category = ?2)
+  AND (CAST(?3 AS TEXT) = '' OR s.assignee_user_id = ?3)
+  AND (CAST(?4 AS INTEGER) = 0 OR s.assignee_user_id IS NULL)
+  AND (CAST(?5 AS TEXT) = '' OR r.id > ?5)
+ORDER BY r.id
+LIMIT ?6
+`
+
+type ListReportsOldestFirstParams struct {
+	State      string
+	Category   string
+	Assignee   string
+	Unassigned int64
+	After      string
+	Lim        int64
+}
+
+type ListReportsOldestFirstRow struct {
+	ID                string
+	Uri               sql.NullString
+	ReporterAccountID string
+	TargetAccountID   string
+	Category          string
+	Comment           string
+	Forwarded         int64
+	FiledAt           int64
+	State             string
+	Outcome           sql.NullString
+	AssigneeUserID    sql.NullString
+	Since             int64
+}
+
+// ListReportsOldestFirst returns the reports that ListReports selects, oldest first, those after
+// the report after (empty for the first page).
+func (q *Queries) ListReportsOldestFirst(ctx context.Context, arg ListReportsOldestFirstParams) ([]ListReportsOldestFirstRow, error) {
+	rows, err := q.db.QueryContext(ctx, listReportsOldestFirst,
+		arg.State,
+		arg.Category,
+		arg.Assignee,
+		arg.Unassigned,
+		arg.After,
+		arg.Lim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReportsOldestFirstRow{}
+	for rows.Next() {
+		var i ListReportsOldestFirstRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.ReporterAccountID,
+			&i.TargetAccountID,
+			&i.Category,
+			&i.Comment,
+			&i.Forwarded,
+			&i.FiledAt,
+			&i.State,
+			&i.Outcome,
+			&i.AssigneeUserID,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const oldestReportFiledAt = `-- name: OldestReportFiledAt :one
+SELECT r.filed_at FROM report_states s JOIN reports r ON r.id = s.report_id
+WHERE s.state = ?
+ORDER BY s.report_id
+LIMIT 1
+`
+
+// OldestReportFiledAt returns when the oldest report in a state was filed; no row when none is.
+func (q *Queries) OldestReportFiledAt(ctx context.Context, state string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, oldestReportFiledAt, state)
+	var filed_at int64
+	err := row.Scan(&filed_at)
+	return filed_at, err
 }
 
 const upsertReportState = `-- name: UpsertReportState :exec

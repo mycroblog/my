@@ -4091,6 +4091,24 @@ func (e ListAdminAccountsParamsOrigin) Valid() bool {
 	}
 }
 
+// Defines values for ListReportsParamsOrder.
+const (
+	ListReportsParamsOrderNewest ListReportsParamsOrder = "newest"
+	ListReportsParamsOrderOldest ListReportsParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListReportsParamsOrder enum.
+func (e ListReportsParamsOrder) Valid() bool {
+	switch e {
+	case ListReportsParamsOrderNewest:
+		return true
+	case ListReportsParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
 // AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
@@ -4942,6 +4960,10 @@ type AdminBrands struct {
 
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
+	// OldestOpenReportFiledAt When the open report that has waited longest was filed; omitted when no report is open.
+	// Needs `manage_reports`.
+	OldestOpenReportFiledAt *time.Time `json:"oldest_open_report_filed_at,omitempty"`
+
 	// OpenReports The reports that are open. Needs `manage_reports`.
 	OpenReports *int64 `json:"open_reports,omitempty"`
 
@@ -13319,12 +13341,27 @@ type ListReportsParams struct {
 	// State Keep only the reports in this state; omitted keeps both.
 	State *AdminReportState `form:"state,omitempty" json:"state,omitempty"`
 
+	// Category Keep only the reports of this category; omitted keeps every category.
+	Category *ReportCategory `form:"category,omitempty" json:"category,omitempty"`
+
+	// Assignee Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
+	// other value is a `400`.
+	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
+	// report that has waited longest first. The cursor continues the page in the same order.
+	Order *ListReportsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListReportsParamsOrder defines parameters for ListReports.
+type ListReportsParamsOrder string
 
 // ListInstanceRulesParams defines parameters for ListInstanceRules.
 type ListInstanceRulesParams struct {
@@ -17632,8 +17669,8 @@ type ClientInterface interface {
 
 	// ListReports List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-	// permission.
+	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// Needs the `manage_reports` permission.
 	//
 	// Corresponds with GET /admin/reports (the `ListReports` operationId).
 	ListReports(ctx context.Context, params *ListReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24541,8 +24578,8 @@ func (c *Client) UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...Re
 
 // ListReports List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-// permission.
+// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// Needs the `manage_reports` permission.
 //
 // Corresponds with GET /admin/reports (the `ListReports` operationId).
 func (c *Client) ListReports(ctx context.Context, params *ListReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -36166,6 +36203,42 @@ func NewListReportsRequest(server string, params *ListReportsParams) (*http.Requ
 
 		}
 
+		if params.Category != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "category", *params.Category, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Assignee != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "assignee", *params.Assignee, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order", *params.Order, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Cursor != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
@@ -46831,8 +46904,8 @@ type ClientWithResponsesInterface interface {
 
 	// ListReportsWithResponse List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-	// permission.
+	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// Needs the `manage_reports` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -74774,8 +74847,8 @@ func (c *ClientWithResponses) UnfollowRelayWithResponse(ctx context.Context, id 
 
 // ListReportsWithResponse List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-// permission.
+// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// Needs the `manage_reports` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //

@@ -4456,8 +4456,8 @@ export interface paths {
         };
         /**
          * List the reports
-         * @description The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-         *     permission.
+         * @description The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+         *     Needs the `manage_reports` permission.
          */
         get: operations["listReports"];
         put?: never;
@@ -7964,6 +7964,12 @@ export interface components {
              * @description The appeals of moderation actions that await a decision. Needs `manage_accounts`.
              */
             pending_appeals?: number;
+            /**
+             * Format: date-time
+             * @description When the open report that has waited longest was filed; omitted when no report is open.
+             *     Needs `manage_reports`.
+             */
+            oldest_open_report_filed_at?: string;
         };
         /**
          * @description A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
@@ -19240,6 +19246,19 @@ export interface operations {
             query?: {
                 /** @description Keep only the reports in this state; omitted keeps both. */
                 state?: components["schemas"]["AdminReportState"];
+                /** @description Keep only the reports of this category; omitted keeps every category. */
+                category?: components["schemas"]["ReportCategory"];
+                /**
+                 * @description Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+                 *     that nobody handles, or the ID of a local account. Omitted keeps every report; any
+                 *     other value is a `400`.
+                 */
+                assignee?: string;
+                /**
+                 * @description `newest` (the default) lists the most recently filed report first; `oldest` lists the
+                 *     report that has waited longest first. The cursor continues the page in the same order.
+                 */
+                order?: "newest" | "oldest";
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */

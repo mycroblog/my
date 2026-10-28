@@ -107,9 +107,16 @@ func (f *fakeModeration) Reports(_ context.Context, q appmoderation.ReportQuery,
 	if q.State != "" && q.State != moderation.ReportOpen && q.State != moderation.ReportResolved {
 		return nil, appmoderation.ErrInvalidQuery
 	}
+	reports := slices.Clone(f.reports)
+	if !q.OldestFirst {
+		slices.Reverse(reports)
+	}
 	var out []moderation.ReportRecord
-	for _, r := range slices.Backward(f.reports) {
-		if (q.State == "" || r.Status.State == q.State) && (q.Before == "" || r.Report.ID < q.Before) && len(out) < limit {
+	for _, r := range reports {
+		past := q.After == "" || (q.OldestFirst && r.Report.ID > q.After) || (!q.OldestFirst && r.Report.ID < q.After)
+		if (q.State == "" || r.Status.State == q.State) && (q.Category == "" || r.Report.Category == q.Category) &&
+			(q.AssigneeUserID == "" || r.Status.AssigneeUserID == q.AssigneeUserID) && (!q.Unassigned || r.Status.AssigneeUserID == "") &&
+			past && len(out) < limit {
 			out = append(out, r)
 		}
 	}
@@ -386,6 +393,60 @@ func TestListAndGetReports(t *testing.T) {
 	res = e.send(t, http.MethodGet, "/admin/reports?state=closed", "admin-read", "")
 	if res.StatusCode != http.StatusBadRequest {
 		t.Errorf("?state=closed = %d, want 400", res.StatusCode)
+	}
+}
+
+// TestListReportsFiltersAndOrder checks the assignee, category, and order of the report queue.
+func TestListReportsFiltersAndOrder(t *testing.T) {
+	e, f := newModerationEnvWith(t, func(o *clientapi.Options) {
+		o.Accounts.(fakeAccounts)[bobAccountID] = appaccount.Actor{
+			Account:   account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: adminNow},
+			Local:     &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+			Lifecycle: account.InitialLifecycleState(bobAccountID),
+		}
+	})
+	f.reports[0].Status.AssigneeUserID = userOf(aliceAccountID)
+	f.reports[1].Status.AssigneeUserID = userOf(bobAccountID)
+	f.reports[1].Report.Category = moderation.CategorySpam
+	ids := func(p clientapi.AdminReportPage) []string {
+		out := []string{}
+		for _, r := range p.Items {
+			out = append(out, r.Id)
+		}
+		return out
+	}
+	for query, want := range map[string][]string{
+		"assignee=me":                 {reportOne},
+		"assignee=none":               {reportThree},
+		"assignee=" + bobAccountID:    {reportTwo},
+		"category=spam":               {reportTwo},
+		"category=other&order=oldest": {reportOne, reportThree},
+		"order=oldest":                {reportOne, reportTwo, reportThree},
+		"order=newest":                {reportThree, reportTwo, reportOne},
+	} {
+		res := e.sendJSON(t, http.MethodGet, "/admin/reports?"+query, "admin-read", "")
+		if page := decodeJSON[clientapi.AdminReportPage](t, res); res.StatusCode != http.StatusOK || !slices.Equal(ids(page), want) {
+			t.Errorf("?%s = %d %v, want %v", query, res.StatusCode, ids(page), want)
+		}
+	}
+
+	// The cursor continues the oldest-first order.
+	res := e.sendJSON(t, http.MethodGet, "/admin/reports?order=oldest&limit=2", "admin-read", "")
+	page := decodeJSON[clientapi.AdminReportPage](t, res)
+	if !slices.Equal(ids(page), []string{reportOne, reportTwo}) || page.NextCursor == nil {
+		t.Fatalf("oldest first page = %+v", page)
+	}
+	res = e.sendJSON(t, http.MethodGet, "/admin/reports?order=oldest&limit=2&cursor="+*page.NextCursor, "admin-read", "")
+	if rest := decodeJSON[clientapi.AdminReportPage](t, res); !slices.Equal(ids(rest), []string{reportThree}) || rest.NextCursor != nil {
+		t.Errorf("oldest second page = %+v", rest)
+	}
+
+	// An assignee that is not a local account, and an unknown order or category, are refused.
+	for _, query := range []string{"assignee=" + reporterAccountID, "assignee=01890a5d-ac96-774b-bcce-b302099a4999", "order=random", "category=rude"} {
+		res := e.send(t, http.MethodGet, "/admin/reports?"+query, "admin-read", "")
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, strings.Split(query, "=")[0]) {
+			t.Errorf("?%s = %d %+v, want 400 naming the parameter", query, res.StatusCode, p)
+		}
 	}
 }
 
