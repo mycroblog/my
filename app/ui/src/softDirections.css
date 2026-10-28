@@ -1,0 +1,71 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/*
+ * The three directions of the soft surfaces (ADR-0111) that the prototype stories compare with the current style
+ * (SoftSurfaces.stories.tsx). Storybook only (storybook.css imports it); no app reads it. Each direction is a set of
+ * token values scoped to the element that carries data-soft-direction, so the follow-up that applies the chosen one
+ * only moves its values into theme.css. The directions differ in three things:
+ *
+ *   shadow strength  the darkness of the shadow under a raised face and inside a sunken one, and the lift of the light one
+ *   radius           --radius-xl, the radius of cards and settings sections (ADR-0111 §1: only those grow)
+ *   surface steps    --color-surface / -raised / -sunken, how far the page, a raised face and a sunken one differ
+ *
+ * Every control boundary keeps 3:1 against the surface it sits on (the stories' play functions check it).
+ */
+
+/* Quiet: faint shadows, today's radius and surface steps. */
+[data-soft-direction="quiet"] {
+  --radius-xl: 1.1875rem;
+  --color-surface: light-dark(var(--palette-cream-25), var(--palette-cocoa-900));
+  --color-surface-raised: light-dark(var(--palette-white), var(--palette-cocoa-850));
+  --color-surface-sunken: light-dark(var(--palette-cream-50), var(--palette-cocoa-950));
+}
+
+/* Soft: the shadows of theme.css, a rounder card, and a raised face of the page's own colour, lifted by its shadow only. */
+[data-soft-direction="soft"] {
+  --radius-xl: 1.5rem;
+  --color-surface: light-dark(var(--palette-cream-25), var(--palette-cocoa-900));
+  --color-surface-raised: light-dark(var(--palette-cream-25), var(--palette-cocoa-900));
+  --color-surface-sunken: light-dark(var(--palette-cream-50), var(--palette-cocoa-950));
+}
+
+/* Plush: strong shadows, the roundest card, and wider steps: a deeper page under white faces and deeper wells. */
+[data-soft-direction="plush"] {
+  --radius-xl: 2rem;
+  --color-surface: light-dark(var(--palette-cream-50), var(--palette-cocoa-950));
+  --color-surface-raised: light-dark(var(--palette-white), var(--palette-cocoa-850));
+  --color-surface-sunken: light-dark(var(--palette-cream-100), var(--palette-black));
+}
+
+/* The shadows, from the scoped surfaces with the same relative colour as theme.css; without it, theme.css's fallback. */
+@supports (color: oklch(from light-dark(white, black) l c h)) {
+  [data-soft-direction="quiet"] {
+    --elevation-soft-raised:
+      -1px -1px 4px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.02) c h), transparent),
+      inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.05) c h)),
+      0 1px 2px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.08),
+      0 4px 12px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.05);
+    --elevation-soft-inset: inset 0 1px 2px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.08);
+  }
+
+  [data-soft-direction="soft"] {
+    --elevation-soft-raised:
+      -2px -2px 6px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent),
+      inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.08) c h)),
+      0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.12),
+      0 8px 24px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.1);
+    --elevation-soft-inset:
+      inset 0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.14),
+      inset 0 -1px 0 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent);
+  }
+
+  [data-soft-direction="plush"] {
+    --elevation-soft-raised:
+      -4px -4px 10px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.06) c h), transparent),
+      inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.12) c h)),
+      0 3px 6px 0 oklch(from var(--color-surface) calc(l - 0.35) c h / 0.18),
+      0 12px 32px 0 oklch(from var(--color-surface) calc(l - 0.35) c h / 0.16);
+    --elevation-soft-inset:
+      inset 0 3px 6px 0 oklch(from var(--color-surface) calc(l - 0.35) c h / 0.2),
+      inset 0 -2px 0 0 light-dark(oklch(from var(--color-surface) calc(l + 0.06) c h), transparent);
+  }
+}
