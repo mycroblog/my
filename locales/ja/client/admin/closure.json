@@ -84,7 +84,7 @@
     "description": "Verb of the dialog that closes the server."
   },
   "admin.closure.close.confirm.description": {
-    "defaultMessage": "この操作は取り消せません。利用者はサインインとデータの持ち出ししかできなくなり、{domain}はすべてのローカルアカウントの削除を他のサーバーへ送ります。続けるには、サーバーのドメイン名を入力してください。",
+    "defaultMessage": "この操作は取り消せません。利用者はログインとデータの持ち出ししかできなくなり、{domain}はすべてのローカルアカウントの削除を他のサーバーへ送ります。続けるには、サーバーのドメイン名を入力してください。",
     "description": "What closing does, in the dialog. {domain} is the server's domain."
   },
   "admin.closure.close.confirm.title": {
@@ -92,7 +92,7 @@
     "description": "Question of the dialog that closes the server."
   },
   "admin.closure.close.description": {
-    "defaultMessage": "クローズするとサービスが終わります。利用者はサインインとデータの持ち出しだけができ、サーバーはすべてのローカルアカウントの削除を他のサーバーへ伝えます。取り消せません。先に、何が終わるかを確かめてください。",
+    "defaultMessage": "クローズするとサービスが終わります。利用者はログインとデータの持ち出しだけができ、サーバーはすべてのローカルアカウントの削除を他のサーバーへ伝えます。取り消せません。先に、何が終わるかを確かめてください。",
     "description": "Explanation above the check in the section that closes the server."
   },
   "admin.closure.close.domain": {
@@ -160,7 +160,7 @@
     "description": "Error when the export deadline is before the closing date."
   },
   "admin.closure.export_until.description": {
-    "defaultMessage": "利用者がサインインしてデータを持ち出せる期限です。空にすると、閉鎖日の{days}日後になります。",
+    "defaultMessage": "利用者がログインしてデータを持ち出せる期限です。空にすると、閉鎖日の{days}日後になります。",
     "description": "Hint of the export deadline field. {days} is a number of days."
   },
   "admin.closure.export_until.invalid": {

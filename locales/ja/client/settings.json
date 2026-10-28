@@ -1004,7 +1004,7 @@
     "description": "Error of the password field when the server refused the password that confirms adding a passkey."
   },
   "settings.passkeys.add.cancelled": {
-    "defaultMessage": "パスキーは追加されませんでした。ブラウザの確認が閉じられたか、時間切れになりました。もう一度お試しください。",
+    "defaultMessage": "パスキーは追加されませんでした。ブラウザの確認が閉じられたか、時間切れになりました。もう一度試してください。",
     "description": "Alert when the user dismissed the browser's passkey prompt or it timed out."
   },
   "settings.passkeys.add.exists": {
@@ -1016,11 +1016,11 @@
     "description": "Alert when the browser refused to create a passkey for another reason (unsupported, or the site's address does not allow it)."
   },
   "settings.passkeys.add.invalid": {
-    "defaultMessage": "パスキーを確認できませんでした。別の端末やパスワードマネージャーでお試しください。",
+    "defaultMessage": "パスキーを確認できませんでした。別の端末やパスワードマネージャーで試してください。",
     "description": "Alert when the server could not verify the new passkey (for example, the device has no screen lock)."
   },
   "settings.passkeys.add.expired": {
-    "defaultMessage": "パスキーの追加に時間がかかりすぎました。もう一度お試しください。",
+    "defaultMessage": "パスキーの追加に時間がかかりすぎました。もう一度試してください。",
     "description": "Alert when the passkey was created after the registration expired (5 minutes)."
   },
   "settings.passkeys.add.too_many": {
@@ -1192,7 +1192,7 @@
     "description": "Note instead of a form or button of the password page that a passkey confirms (removing or setting the password), in a browser without passkey support."
   },
   "settings.passkey_confirmation.cancelled": {
-    "defaultMessage": "パスキーは使われませんでした。ブラウザの確認が閉じられたか、時間切れになりました。もう一度お試しください。",
+    "defaultMessage": "パスキーは使われませんでした。ブラウザの確認が閉じられたか、時間切れになりました。もう一度試してください。",
     "description": "Alert when the user dismissed the browser's passkey prompt that confirms an operation (deleting the account, setting or removing the password, adding a passkey), or it timed out."
   },
   "settings.passkey_confirmation.unavailable": {
@@ -1204,7 +1204,7 @@
     "description": "Alert when the server did not accept the passkey that confirms an operation (another account's passkey, a removed one, or one that does not verify)."
   },
   "settings.passkey_confirmation.expired": {
-    "defaultMessage": "パスキーでの確認に時間がかかりすぎました。もう一度お試しください。",
+    "defaultMessage": "パスキーでの確認に時間がかかりすぎました。もう一度試してください。",
     "description": "Alert when the passkey that confirms an operation was given after the confirmation expired (5 minutes)."
   },
   "settings.profile.display_name.emoji": {

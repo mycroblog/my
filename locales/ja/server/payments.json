@@ -32,7 +32,7 @@
     "description": "Label of the email field of the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
   },
   "payments.error.declined": {
-    "defaultMessage": "カードで支払えませんでした。別のカードをお試しください。",
+    "defaultMessage": "カードで支払えませんでした。別のカードを試してください。",
     "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
   },
   "payments.error.form": {
@@ -44,7 +44,7 @@
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
   "payments.error.three_d_secure": {
-    "defaultMessage": "カードの本人認証（3D セキュア）ができませんでした。もう一度お試しいただくか、別のカードをお使いください。",
+    "defaultMessage": "カードの本人認証（3D セキュア）ができませんでした。もう一度試すか、別のカードを使ってください。",
     "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
   },
   "payments.error.title": {
@@ -52,7 +52,7 @@
     "description": "Title of the error page of the PAY.JP checkout and card pages."
   },
   "payments.error.unavailable": {
-    "defaultMessage": "PAY.JP が応答しません。しばらくしてからお試しください。",
+    "defaultMessage": "PAY.JP が応答しません。しばらくしてから試してください。",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.name": {
@@ -112,7 +112,7 @@
     "description": "Column heading of the payments table of the PAY.JP card page: the refunded amount."
   },
   "payments.portal.resume_failed": {
-    "defaultMessage": "カードを変更しましたが、支払いに失敗しました。別のカードをお試しください。",
+    "defaultMessage": "カードを変更しましたが、支払いに失敗しました。別のカードを試してください。",
     "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {

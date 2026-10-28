@@ -92,7 +92,7 @@
     "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying)."
   },
   "errors.internal": {
-    "defaultMessage": "予期しないエラーが発生しました。しばらくしてからもう一度お試しください。",
+    "defaultMessage": "予期しないエラーが発生しました。しばらくしてからもう一度試してください。",
     "description": "API error message for HTTP 500. Must not reveal internal details."
   },
   "errors.invalid_parameter": {
@@ -172,7 +172,7 @@
     "description": "API error title for HTTP 429 when a client sent more requests than the rate limit allows."
   },
   "errors.rate_limited_detail": {
-    "defaultMessage": "{seconds, plural, other {# 秒後にもう一度お試しください。}}",
+    "defaultMessage": "{seconds, plural, other {# 秒後にもう一度試してください。}}",
     "description": "Detail of the HTTP 429 API error. {seconds} is the wait in whole seconds."
   },
   "errors.relay.invalid": {
@@ -276,7 +276,7 @@
     "description": "API error title for HTTP 403 when the server is closed (ADR-0088 §2) and refuses every operation but the users' own data and exports."
   },
   "errors.service_closed_detail": {
-    "defaultMessage": "サーバーはクローズしました。サインインして、データをエクスポートすることはできます。",
+    "defaultMessage": "サーバーはクローズしました。ログインして、データをエクスポートすることはできます。",
     "description": "API error detail for HTTP 403 when the server is closed: what the users can still do."
   },
   "errors.service_closure.state": {
@@ -296,7 +296,7 @@
     "description": "Detail of the HTTP 422 API error when the user tries to follow, block, or mute their own account."
   },
   "errors.service_unavailable": {
-    "defaultMessage": "一時的に利用できません。しばらくしてからもう一度お試しください。",
+    "defaultMessage": "一時的に利用できません。しばらくしてからもう一度試してください。",
     "description": "Error title for HTTP 503 when the server cannot handle the request for now, e.g. another server it needs to reach is not responding."
   },
   "errors.signature_required": {
@@ -604,7 +604,7 @@
     "description": "API error title for HTTP 422 when the host of a voice chat room chooses as the next host someone who is not in the room or may not host rooms."
   },
   "errors.voice.conflict": {
-    "defaultMessage": "ルームが変わりました。もう一度お試しください。",
+    "defaultMessage": "ルームが変わりました。もう一度試してください。",
     "description": "API error title for HTTP 409 when a change of a voice chat room raced another change of the same user."
   },
   "errors.voice.unavailable": {

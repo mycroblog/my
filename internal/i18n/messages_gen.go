@@ -980,7 +980,7 @@ func (l *Localizer) ServerAuthSignUpRefused() string {
 
 // ServerAuthSignUpSubmit formats "server:auth.sign_up.submit". Button that submits the registration form.
 //
-//	en: Create account
+//	en: Create an account
 func (l *Localizer) ServerAuthSignUpSubmit() string {
 	return l.format("server:auth.sign_up.submit", nil)
 }
@@ -3377,7 +3377,7 @@ func (l *Localizer) ServerModerationActionCategory(category string) string {
 
 // ServerModerationActionKind formats "server:moderation.action.kind". Label of the kind of a moderation action on the user's own account, in the notice of the action and the list of the user's actions. {kind} is the kind; the label must make sense whether or not the action is still in effect.
 //
-//	en: {kind, select, warn {Warning} mark_statuses_sensitive {Posts marked as sensitive} delete_statuses {Posts deleted} force_sensitive {Media always marked as sensitive} limit {Limited: posts shown to followers only and kept off the public timelines} restrict_posting {No posting, replying, boosting, or editing} restrict_interaction {No following, favouriting, boosting, or replying} disable_login {Login disabled} suspend {Suspended: no use of the app, and the profile and posts are hidden} ban {Banned: the account is deleted} other {Moderation action}}
+//	en: {kind, select, warn {Warning} mark_statuses_sensitive {Posts marked as sensitive} delete_statuses {Posts deleted} force_sensitive {Media always marked as sensitive} limit {Limited: posts shown to followers only and kept off the public timelines} restrict_posting {No posting, replying, boosting, or editing} restrict_interaction {No following, favouriting, boosting, or replying} disable_login {Sign-in disabled} suspend {Suspended: no use of the app, and the profile and posts are hidden} ban {Banned: the account is deleted} other {Moderation action}}
 func (l *Localizer) ServerModerationActionKind(kind string) string {
 	return l.format("server:moderation.action.kind", map[string]any{"kind": kind})
 }

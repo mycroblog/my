@@ -1,6 +1,6 @@
 {
   "maintenance.description": {
-    "defaultMessage": "{server} はメンテナンスのため一時的に利用できません。しばらくしてからもう一度お試しください。",
+    "defaultMessage": "{server} はメンテナンスのため一時的に利用できません。しばらくしてからもう一度試してください。",
     "description": "Explanation under the heading of the maintenance page. {server} is the server's name, or its host name."
   },
   "maintenance.document_title": {
