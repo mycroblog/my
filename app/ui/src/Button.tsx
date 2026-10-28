@@ -11,27 +11,37 @@ import { tv, type VariantProps } from "tailwind-variants";
 const button = tv({
   base: [
     "inline-flex cursor-default items-center justify-center gap-2 rounded-full text-center font-extrabold select-none",
-    "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:transition-[color,background-color,translate,scale]",
-    // Pressed, it dents at once (web-client/21-experience-principles.md P2); with reduced motion each variant's pressed fill answers.
-    "motion-safe:data-pressed:scale-95",
+    "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait",
+    "motion-safe:transition-[color,background-color,box-shadow,translate,scale] motion-safe:duration-fast motion-safe:ease-standard",
     // The button sizes a child icon, which sets no size of its own (web-client/16-look-states-and-wording.md G11).
     "pointer-coarse:min-h-11 [&>svg]:shrink-0",
   ],
   variants: {
+    // Pressed, every button answers at once (web-client/21-experience-principles.md P2). A raised one (the soft surfaces,
+    // README "Shape, elevation and states") sinks: its raised shadow turns into the inner shadow of a well and its fill
+    // changes, which also answers with reduced motion. A flat one (outline, ghost, subtle) dents, and with reduced
+    // motion its pressed fill answers. Forced-colors mode drops the shadows; the system draws the button there.
     variant: {
-      /** The one main action of a view. */
-      primary:
-        "bg-accent-fill text-accent-fill-fg data-hovered:bg-accent-fill-hover data-pressed:bg-accent-fill-hover motion-safe:data-hovered:-translate-y-px",
-      /** Other actions. */
-      secondary: "bg-soft text-accent data-hovered:text-accent-hover data-pressed:text-accent-hover",
+      /** The one main action of a view: filled with the accent, raised. */
+      primary: [
+        "bg-accent-fill text-accent-fill-fg shadow-soft-raised data-hovered:bg-accent-fill-hover motion-safe:data-hovered:-translate-y-px",
+        "data-pressed:bg-accent-fill-hover data-pressed:shadow-soft-inset",
+      ],
+      /** Other actions: a raised face with a `border-strong` boundary (3:1). */
+      secondary: [
+        "border border-border-strong bg-surface-raised text-accent shadow-soft-raised data-hovered:text-accent-hover",
+        "data-pressed:bg-surface-sunken data-pressed:text-accent-hover data-pressed:shadow-soft-inset",
+      ],
       /** A rule and the accent color on a clear ground: the follow button. */
-      outline: "border border-accent text-accent data-hovered:bg-soft data-pressed:bg-soft",
+      outline:
+        "border border-accent text-accent data-hovered:bg-soft data-pressed:bg-soft motion-safe:data-pressed:scale-95",
       /** Low-emphasis actions in toolbars and lists. */
-      ghost: "text-fg data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken",
+      ghost: "text-fg data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken motion-safe:data-pressed:scale-95",
       /** A low-emphasis action beside content, in the muted text color: the actions of a post's toolbar that are not toggles, the button that lists who reacted. */
-      subtle: "text-fg-muted data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken",
-      /** Destructive actions. */
-      danger: "bg-danger text-danger-fg data-hovered:shadow-md data-pressed:shadow-sm",
+      subtle:
+        "text-fg-muted data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken motion-safe:data-pressed:scale-95",
+      /** Destructive actions: filled with the danger color, raised. */
+      danger: "bg-danger text-danger-fg shadow-soft-raised data-pressed:shadow-soft-inset",
     },
     size: {
       sm: "min-h-8 px-3 text-sm [&>svg]:size-4",

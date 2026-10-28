@@ -5,8 +5,6 @@
 @import "tailwindcss";
 @import "./theme.css";
 @import "./emoji.css";
-/* The prototype directions of the soft surfaces (SoftSurfaces.stories.tsx), for Storybook only. */
-@import "./softDirections.css";
 @source "../.storybook";
 /* The generated token list holds token names, which look like classes but are not. */
 @source not "./themeTokens.gen.ts";

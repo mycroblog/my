@@ -306,8 +306,8 @@
      are the values without relative colour; where the browser has it, the rule after this block derives them from the
      surface colours instead, so a server theme that changes the surfaces moves its shadows too. A server theme may
      still set either outright, which wins over both (one value for both themes, like the other elevations). */
-  --elevation-soft-raised: 0 1px 2px 0 #502e2614, 0 7px 28px 0 #502e260b;
-  --elevation-soft-inset: inset 0 1px 3px 0 #502e2614;
+  --elevation-soft-raised: 0 1px 2px 0 #502e2614, 0 4px 12px 0 #502e260d;
+  --elevation-soft-inset: inset 0 1px 2px 0 #502e2614;
   --shadow-*: initial;
   --shadow-card: var(--elevation-card);
   --shadow-sm: var(--elevation-sm);
@@ -345,13 +345,11 @@
     :root,
     :host {
       --elevation-soft-raised:
-        -2px -2px 6px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent),
-        inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.08) c h)),
-        0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.12),
-        0 8px 24px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.1);
-      --elevation-soft-inset:
-        inset 0 2px 4px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.14),
-        inset 0 -1px 0 0 light-dark(oklch(from var(--color-surface) calc(l + 0.04) c h), transparent);
+        -1px -1px 4px 0 light-dark(oklch(from var(--color-surface) calc(l + 0.02) c h), transparent),
+        inset 0 1px 0 0 light-dark(transparent, oklch(from var(--color-surface-raised) calc(l + 0.05) c h)),
+        0 1px 2px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.08),
+        0 4px 12px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.05);
+      --elevation-soft-inset: inset 0 1px 2px 0 oklch(from var(--color-surface) calc(l - 0.3) c h / 0.08);
     }
   }
 }

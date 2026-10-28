@@ -49,7 +49,7 @@ Colors have two layers in [src/theme.css](src/theme.css):
 | `surface` | Page background |
 | `surface-raised` | Cards, menus, popovers, dialogs |
 | `surface-sunken` | Inputs, wells, hover fills, media cells |
-| `soft` | The selection tint: the current navigation item, secondary buttons, the reader's own reaction |
+| `soft` | The selection tint: the current navigation item, the reader's own reaction, the hover of an `outline` button |
 | `fg` | Body text and icons |
 | `fg-muted` | Secondary text: metadata, placeholders, hints |
 | `accent` / `accent-hover` | Coral as text and thin marks: links, selected tabs and toggles, checkboxes, switches |
@@ -204,19 +204,25 @@ The utility is not named `text-*` because `tailwind-merge` would read that as a 
   and a server theme overrides (`--elevation-card`, `--elevation-sm|md|lg`).
 - Soft surfaces (ADR-0111): `shadow-soft-raised` (a raised face) and `shadow-soft-inset` (a well: fields, a switch's groove), from
   `--elevation-soft-raised|inset`. Where the browser has relative colour of a `light-dark()` colour, `theme.css` derives them from
-  `surface` and `surface-raised` (a lighter and a darker shadow in the light theme; a 1px inner top highlight and a darker shadow in the dark one),
+  `surface` and `surface-raised` (a faint lighter and darker shadow in the light theme; a 1px inner top highlight and a faint darker shadow in the dark one),
   so a theme that changes the surfaces moves them too; elsewhere they are plain warm shadows, and a server theme may set either outright.
-  No component uses them yet: the story "Foundations/Soft surfaces" compares three prototype directions (`src/softDirections.css`,
-  Storybook only) with the current style, and the chosen one is applied to the tokens and the parts later.
 - Radius, shadow, duration, and easing utilities take tokens only: no arbitrary values (`rounded-[3px]`, `shadow-[…]`, `duration-[…]`).
 
 ## Shape, elevation and states
 
-- **Pills** (`rounded-full`): buttons, badges, tags, toasts and the search field. **Cards** (`rounded-xl`): posts, cards and dialogs,
-  each with a 1px `border` and `shadow-card`. **List items** and toggles are `rounded-md`. **Avatars** are rounded squares
-  (`rounded-avatar`), never circles.
-- Borders come first: a card is told apart by its `border`, with the barely-there `shadow-card`. Floating layers use `shadow-sm` (media badges),
-  `shadow-md` (lists, tooltips, `NewItemsButton`) and `shadow-lg` (dialogs, menus, popovers, toasts).
+- **Pills** (`rounded-full`): buttons, badges, tags, toasts and the search field. **Cards** (`rounded-xl`): cards, settings sections,
+  posts and dialogs. **List items** and toggles are `rounded-md`. **Avatars** are rounded squares (`rounded-avatar`), never circles.
+- **Soft surfaces, quietly**: softness comes from the steps between the surfaces and faint shadows, never from a lower contrast.
+  - Raised faces: `Card` (and `Section surface="card"`) sits on `surface-raised` with `shadow-soft-raised` and no border.
+    The `primary`, `secondary` and `danger` buttons are raised too; pressed, a raised button sinks (`shadow-soft-inset`, a
+    darker fill) in `duration-fast` with `ease-standard`. `outline`, `ghost` and `subtle` buttons stay flat and dent while pressed.
+  - Wells: `TextField`, `TextArea` and the `Select` trigger sit on `surface-sunken` with `shadow-soft-inset`; a `Switch` has a
+    sunken groove and a raised thumb.
+  - What makes a control a control stays: the main action is filled with `accent-fill`, never a shadow-only button; every
+    control boundary keeps 3:1 (a `border-strong` border on fields and `secondary` buttons, the `border-strong` / `accent`
+    track of a switch); the shadows only add to it. Forced-colors mode drops the shadows, and the borders remain (`Card` draws one there).
+  - Posts and dialogs keep a 1px `border` with the barely-there `shadow-card`. Floating layers use `shadow-sm` (media badges),
+    `shadow-md` (lists, tooltips, `NewItemsButton`) and `shadow-lg` (dialogs, menus, popovers, toasts).
 - **Serif** (`font-serif`) is for brand moments only: the display line of the brand, page titles, `EmptyState` headings and avatar
   initials. All other UI is sans in heavy weights; the serif stays light.
 - States: hover is a `surface-sunken` fill or `accent-hover`; selected is `accent` plus a change of shape; invalid is a `danger` border plus a
@@ -540,7 +546,7 @@ arbitrary value. A look that no prop gives is a new prop or component in the kit
 | `Cluster` | `flex flex-wrap` | `gap` (both axes); `rowGap` (between wrapped lines, when it differs from `gap`); `align`; `justify`; `wrap={false}` for one line; `inline` (`inline-flex`, in the line of the text around it) |
 | `Grid` | `grid grid-cols-1`, then `columns` (`2` default / `3`) from the container width `at` (`sm` default / `md`) | `columns`; `at`; `gap` (both axes); `rowGap` |
 | `Box` | A block with no layout of its own | Only the box props below. It stays beside `Card`: a `Box` is a layout primitive (a padded row, a size container, a capped width, an optional frame) with no surface, whereas a `Card` is the one raised surface of the brand (`bg-surface-raised`, `border`, `rounded-xl`, `shadow-card`) |
-| `Card` | A raised surface: `bg-surface-raised border rounded-xl shadow-card` (no shadow in dark), a `div` (or `as`: `section`, `article`, `aside`, `li`) | `padding` (`0` for rows with their own padding / `3` / `4` side panel / `6` page panel, default / `8` settings pane) |
+| `Card` | A raised surface: `bg-surface-raised rounded-xl shadow-soft-raised` (a border in forced-colors mode), a `div` (or `as`: `section`, `article`, `aside`, `li`) | `padding` (`0` for rows with their own padding / `3` / `4` side panel / `6` page panel, default / `8` settings pane) |
 | `SectionHeader` | The heading (children) and `actions` (in a `flex flex-wrap gap-2` row): stacked with `items-start gap-2`, on one line with `justify-between` from `@md` | `actions` (nothing, `null` or `false` leaves the heading alone) |
 | `DialogActions` | `flex flex-wrap justify-end gap-2`: the buttons at the end of a dialog, cancel first | — |
 | `Heading` | `h1`–`h6` by `level` | `level`; `size` (`page` `text-2xl font-bold` / `section` `text-lg font-bold` / `subsection` `font-bold` / `label` `text-sm font-bold` / `medium` `font-bold`; by default level 1 is `page`, 2 `section`, the others `subsection`); `tone` (`fg` / `muted`); `wrap` (`anywhere` / `truncate` / `pretty`); `mono`; `shrink` (`min-w-0`); `focusable` (`tabIndex={-1}` and `outline-none`, for a heading focus moves to from script); `spark` (`✳` / `✧`: a decorative mango mark after the text, `aria-hidden`; `PageHeading` has it too, and sets the text in the serif `page-title`) |

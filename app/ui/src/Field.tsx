@@ -18,7 +18,8 @@ const field = tv({
 /** The box of a text control (an input, a text area); the field recipes put it in their control slot. */
 export const fieldControl = tv({
   base: [
-    "w-full min-w-0 rounded-md border border-border-strong bg-surface-sunken px-3 py-2 text-base text-fg",
+    // A well (the soft surfaces): the sunken surface with the inner shadow, inside the border-strong boundary (3:1).
+    "w-full min-w-0 rounded-md border border-border-strong bg-surface-sunken px-3 py-2 text-base text-fg shadow-soft-inset",
     "placeholder:text-fg-muted data-focused:focus-ring data-invalid:border-danger data-invalid:ring-1 data-invalid:ring-danger data-disabled:cursor-not-allowed data-disabled:opacity-50",
     "pointer-coarse:min-h-11 motion-safe:transition-colors",
   ],
