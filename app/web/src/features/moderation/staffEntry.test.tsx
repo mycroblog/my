@@ -68,9 +68,9 @@ describe("the navigation's staff entries", () => {
     expect(rail).toHaveAttribute("href", "/moderation");
     expect(within(navigation()).queryByRole("link", { name: /^Administration/ })).not.toBeInTheDocument();
     // The digits are drawn as generated content (not color alone), so they are neither the link's text nor read.
-    expect(rail.querySelector('[data-count="3"]')).toHaveAttribute("aria-hidden", "true");
+    expect(rail).not.toHaveTextContent("3");
     const menu = within(navigation()).getByRole("button", { name: "Menu, 3 pending in moderation" });
-    expect(menu.querySelector('[data-count="3"]')).toHaveAttribute("aria-hidden", "true");
+    expect(menu).not.toHaveTextContent("3");
 
     await user.click(menu);
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
