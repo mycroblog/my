@@ -28,6 +28,5 @@ The preflight check fails while a listed document is neither. Leave the section 
 
 ## Checklist
 
-- [ ] `scripts/task.sh check` passes locally
 - [ ] Docs / i18n catalogs updated where needed
 - [ ] No secrets, no unrelated changes

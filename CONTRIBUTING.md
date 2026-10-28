@@ -29,7 +29,7 @@ builds the version pinned in `tools/go.mod` into `bin/task` and runs it; never u
 the API, `app/ui`, `app/web`, Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`,
 `i18n:check`, `mail:check`, `api:check`, `ui:check`, `web:check`, `docker:check`, `agentkit:check`, `mykit:check`).
 `CHECKS="go web"` runs some of them only. `TASK_CONCURRENCY` limits the parallelism; locally `scripts/task.sh` defaults it to half the CPUs.
-`scripts/task.sh check:changed` runs only the contexts you changed and those that depend on them (compared with
+`scripts/task.sh check:changed` (optional locally) runs only the contexts you changed and those that depend on them (compared with
 `BASE=origin/main`); CI decides the same way (`scripts/changed-contexts.sh`) which jobs to skip, and the required
 check `check` collects the results of the jobs ([CI](#ci)).
 
@@ -76,18 +76,19 @@ range WSL gave Linux, outgoing connections (`git`, `gh`, ...) time out.
 
 1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
-3. Run the checks of the contexts you touched (`scripts/task.sh go:check`, ...) or `scripts/task.sh check:changed`,
-   then commit (Conventional Commits, in English). Run the full `scripts/task.sh check` when you change shared
-   configuration. Format Go with `gofmt` and TypeScript and JavaScript with `scripts/task.sh web:fmt` before you
-   commit ([Formatting](#formatting)).
+3. Commit (Conventional Commits, in English). Running the checks locally is not required: the merge queue's full check
+   is the gate. Run `scripts/task.sh check:changed` or the check of one context (`scripts/task.sh go:check`, ...) to
+   reproduce a CI failure or to iterate on what you write. Format Go with `gofmt` and TypeScript and JavaScript with
+   `scripts/task.sh web:fmt` before you commit, since the preflight checks it ([Formatting](#formatting)).
 4. Open a pull request from the template, with its Documentation section filled (see [Documentation](#documentation)).
 5. When its CI is green, a maintainer or the orchestrator (the role that runs agents in parallel and merges their pull
    requests) adds it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge`. `main` only receives
    merges from the merge queue.
-6. If the queue drops the pull request because of a conflict or a failing `check`, merge `main` into the branch,
+6. If the queue drops the pull request because of a conflict or a failing `check`, its owner fixes it while the rest of
+   the queue proceeds: merge `main` into the branch,
    regenerate the committed generated files (those Go reads, the output of `scripts/task.sh generate`) instead of
    resolving their conflicts by hand, run `scripts/task.sh web:fmt` if a TypeScript or JavaScript file conflicted,
-   run `scripts/task.sh check:changed`, and push; the person from step 5 queues it
+   and push; the person from step 5 queues it
    again. Merge `main` only when the pull request conflicts or the queue drops it: the queue checks it on top of the
    latest `main` anyway.
 
@@ -124,7 +125,8 @@ step.
 | Release (by hand) | `release.yml` | Runs the slow suite on the given commit and, only when it passes, creates the tag and a draft GitHub Release |
 | Nightly (03:00 JST) | `nightly.yml` | Runs the slow suite on the head of `main`, unless `main` has not moved since the last successful nightly |
 
-- Pull request CI does not compile, type-check, or test. Run `scripts/task.sh check:changed` locally before you push.
+- Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate. Running
+  `scripts/task.sh check:changed` locally is optional (to reproduce a failure or to iterate).
   To investigate a merge queue failure on the pull request, or to check an outside contribution early, add the label
   `ci:full` to the pull request.
 - Pull requests do not run the web E2E automatically. For a pull request that touches the web client, run
