@@ -12,5 +12,8 @@ export function useMediaViewerLabels(): MediaViewerLabels {
     altText: t("client:timeline.media.viewer.alt_text"),
     previous: t("client:timeline.media.viewer.previous"),
     next: t("client:timeline.media.viewer.next"),
+    loading: t("client:media.loading"),
+    failed: t("client:media.failed"),
+    retry: t("client:media.retry"),
   };
 }

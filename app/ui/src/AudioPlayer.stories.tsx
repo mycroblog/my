@@ -14,7 +14,14 @@ const meta = {
     src: audioFile,
     name: "rain-morning.m4a",
     lang: "en",
-    labels: { play: "Play", pause: "Pause", seek: "Position in the audio" },
+    labels: {
+      play: "Play",
+      pause: "Pause",
+      seek: "Position in the audio",
+      loading: "Loading media",
+      failed: "Couldn't load this media.",
+      retry: "Try again",
+    },
   },
   decorators: [
     (Story) => (
