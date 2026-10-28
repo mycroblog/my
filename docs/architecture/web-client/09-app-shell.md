@@ -156,7 +156,7 @@
     区画は WAI-ARIA APG の並べ替えのできるリスト（listbox の Rearrangeable の例）の考え方に従う。各項目は、表示するかのチェックボックスと、1 つ上・1 つ下へ動かすアイコンのボタン（名前とツールチップは「ホームを上へ移動」）を持ち、どれもふつうのタブ移動で届く。
     動かすとフォーカスは動かした項目の同じボタン（端に着いて押せなくなったときはもう一方のボタン）に残り、新しい位置を `useNotice` の `inPlace` で読み上げ（「ホームを 8 項目中 2 番目に移動しました」）、動かした項目に「保存しました」の印を出す（§16 の G24）。各項目の説明は、電話でタブバーとメニューのどちらに出るか・隠していること・サーバーが提供していないことを言う。
     スタッフの画面は「モデレーション」と「サーバー管理」の 2 つの区分に分ける（[ADR-0058](../../adr/0058-moderation-admin-separation.md)、§14）。ロールがモデレーションの画面の権限（`manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`）のどれかを持つ閲覧者には「モデレーション」（`/moderation`）を、
-    サーバー管理の画面の権限（`manage_settings`・`manage_rules`・`manage_custom_emojis`・`manage_announcements`・`manage_webhooks`・`manage_roles`・`manage_jobs`・`manage_finance`）のどれかを持つ閲覧者には「管理」（`/admin`）を、設定の後にこの順で足す。どちらも、その区分に閲覧者の使える画面があるときだけ出すので、組み込みのモデレーターには「管理」が出ない。レールとサイドバーとメニューのシートに出し、タブバーには出さない。
+    サーバー管理の画面の権限（`manage_settings`・`manage_rules`・`manage_custom_emojis`・`manage_announcements`・`manage_webhooks`・`manage_roles`・`manage_jobs`・`manage_finance`）のどれかを持つ閲覧者には「管理」（`/admin`）を、設定の後にこの順で足す。どちらも、その区分に閲覧者の使える画面があるときだけ出すので、組み込みのモデレーターには「管理」が出ない。レールとサイドバーとメニューのシートに出し、タブバーには出さない。運営の区分は、その最初の項目の上の線で利用者の項目（通話・会計を含む）と分ける。
     権限の 3 つめの区分「利用者の機能」（`member`。`view_finance` など、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)）はこの規則に数えないので、それだけを持つ閲覧者には「モデレーション」も「管理」も出ない。
     サーバーが通話を有効にしている（`GET /instance` の `voice_enabled`、ADR-0100 §2）ログイン中の閲覧者には、利用者の項目のすぐ後に「通話」（`/voice`）を足す。「会計」と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     `view_finance` を持つ閲覧者には、利用者の項目の後、スタッフの区分の前に「会計」（`/finance`）を足す。スタッフの区分と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。

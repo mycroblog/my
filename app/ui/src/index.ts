@@ -86,6 +86,7 @@ export { Tooltip, TooltipTrigger, type TooltipProps, type TooltipTriggerProps } 
 export { Avatar, type AvatarProps } from "./Avatar";
 export { Badge, type BadgeProps } from "./Badge";
 export { RailItem, type RailItemBadge, type RailItemProps } from "./RailItem";
+export { NavMenu, navMenuGroupLimit, type NavMenuGroup, type NavMenuItem, type NavMenuProps } from "./NavMenu";
 export { RoleBadge, RoleBadgeList, type RoleBadgeListProps, type RoleBadgeProps } from "./RoleBadge";
 export {
   DescriptionItem,
@@ -178,6 +179,49 @@ export {
   VoiceIcon,
   WarningIcon,
 } from "./Icons";
+// The icons of the pages of the grouped menus (NavMenu).
+export {
+  BadgeIcon,
+  SupporterIcon,
+  DisplayIcon,
+  AutoDeleteIcon,
+  FollowRequestIcon,
+  BlockIcon,
+  MuteIcon,
+  DomainMuteIcon,
+  PasswordIcon,
+  TwoFactorIcon,
+  PasskeyIcon,
+  LinkedAccountIcon,
+  AuthorizedAppIcon,
+  DeveloperIcon,
+  ImportExportIcon,
+  AliasIcon,
+  MoveAccountIcon,
+  AccountStatusIcon,
+  ArchiveIcon,
+  OverviewIcon,
+  ReportIcon,
+  AppealIcon,
+  AuditLogIcon,
+  AccountsIcon,
+  RegistrationIcon,
+  SignUpBlockIcon,
+  DomainActionIcon,
+  ServerSettingsIcon,
+  RulesIcon,
+  ThemeIcon,
+  DocumentIcon,
+  AnnouncementIcon,
+  RelayIcon,
+  WebhookIcon,
+  LoginProviderIcon,
+  RoleIcon,
+  JobIcon,
+  ErrorIcon,
+  ClosureIcon,
+  CustomEmojiIcon,
+} from "./Icons";
 export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
 export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
 
@@ -236,14 +280,7 @@ export { Box, type BoxProps } from "./Box";
 export { Card, type CardElement, type CardProps } from "./Card";
 export { SettingsLayout, type SettingsLayoutProps } from "./SettingsLayout";
 // The frame of the admin and moderation mode and the parts its list screens share.
-export {
-  AdminNavBack,
-  AdminNavSection,
-  AdminShell,
-  type AdminNavBackProps,
-  type AdminNavSectionProps,
-  type AdminShellProps,
-} from "./AdminShell";
+export { AdminNavBack, AdminShell, type AdminNavBackProps, type AdminShellProps } from "./AdminShell";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 export { FeatureCard, type FeatureCardProps } from "./FeatureCard";
 // An open voice chat room in a list (ADR-0100 §8).

@@ -55,9 +55,9 @@ describe("the archives of the user's data", () => {
     const api = exportsServer([]);
     const { user } = await renderApp({ path: "/settings" });
 
-    await user.click(await screen.findByRole("link", { name: "Your account" }));
+    await user.click(await screen.findByRole("link", { name: "Archive and deletion" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Your account" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Archive and deletion" })).toBeInTheDocument();
     const section = screen.getByRole("region", { name: "Download your data" });
     expect(within(section).getByRole("heading", { level: 3, name: "You have no archives" })).toBeInTheDocument();
 

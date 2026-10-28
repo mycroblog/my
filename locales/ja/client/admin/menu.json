@@ -14,5 +14,25 @@
   "admin.menu.title": {
     "defaultMessage": "管理",
     "description": "Heading of the links to the server administration screens (settings, documents, failed jobs) on the settings page and title of their page, shown only to users with a server administration permission."
+  },
+  "admin.menu.group.accounts": {
+    "defaultMessage": "アカウントと登録",
+    "description": "Heading of a group of the admin and moderation menu: the accounts, the registrations, the blocked sign-ups and the invites."
+  },
+  "admin.menu.group.federation": {
+    "defaultMessage": "連合",
+    "description": "Heading of a group of the admin and moderation menu: the actions on other servers and the list of other servers."
+  },
+  "admin.menu.group.connections": {
+    "defaultMessage": "連携",
+    "description": "Heading of a group of the admin and moderation menu: the relays, the webhooks, the login providers and the OAuth apps of the server."
+  },
+  "admin.menu.group.funding": {
+    "defaultMessage": "運営資金",
+    "description": "Heading of a group of the admin and moderation menu: the finances and the supporters."
+  },
+  "admin.menu.group.operations": {
+    "defaultMessage": "運用",
+    "description": "Heading of a group of the admin and moderation menu: the roles, the background jobs, the errors and closing the service."
   }
 }

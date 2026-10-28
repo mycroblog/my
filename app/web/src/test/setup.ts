@@ -2,7 +2,7 @@
 // Runs before every Vitest file (vitest.config.ts): jest-dom matchers, DOM cleanup and the MSW server.
 // The network is mocked only through MSW (web-client/README.md T3); a request that no handler matches fails the test.
 import "@testing-library/jest-dom/vitest";
-import { watchSwitchesInSubmitForms } from "@my/ui/testing";
+import { watchNavMenus, watchSwitchesInSubmitForms } from "@my/ui/testing";
 import { cleanup, configure } from "@testing-library/react";
 import { destroyAnnouncer } from "react-aria/private/live-announcer/LiveAnnouncer";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
@@ -47,11 +47,14 @@ beforeAll(() => {
 });
 
 // No screen puts a switch, which takes effect at once, inside a form saved by a submit button (web-client §21,
-// ADR-0110 §6): every test watches what it renders, dialogs included, and fails when one did.
+// ADR-0110 §6): every test watches what it renders, dialogs included, and fails when one did. The same way, every
+// grouped menu (NavMenu) has an icon on each page and at most seven pages a group (ADR-0110 §5, §6).
 let switches: { stop: () => void } | undefined;
+let menus: { stop: () => void } | undefined;
 
 beforeEach(() => {
   switches = watchSwitchesInSubmitForms();
+  menus = watchNavMenus();
   // jsdom has no layout, so it does not implement scrolling; the router restores the scroll position
   // on every navigation. restoreMocks (vitest.config.ts) removes the stub after each test.
   vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -75,9 +78,18 @@ afterEach(() => {
   // The tests share one document; a theme chosen in one (lib/theme) must not color the next.
   delete document.documentElement.dataset["theme"];
   // Last, so that the rest of the cleanup runs when it fails; it remembers what the test rendered before cleanup.
-  const watched = switches;
+  const watched = [switches, menus];
   switches = undefined;
-  watched?.stop();
+  menus = undefined;
+  const failures: unknown[] = [];
+  for (const watch of watched) {
+    try {
+      watch?.stop();
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  if (failures.length > 0) throw failures[0];
 });
 
 afterAll(() => {

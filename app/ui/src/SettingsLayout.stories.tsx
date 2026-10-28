@@ -2,20 +2,29 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 import { Heading } from "./Heading";
-import { RailItem } from "./RailItem";
+import { ArchiveIcon, BadgeIcon, ProfileIcon } from "./Icons";
+import { NavMenu } from "./NavMenu";
 import { SettingsLayout } from "./SettingsLayout";
-import { Stack } from "./Stack";
 import { Text } from "./Text";
 
 const menu = (
-  <Stack as="ul" gap="1">
-    <li>
-      <RailItem form="section" href="#profile" icon={null} label="Profile" current />
-    </li>
-    <li>
-      <RailItem form="section" href="#account" icon={null} label="Account" />
-    </li>
-  </Stack>
+  <NavMenu
+    groups={[
+      {
+        id: "profile",
+        heading: "Profile",
+        items: [
+          { href: "#profile", icon: <ProfileIcon />, label: "Profile", current: true },
+          { href: "#badges", icon: <BadgeIcon />, label: "Badges" },
+        ],
+      },
+      {
+        id: "account",
+        heading: "Account and data",
+        items: [{ href: "#account", icon: <ArchiveIcon />, label: "Archive and deletion" }],
+      },
+    ]}
+  />
 );
 
 const meta = {

@@ -4,36 +4,38 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, within, waitFor } from "storybook/test";
-import { AdminNavBack, AdminNavSection, AdminShell, type AdminShellProps } from "./AdminShell";
+import { AdminNavBack, AdminShell, type AdminShellProps } from "./AdminShell";
 import { BrandMark } from "./BrandMark";
 import { PageHeading } from "./PageHeading";
-import { RailItem } from "./RailItem";
+import { AccountsIcon, ReportIcon, ServerSettingsIcon } from "./Icons";
+import { NavMenu } from "./NavMenu";
 import { atViewport, shellParameters } from "./storyViewports";
 import { Text } from "./Text";
 
 const navigation = (
-  <>
-    <AdminNavSection heading="Moderation">
-      <li>
-        <RailItem
-          form="section"
-          href="#reports"
-          icon={null}
-          label="Reports"
-          current
-          badge={{ count: 3, label: "3 open", name: "Reports 3 open" }}
-        />
-      </li>
-      <li>
-        <RailItem form="section" href="#accounts" icon={null} label="Accounts" />
-      </li>
-    </AdminNavSection>
-    <AdminNavSection heading="Administration">
-      <li>
-        <RailItem form="section" href="#settings" icon={null} label="Server settings" />
-      </li>
-    </AdminNavSection>
-  </>
+  <NavMenu
+    groups={[
+      {
+        id: "moderation",
+        heading: "Moderation",
+        items: [
+          {
+            href: "#reports",
+            icon: <ReportIcon />,
+            label: "Reports",
+            current: true,
+            badge: { count: 3, label: "3 open", name: "Reports 3 open" },
+          },
+          { href: "#accounts", icon: <AccountsIcon />, label: "Accounts" },
+        ],
+      },
+      {
+        id: "admin",
+        heading: "Administration",
+        items: [{ href: "#settings", icon: <ServerSettingsIcon />, label: "Server settings" }],
+      },
+    ]}
+  />
 );
 
 function Sample(props: Partial<AdminShellProps> & { startOpen?: boolean }) {

@@ -404,7 +404,7 @@ describe("permissions", () => {
   test("the screen is in the moderation menu of a user with manage_domains", async () => {
     await renderApp({ path: "/moderation" });
 
-    const menu = await screen.findByRole("region", { name: "Moderation" });
+    const menu = await screen.findByRole("group", { name: "Federation" });
     expect(within(menu).getByRole("link", { name: "Domain actions" })).toHaveAttribute(
       "href",
       "/moderation/domain-actions",

@@ -8,6 +8,7 @@
 // are hidden from assistive technology and the link is named with the count instead ("Notifications, 3 unread"), a
 // name that starts with the visible label (WCAG 2.5.3). The tab bar's last item can be a menu (`AppNavMenu`), a
 // button that opens a sheet with the items that only the rail shows.
+// A line (`separated` on the first of them) sets the staff's areas apart from the user's items, in the rail and in the sheet.
 import { createContext, type ReactNode, use, useId } from "react";
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
@@ -128,6 +129,8 @@ const appNavItem = tv({
     },
     // In the top bar every item shows, at every width.
     placement: { side: {}, top: { base: "flex-none" } },
+    // The first item of the staff's areas, set apart from the user's items by a line in the rail and the sidebar.
+    separated: { true: { base: "md:mt-2 md:border-t md:border-border md:pt-3" } },
   },
   compoundVariants: [{ placement: "top", shows: "rail", class: { base: "block" } }],
 });
@@ -149,6 +152,8 @@ export type AppNavItemProps = {
   shows?: "always" | "tab-bar" | "rail";
   /** In the top bar, the call to action (a coral pill). */
   prominent?: boolean;
+  /** Sets the item and those after it apart from the items before it with a line (the staff's areas after the user's items). */
+  separated?: boolean;
 };
 
 /** One item of the navigation: a `RailItem` in a list item. */
@@ -160,9 +165,10 @@ export function AppNavItem({
   badge,
   shows = "always",
   prominent,
+  separated = false,
 }: AppNavItemProps) {
   const placement = use(PlacementContext);
-  const slots = appNavItem({ shows, placement });
+  const slots = appNavItem({ shows, placement, separated });
   const side = placement === "side";
   return (
     <li className={slots.base()}>
@@ -229,10 +235,15 @@ export function AppNavMenu({ label, badge, isOpen, onOpenChange, title, closeLab
 const appNavMenu = tv({
   slots: {
     list: "flex flex-col",
+    item: "",
     link: [
       "flex min-h-12 w-full gap-3 rounded-md px-3 text-base font-normal text-fg data-hovered:bg-surface-sunken",
       "aria-[current=page]:font-semibold aria-[current=page]:text-accent",
     ],
+  },
+  variants: {
+    // The first item of the staff's areas, set apart from the user's items by a line.
+    separated: { true: { item: "mt-2 border-t border-border pt-2" } },
   },
 });
 
@@ -246,9 +257,9 @@ export function AppNavMenuList({ children }: AppNavMenuListProps) {
 export type AppNavMenuLinkProps = Omit<AppNavItemProps, "shows">;
 
 /** An item of the menu sheet: a full-width row with the icon, the label and the count after it. */
-export function AppNavMenuLink({ href, icon, label, current = false, badge }: AppNavMenuLinkProps) {
+export function AppNavMenuLink({ href, icon, label, current = false, badge, separated = false }: AppNavMenuLinkProps) {
   return (
-    <li>
+    <li className={appNavMenu().item({ separated })}>
       <Link
         href={href}
         {...(badge !== undefined && { "aria-label": badge.name })}

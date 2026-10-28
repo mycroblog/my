@@ -47,4 +47,8 @@ L3 のうち、今ある検査は次のとおり。
 - **送信ボタンのある `form` の中のスイッチ**: `Switch` はすぐ効く操作の部品なので、送信ボタンで保存する `form` の中では `Checkbox` を使う。
   `@my/ui/testing` の `watchSwitchesInSubmitForms` が、`app/web` の各テスト（`src/test/setup.ts`）の描いたもの（途中で開いて閉じたダイアログも含む）を見て、
   送信ボタンを持つ `form`（`form=` で外から結び付いたボタンも含む）の中に `role="switch"` があればそのテストを失敗させる。
+- **まとまりのあるメニュー**: 設定のメニューと管理のモードのメニューは `@my/ui` の `NavMenu` で組み、まとまりごとに見える見出しを持ち、すべての項目にアイコンを持ち、
+  1 つのまとまりの項目は 7 個までにする（ADR-0110 §5・§6）。`@my/ui/testing` の `watchNavMenus` が、`app/web` の各テストの描いた `NavMenu` を見て、
+  アイコンのない項目か 8 個以上の項目を持つまとまりがあればそのテストを失敗させる。機能の部品が `RailItem` で項目を並べることは、`restrict/pattern` が禁じる。
+  アプリのナビゲーション（レールとメニューのシート）は、運営の領域（モデレーション・管理）の前に線を引き、利用者の項目と分ける。
 - **読み上げだけの結果**: 機能のフックと部品は `useAnnouncer` を呼ばず、結果の見える置き場を言う `@my/ui` の `useNotice`（`inPlace` か `toast`）を使う（Oxlint の `restrict/feature`、§16 の G25）。すぐ保存する操作は `AutosaveControl` の必須の `state` で保存の状態を受け取る（G24）。

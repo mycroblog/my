@@ -17,7 +17,8 @@
 //
 // The staff's screens are two areas (ADR-0058). A viewer whose roles have a permission of a moderation screen
 // also has Moderation, and one with a permission of a server administration screen has Administration, in that
-// order after the user's items in the rail and the sidebar and in the menu's sheet; a moderator never sees
+// order after the user's items in the rail and the sidebar and in the menu's sheet, set apart from them by a line
+// (the first of them is `separated`); a moderator never sees
 // Administration. Only the permissions of those screens count: a permission of the user's side (ADR-0070, the
 // member category, such as view_finance) shows neither. A viewer with view_finance has Finances, after the user's
 // items and before the staff's areas, in the rail, the sidebar and the menu's sheet, never in the tab bar.
@@ -342,6 +343,8 @@ export function Navigation() {
     return undefined;
   };
   const current = (section: Section | undefined) => section !== undefined && inSection(pathname, section, ownAcct);
+  // A line sets the staff's areas apart from the user's items, in the rail and in the menu's sheet.
+  const firstStaff = shown.find((item) => item.staff !== undefined)?.id;
   return (
     <AppNav
       label={t("client:shell.nav.label")}
@@ -370,13 +373,19 @@ export function Navigation() {
             label={t(item.label)}
             current={current(item.section)}
             shows={item.shows}
+            separated={item.id === firstStaff}
             {...(item.id === "sign-up" && { prominent: true })}
             {...(badge !== undefined && { badge })}
           />
         );
       })}
       {status !== "unknown" && (
-        <NavigationMenu items={shown.filter((item) => item.shows === "rail")} current={current} badgeOf={badgeOf} />
+        <NavigationMenu
+          items={shown.filter((item) => item.shows === "rail")}
+          current={current}
+          badgeOf={badgeOf}
+          firstStaff={firstStaff}
+        />
       )}
     </AppNav>
   );
@@ -411,6 +420,8 @@ type NavigationMenuProps = {
   current: (section: Section | undefined) => boolean;
   /** The badge of a section's link, the same as in the rail. */
   badgeOf: (section: Section | undefined) => ItemBadge;
+  /** The id of the first item of the staff's areas, which a line sets apart; none without one. */
+  firstStaff: string | undefined;
 };
 
 /**
@@ -425,7 +436,7 @@ type NavigationMenuProps = {
  * service and privacy policy, which the third column shows on wide screens (the documents when the server
  * publishes them).
  */
-function NavigationMenu({ items, current, badgeOf }: NavigationMenuProps) {
+function NavigationMenu({ items, current, badgeOf, firstStaff }: NavigationMenuProps) {
   const t = useT();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -464,6 +475,7 @@ function NavigationMenu({ items, current, badgeOf }: NavigationMenuProps) {
                 icon={item.icon}
                 label={t(item.label)}
                 current={current(item.section)}
+                separated={item.id === firstStaff}
                 {...(badge !== undefined && { badge })}
               />
             );

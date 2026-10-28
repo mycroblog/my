@@ -136,7 +136,14 @@ function SampleNav({
       <AppNavItem href="#profile" icon={<ProfileIcon />} label={l.profile} shows="rail" />
       <AppNavItem href="#bookmarks" icon={<BookmarkIcon />} label={l.bookmarks} shows="rail" />
       <AppNavItem href="#settings" icon={<SettingsIcon />} label={l.settings} shows="rail" />
-      <AppNavItem href="#moderation" icon={<ModerationIcon />} label="Moderation" shows="rail" badge={pending} />
+      <AppNavItem
+        href="#moderation"
+        icon={<ModerationIcon />}
+        label="Moderation"
+        shows="rail"
+        badge={pending}
+        separated
+      />
       <AppNavItem href="#admin" icon={<AdminIcon />} label="Administration" shows="rail" />
       <AppNavMenu
         label="Menu"
@@ -150,7 +157,7 @@ function SampleNav({
           <AppNavMenuLink href="#profile" icon={<ProfileIcon />} label={l.profile} />
           <AppNavMenuLink href="#bookmarks" icon={<BookmarkIcon />} label={l.bookmarks} />
           <AppNavMenuLink href="#settings" icon={<SettingsIcon />} label={l.settings} current />
-          <AppNavMenuLink href="#moderation" icon={<ModerationIcon />} label="Moderation" badge={pending} />
+          <AppNavMenuLink href="#moderation" icon={<ModerationIcon />} label="Moderation" badge={pending} separated />
           <AppNavMenuLink href="#admin" icon={<AdminIcon />} label="Administration" />
         </AppNavMenuList>
         <AppNavMenuSection separator="4">

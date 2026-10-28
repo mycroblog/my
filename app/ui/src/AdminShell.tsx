@@ -4,7 +4,7 @@
 // page; below md a small top bar with the menu button, which opens the same menu in a sheet. Like AppShell it answers to
 // the viewport, not to a container (web-client/README.md D2): the menu is as tall as the screen and the top bar is fixed to
 // the screen's top edge.
-import { type ReactNode, type Ref, useId } from "react";
+import type { ReactNode, Ref } from "react";
 import { tv } from "tailwind-variants";
 import { DialogTrigger, Sheet } from "./Dialog";
 import { IconButton } from "./IconButton";
@@ -26,7 +26,6 @@ const adminShell = tv({
     menu: "flex flex-col gap-1 p-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
     brand: "flex flex-col gap-1 px-2 pt-1 pb-4",
     modeLabel: "text-xs font-extrabold tracking-widest text-fg-muted uppercase",
-    list: "flex flex-col gap-4",
     footer: "mt-4 border-t border-border pt-4",
   },
 });
@@ -36,7 +35,7 @@ export type AdminShellProps = {
   brand: ReactNode;
   /** The name of the mode ("Admin and moderation"): above the menu's items, in the top bar, and the name of the menu's landmark. */
   modeLabel: string;
-  /** The menu's items: `AdminNavSection`s. */
+  /** The menu's items: a `NavMenu`. */
   navigation: ReactNode;
   /** Under the items: the link back to the app (`AdminNavBack`). */
   footer: ReactNode;
@@ -83,7 +82,7 @@ export function AdminShell({
         {brand}
         <p className={slots.modeLabel()}>{modeLabel}</p>
       </div>
-      <div className={slots.list()}>{navigation}</div>
+      {navigation}
       <div className={slots.footer()}>{footer}</div>
     </nav>
   );
@@ -116,35 +115,6 @@ export function AdminShell({
 const adminNavBack = tv({
   base: "min-h-11 gap-2 rounded-lg px-3 text-sm font-bold text-fg data-hovered:bg-surface-sunken [&>svg]:size-5",
 });
-
-const adminNavSection = tv({
-  slots: {
-    base: "flex flex-col gap-1",
-    heading: "px-3 pb-1 text-xs font-extrabold text-fg-muted",
-    list: "flex flex-col gap-1",
-  },
-});
-
-export type AdminNavSectionProps = {
-  /** The group's name ("Moderation"). */
-  heading: string;
-  /** The group's items: `RailItem`s with `form="section"` in list items. */
-  children: ReactNode;
-};
-
-/** A named group of the menu's items. */
-export function AdminNavSection({ heading, children }: AdminNavSectionProps) {
-  const slots = adminNavSection();
-  const id = useId();
-  return (
-    <section aria-labelledby={id} className={slots.base()}>
-      <h2 id={id} className={slots.heading()}>
-        {heading}
-      </h2>
-      <ul className={slots.list()}>{children}</ul>
-    </section>
-  );
-}
 
 export type AdminNavBackProps = {
   href: string;

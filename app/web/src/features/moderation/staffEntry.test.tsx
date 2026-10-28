@@ -88,7 +88,7 @@ describe("the navigation's staff entries", () => {
     // The page is in the mode: its menu leads with the moderation overview, and the app's navigation is not there.
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     expect(
-      within(within(staffMenu()).getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Overview" }),
+      within(within(staffMenu()).getByRole("group", { name: "Moderation" })).getByRole("link", { name: "Overview" }),
     ).toHaveAttribute("aria-current", "page");
     expect(within(staffMenu()).getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute(
       "href",
@@ -193,15 +193,15 @@ describe("the navigation's Administration", () => {
     const groups = within(staffMenu());
     expect(
       groups
-        .getByRole("region", { name: "Moderation" })
-        .compareDocumentPosition(groups.getByRole("region", { name: "Administration" })) &
+        .getByRole("group", { name: "Moderation" })
+        .compareDocumentPosition(groups.getByRole("group", { name: "Administration" })) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      within(groups.getByRole("region", { name: "Administration" })).getByRole("link", { name: "Overview" }),
+      within(groups.getByRole("group", { name: "Administration" })).getByRole("link", { name: "Overview" }),
     ).toHaveAttribute("aria-current", "page");
     expect(
-      within(groups.getByRole("region", { name: "Moderation" })).getByRole("link", { name: "Reports 2 open reports" }),
+      within(groups.getByRole("group", { name: "Moderation" })).getByRole("link", { name: "Reports 2 open reports" }),
     ).not.toHaveAttribute("aria-current");
     const main = within(screen.getByRole("main"));
     expect(main.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
@@ -220,7 +220,7 @@ describe("the navigation's Administration", () => {
     await screen.findByRole("heading", { level: 1, name: "Jobs" });
 
     expect(await within(staffMenu()).findByRole("link", { name: "Jobs" })).toHaveAttribute("aria-current", "page");
-    expect(within(staffMenu()).queryByRole("region", { name: "Moderation" })).not.toBeInTheDocument();
+    expect(within(staffMenu()).queryByRole("group", { name: "Moderation" })).not.toBeInTheDocument();
     expect(requests).toEqual([]);
   });
 });

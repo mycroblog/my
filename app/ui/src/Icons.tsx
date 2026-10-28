@@ -23,6 +23,44 @@ import {
   PiPawPrint,
   PiSoccerBall,
   PiSticker,
+  PiSealCheck,
+  PiHandHeart,
+  PiMonitor,
+  PiClockCountdown,
+  PiUserCheck,
+  PiProhibit,
+  PiSpeakerSimpleSlash,
+  PiGlobeX,
+  PiPassword,
+  PiLockKey,
+  PiFingerprint,
+  PiLinkSimple,
+  PiPlugsConnected,
+  PiCode,
+  PiArrowsDownUp,
+  PiAddressBook,
+  PiSuitcaseRolling,
+  PiClipboardText,
+  PiArchive,
+  PiSquaresFour,
+  PiScales,
+  PiListMagnifyingGlass,
+  PiUsers,
+  PiUserCirclePlus,
+  PiUserCircleMinus,
+  PiGlobeSimpleX,
+  PiGear,
+  PiListChecks,
+  PiPalette,
+  PiFileText,
+  PiMegaphone,
+  PiBroadcast,
+  PiWebhooksLogo,
+  PiKey,
+  PiIdentificationBadge,
+  PiQueue,
+  PiBug,
+  PiPower,
   PiArrowBendUpLeft,
   PiAt,
   PiBuildings,
@@ -184,6 +222,46 @@ export const iconTable = {
   FinanceIcon: { off: glyph(PiCoins, "PiCoins") },
   // Voice chat (ADR-0100): a headset, which has no direction.
   VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
+  // The grouped menus of the settings and of the admin and moderation mode (ADR-0110 §5): one icon per page.
+  BadgeIcon: { off: glyph(PiSealCheck, "PiSealCheck") },
+  SupporterIcon: { off: glyph(PiHandHeart, "PiHandHeart") },
+  DisplayIcon: { off: glyph(PiMonitor, "PiMonitor") },
+  AutoDeleteIcon: { off: glyph(PiClockCountdown, "PiClockCountdown") },
+  FollowRequestIcon: { off: glyph(PiUserCheck, "PiUserCheck") },
+  BlockIcon: { off: glyph(PiProhibit, "PiProhibit") },
+  MuteIcon: { off: glyph(PiSpeakerSimpleSlash, "PiSpeakerSimpleSlash") },
+  DomainMuteIcon: { off: glyph(PiGlobeX, "PiGlobeX") },
+  PasswordIcon: { off: glyph(PiPassword, "PiPassword") },
+  TwoFactorIcon: { off: glyph(PiLockKey, "PiLockKey") },
+  PasskeyIcon: { off: glyph(PiFingerprint, "PiFingerprint") },
+  LinkedAccountIcon: { off: glyph(PiLinkSimple, "PiLinkSimple") },
+  AuthorizedAppIcon: { off: glyph(PiPlugsConnected, "PiPlugsConnected") },
+  DeveloperIcon: { off: glyph(PiCode, "PiCode") },
+  ImportExportIcon: { off: glyph(PiArrowsDownUp, "PiArrowsDownUp") },
+  AliasIcon: { off: glyph(PiAddressBook, "PiAddressBook") },
+  MoveAccountIcon: { off: glyph(PiSuitcaseRolling, "PiSuitcaseRolling") },
+  AccountStatusIcon: { off: glyph(PiClipboardText, "PiClipboardText") },
+  ArchiveIcon: { off: glyph(PiArchive, "PiArchive") },
+  OverviewIcon: { off: glyph(PiSquaresFour, "PiSquaresFour") },
+  ReportIcon: { off: glyph(PiFlag, "PiFlag") },
+  AppealIcon: { off: glyph(PiScales, "PiScales") },
+  AuditLogIcon: { off: glyph(PiListMagnifyingGlass, "PiListMagnifyingGlass") },
+  AccountsIcon: { off: glyph(PiUsers, "PiUsers") },
+  RegistrationIcon: { off: glyph(PiUserCirclePlus, "PiUserCirclePlus") },
+  SignUpBlockIcon: { off: glyph(PiUserCircleMinus, "PiUserCircleMinus") },
+  DomainActionIcon: { off: glyph(PiGlobeSimpleX, "PiGlobeSimpleX") },
+  ServerSettingsIcon: { off: glyph(PiGear, "PiGear") },
+  RulesIcon: { off: glyph(PiListChecks, "PiListChecks") },
+  ThemeIcon: { off: glyph(PiPalette, "PiPalette") },
+  DocumentIcon: { off: glyph(PiFileText, "PiFileText") },
+  AnnouncementIcon: { off: glyph(PiMegaphone, "PiMegaphone") },
+  RelayIcon: { off: glyph(PiBroadcast, "PiBroadcast") },
+  WebhookIcon: { off: glyph(PiWebhooksLogo, "PiWebhooksLogo") },
+  LoginProviderIcon: { off: glyph(PiKey, "PiKey") },
+  RoleIcon: { off: glyph(PiIdentificationBadge, "PiIdentificationBadge") },
+  JobIcon: { off: glyph(PiQueue, "PiQueue") },
+  ErrorIcon: { off: glyph(PiBug, "PiBug") },
+  ClosureIcon: { off: glyph(PiPower, "PiPower") },
   // The controls of a call. The microphone and the raised hand close, so they fill while on.
   MicrophoneIcon: { off: glyph(PiMicrophone, "PiMicrophone"), on: glyph(PiMicrophoneFill, "PiMicrophoneFill") },
   // The slash is the mark of a microphone that is off (a badge), not a direction, so it does not mirror.
@@ -502,6 +580,201 @@ export function FinanceIcon() {
 /** A headset, for the voice chat rooms. */
 export function VoiceIcon() {
   return renderIcon(iconTable.VoiceIcon);
+}
+
+/** A seal with a check, for the badges shown on the user's profile. */
+export function BadgeIcon() {
+  return renderIcon(iconTable.BadgeIcon);
+}
+
+/** A hand holding a heart, for supporting the server (the supporter plans and the supporters). */
+export function SupporterIcon() {
+  return renderIcon(iconTable.SupporterIcon);
+}
+
+/** A screen, for how the app shows things and posts (the user's display and posting preferences). */
+export function DisplayIcon() {
+  return renderIcon(iconTable.DisplayIcon);
+}
+
+/** A clock counting down, for deleting old posts automatically. */
+export function AutoDeleteIcon() {
+  return renderIcon(iconTable.AutoDeleteIcon);
+}
+
+/** A person with a check, for the follow requests that await the user. */
+export function FollowRequestIcon() {
+  return renderIcon(iconTable.FollowRequestIcon);
+}
+
+/** A circle struck through, for the accounts the user blocks. */
+export function BlockIcon() {
+  return renderIcon(iconTable.BlockIcon);
+}
+
+/** A speaker struck through, for the accounts the user mutes. */
+export function MuteIcon() {
+  return renderIcon(iconTable.MuteIcon);
+}
+
+/** A globe with a cross, for the servers the user mutes. */
+export function DomainMuteIcon() {
+  return renderIcon(iconTable.DomainMuteIcon);
+}
+
+/** A row of hidden characters, for the password. */
+export function PasswordIcon() {
+  return renderIcon(iconTable.PasswordIcon);
+}
+
+/** A padlock with a keyhole, for two-factor authentication. */
+export function TwoFactorIcon() {
+  return renderIcon(iconTable.TwoFactorIcon);
+}
+
+/** A fingerprint, for passkeys. */
+export function PasskeyIcon() {
+  return renderIcon(iconTable.PasskeyIcon);
+}
+
+/** Two links of a chain, for the accounts of other services linked to the user's. */
+export function LinkedAccountIcon() {
+  return renderIcon(iconTable.LinkedAccountIcon);
+}
+
+/** Two plugs joined, for the apps the user has let use the account. */
+export function AuthorizedAppIcon() {
+  return renderIcon(iconTable.AuthorizedAppIcon);
+}
+
+/** Angle brackets, for the apps registered for the API (the user's and the server's). */
+export function DeveloperIcon() {
+  return renderIcon(iconTable.DeveloperIcon);
+}
+
+/** Arrows down and up, for importing and exporting the user's data. */
+export function ImportExportIcon() {
+  return renderIcon(iconTable.ImportExportIcon);
+}
+
+/** An address book, for the other addresses of the account (its aliases). */
+export function AliasIcon() {
+  return renderIcon(iconTable.AliasIcon);
+}
+
+/** A suitcase, for moving the account to another server. */
+export function MoveAccountIcon() {
+  return renderIcon(iconTable.MoveAccountIcon);
+}
+
+/** A clipboard, for the account's status and the actions taken on it. */
+export function AccountStatusIcon() {
+  return renderIcon(iconTable.AccountStatusIcon);
+}
+
+/** A box of files, for the archive of the account and its deletion. */
+export function ArchiveIcon() {
+  return renderIcon(iconTable.ArchiveIcon);
+}
+
+/** Four squares, for the overview page of an area. */
+export function OverviewIcon() {
+  return renderIcon(iconTable.OverviewIcon);
+}
+
+/** A flag, for the reports of posts and accounts. */
+export function ReportIcon() {
+  return renderIcon(iconTable.ReportIcon);
+}
+
+/** Scales, for the appeals against moderation actions. */
+export function AppealIcon() {
+  return renderIcon(iconTable.AppealIcon);
+}
+
+/** A list under a magnifying glass, for the audit log. */
+export function AuditLogIcon() {
+  return renderIcon(iconTable.AuditLogIcon);
+}
+
+/** Two people, for the accounts of the server. */
+export function AccountsIcon() {
+  return renderIcon(iconTable.AccountsIcon);
+}
+
+/** A person with a plus in a circle, for the registrations that await approval. */
+export function RegistrationIcon() {
+  return renderIcon(iconTable.RegistrationIcon);
+}
+
+/** A person with a minus in a circle, for the addresses that may not sign up. */
+export function SignUpBlockIcon() {
+  return renderIcon(iconTable.SignUpBlockIcon);
+}
+
+/** A globe with a cross, for the actions taken on other servers. */
+export function DomainActionIcon() {
+  return renderIcon(iconTable.DomainActionIcon);
+}
+
+/** A gear, for the settings of the server. */
+export function ServerSettingsIcon() {
+  return renderIcon(iconTable.ServerSettingsIcon);
+}
+
+/** A list with checks, for the rules of the server. */
+export function RulesIcon() {
+  return renderIcon(iconTable.RulesIcon);
+}
+
+/** A palette, for the theme of the server. */
+export function ThemeIcon() {
+  return renderIcon(iconTable.ThemeIcon);
+}
+
+/** A page of text, for the server's documents (the terms of service and the privacy policy). */
+export function DocumentIcon() {
+  return renderIcon(iconTable.DocumentIcon);
+}
+
+/** A megaphone, for the server's announcements. */
+export function AnnouncementIcon() {
+  return renderIcon(iconTable.AnnouncementIcon);
+}
+
+/** A broadcasting antenna, for the relays. */
+export function RelayIcon() {
+  return renderIcon(iconTable.RelayIcon);
+}
+
+/** The webhook mark, for the webhooks. */
+export function WebhookIcon() {
+  return renderIcon(iconTable.WebhookIcon);
+}
+
+/** A key, for the external providers people sign in with. */
+export function LoginProviderIcon() {
+  return renderIcon(iconTable.LoginProviderIcon);
+}
+
+/** A name badge, for the roles. */
+export function RoleIcon() {
+  return renderIcon(iconTable.RoleIcon);
+}
+
+/** A queue, for the background jobs. */
+export function JobIcon() {
+  return renderIcon(iconTable.JobIcon);
+}
+
+/** A bug, for the errors the server recorded. */
+export function ErrorIcon() {
+  return renderIcon(iconTable.ErrorIcon);
+}
+
+/** A power symbol, for closing the service. */
+export function ClosureIcon() {
+  return renderIcon(iconTable.ClosureIcon);
 }
 
 /** A microphone, for the switch of the user's microphone in a call; filled while it is on. */

@@ -889,6 +889,10 @@
           {
             "selector": "JSXElement:matches(:has(> JSXOpeningElement[name.name='section']), :has(> JSXOpeningElement:has(> JSXAttribute[name.name='as'][value.value='section']))) JSXOpeningElement:matches([name.name='h2'], [name.name='Heading']:has(> JSXAttribute[name.name='level'][value.expression.value=2]))",
             "message": "Do not build a titled region in a feature; use Section of @my/ui, which takes the heading as its title (web-client/16-look-states-and-wording.md G5)."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name='RailItem']",
+            "message": "Do not list pages with RailItem in a feature; use NavMenu of @my/ui, which groups them under headings with an icon on every page (web-client/21-experience-principles.md, ADR-0110 §5)."
           }
         ]
       }

@@ -235,6 +235,8 @@ ruleTester.run("restrict/pattern (G5)", restrict.rules.pattern, {
       code: "<Card as='section' aria-labelledby={id}><Heading level={3} id={id}>{name}</Heading></Card>",
       options: pattern,
     },
+    // A menu of pages is the kit's NavMenu.
+    { code: "<NavMenu groups={groups} />", options: pattern },
   ],
   invalid: [
     // A region's heading has one look.
@@ -251,6 +253,11 @@ ruleTester.run("restrict/pattern (G5)", restrict.rules.pattern, {
     { ...fails("<section aria-labelledby={id}><h2 id={id}>{title}</h2></section>"), options: pattern },
     // Both at once: two reports.
     { ...fails("<section><Heading level={2} size='label'>{title}</Heading></section>", 2), options: pattern },
+    // A menu of pages is never a feature's own list of RailItems, which may leave out the icon and the groups.
+    {
+      ...fails("<li><RailItem form='section' href={page.href} icon={null} label={t(page.label)} /></li>"),
+      options: pattern,
+    },
   ],
 });
 

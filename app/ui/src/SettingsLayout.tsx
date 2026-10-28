@@ -24,7 +24,7 @@ const settingsLayout = tv({
 });
 
 export type SettingsLayoutProps = {
-  /** The menu's items (`RailItem`s in a list); the layout brings the card and the navigation landmark. */
+  /** The menu (a `NavMenu`, with what follows it); the layout brings the card and the navigation landmark. */
   menu: ReactNode;
   /** The name of the menu's navigation landmark. */
   menuLabel: string;

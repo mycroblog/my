@@ -100,7 +100,7 @@
     "description": "Heading of the section of the account page about archives of the user's data."
   },
   "settings.account.title": {
-    "defaultMessage": "Your account",
+    "defaultMessage": "Archive and deletion",
     "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
   },
   "settings.autoplay.description": {
@@ -444,7 +444,7 @@
     "description": "Text at the top of the preferences page."
   },
   "settings.preferences.title": {
-    "defaultMessage": "Preferences",
+    "defaultMessage": "Display and posting",
     "description": "Heading and document title of the settings page with the language, time zone, theme, post defaults and timeline languages."
   },
   "settings.profile.avatar": {
@@ -1312,7 +1312,7 @@
     "description": "Description of the setting of who may quote the user's new posts."
   },
   "settings.apps.title": {
-    "defaultMessage": "Development",
+    "defaultMessage": "Your apps",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
   },
   "settings.apps.description": {
@@ -2174,5 +2174,29 @@
   "settings.notifications.sound.blocked": {
     "defaultMessage": "The browser did not play the sound. Allow this site to play sound in the browser's settings, then try again.",
     "description": "Error shown when the browser refused to play the notification sound after the user pressed the button."
+  },
+  "settings.menu.group.profile": {
+    "defaultMessage": "Profile and community",
+    "description": "Heading of a group of the settings menu: the profile, the badges, the user's custom emoji, invites and supporter plans."
+  },
+  "settings.menu.group.display": {
+    "defaultMessage": "Display and notifications",
+    "description": "Heading of a group of the settings menu: how the app shows things and posts, the notifications, and the voice chat history."
+  },
+  "settings.menu.group.relationships": {
+    "defaultMessage": "Relationships",
+    "description": "Heading of a group of the settings menu: follow requests, blocked and muted accounts, and muted domains."
+  },
+  "settings.menu.group.security": {
+    "defaultMessage": "Security",
+    "description": "Heading of a group of the settings menu: the password, two-factor authentication, passkeys and linked accounts."
+  },
+  "settings.menu.group.apps": {
+    "defaultMessage": "Apps",
+    "description": "Heading of a group of the settings menu: the apps the user authorized and the apps they registered."
+  },
+  "settings.menu.group.account": {
+    "defaultMessage": "Account and data",
+    "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
   }
 }

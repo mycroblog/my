@@ -88,7 +88,7 @@ describe("preferences", () => {
   test("switching the display language saves it and displays the app in it at once", async () => {
     const prefs = preferencesServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
-    expect(await screen.findByRole("heading", { level: 1, name: "Preferences" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Display and posting" })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("lang", "en");
 
     await user.click(screen.getByRole("button", { name: /Display language/ }));
@@ -884,37 +884,43 @@ describe("signed out", () => {
   });
 });
 
+/**
+ * Expects the groups of `menu`, in their order, by their names (headings), each with the addresses of its links.
+ */
+function expectMenuGroups(menu: HTMLElement, expected: Record<string, string[]>) {
+  const groups = within(menu);
+  expect(groups.getAllByRole("group")).toEqual(
+    Object.keys(expected).map((name) => groups.getByRole("group", { name })),
+  );
+  for (const [name, hrefs] of Object.entries(expected)) {
+    expect(
+      within(groups.getByRole("group", { name }))
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(hrefs);
+  }
+}
+
 describe("the settings page", () => {
-  test("lists the settings pages", async () => {
+  test("lists the settings pages in named groups", async () => {
     await renderApp({ path: "/settings" });
 
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });
-    expect(
-      within(menu)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href")),
-    ).toEqual([
-      "/settings/profile",
-      "/settings/badges",
-      "/settings/preferences",
-      "/settings/notifications",
-      "/settings/password",
-      "/settings/two-factor",
-      "/settings/passkeys",
-      "/settings/linked-accounts",
-      "/settings/auto-delete",
-      "/settings/follow-requests",
-      "/settings/blocks",
-      "/settings/mutes",
-      "/settings/domain-mutes",
-      "/settings/import-export",
-      "/settings/aliases",
-      "/settings/move",
-      "/settings/authorized-apps",
-      "/settings/apps",
-      "/settings/account-status",
-      "/settings/account",
-    ]);
+    expectMenuGroups(menu, {
+      "Profile and community": ["/settings/profile", "/settings/badges"],
+      "Display and notifications": ["/settings/preferences", "/settings/notifications"],
+      Relationships: ["/settings/follow-requests", "/settings/blocks", "/settings/mutes", "/settings/domain-mutes"],
+      Security: ["/settings/password", "/settings/two-factor", "/settings/passkeys", "/settings/linked-accounts"],
+      Apps: ["/settings/authorized-apps", "/settings/apps"],
+      "Account and data": [
+        "/settings/account-status",
+        "/settings/aliases",
+        "/settings/move",
+        "/settings/import-export",
+        "/settings/auto-delete",
+        "/settings/account",
+      ],
+    });
   });
 
   test("links to the server's status page under the menu, in a new tab, when the server has one (FR-810)", async () => {
