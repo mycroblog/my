@@ -2,7 +2,7 @@
 // What each screen's L4 tasks need on the demo server (`node e2e/server.ts demo`, the scenario of demo/scenario.ts),
 // read from the front matter of the screen's L1 file (docs/architecture/web-client/screens/<screen>.md, whose
 // README.md documents the keys): the address the agent starts at, the person of the scenario it is signed in as (or
-// nobody), the code of the screen that --since watches, the changes to the scenario that the tasks need, the tasks
+// nobody, for the screen or for one task), the code of the screen that --since watches, the changes to the scenario that the tasks need, the tasks
 // that read email in Mailpit, and the tasks the demo server cannot set up, with the reason. Each line of the front
 // matter is `<key>: <JSON value>`, so the block is YAML and needs no YAML parser. A task that turns Web Push on names
 // the person whose reply the harness sends after it (push.ts judges it), and a task may carry notes for its result. screens.test.ts checks every L1
@@ -33,6 +33,8 @@ export type ScreenSetup = {
   paths: readonly string[];
   /** The paths of the tasks (by their text in the L1) that start elsewhere than `start`. */
   starts?: Readonly<Record<string, string>>;
+  /** The tasks (by their text in the L1) that begin signed in as another person than `persona`, or signed out (null). */
+  personas?: Readonly<Record<string, string | null>>;
   /** Changes the scenario as the tasks need, in order; they run once per run, before the first task of the screen. */
   seed?: readonly SeedStep[];
   /**
@@ -87,6 +89,10 @@ const keys: Readonly<Record<keyof ScreenSetup, [(value: unknown) => boolean, str
   persona: [(v) => v === null || typeof v === "string", "a username or null"],
   paths: [isStrings, "a list of patterns"],
   starts: [isStringRecord, "an object of tasks and paths"],
+  personas: [
+    (v) => isRecord(v) && Object.values(v).every((item) => item === null || typeof item === "string"),
+    "an object of tasks and usernames or null",
+  ],
   seed: [
     (v) => Array.isArray(v) && v.every(isSeedStep),
     'a list of {"my": [...]} or {"api", "method", "path", "body"}',

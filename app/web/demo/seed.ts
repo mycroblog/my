@@ -49,6 +49,7 @@ import {
 
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
+type CredentialAccount = components["schemas"]["CredentialAccount"];
 
 /** Runs `bin/my` with `args` and `input` on its standard input against the server's database; returns its output. */
 export type RunMy = (args: readonly string[], input?: string) => string;
@@ -248,27 +249,31 @@ class Seeder {
     for (const p of personas) {
       const api = await this.api(p.username);
       const me = body((await api.GET("/accounts/verify_credentials")).data);
-      let avatar: string | undefined;
-      if (me.avatar === undefined) {
-        avatar = (await this.upload(api, `${p.username}-avatar.png`, avatarOf(p), "", "avatar")).id;
-      }
-      const changed =
-        me.display_name !== p.displayName || me.source.note !== p.note || me.locked !== (p.locked ?? false);
-      if (changed || avatar !== undefined) {
-        await api.PATCH("/accounts/update_credentials", {
-          body: {
-            display_name: p.displayName,
-            note: p.note,
-            locked: p.locked ?? false,
-            ...(avatar === undefined ? {} : { avatar_media_id: avatar }),
-          },
-        });
-      }
+      if (p.newcomer !== true) await this.setUpProfile(api, p, me);
       const prefs = body((await api.GET("/preferences")).data);
       if (prefs.locale !== p.locale || prefs.default_post_language !== p.locale) {
         await api.PATCH("/preferences", { body: { locale: p.locale, default_post_language: p.locale } });
       }
       this.#accounts.set(p.username, body((await api.GET("/accounts/verify_credentials")).data));
+    }
+  }
+
+  /** Sets the display name, profile text, lock, and avatar of `p`, whose account is `me` now. */
+  async setUpProfile(api: Api, p: Persona, me: CredentialAccount): Promise<void> {
+    let avatar: string | undefined;
+    if (me.avatar === undefined) {
+      avatar = (await this.upload(api, `${p.username}-avatar.png`, avatarOf(p), "", "avatar")).id;
+    }
+    const changed = me.display_name !== p.displayName || me.source.note !== p.note || me.locked !== (p.locked ?? false);
+    if (changed || avatar !== undefined) {
+      await api.PATCH("/accounts/update_credentials", {
+        body: {
+          display_name: p.displayName,
+          note: p.note,
+          locked: p.locked ?? false,
+          ...(avatar === undefined ? {} : { avatar_media_id: avatar }),
+        },
+      });
     }
   }
 

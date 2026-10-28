@@ -22,7 +22,7 @@ import { createWriteStream, mkdirSync, readdirSync, readFileSync, rmSync, writeF
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium } from "@playwright/test";
-import { type Persona, personas } from "../demo/scenario.ts";
+import { applicant, type Persona, personas } from "../demo/scenario.ts";
 import { mailpit, pushService, runMy, serverDatabaseOf } from "../e2e/server-cli.ts";
 import { demoServerDir, demoServerURL, serverDir, voiceServerDir } from "../e2e/server-origin.ts";
 import { MCPClient, mcpCommand, type PushShimOptions } from "./mcp.ts";
@@ -68,7 +68,7 @@ function setupOf(screen: string): ScreenSetup {
 }
 
 function personaOf(username: string): Persona {
-  const p = personas.find((x) => x.username === username);
+  const p = [...personas, applicant].find((x) => x.username === username);
   if (p === undefined) {
     throw new Error(`l4: no person ${username} in demo/scenario.ts`);
   }
@@ -497,8 +497,10 @@ async function main(): Promise<number> {
           await applySeed(setup.seed ?? [], context);
         }
         const mailUser = setup.mail?.[task.task];
+        const taskPersona = setup.personas?.[task.task];
+        const signedIn = taskPersona === undefined ? setup.persona : taskPersona;
         const roles: Roles = {
-          signedIn: setup.persona === null ? undefined : personaOf(setup.persona),
+          signedIn: signedIn === null ? undefined : personaOf(signedIn),
           mail: mailUser === undefined ? undefined : personaOf(mailUser),
         };
         if (roles.mail !== undefined) {
