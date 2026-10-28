@@ -54,7 +54,9 @@ const appNav = tv({
       // items are in the menu (`topMenu`), from lg they follow the brand in a row.
       top: {
         base: "sticky top-under-bar flex items-center gap-2 border-b border-border px-4 py-2 lg:gap-4",
-        header: "mx-0 block min-w-0 flex-1 p-0",
+        // The server's name is cut to one line (G7) rather than broken inside a word: its link keeps the whole name.
+        header:
+          "mx-0 block min-w-0 flex-1 p-0 [&_a]:block [&_a]:truncate [&_a]:leading-6 pointer-coarse:[&_a]:leading-11 [&_p]:min-w-0",
         list: "items-center gap-1",
       },
     },

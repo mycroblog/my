@@ -452,7 +452,7 @@ export const SignedOutTablet: Story = {
   },
 };
 
-/** Signed out on a phone: the brand, the call to action and the menu button in one row, nothing wrapped or cut. */
+/** Signed out on a phone: the brand, the call to action and the menu button in one row; only the name may be cut. */
 export const SignedOutPhone: Story = {
   globals: atViewport("phone"),
   args: { navigation: <SignedOutNav />, navigationPlacement: "top", footer: signedOutFooter },
