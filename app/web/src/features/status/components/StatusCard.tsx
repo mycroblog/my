@@ -102,6 +102,7 @@ export function StatusCard({
         revealLabel={t("client:timeline.media.reveal")}
         viewerLabels={viewerLabels}
         audioLabels={audioLabels}
+        more={view.moreMedia ?? undefined}
       />
     ) : (
       card

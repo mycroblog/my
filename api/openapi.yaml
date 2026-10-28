@@ -19801,6 +19801,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MediaAttachment'
+        omitted_media_count:
+          description: |
+            The number of media attachments of a remote status that the server left out: it keeps
+            the first four attachments of a remote post. Clients show that there are more and link
+            to `url` (or `uri`). Omitted when none were left out.
+          type: integer
+          minimum: 1
         mentions:
           description: The accounts the text mentions.
           type: array

@@ -11400,6 +11400,11 @@ type Status struct {
 	// Mentions The accounts the text mentions.
 	Mentions []StatusMention `json:"mentions"`
 
+	// OmittedMediaCount The number of media attachments of a remote status that the server left out: it keeps
+	// the first four attachments of a remote post. Clients show that there are more and link
+	// to `url` (or `uri`). Omitted when none were left out.
+	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
+
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 

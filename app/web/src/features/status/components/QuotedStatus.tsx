@@ -44,6 +44,7 @@ function QuotedPost({ status, notice }: { status: Status; notice: string | null 
           revealLabel={t("client:timeline.media.reveal")}
           viewerLabels={viewerLabels}
           audioLabels={audioLabels}
+          more={view.moreMedia ?? undefined}
         />
       )}
     </>

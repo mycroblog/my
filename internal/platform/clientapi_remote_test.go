@@ -26,7 +26,8 @@ import (
 // database: the federated timeline lists the public posts, local and remote, and nothing else; a
 // remote post's HTML is the sanitizer's output; its author links to the actor's profile page with
 // the avatar behind the media proxy; its attachments are served through the proxy with their alt
-// text; and turning the timeline off makes it a 404.
+// text, the first four of six with the number of the others; and turning the timeline off makes it
+// a 404.
 func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	t.Parallel()
 	e := newTimelineAPI(t)
@@ -71,10 +72,14 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 		}
 		return id
 	}
-	public := ingest(1, domcontent.VisibilityPublic, appcontent.RemoteAttachmentInput{
+	attachments := []appcontent.RemoteAttachmentInput{{
 		Type: "Image", URL: "https://remote.example/files/cat.png", ContentType: "image/png",
 		Description: "a <b>cat</b>", Width: 640, Height: 480,
-	})
+	}}
+	for i := range 5 {
+		attachments = append(attachments, appcontent.RemoteAttachmentInput{Type: "Image", URL: "https://remote.example/files/" + strconv.Itoa(i) + ".png"})
+	}
+	public := ingest(1, domcontent.VisibilityPublic, attachments...)
 	for i, v := range []domcontent.Visibility{domcontent.VisibilityUnlisted, domcontent.VisibilityPrivate, domcontent.VisibilityDirect} {
 		ingest(2+i, v)
 	}
@@ -105,8 +110,11 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 		a.Avatar == nil || !strings.HasPrefix(a.Avatar.Large.Url, proxy) || !strings.HasPrefix(a.Avatar.Small.Url, proxy) {
 		t.Errorf("account = %+v, want carol's handle, profile page, and proxied avatar", a)
 	}
-	if len(st.MediaAttachments) != 1 {
-		t.Fatalf("media = %+v, want the remote image", st.MediaAttachments)
+	if len(st.MediaAttachments) != domcontent.MaxAttachments || st.OmittedMediaCount == nil || *st.OmittedMediaCount != 2 {
+		t.Fatalf("media = %+v, omitted = %v, want the first four remote images and two omitted", st.MediaAttachments, st.OmittedMediaCount)
+	}
+	if got := e.page(t, nil, "/timelines/public").Items[0].OmittedMediaCount; got != nil {
+		t.Errorf("local status omitted_media_count = %v, want none", *got)
 	}
 	m := st.MediaAttachments[0]
 	if m.State != "ready" || m.Type != "image" || m.Url == nil || !strings.HasPrefix(*m.Url, proxy) ||
