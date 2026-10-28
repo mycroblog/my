@@ -295,7 +295,10 @@ type Object struct {
 	Hashtags     []string // without the leading '#'
 	Emojis       []Emoji
 	Attachments  []Attachment
-	Poll         *Poll
+	// OmittedAttachments is the number of media attachments after the first MaxAttachments,
+	// which are left out.
+	OmittedAttachments int
+	Poll               *Poll
 	// Name is the name of a post that is not converted, as received, "" for none: the title of
 	// the choice that a Note in reply to a Question votes for (federation.md §3.4).
 	Name string

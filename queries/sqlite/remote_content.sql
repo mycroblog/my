@@ -3,11 +3,11 @@
 -- Queries of remote statuses and media (data-model section 4.4), owned by internal/app/content.
 
 -- name: InsertRemoteStatusRevision :exec
-INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version)
-VALUES (@revision_id, @activity_uri, @html_policy_version);
+INSERT INTO remote_status_revisions (revision_id, activity_uri, html_policy_version, omitted_attachment_count)
+VALUES (@revision_id, @activity_uri, @html_policy_version, @omitted_attachment_count);
 
 -- name: GetRemoteStatusRevision :one
-SELECT revision_id, activity_uri, html_policy_version FROM remote_status_revisions
+SELECT revision_id, activity_uri, html_policy_version, omitted_attachment_count FROM remote_status_revisions
 WHERE revision_id = @revision_id;
 
 -- name: InsertRemoteMedia :execrows

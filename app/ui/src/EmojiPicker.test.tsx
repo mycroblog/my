@@ -452,6 +452,33 @@ describe("EmojiPicker", () => {
     await user.keyboard("{/Shift}");
     expect(onSelect).toHaveBeenLastCalledWith({ kind: "unicode", emoji: thumbsUp, text: "👍", keepOpen: false });
   });
+
+  it("while loading, keeps the buttons of the sections still empty, disabled, and marks the grid busy", () => {
+    const loadingSections = [
+      { id: "custom", heading: "Blobs", icon: "custom", emojis: [wave] },
+      { id: "people", heading: "People", icon: "people-body", emojis: [] },
+    ] satisfies EmojiPickerSection[];
+    const { rerender } = render(
+      <EmojiPicker
+        sections={loadingSections}
+        loading
+        onSelect={() => {}}
+        labels={{ ...labels, loading: "Loading emoji" }}
+      />,
+    );
+    const grid = screen.getByRole("grid", { name: "Emoji" });
+    expect(grid).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading emoji");
+    expect(rowNames()).toEqual(["Blobs", ":wave:"]);
+    expect(screen.queryByText("No emoji found")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Blobs" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "People" })).toBeDisabled();
+
+    rerender(<EmojiPicker sections={sections} onSelect={() => {}} labels={{ ...labels, loading: "Loading emoji" }} />);
+    expect(grid).not.toHaveAttribute("aria-busy");
+    expect(screen.getByRole("status")).toHaveTextContent("");
+    expect(screen.getByRole("button", { name: "People" })).toBeEnabled();
+  });
 });
 
 describe("searchEmojis", () => {

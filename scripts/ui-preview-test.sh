@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Tests scripts/ui-preview.sh without an account or the network: the checks of `stage` on builds a pull request
-# could upload, the list of added and changed stories of `stories`, and the dry run of `delete-pr` and `comment`.
+# could upload, the list of added and changed stories of `stories`, and the dry runs of `cleanup` and `comment`.
 #
 #   scripts/ui-preview-test.sh
 set -euo pipefail
@@ -106,15 +106,38 @@ $want"
 got="$("$script" stories "$main" "$main" https://x.example)"
 [[ "$got" == "No story was added or changed compared with main." ]] || fail "stories without changes: $got"
 
-# The dry runs touch no account.
-if out="$(DRY_RUN=1 UI_PREVIEW_WORK="$tmp/delete" "$script" delete-pr 7 2>&1)"; then
-  [[ "$out" == *"wrangler preview delete --name pr-7 --skip-confirmation"* ]] || fail "delete-pr: $out"
-  grep -q '^<!-- ui-preview -->$' "$tmp/delete/comment.md" || fail "delete-pr wrote no comment"
+# The dry runs touch no account. cleanup runs with a curl that lists the Previews and a gh that says pull request
+# 7 is closed, 8 open and 9 unknown.
+bin="$tmp/bin"
+mkdir -p "$bin"
+cat >"$bin/curl" <<'EOF2'
+#!/usr/bin/env bash
+case "$*" in
+  *"page=1") echo '{"result":[{"name":"pr-7"},{"name":"pr-8"},{"name":"pr-9"},{"name":"other"},{"name":"pr-x; true"}]}' ;;
+  *) echo '{"result":[]}' ;;
+esac
+EOF2
+cat >"$bin/gh" <<'EOF2'
+#!/usr/bin/env bash
+case "$2" in
+  */pulls/7) echo closed ;;
+  */pulls/8) echo open ;;
+  *) exit 1 ;;
+esac
+EOF2
+chmod +x "$bin/curl" "$bin/gh"
+if out="$(PATH="$bin:$PATH" DRY_RUN=1 UI_PREVIEW_WORK="$tmp/cleanup" GITHUB_REPOSITORY=o/r CLOUDFLARE_API_TOKEN=t \
+  CLOUDFLARE_ACCOUNT_ID=a "$script" cleanup 2>&1)"; then
+  [[ "$out" == *"wrangler preview delete --name pr-7 --skip-confirmation"* ]] || fail "cleanup did not delete pr-7: $out"
+  [[ "$out" == *"keeping pr-8"* ]] || fail "cleanup did not keep the open pr-8: $out"
+  [[ "$out" == *"cannot read pull request 9"* ]] || fail "cleanup did not keep pr-9: $out"
+  [[ "$out" != *"delete --name pr-8"* && "$out" != *"delete --name pr-9"* && "$out" != *"other"* ]] || fail "cleanup: $out"
 else
-  fail "delete-pr: $out"
+  fail "cleanup: $out"
 fi
-out="$(DRY_RUN=1 GITHUB_REPOSITORY=o/r "$script" comment 7 "$tmp/delete/comment.md" 2>&1)" || fail "comment: $out"
-"$script" delete-pr 'x; true' >/dev/null 2>&1 && fail "delete-pr took a PR number that is not one"
+out="$(UI_PREVIEW_METHOD=versions DRY_RUN=1 GITHUB_REPOSITORY=o/r "$script" cleanup 2>&1)" || fail "cleanup (versions): $out"
+[[ "$out" == *"nothing to clean up"* ]] || fail "cleanup (versions): $out"
+out="$(DRY_RUN=1 GITHUB_REPOSITORY=o/r "$script" comment 7 "$tmp/cleanup/wrangler.jsonc" 2>&1)" || fail "comment: $out"
 
 if [[ "$failed" != 0 ]]; then
   exit 1
