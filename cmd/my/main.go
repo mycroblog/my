@@ -79,13 +79,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 		usage(stderr)
 		return 2
 	default:
+		if c, ok := testBuildCommands[cmd]; ok {
+			return c(fs.Args()[1:], stdout, stderr)
+		}
 		_, _ = fmt.Fprintf(stderr, "my: unknown command %q\n\n", cmd)
 		usage(stderr)
 		return 2
 	}
 }
 
+// testBuildCommands are the commands that only the test builds (build tag e2e_fakes) add, by
+// name; testBuildUsage is their lines of the usage. The default build has none, so their names
+// are unknown commands there.
+var (
+	testBuildCommands = map[string]func(args []string, stdout, stderr io.Writer) int{}
+	testBuildUsage    string
+)
+
 func usage(w io.Writer) {
+	defer func() { _, _ = fmt.Fprint(w, testBuildUsage) }()
 	_, _ = fmt.Fprint(w, `Usage: my <command>
 
 Commands:
