@@ -13,7 +13,7 @@ import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/m
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { deviceToday } from "../costs";
-import { costItemFixture } from "./test/handlers";
+import { costItemFixture, instanceSettingsFixture } from "./test/handlers";
 
 beforeEach(() => {
   document.documentElement.lang = "en";
@@ -436,20 +436,83 @@ describe("what the costs screen says of their publication", () => {
     );
   }
 
-  test("shows what the server publishes, and links to the server settings for a viewer who may change it", async () => {
-    server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
-    serveVisibility("breakdown");
-    await renderApp({ path: "/admin/finance" });
-
-    expect(
-      await screen.findByText(
-        "The about page publishes the totals of these costs and their breakdown by provider and category.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Change in the server settings" })).toHaveAttribute(
-      "href",
-      "/admin/settings",
+  /** Plays the server settings: GET answers the fixture, PATCH records the values and answers them saved. */
+  function settingsServer() {
+    const patches: Schemas["UpdateInstanceSettingsRequest"][] = [];
+    server.use(
+      http.patch(`${apiBase}/admin/settings`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["UpdateInstanceSettingsRequest"];
+        patches.push(body);
+        return HttpResponse.json(instanceSettingsFixture(body.values));
+      }),
     );
+    return { patches };
+  }
+
+  test("publishes the running costs next to them, saying that the breakdown reveals the providers", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/finance" });
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    const costs = await within(publication).findByRole("region", { name: "Running costs" });
+    const choice = within(costs).getByRole("radiogroup", { name: "What to publish" });
+    expect(within(choice).getByRole("radio", { name: "Nothing" })).toBeChecked();
+    const breakdown = within(choice).getByRole("radio", { name: "Totals and breakdown" });
+    expect(breakdown).toHaveAccessibleDescription(
+      /This reveals which providers, such as cloud services, run this server\./u,
+    );
+    expect(screen.queryByRole("link", { name: "Change in the server settings" })).not.toBeInTheDocument();
+
+    await user.click(breakdown);
+    await user.click(within(publication).getByRole("button", { name: "Save the publication" }));
+
+    expect(await within(publication).findByText("Saved the publication.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { finance_visibility: "breakdown" } }]);
+    expect(breakdown).toBeChecked();
+  });
+
+  test("publishes the income apart from the costs, saying that the members of a small plan may be guessed", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/finance" });
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    const income = await within(publication).findByRole("region", { name: "Income" });
+    const choice = within(income).getByRole("radiogroup", { name: "What to publish" });
+    expect(within(choice).getByRole("radio", { name: "Nothing" })).toBeChecked();
+    const plans = within(choice).getByRole("radio", { name: "Totals and members of each plan" });
+    expect(plans).toHaveAccessibleDescription(/On a plan with few members, people may guess who they are\./u);
+
+    await user.click(plans);
+    await user.click(within(publication).getByRole("button", { name: "Save the publication" }));
+
+    expect(await within(publication).findByText("Saved the publication.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { income_visibility: "plans" } }]);
+  });
+
+  test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/finance" });
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    const costs = await within(publication).findByRole("region", { name: "Running costs" });
+    const names = within(costs).getByRole("checkbox", { name: "Show the names of the items" });
+    const memos = within(costs).getByRole("checkbox", { name: "Show the memos of the items" });
+    const income = within(costs).getByRole("radiogroup", { name: "Income" });
+    expect(names).not.toBeChecked();
+    expect(memos).not.toBeChecked();
+    expect(memos).toHaveAccessibleDescription(/meant for the operators only/u);
+    expect(within(income).getByRole("radio", { name: "Totals only" })).toBeChecked();
+
+    await user.click(memos);
+    await user.click(within(income).getByRole("radio", { name: "Totals and members of each plan" }));
+    await user.click(within(publication).getByRole("button", { name: "Save the publication" }));
+
+    expect(await within(publication).findByText("Saved the publication.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      { values: { finance_viewer_item_memos: "true", finance_viewer_income: "plans" } },
+    ]);
+    expect(names).not.toBeChecked();
+    expect(memos).toBeChecked();
   });
 
   test("shows what the holders of view_finance see", async () => {
@@ -474,13 +537,14 @@ describe("what the costs screen says of their publication", () => {
     ).toBeInTheDocument();
   });
 
-  test("shows that nothing is published, without the link for a viewer who may not change it", async () => {
+  test("shows what is published, without the form, to a viewer who may not change it", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance"]));
     serveVisibility("private");
     await renderApp({ path: "/admin/finance" });
 
-    expect(await screen.findByText("These costs are not published.")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Change in the server settings" })).not.toBeInTheDocument();
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    expect(await within(publication).findByText("These costs are not published.")).toBeInTheDocument();
+    expect(within(publication).queryByRole("button", { name: "Save the publication" })).not.toBeInTheDocument();
   });
 });
 

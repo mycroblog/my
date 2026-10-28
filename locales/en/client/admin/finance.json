@@ -19,10 +19,6 @@
     "defaultMessage": "{visibility, select, totals {The about page publishes the totals of the income.} plans {The about page publishes the totals of the income and the members of each plan.} other {The income is not published.}}",
     "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
   },
-  "admin.finance.visibility.change": {
-    "defaultMessage": "Change in the server settings",
-    "description": "Link from the costs screen to the server settings, where the publication of the costs is chosen; shown to the viewers who may change the server settings."
-  },
   "admin.finance.viewer": {
     "defaultMessage": "{names, select, shown {People who may read the finances see the names of the items,} other {People who may read the finances do not see the names of the items,}} {memos, select, shown {see their memos,} other {do not see their memos,}} {income, select, plans {and see the income with the members of each plan.} other {and see the totals of the income only.}}",
     "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."
@@ -542,5 +538,9 @@
   "admin.finance.imports.failed": {
     "defaultMessage": "Could not start the import: {reason}",
     "description": "Error of starting an import on the costs screen, with the server's reason."
+  },
+  "admin.finance.publication.title": {
+    "defaultMessage": "Publication",
+    "description": "Heading of the region of the costs screen with what the server publishes of the costs and the income, and what the holders of view_finance see."
   }
 }

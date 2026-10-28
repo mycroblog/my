@@ -13,6 +13,7 @@ import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import {
+  instanceSettingsFixture,
   paymentStatusFixture,
   supporterPlanFixture,
   supporterProgramFixture,
@@ -370,6 +371,41 @@ describe("the supporters screen", () => {
     await waitFor(() => {
       expect(queries.at(-1)).toContain("state=past_due");
     });
+  });
+});
+
+describe("the publication of the supporter list on the supporters screen", () => {
+  test("publishes the supporter list to everyone or to signed-in users, to nobody by default", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters", "manage_settings"]));
+    const patches: Schemas["UpdateInstanceSettingsRequest"][] = [];
+    server.use(
+      http.patch(`${apiBase}/admin/settings`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["UpdateInstanceSettingsRequest"];
+        patches.push(body);
+        return HttpResponse.json(instanceSettingsFixture(body.values));
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/supporters" });
+    const list = await screen.findByRole("region", { name: "Supporter list" });
+    const choice = await within(list).findByRole("radiogroup", { name: "Who may read the supporter list" });
+    expect(within(choice).getByRole("radio", { name: "Nobody" })).toBeChecked();
+    const signedIn = within(choice).getByRole("radio", { name: "Signed-in users" });
+    expect(signedIn).toHaveAccessibleDescription(/Only people signed in to this server/u);
+
+    await user.click(signedIn);
+    await user.click(within(list).getByRole("button", { name: "Save the publication" }));
+
+    expect(await within(list).findByText("Saved the publication.")).toBeInTheDocument();
+    expect(patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
+  });
+
+  test("says who may read the list, without the form, to a viewer who may not change it", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
+    await renderApp({ path: "/admin/supporters" });
+    const list = await screen.findByRole("region", { name: "Supporter list" });
+
+    expect(await within(list).findByText(/may read the supporter list\./u)).toBeInTheDocument();
+    expect(within(list).queryByRole("radiogroup")).not.toBeInTheDocument();
   });
 });
 

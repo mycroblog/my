@@ -100,7 +100,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     ドメインへの処分でホストが停止されているリレーには、何も送らず受け取らない旨の警告を出す。
     承認待ちと参加中のリレーは「脱退する」、拒否と脱退済みのリレーは「もう一度参加する」を同じ位置のボタンで出し（状態が変わってもフォーカスが残る）、拒否と脱退済みのリレーには「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）も出す。
     ボタンのアクセシブルネームはリレーのホスト名（U+2066 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は `reason` の文言で同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。
-- **費用**（`/admin/finance`、`manage_finance`、FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../adr/0067-finance-cost-records.md)・[ADR-0068](../../adr/0068-billing-import.md)・[ADR-0073](../../adr/0073-income-records-and-publication.md) §6）: 「集計」「費用を登録する」「登録した費用」「利用料金の取り込み」「支払いと返金」の 5 つの区画（`h2` の `section`）。
+- **費用**（`/admin/finance`、`manage_finance`、FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../adr/0067-finance-cost-records.md)・[ADR-0068](../../adr/0068-billing-import.md)・[ADR-0073](../../adr/0073-income-records-and-publication.md) §6）: 「集計」「公開範囲」「費用を登録する」「登録した費用」「利用料金の取り込み」「支払いと返金」の 6 つの区画（`h2` の `section`）。
   変更はすべて監査ログに残り、項目の一覧・すべての集計・監査ログに無効化の印を付ける。金額は API の 10 進の文字列を、その通貨の `Intl.NumberFormat`（`style: "currency"`）で書き、通貨の違う合計は換算せずに「¥12,300 + $45.67」の形で並べる。日付（`YYYY-MM-DD`）は UTC の `Intl.DateTimeFormat` で書き、どのタイムゾーンでも同じ日になる。名前・事業者・メモは運営者の入力なので `dir="auto"` で出す。
   - **集計**: 計上のしかた（`RadioGroup`、既定は按分、`?basis=cash`）と、週・月・年のタブ（`?granularity=week` / `year`、既定は月。どちらも URL に置く。S3）。今日の日付は端末のタイムゾーンでルートの loader が決め（ADR-0067 §5）、今日を含む期間から週は 12、月は 12、年は 5 つ前までを `GET /admin/cost_totals` で読む。
     新しい期間が先の表（期間と合計の 2 列）で、見込みを含む期間（`estimated`）にはその旨の印を付ける。表の下に今の期間の事業者・区分ごとの内訳と、期間の区切りの規則（日付で区切りタイムゾーンを持たない・週は月曜から・選んだ計上のしかた・通貨ごとの合計・取り込み元ごとの請求月のタイムゾーンと見込み）を出す。
@@ -116,10 +116,14 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     加入者はユーザー名（`@name`、`dir="ltr"`）で出し、`manage_accounts` を持つ閲覧者にはそれを `/moderation/accounts/{id}` へのリンクにする。アカウントが消えた加入の動きには「削除されたアカウント」、加入のない動き（事業者の手数料）には「なし」と出す。
     一覧の上の絞り込みは、種類（`Select`、変えるとすぐに `?kind=`）と、数える日付の範囲（`type="date"` の始めと終わり。年を打つ途中でも値が変わるので、「この日付で絞り込む」で `?from=`・`?to=` にする。終わりが始めより前なら送らずに欄のエラーにする）で、どれも URL に置く（S3）。
     戻る / 進むで URL が変わると日付の欄もそれに合わせる。絞り込みがあれば「絞り込みを外す」を出し、絞り込みで空の一覧の `EmptyState` にも出す（G14）。外したらフォーカスを種類の `Select` に移す。収入の記録は事業者からの取り込みだけなので、この区画に記録を変える操作はない。個々の動きと加入者は、この画面だけに出す。
-  - 公開範囲（`finance_visibility`・`income_visibility`）はサーバーの設定（`manage_settings`）に置くので、この画面は変えない。画面の説明の下に、`GET /instance` から読んだいまの費用と収入の公開範囲を書き、`manage_settings` を持つ閲覧者には `/admin/settings` へのリンクを付ける。
-    その下に、`view_finance` を持つ人に見せる範囲（`finance_viewer_*`、ADR-0070 §5。項目の名前とメモを見せるか、収入を合計だけか、プランごとの人数までか）を、`GET /finance/cost_totals` の `viewer` から読んで書く。
+  - **公開範囲**: 集計がどこまで公開されるかを、集計のすぐ下で決める（監査の A8）。値はインスタンス設定なので、`manage_settings` を持つ閲覧者にだけフォームを出す。
+    フォームは「運営の費用」（`h3`）に費用の公開範囲（`finance_visibility`、`RadioGroup`、公開しない・合計だけ・合計と内訳。内訳の選択肢の説明に、どの事業者で動いているかが知られることを書く。FR-903）と、会計を閲覧できる人に見せる範囲
+    （項目の名前・メモを見せるか（`finance_viewer_item_names`・`finance_viewer_item_memos`、`Checkbox`、既定は見せない。メモの説明に運営者だけに向けた書き込みがあるかもしれないことを書く）、収入の見せ方（`finance_viewer_income`、`RadioGroup`、合計だけ・合計とプランごとの人数）。ADR-0070 §5）、
+    「収入」（`h3`）に収入の公開範囲（`income_visibility`、`RadioGroup`、公開しない・合計だけ・合計とプランごとの加入者の数。説明に、誰がいくら払ったか・プランごとの金額・手数料は公開しないことと、費用もどちらも公開するときは収支を公開することを、プランごとの数の選択肢の説明に、加入者の少ないプランでは誰が加入しているかが推測されうることを書く。FR-917、ADR-0073 §7）。
+    「公開範囲を保存」は変えた設定だけを `PATCH /admin/settings` でまとめて送り、サーバーの設定と同じキャッシュの置き換えと取り直しの後に、結果を `FormActionBar` に出す。
+    `manage_settings` のない閲覧者には、`GET /instance` から読んだいまの費用と収入の公開範囲と、`view_finance` を持つ人に見せる範囲（`GET /finance/cost_totals` の `viewer`）を文で書く。
   - 集計の表・内訳・規則は運営の費用のページと同じ部品（`features/costs`）で出す。
-- **サポーター**（`/admin/supporters`、`manage_supporters`、FR-910〜FR-912、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md)）: 「課金」「決済の事業者」「プラン」「廃止したプラン」「プランを作成する」「加入者」の区画（`h2` の `section`）。
+- **サポーター**（`/admin/supporters`、`manage_supporters`、FR-910〜FR-912、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md)）: 「課金」「決済の事業者」「プラン」「廃止したプラン」「プランを作成する」「加入者」「サポーターの一覧」の区画（`h2` の `section`）。
   - **課金**（`GET`・`PUT /admin/supporter_program`）: 有効か、有効にしたときの事業者と設定の事業者、続いている加入の数、警告（事業者がない・メールを送らない・事業者が違う・特商法の表記がない。表記の警告は `/admin/documents` へリンクする）。
     有効と無効の切り替えは `can_enable` が偽のとき有効にできない。サーバーの拒否（409 `supporters-unavailable`・`live-subscriptions`）はその `detail` を区画の中（`role="alert"`）に出す。
   - **決済の事業者**（`GET /admin/payment_status`、[ADR-0074](../../adr/0074-payment-provider-port.md) §4）: 課金の `configured_provider` があるときだけ出す（ないとき API は 404）。事業者・モード（テストは請求が起きないことを添える）・レポートのタイムゾーン・最後に webhook を受けた時刻（記録がなければ 45 日以内にないこと）・最後の照合の時刻と結果・要求の数・読み直した加入と直した加入の数の説明リスト。
@@ -129,6 +133,8 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     「編集」（条件とロールの位置のダイアログ。ロールの権限は区分 `member` の権限ができるまで表示だけ）と「廃止」（元に戻せず、加入が期間の終わりに解約されるので `ConfirmDialog`（`danger`）で確かめる）を出す。廃止したプランは別の区画に並べ、操作を出さない。
   - **作成**: ロールのキー（`manage_supporters` だけの閲覧者はロールの一覧を読めないので選択でなく入力）・名前・説明・月額と通貨・割引率・絵文字の上限・順位・公開のフォーム。サーバーの拒否（422 `invalid-supporter-plan`）は `reason` の項目に `detail` を出し、入力を残す。
   - **加入者**（`GET /admin/supporter_subscriptions`）: 新しい順（「さらに表示」）、プランと状態で絞り込み（URL の `?plan=`・`?state=`）。各加入は状態・プラン・間隔・金額・期間の終わり・猶予の終わり・利用者名（消去したアカウントは「削除されたアカウント」）で、「すぐ解約」は返金せず元に戻せないので `ConfirmDialog`（`danger`）で確かめる。
+  - **サポーターの一覧**: 一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0071 §4）を、加入者の隣で決める（監査の A8）。
+    `manage_settings` を持つ閲覧者にだけ、費用の公開範囲と同じ形のフォーム（「公開範囲を保存」と `FormActionBar`）を出し、ほかの閲覧者には `GET /instance` から読んだいまの値を文で書く。
   - 加入の操作（加入・変更・解約）と利用者の画面は #922 が作り、この画面は出さない。
   `features/admin/supporters.test.tsx` は、課金の状態とプランと廃止したプランと加入者、有効化とその拒否、有効にできないときの切り替え、加入が続くときの無効化の拒否、作成とその拒否の項目、確認を経た廃止、確認を経たすぐの解約と状態の絞り込み、事業者の状態と失敗の直し方と警告、今すぐの照合とその `429` の案内、設定の事業者がないときに区画を出さず状態を読まないこと、何も出せないときの理由、`manage_supporters` の有無によるメニューの出し分けを検査する。
 - **ロール**（`/admin/roles`、`manage_roles`、FR-720）: 「ロールを作成する」と「このサーバーのロール」の 2 つの区画（`h2` の `section`）。閲覧者のいちばん高いロールは `GET /admin/accounts/{閲覧者の ID}/roles` で読む。
@@ -215,10 +221,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     サーバーが拒んだ理由（422 `invalid-brand` の `brand_error`）は、直し方の文言にしてファイルのボタンの下（`role="alert"`、ボタンの説明）に出す。ファイルを選ばずに保存を押したときも同じ場所でファイルを求める。
   - **設定**: `GET /admin/settings` の値で、登録モード（`RadioGroup`、各モードの説明付き）、既定の言語（`Select`。カタログのある言語と保存されている言語。新しい利用者の UI の言語の初期値）、ローカルと連合のタイムライン（`Checkbox`）、
     すべての画像に代替テキストを必須にするか（`require_media_description`、`Checkbox`）、Authorized Fetch（`Checkbox`）、リモートのメディアの複製（`RadioGroup`）と持つ期間（`Select`。1 時間〜365 日と保存されている値）、処分したドメインの一覧と公開コメントを見られる人（`RadioGroup`、誰にも・ログインした利用者・誰にでも）、
-    運営の費用の公開範囲（`finance_visibility`、`RadioGroup`、公開しない・合計だけ・合計と内訳。内訳の選択肢の説明に、どの事業者で動いているかが知られることを書く。FR-903）と、同じ区画に、会計を閲覧できる人に見せる範囲
-    （項目の名前・メモを見せるか（`finance_viewer_item_names`・`finance_viewer_item_memos`、`Checkbox`、既定は見せない。メモの説明に運営者だけに向けた書き込みがあるかもしれないことを書く）、収入の見せ方（`finance_viewer_income`、`RadioGroup`、合計だけ・合計とプランごとの人数）。ADR-0070 §5）、
-    その隣の「収入」の区画に収入の公開範囲（`income_visibility`、`RadioGroup`、公開しない・合計だけ・合計とプランごとの加入者の数。区画の説明に、誰がいくら払ったか・プランごとの金額・手数料は公開しないことと、費用もどちらも公開するときは収支を公開することを、プランごとの数の選択肢の説明に、加入者の少ないプランでは誰が加入しているかが推測されうることを書く。FR-917、ADR-0073 §7）、
-    サポーターの一覧を見られる人（`supporter_list_visibility`、`RadioGroup`、誰にも見せない・誰でも・サインインした人。区画の説明に、一覧はアバター・名前・ハンドルだけで金額や日付を出さず、いつも検索エンジンに索引しないよう求めることを書く。ADR-0071 §4）、
+    （運営の費用・収入・サポーターの一覧の公開範囲は、それを出す費用の画面とサポーターの画面に置く）、
     「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）と運営している人を出すか（`public_operators`、`Checkbox`、既定は出す。説明に、スタッフのロールのバッジをプロフィールに出している人だけが載ることを書く）を出す。
     1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
     結果を `FormActionBar` に出す。フォームが画面より長いので、このバーは画面の下に固定する（`sticky`）。変えた設定がなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して選択を残す（E2）。

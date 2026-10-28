@@ -61,6 +61,7 @@ import {
 } from "../../costs";
 import { DateTime, Section, RecordList, RecordTable, RequirePermission, useHasPermission } from "../../moderation";
 import { instanceQueryOptions } from "../api/documents";
+import { FinancePublicationForm } from "./PublicationSettings";
 import {
   type BillingImport,
   type CostItem,
@@ -146,14 +147,15 @@ export function FinanceSettings(props: FinanceSettingsProps) {
   return (
     <RequirePermission permission="manage_finance">
       <Stack gap="8">
-        <Stack gap="2">
-          <Hint size="inherit">{t("client:admin.finance.description")}</Hint>
-          <Publication />
-          <ViewerSettings granularity={props.granularity} basis={props.basis} today={props.today} />
-        </Stack>
+        <Hint size="inherit">{t("client:admin.finance.description")}</Hint>
         <Section surface="card" title={t("client:admin.finance.totals.title")}>
           <Card>
             <TotalsSection {...props} />
+          </Card>
+        </Section>
+        <Section surface="card" title={t("client:admin.finance.publication.title")}>
+          <Card>
+            <PublicationSection granularity={props.granularity} basis={props.basis} today={props.today} />
           </Card>
         </Section>
         <Section surface="card" title={t("client:admin.finance.new.title")}>
@@ -180,33 +182,41 @@ export function FinanceSettings(props: FinanceSettingsProps) {
 }
 
 /**
+ * What the instance publishes of these costs and of the income and shows to the holders of view_finance, next to the
+ * totals they publish (audit A8): the form of those server settings for a viewer with manage_settings, else what they
+ * are now.
+ */
+function PublicationSection(props: { granularity: CostGranularity; basis: CostBasis; today: string }) {
+  const maySet = useHasPermission("manage_settings");
+  if (maySet) return <FinancePublicationForm />;
+  return (
+    <Stack gap="2">
+      <Publication />
+      <ViewerSettings {...props} />
+    </Stack>
+  );
+}
+
+/**
  * What the instance publishes of these costs and of the income (the instance settings `finance_visibility` and
- * `income_visibility`, ADR-0067 §8, ADR-0073 §7), read from GET /instance. They are server settings (manage_settings),
- * not ones of the costs: a viewer who may change them gets a link to the server settings.
+ * `income_visibility`, ADR-0067 §8, ADR-0073 §7), read from GET /instance.
  */
 function Publication() {
   const t = useT();
   const api = useApi();
   const { data: instance } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
-  const maySet = useHasPermission("manage_settings");
   if (instance === undefined) return null;
   return (
     <Cluster as="p" gap="2" rowGap="0">
       <span>{t("client:admin.finance.visibility", { visibility: instance.finance_visibility })}</span>
       <span>{t("client:admin.finance.income_visibility", { visibility: instance.income_visibility })}</span>
-      {maySet && (
-        <Link href="/admin/settings" variant="standalone">
-          {t("client:admin.finance.visibility.change")}
-        </Link>
-      )}
     </Cluster>
   );
 }
 
 /**
  * What the holders of view_finance read of these costs on the finances page (the instance settings
- * `finance_viewer_*`, ADR-0070 §5), read from GET /finance/cost_totals with the totals of the screen. They are server
- * settings (manage_settings) too, changed through the link above.
+ * `finance_viewer_*`, ADR-0070 §5), read from GET /finance/cost_totals with the totals of the screen.
  */
 function ViewerSettings({
   granularity,
