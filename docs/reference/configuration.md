@@ -932,6 +932,7 @@ The payment provider of the supporters: local users subscribe to paid plans on i
 | `none` | yes | No payments: the webhook endpoint and the reconciliation do not run. |
 | `stripe` | yes | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
 | `payjp` | yes | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
+| `fake` | yes | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting. |
 
 ### `payments_stripe_secret_key`
 

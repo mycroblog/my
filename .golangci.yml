@@ -490,6 +490,18 @@ linters:
               desc: testkit depends only on application ports and domain types
             - pkg: github.com/mycroblog/my/internal/platform
               desc: testkit depends only on application ports and domain types
+        # The fake payment provider records payments as paid without any money moving: besides the tests, only the
+        # test builds (build tag e2e_fakes) link it, through one file (ADR-0117 §2; scripts/go-build-tags.sh checks it).
+        payment-fake:
+          list-mode: lax
+          files:
+            - $all
+            - "!$test"
+            - "!**/internal/adapter/payment/fake/**"
+            - "!**/internal/platform/adapters_payments_fake.go"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/payment/fake
+              desc: only internal/platform/adapters_payments_fake.go (build tag e2e_fakes) and tests import the fake payment provider
         # The live interoperability scenarios are black-box clients of running servers (federation.md §12):
         # HTTP to the client APIs and a read of this server's database (pgx), nothing of this module.
         federation-live:

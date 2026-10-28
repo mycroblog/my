@@ -3480,6 +3480,80 @@ func (l *Localizer) ServerPaymentsErrorUnavailable() string {
 	return l.format("server:payments.error.unavailable", nil)
 }
 
+// ServerPaymentsFakeCancel formats "server:payments.fake.cancel". Button of the fake provider's checkout page that goes back without subscribing.
+//
+//	en: Cancel
+func (l *Localizer) ServerPaymentsFakeCancel() string {
+	return l.format("server:payments.fake.cancel", nil)
+}
+
+// ServerPaymentsFakeFail formats "server:payments.fake.fail". Button of the fake provider's checkout page that makes the payment fail, to test the failure.
+//
+//	en: Make the payment fail
+func (l *Localizer) ServerPaymentsFakeFail() string {
+	return l.format("server:payments.fake.fail", nil)
+}
+
+// ServerPaymentsFakeFailed formats "server:payments.fake.failed". Alert of the fake provider's checkout page after its fail button.
+//
+//	en: The payment failed, as asked. Pay or cancel.
+func (l *Localizer) ServerPaymentsFakeFailed() string {
+	return l.format("server:payments.fake.failed", nil)
+}
+
+// ServerPaymentsFakeNotice formats "server:payments.fake.notice". Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0117 §2).
+//
+//	en: Test build: this checkout stands in for a payment provider, and no money moves.
+func (l *Localizer) ServerPaymentsFakeNotice() string {
+	return l.format("server:payments.fake.notice", nil)
+}
+
+// ServerPaymentsFakePay formats "server:payments.fake.pay". Button of the fake provider's checkout page that records the subscription as paid.
+//
+//	en: Pay
+func (l *Localizer) ServerPaymentsFakePay() string {
+	return l.format("server:payments.fake.pay", nil)
+}
+
+// ServerPaymentsFakePortal formats "server:payments.fake.portal". Text of the fake provider's portal page.
+//
+//	en: This test build has no payment methods or invoices to manage.
+func (l *Localizer) ServerPaymentsFakePortal() string {
+	return l.format("server:payments.fake.portal", nil)
+}
+
+// ServerPaymentsFakePriceMonthArgs holds the arguments of ServerPaymentsFakePriceMonth, passed by name.
+//
+//exhaustruct:enforce
+type ServerPaymentsFakePriceMonthArgs struct {
+	_        struct{} // forces keyed fields
+	Amount   string
+	Currency string
+}
+
+// ServerPaymentsFakePriceMonth formats "server:payments.fake.price_month". Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
+//
+//	en: {amount} {currency} a month
+func (l *Localizer) ServerPaymentsFakePriceMonth(args ServerPaymentsFakePriceMonthArgs) string {
+	return l.format("server:payments.fake.price_month", map[string]any{"amount": args.Amount, "currency": args.Currency})
+}
+
+// ServerPaymentsFakePriceYearArgs holds the arguments of ServerPaymentsFakePriceYear, passed by name.
+//
+//exhaustruct:enforce
+type ServerPaymentsFakePriceYearArgs struct {
+	_        struct{} // forces keyed fields
+	Amount   string
+	Currency string
+}
+
+// ServerPaymentsFakePriceYear formats "server:payments.fake.price_year". Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
+//
+//	en: {amount} {currency} a year
+func (l *Localizer) ServerPaymentsFakePriceYear(args ServerPaymentsFakePriceYearArgs) string {
+	return l.format("server:payments.fake.price_year", map[string]any{"amount": args.Amount, "currency": args.Currency})
+}
+
 // ServerPaymentsName formats "server:payments.name". Label of the card holder's name field of the PAY.JP checkout and card pages.
 //
 //	en: Name on the card

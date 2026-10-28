@@ -1,0 +1,10 @@
+{{define "content"}}<p>{{.Price}}</p>
+{{with .Error}}<p class="alert" role="alert">{{.}}</p>
+{{end}}<form class="form" method="post">
+<div class="actions">
+<button class="button" type="submit" name="action" value="pay">{{.L.ServerPaymentsFakePay}}</button>
+<button class="button button-secondary" type="submit" name="action" value="fail">{{.L.ServerPaymentsFakeFail}}</button>
+<button class="button button-secondary" type="submit" name="action" value="cancel">{{.L.ServerPaymentsFakeCancel}}</button>
+</div>
+</form>
+{{end}}

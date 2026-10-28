@@ -1,0 +1,22 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}}</title>
+{{with .Stylesheet}}<link rel="stylesheet" href="{{.}}">
+{{end}}</head>
+<body>
+<main class="page">
+<div class="card">
+<p class="notice" role="status">{{.L.ServerPaymentsFakeNotice}}</p>
+<h1 dir="auto">{{.Title}}</h1>
+{{template "content" .}}
+</div>
+</main>
+</body>
+</html>
+{{end}}

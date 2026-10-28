@@ -684,6 +684,9 @@ func validate(f *field, v string) error {
 		if tag, ok := excludedValues[f.key][v]; ok {
 			return excludedError(v, tag)
 		}
+		if tag, ok := testOnlyValues[f.key][v]; ok {
+			return testOnlyError(v, tag)
+		}
 	}
 	if f.check != nil {
 		return f.check(v)
@@ -706,7 +709,7 @@ func redactSecret(msg, v string) string {
 func v0Values(f *field) []string {
 	var vs []string
 	for _, c := range f.choices {
-		if c.inV0 {
+		if _, testOnly := testOnlyValues[f.key][c.value]; c.inV0 && !testOnly {
 			vs = append(vs, c.value)
 		}
 	}
