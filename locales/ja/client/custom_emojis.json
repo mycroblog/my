@@ -11,9 +11,13 @@
     "defaultMessage": "カスタム絵文字を申請する",
     "description": "Heading of the region of the form that requests a new custom emoji."
   },
-  "custom_emojis.usage": {
-    "defaultMessage": "{used, plural, other {カスタム絵文字を {limit} 個のうち # 個使っています（審査中の申請を含みます）。}}",
-    "description": "How many custom emoji the user has against their limit. {used} counts the user's emoji and pending requests to create one; {limit} is how many they may have."
+  "custom_emojis.usage.label": {
+    "defaultMessage": "使っているカスタム絵文字",
+    "description": "Label of the meter of how many custom emoji the user has against their limit."
+  },
+  "custom_emojis.usage.value": {
+    "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個（上限。審査中の申請を含みます）} other {{used, number} / {limit, number} 個（審査中の申請を含みます）}}",
+    "description": "The value of the meter of the user's custom emoji. {used} counts the user's emoji and pending requests to create one; {limit} is how many they may have; {full} is true when they reached it."
   },
   "custom_emojis.usage.unlimited": {
     "defaultMessage": "{used, plural, other {カスタム絵文字を # 個使っています（審査中の申請を含みます）。上限はありません。}}",

@@ -7,7 +7,13 @@ import { Spark, type SparkMark } from "./Spark";
 const pageHeading = tv({
   variants: {
     // The brand's page-title: the serif is for brand moments, and this is the first of them.
-    visuallyHidden: { true: "sr-only", false: "font-serif text-3xl font-medium tracking-tight" },
+    visuallyHidden: {
+      true: "sr-only",
+      false: "font-serif text-3xl font-medium tracking-tight",
+      // Seen where the bottom tab bar is the navigation, which may not hold the page's item (the menu sheet has it);
+      // the app's stylesheet hides it where the rail shows (data-hidden-with-rail), since a component knows no viewport.
+      wide: "font-serif text-3xl font-medium tracking-tight",
+    },
   },
 });
 
@@ -18,8 +24,11 @@ export type PageHeadingProps = {
   /**
    * For assistive technology only: on a page whose heading only says where the user is, which the navigation already
    * shows (a timeline, the notifications), it is visually hidden but stays in the accessibility tree (web-client/README.md Y5).
+   * `wide` hides it only where the app shell shows its rail, which shows every item and marks the current one (the
+   * app's stylesheet, by `data-hidden-with-rail`); on a phone the tab bar holds a few items only, so the heading says
+   * which of the like pages (the timelines) this is.
    */
-  visuallyHidden?: boolean;
+  visuallyHidden?: boolean | "wide";
   /** A decorative mark (`✳` or `✧`, mango) after the text, hidden from assistive technology. */
   spark?: SparkMark;
 };
@@ -30,9 +39,14 @@ export type PageHeadingProps = {
  */
 export function PageHeading({ children, id, visuallyHidden = false, spark }: PageHeadingProps) {
   return (
-    <h1 id={id} tabIndex={-1} className={pageHeading({ visuallyHidden })}>
+    <h1
+      id={id}
+      tabIndex={-1}
+      className={pageHeading({ visuallyHidden })}
+      data-hidden-with-rail={visuallyHidden === "wide" ? "" : undefined}
+    >
       {children}
-      {spark !== undefined && !visuallyHidden && <Spark mark={spark} />}
+      {spark !== undefined && visuallyHidden === false && <Spark mark={spark} />}
     </h1>
   );
 }

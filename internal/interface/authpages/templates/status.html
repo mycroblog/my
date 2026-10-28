@@ -6,12 +6,13 @@
 {{if .Restricted}}<p>{{$.L.ServerAuthStatusRestricted}}</p>
 {{with .Actions}}<ul class="moderation-actions">
 {{range .}}<li>
-<p><strong>{{.Kind}}</strong></p>
+<p class="action-title"><strong>{{.Kind}}</strong> <span class="status-badge status-badge-warning">{{$.L.ServerAuthStatusActionActive}}</span></p>
+<p>{{if .EndsAt}}<time datetime="{{.EndsAt}}">{{.Ends}}</time>{{else}}{{.Ends}}{{end}}</p>
 <p class="hint">{{.Category}}</p>
 {{with .Reason}}<p dir="auto">{{.}}</p>{{end}}
-<p class="hint">{{if .EndsAt}}<time datetime="{{.EndsAt}}">{{.Ends}}</time>{{else}}{{.Ends}}{{end}}</p>
 {{if .Appeal}}{{with .Appeal}}<div class="appeal">
-<p><strong>{{.State}}</strong></p>
+<p><span class="status-badge">{{.StateLabel}}</span></p>
+<p>{{.State}}</p>
 <p dir="auto">{{.Text}}</p>
 {{with .Answer}}<p class="hint">{{$.L.ServerAuthStatusAppealAnswer}}</p>
 <p dir="auto">{{.}}</p>{{end}}

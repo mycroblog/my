@@ -102,6 +102,7 @@ export { Blurhash, type BlurhashProps } from "./Blurhash";
 export { AutoplayContext, type ImageCandidate, type ImageSources, Picture, type PictureProps } from "./Picture";
 export { QrCode, type QrCodeProps } from "./QrCode";
 export { RegionError, type RegionErrorProps } from "./RegionError";
+export { SignInState, type SignInStateProps } from "./SignInState";
 export { Skeleton, type SkeletonProps } from "./Skeleton";
 export { AccountRowSkeleton, NotificationRowSkeleton, PostSkeleton, type SkeletonRowProps } from "./SkeletonRows";
 export { Spinner, type SpinnerProps } from "./Spinner";
@@ -173,11 +174,13 @@ export {
   MoveDownIcon,
   MoveUpIcon,
   NotificationsIcon,
+  PinIcon,
   PlusIcon,
   PollIcon,
   ProfileIcon,
   QuoteIcon,
   RaiseHandIcon,
+  RepliesIcon,
   ReplyIcon,
   SearchIcon,
   SettingsIcon,
@@ -237,6 +240,8 @@ export {
 export { AssignedIcon, LegalIcon, SpamIcon, UnassignedIcon, WaitingIcon } from "./Icons";
 export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
 export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
+// The follow button of a profile and of a row of accounts.
+export { FollowButton, type FollowButtonProps, type FollowStatus } from "./FollowButton";
 
 // Timeline.
 export { ContentWarning, type ContentWarningProps } from "./ContentWarning";
@@ -270,6 +275,7 @@ export { LinkCard, type LinkCardImage, type LinkCardProps } from "./LinkCard";
 export { AudioPlayer, type AudioPlayerLabels, type AudioPlayerProps } from "./AudioPlayer";
 export { MediaGrid, type MediaGridProps, type MediaItem, type MediaPlayback } from "./MediaGrid";
 export type { MediaViewerLabels } from "./MediaViewer";
+export { MediaLoadFailure, type MediaLoadFailureProps, type MediaLoadLabels } from "./MediaLoadFailure";
 export { NewItemsButton, type NewItemsButtonProps } from "./NewItemsButton";
 export { PostCard, PostCardAuthor, type PostCardAuthorProps, type PostCardProps } from "./PostCard";
 export {
@@ -321,6 +327,10 @@ export { InfoPage, type InfoPageProps } from "./InfoPage";
 // The landing page's parts read in order, and the steps that follow an action (web-client/screens/landing.md).
 export { SectionProgress, type SectionProgressPart, type SectionProgressProps } from "./SectionProgress";
 export { Steps, type Step, type StepsProps } from "./Steps";
+// Where a flow of steps stands (the report dialog).
+export { Stepper, type StepperProps } from "./Stepper";
+// Details folded under their summary (the about page).
+export { Disclosure, type DisclosureProps } from "./Disclosure";
 export { Grid, type GridProps } from "./Grid";
 export type { LayoutElement, Space } from "./layout";
 export { Stack, type StackProps } from "./Stack";
@@ -368,7 +378,8 @@ export { AccountItem, type AccountItemProps } from "./AccountItem";
 export {
   PostCardAuthorLink,
   PostCardAvatarLink,
-  PostCardBoostContext,
+  PostCardContext,
+  type PostCardContextProps,
   PostCardNameLink,
   PostCardOrigin,
   PostCardTimeLink,

@@ -49,7 +49,14 @@ const meta = {
     items: pictures.slice(0, 1),
     noDescriptionLabel: "No description",
     revealLabel: "Show sensitive media",
-    audioLabels: { play: "Play", pause: "Pause", seek: "Position" },
+    audioLabels: {
+      play: "Play",
+      pause: "Pause",
+      seek: "Position",
+      loading: "Loading media",
+      failed: "Couldn't load this media.",
+      retry: "Try again",
+    },
     onRevealedChange: fn(),
   },
 } satisfies Meta<typeof MediaGrid>;
@@ -144,6 +151,9 @@ export const Viewer: Story = {
       altText: "Description",
       previous: "Previous image",
       next: "Next image",
+      loading: "Loading media",
+      failed: "Couldn't load this media.",
+      retry: "Try again",
     },
   },
   // The viewer covers the story frame, so give it room.

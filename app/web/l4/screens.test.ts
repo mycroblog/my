@@ -2,12 +2,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { personas } from "../demo/scenario.ts";
+import { applicant, personas } from "../demo/scenario.ts";
 import { applySeed, parseSetup } from "./screens.ts";
 import { parseTasks, screensDir } from "./tasks.ts";
 
 const root = resolve(import.meta.dirname, "../../..");
-const usernames = new Set(personas.map((p) => p.username));
+const usernames = new Set([...personas, applicant].map((p) => p.username));
 
 describe("parseSetup", () => {
   it("reads the keys of the front matter as JSON", () => {
@@ -17,6 +17,7 @@ describe("parseSetup", () => {
       "persona: null",
       'paths: ["app/web/src/features/x/**"]',
       'seed: [{"my": ["admin", "role", "grant", "yuki", "translator"]}, {"api": "yuki", "method": "PUT", "path": "/p", "body": {"a": false}}]',
+      'personas: {"task": null}',
       'unavailable: {"task": "why"}',
       "---",
       "",
@@ -30,6 +31,7 @@ describe("parseSetup", () => {
         { my: ["admin", "role", "grant", "yuki", "translator"] },
         { api: "yuki", method: "PUT", path: "/p", body: { a: false } },
       ],
+      personas: { task: null },
       unavailable: { task: "why" },
     });
   });
@@ -71,6 +73,7 @@ describe("the screens' setups", () => {
       const setup = parseSetup(screen, markdown);
       for (const named of [
         ...Object.keys(setup.starts ?? {}),
+        ...Object.keys(setup.personas ?? {}),
         ...Object.keys(setup.mail ?? {}),
         ...Object.keys(setup.push ?? {}),
         ...Object.keys(setup.notes ?? {}),
@@ -84,6 +87,7 @@ describe("the screens' setups", () => {
       const seedUsers = (setup.seed ?? []).flatMap((step) => ("api" in step ? [step.api] : []));
       for (const username of [
         setup.persona,
+        ...Object.values(setup.personas ?? {}),
         ...Object.values(setup.mail ?? {}),
         ...Object.values(setup.push ?? {}),
         ...seedUsers,

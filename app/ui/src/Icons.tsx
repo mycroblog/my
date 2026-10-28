@@ -110,6 +110,8 @@ import {
   PiPauseFill,
   PiPlayFill,
   PiPlus,
+  PiPushPinSimple,
+  PiChatCircle,
   PiQuotes,
   PiRepeat,
   PiRepeatBold,
@@ -165,6 +167,9 @@ export const iconTable = {
   MoveDownIcon: { off: glyph(PiArrowDown, "PiArrowDown") },
   // Posts.
   ReplyIcon: { off: glyph(PiArrowBendUpLeft, "PiArrowBendUpLeft"), directional: true },
+  // A speech bubble: the conversation under a post, which the reader opens to read the replies.
+  RepliesIcon: { off: glyph(PiChatCircle, "PiChatCircle") },
+  PinIcon: { off: glyph(PiPushPinSimple, "PiPushPinSimple") },
   // Up is where the new items wait (above the feed) in any writing direction, so it does not mirror.
   NewItemsIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
   HideMediaIcon: { off: glyph(PiEyeSlash, "PiEyeSlash") },
@@ -369,6 +374,16 @@ export function MoveDownIcon() {
 /** An arrow turning back to the start of the line, for replying. It flips in right-to-left text. */
 export function ReplyIcon() {
   return renderIcon(iconTable.ReplyIcon);
+}
+
+/** A speech bubble, for reading the replies to a post (its conversation), apart from writing one (ReplyIcon). */
+export function RepliesIcon() {
+  return renderIcon(iconTable.RepliesIcon);
+}
+
+/** A pin, for a post pinned to the top of a profile. */
+export function PinIcon() {
+  return renderIcon(iconTable.PinIcon);
 }
 
 /** An arrow up, for the button that shows the new posts waiting above a feed. */

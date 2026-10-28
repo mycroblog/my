@@ -1,8 +1,7 @@
 ---
 start: "/home"
-persona: "yuki"
+persona: "kai"
 paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/home.tsx"]
-unavailable: {"おすすめのアカウントを 1 人フォローする": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "おすすめのアカウントのプロフィールを開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、プロフィールの設定を開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、最初の投稿を書き始める": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "もっと多くの人を探す（アカウントの検索を開く）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストを閉じる": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
 ---
 
 ## 始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）
@@ -19,12 +18,12 @@ unavailable: {"おすすめのアカウントを 1 人フォローする": "the 
 
 | 作業 | 最短の手順の数 |
 | --- | --- |
-| おすすめのアカウントを 1 人フォローする | 1 |
 | おすすめのアカウントのプロフィールを開く | 1 |
 | チェックリストから、プロフィールの設定を開く | 1 |
 | チェックリストから、最初の投稿を書き始める | 1 |
 | もっと多くの人を探す（アカウントの検索を開く） | 1 |
 | チェックリストを閉じる | 1 |
+| おすすめのアカウントを 1 人フォローする | 1 |
 
 ### 3. 情報の優先順位とまとまり
 

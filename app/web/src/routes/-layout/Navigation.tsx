@@ -83,7 +83,6 @@ import {
   navigationEntryIcons,
   navigationEntryLabels,
   tabBarLimit,
-  ThemeRadioGroup,
   useNavigationEntries,
 } from "../../features/settings";
 import { type TimelineAvailability, useTimelineAvailability } from "../../features/timeline";
@@ -483,10 +482,6 @@ function NavigationMenu({ items, current, badgeOf, firstStaff }: NavigationMenuP
           })}
         </AppNavMenuList>
       )}
-      {/* The theme is a setting of this browser, switched here too so that phones reach it in one step. */}
-      <AppNavMenuSection separator="4">
-        <ThemeRadioGroup layout="sheet" />
-      </AppNavMenuSection>
       <AppNavMenuSection separator="3">
         <ServerNameLink />
       </AppNavMenuSection>

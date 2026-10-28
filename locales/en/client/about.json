@@ -91,6 +91,10 @@
     "defaultMessage": "{setting, select, allow {This server reserves nothing against AI: AI may train on and use its pages, except those of the accounts that opt out.} deny_training {This server reserves its pages against the training of AI models. AI search and assistants may still use them, except the pages of the accounts that opt out.} other {This server reserves its pages against the training of AI models and against their use by AI search, assistants and agents.}}",
     "description": "What the server states to AI crawlers, by the server setting ai_usage (allow, deny_training, or deny)."
   },
+  "about.crawlers.details": {
+    "defaultMessage": "How the server states it, and what it means in law",
+    "description": "Summary of the folded details under the server's statements to search engines and AI: how it states them, the accounts' own choices, and their legal meaning."
+  },
   "about.crawlers.how": {
     "defaultMessage": "The server states this in its robots.txt (with a list of known AI crawlers), in the robots meta tag and the X-Robots-Tag, Content-Usage and tdm-reservation headers of its pages, and in /.well-known/tdmrep.json. These are requests: well-known crawlers say they follow some of them, but nothing technically stops a crawler that does not.",
     "description": "How the server states its search and AI settings: the machine-readable means it uses."

@@ -4,7 +4,8 @@
 // time: the reason, the rules it breaks (for a rule violation), the posts, then a comment and, for an account
 // of another server, forwarding; or, from a voice chat room's page, reports the room and its host without the
 // posts step (ADR-0100 §11). Each step is a form whose heading takes the focus when the step appears, so a
-// screen reader reads where the user is and Tab goes on from there; Back keeps the answers.
+// screen reader reads where the user is and Tab goes on from there; Back keeps the answers. Above the heading, a
+// Stepper shows how far the report has come, in words and as segments.
 import {
   Button,
   Checkbox,
@@ -20,6 +21,7 @@ import {
   serverSanitizedHtml,
   Spinner,
   Stack,
+  Stepper,
   Text,
   TextArea,
 } from "@my/ui";
@@ -138,7 +140,11 @@ function ReportSteps({ account, status, voiceRoom, close }: ReportStepsProps) {
   return (
     <Stack as="form" onSubmit={form.next} aria-labelledby={headingId} gap="4">
       <Stack gap="1">
-        <Hint>{t("client:report.step", { current: form.position.current, total: form.position.total })}</Hint>
+        <Stepper
+          current={form.position.current}
+          total={form.position.total}
+          label={t("client:report.step", { current: form.position.current, total: form.position.total })}
+        />
         {heading}
       </Stack>
       {voiceRoom !== undefined && form.step === "category" && (

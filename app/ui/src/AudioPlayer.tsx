@@ -4,13 +4,17 @@ import { Button, Slider, SliderThumb, SliderTrack, useLocale } from "react-aria-
 import { tv } from "tailwind-variants";
 import { formatClock } from "./clock";
 import { PauseIcon, PlayIcon } from "./Icons";
+import { MediaLoadFailure, type MediaLoadLabels } from "./MediaLoadFailure";
+import { VisuallyHidden } from "./VisuallyHidden";
 
 const audioPlayer = tv({
   slots: {
-    base: "flex items-center gap-3 rounded-lg bg-surface-sunken p-4",
+    base: "relative flex items-center gap-3 rounded-lg bg-surface-sunken p-4",
     play: [
       "grid size-11 shrink-0 cursor-default place-items-center rounded-full bg-accent-fill text-accent-fill-fg",
       "data-focus-visible:focus-ring data-hovered:bg-accent-fill-hover motion-safe:transition-colors [&>svg]:size-5",
+      // From the press until the sound starts, the button pulses where it was pressed (ADR-0110 P2).
+      "data-waiting:cursor-wait motion-safe:data-waiting:animate-pulse",
     ],
     core: "min-w-0 flex-1",
     slider: "w-full",
@@ -32,7 +36,7 @@ const bars = Array.from({ length: 24 }, (_, i) => ({
   height: barHeights[(i * 5 + (i % 3)) % barHeights.length] ?? "h-3",
 }));
 
-export type AudioPlayerLabels = {
+export type AudioPlayerLabels = MediaLoadLabels & {
   /** The accessible name of the play button ("Play"). */
   play: string;
   /** The accessible name of the play button while the audio plays ("Pause"). */
@@ -83,25 +87,79 @@ function useMediaTimes(audioRef: React.RefObject<HTMLAudioElement | null>) {
 }
 
 /**
+ * Whether the audio waits for data after a press (`waiting`, also while it buffers), and whether the file failed to
+ * load (`failed`, from the element's `error` event or a rejected play()).
+ */
+function useLoadState(audioRef: React.RefObject<HTMLAudioElement | null>) {
+  const [waiting, setWaiting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const element = audioRef.current;
+    if (element === null) return;
+    const onWaiting = () => {
+      // A file that buffers while it plays; the loading of the metadata before a press is not a wait.
+      if (!element.paused) setWaiting(true);
+    };
+    const onPlaying = () => {
+      setWaiting(false);
+    };
+    const onError = () => {
+      setWaiting(false);
+      setFailed(true);
+    };
+    element.addEventListener("waiting", onWaiting);
+    element.addEventListener("playing", onPlaying);
+    element.addEventListener("error", onError);
+    return () => {
+      element.removeEventListener("waiting", onWaiting);
+      element.removeEventListener("playing", onPlaying);
+      element.removeEventListener("error", onError);
+    };
+  }, [audioRef]);
+  return { waiting, failed, setWaiting, setFailed };
+}
+
+/**
  * The player of an audio file: a play / pause button, a decorative waveform with a seek slider over it, the name, and
  * the elapsed and total time. It wraps an `<audio>` without the browser's controls and never starts by itself
  * (ADR-0054 §6). The slider (React Aria) moves with the arrow keys, Home / End and PageUp / PageDown; it is disabled
- * until the file's length is known.
+ * until the file's length is known. From a press until the sound starts the play button pulses (and the wait is read
+ * out); a file that could not load shows `MediaLoadFailure` over the player, with "Try again".
  */
 export function AudioPlayer({ src, name, lang, labels, className, ...props }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const { current, duration, playing } = useMediaTimes(audioRef);
+  const { waiting, failed, setWaiting, setFailed } = useLoadState(audioRef);
   const { locale } = useLocale();
   const slots = audioPlayer();
   const toggle = () => {
     const element = audioRef.current;
     if (element === null) return;
     if (element.paused || element.ended) {
-      // A rejected play() (the file failed to load, or the user agent refused) leaves the button as it was.
-      void element.play().catch(() => undefined);
+      // From the press until the sound starts, the button shows that it waits (the file may still load).
+      setWaiting(true);
+      element.play().then(
+        () => {
+          setWaiting(false);
+        },
+        (error: unknown) => {
+          setWaiting(false);
+          // The user agent refusing to play (no gesture) or a pause before it started leaves the button as it was; a
+          // file that could not load shows the failure with "Try again".
+          const name = error instanceof DOMException ? error.name : "";
+          if (name !== "NotAllowedError" && name !== "AbortError") setFailed(true);
+        },
+      );
     } else {
       element.pause();
     }
+  };
+  const retry = () => {
+    const element = audioRef.current;
+    if (element === null) return;
+    setFailed(false);
+    element.load();
+    toggle();
   };
   const clock = (seconds: number) => formatClock(locale, seconds);
   const times = `${clock(current)} / ${clock(duration)}`;
@@ -109,9 +167,17 @@ export function AudioPlayer({ src, name, lang, labels, className, ...props }: Au
   return (
     <div role="group" aria-label={name} {...props} className={slots.base({ className })}>
       <audio ref={audioRef} src={src} preload="metadata" />
-      <Button aria-label={playing ? labels.pause : labels.play} onPress={toggle} className={slots.play()}>
+      <Button
+        aria-label={playing ? labels.pause : labels.play}
+        onPress={toggle}
+        data-waiting={waiting && !playing ? "" : undefined}
+        className={slots.play()}
+      >
         {playing ? <PauseIcon /> : <PlayIcon />}
       </Button>
+      {/* A live region that stays in place, so that the words of the wait are read when they come. */}
+      <VisuallyHidden role="status">{waiting && !playing ? labels.loading : ""}</VisuallyHidden>
+      {failed && <MediaLoadFailure labels={labels} onRetry={retry} className="rounded-lg" />}
       <div className={slots.core()}>
         <Slider
           aria-label={labels.seek}

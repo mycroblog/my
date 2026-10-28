@@ -6,7 +6,14 @@ import { ariaSnapshot } from "../test/aria-snapshot";
 import { MediaGrid, type MediaItem } from "./MediaGrid";
 import { AutoplayContext } from "./Picture";
 
-const audioLabels = { play: "Play", pause: "Pause", seek: "Position" };
+const audioLabels = {
+  play: "Play",
+  pause: "Pause",
+  seek: "Position",
+  loading: "Loading media",
+  failed: "Couldn't load this media.",
+  retry: "Try again",
+};
 
 const items: readonly MediaItem[] = [
   { id: "a", src: "/a.png", alt: "A cat on a sofa", lang: "en" },
@@ -127,6 +134,26 @@ describe("MediaGrid", () => {
     expect(blurs()).toHaveLength(0);
   });
 
+  it("marks a picture that could not load, and loads it again on Try again", async () => {
+    const user = userEvent.setup();
+    render(
+      <MediaGrid
+        items={[{ id: "a", src: "/a.webp", alt: "A cat on a sofa" }]}
+        noDescriptionLabel="No description"
+        revealLabel="Show sensitive media"
+        audioLabels={audioLabels}
+      />,
+    );
+    fireEvent.error(screen.getByRole("img", { name: "A cat on a sofa" }));
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("group", { name: "Couldn't load this media." })).getByRole("button", {
+        name: "Try again",
+      }),
+    );
+    expect(screen.getByRole("img", { name: "A cat on a sofa" })).toBeInTheDocument();
+  });
+
   describe("viewer", () => {
     const viewerLabels = {
       title: (position: number, count: number) => `Image ${String(position)} of ${String(count)}`,
@@ -135,6 +162,9 @@ describe("MediaGrid", () => {
       altText: "Description",
       previous: "Previous image",
       next: "Next image",
+      loading: "Loading media",
+      failed: "Couldn't load this media.",
+      retry: "Try again",
     };
     const viewable: readonly MediaItem[] = [
       {
@@ -187,6 +217,96 @@ describe("MediaGrid", () => {
       await waitFor(() => {
         expect(first).toHaveFocus();
       });
+    });
+
+    it("opens with the description shown from the description mark of a picture", async () => {
+      const user = userEvent.setup();
+      render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "Description" }));
+      const dialog = await screen.findByRole("dialog", { name: "Image 1 of 2" });
+      expect(within(dialog).getByRole("button", { name: "Description" })).toHaveAttribute("aria-expanded", "true");
+      expect(within(dialog).getByText("A cat on a sofa", { selector: "p" })).toBeVisible();
+    });
+
+    it("counts the position as the grid does, videos included", async () => {
+      const user = userEvent.setup();
+      const withVideo: readonly MediaItem[] = [
+        viewable[0] as MediaItem,
+        { id: "v", src: "/v.webp", alt: null, playback: { kind: "video", url: "/v.mp4" } },
+        viewable[1] as MediaItem,
+      ];
+      render(
+        <MediaGrid
+          items={withVideo}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "No description" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("3 / 3")).toBeInTheDocument();
+    });
+
+    it("steps to the next picture on a swipe towards the start of the line", async () => {
+      const user = userEvent.setup();
+      render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "A cat on a sofa" }));
+      const dialog = await screen.findByRole("dialog", { name: "Image 1 of 2" });
+      const image = within(dialog).getByRole("img", { name: "A cat on a sofa" });
+      await user.pointer([
+        { keys: "[TouchA>]", target: image, coords: { clientX: 200, clientY: 100 } },
+        { pointerName: "TouchA", target: image, coords: { clientX: 80, clientY: 110 } },
+        { keys: "[/TouchA]", target: image, coords: { clientX: 80, clientY: 110 } },
+      ]);
+      expect(screen.getByRole("dialog", { name: "Image 2 of 2" })).toBeInTheDocument();
+      // A mostly vertical move is not a swipe.
+      const next = within(dialog).getByRole("img", { name: "No description" });
+      await user.pointer([
+        { keys: "[TouchA>]", target: next, coords: { clientX: 200, clientY: 100 } },
+        { pointerName: "TouchA", target: next, coords: { clientX: 140, clientY: 300 } },
+        { keys: "[/TouchA]", target: next, coords: { clientX: 140, clientY: 300 } },
+      ]);
+      expect(screen.getByRole("dialog", { name: "Image 2 of 2" })).toBeInTheDocument();
+    });
+
+    it("shows a spinner while the picture loads, and Try again when it fails", async () => {
+      const user = userEvent.setup();
+      render(
+        <MediaGrid
+          items={viewable}
+          noDescriptionLabel="No description"
+          revealLabel="Show sensitive media"
+          audioLabels={audioLabels}
+          viewerLabels={viewerLabels}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "A cat on a sofa" }));
+      const dialog = await screen.findByRole("dialog", { name: "Image 1 of 2" });
+      expect(within(dialog).getByRole("progressbar", { name: "Loading media" })).toBeInTheDocument();
+      fireEvent.error(within(dialog).getByRole("img", { name: "A cat on a sofa" }));
+      const failure = within(dialog).getByRole("group", { name: "Couldn't load this media." });
+      await user.click(within(failure).getByRole("button", { name: "Try again" }));
+      expect(within(dialog).queryByRole("group", { name: "Couldn't load this media." })).not.toBeInTheDocument();
+      fireEvent.load(within(dialog).getByRole("img", { name: "A cat on a sofa" }));
+      expect(within(dialog).queryByRole("progressbar")).not.toBeInTheDocument();
     });
 
     it("shows the description over the picture on demand, and only for a picture that has one", async () => {

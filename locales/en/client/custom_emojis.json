@@ -11,9 +11,13 @@
     "defaultMessage": "Request a custom emoji",
     "description": "Heading of the region of the form that requests a new custom emoji."
   },
-  "custom_emojis.usage": {
-    "defaultMessage": "{used, plural, one {You have # of {limit} custom emoji, counting your pending requests.} other {You have # of {limit} custom emoji, counting your pending requests.}}",
-    "description": "How many custom emoji the user has against their limit. {used} counts the user's emoji and pending requests to create one; {limit} is how many they may have."
+  "custom_emojis.usage.label": {
+    "defaultMessage": "Custom emoji used",
+    "description": "Label of the meter of how many custom emoji the user has against their limit."
+  },
+  "custom_emojis.usage.value": {
+    "defaultMessage": "{full, select, true {{used, number} of {limit, number}, limit reached, counting pending requests} other {{used, number} of {limit, number}, counting pending requests}}",
+    "description": "The value of the meter of the user's custom emoji. {used} counts the user's emoji and pending requests to create one; {limit} is how many they may have; {full} is true when they reached it."
   },
   "custom_emojis.usage.unlimited": {
     "defaultMessage": "{used, plural, one {You have # custom emoji, counting your pending requests. Your roles set no limit.} other {You have # custom emoji, counting your pending requests. Your roles set no limit.}}",
