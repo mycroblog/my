@@ -491,7 +491,11 @@ func TestWebhookData(t *testing.T) {
 	if group == nil || data["count_24h"] != float64(0) || group["count_24h"] != float64(1) {
 		t.Fatalf("error_group.created = %v, the group %v", data, group)
 	}
-	for _, k := range []string{"count_24h", "count_7d", "last_seen_at", "last_version"} {
+	// Only the admin list carries the counts of the days.
+	if _, ok := data["daily_counts"]; ok || group["daily_counts"] == nil {
+		t.Errorf("daily_counts: the data %v, the group %v", data["daily_counts"], group["daily_counts"])
+	}
+	for _, k := range []string{"count_24h", "count_7d", "daily_counts", "last_seen_at", "last_version"} {
 		delete(data, k)
 		delete(group, k)
 	}
