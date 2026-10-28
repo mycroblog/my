@@ -79,7 +79,9 @@ jobs:
   # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0117 §4): the demo
   # scenario signs in, a second run of the seed adds nothing, and a password reset arrives in Mailpit. The specs need
   # the test build of `bin/my` (`GO_TAGS=e2e_fakes`) and Mailpit, so they run here every night rather than in the
-  # merge queue. The test build stays in the job and is never uploaded.
+  # merge queue. The demo server has Web Push on: `node e2e/server.ts demo` starts the test build's fake push service
+  # (`my dev push-service`) with the certificate that start-mailpit's scripts/mailpit-cert.sh writes, here and in the
+  # l4 job alike. The test build stays in the job and is never uploaded.
   demo-e2e:
     needs: changes
     if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'slow-suite'
