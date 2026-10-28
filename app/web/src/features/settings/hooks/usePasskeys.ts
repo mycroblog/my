@@ -40,13 +40,14 @@ export type PasskeyForm = {
   changeName: (name: string) => void;
   password: string;
   changePassword: (password: string) => void;
-  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  /** Submits the form; `onAdded` is called once the item is on the list (the panel closes then). */
+  submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => void;
   isPending: boolean;
   /** The password field's error when the server refused the password, localized; undefined otherwise. */
   passwordError: string | undefined;
   /** Why the registration failed otherwise, localized, for an alert next to the form; undefined when it did not. */
   error: string | undefined;
-  /** What the last registration did, for the form's StatusMessage; undefined before the first one. */
+  /** What the last registration did, shown above the list; undefined before the first one. */
   status: string | undefined;
 };
 
@@ -115,7 +116,7 @@ export function usePasskeyForm(): PasskeyForm {
       // A refused password marks the field invalid, which stops the form (native validation) until it changes.
       if (register.isError) register.reset();
     },
-    submit: (event) => {
+    submit: (event, onAdded) => {
       event.preventDefault();
       const trimmed = name.trim();
       if (register.isPending || trimmed === "" || (hasPassword && password === "")) return;
@@ -126,7 +127,7 @@ export function usePasskeyForm(): PasskeyForm {
       else return;
       register.reset();
       setStatus(undefined);
-      register.mutate({ name: trimmed, confirmation });
+      register.mutate({ name: trimmed, confirmation }, { onSuccess: () => onAdded?.() });
     },
     isPending: register.isPending,
     passwordError: failure === "wrong-password" ? t("client:settings.passkeys.add.wrong_password") : undefined,

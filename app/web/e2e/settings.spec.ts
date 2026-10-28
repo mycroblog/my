@@ -490,6 +490,7 @@ test("linking an account confirms with the password and comes back linked; unlin
   const changes = await signedInServer(page, projectLocale());
   await page.goto("/settings/linked-accounts");
   const main = page.getByRole("main");
+  await main.getByRole("button", { name: message("settings.linked_accounts.add.title"), exact: true }).click();
   await main
     .getByRole("button", {
       name: message("settings.linked_accounts.link").replace("{provider}", "Lab ID"),

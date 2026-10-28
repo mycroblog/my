@@ -35,6 +35,8 @@ export type RemoveAlias = {
   run: (alias: AccountAlias, onDone: () => void) => void;
   /** The `uri` of the alias being removed. */
   pendingUri: string | undefined;
+  /** Why the last removal failed, localized, shown above the list; undefined when it did not. */
+  error: string | undefined;
 };
 
 export function useRemoveAlias(): RemoveAlias {
@@ -45,15 +47,15 @@ export function useRemoveAlias(): RemoveAlias {
   const remove = useMutation(removeAliasMutation(api));
   return {
     pendingUri: remove.isPending ? remove.variables : undefined,
+    error: remove.isError
+      ? t("client:account_move.aliases.remove_failed", { reason: errorMessage(remove.error) })
+      : undefined,
     run: (alias, onDone) => {
       remove.mutate(alias.uri, {
         onSuccess: (list) => {
           cacheAliases(api, queryClient, list);
           onDone();
           notice.inPlace(t("client:account_move.aliases.removed", { name: isolate(aliasName(alias)) }));
-        },
-        onError: (error) => {
-          notice.inPlace(t("client:account_move.aliases.remove_failed", { reason: errorMessage(error) }), "assertive");
         },
       });
     },
@@ -66,12 +68,12 @@ export type AddAliasForm = {
   isFull: boolean;
   acct: string;
   setAcct: (acct: string) => void;
-  /** Adds the alias once the browser has checked the field. */
-  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  /** Adds the alias once the browser has checked the field; `onAdded` is called once it is on the list. */
+  submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => void;
   isPending: boolean;
   /** Why adding failed, localized, for an alert next to the form; the field keeps what was typed. */
   error: string | undefined;
-  /** What the last addition did, for the form's StatusMessage; undefined before the first one. */
+  /** What the last addition did, shown above the list; undefined before the first one. */
   status: string | undefined;
 };
 
@@ -101,13 +103,13 @@ export function useAddAliasForm(): AddAliasForm {
       setAcct(value);
       if (add.isError) add.reset();
     },
-    submit: (event) => {
+    submit: (event, onAdded) => {
       event.preventDefault();
       const value = acct.trim();
       if (add.isPending || value === "") return;
       add.reset();
       setStatus(undefined);
-      add.mutate(value);
+      add.mutate(value, { onSuccess: () => onAdded?.() });
     },
     isPending: add.isPending,
     error: add.isError ? t("client:account_move.aliases.add_failed", { reason: errorMessage(add.error) }) : undefined,

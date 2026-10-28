@@ -24,6 +24,8 @@ export type BadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
     count: number;
     /** The largest number drawn as is; above it the badge shows `max` followed by a plus sign. */
     max?: number;
+    /** The count is a lower bound (a list not loaded to its end): the number is followed by a plus sign. */
+    atLeast?: boolean;
   } & (
     | {
         /**
@@ -48,10 +50,19 @@ export type BadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
  * A small count, such as unread notifications. The digits are drawn for sighted users and hidden
  * from assistive technology, which reads `label` instead, so a capped "99+" never hides the real count.
  */
-export function Badge({ count, label, decorative = false, max = 99, tone, className, ...props }: BadgeProps) {
+export function Badge({
+  count,
+  label,
+  decorative = false,
+  max = 99,
+  atLeast = false,
+  tone,
+  className,
+  ...props
+}: BadgeProps) {
   const { locale } = useLocale();
   const format = new Intl.NumberFormat(locale);
-  const shown = count > max ? `${format.format(max)}+` : format.format(count);
+  const shown = count > max ? `${format.format(max)}+` : `${format.format(count)}${atLeast ? "+" : ""}`;
   if (decorative) {
     return (
       <span

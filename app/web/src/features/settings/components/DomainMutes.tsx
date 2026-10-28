@@ -1,49 +1,85 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The muted domains page below its heading (FR-304): what muting a domain does, the form that mutes one, and the muted
-// domains in the order of the domains, each with its button that unmutes it. The form follows the browser's constraint
-// validation (React Aria's native validation); muting is undone as easily, so neither asks first. What muting did stays
-// on the page in a StatusMessage (role="status") under the form; unmuting is announced and moves focus to the next row.
-import {
-  Box,
-  Button,
-  Cluster,
-  EmptyState,
-  Hint,
-  InlineError,
-  Section,
-  Stack,
-  StatusMessage,
-  Text,
-  TextField,
-} from "@my/ui";
+// The muted domains page below its heading (FR-304; web-client/screens/settings-domain-mutes.md): the list-and-add part
+// (`ListSection`) with the muted domains in the order of the domains, each with its button that unmutes it, and the
+// button that opens the form that mutes one. The form follows the browser's constraint validation (React Aria's native
+// validation); muting is undone as easily, so neither asks first. What muting did, and a failed unmute, show above the
+// list; unmuting is announced and moves focus to the next row (web-client/16-look-states-and-wording.md G24).
+import { Button, Cluster, FormActionBar, Hint, ListSection, Stack, Text, TextField } from "@my/ui";
 import { useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { domainToUnicode } from "../../../lib/idn";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { domainLimit, type DomainMute } from "../api/domainMutes";
-import { type UnmuteDomain, useDomainMuteList, useMuteDomainForm, useUnmuteDomain } from "../hooks/useDomainMutes";
+import {
+  type MuteDomainForm,
+  type UnmuteDomain,
+  useDomainMuteList,
+  useMuteDomainForm,
+  useUnmuteDomain,
+} from "../hooks/useDomainMutes";
 
 export function DomainMutes() {
   const t = useT();
+  const list = useDomainMuteList();
+  const form = useMuteDomainForm();
+  const unmute = useUnmuteDomain();
+  const listRef = useRef<HTMLUListElement>(null);
+  const removed = useFocusAfterRemoval(
+    listRef,
+    list.items.map((mute) => mute.domain),
+  );
+  const count = list.items.length;
+  let result: { tone: "success" | "danger"; message: string } | undefined;
+  if (unmute.error !== undefined) result = { tone: "danger", message: unmute.error };
+  else if (form.status !== undefined) result = { tone: "success", message: form.status };
   return (
-    <Stack gap="8">
-      <p>{t("client:settings.domain_mutes.description")}</p>
-      <Section title={t("client:settings.domain_mutes.new.title")}>
-        <MuteDomainForm />
-      </Section>
-      <Section title={t("client:settings.domain_mutes.list.title")}>
-        <DomainMuteList />
-      </Section>
-    </Stack>
+    <ListSection
+      title={t("client:settings.domain_mutes.list.title")}
+      description={t("client:settings.domain_mutes.description")}
+      items={list.items}
+      itemKey={(mute) => mute.domain}
+      renderItem={(mute) => (
+        <DomainMuteRow
+          mute={mute}
+          unmute={unmute}
+          onUnmuted={() => {
+            removed(mute.domain);
+          }}
+        />
+      )}
+      listRef={listRef}
+      countLabel={
+        list.hasMore
+          ? t("client:settings.domain_mutes.count_at_least", { count })
+          : t("client:settings.domain_mutes.count", { count })
+      }
+      hasMore={list.hasMore}
+      more={{ label: t("client:settings.list.more"), onPress: list.loadMore, isPending: list.isLoadingMore }}
+      empty={{
+        heading: t("client:settings.domain_mutes.empty"),
+        description: t("client:settings.domain_mutes.empty.description"),
+      }}
+      add={{
+        label: t("client:settings.domain_mutes.new.title"),
+        panel: (close) => <MuteDomainFormFields form={form} close={close} />,
+      }}
+      result={result}
+    />
   );
 }
 
-function MuteDomainForm() {
+/** The form that mutes a domain, in the panel of the list. */
+function MuteDomainFormFields({ form, close }: { form: MuteDomainForm; close: () => void }) {
   const t = useT();
-  const form = useMuteDomainForm();
   return (
-    <Stack as="form" onSubmit={form.submit} gap="4">
+    <Stack
+      as="form"
+      onSubmit={(event) => {
+        form.submit(event, close);
+      }}
+      gap="4"
+    >
       <TextField
         label={t("client:settings.domain_mutes.domain")}
         description={t("client:settings.domain_mutes.domain.description")}
@@ -57,55 +93,18 @@ function MuteDomainForm() {
         inputMode="url"
         errorMessage={t("client:settings.domain_mutes.domain.required")}
       />
-      {form.error !== undefined && (
-        <InlineError alert size="inherit">
-          {t("client:settings.domain_mutes.mute_failed", {
-            reason: form.error,
-          })}
-        </InlineError>
-      )}
-      <div>
+      <FormActionBar
+        result={
+          form.error === undefined
+            ? undefined
+            : { tone: "danger", message: t("client:settings.domain_mutes.mute_failed", { reason: form.error }) }
+        }
+      >
         <Button type="submit" variant="primary" isPending={form.isPending}>
           {t("client:settings.domain_mutes.mute")}
         </Button>
-      </div>
-      <StatusMessage>{form.status}</StatusMessage>
-    </Stack>
-  );
-}
-
-function DomainMuteList() {
-  const t = useT();
-  const list = useDomainMuteList();
-  const unmute = useUnmuteDomain();
-  const listRef = useRef<HTMLUListElement>(null);
-  const removed = useFocusAfterRemoval(
-    listRef,
-    list.items.map((mute) => mute.domain),
-  );
-  if (list.items.length === 0) return <EmptyState heading={t("client:settings.domain_mutes.empty")} />;
-  return (
-    <Stack gap="4">
-      <Stack as="ul" ref={listRef} divided>
-        {list.items.map((mute) => (
-          <Box as="li" key={mute.domain} data-row-id={mute.domain} container paddingY="3">
-            <DomainMuteRow
-              mute={mute}
-              unmute={unmute}
-              onUnmuted={() => {
-                removed(mute.domain);
-              }}
-            />
-          </Box>
-        ))}
-      </Stack>
-      {list.hasMore && (
-        <div>
-          <Button onPress={list.loadMore} isPending={list.isLoadingMore}>
-            {t("client:settings.list.more")}
-          </Button>
-        </div>
-      )}
+        <Button onPress={close}>{t("client:settings.list.cancel")}</Button>
+      </FormActionBar>
     </Stack>
   );
 }
