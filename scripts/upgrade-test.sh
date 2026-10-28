@@ -38,6 +38,8 @@ git -C "$root" rev-parse -q --verify "refs/tags/$previous" >/dev/null || fail "n
 
 # shellcheck source=scripts/web-sign-in.sh
 . "$root/scripts/web-sign-in.sh"
+# shellcheck source=scripts/remote-test-server.sh
+. "$root/scripts/remote-test-server.sh"
 
 port="${UPGRADE_TEST_HTTP_PORT:-18081}"
 base="http://127.0.0.1:$port"
@@ -88,35 +90,9 @@ docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_ima
 docker build -q --target schema -t "$candidate_schema_image" "$root" >/dev/null
 
 # --- The private CA, remote.test, and the previous release's PostgreSQL preparation ---------------
+remote_test_files "$work"
 certs="$work/certs"
 remote="$work/remote"
-mkdir -p "$certs" "$remote"
-openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 2 \
-	-subj "/CN=my upgrade-test CA" -keyout "$certs/ca.key" -out "$certs/ca.pem" 2>/dev/null
-openssl req -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
-	-subj "/CN=remote.test" -keyout "$certs/server.key" -out "$certs/server.csr" 2>/dev/null
-printf '%s\n' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature' 'extendedKeyUsage=serverAuth' \
-	'subjectAltName=DNS:remote.test' >"$certs/server.ext"
-openssl x509 -req -in "$certs/server.csr" -CA "$certs/ca.pem" -CAkey "$certs/ca.key" -CAcreateserial \
-	-days 2 -extfile "$certs/server.ext" -out "$certs/server.pem" 2>/dev/null
-
-carol_id="https://remote.test/users/carol"
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$work/carol.key" 2>/dev/null
-jq -n --arg id "$carol_id" --arg pem "$(openssl pkey -in "$work/carol.key" -pubout)" '{
-	"@context": ["https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1"],
-	id: $id, type: "Person", preferredUsername: "carol", name: "Carol",
-	inbox: ($id + "/inbox"), outbox: ($id + "/outbox"), followers: ($id + "/followers"), following: ($id + "/following"),
-	endpoints: {sharedInbox: "https://remote.test/inbox"}, url: "https://remote.test/@carol",
-	manuallyApprovesFollowers: false,
-	publicKey: {id: ($id + "#main-key"), owner: $id, publicKeyPem: $pem}
-}' >"$remote/carol.json"
-jq -n --arg id "$carol_id" '{
-	subject: "acct:carol@remote.test",
-	links: [{rel: "self", type: "application/activity+json", href: $id}]
-}' >"$remote/webfinger.json"
-# Throwaway keys and files, read by containers that run as other users.
-chmod 0755 "$work" "$certs" "$remote"
-chmod 0644 "$certs"/* "$remote"/*
 git -C "$root" show "$previous:schema/postgres.bootstrap.sql" >"$work/postgres.bootstrap.sql"
 chmod 0644 "$work/postgres.bootstrap.sql"
 export UPGRADE_TEST_CERTS="$certs" UPGRADE_TEST_REMOTE="$remote" UPGRADE_TEST_BOOTSTRAP="$work/postgres.bootstrap.sql"

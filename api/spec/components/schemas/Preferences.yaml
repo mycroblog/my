@@ -29,8 +29,8 @@ properties:
   email_suppression:
     description: |
       Whether emails no longer reach the primary address, read-only; omitted when they do.
-      After a `hard_bounce`, the user asks for the verification email again to show that the
-      address works.
+      After a `hard_bounce`, the user asks for the verification email again
+      (`POST /accounts/email/verification`) to show that the address works.
     readOnly: true
     allOf:
       - $ref: ./EmailSuppression.yaml

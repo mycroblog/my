@@ -37,7 +37,7 @@ const demoSpec = /demo-[^/]*\.spec\.ts$/;
 /**
  * Whether the run starts the demo server (`node e2e/server.ts demo`, ADR-0117) and its specs: it needs the test build
  * (`GO_TAGS=e2e_fakes scripts/task.sh go:bin`) and Mailpit (`scripts/task.sh docker:mailpit`), so only E2E_DEMO=1 asks
- * for it.
+ * for it: the `demo-e2e` job of the Nightly workflow, and a run by hand.
  */
 const demo = process.env["E2E_DEMO"] === "1" && !externalServer;
 

@@ -806,6 +806,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/email/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send the authenticated user a new verification email
+         * @description Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+         *     such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
+         *     following its link shows that the address works and lifts the suppression. Earlier links
+         *     keep working until they expire. The email is queued and sent in the background, so a 202
+         *     does not tell whether it arrived. A user whose address is verified and not suppressed by a
+         *     hard bounce gets a 409 `/api/v1/problems/email-already-verified`; a user without an email
+         *     address, or an instance that sends no email (`Instance.sends_email`), a 404. At most 3
+         *     emails per user are sent every hour; more get a 429 with `Retry-After`.
+         */
+        post: operations["resendVerificationEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/exports": {
         parameters: {
             query?: never;
@@ -12013,8 +12040,8 @@ export interface components {
             require_media_description: boolean;
             /**
              * @description Whether emails no longer reach the primary address, read-only; omitted when they do.
-             *     After a `hard_bounce`, the user asks for the verification email again to show that the
-             *     address works.
+             *     After a `hard_bounce`, the user asks for the verification email again
+             *     (`POST /accounts/email/verification`) to show that the address works.
              */
             readonly email_suppression?: components["schemas"]["EmailSuppression"];
             /**
@@ -15151,6 +15178,25 @@ export interface operations {
         responses: {
             /** @description The user has no password. */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    resendVerificationEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The verification email is queued. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
