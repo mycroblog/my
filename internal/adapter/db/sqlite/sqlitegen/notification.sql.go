@@ -359,6 +359,41 @@ func (q *Queries) InsertNotificationDomainExclusion(ctx context.Context, arg Ins
 	return err
 }
 
+const listNotificationSettings = `-- name: ListNotificationSettings :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id = ? ORDER BY notification_group, channel
+`
+
+// ListNotificationSettings returns the channels a local account chose (FR-210).
+func (q *Queries) ListNotificationSettings(ctx context.Context, accountID string) ([]NotificationSetting, error) {
+	rows, err := q.db.QueryContext(ctx, listNotificationSettings, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NotificationSetting{}
+	for rows.Next() {
+		var i NotificationSetting
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.NotificationGroup,
+			&i.Channel,
+			&i.Enabled,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotifications = `-- name: ListNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
   n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.dedupe_key, n.created_at
@@ -621,6 +656,30 @@ func (q *Queries) UpsertNotificationExclusion(ctx context.Context, arg UpsertNot
 		arg.TargetAccountID,
 		arg.Reason,
 		arg.ExpiresAt,
+	)
+	return err
+}
+
+const upsertNotificationSetting = `-- name: UpsertNotificationSetting :exec
+INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at
+`
+
+type UpsertNotificationSettingParams struct {
+	AccountID         string
+	NotificationGroup string
+	Channel           string
+	Enabled           int64
+	UpdatedAt         int64
+}
+
+func (q *Queries) UpsertNotificationSetting(ctx context.Context, arg UpsertNotificationSettingParams) error {
+	_, err := q.db.ExecContext(ctx, upsertNotificationSetting,
+		arg.AccountID,
+		arg.NotificationGroup,
+		arg.Channel,
+		arg.Enabled,
+		arg.UpdatedAt,
 	)
 	return err
 }

@@ -39,8 +39,8 @@ properties:
   sends_email:
     description: |
       Whether the instance sends email (the server setting `mail` is not `none`). Without
-      email, the moderator notifications come only in the app, so clients do not offer
-      the preference `email_moderator_notifications`.
+      email, notifications come only in the app, so clients do not offer the email column of
+      the notification settings (`GET /preferences/notifications`).
     type: boolean
   push_server_key:
     description: |

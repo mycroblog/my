@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getNotificationSettings
+  summary: Get the authenticated user's notification settings
+  description: |
+    Whether the user gets each kind of notification in the app and by email, for the kinds
+    the user gets.
+  tags: [preferences]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The settings.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationSettings.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateNotificationSettings
+  summary: Change the authenticated user's notification settings
+  description: |
+    Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+    row the user does not get or a channel that is fixed; nothing is changed then.
+  tags: [preferences]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/NotificationSettingsUpdate.yaml
+  responses:
+    "200":
+      description: The settings after the change.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationSettings.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

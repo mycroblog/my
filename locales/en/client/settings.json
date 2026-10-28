@@ -375,22 +375,6 @@
     "defaultMessage": "Server status",
     "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
   },
-  "settings.moderator_notifications.email": {
-    "defaultMessage": "Also send them by email",
-    "description": "Label of the switch that also sends the moderator notifications by email."
-  },
-  "settings.moderator_notifications.email.description": {
-    "defaultMessage": "The notifications of new reports, sign-ups awaiting approval and appeals that your role handles also come to your email address.",
-    "description": "Help text of the switch that also sends the moderator notifications by email."
-  },
-  "settings.moderator_notifications.no_email": {
-    "defaultMessage": "This server does not send email, so the moderator notifications come only in the app.",
-    "description": "Shown instead of the email switch of the moderator notifications when the server is set up to send no email."
-  },
-  "settings.moderator_notifications.title": {
-    "defaultMessage": "Moderator notifications",
-    "description": "Heading of the section of the preferences about the notifications of new reports, sign-ups awaiting approval and appeals, shown only to moderators."
-  },
   "settings.mutes.empty": {
     "defaultMessage": "You have not muted anyone",
     "description": "Shown when the user mutes no account."

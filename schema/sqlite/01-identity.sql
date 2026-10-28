@@ -188,8 +188,6 @@ CREATE TABLE user_preferences (
   default_quote_policy TEXT NOT NULL DEFAULT 'public' CHECK (default_quote_policy IN ('public', 'followers', 'nobody')),
   default_post_language TEXT NOT NULL,
   require_media_description INTEGER NOT NULL CHECK (require_media_description IN (0, 1)),
-  -- Whether the moderator notifications (admin_report, admin_sign_up) also come by email.
-  email_moderator_notifications INTEGER NOT NULL CHECK (email_moderator_notifications IN (0, 1)),
   -- Whether the web client inserts new timeline posts without asking (ADR-0077).
   timeline_auto_insert INTEGER NOT NULL DEFAULT 0 CHECK (timeline_auto_insert IN (0, 1)),
   updated_at INTEGER NOT NULL
@@ -535,13 +533,20 @@ CREATE TABLE invite_revocations (
 ) STRICT;
 
 -- Resource: a token sent to a user. token_hash is the SHA-256 digest of the token. An
--- email_unsubscribe token names the unsubscribable category of email it turns off (ADR-0086 §4).
+-- email_unsubscribe token names the unsubscribable category of email it turns off (ADR-0086 §4):
+-- a group of the notification settings (notification_settings.notification_group, ADR-0109 §4).
 CREATE TABLE user_tokens (
   id TEXT NOT NULL PRIMARY KEY,
   user_id TEXT NOT NULL,
   purpose TEXT NOT NULL CHECK (purpose IN ('email_verification', 'password_reset', 'email_unsubscribe')),
   email_address_id TEXT,
-  unsubscribe_category TEXT CHECK (unsubscribe_category IN ('email_moderator_notifications')),
+  unsubscribe_category TEXT CHECK (unsubscribe_category IN (
+    'mention', 'follow', 'follow_request', 'follow_accepted', 'boost', 'favourite', 'reaction', 'quote', 'poll_closed',
+    'account_moved', 'voice',
+    'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
+    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group',
+    'moderation'
+  )),
   token_hash BLOB NOT NULL,
   expires_at INTEGER NOT NULL,
   issued_at INTEGER NOT NULL,

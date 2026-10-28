@@ -467,6 +467,9 @@ DELETE FROM notifications WHERE id = ANY(sqlc.arg(ids)::uuid[]);
 -- name: EraseNotificationReadMarker :exec
 DELETE FROM notification_read_markers WHERE account_id = sqlc.arg(account_id);
 
+-- name: EraseNotificationSettingsOf :exec
+DELETE FROM notification_settings WHERE account_id = sqlc.arg(account_id);
+
 -- name: EraseNotificationExclusionsAsViewer :execrows
 DELETE FROM notification_exclusions WHERE notification_exclusions.viewer_account_id = sqlc.arg(account_id) AND notification_exclusions.target_account_id IN (
   SELECT x.target_account_id FROM notification_exclusions x WHERE x.viewer_account_id = sqlc.arg(account_id)

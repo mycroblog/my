@@ -119,10 +119,6 @@
     "defaultMessage": "You get this email because this address belongs to your account on {instance}.",
     "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.reason.moderator_notifications": {
-    "defaultMessage": "You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.",
-    "description": "Why a moderator who chose to get moderator notifications by email gets an email about a new item."
-  },
   "mail.reason.supporter": {
     "defaultMessage": "You get this email because you subscribe, or subscribed, to a supporter plan on {instance}.",
     "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
@@ -282,5 +278,97 @@
   "mail.verify_email.subject": {
     "defaultMessage": "Confirm your email address for {instance}",
     "description": "Subject of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.notification": {
+    "defaultMessage": "You get this email because email is on for “{group}” in your notification settings. You can turn it off there.",
+    "description": "Sentence of the signature of a notification email: why it comes. {group} is the name of the kind of notification, as the notification settings name it (such as Mentions)."
+  },
+  "mail.notification.body": {
+    "defaultMessage": "You have a notification on {instance} that you have not read yet.",
+    "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.action.open_notification": {
+    "defaultMessage": "Open",
+    "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
+  },
+  "mail.group.mention": {
+    "defaultMessage": "Mentions",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow": {
+    "defaultMessage": "New followers",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_request": {
+    "defaultMessage": "Follow requests",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_accepted": {
+    "defaultMessage": "Accepted follow requests",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.boost": {
+    "defaultMessage": "Boosts",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.favourite": {
+    "defaultMessage": "Favourites",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.reaction": {
+    "defaultMessage": "Emoji reactions",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.quote": {
+    "defaultMessage": "Quotes",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.poll_closed": {
+    "defaultMessage": "Ended polls",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.account_moved": {
+    "defaultMessage": "Accounts you follow moving",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.voice": {
+    "defaultMessage": "Voice chats",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_report": {
+    "defaultMessage": "New reports",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_sign_up": {
+    "defaultMessage": "Registrations awaiting approval",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_appeal": {
+    "defaultMessage": "New appeals",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_webhook_disabled": {
+    "defaultMessage": "Disabled webhooks",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_custom_emoji_request": {
+    "defaultMessage": "Custom emoji requests",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_account_moved": {
+    "defaultMessage": "Limited accounts moving",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_service_closure_due": {
+    "defaultMessage": "Closing date passed",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_error_group": {
+    "defaultMessage": "New and recurring errors",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.moderation": {
+    "defaultMessage": "Notices from the moderators",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

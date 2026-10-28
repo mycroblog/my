@@ -660,6 +660,14 @@ type NotificationReadMarker struct {
 	LastReadID string
 }
 
+type NotificationSetting struct {
+	AccountID         string
+	NotificationGroup string
+	Channel           string
+	Enabled           int64
+	UpdatedAt         int64
+}
+
 type OauthAuthorizationCode struct {
 	CodeHash      []byte
 	ClientID      string
@@ -1205,15 +1213,14 @@ type User struct {
 }
 
 type UserPreference struct {
-	UserID                      string
-	Locale                      string
-	DefaultVisibility           string
-	DefaultQuotePolicy          string
-	DefaultPostLanguage         string
-	RequireMediaDescription     int64
-	EmailModeratorNotifications int64
-	TimelineAutoInsert          int64
-	UpdatedAt                   int64
+	UserID                  string
+	Locale                  string
+	DefaultVisibility       string
+	DefaultQuotePolicy      string
+	DefaultPostLanguage     string
+	RequireMediaDescription int64
+	TimelineAutoInsert      int64
+	UpdatedAt               int64
 }
 
 type UserRegistrationState struct {

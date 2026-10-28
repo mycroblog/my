@@ -131,7 +131,7 @@
 | `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `creator_kind`（`enum(staff, member)`、既定 `staff`）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)`、インデックス `(created_by_user_id, id)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
-| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum(email_moderator_notifications)`。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は利用者設定のメールの項目の列名で、使うとその設定を off にする |
+| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
 - 招待の作成の経路は `creator_kind` に記録します（[ADR-0108](../../../adr/0108-member-invites.md) §3）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。
@@ -265,14 +265,14 @@
 
 | テーブル | カラム | 制約 |
 | --- | --- | --- |
-| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `email_moderator_notifications`（`bool`。モデレーターへの通知をメールでも受け取るか、FR-712）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0077）, `updated_at` | |
+| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0077）, `updated_at` | |
 | `user_timeline_languages` | `user_id`, `language`（`lang`） | PK `(user_id, language)`。行が無ければすべての言語を表示（FR-208） |
 | `user_time_zones` | `user_id`（PK）, `time_zone`（IANA 名） | 行が無ければタイムゾーンを選んでいない（日時は UTC。Web クライアントは端末のゾーンを保存する） |
 
 - 登録時に既定値の行を作ります。`locale` は登録時に指定されたロケール、無ければインスタンスの既定（`default_locale`）、それも無ければ `en` です。
   サーバーで描く登録のページは、要求の `Accept-Language` にいちばん合う、カタログのあるロケール（疑似ロケールは除く。`i18n.Resolver.AcceptedLocale`）を指定します。
   合うものが無ければ指定せず、インスタンスの既定になります。
-  `user_time_zones` の行は作らない（タイムゾーンは選んでいない状態で、`UTC` として扱う）。`default_visibility` は `public`、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` と `email_moderator_notifications` と `timeline_auto_insert` は偽です。
+  `user_time_zones` の行は作らない（タイムゾーンは選んでいない状態で、`UTC` として扱う）。`default_visibility` は `public`、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` と `timeline_auto_insert` は偽です。
 - `lang` の値は BCP 47 として検証し、正規形（`ja-JP`、`zh-Hant-TW`、`iw` → `he`）で保存します。未知のサブタグ、言語を明示しないタグ（`und-JP`、私用の `x-…`）は拒否します。
   `locale` は `und` も拒否します。
 - タイムゾーンを選んだ事実は `user_time_zones` の行の有無で表します（ADR-0020 規約 4。`user_preferences` に NULL 許容の列や「選んだか」の列を置かない）。

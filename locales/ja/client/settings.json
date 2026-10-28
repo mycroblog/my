@@ -375,22 +375,6 @@
     "defaultMessage": "サーバーの状態",
     "description": "Link under the settings menu to the server's status page on another site, where the operators tell of outages and maintenance. The link leaves the app."
   },
-  "settings.moderator_notifications.email": {
-    "defaultMessage": "メールでも受け取る",
-    "description": "Label of the switch that also sends the moderator notifications by email."
-  },
-  "settings.moderator_notifications.email.description": {
-    "defaultMessage": "あなたのロールが扱う新しい通報・承認待ちの登録・異議申し立ての通知を、メールアドレスにも送ります。",
-    "description": "Help text of the switch that also sends the moderator notifications by email."
-  },
-  "settings.moderator_notifications.no_email": {
-    "defaultMessage": "このサーバーはメールを送らない設定のため、モデレーターへの通知はアプリの中にだけ届きます。",
-    "description": "Shown instead of the email switch of the moderator notifications when the server is set up to send no email."
-  },
-  "settings.moderator_notifications.title": {
-    "defaultMessage": "モデレーターへの通知",
-    "description": "Heading of the section of the preferences about the notifications of new reports, sign-ups awaiting approval and appeals, shown only to moderators."
-  },
   "settings.mutes.empty": {
     "defaultMessage": "ミュートしているアカウントはありません",
     "description": "Shown when the user mutes no account."

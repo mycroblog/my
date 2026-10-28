@@ -16,7 +16,7 @@ import (
 
 // notificationAppeals checks the notifications of the appeals (FR-707, FR-712): an admin_appeal
 // of a new appeal to the holders of manage_accounts other than the account that appealed, emailed
-// to those who want that, and an appeal_decided of the decision to that account, each once.
+// to those with an address, and an appeal_decided of the decision to that account, each once.
 func notificationAppeals(t *testing.T, e *notificationEnv) {
 	ctx := t.Context()
 	mod, reports, alice := e.user(t, "mod"), e.user(t, "reports"), e.user(t, "alice")
@@ -59,7 +59,7 @@ func notificationAppeals(t *testing.T, e *notificationEnv) {
 	mailer := &Mailer{}
 	reg := &queue.JobHandlerRegistry{}
 	appnotification.RegisterModeratorJobs(reg, appnotification.MailDeps{
-		Staff: e.staff, Mailer: mailer, Host: contractHost, WebOrigin: "https://web.example",
+		Staff: e.staff, Settings: e.svc, Mailboxes: e.staff, Mailer: mailer, Host: contractHost, WebOrigin: "https://web.example",
 	})
 	handle, _, _ := reg.Lookup(appnotification.JobModeratorEmail)
 	if res := handle(ctx, queue.Job{ID: e.ids.NewID(), Type: jobs[0].Type, Payload: jobs[0].Payload}); !res.IsDone() {

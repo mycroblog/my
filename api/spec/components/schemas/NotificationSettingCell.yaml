@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: One channel of one row of the notification settings.
+type: object
+required: [enabled, fixed]
+properties:
+  enabled:
+    description: Whether the user gets the row's notifications through the channel.
+    type: boolean
+  fixed:
+    description: |
+      Whether the channel is always on and cannot be changed: clients show it on and
+      disabled.
+    type: boolean

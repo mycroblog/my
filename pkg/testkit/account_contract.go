@@ -172,6 +172,8 @@ type accountEnv struct {
 	sealer     *kernel.Sealer
 	// mailJobs runs the email jobs of the identity service that newIdentityWith made last.
 	mailJobs *InlineJobs
+	// unsubscriptions stands in for the notification settings that unsubscribe links turn off.
+	unsubscriptions *stubUnsubscriptions
 }
 
 const contractHost = "social.example"
@@ -226,6 +228,8 @@ func newAccountEnvOn(h AccountHarness, projectors *uow.Projectors, register ...f
 		kv:         kv,
 		limiter:    kernel.NewRateLimiter(kv, clock),
 		sealer:     kernel.NewSealer(NewKeyManager("contract")),
+
+		unsubscriptions: newStubUnsubscriptions(),
 	}
 	e.identity = e.newIdentity(e.hasher)
 	return e
@@ -252,6 +256,8 @@ func (e *accountEnv) newIdentityWith(change func(*appidentity.Deps)) *appidentit
 		Passkeys:    FakePasskeys{},
 		WebClient:   contractWebClient,
 		BaseURL:     "https://" + contractHost,
+
+		Unsubscriptions: e.unsubscriptions,
 	}
 	outbox, jobs := inlineOutbox(e.projectors)
 	d.Outbox, e.mailJobs = outbox, jobs

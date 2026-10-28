@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A row of the notification settings: one or more notification types that the user turns on
+  and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+  `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+  `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+  `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+  `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+  `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+  notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+  `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+  `service_closure`, and `supporter` (the `supporter_*` types).
+type: string
+enum:
+  - mention
+  - follow
+  - follow_request
+  - follow_accepted
+  - boost
+  - favourite
+  - reaction
+  - quote
+  - poll_closed
+  - account_moved
+  - voice
+  - admin_report
+  - admin_sign_up
+  - admin_appeal
+  - admin_webhook_disabled
+  - admin_custom_emoji_request
+  - admin_account_moved
+  - admin_service_closure_due
+  - admin_error_group
+  - moderation
+  - service_closure
+  - supporter

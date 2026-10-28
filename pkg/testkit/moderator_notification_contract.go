@@ -23,8 +23,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// stubStaff is an in-memory notification.Staff: the permissions of local accounts and where
-// their moderator notifications are emailed.
+// stubStaff is an in-memory notification.Staff and notification.Mailboxes: the permissions of
+// local accounts and where their notifications are emailed.
 type stubStaff struct {
 	mu      sync.Mutex
 	granted map[string][]notification.Permission
@@ -42,7 +42,7 @@ func (s *stubStaff) set(accountID string, perms ...notification.Permission) {
 	s.granted[accountID] = perms
 }
 
-// email makes accountID want its moderator notifications by email at address, or not when
+// email gives accountID the usable address address for its notification emails, or none when
 // address is "".
 func (s *stubStaff) email(accountID, address string) {
 	s.mu.Lock()
@@ -60,8 +60,7 @@ func (s *stubStaff) PermissionHolders(_ context.Context, _ uow.Tx, p notificatio
 	var out []appnotification.StaffMember
 	for id, perms := range s.granted {
 		if slices.Contains(perms, p) {
-			_, email := s.mail[id]
-			out = append(out, appnotification.StaffMember{AccountID: id, Email: email})
+			out = append(out, appnotification.StaffMember{AccountID: id})
 		}
 	}
 	slices.SortFunc(out, func(a, b appnotification.StaffMember) int { return strings.Compare(a.AccountID, b.AccountID) })
@@ -81,9 +80,9 @@ func (s *stubStaff) Mailbox(_ context.Context, accountID string) (appnotificatio
 	return m, ok, nil
 }
 
-// UnsubscribeLink returns a link that names accountID.
-func (s *stubStaff) UnsubscribeLink(_ context.Context, accountID string) (string, error) {
-	return "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + accountID, nil
+// UnsubscribeLink returns a link that names accountID and the group.
+func (s *stubStaff) UnsubscribeLink(_ context.Context, accountID string, g notification.Group) (string, error) {
+	return "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + accountID + "_" + string(g), nil
 }
 
 // recordingOutbox is a queue.Outbox that keeps the jobs it is given.
@@ -110,9 +109,10 @@ func (o *recordingOutbox) take() []queue.NewJob {
 // notificationModerators checks the moderator notifications (FR-712): an admin_report of the
 // first open report of an account to the holders of manage_reports other than the reporter
 // and the target, an admin_sign_up of a pending registration to the holders of
-// manage_accounts, each once, an email job in the same transaction for the holders who want
-// email, the email itself, and the notifications leaving the list and the unread count once
-// the permission is gone.
+// manage_accounts, each once, an email job in the same transaction for each holder unless they
+// turned the type's email off (it is on by default, per type), the email itself, none for a
+// holder who turned the type off in the app, and the notifications leaving the list and the
+// unread count once the permission is gone.
 func notificationModerators(t *testing.T, e *notificationEnv) {
 	ctx := t.Context()
 	mod, helper, reporter, target := e.user(t, "mod"), e.user(t, "helper"), e.user(t, "reporter"), e.user(t, "target")
@@ -123,6 +123,10 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	e.staff.set(target, both...)
 	e.staff.email(mod, "mod@example.com")
 	e.staff.email(target, "target@example.com")
+	// The moderator emails are on by default and turned off per type: helper turns off the
+	// emails of the reports, and reporter those of the sign-ups.
+	e.setting(t, helper, notification.GroupAdminReport, notification.ChannelEmail, false)
+	e.setting(t, reporter, notification.GroupAdminSignUp, notification.ChannelEmail, false)
 
 	type moderatorSummary struct {
 		Type          notification.Type
@@ -191,7 +195,7 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	check(mod, signUp, report)
 	check(target, signUp) // only the reports of their own account are kept from them
 	if jobs := e.outbox.take(); len(jobs) != 2 {
-		t.Errorf("jobs after the sign-up = %+v, want the emails of mod and target, once each", jobs)
+		t.Errorf("jobs after the sign-up = %+v, want the emails of mod and target, once each (reporter turned them off)", jobs)
 	}
 	e.checkUnread(t, mod, 2)
 
@@ -199,7 +203,7 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	mailer := &Mailer{}
 	reg := &queue.JobHandlerRegistry{}
 	appnotification.RegisterModeratorJobs(reg, appnotification.MailDeps{
-		Staff: e.staff, Mailer: mailer, Host: contractHost, WebOrigin: "https://web.example",
+		Staff: e.staff, Settings: e.svc, Mailboxes: e.staff, Mailer: mailer, Host: contractHost, WebOrigin: "https://web.example",
 	})
 	handle, _, ok := reg.Lookup(appnotification.JobModeratorEmail)
 	if !ok {
@@ -219,16 +223,23 @@ func notificationModerators(t *testing.T, e *notificationEnv) {
 	}
 	// It is a notification that its recipient can stop with one click (ADR-0086 §4).
 	if len(sent) == 1 {
-		link := "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + mod
+		link := "https://" + contractHost + "/mail/unsubscribe?token=my_eut_" + mod + "_admin_report"
 		if sent[0].Category != kernel.MailNotification || sent[0].Headers[kernel.HeaderListUnsubscribe] != "<"+link+">" ||
 			sent[0].Headers[kernel.HeaderListUnsubscribePost] != "List-Unsubscribe=One-Click" || !strings.Contains(sent[0].Text, link) {
 			t.Errorf("sent = %+v, want a notification with the unsubscribe link in its headers and text", sent[0])
 		}
 	}
-	// A moderator who turned email off, or lost the permission, gets none.
+	// A moderator without a usable address, who turned the type's email or the type off since,
+	// or who lost the permission, gets none.
 	e.staff.email(mod, "")
 	run()
 	e.staff.email(mod, "mod@example.com")
+	e.setting(t, mod, notification.GroupAdminReport, notification.ChannelEmail, false)
+	run()
+	e.setting(t, mod, notification.GroupAdminReport, notification.ChannelEmail, true)
+	e.setting(t, mod, notification.GroupAdminReport, notification.ChannelInApp, false)
+	run()
+	e.setting(t, mod, notification.GroupAdminReport, notification.ChannelInApp, true)
 	e.staff.set(mod, notification.PermissionManageAccounts)
 	run()
 	if got := len(mailer.Sent()); got != 1 {

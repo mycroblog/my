@@ -11,6 +11,7 @@
 | `notification_deleted_statuses` | 投影 | `status_id`（PK） | `content.status_deleted` から作る。その投稿についての通知があるときだけ（削除された投稿に後から通知は付かない） |
 | `push_subscriptions` | 現在値 | `id`, `account_id`, `oauth_token_family_id`, `endpoint`, `key_p256dh`, `key_auth`, `created_at`, `updated_at` | 一意 `(endpoint)`, 一意 `(oauth_token_family_id)`。インデックス `(account_id)`（FR-206） |
 | `push_subscription_alerts` | 現在値 | `subscription_id`, `notification_type` | PK `(subscription_id, notification_type)` |
+| `notification_settings` | 現在値 | `account_id`, `notification_group`（`enum(mention, follow, follow_request, follow_accepted, boost, favourite, reaction, quote, poll_closed, account_moved, voice, admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, admin_service_closure_due, admin_error_group, moderation)`）, `channel`（`enum(in_app, email)`）, `enabled`（`bool`）, `updated_at` | PK `(account_id, notification_group, channel)`。CHECK `moderation` は `email` だけ（FR-210、ADR-0109 §6） |
 
 - 通知は `notification` の同期 projector が、`graph` と `content` のドメインイベントから同じトランザクションで作ります（§2.1）。
 
@@ -102,8 +103,16 @@
     クライアント API は `voice_room_id` を載せ、ルームが開いていて閲覧者に見えるときだけ `voice_room` にルームを埋め込みます。Web Push はルームのページ（`/voice/<room_id>`）を開きます。
   - `admin_report` は、通報を受け付けたトランザクションで対象にほかの未解決の通報が無いときだけ作り（`moderation.report_filed` の `FirstOpen`）、通報者と通報の対象には作りません。
   - `admin_sign_up` は `identity.registration_pending`（登録が `pending` で始まった）から作ります。
-  - `user_preferences.email_moderator_notifications` が真の受け取る人には、新しく作った通知ごとに、同じトランザクションの outbox でメールのジョブ（`notification.moderator_email`、冪等キーは通知の ID）を積みます。
-    ジョブは送る時点で権限と設定を確かめ、通知の種類と通知の画面へのリンクだけを書いたメールを `Mailer` で送ります。`mail = none` ではジョブを積みません。
+  - 受け取る人がその種類をアプリ内でオフにしていれば作りません（下の通知の設定）。メールがオン（既定）の受け取る人には、新しく作った通知ごとに、同じトランザクションの outbox でメールのジョブ（`notification.moderator_email`、冪等キーは通知の ID）を積み、未読を待たずに送ります。
+    ジョブは送る時点で権限と設定とあて先（確認済みで、抑止されていない主のアドレス）を確かめ、通知の種類と通知の画面へのリンクだけを書いたメールを `Mailer` で送ります。`mail = none` ではジョブを積みません。
+- 通知の設定（FR-210、ADR-0109 §2・§3・§6）は、利用者が選んだ（種類のグループ、経路）だけを `notification_settings` に持ち、行が無ければグループの既定に従います。グループと既定、固定の経路はドメインの `notification.Groups` が決めます。
+  - グループは、普段の通知が種類ごと（通話の `voice_room_started`・`voice_room_invited` は `voice` にまとめる）、モデレーター向けが種類ごと、インスタンスからの知らせが `moderation`（`moderation_notice`・`report_resolved`・`appeal_decided`・`relationships_severed`・`custom_emoji_request_decided`）・`service_closure`・`supporter`（`supporter_*`）です。
+  - 既定は、普段の通知がアプリ内オン・メールオフ、モデレーター向けがどちらもオン、`moderation` がアプリ内固定・メールオフ、`service_closure` と `supporter` がどちらも固定です。固定の経路は行を持ちません（CHECK と `Setting.Validate` で拒否）。
+    クライアント API は、権限の無いモデレーター向けの行と、サポーターの機能が無効のときの `supporter` の行を返しません。
+  - 通知を作る projector は、同じトランザクションで受け取る人の設定を読み、その種類のアプリ内がオフなら作りません（Web Push・メールも届かない）。オフにする前の通知は消しません。管理画面の未対応の件数は通報や登録の状態から数えるので変わりません。
+  - 普段の通知と `moderation` は、メールがオンなら作った通知ごとに同じトランザクションでジョブ（`notification.email`、冪等キーは通知の ID、実行は 15 分後）を積みます。
+    ジョブは送る時点で、設定のメールがまだオン、通知が未読（`notification_read_markers` より新しく、消していない）、まだ見える（Web Push と同じ `Listed` と投稿の可視性）、あて先がある（確認済みで抑止されていない主のアドレス）ときだけ、Web Push と同じ文面を件名にしたメールを 1 通送ります。
+  - 配信停止のリンク（ADR-0086 §4）の区分はグループで、使うとそのグループのメールの行を `enabled = false` で書きます。
 - Web Push の購読（FR-206）は、OAuth のグラント（トークン系列。リフレッシュで変わらない）ごとに 1 つです。ブラウザの `PushSubscription` のエンドポイントと鍵（`key_p256dh`・`key_auth` は RFC 8291 の鍵をパディングなしの base64url で）と、送る通知の種類（`push_subscription_alerts`）を持ちます。
   - 登録は、同じグラントの購読と同じエンドポイントの購読を置き換えます（どちらも一意）。同じグラントが同じエンドポイントで種類だけを変えたときは、ID と作成時刻を保ちます。
     行は通知を受け取るアカウント（`account_id`）に結び付けるので、通知の作成のトランザクションの中で、受け取る人のアカウントと種類から購読を引けます。

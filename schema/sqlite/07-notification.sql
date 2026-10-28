@@ -153,6 +153,27 @@ CREATE TABLE push_subscription_alerts (
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;
 
+-- Current value: a local account's choice of a channel of a group of notification types (FR-210,
+-- ADR-0109 §2, §6). A row exists once the user chose; until then the group's default applies
+-- (notification.Groups). Only the channels the user can choose have rows: the instance's notices
+-- are always in the app, and the service closure and supporter emails always sent. The group of
+-- an email is also the category of its unsubscribe link, which turns its email row off.
+CREATE TABLE notification_settings (
+  account_id TEXT NOT NULL,
+  notification_group TEXT NOT NULL CHECK (notification_group IN (
+    'mention', 'follow', 'follow_request', 'follow_accepted', 'boost', 'favourite', 'reaction', 'quote', 'poll_closed',
+    'account_moved', 'voice',
+    'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
+    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group',
+    'moderation'
+  )),
+  channel TEXT NOT NULL CHECK (channel IN ('in_app', 'email')),
+  enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, notification_group, channel),
+  CHECK (notification_group <> 'moderation' OR channel = 'email')
+) STRICT;
+
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.
 CREATE INDEX notifications_source_account_id ON notifications (source_account_id);

@@ -22,7 +22,6 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useDisplaySettings } from "../../../lib/locale";
 import type { Visibility } from "../api/me";
 import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } from "../hooks/languages";
-import { useModeratorEmail } from "../hooks/useModeratorEmail";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
 import { type PreferenceControl, type PreferencesControls, usePreferences } from "../hooks/usePreferences";
@@ -74,7 +73,6 @@ export function PreferencesForm() {
     requireMediaDescription,
     timelineLanguages,
     timelineAutoInsert,
-    emailModeratorNotifications,
     emailSuppression,
   } = usePreferences();
   return (
@@ -140,7 +138,6 @@ export function PreferencesForm() {
         {t("client:settings.timeline_auto_insert.label")}
       </Switch>
       <PushNotifications />
-      <ModeratorNotifications control={emailModeratorNotifications} />
       <EmailDelivery suppression={emailSuppression} />
     </Stack>
   );
@@ -231,37 +228,6 @@ function EmailDelivery({ suppression }: { suppression: PreferencesControls["emai
           </Text>
         )}
       </Callout>
-    </Stack>
-  );
-}
-
-/**
- * The moderator notifications, for a viewer whose roles get them: a switch that also sends them by email
- * (the APG switch pattern), or why they come only in the app when the server sends no email.
- */
-function ModeratorNotifications({ control }: { control: PreferenceControl<boolean> }) {
-  const t = useT();
-  const headingId = useId();
-  const email = useModeratorEmail(control);
-  if (email.status === "hidden") return null;
-  return (
-    <Stack as="section" aria-labelledby={headingId} gap="3">
-      <Heading level={2} id={headingId}>
-        {t("client:settings.moderator_notifications.title")}
-      </Heading>
-      {email.status === "no-email" ? (
-        <Hint>{t("client:settings.moderator_notifications.no_email")}</Hint>
-      ) : (
-        <Switch
-          isSelected={email.control.value}
-          onChange={email.control.onChange}
-          description={t("client:settings.moderator_notifications.email.description")}
-          isInvalid={email.control.error !== undefined}
-          errorMessage={email.control.error}
-        >
-          {t("client:settings.moderator_notifications.email")}
-        </Switch>
-      )}
     </Stack>
   );
 }

@@ -14,8 +14,8 @@ import (
 // implement it and pass testkit.AccountErasureContract.
 type ErasureRepository interface {
 	// EraseNotificationsOf deletes up to limit notifications to or from the account or about its
-	// user, with their dismissals, its read marker and Web Push subscriptions, and up to limit of
-	// each of the exclusions by and of it. It returns the most rows that one kind lost.
+	// user, with their dismissals, its read marker, notification settings, and Web Push
+	// subscriptions, and up to limit of each of the exclusions by and of it. It returns the most rows that one kind lost.
 	EraseNotificationsOf(ctx context.Context, tx uow.Tx, accountID, userID string, limit int) (int64, error)
 	// EraseStatusNotifications deletes the notifications about the statuses, with their
 	// dismissals, and the statuses' rows of notification_deleted_statuses.

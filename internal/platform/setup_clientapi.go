@@ -40,7 +40,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, InstanceThumbnail: a.instanceThumbnail,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, TagSearch: a.TagSearch,
-		Notifications: a.Notifications, Push: a.Push,
+		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,
 		Statuses: a.Content, StatusReader: a.Statuses, Interactions: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
 		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages,
 		Streams: a.Streams, HomeEntries: a.Timeline,
