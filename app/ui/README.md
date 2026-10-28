@@ -357,7 +357,7 @@ string through props or children.
 | `TextAreaAutocomplete` | `Autocomplete` + `TextField` + `TextArea`, `Popover` + `ListBox` | as `TextArea`, plus the completion of the word after a trigger character (below) |
 | `TextFieldAutocomplete` | `Autocomplete` + `TextField` + `Input`, `Popover` + `ListBox` | as `TextField`, plus the same completion on one line (below) |
 | `Checkbox` | `CheckboxField` + `CheckboxButton` | children as the label, `description`, `errorMessage`, `isIndeterminate` |
-| `Switch` | `SwitchField` + `SwitchButton` | children as the label, `description`, `errorMessage` |
+| `Switch` | `SwitchField` + `SwitchButton` | children as the label, `description`, `errorMessage`. It takes effect as soon as it changes: a form saved by a submit button uses `Checkbox` instead (checked by `@my/ui/testing`, below) |
 | `RadioGroup`, `Radio` | `RadioGroup`, `RadioField` + `RadioButton` | `orientation`: `vertical` (default) / `horizontal`; a `description` per `Radio` |
 | `Select`, `SelectItem` | `Select` + `Popover` + `ListBox`, `ListBoxItem` | `items` with a render function, or `SelectItem` children; single selection. `SelectItem`'s `description` adds a line under the label (the option's accessible description) that the closed select does not show. `variant="toolbar"` (with `aria-label` and an `icon`) is a ghost `toolbar`-sized button for a row of tools that shows the chosen option |
 | `ReasonField` | `TextArea` | The reason for an operator's action: three rows and a required character count (`characterLimit`, `formatRemaining`) |
@@ -642,6 +642,11 @@ against viewport breakpoints.
 Each component has Testing Library tests next to it (`src/<Component>.test.tsx`) that find elements by role and drive them with
 `user-event`: keyboard operation and the label / description / error association. They run in jsdom in the `unit` project of
 [vitest.config.ts](vitest.config.ts) (`bun run test:unit`), which `scripts/task.sh ui:unit-test` (part of `scripts/task.sh check`) runs.
+
+`@my/ui/testing` ([src/testing.ts](src/testing.ts)) holds checks for the tests of the screens built with the kit, kept out of the
+main entry: `watchSwitchesInSubmitForms` watches what a test renders, dialogs opened and closed during it included, and its `stop`
+throws when a `role="switch"` was inside a form with a submit button (web-client §21, ADR-0110 §6). app/web's test setup runs it
+around every test.
 
 ## Stories
 

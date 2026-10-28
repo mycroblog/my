@@ -575,6 +575,14 @@
     "defaultMessage": "Profile",
     "description": "Heading and document title of the settings page that edits the user's profile."
   },
+  "settings.badges.title": {
+    "defaultMessage": "Badges and supporter list",
+    "description": "Heading and document title of the settings page that chooses the role badges the profile shows and whether the user is on the supporter list."
+  },
+  "settings.badges.none": {
+    "defaultMessage": "You have no badges to show on your profile. Badges come with the roles the staff gives you.",
+    "description": "Shown in the badges section when none of the user's roles has a badge."
+  },
   "settings.profile.too_long": {
     "defaultMessage": "Use at most {max} characters.",
     "description": "Error of a profile field whose text is longer than its limit. {max} is the limit."
@@ -1257,7 +1265,7 @@
   },
   "settings.profile.badges": {
     "defaultMessage": "Badges",
-    "description": "Heading of the section of the profile settings that chooses which role badges the profile shows (ADR-0071)."
+    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0071)."
   },
   "settings.profile.badges.description": {
     "defaultMessage": "Choose which badges of your roles to show on your profile. A badge stays hidden until you show it, and shows on your profile only.",

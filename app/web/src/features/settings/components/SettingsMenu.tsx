@@ -22,6 +22,7 @@ const pages: readonly {
   invites?: true;
 }[] = [
   { href: "/settings/profile", label: "client:settings.profile.title" },
+  { href: "/settings/badges", label: "client:settings.badges.title" },
   { href: "/settings/preferences", label: "client:settings.preferences.title" },
   { href: "/settings/notifications", label: "client:settings.notifications.title" },
   { href: "/settings/password", label: "client:settings.password.title" },

@@ -59,7 +59,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 ## The list of members
 
 - The instance setting `supporter_list_visibility` ("Server settings"; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
-- The list shows only the subscribers who chose to be listed in their profile settings (nobody is listed by default). It shows the plan name and each person's avatar, display name, and handle, and never amounts, whether the payment is monthly or yearly, dates, or counts.
+- The list shows only the subscribers who chose to be listed on the "Badges and supporter list" page of their settings (nobody is listed by default). It shows the plan name and each person's avatar, display name, and handle, and never amounts, whether the payment is monthly or yearly, dates, or counts.
 - A choice to be listed stays when the subscriber changes plans, and disappears when the subscription ends (the role is removed). Someone who subscribes again starts unlisted.
 - The list page and its API always send `noindex, noarchive`, whatever the search-engine setting (`search_indexing`) says.
 

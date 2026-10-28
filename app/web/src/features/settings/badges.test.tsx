@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The badges of the user's roles on the profile settings page through the whole app (web-client/README.md T4, ADR-0071):
+// The badges of the user's roles on the badges settings page through the whole app (web-client/README.md T4, ADR-0071):
 // MSW plays the server's choices, and the user's switches change them.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -38,11 +38,22 @@ function badgeServer(initial: Schemas["BadgeChoice"][], refuse = false) {
 }
 
 describe("the badges of the profile", () => {
-  test("are not offered to a viewer without a role that has a badge", async () => {
+  test("are on their own page, apart from the profile form and its save button", async () => {
+    badgeServer([{ role_id: staffId, label: "Staff", color: "purple", displayed: true }]);
     await renderApp({ path: "/settings/profile" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Profile" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Badges" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+  });
+
+  test("tell a viewer without a role that has a badge that there is none", async () => {
+    await renderApp({ path: "/settings/badges" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Badges and supporter list" })).toBeInTheDocument();
+    const section = screen.getByRole("region", { name: "Badges" });
+    expect(within(section).getByText(/^You have no badges to show/)).toBeInTheDocument();
+    expect(within(section).queryByRole("switch")).not.toBeInTheDocument();
   });
 
   test("are hidden until switched on, each switch named by its badge", async () => {
@@ -50,7 +61,7 @@ describe("the badges of the profile", () => {
       { role_id: staffId, label: "Staff", color: "purple", displayed: true },
       { role_id: supporterId, label: "サポーター", color: "green", displayed: false },
     ]);
-    const { user } = await renderApp({ path: "/settings/profile" });
+    const { user } = await renderApp({ path: "/settings/badges" });
 
     const section = await screen.findByRole("region", { name: "Badges" });
     const staff = within(section).getByRole("switch", { name: "Staff" });
@@ -79,7 +90,7 @@ describe("the badges of the profile", () => {
 
   test("a change the server refuses is reported under its switch, which goes back", async () => {
     badgeServer([{ role_id: supporterId, label: "Supporter", color: "blue", displayed: false }], true);
-    const { user } = await renderApp({ path: "/settings/profile" });
+    const { user } = await renderApp({ path: "/settings/badges" });
 
     const supporter = within(await screen.findByRole("region", { name: "Badges" })).getByRole("switch", {
       name: "Supporter",

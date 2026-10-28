@@ -162,8 +162,8 @@ describe("the list of the open rooms", () => {
         name: "Followers of the host",
       }),
     );
-    expect(within(dialog).getByRole("switch", { name: "Post about the room" })).toBeChecked();
-    expect(within(dialog).getByRole("switch", { name: "Post about the room" })).toHaveAccessibleDescription(
+    expect(within(dialog).getByRole("checkbox", { name: "Post about the room" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Post about the room" })).toHaveAccessibleDescription(
       "A post for your followers only.",
     );
     const text = within(dialog).getByRole("textbox", { name: "Post text" });
@@ -195,7 +195,7 @@ describe("the list of the open rooms", () => {
         name: "Mutual follows of the host",
       }),
     );
-    expect(within(dialog).queryByRole("switch", { name: "Post about the room" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("checkbox", { name: "Post about the room" })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Start the room" }));
     expect(await within(dialog).findByText("Enter a name of up to 100 characters on one line.")).toBeInTheDocument();
   });
@@ -322,7 +322,7 @@ describe("the page of a room", () => {
     await user.click(await screen.findByRole("button", { name: "Room settings" }));
     const dialog = await screen.findByRole("dialog", { name: "Room settings" });
     expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveValue("Friday night radio");
-    expect(within(dialog).queryByRole("switch", { name: "Post about the room" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("checkbox", { name: "Post about the room" })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("radio", { name: "Everyone who joins" }));
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
