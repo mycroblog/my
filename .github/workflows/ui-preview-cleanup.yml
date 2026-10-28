@@ -1,0 +1,58 @@
+name: UI preview cleanup
+
+# Deletes the Cloudflare Previews pr-<number> of closed and merged pull requests (ADR-0112 §4), once every 24 hours and
+# on demand, with `scripts/ui-preview.sh cleanup`: it lists the Previews of the Worker through the Cloudflare API and
+# asks GitHub for the state of each pull request. A scheduled run and workflow_dispatch both run main's workflow and
+# script in the environment `ui-preview` (deployment branches: main only), which holds the secret CLOUDFLARE_API_TOKEN
+# and the variable CLOUDFLARE_ACCOUNT_ID. It never checks out or downloads anything of a pull request, and the token
+# of GitHub reads pull requests only.
+#
+# The variable UI_PREVIEW_METHOD=versions (version preview aliases instead of Previews, see ui-preview-deploy.yml)
+# makes the cleanup do nothing: an alias cannot be deleted, and the next upload with the same alias replaces it.
+# Run it with the input `dry-run` to list what it would delete without deleting anything.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: List the Previews it would delete without deleting them
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: ui-preview-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ui-preview
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .tool-versions
+      - name: Install wrangler
+        run: scripts/ui-preview.sh install
+      - name: Delete the Previews of closed pull requests
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          UI_PREVIEW_METHOD: ${{ vars.UI_PREVIEW_METHOD }}
+          UI_PREVIEW_WORK: ${{ runner.temp }}/ui-preview
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: scripts/ui-preview.sh cleanup
