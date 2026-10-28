@@ -527,6 +527,65 @@ describe("email suppression", () => {
     expect(within(section).getByText(/ask for the verification email again/)).toBeInTheDocument();
   });
 
+  test("sends the verification email again from the notice, and says so next to the button", async () => {
+    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    let requests = 0;
+    server.use(
+      http.post(`${apiBase}/accounts/email/verification`, () => {
+        requests++;
+        return new HttpResponse(null, { status: 202 });
+      }),
+    );
+    const { user } = await renderApp({ path: "/settings/notifications" });
+
+    const section = await screen.findByRole("region", { name: "Email delivery" });
+    await user.click(within(section).getByRole("button", { name: "Send the verification email" }));
+
+    expect(await within(section).findByText(/We sent a verification email/)).toBeInTheDocument();
+    expect(requests).toBe(1);
+    expect(within(section).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("says when the user may ask again after too many verification emails", async () => {
+    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    server.use(
+      http.post(`${apiBase}/accounts/email/verification`, () =>
+        problem(429, "about:blank", "Too Many Requests", { headers: { "Retry-After": "1800" } }),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/notifications" });
+
+    const section = await screen.findByRole("region", { name: "Email delivery" });
+    await user.click(within(section).getByRole("button", { name: "Send the verification email" }));
+
+    expect(await within(section).findByRole("alert")).toHaveTextContent(
+      /You asked for the verification email too many times\. You can ask again at .+\./,
+    );
+    expect(within(section).queryByText(/We sent a verification email/)).not.toBeInTheDocument();
+  });
+
+  test("removes the notice when the server says the address is verified again", async () => {
+    const preferences = preferencesServer({
+      email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
+    });
+    server.use(
+      http.post(`${apiBase}/accounts/email/verification`, () => {
+        // Verified in another tab meanwhile.
+        server.use(http.get(`${apiBase}/preferences`, () => HttpResponse.json(preferencesFixture)));
+        return problem(409, "/api/v1/problems/email-already-verified", "The email address is already verified.");
+      }),
+    );
+    const { user } = await renderApp({ path: "/settings/notifications" });
+
+    const section = await screen.findByRole("region", { name: "Email delivery" });
+    expect(preferences.current.email_suppression).toBeDefined();
+    await user.click(within(section).getByRole("button", { name: "Send the verification email" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: "Email delivery" })).not.toBeInTheDocument();
+    });
+  });
+
   test("says that notification emails stop after a complaint, without the hard bounce's advice", async () => {
     preferencesServer({ email_suppression: { kind: "complaint", since: "2026-10-10T09:30:00Z" } });
     await renderApp({ path: "/settings/notifications" });

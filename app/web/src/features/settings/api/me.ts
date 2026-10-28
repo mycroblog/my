@@ -103,3 +103,17 @@ export function updateProfileMutation(api: Api) {
     },
   };
 }
+
+/**
+ * Asks for a new verification email to the user's primary address (POST /accounts/email/verification), as the options
+ * of TanStack Query's useMutation. Following its link lifts a hard bounce's suppression (ADR-0086 §5).
+ */
+export function resendVerificationEmailMutation(api: Api) {
+  return {
+    mutationKey: ["post", "/accounts/email/verification"] as const,
+    mutationFn: async (): Promise<void> => {
+      // The middleware throws an ApiError for every error status.
+      await api.fetch.POST("/accounts/email/verification");
+    },
+  };
+}
