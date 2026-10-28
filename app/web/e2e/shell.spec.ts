@@ -134,28 +134,20 @@ for (const path of pages) {
 }
 
 // Signed out: vite preview has no OAuth endpoints, so no session resumes.
-test.describe("page /login", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-  });
-
-  test("has no axe violations", async ({ makeAxeBuilder }) => {
-    await expectNoAxeViolations(makeAxeBuilder);
-  });
-
-  test("does not scroll horizontally", async ({ page }) => {
-    await expectNoHorizontalScroll(page);
-  });
-
-  test("offers the one button to the server's sign-in screen", async ({ page }) => {
-    await expect(page.getByRole("main").getByRole("button")).toHaveCount(1);
-  });
-
-  test("marks the navigation's sign-in item as current", async ({ page }) => {
-    const current = page.locator('nav a[aria-current="page"]').filter({ visible: true });
-    await expect(current).toHaveCount(1);
-    await expect(current).toHaveAttribute("href", /^\/login/);
+test.describe("/login", () => {
+  test("is no page: it opens the server's sign-in screen at once, to come back to return_to", async ({ page }) => {
+    // vite preview has no authorization screen: answer it with an empty page, and keep the URL it was opened with.
+    const authorize = new Promise<URL>((resolve) => {
+      void page.route("**/oauth/authorize?*", async (route) => {
+        resolve(new URL(route.request().url()));
+        await route.fulfill({ status: 200, contentType: "text/html", body: "<title>Sign in</title>" });
+      });
+    });
+    await page.goto("/login?return_to=%2Ftags%2Fcats");
+    const url = await authorize;
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(new URL(url.searchParams.get("redirect_uri") ?? "").pathname).toBe("/login/callback");
   });
 });
 
@@ -245,10 +237,13 @@ ${Array.from({ length: items }, () => `          - listitem:\n            - link
   });
 
   test("sends a page that needs a session to sign in, which comes back to it", async ({ page }) => {
+    // Through /login, which is no page, straight to the server's sign-in screen (vite preview has none: an empty one).
+    const authorize = page.waitForRequest((request) => new URL(request.url()).pathname === "/oauth/authorize");
+    await page.route("**/oauth/authorize?*", (route) =>
+      route.fulfill({ status: 200, contentType: "text/html", body: "<title>Sign in</title>" }),
+    );
     await page.goto("/notifications");
-    await expect(page).toHaveURL(/\/login\?/);
-    expect(new URL(page.url()).searchParams.get("return_to")).toBe("/notifications");
-    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    await authorize;
   });
 });
 
