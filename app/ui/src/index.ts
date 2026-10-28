@@ -128,6 +128,7 @@ export { ProgressMeter, type ProgressMeterProps } from "./ProgressMeter";
 export { Sparkline, type SparklineProps } from "./Sparkline";
 export { AgeBadge, type AgeBadgeProps, type AgeLevel } from "./AgeBadge";
 export { TriageLayout, type TriageLayoutProps } from "./TriageLayout";
+export { SeverityMark, type SeverityMarkProps } from "./SeverityMark";
 export { StatTile, type StatTileChange, StatTileGrid, type StatTileGridProps, type StatTileProps } from "./StatTile";
 export {
   TrendChart,

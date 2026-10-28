@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// An account's admin page below its heading (FR-714, FR-703, FR-713): the account with its state, registration
+// An account's admin page below its heading (FR-714, FR-703, FR-713; screens/moderation-account.md), in @my/ui's
+// TriageLayout: the summary with what its actions take away now as badges, the form of a new action as the decision
+// (A6: a moderator from a report comes to act), then the evidence and the tools. The account with its state, registration
 // (with the invite it signed up with and who created it, ADR-0108 §5) and roles; what its actions take away now; its email address and IP addresses, which a local account shows only
 // when the moderator presses "show" (each time is recorded in the audit log, ADR-0038); whether its user has
 // two-factor authentication, with its removal, which asks first (recorded in the audit log); for manage_login_recovery,
@@ -12,8 +14,10 @@
 // remote account's posts from its server (RefetchStatusesSection).
 import {
   AccountItem,
+  BlockIcon,
   Box,
   Button,
+  CheckIcon,
   Cluster,
   ConfirmDialog,
   DescriptionItem,
@@ -28,8 +32,10 @@ import {
   SectionHeader,
   Spinner,
   Stack,
+  StatusBadge,
   StatusMessage,
   Text,
+  TriageLayout,
 } from "@my/ui";
 import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -70,6 +76,9 @@ import { InviteCreator, inviteCreatorKindLabels } from "./inviteParts";
 import { AccountLabel, AssigneeName } from "./reportParts";
 import { imageSources } from "../../../lib/images";
 
+/** The restrictions that keep the account from signing in or reaching anyone, in the danger tone; the others warn. */
+const severeRestrictions: ReadonlySet<string> = new Set(["login", "federation", "profile_view"]);
+
 export function AccountDetailView({ id }: { id: string }) {
   return (
     <RequirePermission permission="manage_accounts">
@@ -88,65 +97,84 @@ function AccountPage({ id }: { id: string }) {
   const canRefetch = useHasPermission("manage_domains");
   // Recovering a user's sign-in is server administration (ADR-0058).
   const canRecoverSignIn = useHasPermission("manage_login_recovery");
+  const restrictionsId = useId();
   return (
-    <Stack gap="8">
-      <Section surface="card" title={t("client:admin.account.summary.title")}>
-        <AccountSummary account={account} />
-      </Section>
-      <Section surface="card" title={t("client:admin.account.restrictions.title")}>
-        {account.restrictions.length === 0 ? (
-          <p>{t("client:admin.account.restrictions.none")}</p>
-        ) : (
-          <Stack as="ul" marker="discInside" gap="1">
-            {account.restrictions.map((restriction) => (
-              <li key={restriction}>{t(adminAccountRestrictionLabels[restriction])}</li>
-            ))}
+    <TriageLayout
+      summary={
+        <Section surface="card" title={t("client:admin.account.summary.title")}>
+          <AccountSummary account={account} />
+          {/* What the account cannot do now, as badges (ADR-0110 P3). */}
+          <Stack gap="2">
+            <Heading level={3} id={restrictionsId}>
+              {t("client:admin.account.restrictions.title")}
+            </Heading>
+            {account.restrictions.length === 0 ? (
+              <StatusBadge icon={<CheckIcon />} label={t("client:admin.account.restrictions.none")} tone="success" />
+            ) : (
+              <Cluster as="ul" gap="2" aria-labelledby={restrictionsId}>
+                {account.restrictions.map((restriction) => (
+                  <li key={restriction}>
+                    <StatusBadge
+                      icon={<BlockIcon />}
+                      label={t(adminAccountRestrictionLabels[restriction])}
+                      tone={severeRestrictions.has(restriction) ? "danger" : "warning"}
+                    />
+                  </li>
+                ))}
+              </Cluster>
+            )}
           </Stack>
-        )}
-      </Section>
-      {!account.local && account.state !== "deleted" && canRefetch && (
-        <RefetchStatusesSection target={{ kind: "account", id: account.id }} />
-      )}
-      {account.local && canManageRoles && <AccountRoles accountId={account.id} handle={isolate(handle)} />}
-      {account.local && account.email_verified !== undefined && (
-        <EmailSuppressionSection id={account.id} suppression={account.email_suppression} handle={isolate(handle)} />
-      )}
-      {account.local && account.two_factor_enabled !== undefined && (
-        <TwoFactorSection id={account.id} enabled={account.two_factor_enabled} handle={isolate(handle)} />
-      )}
-      {account.local && account.two_factor_enabled !== undefined && canRecoverSignIn && (
-        <PasswordResetSection id={account.id} handle={isolate(handle)} />
-      )}
-      {account.local && <PrivateDataSection id={account.id} />}
-      <ActionHistory account={account} />
-      <Section surface="card" title={t("client:admin.account.reports.title")}>
-        <AccountReports reports={account.reports} />
-      </Section>
-      <Section surface="card" title={t("client:admin.account.action.title")}>
-        <StatusMessage tone="success">{issued}</StatusMessage>
-        {account.state === "deleted" ? (
-          <p>{t("client:admin.account.action.deleted")}</p>
-        ) : (
-          <>
-            <Hint>{t("client:admin.account.action.posts")}</Hint>
-            <AccountActionForm
-              target={{
-                accountId: account.id,
-                remote: !account.local,
-                statusIds: [],
-                category: "other",
-                hasEmail: account.email_verified !== undefined,
-              }}
-              handle={handle}
-              posts={[]}
-              onIssued={(action) => {
-                setIssued(t("client:admin.account.action.issued", { kind: t(accountActionKindLabels[action.kind]) }));
-              }}
-            />
-          </>
-        )}
-      </Section>
-    </Stack>
+        </Section>
+      }
+      decision={
+        <Section surface="card" title={t("client:admin.account.action.title")}>
+          <StatusMessage tone="success">{issued}</StatusMessage>
+          {account.state === "deleted" ? (
+            <p>{t("client:admin.account.action.deleted")}</p>
+          ) : (
+            <>
+              <Hint>{t("client:admin.account.action.posts")}</Hint>
+              <AccountActionForm
+                target={{
+                  accountId: account.id,
+                  remote: !account.local,
+                  statusIds: [],
+                  category: "other",
+                  hasEmail: account.email_verified !== undefined,
+                }}
+                handle={handle}
+                posts={[]}
+                onIssued={(action) => {
+                  setIssued(t("client:admin.account.action.issued", { kind: t(accountActionKindLabels[action.kind]) }));
+                }}
+              />
+            </>
+          )}
+        </Section>
+      }
+      evidence={
+        <>
+          <ActionHistory account={account} />
+          <Section surface="card" title={t("client:admin.account.reports.title")}>
+            <AccountReports reports={account.reports} />
+          </Section>
+          {account.local && canManageRoles && <AccountRoles accountId={account.id} handle={isolate(handle)} />}
+          {account.local && account.email_verified !== undefined && (
+            <EmailSuppressionSection id={account.id} suppression={account.email_suppression} handle={isolate(handle)} />
+          )}
+          {account.local && account.two_factor_enabled !== undefined && (
+            <TwoFactorSection id={account.id} enabled={account.two_factor_enabled} handle={isolate(handle)} />
+          )}
+          {account.local && account.two_factor_enabled !== undefined && canRecoverSignIn && (
+            <PasswordResetSection id={account.id} handle={isolate(handle)} />
+          )}
+          {account.local && <PrivateDataSection id={account.id} />}
+          {!account.local && account.state !== "deleted" && canRefetch && (
+            <RefetchStatusesSection target={{ kind: "account", id: account.id }} />
+          )}
+        </>
+      }
+    />
   );
 }
 

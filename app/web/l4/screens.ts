@@ -99,6 +99,8 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
     },
   },
   "moderation-report": { start: "/moderation/reports", persona: "marco" },
+  // quickdeals has a warning from marco (demo/scenario.ts), which the lift task lifts.
+  "moderation-account": { start: "/moderation/accounts", persona: "marco" },
 };
 
 /** The setup of `screen`: its entry, or a start at `/home` as yuki. */

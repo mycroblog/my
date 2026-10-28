@@ -42,6 +42,7 @@
 - [管理のトップ（`/admin`）](admin.md)
 - [サーバーの設定（`/admin/settings`）](admin-settings.md)
 - [モデレーションのトップ（`/moderation`）](moderation.md)
+- [アカウントの管理（`/moderation/accounts/{id}`）](moderation-account.md)
 - [通報の詳細（`/moderation/reports/{id}`）](moderation-report.md)
 - [通報の一覧（`/moderation/reports`）](moderation-reports.md)
 - [ランディングページ（`/`、サインインしていない人）](landing.md)
