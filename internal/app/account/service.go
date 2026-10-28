@@ -97,7 +97,8 @@ type preparedKey struct {
 }
 
 // PrepareLocalAccount validates in and generates everything a new local account needs.
-// It writes nothing.
+// It writes nothing. The first profile revision is discoverable: a new account appears in the
+// account search and the suggestions until its owner turns that off (FR-307).
 func (s *Service) PrepareLocalAccount(ctx context.Context, in LocalAccountInput) (*PreparedLocalAccount, error) {
 	if in.UserID == "" {
 		return nil, errors.New("account: a local account needs a user")
@@ -121,13 +122,14 @@ func (s *Service) PrepareLocalAccount(ctx context.Context, in LocalAccountInput)
 			UsernameNormalized: account.NormalizeUsername(in.Username),
 		},
 		Profile: account.ProfileRevision{
-			ID:          s.d.IDs.NewID(),
-			AccountID:   a.ID,
-			Seq:         1,
-			DisplayName: in.DisplayName,
-			Indexable:   in.Indexable,
-			RevisedAt:   now,
-			Source:      &account.ProfileSource{},
+			ID:           s.d.IDs.NewID(),
+			AccountID:    a.ID,
+			Seq:          1,
+			DisplayName:  in.DisplayName,
+			Discoverable: true,
+			Indexable:    in.Indexable,
+			RevisedAt:    now,
+			Source:       &account.ProfileSource{},
 		},
 		keys: keys,
 	}, nil

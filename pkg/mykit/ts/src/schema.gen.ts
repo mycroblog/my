@@ -1518,9 +1518,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Search accounts by prefix
+         * Search accounts by name
          * @description The accounts whose username, `username@domain`, or a word of the display name starts
-         *     with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+         *     with `q`, and the accounts of this server whose username or display name contains `q`,
+         *     for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
          *     ADR-0092). The search covers the local accounts and the remote accounts that the
          *     instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
          *     (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -1530,13 +1531,43 @@ export interface paths {
          *     word, split at white space and without its `:shortcode:`s, so a display name in a script
          *     without spaces (Chinese, Japanese) matches from its start.
          *
+         *     An account of this server that is not `discoverable` is found only by its whole username,
+         *     unless the viewer follows it; a remote account's `discoverable` does not matter.
          *     Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
          *     deleted, or suspended, and accounts of a suspended domain are left out. An account's
          *     `indexable` does not matter. The results come in this order: an exact match of the
-         *     username or `username@domain`, then the accounts that the viewer follows, then the local
-         *     accounts, then those with more followers. There is no paging.
+         *     username or `username@domain`, then the matches from the start of a name, then the
+         *     accounts that the viewer follows, then the local accounts, then those with more
+         *     followers. There is no paging.
          */
         get: operations["searchAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggest accounts to follow
+         * @description Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+         *     administrators feature (the instance setting `featured_accounts`), in the order they gave,
+         *     then the accounts that published a public or local post in the last 30 days, the one that
+         *     posted last first. Each account comes once.
+         *
+         *     Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+         *     it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+         *     deactivated, deleted, or suspended are left out. There is no paging.
+         */
+        get: operations["listAccountSuggestions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7237,6 +7268,16 @@ export interface components {
              */
             remote_fetch_started?: boolean;
         };
+        /** @description An account suggested to follow, with why it is suggested. */
+        AccountSuggestion: {
+            /**
+             * @description Why the account is suggested: `featured` when the administrators feature it,
+             *     `recently_active` when it posted recently.
+             * @enum {string}
+             */
+            source: "featured" | "recently_active";
+            account: components["schemas"]["Account"];
+        };
         /** @description The account to add as an alias. */
         AddAccountAliasRequest: {
             /**
@@ -9855,7 +9896,11 @@ export interface components {
         };
         /** @description The authenticated user's own account, with what only its owner sees. */
         CredentialAccount: components["schemas"]["Account"] & {
-            /** @description Whether the account may be suggested to others and listed in directories. */
+            /**
+             * @description Whether the account is suggested to others and found by the middle of its names in
+             *     the account search (FR-307, FR-308); when `false`, the search finds it only by its
+             *     whole username. New accounts are discoverable.
+             */
             discoverable: boolean;
             /**
              * @description Whether the account's profile and public posts may be indexed for search: by this
@@ -10921,17 +10966,18 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "public_operators";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "public_operators" | "featured_accounts";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
          *     `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
          *     the username of a local account, or empty for none. `email`: an email address such as
          *     `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-         *     none.
+         *     none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+         *     a leading `@` are accepted), in order, or empty for none.
          * @enum {string}
          */
-        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri";
+        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts";
         /**
          * @description The key of an instance text: the name (one line), the short and full descriptions,
          *     the terms of service and the privacy policy (Markdown), the alternative texts of the
@@ -13166,7 +13212,11 @@ export interface components {
             locked?: boolean;
             /** @description Whether the account is automated. */
             bot?: boolean;
-            /** @description Whether the account may be suggested to others and listed in directories. */
+            /**
+             * @description Whether the account is suggested to others and found by the middle of its names in the
+             *     account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+             *     username. New accounts are discoverable.
+             */
             discoverable?: boolean;
             /** @description Whether the account's profile and public posts may be indexed for search (FR-412). */
             indexable?: boolean;
@@ -15985,6 +16035,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Account"][];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountSuggestions: {
+        parameters: {
+            query?: {
+                /** @description The maximum number of suggestions. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The suggestions, featured accounts first. */
+            200: {
+                headers: {
+                    /** @description `no-store`: the suggestions depend on the viewer and change as it follows. */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSuggestion"][];
                 };
             };
             default: components["responses"]["Problem"];
