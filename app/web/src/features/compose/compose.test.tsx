@@ -53,6 +53,12 @@ async function findToast(text: string) {
   return within(await screen.findByRole("region", { name: "Messages" })).findByText(text);
 }
 
+/** Whether the toast of `message` (its text) carries a celebrated moment (web-client §21.5) on its icon. */
+function isCelebrating(message: HTMLElement): boolean {
+  // The toast's icon is decorative and has no role.
+  return message.closest("li")?.querySelector("[data-celebrating]") != null;
+}
+
 /** Opens the sheet from the navigation's button and returns it. */
 async function openSheet(user: Awaited<ReturnType<typeof renderApp>>["user"]) {
   await user.click((await screen.findAllByRole("button", { name: "Write a post" }))[0] as HTMLElement);
@@ -123,6 +129,29 @@ describe("the new-post form", () => {
     const next = await openSheet(user);
     expect(within(next).getByRole("textbox", { name: "Your post" })).toHaveValue("");
     expect(within(next).getByRole("button", { name: "Visibility: Followers" })).toBeInTheDocument();
+  });
+
+  test("celebrates the account's first post in its toast, and only the first (web-client §21.5)", async () => {
+    signedIn();
+    server.use(
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({ ...viewerFixture, statuses_count: 0 }),
+      ),
+    );
+    const { user } = await renderApp();
+
+    let sheet = await openSheet(user);
+    await user.type(await within(sheet).findByRole("textbox", { name: "Your post" }), "My first post");
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    const first = await findToast("Posted your first post. Welcome.");
+    // The toast's icon carries the moment for a little while.
+    expect(isCelebrating(first)).toBe(true);
+
+    sheet = await openSheet(user);
+    await user.type(within(sheet).getByRole("textbox", { name: "Your post" }), "And another");
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+    const second = await findToast("Posted.");
+    expect(isCelebrating(second)).toBe(false);
   });
 
   test("puts images, the content warning, visibility and language in one row of tools under the text, each with its current value", async () => {

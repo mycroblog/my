@@ -61,6 +61,7 @@ const credentials: Schemas["CredentialAccount"] = {
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: ["start_voice_rooms"],
+  statuses_count: 12,
 };
 
 /** The instance with voice chat on, where only the users with start_voice_rooms open rooms. */

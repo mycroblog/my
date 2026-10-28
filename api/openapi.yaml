@@ -14814,6 +14814,7 @@ components:
             - source
             - posting
             - permissions
+            - statuses_count
           properties:
             discoverable:
               description: Whether the account may be suggested to others and listed in directories.
@@ -14834,6 +14835,14 @@ components:
               $ref: '#/components/schemas/AccountSource'
             posting:
               $ref: '#/components/schemas/PostingLimits'
+            statuses_count:
+              description: |
+                The number of the account's own posts that are not deleted, of every visibility.
+                Only the owner sees it; other accounts do not carry it. A client that creates a post
+                adds one to it, so a count of 1 after the create is the account's first post.
+              type: integer
+              format: int64
+              minimum: 0
             permissions:
               description: |
                 The permissions that the user's roles grant, which the admin operations need; empty

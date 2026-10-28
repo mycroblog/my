@@ -7308,6 +7308,11 @@ type CredentialAccount struct {
 	// Source The profile as the user typed it, for editing.
 	Source AccountSource `json:"source"`
 
+	// StatusesCount The number of the account's own posts that are not deleted, of every visibility.
+	// Only the owner sees it; other accounts do not carry it. A client that creates a post
+	// adds one to it, so a count of 1 after the create is the account's first post.
+	StatusesCount int64 `json:"statuses_count"`
+
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
 
