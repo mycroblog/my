@@ -5,7 +5,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentType } from "react";
 import { expect } from "storybook/test";
-import { AccountRowSkeleton, NotificationRowSkeleton, PostSkeleton, type SkeletonRowProps } from "./SkeletonRows";
+import {
+  AccountRowSkeleton,
+  FactsCardSkeleton,
+  NotificationRowSkeleton,
+  PostSkeleton,
+  type SkeletonRowProps,
+  StageSkeleton,
+  VoiceRoomCardSkeleton,
+} from "./SkeletonRows";
 import { VisuallyHidden } from "./VisuallyHidden";
 
 const meta = {
@@ -18,9 +26,21 @@ type Story = StoryObj<typeof meta>;
 
 const keys = ["first", "second", "third"] as const;
 
-type LoadingListProps = { title: string; label: string; Row: ComponentType<SkeletonRowProps>; divided?: boolean };
+type LoadingListProps = {
+  title: string;
+  label: string;
+  Row: ComponentType<SkeletonRowProps>;
+  /** How the rows sit: divided by borders (account lists), apart (cards), or flush (posts, notifications). */
+  layout?: "divided" | "gapped" | "flush";
+};
 
-function LoadingList({ title, label, Row, divided = false }: LoadingListProps) {
+const layouts = {
+  divided: "flex flex-col divide-y divide-border border-y border-border",
+  gapped: "flex flex-col gap-3",
+  flush: "flex flex-col",
+} as const;
+
+function LoadingList({ title, label, Row, layout = "flush" }: LoadingListProps) {
   const id = `skeleton-rows-${title.toLowerCase()}`;
   return (
     <section aria-labelledby={id} aria-busy="true" className="flex flex-col gap-2">
@@ -28,7 +48,7 @@ function LoadingList({ title, label, Row, divided = false }: LoadingListProps) {
         {title}
       </h2>
       <VisuallyHidden>{label}</VisuallyHidden>
-      <div className={divided ? "flex flex-col divide-y divide-border border-y border-border" : "flex flex-col"}>
+      <div className={layouts[layout]}>
         {keys.map((key) => (
           <Row key={key} />
         ))}
@@ -60,7 +80,7 @@ export const Posts: Story = {
 };
 
 export const Accounts: Story = {
-  render: () => <LoadingList title="Followers" label="Loading followers" Row={AccountRowSkeleton} divided />,
+  render: () => <LoadingList title="Followers" label="Loading followers" Row={AccountRowSkeleton} layout="divided" />,
   play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByRole("region", { name: "Followers" })).toHaveAttribute("aria-busy", "true");
     await expectLoadingRegion(canvasElement, "Followers", "Loading followers");
@@ -72,5 +92,29 @@ export const Notifications: Story = {
   play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByRole("region", { name: "Notifications" })).toHaveAttribute("aria-busy", "true");
     await expectLoadingRegion(canvasElement, "Notifications", "Loading notifications");
+  },
+};
+
+export const VoiceRooms: Story = {
+  render: () => <LoadingList title="Rooms" label="Loading rooms" Row={VoiceRoomCardSkeleton} layout="gapped" />,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByRole("region", { name: "Rooms" })).toHaveAttribute("aria-busy", "true");
+    await expectLoadingRegion(canvasElement, "Rooms", "Loading rooms");
+  },
+};
+
+export const FactsCards: Story = {
+  render: () => <LoadingList title="History" label="Loading history" Row={FactsCardSkeleton} layout="gapped" />,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByRole("region", { name: "History" })).toHaveAttribute("aria-busy", "true");
+    await expectLoadingRegion(canvasElement, "History", "Loading history");
+  },
+};
+
+export const Stage: Story = {
+  render: () => <LoadingList title="Room" label="Loading the room" Row={StageSkeleton} />,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByRole("region", { name: "Room" })).toHaveAttribute("aria-busy", "true");
+    await expectLoadingRegion(canvasElement, "Room", "Loading the room");
   },
 };

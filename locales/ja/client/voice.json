@@ -21,7 +21,7 @@
   },
   "voice.list.loading": {
     "defaultMessage": "ルームを読み込んでいます",
-    "description": "Accessible name of the spinner while the voice chat rooms load."
+    "description": "Visually hidden name of the busy list while the voice chat rooms or the voice chat history load."
   },
   "voice.list.failed": {
     "defaultMessage": "ルームを読み込めませんでした",
@@ -325,7 +325,7 @@
   },
   "voice.room.loading": {
     "defaultMessage": "ルームを読み込んでいます",
-    "description": "Accessible name of the spinner while a voice chat room loads."
+    "description": "Visually hidden name of the busy page while a voice chat room loads."
   },
   "voice.history.title": {
     "defaultMessage": "通話の履歴",
