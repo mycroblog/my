@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Checks the build tags of the server (docs/reference/build-tags.md): the tags that leave adapters out (NFR-PORT-4,
-# ADR-0010, ADR-0015 Build matrix) and the test-only tag e2e_fakes, which adds the fakes (ADR-0117 §2). For each
+# ADR-0010, ADR-0015 Build matrix) and the test-only tag e2e_fakes, which adds the fakes (ADR-0117 §2, ADR-0118 §1). For each
 # representative set of tags, it builds every package with CGO_ENABLED=0, runs go vet, and fails when cmd/my still
 # depends on a package that a tag of the set leaves out. It fails as well when cmd/my without e2e_fakes (the default
-# build with no tags among them) depends on a fake: a fake that records payments as paid must never reach a released
+# build with no tags among them) depends on a fake: a fake that records payments as paid or accepts any push message must never reach a released
 # binary. The set with e2e_fakes also runs the tests that only that build has (named *E2EFakes*).
 #
 #   scripts/go-build-tags.sh                  every set below
@@ -63,6 +63,7 @@ excluded_packages() {
 # fake_packages prints the packages of the fakes that only a build with e2e_fakes may link into cmd/my.
 fake_packages() {
   echo "github.com/mycroblog/my/internal/adapter/payment/fake"
+  echo "github.com/mycroblog/my/internal/adapter/pushservice/fake"
 }
 
 # check_deps SET reads the packages that cmd/my built with SET depends on from stdin and fails, printing why, when one
@@ -116,7 +117,7 @@ for set in "${sets[@]}"; do
   go vet -tags "$set" ./...
   go list -deps -tags "$set" ./cmd/my | check_deps "$set" || status=1
   if [[ ",$set," == *,e2e_fakes,* ]]; then
-    mapfile -t pkgs < <(grep -rlE '^//go:build .*e2e_fakes' --include='*_test.go' internal | xargs -n1 dirname | sort -u | sed 's|^|./|')
+    mapfile -t pkgs < <(grep -rlE '^//go:build .*e2e_fakes' --include='*_test.go' internal cmd | xargs -n1 dirname | sort -u | sed 's|^|./|')
     go test -tags "$set" -run E2EFakes "${pkgs[@]}"
   fi
 done

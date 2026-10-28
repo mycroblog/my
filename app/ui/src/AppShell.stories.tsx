@@ -14,6 +14,7 @@ import {
   AppNavMenuLink,
   AppNavMenuList,
   AppNavMenuSection,
+  AppNavTopAction,
   type AppNavBadge,
 } from "./AppNavigation";
 import { AppShell, type AppShellProps, AsidePanel, ShellDock } from "./AppShell";
@@ -86,14 +87,26 @@ function Brand({ name }: { name: string }) {
   );
 }
 
-/** The navigation of people who are not signed in: a light top bar with the server's pages and the way in. */
-function SignedOutNav() {
+/**
+ * The navigation of people who are not signed in: a light top bar with the server's pages and the way in. Below lg
+ * the pages are behind the menu button and the call to action stays in the bar.
+ */
+function SignedOutNav({ menuOpen = false }: { menuOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(menuOpen);
   return (
-    <AppNav label="Main" placement="top" header={<Brand name="my example" />}>
-      <AppNavItem href="#about" icon={<HomeIcon />} label="About this server" current />
-      <AppNavItem href="#rules" icon={<SearchIcon />} label="Rules" />
+    <AppNav
+      label="Main"
+      placement="top"
+      header={<Brand name="my example" />}
+      topMenu={{ label: "Menu", isOpen, onOpenChange: setIsOpen }}
+      topAction={<AppNavTopAction href="#signup" label="Create an account" />}
+    >
+      <AppNavItem href="#local" icon={<LocalIcon />} label="Local" current />
+      <AppNavItem href="#federated" icon={<FederatedIcon />} label="Federated" />
+      <AppNavItem href="#search" icon={<SearchIcon />} label="Search" />
+      <AppNavItem href="#about" icon={<HomeIcon />} label="About" />
       <AppNavItem href="#login" icon={<ProfileIcon />} label="Log in" />
-      <AppNavItem href="#signup" icon={<PlusIcon />} label="Create an account" prominent />
+      <AppNavItem href="#signup" icon={<PlusIcon />} label="Create an account" shows="rail" prominent />
     </AppNav>
   );
 }
@@ -233,6 +246,18 @@ const aside = (
       </Link>
     </Text>
   </AsidePanel>
+);
+
+/** The signed-out pages' footer: the server's information page and its documents. */
+const signedOutFooter = (
+  <Text as="p" size="sm">
+    <Link href="#about" variant="standalone">
+      More about this server
+    </Link>{" "}
+    <Link href="#terms" variant="standalone">
+      Terms of service
+    </Link>
+  </Text>
 );
 
 const meta = {
@@ -403,21 +428,83 @@ export const SkipLinkFocused: Story = {
   },
 };
 
-/** Signed out: the top bar in place of the rail and the tab bar, on a tablet. */
+/** Signed out: the top bar in place of the rail and the tab bar; on a laptop (lg) every item in its row. */
+export const SignedOutLaptop: Story = {
+  globals: atViewport("laptop"),
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", footer: signedOutFooter },
+  play: async ({ canvas }) => {
+    const nav = canvas.getByRole("navigation", { name: "Main" });
+    await expect(within(nav).getByRole("link", { name: "Local" })).toHaveAttribute("aria-current", "page");
+    await expect(within(nav).getAllByRole("link", { name: "Create an account" })).toHaveLength(1);
+    await expect(within(nav).queryByRole("button", { name: "Menu" })).toBeNull();
+  },
+};
+
+/** Signed out on a tablet: below lg the items are behind the menu button, and the call to action stays in the bar. */
 export const SignedOutTablet: Story = {
   globals: atViewport("tablet"),
   args: { navigation: <SignedOutNav />, navigationPlacement: "top" },
   play: async ({ canvas }) => {
     const nav = canvas.getByRole("navigation", { name: "Main" });
-    await expect(within(nav).getByRole("link", { name: "About this server" })).toHaveAttribute("aria-current", "page");
+    await expect(within(nav).getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "false");
     await expect(within(nav).getByRole("link", { name: "Create an account" })).toBeVisible();
+    await expect(within(nav).queryByRole("link", { name: "Local" })).toBeNull();
   },
 };
 
-/** Signed out on a phone: the links wrap under the brand instead of scrolling sideways. */
+/** Signed out on a phone: the brand, the call to action and the menu button in one row; only the name may be cut. */
 export const SignedOutPhone: Story = {
   globals: atViewport("phone"),
-  args: { navigation: <SignedOutNav />, navigationPlacement: "top" },
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", footer: signedOutFooter },
+  play: async ({ canvas }) => {
+    const nav = canvas.getByRole("navigation", { name: "Main" });
+    const action = within(nav).getByRole("link", { name: "Create an account" });
+    const menu = within(nav).getByRole("button", { name: "Menu" });
+    // One row: the action and the button are side by side, and the bar is no wider than the screen.
+    await expect(Math.abs(action.getBoundingClientRect().top - menu.getBoundingClientRect().top)).toBeLessThan(8);
+    await expect(nav.scrollWidth).toBeLessThanOrEqual(nav.clientWidth);
+  },
+};
+
+/**
+ * Signed out on a phone with the menu open: the items in rows under the bar. The button names the list it shows
+ * (`aria-expanded`, `aria-controls`); Tab goes on into the items, and Escape closes them and returns focus to it.
+ */
+export const SignedOutPhoneMenuOpen: Story = {
+  globals: atViewport("phone"),
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", footer: signedOutFooter },
+  play: async ({ canvas }) => {
+    const nav = canvas.getByRole("navigation", { name: "Main" });
+    const menu = within(nav).getByRole("button", { name: "Menu" });
+    await userEvent.click(menu);
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    const list = within(nav).getByRole("list");
+    await expect(menu).toHaveAttribute("aria-controls", list.id);
+    await expect(within(list).getByRole("link", { name: "Local" })).toBeVisible();
+    await userEvent.tab();
+    await expect(within(list).getByRole("link", { name: "Local" })).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(menu).toHaveFocus();
+    await userEvent.click(menu);
+  },
+};
+
+/**
+ * Signed out on a desktop: one column under the top bar, ending with the footer. The top bar's pages have no third
+ * column, so the shell leaves out the `aside` it is given.
+ */
+export const SignedOutDesktop: Story = {
+  globals: atViewport("desktop"),
+  args: { navigation: <SignedOutNav />, navigationPlacement: "top", aside, footer: signedOutFooter },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole("complementary")).toBeNull();
+    const footer = canvas.getByRole("contentinfo");
+    await expect(within(footer).getByRole("link", { name: "More about this server" })).toBeVisible();
+    // The footer ends the page: nothing, and no blank strip, comes after it.
+    const { bottom } = footer.getBoundingClientRect();
+    await expect(bottom + window.scrollY).toBeCloseTo(document.documentElement.scrollHeight, 0);
+  },
 };
 
 /** The app's offline bar before the shell, as the app's layout renders it. */
