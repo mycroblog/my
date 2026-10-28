@@ -1,4 +1,4 @@
-You can export your data from 2027-04-30 15:00 (UTC) until Example Social, a week from now.
+You can export your data from Example Social until 2027-04-30 15:00 (UTC), a week from now.
 
 After that, the administrators delete the server's data, and it cannot be recovered.
 

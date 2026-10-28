@@ -1,4 +1,4 @@
-2027-03-31 15:00 (UTC) closes within a day, on Example Social. This is the last reminder before the closing date.
+Example Social closes within a day, on 2027-03-31 15:00 (UTC). This is the last reminder before the closing date.
 
 You can sign in and export your data until 2027-04-30 15:00 (UTC). After that, the administrators delete the server's data.
 

@@ -1,4 +1,4 @@
-The administrators of 2027-03-31 15:00 (UTC) announced that the server closes on Example Social. From then on, you can only sign in to export your data.
+The administrators of Example Social announced that the server closes on 2027-03-31 15:00 (UTC). From then on, you can only sign in to export your data.
 
 You can sign in and export your data until 2027-04-30 15:00 (UTC). After that, the administrators delete the server's data.
 

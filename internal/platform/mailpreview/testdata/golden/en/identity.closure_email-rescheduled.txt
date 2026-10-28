@@ -1,4 +1,4 @@
-The administrators of 2027-03-31 15:00 (UTC) changed the dates of its closure: the server now closes on Example Social.
+The administrators of Example Social changed the dates of its closure: the server now closes on 2027-03-31 15:00 (UTC).
 
 You can sign in and export your data until 2027-04-30 15:00 (UTC). After that, the administrators delete the server's data.
 

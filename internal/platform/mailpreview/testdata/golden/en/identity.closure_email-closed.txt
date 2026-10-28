@@ -1,4 +1,4 @@
-2027-04-30 15:00 (UTC) has closed. Until Example Social, you can still sign in and export your data; nothing else works any more.
+Example Social has closed. Until 2027-04-30 15:00 (UTC), you can still sign in and export your data; nothing else works any more.
 
 After that, the administrators delete the server's data, and it cannot be recovered.
 
