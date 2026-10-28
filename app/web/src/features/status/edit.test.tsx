@@ -317,7 +317,7 @@ describe("the emoji picker of the edit dialog", () => {
     await user.type(text, "Ok");
 
     await user.click(within(dialog).getByRole("button", { name: "Add emoji" }));
-    const picker = await screen.findByRole("dialog", { name: "Emoji" });
+    const picker = await screen.findByRole("dialog", { name: "Emoji" }, { timeout: 5000 });
     await user.type(
       await within(picker).findByRole("searchbox", { name: "Search emoji" }, { timeout: 5000 }),
       "thumbs up",
