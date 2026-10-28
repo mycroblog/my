@@ -2238,5 +2238,61 @@
   "settings.menu.group.account": {
     "defaultMessage": "アカウントとデータ",
     "description": "Heading of a group of the settings menu: the account's status, aliases and move, import and export, deleting old posts, the archive and deleting the account."
+  },
+  "settings.profile.preview": {
+    "defaultMessage": "プレビュー",
+    "description": "Heading of the section of the profile settings that shows the profile as it is being edited."
+  },
+  "settings.profile.preview.description": {
+    "defaultMessage": "保存した後に、ほかの人から見えるプロフィールです。リンクとメンションは保存したときに作られます。",
+    "description": "Description under the preview of the profile settings."
+  },
+  "settings.profile.identity": {
+    "defaultMessage": "名前と自己紹介",
+    "description": "Heading of the section of the profile settings with the display name and the bio (settings.profile.display_name, settings.profile.note)."
+  },
+  "settings.profile.account_kind": {
+    "defaultMessage": "フォローとボット",
+    "description": "Heading of the section of the profile settings with whether follow requests need approval and whether the account is a bot."
+  },
+  "settings.profile.save_failed": {
+    "defaultMessage": "プロフィールを保存できませんでした：{reason}",
+    "description": "Error beside the save button of the profile settings when the server refused the save. {reason} is the server's reason."
+  },
+  "settings.auto_delete.policy": {
+    "defaultMessage": "自動削除",
+    "description": "Heading of the section of the auto-delete settings with turning it on and the age of the posts it deletes."
+  },
+  "settings.auto_delete.reactions": {
+    "defaultMessage": "反応の多い投稿",
+    "description": "Heading of the section of the auto-delete settings with the boost and favourite counts above which posts are kept."
+  },
+  "settings.security.title": {
+    "defaultMessage": "セキュリティ",
+    "description": "Heading of the section of the settings page that sums up how the account signs in and is protected."
+  },
+  "settings.security.description": {
+    "defaultMessage": "ログインの方法と、アカウントを守る設定です。開くと変えられます。",
+    "description": "Description under the security section of the settings page."
+  },
+  "settings.security.count": {
+    "defaultMessage": "{count, plural, other {# 件}}",
+    "description": "Badge of a row of the security section of the settings page: how many passkeys or linked accounts the user has (at least one)."
+  },
+  "settings.security.none": {
+    "defaultMessage": "なし",
+    "description": "Badge of a row of the security section of the settings page: the user has no password, passkey or linked account."
+  },
+  "settings.security.password.set": {
+    "defaultMessage": "設定済み",
+    "description": "Badge of the password row of the security section of the settings page: the user has a password."
+  },
+  "settings.security.on": {
+    "defaultMessage": "オン",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is on."
+  },
+  "settings.security.off": {
+    "defaultMessage": "オフ",
+    "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
   }
 }

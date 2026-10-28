@@ -8,6 +8,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 import { autoDeletePolicyFixture } from "./test/handlers";
 
 beforeEach(() => {
@@ -37,6 +38,24 @@ describe("automatic deletion of old posts", () => {
     await renderApp({ path: "/settings" });
     const link = await screen.findByRole("link", { name: "Delete old posts" });
     expect(link).toHaveAttribute("href", "/settings/auto-delete");
+  });
+
+  test("the sections follow the screen's requirements, and the save button ends the form", async () => {
+    autoDeleteServer(autoDeletePolicyFixture);
+    await renderApp({ path: "/settings/auto-delete" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Delete old posts" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-auto-delete.md §3
+    expect(sectionHeadings()).toEqual([
+      "Automatic deletion",
+      "Keep these posts",
+      "Keep posts with these visibilities",
+      "Posts with many reactions",
+    ]);
+    expect(screen.getByRole("group", { name: "Keep these posts" })).toHaveAccessibleDescription(
+      "Posts that match any checked item are never deleted automatically.",
+    );
+    // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 
   test("shows the saved policy and saves the edited one as a whole", async () => {
@@ -93,7 +112,10 @@ describe("automatic deletion of old posts", () => {
     await user.click(await screen.findByRole("checkbox", { name: /Delete old posts automatically/ }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText(/^The settings could not be saved: /)).toHaveAttribute("role", "alert");
+    expect(await screen.findByText(/^The settings could not be saved: /)).toBeVisible();
+    expect(
+      screen.getAllByRole("alert").filter((alert) => alert.textContent.startsWith("The settings could not be saved: ")),
+    ).toHaveLength(1);
     expect(screen.getByRole("checkbox", { name: /Delete old posts automatically/ })).toBeChecked();
   });
 
