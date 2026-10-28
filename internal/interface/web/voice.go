@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // This file serves the shell of the page of a voice chat room (/voice/{room_id}, ADR-0100 §9).
@@ -97,7 +99,7 @@ func (h *Handler) renderVoiceRoom(ctx context.Context, roomID string) (document,
 	if s.Ended {
 		meta.Title, state = l.ServerPreviewVoiceRoomEnded(s.Name), "ended"
 	} else {
-		meta.Title = l.ServerPreviewVoiceRoomOpen(s.HostName, s.Name)
+		meta.Title = l.ServerPreviewVoiceRoomOpen(i18n.ServerPreviewVoiceRoomOpenArgs{Host: s.HostName, Room: s.Name})
 		meta.Description = description(s.Description)
 	}
 	img, err := h.instanceImage(ctx, lang)

@@ -347,7 +347,7 @@ func (p page) DocumentTitle() string {
 	if p.InstanceName == "" {
 		return p.Title
 	}
-	return p.L.ServerAuthDocumentTitle(p.InstanceName, p.Title)
+	return p.L.ServerAuthDocumentTitle(i18n.ServerAuthDocumentTitleArgs{Instance: p.InstanceName, Page: p.Title})
 }
 
 func (h *Handler) newPage(r *http.Request, title func(*i18n.Localizer) string) page {

@@ -250,7 +250,7 @@ func (h *Handler) authorMeta(ctx context.Context, lang string, p appcontent.Prof
 	handle := username + "@" + h.o.AccountDomain
 	meta := previewMeta{
 		SiteName: h.instanceName(ctx),
-		Title:    h.o.Messages.Localizer(lang).ServerPreviewTitle(handle, displayName(p)),
+		Title:    h.o.Messages.Localizer(lang).ServerPreviewTitle(i18n.ServerPreviewTitleArgs{Handle: handle, Name: displayName(p)}),
 		Locale:   ogLocale(lang),
 		Creator:  "@" + handle,
 	}

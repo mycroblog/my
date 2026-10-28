@@ -368,11 +368,20 @@ func (l *Localizer) ServerAuthCrossOrigin() string {
 	return l.format("server:auth.cross_origin", nil)
 }
 
+// ServerAuthDocumentTitleArgs holds the arguments of ServerAuthDocumentTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerAuthDocumentTitleArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Page     string
+}
+
 // ServerAuthDocumentTitle formats "server:auth.document_title". The browser tab title of the sign-in, sign-up, email verification, account status and consent pages: the page's title, then the server's name. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: {page} – {instance}
-func (l *Localizer) ServerAuthDocumentTitle(instance string, page string) string {
-	return l.format("server:auth.document_title", map[string]any{"instance": instance, "page": page})
+func (l *Localizer) ServerAuthDocumentTitle(args ServerAuthDocumentTitleArgs) string {
+	return l.format("server:auth.document_title", map[string]any{"instance": args.Instance, "page": args.Page})
 }
 
 // ServerAuthDocumentFooterLabel formats "server:auth.document.footer_label". Accessible name of the navigation in the footer of the server-rendered pages that links to the terms of service and the privacy policy.
@@ -515,11 +524,20 @@ func (l *Localizer) ServerAuthForgotPasswordRateLimited(minutes int) string {
 	return l.format("server:auth.forgot_password.rate_limited", map[string]any{"minutes": minutes})
 }
 
+// ServerAuthForgotPasswordSentArgs holds the arguments of ServerAuthForgotPasswordSent, passed by name.
+//
+//exhaustruct:enforce
+type ServerAuthForgotPasswordSentArgs struct {
+	_       struct{} // forces keyed fields
+	Email   string
+	Minutes int
+}
+
 // ServerAuthForgotPasswordSent formats "server:auth.forgot_password.sent". Notice after a password reset link was asked for. It must read the same whether or not an account uses the address. {email} is the address the user entered; {minutes} how long the link works.
 //
 //	en: If an account uses {email}, a link to set a new password is on its way. {minutes, plural, one {The link works for # minute.} other {The link works for # minutes.}} If no email arrives, check the spam folder and the address.
-func (l *Localizer) ServerAuthForgotPasswordSent(email string, minutes int) string {
-	return l.format("server:auth.forgot_password.sent", map[string]any{"email": email, "minutes": minutes})
+func (l *Localizer) ServerAuthForgotPasswordSent(args ServerAuthForgotPasswordSentArgs) string {
+	return l.format("server:auth.forgot_password.sent", map[string]any{"email": args.Email, "minutes": args.Minutes})
 }
 
 // ServerAuthForgotPasswordSubmit formats "server:auth.forgot_password.submit". Button that asks for a password reset link by email.
@@ -886,18 +904,36 @@ func (l *Localizer) ServerAuthSignUpInviteRequired() string {
 	return l.format("server:auth.sign_up.invite_required", nil)
 }
 
+// ServerAuthSignUpPasswordHintArgs holds the arguments of ServerAuthSignUpPasswordHint, passed by name.
+//
+//exhaustruct:enforce
+type ServerAuthSignUpPasswordHintArgs struct {
+	_   struct{} // forces keyed fields
+	Max float64
+	Min float64
+}
+
 // ServerAuthSignUpPasswordHint formats "server:auth.sign_up.password_hint". Hint under the password field. {min} and {max} are the allowed lengths in characters.
 //
 //	en: {min, number} to {max, number} characters.
-func (l *Localizer) ServerAuthSignUpPasswordHint(max float64, min float64) string {
-	return l.format("server:auth.sign_up.password_hint", map[string]any{"max": max, "min": min})
+func (l *Localizer) ServerAuthSignUpPasswordHint(args ServerAuthSignUpPasswordHintArgs) string {
+	return l.format("server:auth.sign_up.password_hint", map[string]any{"max": args.Max, "min": args.Min})
+}
+
+// ServerAuthSignUpPasswordInvalidArgs holds the arguments of ServerAuthSignUpPasswordInvalid, passed by name.
+//
+//exhaustruct:enforce
+type ServerAuthSignUpPasswordInvalidArgs struct {
+	_   struct{} // forces keyed fields
+	Max float64
+	Min float64
 }
 
 // ServerAuthSignUpPasswordInvalid formats "server:auth.sign_up.password_invalid". Error under the password field when it is too short or too long. {min} and {max} are the allowed lengths in characters.
 //
 //	en: Use {min, number} to {max, number} characters.
-func (l *Localizer) ServerAuthSignUpPasswordInvalid(max float64, min float64) string {
-	return l.format("server:auth.sign_up.password_invalid", map[string]any{"max": max, "min": min})
+func (l *Localizer) ServerAuthSignUpPasswordInvalid(args ServerAuthSignUpPasswordInvalidArgs) string {
+	return l.format("server:auth.sign_up.password_invalid", map[string]any{"max": args.Max, "min": args.Min})
 }
 
 // ServerAuthSignUpPasswordLabel formats "server:auth.sign_up.password_label". Label of the password field on the registration form.
@@ -1040,11 +1076,20 @@ func (l *Localizer) ServerAuthStatusAppealAnswer() string {
 	return l.format("server:auth.status.appeal_answer", nil)
 }
 
+// ServerAuthStatusAppealHintArgs holds the arguments of ServerAuthStatusAppealHint, passed by name.
+//
+//exhaustruct:enforce
+type ServerAuthStatusAppealHintArgs struct {
+	_    struct{} // forces keyed fields
+	Days int
+	Max  float64
+}
+
 // ServerAuthStatusAppealHint formats "server:auth.status.appeal_hint". Hint under the appeal field of a moderation action on the status page. {days} is the time left to appeal, rounded up to whole days; {max} is the longest allowed appeal in characters.
 //
 //	en: {days, plural, one {You can appeal once, within # day. Up to {max, number} characters.} other {You can appeal once, within # days. Up to {max, number} characters.}}
-func (l *Localizer) ServerAuthStatusAppealHint(days int, max float64) string {
-	return l.format("server:auth.status.appeal_hint", map[string]any{"days": days, "max": max})
+func (l *Localizer) ServerAuthStatusAppealHint(args ServerAuthStatusAppealHintArgs) string {
+	return l.format("server:auth.status.appeal_hint", map[string]any{"days": args.Days, "max": args.Max})
 }
 
 // ServerAuthStatusAppealLabel formats "server:auth.status.appeal_label". Label of the field in which a user whose account is restricted writes their appeal of a moderation action (why a moderator should reconsider it).
@@ -2069,11 +2114,21 @@ func (l *Localizer) ServerErrorsStatusPollClosed() string {
 	return l.format("server:errors.status.poll_closed", nil)
 }
 
+// ServerErrorsStatusPollInvalidArgs holds the arguments of ServerErrorsStatusPollInvalid, passed by name.
+//
+//exhaustruct:enforce
+type ServerErrorsStatusPollInvalidArgs struct {
+	_      struct{} // forces keyed fields
+	Length string
+	Max    string
+	Min    string
+}
+
 // ServerErrorsStatusPollInvalid formats "server:errors.status.poll_invalid". Detail of the HTTP 422 API error when a new poll has too few or too many options, a blank, too long, or repeated option, or a duration out of range. {min} and {max} bound the number of options, {length} is the maximum number of characters of an option.
 //
 //	en: A poll needs {min} to {max} different options of at most {length} characters each, and must last from 5 minutes to 30 days.
-func (l *Localizer) ServerErrorsStatusPollInvalid(length string, max string, min string) string {
-	return l.format("server:errors.status.poll_invalid", map[string]any{"length": length, "max": max, "min": min})
+func (l *Localizer) ServerErrorsStatusPollInvalid(args ServerErrorsStatusPollInvalidArgs) string {
+	return l.format("server:errors.status.poll_invalid", map[string]any{"length": args.Length, "max": args.Max, "min": args.Min})
 }
 
 // ServerErrorsStatusPollInvalidChoices formats "server:errors.status.poll_invalid_choices". Detail of the HTTP 422 API error when a vote has no choice, an unknown choice, the same choice twice, or several choices in a single-choice poll.
@@ -2265,18 +2320,36 @@ func (l *Localizer) ServerErrorsSupportersUnavailableDetail(reason string) strin
 	return l.format("server:errors.supporters.unavailable_detail", map[string]any{"reason": reason})
 }
 
+// ServerErrorsTooLongArgs holds the arguments of ServerErrorsTooLong, passed by name.
+//
+//exhaustruct:enforce
+type ServerErrorsTooLongArgs struct {
+	_    struct{} // forces keyed fields
+	Max  int
+	Name string
+}
+
 // ServerErrorsTooLong formats "server:errors.too_long". Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters.
 //
 //	en: {max, plural, one {{name} can be at most # character long.} other {{name} can be at most # characters long.}}
-func (l *Localizer) ServerErrorsTooLong(max int, name string) string {
-	return l.format("server:errors.too_long", map[string]any{"max": max, "name": name})
+func (l *Localizer) ServerErrorsTooLong(args ServerErrorsTooLongArgs) string {
+	return l.format("server:errors.too_long", map[string]any{"max": args.Max, "name": args.Name})
+}
+
+// ServerErrorsTooManyArgs holds the arguments of ServerErrorsTooMany, passed by name.
+//
+//exhaustruct:enforce
+type ServerErrorsTooManyArgs struct {
+	_    struct{} // forces keyed fields
+	Max  int
+	Name string
 }
 
 // ServerErrorsTooMany formats "server:errors.too_many". Detail of an API error (HTTP 422) when a list property of the request body has too many items. {name} is the property name, e.g. fields (not translated); {max} is the limit.
 //
 //	en: {max, plural, one {{name} can have at most # item.} other {{name} can have at most # items.}}
-func (l *Localizer) ServerErrorsTooMany(max int, name string) string {
-	return l.format("server:errors.too_many", map[string]any{"max": max, "name": name})
+func (l *Localizer) ServerErrorsTooMany(args ServerErrorsTooManyArgs) string {
+	return l.format("server:errors.too_many", map[string]any{"max": args.Max, "name": args.Name})
 }
 
 // ServerErrorsTwoFactorCodeInvalid formats "server:errors.two_factor.code_invalid". Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code.
@@ -2853,25 +2926,52 @@ func (l *Localizer) ServerMailReasonSupporter(instance string) string {
 	return l.format("server:mail.reason.supporter", map[string]any{"instance": instance})
 }
 
+// ServerMailServiceClosureAnnouncedBodyArgs holds the arguments of ServerMailServiceClosureAnnouncedBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureAnnouncedBodyArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
+}
+
 // ServerMailServiceClosureAnnouncedBody formats "server:mail.service_closure_announced.body". First paragraph of the email of the service closure to every user with a verified address: the announcement of the closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: The administrators of {instance} announced that the server closes on {closesAt}. From then on, you can only sign in to export your data.
-func (l *Localizer) ServerMailServiceClosureAnnouncedBody(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_announced.body", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureAnnouncedBody(args ServerMailServiceClosureAnnouncedBodyArgs) string {
+	return l.format("server:mail.service_closure_announced.body", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureAnnouncedSubjectArgs holds the arguments of ServerMailServiceClosureAnnouncedSubject, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureAnnouncedSubjectArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
 }
 
 // ServerMailServiceClosureAnnouncedSubject formats "server:mail.service_closure_announced.subject". Subject of the email of the service closure to every user with a verified address: the administrators announced that the server closes. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} closes on {closesAt}
-func (l *Localizer) ServerMailServiceClosureAnnouncedSubject(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_announced.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureAnnouncedSubject(args ServerMailServiceClosureAnnouncedSubjectArgs) string {
+	return l.format("server:mail.service_closure_announced.subject", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureClosedBodyArgs holds the arguments of ServerMailServiceClosureClosedBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureClosedBodyArgs struct {
+	_           struct{} // forces keyed fields
+	ExportUntil string
+	Instance    string
 }
 
 // ServerMailServiceClosureClosedBody formats "server:mail.service_closure_closed.body". First paragraph of the email of the service closure to every user with a verified address: the server has closed, and the user may still export their data. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} has closed. Until {exportUntil}, you can still sign in and export your data; nothing else works any more.
-func (l *Localizer) ServerMailServiceClosureClosedBody(exportUntil string, instance string) string {
-	return l.format("server:mail.service_closure_closed.body", map[string]any{"exportUntil": exportUntil, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureClosedBody(args ServerMailServiceClosureClosedBodyArgs) string {
+	return l.format("server:mail.service_closure_closed.body", map[string]any{"exportUntil": args.ExportUntil, "instance": args.Instance})
 }
 
 // ServerMailServiceClosureClosedDetail formats "server:mail.service_closure_closed.detail". Second paragraph of the email of the closed server: what happens after the deadline of the export.
@@ -2888,25 +2988,52 @@ func (l *Localizer) ServerMailServiceClosureClosedSubject(instance string) strin
 	return l.format("server:mail.service_closure_closed.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailServiceClosureDayBeforeBodyArgs holds the arguments of ServerMailServiceClosureDayBeforeBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureDayBeforeBodyArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
+}
+
 // ServerMailServiceClosureDayBeforeBody formats "server:mail.service_closure_day_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} closes within a day, on {closesAt}. This is the last reminder before the closing date.
-func (l *Localizer) ServerMailServiceClosureDayBeforeBody(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_day_before.body", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureDayBeforeBody(args ServerMailServiceClosureDayBeforeBodyArgs) string {
+	return l.format("server:mail.service_closure_day_before.body", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureDayBeforeSubjectArgs holds the arguments of ServerMailServiceClosureDayBeforeSubject, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureDayBeforeSubjectArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
 }
 
 // ServerMailServiceClosureDayBeforeSubject formats "server:mail.service_closure_day_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} closes within a day, on {closesAt}
-func (l *Localizer) ServerMailServiceClosureDayBeforeSubject(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_day_before.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureDayBeforeSubject(args ServerMailServiceClosureDayBeforeSubjectArgs) string {
+	return l.format("server:mail.service_closure_day_before.subject", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureExportWeekBeforeBodyArgs holds the arguments of ServerMailServiceClosureExportWeekBeforeBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureExportWeekBeforeBodyArgs struct {
+	_           struct{} // forces keyed fields
+	ExportUntil string
+	Instance    string
 }
 
 // ServerMailServiceClosureExportWeekBeforeBody formats "server:mail.service_closure_export_week_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export. {instance} is the server's display name, or its domain name when it has none. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: You can export your data from {instance} until {exportUntil}, a week from now.
-func (l *Localizer) ServerMailServiceClosureExportWeekBeforeBody(exportUntil string, instance string) string {
-	return l.format("server:mail.service_closure_export_week_before.body", map[string]any{"exportUntil": exportUntil, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureExportWeekBeforeBody(args ServerMailServiceClosureExportWeekBeforeBodyArgs) string {
+	return l.format("server:mail.service_closure_export_week_before.body", map[string]any{"exportUntil": args.ExportUntil, "instance": args.Instance})
 }
 
 // ServerMailServiceClosureExportWeekBeforeSubject formats "server:mail.service_closure_export_week_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a week before the deadline of the export after the server closed. {instance} is the server's display name, or its domain name when it has none.
@@ -2916,32 +3043,68 @@ func (l *Localizer) ServerMailServiceClosureExportWeekBeforeSubject(instance str
 	return l.format("server:mail.service_closure_export_week_before.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailServiceClosureRescheduledBodyArgs holds the arguments of ServerMailServiceClosureRescheduledBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureRescheduledBodyArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
+}
+
 // ServerMailServiceClosureRescheduledBody formats "server:mail.service_closure_rescheduled.body". First paragraph of the email of the service closure to every user with a verified address: the dates of the announced closure changed. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: The administrators of {instance} changed the dates of its closure: the server now closes on {closesAt}.
-func (l *Localizer) ServerMailServiceClosureRescheduledBody(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_rescheduled.body", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureRescheduledBody(args ServerMailServiceClosureRescheduledBodyArgs) string {
+	return l.format("server:mail.service_closure_rescheduled.body", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureRescheduledSubjectArgs holds the arguments of ServerMailServiceClosureRescheduledSubject, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureRescheduledSubjectArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
 }
 
 // ServerMailServiceClosureRescheduledSubject formats "server:mail.service_closure_rescheduled.subject". Subject of the email of the service closure to every user with a verified address: the administrators changed the dates of the announced closure. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} now closes on {closesAt}
-func (l *Localizer) ServerMailServiceClosureRescheduledSubject(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_rescheduled.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureRescheduledSubject(args ServerMailServiceClosureRescheduledSubjectArgs) string {
+	return l.format("server:mail.service_closure_rescheduled.subject", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureWeekBeforeBodyArgs holds the arguments of ServerMailServiceClosureWeekBeforeBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureWeekBeforeBodyArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
 }
 
 // ServerMailServiceClosureWeekBeforeBody formats "server:mail.service_closure_week_before.body". First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: {instance} closes in a week, on {closesAt}. Export your data before you lose access to it.
-func (l *Localizer) ServerMailServiceClosureWeekBeforeBody(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_week_before.body", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureWeekBeforeBody(args ServerMailServiceClosureWeekBeforeBodyArgs) string {
+	return l.format("server:mail.service_closure_week_before.body", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
+}
+
+// ServerMailServiceClosureWeekBeforeSubjectArgs holds the arguments of ServerMailServiceClosureWeekBeforeSubject, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailServiceClosureWeekBeforeSubjectArgs struct {
+	_        struct{} // forces keyed fields
+	ClosesAt string
+	Instance string
 }
 
 // ServerMailServiceClosureWeekBeforeSubject formats "server:mail.service_closure_week_before.subject". Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo).
 //
 //	en: One week until {instance} closes on {closesAt}
-func (l *Localizer) ServerMailServiceClosureWeekBeforeSubject(closesAt string, instance string) string {
-	return l.format("server:mail.service_closure_week_before.subject", map[string]any{"closesAt": closesAt, "instance": instance})
+func (l *Localizer) ServerMailServiceClosureWeekBeforeSubject(args ServerMailServiceClosureWeekBeforeSubjectArgs) string {
+	return l.format("server:mail.service_closure_week_before.subject", map[string]any{"closesAt": args.ClosesAt, "instance": args.Instance})
 }
 
 // ServerMailServiceClosureWithdrawnBody formats "server:mail.service_closure_withdrawn.body". Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none.
@@ -3014,11 +3177,20 @@ func (l *Localizer) ServerMailSupporterPaymentFailedAction() string {
 	return l.format("server:mail.supporter_payment_failed.action", nil)
 }
 
+// ServerMailSupporterPaymentFailedBodyArgs holds the arguments of ServerMailSupporterPaymentFailedBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailSupporterPaymentFailedBodyArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Plan     string
+}
+
 // ServerMailSupporterPaymentFailedBody formats "server:mail.supporter_payment_failed.body". First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
 //
 //	en: A payment for your supporter plan “{plan}” on {instance} failed.
-func (l *Localizer) ServerMailSupporterPaymentFailedBody(instance string, plan string) string {
-	return l.format("server:mail.supporter_payment_failed.body", map[string]any{"instance": instance, "plan": plan})
+func (l *Localizer) ServerMailSupporterPaymentFailedBody(args ServerMailSupporterPaymentFailedBodyArgs) string {
+	return l.format("server:mail.supporter_payment_failed.body", map[string]any{"instance": args.Instance, "plan": args.Plan})
 }
 
 // ServerMailSupporterPaymentFailedDetail formats "server:mail.supporter_payment_failed.detail". Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC.
@@ -3035,11 +3207,20 @@ func (l *Localizer) ServerMailSupporterPaymentFailedSubject(instance string) str
 	return l.format("server:mail.supporter_payment_failed.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailSupporterPlanRetiredBodyArgs holds the arguments of ServerMailSupporterPlanRetiredBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailSupporterPlanRetiredBodyArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Plan     string
+}
+
 // ServerMailSupporterPlanRetiredBody formats "server:mail.supporter_plan_retired.body". First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
 //
 //	en: The administrators of {instance} retired the supporter plan “{plan}” that you subscribe to.
-func (l *Localizer) ServerMailSupporterPlanRetiredBody(instance string, plan string) string {
-	return l.format("server:mail.supporter_plan_retired.body", map[string]any{"instance": instance, "plan": plan})
+func (l *Localizer) ServerMailSupporterPlanRetiredBody(args ServerMailSupporterPlanRetiredBodyArgs) string {
+	return l.format("server:mail.supporter_plan_retired.body", map[string]any{"instance": args.Instance, "plan": args.Plan})
 }
 
 // ServerMailSupporterPlanRetiredDetail formats "server:mail.supporter_plan_retired.detail". Second paragraph of the email to a subscriber whose supporter plan the administrators retired.
@@ -3056,11 +3237,20 @@ func (l *Localizer) ServerMailSupporterPlanRetiredSubject(instance string) strin
 	return l.format("server:mail.supporter_plan_retired.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailSupporterServiceClosureBodyArgs holds the arguments of ServerMailSupporterServiceClosureBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailSupporterServiceClosureBodyArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Plan     string
+}
+
 // ServerMailSupporterServiceClosureBody formats "server:mail.supporter_service_closure.body". First paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels at the end of its period. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators.
 //
 //	en: The administrators of {instance} announced that the server closes, which cancels your subscription to the supporter plan “{plan}”.
-func (l *Localizer) ServerMailSupporterServiceClosureBody(instance string, plan string) string {
-	return l.format("server:mail.supporter_service_closure.body", map[string]any{"instance": instance, "plan": plan})
+func (l *Localizer) ServerMailSupporterServiceClosureBody(args ServerMailSupporterServiceClosureBodyArgs) string {
+	return l.format("server:mail.supporter_service_closure.body", map[string]any{"instance": args.Instance, "plan": args.Plan})
 }
 
 // ServerMailSupporterServiceClosureDetail formats "server:mail.supporter_service_closure.detail". Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels.
@@ -3077,11 +3267,21 @@ func (l *Localizer) ServerMailSupporterServiceClosureSubject(instance string) st
 	return l.format("server:mail.supporter_service_closure.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailSupporterSubscriptionEndedBodyArgs holds the arguments of ServerMailSupporterSubscriptionEndedBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailSupporterSubscriptionEndedBodyArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Plan     string
+	Reason   string
+}
+
 // ServerMailSupporterSubscriptionEndedBody formats "server:mail.supporter_subscription_ended.body". Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why.
 //
 //	en: Your supporter plan “{plan}” on {instance} ended, and its benefits with it. {reason, select, lapsed {No payment succeeded within 7 days after a payment failed, or the subscription was paused.} reversed {A payment was refunded in full or charged back.} plan_retired {The administrators retired the plan.} account_suspended {Your account was suspended.} staff {An administrator canceled the subscription.} other {The subscription was canceled.}}
-func (l *Localizer) ServerMailSupporterSubscriptionEndedBody(instance string, plan string, reason string) string {
-	return l.format("server:mail.supporter_subscription_ended.body", map[string]any{"instance": instance, "plan": plan, "reason": reason})
+func (l *Localizer) ServerMailSupporterSubscriptionEndedBody(args ServerMailSupporterSubscriptionEndedBodyArgs) string {
+	return l.format("server:mail.supporter_subscription_ended.body", map[string]any{"instance": args.Instance, "plan": args.Plan, "reason": args.Reason})
 }
 
 // ServerMailSupporterSubscriptionEndedSubject formats "server:mail.supporter_subscription_ended.subject". Subject of the email to a subscriber whose supporter subscription ended: a payment kept failing, a payment was refunded, the plan was retired, or it was canceled. {instance} is the server's display name, or its domain name when it has none.
@@ -3315,11 +3515,22 @@ func (l *Localizer) ServerPaymentsPortalCard() string {
 	return l.format("server:payments.portal.card", nil)
 }
 
+// ServerPaymentsPortalCardValueArgs holds the arguments of ServerPaymentsPortalCardValue, passed by name.
+//
+//exhaustruct:enforce
+type ServerPaymentsPortalCardValueArgs struct {
+	_     struct{} // forces keyed fields
+	Brand string
+	Last4 string
+	Month string
+	Year  string
+}
+
 // ServerPaymentsPortalCardValue formats "server:payments.portal.card_value". The card on the PAY.JP card page: its brand, last four digits, and expiry month and year.
 //
 //	en: {brand} ending in {last4}, expires {month}/{year}
-func (l *Localizer) ServerPaymentsPortalCardValue(brand string, last4 string, month string, year string) string {
-	return l.format("server:payments.portal.card_value", map[string]any{"brand": brand, "last4": last4, "month": month, "year": year})
+func (l *Localizer) ServerPaymentsPortalCardValue(args ServerPaymentsPortalCardValueArgs) string {
+	return l.format("server:payments.portal.card_value", map[string]any{"brand": args.Brand, "last4": args.Last4, "month": args.Month, "year": args.Year})
 }
 
 // ServerPaymentsPortalChangeCard formats "server:payments.portal.change_card". Heading and button of the card change form on the PAY.JP card page.
@@ -3434,11 +3645,20 @@ func (l *Localizer) ServerPreviewDefaultImageAlt(instance string) string {
 	return l.format("server:preview.default_image_alt", map[string]any{"instance": instance})
 }
 
+// ServerPreviewDocumentTitleArgs holds the arguments of ServerPreviewDocumentTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerPreviewDocumentTitleArgs struct {
+	_        struct{} // forces keyed fields
+	Document string
+	Instance string
+}
+
 // ServerPreviewDocumentTitle formats "server:preview.document_title". Title of the link preview (og:title and the page title) of the page of one of the instance's documents (/about/terms, /about/privacy, /about/commerce). {document} is the document's name (preview.document.*), {instance} the instance name.
 //
 //	en: {document} | {instance}
-func (l *Localizer) ServerPreviewDocumentTitle(document string, instance string) string {
-	return l.format("server:preview.document_title", map[string]any{"document": document, "instance": instance})
+func (l *Localizer) ServerPreviewDocumentTitle(args ServerPreviewDocumentTitleArgs) string {
+	return l.format("server:preview.document_title", map[string]any{"document": args.Document, "instance": args.Instance})
 }
 
 // ServerPreviewDocumentCommerceDisclosure formats "server:preview.document.commerce_disclosure". Name of the instance's commerce disclosures of its supporter plans in the link preview of their page (/about/commerce).
@@ -3469,11 +3689,20 @@ func (l *Localizer) ServerPreviewHeaderAlt(name string) string {
 	return l.format("server:preview.header_alt", map[string]any{"name": name})
 }
 
+// ServerPreviewTitleArgs holds the arguments of ServerPreviewTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerPreviewTitleArgs struct {
+	_      struct{} // forces keyed fields
+	Handle string
+	Name   string
+}
+
 // ServerPreviewTitle formats "server:preview.title". Title of the link preview (og:title and the page title) of a profile or a post. {name} is the display name, or the username when there is none; {handle} is username@domain.
 //
 //	en: {name} (@{handle})
-func (l *Localizer) ServerPreviewTitle(handle string, name string) string {
-	return l.format("server:preview.title", map[string]any{"handle": handle, "name": name})
+func (l *Localizer) ServerPreviewTitle(args ServerPreviewTitleArgs) string {
+	return l.format("server:preview.title", map[string]any{"handle": args.Handle, "name": args.Name})
 }
 
 // ServerPreviewVoiceRoomEnded formats "server:preview.voice_room_ended". Title of the link preview (og:title and the page title) of a voice chat room that has ended, shown only when the instance shows the summaries of its rooms. {room} is the room's name.
@@ -3483,11 +3712,20 @@ func (l *Localizer) ServerPreviewVoiceRoomEnded(room string) string {
 	return l.format("server:preview.voice_room_ended", map[string]any{"room": room})
 }
 
+// ServerPreviewVoiceRoomOpenArgs holds the arguments of ServerPreviewVoiceRoomOpen, passed by name.
+//
+//exhaustruct:enforce
+type ServerPreviewVoiceRoomOpenArgs struct {
+	_    struct{} // forces keyed fields
+	Host string
+	Room string
+}
+
 // ServerPreviewVoiceRoomOpen formats "server:preview.voice_room_open". Title of the link preview (og:title and the page title) of a voice chat room that is open, shown only when the instance shows the summaries of its rooms. {room} is the room's name; {host} is the display name of the host, or the username when there is none.
 //
 //	en: {room} — a voice chat hosted by {host}, open now
-func (l *Localizer) ServerPreviewVoiceRoomOpen(host string, room string) string {
-	return l.format("server:preview.voice_room_open", map[string]any{"host": host, "room": room})
+func (l *Localizer) ServerPreviewVoiceRoomOpen(args ServerPreviewVoiceRoomOpenArgs) string {
+	return l.format("server:preview.voice_room_open", map[string]any{"host": args.Host, "room": args.Room})
 }
 
 // ServerPushAccountMoved formats "server:push.account_moved". Web Push notification. {name} is the display name, or the @handle, of an account that the user followed, which moved to another account.

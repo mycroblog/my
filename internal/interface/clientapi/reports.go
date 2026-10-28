@@ -14,6 +14,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // ReportLimit bounds the reports that one account files (createReport): each report lands in
@@ -82,9 +83,9 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 	case errors.As(err, &fieldErr):
 		return unprocessable(l.ServerErrorsInvalidValue(fieldErr.Field))
 	case errors.As(err, &countErr):
-		return unprocessable(l.ServerErrorsTooMany(countErr.Max, countErr.Field))
+		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: countErr.Max, Name: countErr.Field}))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:

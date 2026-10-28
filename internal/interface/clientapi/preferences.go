@@ -10,6 +10,7 @@ import (
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // UserPreferences reads and changes the viewer's preferences (FR-007, FR-208).
@@ -101,7 +102,7 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 		l := s.Localizer(ctx)
 		detail := l.ServerErrorsInvalidValue(invalid.Preference)
 		if errors.Is(invalid.Err, identity.ErrTooManyLanguages) {
-			detail = l.ServerErrorsTooMany(identity.MaxTimelineLanguageCount, invalid.Preference)
+			detail = l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: identity.MaxTimelineLanguageCount, Name: invalid.Preference})
 		}
 		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)
 		return UpdatePreferencesdefaultApplicationProblemPlusJSONResponse{

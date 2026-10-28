@@ -311,5 +311,14 @@ files needs to change); `scripts/task.sh i18n:check` reports keys written in the
 After editing, run `scripts/task.sh i18n:gen` to regenerate the pseudo-locales (`en-XA` / `ar-XB`) and the typed
 accessors, and commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
 `internal/i18n/testdata/golden.json`). The pseudo-locales of `client` and the TypeScript accessors are not committed.
+
+Every accessor takes the arguments of a message by name, so that two arguments of the same type cannot be swapped:
+
+- In Go, an accessor of a message with one argument takes it as its only parameter (`l.ServerErrorsUnusableImage(name)`);
+  one with two or more takes a generated struct named after it, with one field per argument
+  (`l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: max, Name: name})`). The struct cannot be written without
+  the field names, and `scripts/task.sh go:lint` reports a field left out.
+- In TypeScript, the translator takes the arguments as an object of named values (`t("client:key", { name })`), typed
+  by `MessageArgs` of the generated accessors.
 To see the pages the server renders in a pseudo-locale, start it with `my serve -pseudo-locales` and set the browser's
 language to `en-XA` or `ar-XB` (they cannot be chosen without the flag).

@@ -491,7 +491,7 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 	v.Title, v.Back = v.L.ServerPaymentsPortalTitle(), st.Return
 	for _, c := range cus.Cards.Data {
 		if c.ID == cus.DefaultCard {
-			v.Card = v.L.ServerPaymentsPortalCardValue(c.Brand, c.Last4, strconv.Itoa(c.ExpMonth), strconv.Itoa(c.ExpYear))
+			v.Card = v.L.ServerPaymentsPortalCardValue(i18n.ServerPaymentsPortalCardValueArgs{Brand: c.Brand, Last4: c.Last4, Month: strconv.Itoa(c.ExpMonth), Year: strconv.Itoa(c.ExpYear)})
 		}
 	}
 	subs, err := h.customerSubscriptions(ctx, cus.ID)

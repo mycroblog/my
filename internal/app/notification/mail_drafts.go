@@ -103,19 +103,19 @@ func SupporterEmailDraft(l *i18n.Localizer, name, to string, m SupporterMail, we
 	case notification.TypeSupporterPaymentFailed:
 		d.Subject = l.ServerMailSupporterPaymentFailedSubject(name)
 		d.Paragraphs = []string{
-			l.ServerMailSupporterPaymentFailedBody(name, m.PlanName),
+			l.ServerMailSupporterPaymentFailedBody(i18n.ServerMailSupporterPaymentFailedBodyArgs{Instance: name, Plan: m.PlanName}),
 			l.ServerMailSupporterPaymentFailedDetail(m.GraceEndsAt.UTC().Format(graceLayout)),
 		}
 		d.Action = &kernel.MailAction{Label: l.ServerMailSupporterPaymentFailedAction(), URL: origin + "/settings/supporter"}
 	case notification.TypeSupporterSubscriptionEnded:
 		d.Subject = l.ServerMailSupporterSubscriptionEndedSubject(name)
-		d.Paragraphs = []string{l.ServerMailSupporterSubscriptionEndedBody(name, m.PlanName, m.EndReason)}
+		d.Paragraphs = []string{l.ServerMailSupporterSubscriptionEndedBody(i18n.ServerMailSupporterSubscriptionEndedBodyArgs{Instance: name, Plan: m.PlanName, Reason: m.EndReason})}
 	case notification.TypeSupporterPlanRetired:
 		d.Subject = l.ServerMailSupporterPlanRetiredSubject(name)
-		d.Paragraphs = []string{l.ServerMailSupporterPlanRetiredBody(name, m.PlanName), l.ServerMailSupporterPlanRetiredDetail()}
+		d.Paragraphs = []string{l.ServerMailSupporterPlanRetiredBody(i18n.ServerMailSupporterPlanRetiredBodyArgs{Instance: name, Plan: m.PlanName}), l.ServerMailSupporterPlanRetiredDetail()}
 	case notification.TypeSupporterServiceClosure:
 		d.Subject = l.ServerMailSupporterServiceClosureSubject(name)
-		d.Paragraphs = []string{l.ServerMailSupporterServiceClosureBody(name, m.PlanName), l.ServerMailSupporterServiceClosureDetail()}
+		d.Paragraphs = []string{l.ServerMailSupporterServiceClosureBody(i18n.ServerMailSupporterServiceClosureBodyArgs{Instance: name, Plan: m.PlanName}), l.ServerMailSupporterServiceClosureDetail()}
 	default:
 		return kernel.MailDraft{}, false
 	}

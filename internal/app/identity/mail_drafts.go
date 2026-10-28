@@ -109,27 +109,27 @@ func ClosureEmailDraft(w MailWording, to string, e identity.ClosureEmail, view i
 	}
 	switch e {
 	case identity.ClosureEmailAnnounced:
-		d.Subject = l.ServerMailServiceClosureAnnouncedSubject(closesAt, w.Name)
-		d.Paragraphs = notice(l.ServerMailServiceClosureAnnouncedBody(closesAt, w.Name))
+		d.Subject = l.ServerMailServiceClosureAnnouncedSubject(i18n.ServerMailServiceClosureAnnouncedSubjectArgs{ClosesAt: closesAt, Instance: w.Name})
+		d.Paragraphs = notice(l.ServerMailServiceClosureAnnouncedBody(i18n.ServerMailServiceClosureAnnouncedBodyArgs{ClosesAt: closesAt, Instance: w.Name}))
 	case identity.ClosureEmailRescheduled:
-		d.Subject = l.ServerMailServiceClosureRescheduledSubject(closesAt, w.Name)
-		d.Paragraphs = notice(l.ServerMailServiceClosureRescheduledBody(closesAt, w.Name))
+		d.Subject = l.ServerMailServiceClosureRescheduledSubject(i18n.ServerMailServiceClosureRescheduledSubjectArgs{ClosesAt: closesAt, Instance: w.Name})
+		d.Paragraphs = notice(l.ServerMailServiceClosureRescheduledBody(i18n.ServerMailServiceClosureRescheduledBodyArgs{ClosesAt: closesAt, Instance: w.Name}))
 	case identity.ClosureEmailWeekBefore:
-		d.Subject = l.ServerMailServiceClosureWeekBeforeSubject(closesAt, w.Name)
-		d.Paragraphs = notice(l.ServerMailServiceClosureWeekBeforeBody(closesAt, w.Name))
+		d.Subject = l.ServerMailServiceClosureWeekBeforeSubject(i18n.ServerMailServiceClosureWeekBeforeSubjectArgs{ClosesAt: closesAt, Instance: w.Name})
+		d.Paragraphs = notice(l.ServerMailServiceClosureWeekBeforeBody(i18n.ServerMailServiceClosureWeekBeforeBodyArgs{ClosesAt: closesAt, Instance: w.Name}))
 	case identity.ClosureEmailDayBefore:
-		d.Subject = l.ServerMailServiceClosureDayBeforeSubject(closesAt, w.Name)
-		d.Paragraphs = notice(l.ServerMailServiceClosureDayBeforeBody(closesAt, w.Name))
+		d.Subject = l.ServerMailServiceClosureDayBeforeSubject(i18n.ServerMailServiceClosureDayBeforeSubjectArgs{ClosesAt: closesAt, Instance: w.Name})
+		d.Paragraphs = notice(l.ServerMailServiceClosureDayBeforeBody(i18n.ServerMailServiceClosureDayBeforeBodyArgs{ClosesAt: closesAt, Instance: w.Name}))
 	case identity.ClosureEmailWithdrawn:
 		d.Subject = l.ServerMailServiceClosureWithdrawnSubject(w.Name)
 		d.Paragraphs = []string{l.ServerMailServiceClosureWithdrawnBody(w.Name)}
 		d.Action = nil
 	case identity.ClosureEmailClosed:
 		d.Subject = l.ServerMailServiceClosureClosedSubject(w.Name)
-		d.Paragraphs = []string{l.ServerMailServiceClosureClosedBody(exportUntil, w.Name), l.ServerMailServiceClosureClosedDetail()}
+		d.Paragraphs = []string{l.ServerMailServiceClosureClosedBody(i18n.ServerMailServiceClosureClosedBodyArgs{ExportUntil: exportUntil, Instance: w.Name}), l.ServerMailServiceClosureClosedDetail()}
 	case identity.ClosureEmailExportWeekBefore:
 		d.Subject = l.ServerMailServiceClosureExportWeekBeforeSubject(w.Name)
-		d.Paragraphs = []string{l.ServerMailServiceClosureExportWeekBeforeBody(exportUntil, w.Name), l.ServerMailServiceClosureClosedDetail()}
+		d.Paragraphs = []string{l.ServerMailServiceClosureExportWeekBeforeBody(i18n.ServerMailServiceClosureExportWeekBeforeBodyArgs{ExportUntil: exportUntil, Instance: w.Name}), l.ServerMailServiceClosureClosedDetail()}
 	default:
 		return kernel.MailDraft{}, false
 	}

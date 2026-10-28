@@ -68,7 +68,7 @@ func (h *Handler) serveDocumentPage(w http.ResponseWriter, r *http.Request, path
 	}
 	lang := h.instanceLocale(r.Context())
 	l := h.o.Messages.Localizer(lang)
-	h.serveInstancePage(w, r, path, l.ServerPreviewDocumentTitle(page.name(l), h.instanceName(r.Context())))
+	h.serveInstancePage(w, r, path, l.ServerPreviewDocumentTitle(i18n.ServerPreviewDocumentTitleArgs{Document: page.name(l), Instance: h.instanceName(r.Context())}))
 }
 
 // serveInstancePage serves the shell of the page about the instance at path under title (see

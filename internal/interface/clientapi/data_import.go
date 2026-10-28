@@ -15,6 +15,7 @@ import (
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The viewer's follows, blocks, mutes, and bookmarks as Mastodon's CSV files: exports, and
@@ -100,7 +101,7 @@ func (s *Server) importProblem(ctx context.Context, err error) *problem {
 	switch {
 	case errors.Is(err, identity.ErrTooManyImportEntries):
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-			l.ServerErrorsTooMany(identity.MaxImportEntries, "text"))
+			l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: identity.MaxImportEntries, Name: "text"}))
 	case errors.As(err, &parseErr):
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsImportInvalidCsv())
 	case errors.Is(err, appidentity.ErrImportInProgress):

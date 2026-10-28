@@ -151,11 +151,31 @@ function goAccessors(messages: Message[]): string {
     ...(needsTime ? ['import "time"', ""] : []),
     ...server.flatMap(({ id, source, description, args }) => {
       const name = goName(id);
-      const params = args.map(([n, t]) => `${goParam(n)} ${goType(t)}`).join(", ");
+      // A message with two or more arguments takes them by name, in a struct of its own: positional
+      // parameters of the same type (mostly string) would let a caller swap them without a compile error.
+      // The blank field makes an unkeyed literal a compile error outside the package, and the
+      // //exhaustruct:enforce directive has golangci-lint (exhaustruct_v5) report a field left out.
+      const named = args.length >= 2;
+      const argsType = `${name}Args`;
+      const params = named ? `args ${argsType}` : args.map(([n, t]) => `${goParam(n)} ${goType(t)}`).join(", ");
+      const value = (n: string) => (named ? `args.${goName(n)}` : goParam(n));
       const values = args.length
-        ? `map[string]any{${args.map(([n]) => `${JSON.stringify(n)}: ${goParam(n)}`).join(", ")}}`
+        ? `map[string]any{${args.map(([n]) => `${JSON.stringify(n)}: ${value(n)}`).join(", ")}}`
         : "nil";
+      const fieldWidth = Math.max(0, ...args.map(([n]) => goName(n).length));
       return [
+        ...(named
+          ? [
+              `// ${argsType} holds the arguments of ${name}, passed by name.`,
+              "//",
+              "//exhaustruct:enforce",
+              `type ${argsType} struct {`,
+              `\t${"_".padEnd(fieldWidth)} struct{} // forces keyed fields`,
+              ...args.map(([n, t]) => `\t${goName(n).padEnd(fieldWidth)} ${goType(t)}`),
+              "}",
+              "",
+            ]
+          : []),
         `// ${name} formats ${JSON.stringify(id)}.${description ? ` ${comment(description)}` : ""}`,
         "//",
         `//\t${SOURCE}: ${comment(source)}`,

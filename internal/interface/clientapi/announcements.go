@@ -12,6 +12,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The server-wide announcements (FR-726): the users' list with their reads, and the admin
@@ -135,7 +136,7 @@ func (s *Server) announcementProblem(ctx context.Context, err error) (problem, b
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("ends_at")), true
 	case errors.Is(err, instance.ErrAnnouncementTooLong):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-			l.ServerErrorsTooLong(instance.MaxAnnouncementBodyLength, "text")), true
+			l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: instance.MaxAnnouncementBodyLength, Name: "text"})), true
 	case errors.Is(err, instance.ErrInvalidValue):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("text")), true
 	}

@@ -13,6 +13,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The admin operations of the actions on accounts (FR-703, manage_accounts). The moderation
@@ -216,7 +217,7 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	case errors.Is(err, appmoderation.ErrCannotBlockEmail):
 		return unprocessable(l.ServerErrorsInvalidValue("block_email"))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case errors.Is(err, appmoderation.ErrUnsupportedAction), errors.Is(err, moderation.ErrInvalidAction):
@@ -275,7 +276,7 @@ func (s *Server) LiftAccountAction(ctx context.Context, req LiftAccountActionReq
 	case errors.As(err, &textErr):
 		detail := l.ServerErrorsInvalidValue(textErr.Field)
 		if textErr.Max > 0 {
-			detail = l.ServerErrorsTooLong(textErr.Max, textErr.Field)
+			detail = l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field})
 		}
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil

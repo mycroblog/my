@@ -14,6 +14,7 @@ linters:
   enable:
     - depguard
     - errorlint
+    - exhaustruct_v5
     - forbidigo
     - gocritic
     - gosec
@@ -498,6 +499,11 @@ linters:
           allow:
             - $gostd
             - github.com/jackc/pgx/v5
+    # Only the struct types marked //exhaustruct:enforce must list every field: the generated
+    # <Accessor>Args of an i18n message with two or more arguments (ADR-0009, tools/i18n/src/generate.ts),
+    # where a field left out is a missing argument.
+    exhaustruct_v5:
+      explicit-mode: true
     # Every outbound request goes through the SSRF-guarded kernel.HTTPClient (ADR-0019 §1);
     # http.DefaultClient and the package-level helpers that use it bypass the guard.
     forbidigo:

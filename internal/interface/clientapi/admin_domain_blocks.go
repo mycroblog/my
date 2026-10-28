@@ -12,6 +12,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The domain block list in Mastodon's CSV (FR-706, manage_domains): the export of the domain
@@ -55,7 +56,7 @@ func (s *Server) PreviewDomainBlockImport(ctx context.Context, req PreviewDomain
 	switch {
 	case errors.Is(err, moderation.ErrTooManyDomainBlocks):
 		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
-			l.ServerErrorsUnprocessable(), l.ServerErrorsTooMany(moderation.MaxDomainBlockImport, "csv"))), nil
+			l.ServerErrorsUnprocessable(), l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainBlockImport, Name: "csv"}))), nil
 	case errors.Is(err, moderation.ErrMalformedDomainBlockCSV):
 		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "csv")), nil
 	case err != nil:
@@ -109,9 +110,9 @@ func (s *Server) ImportDomainBlocks(ctx context.Context, req ImportDomainBlocksR
 	var textErr *moderation.TextError
 	switch {
 	case errors.Is(err, moderation.ErrTooManyDomainBlocks):
-		return unprocessable(l.ServerErrorsTooMany(moderation.MaxDomainBlockImport, "blocks"))
+		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainBlockImport, Name: "blocks"}))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(textErr.Max, textErr.Field))
+		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
 	case err != nil:
