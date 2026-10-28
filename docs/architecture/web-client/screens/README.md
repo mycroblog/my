@@ -39,8 +39,15 @@
 ## 画面の一覧
 
 - [バッジとサポーターの一覧（`/settings/badges`）](badges.md)
+- [管理のトップ（`/admin`）](admin.md)
 - [サーバーの設定（`/admin/settings`）](admin-settings.md)
+- [モデレーションのトップ（`/moderation`）](moderation.md)
+- [通報の詳細（`/moderation/reports/{id}`）](moderation-report.md)
+- [通報の一覧（`/moderation/reports`）](moderation-reports.md)
 - [ランディングページ（`/`、サインインしていない人）](landing.md)
+- [ようこそ（`/welcome`、アカウントを作った直後）](welcome.md)
+- [始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）](home-first-run.md)
+- [アカウントの検索（`/search`）](search.md)
 - [設定のメニュー（`/settings` と各画面の横）](settings-menu.md)
 - [設定のトップ（`/settings`）](settings.md)
 - [表示・投稿・タイムライン（`/settings/preferences`）](settings-preferences.md)

@@ -30,6 +30,11 @@
 // A search ranks the emoji of every section by `searchEmojis` (exported for the completion of ADR-0092) into one
 // section of results, disables the section buttons, and announces the count in a role="status" region once typing
 // pauses.
+//
+// While the app is still loading emoji (`loading`), the picker is there at once with its search field and section
+// buttons (web-client/16-look-states-and-wording.md G15): the buttons of the sections still without emoji are disabled,
+// the grid is aria-busy="true" and shows skeleton rows after the emoji it has, and the status region says
+// `labels.loading`.
 import {
   defaultRangeExtractor,
   observeElementRect,
@@ -59,6 +64,7 @@ import {
   TravelEmojiIcon,
 } from "./Icons";
 import { Menu, MenuItem, MenuTrigger } from "./Menu";
+import { Skeleton } from "./Skeleton";
 import { countAnnounceDelay } from "./TextArea";
 import { TextField } from "./TextField";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
@@ -182,6 +188,8 @@ export type EmojiPickerLabels = {
   resultCount: (count: number) => string;
   /** What the grid says when no emoji matches the search, or there are none. */
   empty: string;
+  /** What the status region says while `loading`. */
+  loading?: string | undefined;
   /** The name and tooltip of the skin tone button and the name of its menu; needed for the button to show. */
   skinTone?: string | undefined;
   /** The name of each skin tone in the menu; needed for the button to show. */
@@ -189,8 +197,13 @@ export type EmojiPickerLabels = {
 };
 
 export type EmojiPickerProps = {
-  /** The sections of the grid, in order. A section without emoji is left out, and so is its button. */
+  /**
+   * The sections of the grid, in order. A section without emoji is left out, and so is its button, except while
+   * `loading`, when its button shows disabled.
+   */
   sections: readonly EmojiPickerSection[];
+  /** Whether the app is still loading emoji: the grid shows skeleton rows after the emoji it has. */
+  loading?: boolean | undefined;
   /**
    * Called with the emoji picked. Unless `keepOpen` is true, the app closes the picker (and returns focus to its
    * field); with `keepOpen`, focus stays on the emoji picked so that the user can go on picking.
@@ -236,6 +249,9 @@ const picker = tv({
     // Copies of a heading and two cells, never seen, that tell the sizes of the rows and the columns (ADR-0097 §1).
     probe: "pointer-events-none invisible absolute top-0 inset-s-0 flex items-start gap-1",
     empty: "p-2 text-sm text-fg-muted",
+    // The rows of the emoji still loading, in the size of the emoji rows.
+    skeleton: "flex flex-col gap-1 pt-1",
+    skeletonCell: "size-10 shrink-0 rounded-md pointer-coarse:size-11",
     status: "sr-only",
   },
 });
@@ -662,6 +678,7 @@ type Jump = { section: string; offset: number };
  */
 export function EmojiPicker({
   sections,
+  loading = false,
   onSelect,
   skinTone = "none",
   onSkinToneChange,
@@ -879,7 +896,24 @@ export function EmojiPicker({
     else rowGroups.push({ group: row.group, items: [virtualItem] });
   }
 
-  const status = announced !== null && announced.query === query ? labels.resultCount(announced.count) : "";
+  const status = loading
+    ? (labels.loading ?? "")
+    : announced !== null && announced.query === query
+      ? labels.resultCount(announced.count)
+      : "";
+  // While loading, the sections still without emoji keep their (disabled) buttons.
+  const buttons = loading ? sections : shown;
+  const skeletonRows = loading ? (
+    <div aria-hidden="true" className={styles.skeleton()}>
+      {[0, 1, 2, 3].map((row) => (
+        <div key={row} className={styles.row()}>
+          {Array.from({ length: columns }, (_, column) => (
+            <Skeleton key={column} shape="rect" className={styles.skeletonCell()} />
+          ))}
+        </div>
+      ))}
+    </div>
+  ) : null;
 
   return (
     <div className={styles.root()}>
@@ -906,16 +940,16 @@ export function EmojiPicker({
           />
         )}
       </div>
-      {shown.length > 1 && (
+      {buttons.length > 1 && (
         <Toolbar aria-label={labels.categories} className={styles.toolbar()}>
-          {shown.map((section) => (
+          {buttons.map((section) => (
             <TooltipTrigger key={section.id}>
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label={section.heading}
                 {...(section.id === currentSection ? { "aria-current": "true" } : {})}
-                isDisabled={searching}
+                isDisabled={searching || section.emojis.length === 0}
                 className={styles.tab()}
                 onPress={() => {
                   moveTo(section);
@@ -941,11 +975,12 @@ export function EmojiPicker({
         aria-label={labels.grid}
         aria-rowcount={Math.max(1, layout.rows.length)}
         aria-colcount={columns}
+        {...(loading ? { "aria-busy": "true" } : {})}
         className={styles.grid()}
         // eslint-disable-next-line restrict/syntax -- ADR-0097 §4: GridList cannot leave rows unrendered, so the virtualized grid handles its own keys (APG grid)
         onKeyDown={onGridKeyDown}
       >
-        {layout.rows.length === 0 ? (
+        {layout.rows.length === 0 && loading ? null : layout.rows.length === 0 ? (
           <div role="row" aria-rowindex={1}>
             <div role="gridcell" aria-colspan={columns} className={styles.empty()}>
               {labels.empty}
@@ -1008,6 +1043,7 @@ export function EmojiPicker({
             ))}
           </div>
         )}
+        {skeletonRows}
       </div>
       <span role="status" className={styles.status()}>
         {status}

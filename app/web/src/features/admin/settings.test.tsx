@@ -155,7 +155,11 @@ describe("the server's name", () => {
   test("is in the administration menu", async () => {
     namesServer(undefined);
     const { user } = await renderApp({ path: "/admin" });
-    await user.click(await within(await screen.findByRole("main")).findByRole("link", { name: "Server settings" }));
+    await user.click(
+      await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole("link", {
+        name: "Server settings",
+      }),
+    );
 
     expect(await screen.findByRole("heading", { level: 1, name: "Server settings" })).toBeInTheDocument();
   });

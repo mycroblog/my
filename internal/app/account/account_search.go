@@ -11,9 +11,12 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
-// The prefix search of accounts for the autocomplete of mentions and the account search
-// (ADR-0092 §1, FR-119, FR-306): the accounts with a search term that starts with the query, in
-// the order exact match, followed by the viewer, local, most followers.
+// The search of accounts for the autocomplete of mentions and the account search (ADR-0092 §1,
+// FR-119, FR-306, FR-307): the accounts with a search term that starts with the query, in the
+// order exact match, match from the start of a name, followed by the viewer, local, most
+// followers. The infix terms of discoverable local accounts make the query match the middle of
+// their names; a local account that is not discoverable matches only its whole username, or a
+// viewer that follows it.
 
 // Limits of the prefix search of accounts.
 const (
@@ -76,10 +79,12 @@ func NormalizeSearchQuery(q string) (string, error) {
 // Search returns the IDs of up to limit accounts (DefaultSearchLimit when zero or less, at most
 // MaxSearchLimit) whose search term starts with q, for viewerID. It reads the first
 // searchCandidates terms of the range in term order, leaves out the accounts that the viewer
-// blocks, mutes, or is blocked by and those of a suspended domain, and orders the rest: an
-// exact match of the username (or username@domain) first, then the accounts that the viewer
-// follows, then the local ones, then those with more followers, and then in term order. The
-// search does not read indexable (ADR-0092 §1).
+// blocks, mutes, or is blocked by, those of a suspended domain, and those that match only by an
+// exact-username term that is not equal to q when the viewer does not follow them, and orders
+// the rest: an exact match of the username (or username@domain) first, then the matches from
+// the start of a name (not only an infix), then the accounts that the viewer follows, then the
+// local ones, then those with more followers, and then in term order. The search does not read
+// indexable (ADR-0092 §1).
 func (s *PrefixSearch) Search(ctx context.Context, viewerID, q string, limit int) ([]string, error) {
 	n, err := NormalizeSearchQuery(q)
 	if err != nil {
@@ -95,9 +100,9 @@ func (s *PrefixSearch) Search(ctx context.Context, viewerID, q string, limit int
 	}
 
 	type candidate struct {
-		id, domain   string
-		exact, local bool
-		rel          SearchRelation
+		id, domain                     string
+		exact, prefix, unlisted, local bool
+		rel                            SearchRelation
 	}
 	var cands []*candidate
 	byID := map[string]*candidate{}
@@ -108,8 +113,13 @@ func (s *PrefixSearch) Search(ctx context.Context, viewerID, q string, limit int
 			byID[t.AccountID] = c
 			cands = append(cands, c)
 		}
-		if t.Kind == account.SearchTermUsername && t.Term == n {
-			c.exact = true
+		switch t.Kind {
+		case account.SearchTermUsername, account.SearchTermExactUsername:
+			c.exact = c.exact || t.Term == n
+			c.prefix = true
+			c.unlisted = t.Kind == account.SearchTermExactUsername
+		case account.SearchTermDisplayName:
+			c.prefix = true
 		}
 	}
 	if len(cands) == 0 {
@@ -141,14 +151,14 @@ func (s *PrefixSearch) Search(ctx context.Context, viewerID, q string, limit int
 	kept := cands[:0]
 	for _, c := range cands {
 		c.rel = rels[c.id]
-		if c.rel.Hidden || !c.local && suspended[c.domain] {
+		if c.rel.Hidden || !c.local && suspended[c.domain] || c.unlisted && !c.exact && !c.rel.Following {
 			continue
 		}
 		kept = append(kept, c)
 	}
 
 	slices.SortStableFunc(kept, func(a, b *candidate) int {
-		for _, k := range [][2]bool{{a.exact, b.exact}, {a.rel.Following, b.rel.Following}, {a.local, b.local}} {
+		for _, k := range [][2]bool{{a.exact, b.exact}, {a.prefix, b.prefix}, {a.rel.Following, b.rel.Following}, {a.local, b.local}} {
 			if k[0] != k[1] {
 				if k[0] {
 					return -1

@@ -298,7 +298,8 @@ test.describe("reports", () => {
     await expectNoHorizontalScroll(page);
 
     // The ban, by keyboard: the radio's input is visually hidden under its drawn circle.
-    const handling = main.getByRole("region").last();
+    // The decision of the report's page: its last region is the handling.
+    const handling = main.locator("[data-triage-decision]").getByRole("region").last();
     await handling.locator('input[type="radio"][value="ban"]').focus();
     await page.keyboard.press("Space");
     await expect(handling.locator('input[type="radio"][value="ban"]')).toBeChecked();
@@ -324,7 +325,7 @@ test.describe("reports", () => {
     await page.keyboard.press("Space");
     await handling.locator('form button[type="submit"]').click();
     await expect(handling.getByRole("status").filter({ hasText: /\S/ })).toBeVisible();
-    await expect(main.getByRole("heading", { level: 2 }).last()).toBeFocused();
+    await expect(handling.getByRole("heading", { level: 2 })).toBeFocused();
     expect(actions).toEqual([`limit ${reportId}`]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

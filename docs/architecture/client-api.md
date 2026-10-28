@@ -131,7 +131,8 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 
   サポーターの一覧（`GET /instance/supporters`）の応答は、問題の応答も含め、`search_indexing` に関わらずいつも `X-Robots-Tag: noindex, noarchive` です（`platform` の `noArchivePaths`、ADR-0057）。
 - 投稿フォームの補完の前方一致の検索（`GET /accounts/search`・`GET /tags/search`、ADR-0092）はトークン必須で、アカウントの結果が閲覧者のブロック・ミュート・フォローで変わり、同じ接頭辞を打ち直すと同じ問い合わせが続くので、`Cache-Control: private, max-age=30` を付けます。
-  `searchAccounts` は `q`（先頭の `@` を除いて 1〜100 文字）のユーザー名・`username@domain`・表示名の語の前方一致で、`account` の `PrefixSearch` が `account_search_terms` から選んだアカウントを返し、`presentable` でもう一度確かめます。`limit` は既定 8・最大 20 で、ページングも解決（`resolve`）もしません。
+  `searchAccounts` は `q`（先頭の `@` を除いて 1〜100 文字）のユーザー名・`username@domain`・表示名の語の前方一致と、このサーバーの見つけてもらう設定がオンのアカウントのユーザー名・表示名の部分一致（FR-307）で、`account` の `PrefixSearch` が `account_search_terms` から選んだアカウントを返し、`presentable` でもう一度確かめます。`limit` は既定 8・最大 20 で、ページングも解決（`resolve`）もしません。
+- おすすめのアカウント（`GET /accounts/suggestions`、FR-308、スコープ `read:accounts`）は、`account` の `Suggestions` が、インスタンスの設定 `featured_accounts` のアカウントをその順に、次に 30 日以内に `public` か `local` の投稿をしたローカルのアカウントを最後に投稿した順に並べ、閲覧者自身・フォロー中・ブロックとミュートの関係にあるアカウント・見つけてもらう設定がオフのアカウント・`active` でないアカウントを除いて返します。応答はアカウントとおすすめの理由（`featured` / `recently_active`）の組（`AccountSuggestion`）で、フォローするたびに変わるので `Cache-Control: no-store` です。`limit` は既定 10・最大 40 で、ページングはしません。
   `searchTags`（スコープ `read:statuses`）は `q`（先頭の `#` を除いて 1〜100 文字）を `NormalizeTag`（NFKC + 小文字化）にした前方一致で、`timeline` の `TagSearch` が `tags.name_normalized` の範囲から最大 100 件を読み、`tag_usage` に行のあるタグ（`public` / `local` / `unlisted` の投稿に今付いているもの）だけを、完全一致 → 投稿の数の多い順 → 最近使われた順に返します。
   応答はタグの名前（最初に使われた表記）と投稿の数（`TagSuggestion`）です。`limit` は `searchAccounts` と同じ `SearchLimit`（既定 8・最大 20）で、ページングはしません。
 - `/api/v1` のすべての応答はローカライズされうるので、`Vary: Accept-Language` を付けます（`localize`）。

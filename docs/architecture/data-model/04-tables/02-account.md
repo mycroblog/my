@@ -13,7 +13,7 @@
 | `remote_account_heads` | 投影 | `account_id`（PK）, `snapshot_id`, `inbox_url`, `shared_inbox_url`（NULL 可）, `last_fetched_at`, `consecutive_fetch_failures`（`int`） | インデックス `(last_fetched_at)`（定期リフレッシュ）、`(shared_inbox_url)`（アカウント削除の `Delete` を送る既知の shared inbox、§8）。取得のたびに最新のスナップショットを指し、`last_fetched_at` を取得の時刻、`consecutive_fetch_failures` を 0 にする。取得に失敗したら `consecutive_fetch_failures` を 1 増やし、`last_fetched_at` を失敗の時刻にする（次の定期リフレッシュを 24 時間後に送る） |
 | `remote_account_handle_verifications` | イベント | `id`, `account_id`, `username`, `domain`, `outcome`（`enum(verified, mismatch)`）, `checked_at` | インデックス `(account_id, id DESC)`。WebFinger で `acct:{username}@{domain}` を確かめた記録（[federation.md §6.2](../../federation.md#62-actor-とハンドル)）。`verified` は `self` リンクが Actor の `uri` を指したこと、`mismatch` は答えがそれを確かめなかったこと。結果が最新の記録と同じなら挿入しない |
 | `account_handles` | 投影 | `account_id`（PK）, `username`, `username_normalized`, `domain` | **一意 `(username_normalized, domain)`**。WebFinger・`@user@host` の解決（FR-305, FR-401）。ローカルは `local_accounts`、リモートは最新の `remote_account_handle_verifications` が `verified` のときだけ作る（確かめていない・`mismatch` のリモートのアカウントは行を持たない） |
-| `account_search_terms` | 投影 | `account_id`, `kind`（`enum(username, display_name)`）, `term`, `is_local`（`bool`） | PK `(account_id, kind, term)`。インデックス `(term, account_id)`（PostgreSQL は `term` を `COLLATE "C"`、SQLite は既定の `BINARY` でバイト順）。アカウントの前方一致の検索（FR-119, FR-306, ADR-0092 §1）が照合する語 |
+| `account_search_terms` | 投影 | `account_id`, `kind`（`enum(username, display_name, infix, exact_username)`）, `term`, `is_local`（`bool`） | PK `(account_id, kind, term)`。インデックス `(term, account_id)`（PostgreSQL は `term` を `COLLATE "C"`、SQLite は既定の `BINARY` でバイト順）。アカウントの名前の検索（FR-119, FR-306, FR-307, ADR-0092 §1）が前方一致で照合する語 |
 
 - インスタンス自身の Actor（`Application`）もローカルの `accounts` に 1 行持ちます（`local_accounts` と `account_handles` には入れません）。
   ローカルの `application` はこの 1 行だけなので、部分一意インデックスで二重作成を防ぎ、作成を冪等にします。
@@ -21,9 +21,11 @@
 - リモートのハンドルが変わった場合、同じハンドルを別の Actor が後から名乗ることがあります。後から `verified` を記録した Actor がハンドルを持ち、先に持っていた Actor の行は投影から消えます（再構築も記録の `id` 順に当てはめるので同じ結果になります）。
 - `account_search_terms` は、ハンドル（`account_handles`）・プロフィールの現在の版（`account_profile_heads`）・ライフサイクル（`account_lifecycle_states`）と、`moderation` が凍結しているか（`AccountPolicy.SuspendedTx`）から作ります（ADR-0092 §1）。
   - 語は、`username_normalized` と、リモートのアカウントでは加えて `username@domain`（`kind = username`）、表示名から `:shortcode:` を除いて NFKC + 小文字化した全体と、空白で区切った各語（`kind = display_name`、20 語まで）です。CJK の表示名は語に分けないので、先頭からの前方一致になります。語は 100 文字（検索の `q` の上限）で切ります。
+  - 見つけてもらう設定（プロフィールの `discoverable`）がオンのローカルのアカウントは、加えて、`username_normalized` と表示名の全体の、2 文字目以降から始まる接尾辞（`kind = infix`。空白から始まるものを除く）を持ちます。接尾辞の前方一致は名前の途中との部分一致になります（FR-307）。
+  - `discoverable` がオフのローカルのアカウントは、`username_normalized` の 1 行（`kind = exact_username`）だけを持ちます。検索は、`q` がそれと等しいときか、閲覧者がそのアカウントをフォローしているときだけ、そのアカウントを返します。リモートのアカウントの `discoverable` は語に関わりません。
   - `active` でない・凍結中（自身の処分による `suspend` / `ban`）・ハンドルのない・`Application` のアカウントは行を持ちません。停止したドメインのアカウントは行を持ち、検索のときに除きます。
   - 同期投影です（ADR-0020 規約 7）。`SearchTermProjector` が、ローカルのアカウントの作成・プロフィールの版・ライフサイクルのイベント・ハンドルの確認（ハンドルを奪われたアカウントも）と、`moderation` の `EventAccountSuspensionChanged` のたびに、そのアカウントの行を作り直します。再構築（`my projection rebuild account_search_terms`）は、ハンドルを持つアカウントごとに同じ規則で作ります。
-  - 検索は `term >= q AND term < q || U+10FFFF` の範囲を索引の順に最大 100 行読み、`graph` の `CandidateRelations`（ブロックの双方向・期限内のミュート・フォロー・フォロワー数）と `moderation` のドメインの停止で除いてから、完全一致 → フォロー中 → ローカル → フォロワーの多い順に並べます。`graph` のテーブルは JOIN しません。
+  - 検索は `term >= q AND term < q || U+10FFFF` の範囲を索引の順に最大 100 行読み、`graph` の `CandidateRelations`（ブロックの双方向・期限内のミュート・フォロー・フォロワー数）と `moderation` のドメインの停止で除いてから、完全一致 → 名前の先頭からの一致（`infix` だけで一致したものより先）→ フォロー中 → ローカル → フォロワーの多い順に並べます。`graph` のテーブルは JOIN しません。
 
 #### プロフィール【イベント（版）】
 
