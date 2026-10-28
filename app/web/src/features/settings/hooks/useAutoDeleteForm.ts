@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import type { FormActionResult } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -78,10 +79,19 @@ export function useAutoDeleteForm() {
     setDraft({ ...policy, ...next });
   };
 
+  const hasChanges = !samePolicy(policy, saved);
+  let result: FormActionResult | undefined;
+  if (save.isError)
+    result = {
+      tone: "danger",
+      message: t("client:settings.auto_delete.save_failed", { reason: errorMessage(save.error) }),
+    };
+  else if (status !== undefined && !hasChanges) result = { tone: "success", message: status };
+
   return {
     policy,
     /** Whether the form holds edits that are not saved: leaving the page asks first. */
-    hasChanges: !samePolicy(policy, saved),
+    hasChanges,
     setEnabled: (enabled: boolean) => {
       change({ enabled });
     },
@@ -113,9 +123,10 @@ export function useAutoDeleteForm() {
       save.mutate(policy);
     },
     isSaving: save.isPending,
-    /** Why the last save failed, localized; nothing was changed and the form keeps the edits. */
-    saveError: save.isError ? errorMessage(save.error) : undefined,
-    /** What the last save did, for the region that reports it. */
-    status,
+    /**
+     * The result of the last save beside the save button (web-client/16-look-states-and-wording.md G24): the policy it
+     * saved, until the form changes again; or why it failed, when nothing was changed and the form keeps the edits.
+     */
+    result,
   };
 }

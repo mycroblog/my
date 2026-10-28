@@ -230,13 +230,21 @@ export function AppNavTopAction({ href, label }: AppNavTopActionProps) {
 export type AppNavBrandProps = {
   /** The server's name (`ServerNameLink`), which names the brand: the wordmark beside it is decorative. */
   children: ReactNode;
+  /**
+   * Whether `children` show the server's own logo (`ServerNameLink`'s `logo`), which includes its name and takes the
+   * place of the built-in wordmark.
+   */
+  ownLogo?: boolean;
 };
 
-/** The wordmark with the server's name beside it: the start of the sidebar and of the signed-out top bar. */
-export function AppNavBrand({ children }: AppNavBrandProps) {
+/**
+ * The wordmark with the server's name beside it, or the server's own logo alone: the start of the sidebar and of the
+ * signed-out top bar.
+ */
+export function AppNavBrand({ children, ownLogo = false }: AppNavBrandProps) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <Wordmark name="my" decorative size="sm" />
+      {!ownLogo && <Wordmark name="my" decorative size="sm" />}
       {children}
     </div>
   );

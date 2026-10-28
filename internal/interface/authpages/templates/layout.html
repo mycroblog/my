@@ -11,9 +11,13 @@
 <body>
 <main class="page">
 <header class="site-header">
-<span class="site-logo" aria-hidden="true"></span>
+{{if .Logo}}<picture>
+{{with .LogoDark}}<source srcset="{{.}}" media="(prefers-color-scheme: dark)">
+{{end}}<img class="site-own-logo" src="{{.Logo}}" alt="{{.InstanceName}}">
+</picture>
+{{else}}<span class="site-logo" aria-hidden="true"></span>
 {{with .InstanceName}}<p class="site-name" dir="auto">{{.}}</p>
-{{end}}</header>
+{{end}}{{end}}</header>
 <div class="card">
 {{template "content" .}}
 </div>

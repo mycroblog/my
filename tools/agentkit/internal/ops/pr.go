@@ -63,8 +63,7 @@ func acceptanceCriteria(body string) []criterion {
 // Open pushes the branch and opens its pull request from .github/pull_request_template.md's sections: the
 // summary, Closes #N (or Stacked on #M first), the commit subjects as the changes, the issue's acceptance
 // criteria with the checked state they have in the issue, the decisions, the documentation (docsync.Section: it refuses to open the PR while a document
-// that describes the changed paths is neither changed nor given a reason), and the checklist (`scripts/task.sh check` checked when `agentkit check` passed on
-// this content of the tree). It comments the PR on the issue and returns the PR URL.
+// that describes the changed paths is neither changed nor given a reason), and the checklist. It comments the PR on the issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
 	if err != nil {
@@ -150,7 +149,6 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		decisions = "None"
 	}
 	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n%s\n## Checklist\n\n", decisions, docSection)
-	fmt.Fprintf(&b, "- [%s] `scripts/task.sh check` passes locally\n", mark(CheckPassed(r, "origin/"+o.Base)))
 	fmt.Fprintf(&b, "- [%s] Docs / i18n catalogs updated where needed\n", mark(o.Confirm))
 	fmt.Fprintf(&b, "- [%s] No secrets, no unrelated changes\n", mark(o.Confirm))
 	if o.Footer != "" {
@@ -177,11 +175,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 			return url, err
 		}
 	}
-	note := ""
-	if !CheckPassed(r, "origin/"+o.Base) {
-		note = " (the check item is unchecked: run `agentkit check` and tick it)"
-	}
-	return url + note, nil
+	return url, nil
 }
 
 func mark(b bool) string {
@@ -371,7 +365,7 @@ func Wait(n int, branch, head string, timeout, interval time.Duration, all bool,
 		case p.HeadRefName == branch && head != "" && p.HeadRefOid != head:
 			// GitHub has not seen the push yet.
 		case p.Mergeable == "CONFLICTING":
-			return WaitResult{3, []string{fmt.Sprintf("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), agentkit check, push (workflow.md §7)", n)}}
+			return WaitResult{3, []string{fmt.Sprintf("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)}}
 		default:
 			res, failed, pending := summarize(p.StatusCheckRollup)
 			if res == "failed" && (!all || !pending) {

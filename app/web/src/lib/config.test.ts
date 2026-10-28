@@ -25,6 +25,11 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig(shellWith(JSON.stringify(valid)))).toEqual(valid);
   });
 
+  test("reads the instance's own brand images", () => {
+    const brand = { ...valid, icon: { url: "/brand/r1/icon.svg", width: 64, height: 64 } };
+    expect(readRuntimeConfig(shellWith(JSON.stringify(brand)))).toEqual(brand);
+  });
+
   test("ignores fields the client does not know", () => {
     expect(readRuntimeConfig(shellWith(JSON.stringify({ ...valid, future: true })))).toEqual(valid);
   });
@@ -35,6 +40,10 @@ describe("readRuntimeConfig", () => {
     ["text that is not JSON", shellWith("{")],
     ["a missing field", shellWith(JSON.stringify({ ...valid, instanceName: undefined }))],
     ["an empty name", shellWith(JSON.stringify({ ...valid, instanceName: "" }))],
+    [
+      "a brand image elsewhere than under /brand/",
+      shellWith(JSON.stringify({ ...valid, logo: { url: "https://elsewhere.example/logo.svg", width: 4, height: 1 } })),
+    ],
     [
       "an API origin that is not an http(s) URL",
       shellWith(JSON.stringify({ ...valid, apiOrigin: "javascript:alert(1)" })),

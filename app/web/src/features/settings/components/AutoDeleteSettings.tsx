@@ -1,19 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automatic deletion of the user's own old posts (FR-118): turning it on, the age after which posts go, and the
 // exceptions that keep them. The form saves the whole policy at once; the server deletes the posts in its hourly job.
-import {
-  Button,
-  Checkbox,
-  ConfirmDialog,
-  Grid,
-  Hint,
-  InlineError,
-  Select,
-  SelectItem,
-  Stack,
-  StatusMessage,
-  Text,
-} from "@my/ui";
+import { Button, Checkbox, ConfirmDialog, FormActionBar, Grid, Hint, Section, Select, SelectItem, Stack } from "@my/ui";
 import { useId } from "react";
 import { visibilities, visibilityLabel } from "../../compose";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -29,131 +17,151 @@ const flags: readonly { id: AutoDeleteFlag; label: ClientMessageKey }[] = [
   { id: "keep_polls", label: "client:settings.auto_delete.keep.polls" },
 ];
 
+/**
+ * The automatic deletion in the sections of its screen requirements (web-client/screens/settings-auto-delete.md): what
+ * it deletes and when, the kinds of posts kept, the visibilities kept, and the posts kept for their reactions. The
+ * save button and the policy it saved stay at the bottom edge of the screen (`FormActionBar` `sticky`).
+ */
 export function AutoDeleteSettings() {
   const t = useT();
   const form = useAutoDeleteForm();
-  const keepId = useId();
-  const visibilityId = useId();
   const thresholdLabel = (count: number) =>
     count === 0
       ? t("client:settings.auto_delete.threshold.off")
       : t("client:settings.auto_delete.threshold.count", { count });
   return (
     <>
-      <Stack as="form" onSubmit={form.submit} gap="6">
+      <Stack as="form" onSubmit={form.submit} gap="8">
         <Hint size="inherit">{t("client:settings.auto_delete.description")}</Hint>
-        <Checkbox
-          isSelected={form.policy.enabled}
-          onChange={form.setEnabled}
-          description={t("client:settings.auto_delete.enabled.description")}
-        >
-          {t("client:settings.auto_delete.enabled")}
-        </Checkbox>
-        <Select
-          label={t("client:settings.auto_delete.age")}
-          description={t("client:settings.auto_delete.age.description")}
-          value={String(form.policy.min_age_days)}
-          onChange={(key) => {
-            if (typeof key === "string") form.setMinAgeDays(Number(key));
-          }}
-          items={form.ageChoices.map((days) => ({
-            id: String(days),
-            name: t("client:settings.auto_delete.age.days", { count: days }),
+        <Section title={t("client:settings.auto_delete.policy")}>
+          <Stack gap="6">
+            <Checkbox
+              isSelected={form.policy.enabled}
+              onChange={form.setEnabled}
+              description={t("client:settings.auto_delete.enabled.description")}
+            >
+              {t("client:settings.auto_delete.enabled")}
+            </Checkbox>
+            <Select
+              label={t("client:settings.auto_delete.age")}
+              description={t("client:settings.auto_delete.age.description")}
+              value={String(form.policy.min_age_days)}
+              onChange={(key) => {
+                if (typeof key === "string") form.setMinAgeDays(Number(key));
+              }}
+              items={form.ageChoices.map((days) => ({
+                id: String(days),
+                name: t("client:settings.auto_delete.age.days", { count: days }),
+              }))}
+            >
+              {(choice) => (
+                <SelectItem id={choice.id} textValue={choice.name}>
+                  {choice.name}
+                </SelectItem>
+              )}
+            </Select>
+          </Stack>
+        </Section>
+        <CheckboxSection
+          title={t("client:settings.auto_delete.keep")}
+          description={t("client:settings.auto_delete.keep.description")}
+          items={flags.map((flag) => ({
+            id: flag.id,
+            label: t(flag.label),
+            selected: form.policy[flag.id],
+            onChange: (selected: boolean) => {
+              form.setFlag(flag.id, selected);
+            },
           }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-        <Stack as="fieldset" aria-describedby={keepId} container shrink gap="2">
-          <Text as="legend" size="sm" weight="medium" tone="fg">
-            {t("client:settings.auto_delete.keep")}
-          </Text>
-          <Hint id={keepId}>{t("client:settings.auto_delete.keep.description")}</Hint>
-          <Grid as="ul" gap="6" rowGap="1">
-            {flags.map((flag) => (
-              <li key={flag.id}>
-                <Checkbox
-                  isSelected={form.policy[flag.id]}
-                  onChange={(selected) => {
-                    form.setFlag(flag.id, selected);
-                  }}
-                >
-                  {t(flag.label)}
-                </Checkbox>
-              </li>
-            ))}
-          </Grid>
-        </Stack>
-        <Stack as="fieldset" aria-describedby={visibilityId} container shrink gap="2">
-          <Text as="legend" size="sm" weight="medium" tone="fg">
-            {t("client:settings.auto_delete.visibilities")}
-          </Text>
-          <Hint id={visibilityId}>{t("client:settings.auto_delete.visibilities.description")}</Hint>
-          <Grid as="ul" gap="6" rowGap="1">
-            {visibilities.map((visibility) => (
-              <li key={visibility}>
-                <Checkbox
-                  isSelected={form.policy.keep_visibilities.includes(visibility)}
-                  onChange={(selected) => {
-                    form.setKeepVisibility(visibility, selected);
-                  }}
-                >
-                  {t(visibilityLabel[visibility])}
-                </Checkbox>
-              </li>
-            ))}
-          </Grid>
-        </Stack>
-        <Select
-          label={t("client:settings.auto_delete.min_boosts")}
-          value={String(form.policy.keep_min_boosts)}
-          onChange={(key) => {
-            if (typeof key === "string") form.setMinBoosts(Number(key));
-          }}
-          items={form.boostChoices.map((count) => ({ id: String(count), name: thresholdLabel(count) }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-        <Select
-          label={t("client:settings.auto_delete.min_favourites")}
-          value={String(form.policy.keep_min_favourites)}
-          onChange={(key) => {
-            if (typeof key === "string") form.setMinFavourites(Number(key));
-          }}
-          items={form.favouriteChoices.map((count) => ({ id: String(count), name: thresholdLabel(count) }))}
-        >
-          {(choice) => (
-            <SelectItem id={choice.id} textValue={choice.name}>
-              {choice.name}
-            </SelectItem>
-          )}
-        </Select>
-        {form.saveError !== undefined && (
-          <InlineError alert size="inherit">
-            {t("client:settings.auto_delete.save_failed", {
-              reason: form.saveError,
-            })}
-          </InlineError>
-        )}
-        <Stack gap="3">
-          <div>
-            <Button type="submit" variant="primary" isPending={form.isSaving}>
-              {t("client:settings.auto_delete.save")}
-            </Button>
-          </div>
-          <StatusMessage>{form.status}</StatusMessage>
-        </Stack>
+        />
+        <CheckboxSection
+          title={t("client:settings.auto_delete.visibilities")}
+          description={t("client:settings.auto_delete.visibilities.description")}
+          items={visibilities.map((visibility) => ({
+            id: visibility,
+            label: t(visibilityLabel[visibility]),
+            selected: form.policy.keep_visibilities.includes(visibility),
+            onChange: (selected: boolean) => {
+              form.setKeepVisibility(visibility, selected);
+            },
+          }))}
+        />
+        <Section title={t("client:settings.auto_delete.reactions")}>
+          <Stack gap="6">
+            <Select
+              label={t("client:settings.auto_delete.min_boosts")}
+              value={String(form.policy.keep_min_boosts)}
+              onChange={(key) => {
+                if (typeof key === "string") form.setMinBoosts(Number(key));
+              }}
+              items={form.boostChoices.map((count) => ({ id: String(count), name: thresholdLabel(count) }))}
+            >
+              {(choice) => (
+                <SelectItem id={choice.id} textValue={choice.name}>
+                  {choice.name}
+                </SelectItem>
+              )}
+            </Select>
+            <Select
+              label={t("client:settings.auto_delete.min_favourites")}
+              value={String(form.policy.keep_min_favourites)}
+              onChange={(key) => {
+                if (typeof key === "string") form.setMinFavourites(Number(key));
+              }}
+              items={form.favouriteChoices.map((count) => ({ id: String(count), name: thresholdLabel(count) }))}
+            >
+              {(choice) => (
+                <SelectItem id={choice.id} textValue={choice.name}>
+                  {choice.name}
+                </SelectItem>
+              )}
+            </Select>
+          </Stack>
+        </Section>
+        <FormActionBar sticky result={form.result}>
+          <Button type="submit" variant="primary" isPending={form.isSaving}>
+            {t("client:settings.auto_delete.save")}
+          </Button>
+        </FormActionBar>
       </Stack>
       {/* Outside the form: React bubbles the dialog's own submit event through its portal to an enclosing form. */}
       <UnsavedChangesDialog hasChanges={form.hasChanges} />
     </>
+  );
+}
+
+type CheckboxItem = { id: string; label: string; selected: boolean; onChange: (selected: boolean) => void };
+
+/**
+ * A section of checkboxes, each keeping a kind of post: a group (the APG checkbox pattern) named by the section's
+ * heading and described by its description.
+ */
+function CheckboxSection({
+  title,
+  description,
+  items,
+}: {
+  title: string;
+  description: string;
+  items: readonly CheckboxItem[];
+}) {
+  const headingId = useId();
+  const descriptionId = useId();
+  return (
+    <Section title={title} headingId={headingId}>
+      <Stack role="group" aria-labelledby={headingId} aria-describedby={descriptionId} container shrink gap="2">
+        <Hint id={descriptionId}>{description}</Hint>
+        <Grid as="ul" gap="6" rowGap="1">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Checkbox isSelected={item.selected} onChange={item.onChange}>
+                {item.label}
+              </Checkbox>
+            </li>
+          ))}
+        </Grid>
+      </Stack>
+    </Section>
   );
 }
 

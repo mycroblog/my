@@ -12,6 +12,8 @@
 // - public images under /media/ are cache first, at most 300 entries for 30 days;
 // - the instance theme's stylesheets under /theme/ (ADR-0059), named by their revision, are cache first, at
 //   most 5 entries;
+// - the instance's own icon and logos under /brand/ (ADR-0116), named by their revision, are cache first, at most 30
+//   entries (the files of the current icon and logos, with room for a change), so that the offline shell shows them;
 // - the Noto Color Emoji splits of the build (ADR-0095 §3), which the precache leaves out (about 6 MB in both
 //   formats), are cache first when a page first shows one of their emoji, at most 44 entries (two builds of the
 //   splits of both formats);
@@ -40,6 +42,7 @@ import {
   mediaCacheName,
   shellPath,
   themeCacheName,
+  brandCacheName,
   skipWaitingMessage,
 } from "../src/lib/sw-protocol.ts";
 import { clickedURL, notificationFor } from "./push.ts";
@@ -120,6 +123,15 @@ registerRoute(
   new CacheFirst({
     cacheName: themeCacheName,
     plugins: [new CacheableResponsePlugin({ statuses: [200] }), themeExpiration],
+  }),
+);
+
+const brandExpiration = new ExpirationPlugin({ maxEntries: 30, purgeOnQuotaError: true });
+registerRoute(
+  (options) => handlingOf(options) === "brand",
+  new CacheFirst({
+    cacheName: brandCacheName,
+    plugins: [new CacheableResponsePlugin({ statuses: [200] }), brandExpiration],
   }),
 );
 
