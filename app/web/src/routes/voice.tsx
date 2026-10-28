@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
-import { VoiceRoomList, voiceRoomsQueryOptions } from "../features/voice";
+import { VoiceRoomList, VoiceRoomsSkeleton, voiceRoomsQueryOptions } from "../features/voice";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/voice")({
     await queryClient.infiniteQuery({ ...voiceRoomsQueryOptions(api), staleTime: Infinity }).catch(() => undefined);
   },
   component: VoicePage,
+  pendingComponent: VoicePending,
 });
 
 function VoicePage() {
@@ -25,6 +26,17 @@ function VoicePage() {
     <>
       <PageHeading>{t("client:voice.title")}</PageHeading>
       <VoiceRoomList />
+    </>
+  );
+}
+
+/** The page's heading over the shape of the rooms, while the first page loads (web-client/16-look-states-and-wording.md G15). */
+function VoicePending() {
+  const t = useT();
+  return (
+    <>
+      <PageHeading>{t("client:voice.title")}</PageHeading>
+      <VoiceRoomsSkeleton />
     </>
   );
 }

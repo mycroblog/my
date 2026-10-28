@@ -14,7 +14,6 @@ import {
   MicrophoneIcon,
   RegionError,
   Section,
-  Spinner,
   Stack,
   Text,
   VoiceIcon,
@@ -29,6 +28,7 @@ import { useJoinedVoiceRoomId } from "../hooks/useVoiceCallControls";
 import { useCanStartVoiceRoom, useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
 import { useOpenFor } from "../hooks/useVoiceStage";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
+import { VoiceRoomsSkeleton } from "./VoiceSkeletons";
 
 type VoiceRoomItemProps = { room: VoiceRoom; headingLevel: 2 | 3; surface?: "card" | "plain" };
 
@@ -125,11 +125,7 @@ function Rooms() {
     case "unavailable":
       return <EmptyState heading={t("client:voice.unavailable")} />;
     case "loading":
-      return (
-        <div aria-busy="true">
-          <Spinner label={t("client:voice.list.loading")} />
-        </div>
-      );
+      return <VoiceRoomsSkeleton />;
     case "error":
       return (
         <RegionError

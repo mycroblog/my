@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The voice chat history of the settings (ADR-0100 §13, 回答 32): the rooms the user hosted, newest first, each with
 // its name (the host's text), when it opened and ended, and why it ended; an open one says it is still open.
-import {
-  Button,
-  Card,
-  DescriptionItem,
-  DescriptionList,
-  EmptyState,
-  Heading,
-  Hint,
-  RegionError,
-  Spinner,
-  Stack,
-} from "@my/ui";
+import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, RegionError, Stack } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type DateView, useVoiceHistory, type VoiceHistoryRow } from "../hooks/useVoiceHistory";
+import { VoiceHistorySkeleton } from "./VoiceSkeletons";
 
 function DateTimeText({ value }: { value: DateView }) {
   return <time dateTime={value.dateTime}>{value.text}</time>;
@@ -27,11 +17,7 @@ export function VoiceHistoryView() {
     case "unavailable":
       return <EmptyState heading={t("client:voice.unavailable")} />;
     case "loading":
-      return (
-        <div aria-busy="true">
-          <Spinner label={t("client:voice.list.loading")} />
-        </div>
-      );
+      return <VoiceHistorySkeleton />;
     case "error":
       return (
         <RegionError

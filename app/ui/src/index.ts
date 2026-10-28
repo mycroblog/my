@@ -112,7 +112,15 @@ export { QrCode, type QrCodeProps } from "./QrCode";
 export { RegionError, type RegionErrorProps } from "./RegionError";
 export { SignInState, type SignInStateProps } from "./SignInState";
 export { Skeleton, type SkeletonProps } from "./Skeleton";
-export { AccountRowSkeleton, NotificationRowSkeleton, PostSkeleton, type SkeletonRowProps } from "./SkeletonRows";
+export {
+  AccountRowSkeleton,
+  FactsCardSkeleton,
+  NotificationRowSkeleton,
+  PostSkeleton,
+  type SkeletonRowProps,
+  StageSkeleton,
+  VoiceRoomCardSkeleton,
+} from "./SkeletonRows";
 export { Spinner, type SpinnerProps } from "./Spinner";
 export { BrandIcon, type BrandIconProps, type BrandLogo } from "./BrandImage";
 export { BrandMark, type BrandMarkProps } from "./BrandMark";
