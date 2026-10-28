@@ -3,7 +3,7 @@ name: Slow suite
 # The checks too slow for the merge queue (ADR-0079): the web E2E over the full width × locale matrix on 8 shards, the
 # live interoperability test with Mastodon, GoToSocial, and Misskey, the PostgreSQL tests on a real postgres container
 # (ADR-0041), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the
-# LiveKit transport contract on livekit-server --dev (ADR-0102), the Docker Compose smoke test (linux/amd64)
+# LiveKit transport contract on livekit-server --dev (ADR-0102), the blob = s3 contract on Garage, the Docker Compose smoke test (linux/amd64)
 # with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0087 §4), the restore drill, golangci-lint over everything with the build tag sets,
 # and CodeQL. release.yml calls it as the release gate, nightly.yml every night,
 # and it runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`. Every job checks out the commit
@@ -62,6 +62,9 @@ jobs:
 
   voice-contract:
     uses: ./.github/workflows/voice-contract.yml
+
+  blob-contract:
+    uses: ./.github/workflows/blob-contract.yml
 
   docker:
     # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
@@ -191,7 +194,7 @@ jobs:
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
   result:
     if: always()
-    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, docker, upgrade, restore-drill, go-static, codeql]
+    needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, docker, upgrade, restore-drill, go-static, codeql]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results
