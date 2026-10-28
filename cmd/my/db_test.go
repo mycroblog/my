@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform"
@@ -94,5 +95,50 @@ func TestDBUpgradeRunsAndChecksSteps(t *testing.T) {
 	}
 	if code, _, stderr := runCmd(t, dbCmd, "upgrade"); code != 1 || !strings.Contains(stderr, "the schema of this release is not applied") {
 		t.Errorf("db upgrade on a new database = %d %q; want the schema to be applied first", code, stderr)
+	}
+}
+
+func TestDBBackup(t *testing.T) {
+	newAdminEnv(t)
+	if code, _, stderr := runAdminCreate(t, adminPassword+"\n", "-username", "alice", "-email", "alice@example.com"); code != 0 {
+		t.Fatalf("admin create = %d %q", code, stderr)
+	}
+	out := filepath.Join(t.TempDir(), "backup.db")
+	if code, stdout, stderr := runCmd(t, dbCmd, "backup", out); code != 0 || stdout != "ok: the database is copied to "+out+"\n" {
+		t.Fatalf("db backup = %d %q %q", code, stdout, stderr)
+	}
+
+	// The copy holds alice.
+	copied, err := sqlite.Open(t.Context(), out, uow.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := copied.IdentityRepository().FindUserIDByEmail(t.Context(), "alice@example.com"); err != nil {
+		t.Errorf("alice in the copy: %v", err)
+	}
+	_ = copied.Close()
+
+	for _, tc := range []struct {
+		args []string
+		code int
+		want string
+	}{
+		{[]string{"backup"}, 2, "want 1 argument(s)"},
+		{[]string{"backup", out}, 1, "already exists"},
+	} {
+		if code, _, stderr := runCmd(t, dbCmd, tc.args...); code != tc.code || !strings.Contains(stderr, tc.want) {
+			t.Errorf("db %v = %d %q; want %d containing %q", tc.args, code, stderr, tc.code, tc.want)
+		}
+	}
+
+	t.Setenv(config.EnvPrefix+"DATABASE_URL", filepath.Join(t.TempDir(), "missing.db"))
+	if code, _, stderr := runCmd(t, dbCmd, "backup", filepath.Join(t.TempDir(), "b.db")); code != 1 || !strings.Contains(stderr, "the database:") {
+		t.Errorf("db backup of a missing database = %d %q", code, stderr)
+	}
+
+	t.Setenv(config.EnvPrefix+"DB", "postgres")
+	t.Setenv(config.EnvPrefix+"DATABASE_URL", "postgres://my@db.invalid/my")
+	if code, _, stderr := runCmd(t, dbCmd, "backup", filepath.Join(t.TempDir(), "b.db")); code != 1 || !strings.Contains(stderr, "pg_dump") {
+		t.Errorf("db backup with db = postgres = %d %q", code, stderr)
 	}
 }

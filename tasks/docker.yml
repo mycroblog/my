@@ -67,6 +67,13 @@ tasks:
     cmds:
       - scripts/upgrade-test.sh {{shellQuote .PREVIOUS}} {{.DIALECTS}}
 
+  # Not part of `check`: it builds the images and runs the stack twice per dialect, which takes minutes (CI job
+  # restore-drill, in the slow suite).
+  restore-drill:
+    desc: Fill an instance, back it up while it runs, restore it into new volumes, and check the data, the Actors' keys, and signed delivery (DIALECTS, default both)
+    cmds:
+      - scripts/restore-drill.sh {{.DIALECTS}}
+
   mailpit:
     desc: Create the certificate of the development Mailpit and start it (deploy/docker/mailpit; SMTP on 127.0.0.1:1025, UI on http://127.0.0.1:8025)
     cmds:
