@@ -28,10 +28,10 @@ function StartSignIn() {
   const { return_to: returnTo = "/" } = Route.useSearch();
   const { signIn } = useSignIn(returnTo);
   // Once per visit: a second start (React's development double effects) would replace the first one's state.
-  const started = useRef(false);
+  const startedRef = useRef(false);
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    if (startedRef.current) return;
+    startedRef.current = true;
     signIn();
   }, [signIn]);
   return <Spinner label={t("client:login.title")} />;
