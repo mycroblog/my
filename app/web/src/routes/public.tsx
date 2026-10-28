@@ -2,7 +2,7 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { useId } from "react";
 import { TimelineFeed, TimelineSkeleton, timelineQueryOptions } from "../features/timeline";
-import { SignInPrompt } from "../lib/auth/SignInPrompt";
+import { SignInPrompt } from "../features/session";
 import { ApiError } from "../lib/errors";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";

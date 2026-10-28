@@ -4,7 +4,7 @@ import { useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query"
 import { useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useApi, useSessionStatus, useSessionUnreachable } from "../../../lib/auth/SessionProvider";
-import { SignInPrompt } from "../../../lib/auth/SignInPrompt";
+import { SignInPrompt } from "../../session";
 import { useT } from "../../../lib/i18n";
 import { useIsOffline } from "../../../lib/network";
 import { keepHomeTimelineSaved } from "../api/savedHome";
