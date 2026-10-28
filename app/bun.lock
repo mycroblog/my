@@ -63,7 +63,7 @@
         "tailwind-variants": "3.3.1",
       },
       "devDependencies": {
-        "@storybook/addon-a11y": "10.6.1",
+        "@storybook/addon-a11y": "10.6.3",
         "@storybook/addon-vitest": "10.6.2",
         "@storybook/react-vite": "10.6.2",
         "@tailwindcss/oxide": "4.3.3",
@@ -809,7 +809,7 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.63.6", "", { "os": "win32", "cpu": "x64" }, "sha512-0RAxO1pS/6lY1mSoD2Apm+6aPyfUlm+OWKgncIdj/eVN9I+pDY3lKgD7xsUNFei1u7MZQETGOo6m8POXMDp53A=="],
 
-    "@storybook/addon-a11y": ["@storybook/addon-a11y@10.6.1", "", { "dependencies": { "@storybook/global": "^5.0.0", "axe-core": "^4.2.0" }, "peerDependencies": { "storybook": "^10.6.1" } }, "sha512-73wx4xyOMBbFIF4DnlfHy5o/c5sWjawn/tb+zq/GAKXkYCuBziE5aa3WDzRDhdxN259p5kTDyJcRi1SlUEUexg=="],
+    "@storybook/addon-a11y": ["@storybook/addon-a11y@10.6.3", "", { "dependencies": { "@storybook/global": "^5.0.0", "axe-core": "^4.2.0" }, "peerDependencies": { "storybook": "^10.6.3" } }, "sha512-nqvjpmu5g+PPtEKwgE0qAi4wfuQ9yngOb/1Gm24pBBZOuRsd3UMEBjKORSuAGrIAz9X3LCFfQi7sCcBFXvFbwg=="],
 
     "@storybook/addon-vitest": ["@storybook/addon-vitest@10.6.2", "", { "dependencies": { "@storybook/global": "^5.0.0", "@storybook/icons": "^2.0.2" }, "peerDependencies": { "@vitest/browser": "^3.0.0 || ^4.0.0 || ^5.0.0", "@vitest/browser-playwright": "^4.0.0 || ^5.0.0", "@vitest/runner": "^3.0.0 || ^4.0.0 || ^5.0.0", "storybook": "^10.6.2", "vitest": "^3.0.0 || ^4.0.0 || ^5.0.0" }, "optionalPeers": ["@vitest/browser", "@vitest/browser-playwright", "@vitest/runner", "vitest"] }, "sha512-gyyBzncvUyEgWQR3LinnGuI4UsWIUYLyw1u8i244aTxmY4uxCYjsDmUNkaSr8xQzNz8nh2Ckh3G4bO4SvJ6nJQ=="],
 
