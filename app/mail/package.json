@@ -1,0 +1,17 @@
+{
+  "name": "@my/mail",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "gen": "bun run src/frame.ts",
+    "check": "bun run src/frame.ts --check",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "mjml": "5.4.1",
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  }
+}

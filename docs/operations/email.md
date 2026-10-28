@@ -274,7 +274,7 @@ only the text version is written to the log.
   `color-scheme` and `prefers-color-scheme`. The administrator's theme overrides do not affect email.
 - Only `https` URLs become links. When a URL is `http`, as in a development setup where `web_origin` is `http://{host}`, the URL
   is written as text instead of a button or an unsubscribe link, and the server URL in the signature is left out.
-- The source of the layout is `tools/mail/frame.mjml`. `scripts/task.sh mail:gen` compiles it with MJML (Bun) into the Go
+- The source of the layout is `app/mail/frame.mjml`. `scripts/task.sh mail:gen` compiles it with MJML (Bun) into the Go
   `html/template` `internal/app/kernel/mail_frame.gen.html`, which is committed and embedded in the binary. No JavaScript runs in
   the server at run time. If the committed output is stale, `scripts/task.sh mail:gen-check` (`server-static` of the merge queue)
   fails.

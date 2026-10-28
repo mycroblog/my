@@ -106,7 +106,7 @@ jobs:
 
   preflight:
     # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile and Playwright image versions, the design
-    # tokens, the CSS 100vh check, the types of the email layout's compiler (tools/mail), and the Documentation section
+    # tokens, the CSS 100vh check, the types of the email layout's compiler (app/mail), and the Documentation section
     # of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
     # requests in the merge queue cannot break them and the queue does not run them again.
     # The bun fmt check (web:fmt-check) runs here and again in the merge queue's repo job, because two pull requests
@@ -132,7 +132,7 @@ jobs:
         with:
           node: "false"
       - name: Install the Bun packages
-        run: scripts/task.sh web:install i18n:install mail:install
+        run: scripts/task.sh web:install i18n:install
       - parallel:
           - name: docs:lint
             run: scripts/task.sh docs:lint
@@ -158,8 +158,6 @@ jobs:
             run: scripts/task.sh mykit:mybot-licenses
           - name: mykit:mybot-ts-licenses
             run: scripts/task.sh mykit:mybot-ts-licenses
-          - name: mail:licenses
-            run: scripts/task.sh mail:licenses
           - name: mail:typecheck
             run: scripts/task.sh mail:typecheck
           - name: docker:dockerfile-check
@@ -316,8 +314,8 @@ jobs:
         run: scripts/task.sh api:warm
       # mail:gen-check compiles the email layout with the token colors of the merged main: a pull request that changes
       # the tokens and one that changes the layout can each be fresh alone (ADR-0081).
-      - name: Install the email layout's packages
-        run: scripts/task.sh mail:install
+      - name: Install the client workspace, which holds the email layout's packages
+        run: scripts/task.sh web:install
       - name: Wait for Atlas and PostgreSQL
         wait: db
       # db:lint compares the schema with the main commit the group is built on, which a group queued behind others is

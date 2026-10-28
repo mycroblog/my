@@ -1,6 +1,0 @@
-# Bun settings for the email template package (same policy as app/bunfig.toml, ADR-0025).
-[install]
-# `bun add` writes exact versions; every dependency is pinned.
-exact = true
-# Never resolve a version published less than three days ago, transitive ones included.
-minimumReleaseAge = 259200
