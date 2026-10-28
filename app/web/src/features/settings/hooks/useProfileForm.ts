@@ -71,6 +71,7 @@ export function useProfileForm() {
   const [nextFieldKey, setNextFieldKey] = useState(account.source.fields.length);
   const [locked, setLocked] = useState(account.locked);
   const [bot, setBot] = useState(account.bot);
+  const [discoverable, setDiscoverable] = useState(account.discoverable);
   const [indexable, setIndexable] = useState(account.indexable);
   const [aiOptOut, setAiOptOut] = useState(account.ai_opt_out);
   // How many edits the form has had, and how many it had when it was last submitted: the result of a save shows
@@ -106,6 +107,7 @@ export function useProfileForm() {
       .map(({ name, value }) => ({ name, value })),
     locked,
     bot,
+    discoverable,
     indexable,
     ai_opt_out: aiOptOut,
     ...avatar.change("avatar_media_id"),
@@ -119,6 +121,7 @@ export function useProfileForm() {
     draft.note !== account.source.note ||
     draft.locked !== account.locked ||
     draft.bot !== account.bot ||
+    draft.discoverable !== account.discoverable ||
     draft.indexable !== account.indexable ||
     draft.ai_opt_out !== account.ai_opt_out ||
     draft.avatar_media_id !== undefined ||
@@ -162,6 +165,7 @@ export function useProfileForm() {
     },
     locked: { isSelected: locked, onChange: edit(setLocked) },
     bot: { isSelected: bot, onChange: edit(setBot) },
+    discoverable: { isSelected: discoverable, onChange: edit(setDiscoverable) },
     indexable: { isSelected: indexable, onChange: edit(setIndexable) },
     aiOptOut: { isSelected: aiOptOut, onChange: edit(setAiOptOut) },
     serverPolicy,
@@ -188,8 +192,8 @@ function sameFields(a: readonly Field[], b: readonly Field[]): boolean {
   return a.length === b.length && a.every((field, i) => field.name === b[i]?.name && field.value === b[i].value);
 }
 
-/** The state of one image of the profile, and its upload. */
-function useImageControl(saved: CredentialAccount["avatar"], purpose: ImagePurpose) {
+/** The state of one image of the profile, and its upload (the profile form and the welcome step). */
+export function useImageControl(saved: CredentialAccount["avatar"], purpose: ImagePurpose) {
   const api = useApi();
   const t = useT();
   const [image, setImage] = useState<ImageChange>({ kind: "keep" });

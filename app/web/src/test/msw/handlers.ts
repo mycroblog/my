@@ -16,6 +16,7 @@ export * as emoji from "../../features/emoji/test/handlers";
 export * as landing from "../../features/landing/test/handlers";
 export * as moderation from "../../features/moderation/test/handlers";
 export * as notifications from "../../features/notifications/test/handlers";
+export * as onboarding from "../../features/onboarding/test/handlers";
 export * as profile from "../../features/profile/test/handlers";
 export * as report from "../../features/report/test/handlers";
 export * as session from "../../features/session/test/handlers";

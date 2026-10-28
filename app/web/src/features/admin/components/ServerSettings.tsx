@@ -6,8 +6,9 @@
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
 // the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
 // form from being sent while a field is invalid (React Aria's native validation: the error is under its field and
-// linked to it, and focus moves to the first invalid field). What a save did stays on the page in a StatusMessage
-// next to its button; a failure stays above the button (web-client/README.md E2).
+// linked to it, and focus moves to the first invalid field). Each form has one FormActionBar: its save button with the
+// result of the last save beside it, success or failure (ADR-0110 §5, audit A8); the policies' bar sticks to the bottom
+// of the screen, since its form is taller than the screen (web-client/README.md E2).
 import {
   Button,
   Checkbox,
@@ -17,6 +18,8 @@ import {
   FileTrigger,
   Heading,
   Hint,
+  FormActionBar,
+  type FormActionResult,
   InlineError,
   PreviewImage,
   Radio,
@@ -24,7 +27,6 @@ import {
   Select,
   SelectItem,
   Stack,
-  StatusMessage,
   TextArea,
   TextField,
 } from "@my/ui";
@@ -59,6 +61,17 @@ export function ServerSettings() {
   );
 }
 
+/** The result of a form's last save for its FormActionBar: the failure with its reason, or what the save did. */
+function saveResult(
+  status: string | undefined,
+  saveError: string | undefined,
+  failed: (reason: string) => string,
+): FormActionResult | undefined {
+  if (saveError !== undefined) return { tone: "danger", message: failed(saveError) };
+  if (status !== undefined) return { tone: "success", message: status };
+  return undefined;
+}
+
 function NameForm() {
   const t = useT();
   const form = useServerSettings();
@@ -73,17 +86,15 @@ function NameForm() {
           // Only an invalid name sets isInvalid: React Aria ignores `validate` once isInvalid is given at all.
           {...(form.field.error === undefined ? {} : { isInvalid: true, errorMessage: form.field.error })}
         />
-        {form.saveError !== undefined && (
-          <InlineError size="inherit" alert>
-            {t("client:admin.settings.name.save_failed", { reason: form.saveError })}
-          </InlineError>
-        )}
-        <div>
+        <FormActionBar
+          result={saveResult(form.status, form.saveError, (reason) =>
+            t("client:admin.settings.name.save_failed", { reason }),
+          )}
+        >
           <Button type="submit" variant="primary" isPending={form.isSaving}>
             {t("client:admin.settings.name.save")}
           </Button>
-        </div>
-        <StatusMessage>{form.status}</StatusMessage>
+        </FormActionBar>
       </Stack>
     </Section>
   );
@@ -118,17 +129,15 @@ function DescriptionsForm() {
       <Stack as="form" gap="6" onSubmit={form.submit}>
         <DescriptionInput field={form.short} label={t("client:admin.settings.descriptions.short")} />
         <DescriptionInput field={form.full} label={t("client:admin.settings.descriptions.full")} />
-        {form.saveError !== undefined && (
-          <InlineError size="inherit" alert>
-            {t("client:admin.settings.descriptions.save_failed", { reason: form.saveError })}
-          </InlineError>
-        )}
-        <div>
+        <FormActionBar
+          result={saveResult(form.status, form.saveError, (reason) =>
+            t("client:admin.settings.descriptions.save_failed", { reason }),
+          )}
+        >
           <Button type="submit" variant="primary" isPending={form.isSaving}>
             {t("client:admin.settings.descriptions.save")}
           </Button>
-        </div>
-        <StatusMessage>{form.status}</StatusMessage>
+        </FormActionBar>
       </Stack>
     </Section>
   );
@@ -160,7 +169,7 @@ function ContactForm() {
           errorMessage={t("client:admin.settings.contact.email.invalid")}
         />
         <Stack as="section" gap="3" aria-labelledby={thumbnailHeadingId} aria-busy={form.thumbnail.isUploading}>
-          <Heading level={3} size="medium" id={thumbnailHeadingId}>
+          <Heading level={3} id={thumbnailHeadingId}>
             {t("client:admin.settings.contact.thumbnail")}
           </Heading>
           <Hint>{t("client:admin.settings.contact.thumbnail.description")}</Hint>
@@ -217,17 +226,15 @@ function ContactForm() {
             errorMessage={t("client:admin.settings.name.too_long", { max: String(thumbnailAltLimit) })}
           />
         </Stack>
-        {form.saveError !== undefined && (
-          <InlineError size="inherit" alert>
-            {t("client:admin.settings.contact.save_failed", { reason: form.saveError })}
-          </InlineError>
-        )}
-        <div>
+        <FormActionBar
+          result={saveResult(form.status, form.saveError, (reason) =>
+            t("client:admin.settings.contact.save_failed", { reason }),
+          )}
+        >
           <Button type="submit" variant="primary" isPending={form.isSaving}>
             {t("client:admin.settings.contact.save")}
           </Button>
-        </div>
-        <StatusMessage>{form.status}</StatusMessage>
+        </FormActionBar>
       </Stack>
     </Section>
   );
@@ -764,6 +771,21 @@ function PoliciesForm() {
           description={t("client:admin.settings.landing.operators.description")}
         />
       </Section>
+      {/* The accounts that the suggestions to follow show first, in this order (FR-308). */}
+      <Section surface="card" title={t("client:admin.settings.featured.title")}>
+        <Hint size="inherit">{t("client:admin.settings.featured.description")}</Hint>
+        <TextField
+          label={t("client:admin.settings.featured.accounts")}
+          description={t("client:admin.settings.featured.accounts.description")}
+          value={form.value("featured_accounts")}
+          onChange={(value) => {
+            form.change("featured_accounts", value);
+          }}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
+        />
+      </Section>
       <Section surface="card" title={t("client:admin.settings.crawlers.title")}>
         <Hint size="inherit">{t("client:admin.settings.crawlers.description")}</Hint>
         <PolicyRadios form={form} setting="search_indexing" label={t("client:admin.settings.crawlers.search")} />
@@ -800,19 +822,16 @@ function PoliciesForm() {
           />
         </Section>
       )}
-      {form.saveError !== undefined && (
-        <InlineError size="inherit" alert>
-          {t("client:admin.settings.policies.save_failed", { reason: form.saveError })}
-        </InlineError>
-      )}
-      <Stack gap="3">
-        <div>
-          <Button type="submit" variant="primary" isPending={form.isSaving}>
-            {t("client:admin.settings.policies.save")}
-          </Button>
-        </div>
-        <StatusMessage>{form.status}</StatusMessage>
-      </Stack>
+      <FormActionBar
+        sticky
+        result={saveResult(form.status, form.saveError, (reason) =>
+          t("client:admin.settings.policies.save_failed", { reason }),
+        )}
+      >
+        <Button type="submit" variant="primary" isPending={form.isSaving}>
+          {t("client:admin.settings.policies.save")}
+        </Button>
+      </FormActionBar>
       {form.narrowing !== null && (
         <NarrowingDialog
           narrowing={form.narrowing}

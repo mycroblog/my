@@ -2318,5 +2318,17 @@
   "settings.security.off": {
     "defaultMessage": "オフ",
     "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
+  },
+  "settings.profile.discovery": {
+    "defaultMessage": "見つけてもらう",
+    "description": "Heading of the section of the profile settings about being suggested to others and found by name."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "おすすめに出し、名前の一部で見つかるようにする",
+    "description": "Label of the checkbox that lets the account appear in the suggestions and in the search by part of its name."
+  },
+  "settings.profile.discoverable.description": {
+    "defaultMessage": "このサーバーの人へのおすすめにあなたのアカウントを出し、名前の一部で見つかるようにします。オフにしても、ユーザー名の全体と、あなたをフォローしている人からは見つかります。",
+    "description": "Help text of the discoverable checkbox."
   }
 }

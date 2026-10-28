@@ -1,0 +1,46 @@
+{
+  "welcome.title": {
+    "defaultMessage": "Welcome",
+    "description": "Title of the welcome page shown after sign-up, in the browser tab."
+  },
+  "welcome.heading": {
+    "defaultMessage": "Welcome to {server}",
+    "description": "Heading of the welcome page after sign-up. {server} is the name of the server."
+  },
+  "welcome.lead": {
+    "defaultMessage": "Set up the basics of your profile, then choose people to follow on your home timeline.",
+    "description": "The line under the welcome heading that says what comes next."
+  },
+  "welcome.basics": {
+    "defaultMessage": "Profile basics",
+    "description": "Heading of the section with the avatar and the display name on the welcome page."
+  },
+  "welcome.basics.description": {
+    "defaultMessage": "You can change these and add a bio later in the profile settings.",
+    "description": "Note under the heading of the profile basics on the welcome page."
+  },
+  "welcome.avatar.choose": {
+    "defaultMessage": "Choose an avatar",
+    "description": "Button that opens the file picker for the avatar on the welcome page."
+  },
+  "welcome.avatar.remove": {
+    "defaultMessage": "Remove the avatar",
+    "description": "Button that removes the chosen avatar on the welcome page."
+  },
+  "welcome.display_name": {
+    "defaultMessage": "Display name",
+    "description": "Label of the display name field on the welcome page."
+  },
+  "welcome.display_name.description": {
+    "defaultMessage": "The name people see. Leave it empty to show your username, {username}.",
+    "description": "Help text of the display name field on the welcome page. {username} is the user's username."
+  },
+  "welcome.continue": {
+    "defaultMessage": "Continue",
+    "description": "Primary button of the welcome page: saves the profile basics and opens the home timeline."
+  },
+  "welcome.later": {
+    "defaultMessage": "Later",
+    "description": "Link on the welcome page that opens the home timeline without saving."
+  }
+}

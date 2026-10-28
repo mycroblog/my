@@ -1,7 +1,8 @@
 ---
 start: "/home"
 persona: "yuki"
-paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
+paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/home.tsx"]
+unavailable: {"おすすめのアカウントを 1 人フォローする": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "おすすめのアカウントのプロフィールを開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、プロフィールの設定を開く": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストから、最初の投稿を書き始める": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "もっと多くの人を探す（アカウントの検索を開く）": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already", "チェックリストを閉じる": "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already"}
 ---
 
 ## 始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）

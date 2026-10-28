@@ -96,6 +96,16 @@ export function useVoiceCallControls(): VoiceCallControls | null {
   };
 }
 
+/**
+ * The ID of the room whose call the user is in now (connecting, connected or reconnecting), or undefined: the lists of
+ * rooms mark it "Joined".
+ */
+export function useJoinedVoiceRoomId(): string | undefined {
+  const { call, snapshot } = useVoiceCallState();
+  if (call === null || snapshot === undefined || snapshot.phase === "ended") return undefined;
+  return call.roomId;
+}
+
 /** A path without its trailing slashes, as the router matches it. */
 function normalizedPath(pathname: string): string {
   return pathname.length > 1 ? pathname.replace(/\/+$/u, "") : pathname;

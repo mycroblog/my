@@ -325,3 +325,37 @@ describe("while the instance takes nothing in from other servers", () => {
     expect(screen.queryByText("This server does not follow accounts of other servers now.")).not.toBeInTheDocument();
   });
 });
+
+describe("the search by name", () => {
+  test("lists the accounts whose names match while the user types, with their follow buttons", async () => {
+    server.use(resumableSession());
+    const queries: string[] = [];
+    server.use(
+      http.get(`${apiBase}/accounts/search`, ({ request }) => {
+        queries.push(new URL(request.url).searchParams.get("q") ?? "");
+        return HttpResponse.json([carol]);
+      }),
+    );
+    const { user, field } = await openSearch();
+
+    await user.click(field);
+    await user.keyboard("aro");
+
+    const results = await screen.findByRole("region", { name: "Accounts (1)" });
+    expect(within(results).getByRole("link", { name: /Carol/ })).toHaveAttribute("href", "/@carol@remote.example");
+    expect(await within(results).findByRole("button", { name: "Follow" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status").some((status) => status.textContent === "1 account found")).toBe(true);
+    // The typing paused once: one search.
+    expect(queries).toEqual(["aro"]);
+  });
+
+  test("says when no account matches", async () => {
+    server.use(resumableSession());
+    const { user, field } = await openSearch();
+
+    await user.click(field);
+    await user.keyboard("zz");
+
+    expect(await screen.findByText(/No accounts found\. For someone on another server/)).toBeInTheDocument();
+  });
+});

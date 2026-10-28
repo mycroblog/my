@@ -2,6 +2,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useId } from "react";
 import { Announcements } from "../features/announcements";
+import { FirstRun } from "../features/onboarding";
 import {
   forgetSavedHomeTimeline,
   HomeTimeline,
@@ -65,6 +66,14 @@ function HomePage() {
       <PageHeading id={headingId}>{t("client:home.title")}</PageHeading>
       {/* The server's announcements to every user (FR-726); not while the page shows the posts kept on this browser. */}
       {!saved && <Announcements />}
+      {/* The first steps of a new user and the accounts suggested to follow (web-client/screens/home-first-run.md). */}
+      {!saved && (
+        <FirstRun
+          onDismissed={() => {
+            document.getElementById(headingId)?.focus();
+          }}
+        />
+      )}
       {/* Mounted again once the session resumes: the user change replaced the kept posts' query (lib/auth/userData). */}
       <HomeTimeline key={saved ? "saved" : "loaded"} aria-labelledby={headingId} saved={saved} />
     </>

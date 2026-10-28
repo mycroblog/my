@@ -16,6 +16,7 @@ import {
 import { tv } from "tailwind-variants";
 import { Badge } from "./Badge";
 import { useCallBarBlockSize } from "./callBarBlockSize";
+import { MicrophoneIcon, MicrophoneOffIcon } from "./Icons";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
 
 const callDock = tv({
@@ -59,7 +60,8 @@ const callDockButton = tv({
   slots: {
     base: [
       "relative inline-flex shrink-0 cursor-default items-center justify-center gap-2 rounded-full font-extrabold select-none",
-      "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait",
+      // A control that waits pulses where it was pressed (ADR-0110 P2); with reduced motion, the wait cursor alone.
+      "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:data-pending:animate-pulse",
       "motion-safe:transition-[color,background-color,box-shadow] [&>svg]:size-5 [&>svg]:shrink-0",
     ],
     count: "",
@@ -189,5 +191,50 @@ export function CallDockButton(props: CallDockButtonProps) {
       {button}
       <Tooltip>{label}</Tooltip>
     </TooltipTrigger>
+  );
+}
+
+export type CallMicrophoneButtonProps = {
+  /** Whether the user's microphone is on now. */
+  isOn: boolean;
+  /** Asks to turn the microphone on (`true`) or off (`false`). */
+  onChange: (on: boolean) => void;
+  /** Waits for the microphone to turn on or off: the button keeps its focus and shows the wait. */
+  isPending?: boolean;
+  /** The names of the two actions ("Turn microphone on", "Turn microphone off"). */
+  labels: { turnOn: string; turnOff: string };
+  /** Shows the name beside the icon (the room's dock); without it, the name is the tooltip (the mini-player). */
+  showLabel?: boolean;
+  /** `md` (48 px, default) in the dock, `sm` (44 px) in the mini-player. */
+  size?: "md" | "sm";
+};
+
+/**
+ * The user's own microphone in a call: one shape for each state, the same as on the stage (a filled microphone on a
+ * coral button while it is on, the slashed microphone of `MicrophoneOffIcon` on cream while it is off), and a name
+ * that says what a press does ("Turn microphone off"). It is a plain button whose name changes with the state, not a
+ * toggle with `aria-pressed` (WAI-ARIA APG, button pattern: a toggle keeps its name), so the name never leaves the
+ * user to guess whether a press mutes or unmutes.
+ */
+export function CallMicrophoneButton({
+  isOn,
+  onChange,
+  isPending = false,
+  labels,
+  showLabel = false,
+  size = "md",
+}: CallMicrophoneButtonProps) {
+  return (
+    <CallDockButton
+      label={isOn ? labels.turnOff : labels.turnOn}
+      icon={isOn ? <MicrophoneIcon filled /> : <MicrophoneOffIcon />}
+      showLabel={showLabel}
+      size={size}
+      variant={isOn ? "primary" : "soft"}
+      onPress={() => {
+        onChange(!isOn);
+      }}
+      isPending={isPending}
+    />
   );
 }

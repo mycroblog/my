@@ -546,10 +546,13 @@ entries:
     docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
-    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md", "docs/architecture/web-client/screens/compose.md"]
+    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
-    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/screens/home.md", "docs/architecture/web-client/screens/local.md", "docs/architecture/web-client/screens/public.md", "docs/architecture/web-client/screens/status.md", "docs/architecture/web-client/screens/notifications.md"]
+    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
+  - name: web-feature-onboarding
+    paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/welcome.tsx"]
+    docs: ["docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
   - name: web-feature-emoji
     paths: ["app/web/src/features/emoji/**", "app/web/src/features/custom-emojis/**"]
     docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0052-emoji-reactions.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]

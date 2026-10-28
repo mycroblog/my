@@ -270,6 +270,18 @@ func TestSignInOfAPendingUserShowsTheStatus(t *testing.T) {
 	wantLacks(t, body, "verify_email/resend", "waiting for a moderator")
 }
 
+func TestSignUpOfAReadyUserGoesToTheWelcomeStep(t *testing.T) {
+	id := newFakeIdentity()
+	id.mode = identity.RegistrationOpen
+	id.signUpReady = true
+	b := newBrowser(t, newServer(t, id))
+	form := signUpForm(b, "username", "alice", "email", "alice@example.com", "password", "correct horse")
+	w := b.do(http.MethodPost, authpages.PathSignUp, form, nil)
+	if w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathWelcome {
+		t.Fatalf("POST sign_up = %d → %q, want 303 to %s\n%s", w.Code, w.Header().Get("Location"), authpages.PathWelcome, w.Body.String())
+	}
+}
+
 func TestVerifyEmail(t *testing.T) {
 	id := newFakeIdentity()
 	b := newBrowser(t, newServer(t, id))
@@ -285,6 +297,8 @@ func TestVerifyEmail(t *testing.T) {
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "Your email address is confirmed.") {
 		t.Fatalf("POST verify_email = %d %s", w.Code, w.Body.String())
 	}
+	// Continuing signs in to the app, which opens its welcome step.
+	wantContains(t, w.Body.String(), `<a href="/login?return_to=%2Fwelcome">`)
 	w = b.do(http.MethodPost, authpages.PathVerifyEmail, b.form(page, "token", "my_evt_good"), nil)
 	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "This link is not valid.") {
 		t.Errorf("second POST verify_email = %d %s", w.Code, w.Body.String())

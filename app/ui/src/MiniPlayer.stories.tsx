@@ -4,8 +4,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect } from "storybook/test";
-import { CallDockButton } from "./CallDock";
-import { LeaveIcon, MicrophoneIcon } from "./Icons";
+import { CallConnectionBadge } from "./CallConnectionBadge";
+import { CallDockButton, CallMicrophoneButton } from "./CallDock";
+import { LeaveIcon } from "./Icons";
 import { Link } from "./Link";
 import { MiniPlayer } from "./MiniPlayer";
 import { InlineError } from "./Text";
@@ -13,12 +14,11 @@ import { InlineError } from "./Text";
 function Microphone() {
   const [on, setOn] = useState(true);
   return (
-    <CallDockButton
-      label="Microphone"
-      size="sm"
-      icon={<MicrophoneIcon filled={on} />}
-      isSelected={on}
+    <CallMicrophoneButton
+      isOn={on}
       onChange={setOn}
+      labels={{ turnOn: "Turn microphone on", turnOff: "Turn microphone off" }}
+      size="sm"
     />
   );
 }
@@ -42,12 +42,8 @@ const meta = {
       </Link>
     ),
     status: "Haruka is talking",
-    children: (
-      <>
-        <Microphone />
-        {leave}
-      </>
-    ),
+    children: <Microphone />,
+    end: leave,
   },
 } satisfies Meta<typeof MiniPlayer>;
 
@@ -59,7 +55,7 @@ export const Speaker: Story = {
   play: async ({ canvas }) => {
     const card = canvas.getByRole("region", { name: "Voice chat call" });
     await expect(card).toContainElement(canvas.getByRole("link", { name: "Friday night radio" }));
-    await expect(canvas.getByRole("button", { name: "Microphone", pressed: true })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Turn microphone off" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Leave" })).toBeVisible();
     await expect(card).toHaveTextContent("Haruka is talking");
   },
@@ -67,17 +63,17 @@ export const Speaker: Story = {
 
 /** A listener has no microphone: only leaving. */
 export const Listener: Story = {
-  args: { children: leave },
+  args: { children: undefined },
 };
 
-/** While the call is not connected, the status line says so, and nobody is ringed. */
+/** While the call is not connected, the status line shows the connection's badge, and nobody is ringed. */
 export const Reconnecting: Story = {
   args: {
     avatars: [
       { id: "1", name: "Haruka" },
       { id: "2", name: "Sota" },
     ],
-    status: "Reconnecting…",
+    status: <CallConnectionBadge state="reconnecting" label="Reconnecting…" />,
   },
 };
 
