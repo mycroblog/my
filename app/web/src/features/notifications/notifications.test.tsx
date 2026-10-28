@@ -75,8 +75,8 @@ describe("the notifications page", () => {
 
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     const [mention, follow] = within(feed).getAllByRole("article");
-    expect(mention?.querySelector("[data-notification-kind]")).toHaveAttribute("data-notification-kind", "mention");
-    expect(follow?.querySelector("[data-notification-kind]")).toHaveAttribute("data-notification-kind", "follow");
+    expect(mention?.innerHTML).toMatch(/data-notification-kind="mention"/);
+    expect(follow?.innerHTML).toMatch(/data-notification-kind="follow"/);
     // Only the mention has the reply; the follow has its follow back instead.
     expect(within(follow ?? feed).queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
 
