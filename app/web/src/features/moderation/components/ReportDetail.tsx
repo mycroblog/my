@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A report's page below its heading: everything a moderator needs to handle one report on one page (NFR-MOD-4,
-// FR-710). The report itself, the posts it points at (or the voice chat room, with its records and ending it,
+// FR-710; screens/moderation-report.md), in @my/ui's TriageLayout: the summary with the report's state, category and
+// wait as badges; the decision (who handles it, and resolving it, the action form's submit the one primary button);
+// then the evidence. The report itself, the posts it points at (or the voice chat room, with its records and ending it,
 // ADR-0100 §11), its target with the target's history (its other reports
 // and its moderation actions), the moderator who handles it, the moderators' notes, and handling it: a
 // moderation action on the target that resolves it, resolving it without one, or reopening it. What a change
@@ -10,6 +12,7 @@ import {
   AccountItem,
   Box,
   Button,
+  CheckIcon,
   Cluster,
   DescriptionItem,
   DescriptionList,
@@ -20,10 +23,13 @@ import {
   Link,
   ReasonField,
   RegionError,
+  ReportIcon,
   Spinner,
   Stack,
+  StatusBadge,
   StatusMessage,
   Text,
+  TriageLayout,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -50,7 +56,7 @@ import {
 } from "../hooks/useReports";
 import { AccountActionForm } from "./AccountActionForm";
 import { DateTime, RecordList, RequirePermission, useFocusAfterChange } from "./parts";
-import { AccountLabel, AssigneeName } from "./reportParts";
+import { AccountLabel, AssigneeName, ReportCategoryBadge, ReportWaitBadge } from "./reportParts";
 import { ReportVoiceRoom } from "./ReportVoiceRoom";
 import { imageSources } from "../../../lib/images";
 
@@ -85,160 +91,173 @@ function ReportPage({ id }: { id: string }) {
   });
   const target = report.target_account;
   return (
-    <Stack gap="8">
-      <Section surface="card" title={t("client:admin.report.summary.title")}>
-        <ReportSummary report={report} />
-      </Section>
-      {report.voice_room !== undefined && <ReportVoiceRoom report={report} room={report.voice_room} />}
-      {/* A room's report points at no posts. */}
-      {report.voice_room === undefined && (
-        <Section surface="card" title={t("client:admin.report.posts.title")}>
-          <ReportedPosts posts={posts} />
+    <TriageLayout
+      summary={
+        <Section surface="card" title={t("client:admin.report.summary.title")}>
+          <ReportSummary report={report} />
         </Section>
-      )}
-      <Section surface="card" title={t("client:admin.report.target.title")}>
-        {target === undefined ? (
-          <p>{t("client:admin.report.target.deleted")}</p>
-        ) : (
-          <Stack gap="3">
-            <AccountItem
-              name={accountName(target)}
-              handle={target.display_name === "" ? undefined : handleOf(target)}
-              avatar={imageSources(target.avatar)}
-              avatarSeed={target.id}
+      }
+      decision={
+        <>
+          <Section surface="card" title={t("client:admin.report.assignee.title")}>
+            <Assignee
+              report={report}
+              pending={changes.pending !== undefined}
+              onAssign={changes.assignToSelf}
+              onUnassign={changes.unassign}
+              isAssigning={changes.pending?.operation === "assign_to_self"}
+              isUnassigning={changes.pending?.operation === "unassign"}
             />
-            <Cluster as="ul" gap="4" rowGap="1">
-              <li>
-                <Link href={`/@${target.acct}`} variant="standalone">
-                  {t("client:admin.report.target.profile")}
-                </Link>
-              </li>
-              {canAct && (
-                <li>
-                  <Link href={`/moderation/accounts/${encodeURIComponent(target.id)}`} variant="standalone">
-                    {t("client:admin.report.target.admin")}
-                  </Link>
-                </li>
-              )}
-              {canAudit && (
-                <li>
-                  <Link
-                    href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(target.id)}`}
-                    variant="standalone"
-                  >
-                    {t("client:admin.report.target.audit")}
-                  </Link>
-                </li>
-              )}
-            </Cluster>
-          </Stack>
-        )}
-        <DescriptionList columns={2}>
-          <DescriptionItem term={t("client:admin.report.target.reports")}>
-            <Text numeric>
-              {t("client:admin.report.target.reports.count", { count: report.target_history.reports_count })}
-            </Text>
-          </DescriptionItem>
-          <DescriptionItem term={t("client:admin.report.target.actions")}>
-            <Text numeric>
-              {t("client:admin.report.target.actions.count", { count: report.target_history.actions_count })}
-            </Text>
-          </DescriptionItem>
-        </DescriptionList>
-      </Section>
-      {canAct && target !== undefined && (
-        <Section surface="card" title={t("client:admin.report.history.title")}>
-          <TargetActions accountId={target.id} reportId={report.id} />
-        </Section>
-      )}
-      <Section surface="card" title={t("client:admin.report.assignee.title")}>
-        <Assignee
-          report={report}
-          pending={changes.pending !== undefined}
-          onAssign={changes.assignToSelf}
-          onUnassign={changes.unassign}
-          isAssigning={changes.pending?.operation === "assign_to_self"}
-          isUnassigning={changes.pending?.operation === "unassign"}
-        />
-        <StatusMessage>{message?.region === "assignee" ? message.text : undefined}</StatusMessage>
-      </Section>
-      <Section surface="card" title={t("client:admin.report.notes.title")}>
-        <Notes report={report} />
-      </Section>
-      <Section surface="card" title={t("client:admin.report.resolution.title")} headingRef={resolutionHeadingRef}>
-        <StatusMessage>{message?.region === "resolution" ? message.text : undefined}</StatusMessage>
-        {report.state === "resolved" ? (
-          <Stack align="start" gap="3">
+            <StatusMessage>{message?.region === "assignee" ? message.text : undefined}</StatusMessage>
+          </Section>
+          <Section surface="card" title={t("client:admin.report.resolution.title")} headingRef={resolutionHeadingRef}>
+            <StatusMessage>{message?.region === "resolution" ? message.text : undefined}</StatusMessage>
+            {report.state === "resolved" ? (
+              <Stack align="start" gap="3">
+                <DescriptionList>
+                  <DescriptionItem term={t("client:admin.report.outcome")}>
+                    {report.outcome === undefined
+                      ? t("client:admin.reports.filter.resolved")
+                      : t(reportOutcomeLabels[report.outcome])}
+                  </DescriptionItem>
+                  <DescriptionItem term={t("client:admin.report.resolved_at")}>
+                    <DateTime value={report.state_changed_at} />
+                  </DescriptionItem>
+                </DescriptionList>
+                <Hint>{t("client:admin.report.reopen.description")}</Hint>
+                <Button onPress={changes.reopen} isPending={changes.pending?.operation === "reopen"}>
+                  {t("client:admin.report.reopen")}
+                </Button>
+              </Stack>
+            ) : (
+              <Stack gap="8">
+                <Stack gap="3">
+                  <Heading level={3}>{t("client:admin.report.action.title")}</Heading>
+                  {target === undefined ? (
+                    <p>{t("client:admin.report.action.deleted")}</p>
+                  ) : canAct ? (
+                    <AccountActionForm
+                      target={{
+                        accountId: target.id,
+                        remote: isRemote(target),
+                        reportId: report.id,
+                        statusIds: actionable.map((post) => post.id),
+                        category: report.category,
+                      }}
+                      handle={handleOf(target)}
+                      posts={actionable}
+                      onIssued={(action) => {
+                        setMessage({
+                          region: "resolution",
+                          text: t("client:admin.report.action.issued", {
+                            kind: t(accountActionKindLabels[action.kind]),
+                          }),
+                        });
+                        focusResolution();
+                      }}
+                    />
+                  ) : (
+                    <p>{t("client:admin.report.action.missing_permission")}</p>
+                  )}
+                </Stack>
+                {/* The other ways to resolve it, in the plain buttons: the action above is the primary decision (W1). */}
+                <Stack align="start" gap="3">
+                  <Heading level={3}>{t("client:admin.report.resolve.title")}</Heading>
+                  <Hint>{t("client:admin.report.resolve.description")}</Hint>
+                  <Cluster gap="2">
+                    <Button
+                      onPress={() => {
+                        changes.resolve("dismissed");
+                      }}
+                      isPending={changes.pending?.operation === "resolve" && changes.pending.outcome === "dismissed"}
+                    >
+                      {t("client:admin.report.resolve.dismissed")}
+                    </Button>
+                    <Button
+                      onPress={() => {
+                        changes.resolve("actioned");
+                      }}
+                      isPending={changes.pending?.operation === "resolve" && changes.pending.outcome === "actioned"}
+                    >
+                      {t("client:admin.report.resolve.actioned")}
+                    </Button>
+                  </Cluster>
+                </Stack>
+              </Stack>
+            )}
+          </Section>
+        </>
+      }
+      evidence={
+        <>
+          {report.voice_room !== undefined && <ReportVoiceRoom report={report} room={report.voice_room} />}
+          {/* A room's report points at no posts. */}
+          {report.voice_room === undefined && (
+            <Section surface="card" title={t("client:admin.report.posts.title")}>
+              <ReportedPosts posts={posts} />
+            </Section>
+          )}
+          <Section surface="card" title={t("client:admin.report.target.title")}>
+            {target === undefined ? (
+              <p>{t("client:admin.report.target.deleted")}</p>
+            ) : (
+              <Stack gap="3">
+                <AccountItem
+                  name={accountName(target)}
+                  handle={target.display_name === "" ? undefined : handleOf(target)}
+                  avatar={imageSources(target.avatar)}
+                  avatarSeed={target.id}
+                />
+                <Cluster as="ul" gap="4" rowGap="1">
+                  <li>
+                    <Link href={`/@${target.acct}`} variant="standalone">
+                      {t("client:admin.report.target.profile")}
+                    </Link>
+                  </li>
+                  {canAct && (
+                    <li>
+                      <Link href={`/moderation/accounts/${encodeURIComponent(target.id)}`} variant="standalone">
+                        {t("client:admin.report.target.admin")}
+                      </Link>
+                    </li>
+                  )}
+                  {canAudit && (
+                    <li>
+                      <Link
+                        href={`/moderation/audit-log?target_kind=account&target=${encodeURIComponent(target.id)}`}
+                        variant="standalone"
+                      >
+                        {t("client:admin.report.target.audit")}
+                      </Link>
+                    </li>
+                  )}
+                </Cluster>
+              </Stack>
+            )}
             <DescriptionList columns={2}>
-              <DescriptionItem term={t("client:admin.report.outcome")}>
-                {report.outcome === undefined
-                  ? t("client:admin.reports.filter.resolved")
-                  : t(reportOutcomeLabels[report.outcome])}
+              <DescriptionItem term={t("client:admin.report.target.reports")}>
+                <Text numeric>
+                  {t("client:admin.report.target.reports.count", { count: report.target_history.reports_count })}
+                </Text>
               </DescriptionItem>
-              <DescriptionItem term={t("client:admin.report.resolved_at")}>
-                <DateTime value={report.state_changed_at} />
+              <DescriptionItem term={t("client:admin.report.target.actions")}>
+                <Text numeric>
+                  {t("client:admin.report.target.actions.count", { count: report.target_history.actions_count })}
+                </Text>
               </DescriptionItem>
             </DescriptionList>
-            <Hint>{t("client:admin.report.reopen.description")}</Hint>
-            <Button onPress={changes.reopen} isPending={changes.pending?.operation === "reopen"}>
-              {t("client:admin.report.reopen")}
-            </Button>
-          </Stack>
-        ) : (
-          <Stack gap="8">
-            <Stack gap="3">
-              <Heading level={3}>{t("client:admin.report.action.title")}</Heading>
-              {target === undefined ? (
-                <p>{t("client:admin.report.action.deleted")}</p>
-              ) : canAct ? (
-                <AccountActionForm
-                  target={{
-                    accountId: target.id,
-                    remote: isRemote(target),
-                    reportId: report.id,
-                    statusIds: actionable.map((post) => post.id),
-                    category: report.category,
-                  }}
-                  handle={handleOf(target)}
-                  posts={actionable}
-                  onIssued={(action) => {
-                    setMessage({
-                      region: "resolution",
-                      text: t("client:admin.report.action.issued", { kind: t(accountActionKindLabels[action.kind]) }),
-                    });
-                    focusResolution();
-                  }}
-                />
-              ) : (
-                <p>{t("client:admin.report.action.missing_permission")}</p>
-              )}
-            </Stack>
-            <Stack align="start" gap="3">
-              <Heading level={3}>{t("client:admin.report.resolve.title")}</Heading>
-              <Hint>{t("client:admin.report.resolve.description")}</Hint>
-              <Cluster gap="2">
-                <Button
-                  onPress={() => {
-                    changes.resolve("dismissed");
-                  }}
-                  isPending={changes.pending?.operation === "resolve" && changes.pending.outcome === "dismissed"}
-                >
-                  {t("client:admin.report.resolve.dismissed")}
-                </Button>
-                <Button
-                  onPress={() => {
-                    changes.resolve("actioned");
-                  }}
-                  isPending={changes.pending?.operation === "resolve" && changes.pending.outcome === "actioned"}
-                >
-                  {t("client:admin.report.resolve.actioned")}
-                </Button>
-              </Cluster>
-            </Stack>
-          </Stack>
-        )}
-      </Section>
-    </Stack>
+          </Section>
+          {canAct && target !== undefined && (
+            <Section surface="card" title={t("client:admin.report.history.title")}>
+              <TargetActions accountId={target.id} reportId={report.id} />
+            </Section>
+          )}
+          <Section surface="card" title={t("client:admin.report.notes.title")}>
+            <Notes report={report} />
+          </Section>
+        </>
+      }
+    />
   );
 }
 
@@ -252,13 +271,17 @@ function ReportSummary({ report }: { report: ReportDetail }) {
   const rules = useCitedRules(report.rule_ids);
   return (
     <Stack gap="3">
+      {/* The state, the category and the wait at a glance; the facts follow. */}
+      <Cluster gap="2" align="center">
+        <StatusBadge
+          icon={report.state === "open" ? <ReportIcon /> : <CheckIcon />}
+          label={t(stateLabels[report.state])}
+          tone={report.state === "open" ? "accent" : "success"}
+        />
+        <ReportCategoryBadge category={report.category} />
+        {report.state === "open" && <ReportWaitBadge filedAt={report.filed_at} />}
+      </Cluster>
       <DescriptionList columns={3}>
-        <DescriptionItem term={t("client:admin.report.state")}>
-          <Text weight="semibold">{t(stateLabels[report.state])}</Text>
-        </DescriptionItem>
-        <DescriptionItem term={t("client:admin.report.category")}>
-          {t(reportCategoryLabels[report.category])}
-        </DescriptionItem>
         <DescriptionItem term={t("client:admin.report.filed_at")}>
           <DateTime value={report.filed_at} />
         </DescriptionItem>

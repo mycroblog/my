@@ -1,3 +1,10 @@
+---
+start: "/admin"
+persona: "hana"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+unavailable: {"アイコンを設定する（SVG を選び、プレビューを見て保存する）": "the agent has no file to choose: the browser tools give it none", "ロゴを設定する": "the agent has no file to choose: the browser tools give it none", "アイコンを組み込みのものに戻す": "the demo scenario sets no icon of its own, and setting one needs the PNG renditions that the web client draws from a chosen file"}
+---
+
 ## サーバーの設定（`/admin/settings`）
 
 `manage_settings` を持つ管理者が、サーバーの名前・説明・連絡先とサムネイル・アイコンとロゴ・方針を決める画面（FR-705、[§14](../14-admin.md)）。

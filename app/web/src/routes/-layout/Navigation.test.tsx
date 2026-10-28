@@ -78,6 +78,19 @@ describe("while signed out", () => {
     expect(menu).toHaveAttribute("aria-expanded", "false");
   });
 
+  test("keeps the color theme in the bar's list, kept on this browser and switched in place", async () => {
+    const { user } = await renderApp({ path: "/local" });
+    await screen.findByRole("heading", { level: 1, name: "Local timeline" });
+    const list = within(navigation()).getByRole("list");
+    const theme = await within(list).findByRole("radiogroup", { name: "Theme" });
+    await user.click(within(theme).getByRole("radio", { name: "Dark" }));
+
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    expect(themeKey.read()).toBe("dark");
+    // Choosing a theme neither closes the menu nor leaves the bar.
+    expect(within(navigation()).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+  });
+
   test("makes Sign in the call to action of the bar while the server takes no new accounts", async () => {
     server.use(
       http.get(`${apiBase}/instance`, () =>

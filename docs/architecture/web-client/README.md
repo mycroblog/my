@@ -244,3 +244,12 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
     - 同じ比較を手元でするときは `scripts/task.sh ui:test-docker` を使う。`scripts/task.sh ui:test` を手元で動かす（`scripts/task.sh ui:test-install` でブラウザを入れる）と、axe は信用できるが、スクリーンショットは一致しない。
   - `scripts/task.sh check` はブラウザなしで動く検査だけを集める。`scripts/task.sh ui:test` は CI の `ui-test` ジョブがそのイメージの中で、`app/ui` を変える PR で動かす（Merge Queue では動かさない、[ADR-0047](../../adr/0047-ci-protection-layers.md)）。失敗したときの実際の画像と差分は成果物 `ui-test-screenshots` にある。
   - ワークフローのイメージと `PLAYWRIGHT_IMAGE`、`playwright` / `@playwright/test` の版が食い違うと、`scripts/task.sh web:playwright-image-check`（`scripts/task.sh check` の一部）が失敗する。
+- 画面のストーリー（[ADR-0112](../../adr/0112-pr-ui-preview.md) §1）は、その画面の機能の `features/<x>/<画面>.stories.tsx` に置く。Storybook は `app/web/.storybook` で、`scripts/task.sh web:storybook`（ポート 6007）で開き、
+  `app/ui` の Storybook を composition（`refs`）で取り込む（開発では `scripts/task.sh ui:storybook` のポート 6006、静的なビルド `scripts/task.sh web:storybook-build` では `storybook-static/ui/` に置いた `@my/ui` のビルド）。
+  - ストーリーは、アプリ全体をルートのアドレスで描く（`src/test/stories.tsx` の `renderScreen` と `screenLoader`。統合テストの `renderApp` と同じサービス）。API はブラウザの MSW（`msw/browser`、`src/test/msw/browser.ts`）が、
+    統合テストと同じ既定のハンドラ（`src/test/msw/defaultHandlers.ts`、各機能の `test/handlers.ts`）とストーリーのハンドラ（`parameters.screen.handlers`）で答える。MSW の Service Worker は、インストールした `msw` のものを Storybook の Vite のプラグインが配る。
+    ハンドラのない API の要求があれば、ストーリーは失敗する。
+  - 画面ごとに、通常（`play` で主な操作）・空・読み込み中・エラー・`ja`・`en-XA`・`ar-XB`・320 px のストーリーを持つ。ロケールはツールバーの `locale` で、ページはそのロケールで始まり、ログインした閲覧者の設定のロケールも同じにする。
+  - `scripts/task.sh web:story-test`（`app/web/vitest.stories.config.ts`）で実ブラウザのテストになり、`play` と axe（Y1）を動かす。スクリーンショットは比べない（画面は E2E が受け持つ）。
+    メタの `play` は画面が読み込み終わる（`main h1` があり、スピナーがない）まで待つので、axe は読み込み中ではなく画面を検査する。CI の `web-story-test` ジョブが、クライアントを変える PR で `ui-test` と同じイメージの中で動かす。
+  - ストーリーは、テストと同じく `src/test` と自分の機能の `test/` を import できる（境界の lint）。

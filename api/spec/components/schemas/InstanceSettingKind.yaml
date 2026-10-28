@@ -5,6 +5,7 @@ description: |
   `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
   the username of a local account, or empty for none. `email`: an email address such as
   `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-  none.
+  none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+  a leading `@` are accepted), in order, or empty for none.
 type: string
-enum: [bool, int, enum, locale, media, account, email, uri]
+enum: [bool, int, enum, locale, media, account, email, uri, accounts]

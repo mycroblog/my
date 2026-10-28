@@ -1,30 +1,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Runs the L4 task tests (ADR-0110 §7, ADR-0114): an agent (Claude Code, non-interactive) does each task of the
-// screens' L1 files in a browser it sees only through ARIA snapshots (the Playwright MCP server), against `my serve`
-// with the web E2E fixtures (e2e/server.ts), and the run writes the steps, backtracks, and lostness of every task to
-// one JSON file (transcript.ts says how they are measured). `scripts/task.sh web:l4` runs it; the Nightly workflow
-// runs it on main with the agent authenticated by Workload Identity Federation (ADR-0115).
+// screens' L1 files in a browser it sees only through ARIA snapshots (the Playwright MCP server), against the demo
+// server (`node e2e/server.ts demo`, ADR-0117 §4: the test build with the demo scenario of demo/scenario.ts and its
+// email in Mailpit), signed in as the person of the scenario that the front matter of the screen's L1 file names
+// (screens.ts), and the run writes the steps, backtracks, and lostness of every task to one JSON file (transcript.ts
+// says how they are measured). A task that reads email gets the person's mailbox, Mailpit's web UI, in a second
+// tab, and its steps there are recorded apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and
+// the test build of `bin/my`; the Nightly workflow runs it on main with the agent authenticated by Workload Identity
+// Federation (ADR-0115).
 //
 //   node l4/run.ts [--screen <name>]... [--since <commit>] [--cap <n>] [--dry-run] [--out <file>]
 //
-// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or
-// context-map paths changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
-// the run. --dry-run does everything but call the agent: it selects the tasks, starts the server with the fixtures,
-// signs in, and opens each screen's start through the Playwright MCP server as the agent would, then records the
-// tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
+// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or the
+// paths of its front matter changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
+// the run. --dry-run does everything but call the agent: it selects the tasks, starts and seeds the demo server,
+// signs in, and opens each task's start (and mailbox) through the Playwright MCP server as the agent would, then
+// records the tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
 // L4_NO_SANDBOX=1 starts the agent's Chromium without its sandbox (mcp.ts).
 import { execFileSync, spawn } from "node:child_process";
 import { createWriteStream, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium } from "@playwright/test";
-import { runMy, serverDatabaseOf } from "../e2e/server-cli.ts";
-import { admin, serverURL, voiceServerDir } from "../e2e/server-origin.ts";
+import { type Persona, personas } from "../demo/scenario.ts";
+import { mailpit, runMy } from "../e2e/server-cli.ts";
+import { demoServerDir, demoServerURL, serverDir, voiceServerDir } from "../e2e/server-origin.ts";
 import { MCPClient, mcpCommand } from "./mcp.ts";
-import { setupOf } from "./screens.ts";
-import { capTasks, parseContextMap, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
+import { applySeed, parseSetup, type ScreenSetup, type SetupContext } from "./screens.ts";
+import { capTasks, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
 import { lostnessThreshold, type RunResult, type TaskResult } from "./results.ts";
-import { failureOf, mcpPrefix, measure, parseTranscript, readTools, stepTools } from "./transcript.ts";
+import { failureOf, mcpPrefix, measure, parseTranscript, readTools, stepTools, tabTool } from "./transcript.ts";
 
 const webDir = resolve(import.meta.dirname, "..");
 const root = resolve(webDir, "../..");
@@ -49,8 +54,24 @@ const budgetUSD = process.env["L4_BUDGET_USD"] ?? "1";
 const timeoutMs = Number(process.env["L4_TIMEOUT_MINUTES"] ?? "10") * 60_000;
 const sandbox = process.env["L4_NO_SANDBOX"] !== "1";
 
+/** The origin of Mailpit's web UI, the mailbox of the tasks that read email. */
+const mailOrigin = `http://127.0.0.1:${String(mailpit.uiPort)}`;
+
 function git(...args: string[]): string {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+}
+
+/** The setup of `screen`, from the front matter of its L1 file. */
+function setupOf(screen: string): ScreenSetup {
+  return parseSetup(screen, readFileSync(join(root, screensDir, `${screen}.md`), "utf8"));
+}
+
+function personaOf(username: string): Persona {
+  const p = personas.find((x) => x.username === username);
+  if (p === undefined) {
+    throw new Error(`l4: no person ${username} in demo/scenario.ts`);
+  }
+  return p;
 }
 
 /** The tasks of the run, by --screen, --since, or every screen. */
@@ -77,8 +98,7 @@ function selectTasks(): { tasks: Task[]; selection: RunResult["selection"] } {
       console.log(`l4: ${values.since} is not in the history; measuring every screen.`);
     }
     if (changed !== undefined) {
-      const entries = parseContextMap(readFileSync(join(root, "tools/agentkit/context-map.yaml"), "utf8"));
-      screens = all.filter((screen) => screenChanged(screen, changed, entries));
+      screens = all.filter((screen) => screenChanged(screen, changed, setupOf(screen).paths));
       selection = { mode: "since", since: values.since };
     }
   }
@@ -88,86 +108,157 @@ function selectTasks(): { tasks: Task[]; selection: RunResult["selection"] } {
   return { tasks: capTasks(tasks, cap), selection };
 }
 
-/** Starts `my serve` with the E2E fixtures (e2e/server.ts) and waits until it answers. */
+/**
+ * Starts the demo server (`node e2e/server.ts demo`) and waits until it has applied the scenario: the line
+ * "demo: ready" of its output.
+ */
 async function startServer(): Promise<() => Promise<void>> {
   const log = createWriteStream(join(workDir, "server.log"));
   // server-origin.ts wrote the ports, the directories, and the KEK to process.env, which the child inherits.
-  const server = spawn(process.execPath, [join(webDir, "e2e/server.ts")], {
+  const server = spawn(process.execPath, [join(webDir, "e2e/server.ts"), "demo"], {
     cwd: webDir,
     env: process.env,
     stdio: ["ignore", "pipe", "pipe"],
   });
-  server.stdout.pipe(log);
   server.stderr.pipe(log);
+  const ready = new Promise<void>((done) => {
+    server.stdout.on("data", (chunk: Buffer) => {
+      log.write(chunk);
+      if (chunk.toString("utf8").includes("demo: ready")) {
+        done();
+      }
+    });
+  });
   const exited = new Promise<void>((done) => {
     server.on("exit", () => {
       done();
     });
   });
-  const deadline = Date.now() + 120_000;
-  for (;;) {
-    if (server.exitCode !== null) {
-      throw new Error(`e2e/server.ts exited with ${String(server.exitCode)}; see ${join(workDir, "server.log")}`);
-    }
-    try {
-      await fetch(serverURL);
-      break;
-    } catch {
-      if (Date.now() > deadline) {
-        throw new Error(`my serve did not answer at ${serverURL}; see ${join(workDir, "server.log")}`);
-      }
-      await new Promise((wait) => setTimeout(wait, 500));
-    }
+  let timer: NodeJS.Timeout | undefined;
+  const outcome = await Promise.race([
+    ready.then(() => "ready" as const),
+    exited.then(() => "exited" as const),
+    new Promise<"late">((done) => {
+      timer = setTimeout(() => {
+        done("late");
+      }, 300_000);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (outcome === "exited") {
+    throw new Error(`e2e/server.ts demo exited with ${String(server.exitCode)}; see ${join(workDir, "server.log")}`);
+  }
+  if (outcome === "late") {
+    server.kill("SIGTERM");
+    throw new Error(`the demo server was not ready within 5 minutes; see ${join(workDir, "server.log")}`);
   }
   return async () => {
     server.kill("SIGTERM");
     await exited;
-    rmSync(voiceServerDir, { recursive: true, force: true });
+    // server-origin.ts made a directory for each server of e2e/server.ts; the run started only the demo server.
+    for (const dir of [serverDir, voiceServerDir, demoServerDir]) {
+      rmSync(dir, { recursive: true, force: true });
+    }
   };
 }
 
 /**
- * Signs alice in to the web client as e2e/main-flow.spec.ts does, sets her display language to Japanese (the
- * language of the L1 tasks), and saves the browser's storage state for the Playwright MCP server.
+ * Signs `p` in to the web client as e2e/demo-smoke.spec.ts does and sets the display language to Japanese (the
+ * language of the L1 tasks); with `storageState`, saves the browser's storage state for the Playwright MCP server.
+ * Returns the Authorization header of the client's API calls.
  */
-async function signIn(storageState: string): Promise<void> {
+async function signIn(p: Persona, storageState?: string): Promise<string> {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ locale: "ja-JP" });
-    await page.goto(`${serverURL}/login`);
+    await page.goto(`${demoServerURL}/login`);
     const authorized = page.waitForRequest(
       (request) =>
         new URL(request.url()).pathname.startsWith("/api/") &&
         request.headers()["authorization"]?.startsWith("Bearer ") === true,
     );
-    await page.getByRole("main").getByRole("button").click();
-    await page.locator('input[type="email"][autocomplete="username"]').fill(admin.email);
-    await page.locator('input[type="password"][autocomplete="current-password"]').fill(admin.password);
+    // The client's sign-in page leads to the server's with a button, unless it goes there at once.
+    const email = page.locator('input[type="email"][autocomplete="username"]');
+    const toServer = page.getByRole("main").getByRole("button").first();
+    await email.or(toServer).first().waitFor();
+    if (!(await email.isVisible())) {
+      await toServer.click();
+    }
+    await email.fill(p.email);
+    await page.locator('input[type="password"][autocomplete="current-password"]').fill(p.password);
     await page.locator('main button[type="submit"]').first().click();
     const authorization = (await authorized).headers()["authorization"] ?? "";
-    await page.waitForURL(`${serverURL}/home`);
-    const response = await page.request.patch(`${serverURL}/api/v1/preferences`, {
+    await page.waitForURL(`${demoServerURL}/home`);
+    const response = await page.request.patch(`${demoServerURL}/api/v1/preferences`, {
       headers: { Authorization: authorization },
       data: { locale: "ja" },
     });
     if (!response.ok()) {
-      throw new Error(`PATCH /api/v1/preferences: ${String(response.status())}`);
+      throw new Error(`PATCH /api/v1/preferences as ${p.username}: ${String(response.status())}`);
     }
-    // The client keeps the language it loaded with until it loads again.
-    await page.reload();
-    await page.locator('html[lang="ja"]').waitFor({ state: "attached" });
-    await page.context().storageState({ path: storageState });
+    if (storageState !== undefined) {
+      // The client keeps the language it loaded with until it loads again.
+      await page.reload();
+      await page.locator('html[lang="ja"]').waitFor({ state: "attached" });
+      await page.context().storageState({ path: storageState });
+    }
+    return authorization;
   } finally {
     await browser.close();
   }
 }
 
+/** The context of the screens' setups: `bin/my` and the client API as the people of the scenario. */
+function setupContext(): SetupContext {
+  const tokens = new Map<string, string>();
+  return {
+    runMy: (args, input) => runMy(args, input, "demo"),
+    api: async (username, method, path, body) => {
+      let authorization = tokens.get(username);
+      if (authorization === undefined) {
+        authorization = await signIn(personaOf(username));
+        tokens.set(username, authorization);
+      }
+      const response = await fetch(`${demoServerURL}/api/v1${path}`, {
+        method,
+        headers: { Authorization: authorization, "Content-Type": "application/json" },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+      if (!response.ok) {
+        throw new Error(`${method} /api/v1${path} as ${username}: ${String(response.status)}`);
+      }
+    },
+  };
+}
+
+/** Removes the email to `p` from Mailpit, so that the mailbox of a task holds only what the task sends. */
+async function clearMailbox(p: Persona): Promise<void> {
+  const query = new URLSearchParams({ query: `to:${p.email}` });
+  const response = await fetch(`${mailOrigin}/api/v1/search?${query.toString()}`, { method: "DELETE" });
+  if (!response.ok) {
+    throw new Error(`Mailpit: removing the email to ${p.email} answered ${String(response.status)}`);
+  }
+}
+
+/** Who the agent is in a task: the person signed in, and the person whose mailbox it reads. */
+type Roles = { signedIn: Persona | undefined; mail: Persona | undefined };
+
 /** The instructions of the agent for `task`. */
-function prompt(task: Task): string {
+function prompt(task: Task, roles: Roles): string {
+  const { signedIn, mail } = roles;
   return [
     "You are a first-time user of a web app, testing whether its screens are easy to find your way through.",
-    "A browser is open at the app's start page, signed in. You see the page only through its accessibility tree:",
-    "call browser_snapshot to read it, and act with the other browser tools. You cannot type an address.",
+    signedIn === undefined
+      ? "A browser is open at the app's start page; you are not signed in."
+      : `A browser is open at the app's start page, signed in as ${signedIn.displayName}.`,
+    "You see the page only through its accessibility tree: call browser_snapshot to read it, and act with the other",
+    "browser tools. You cannot type an address.",
+    ...(mail === undefined
+      ? []
+      : [
+          `You are ${mail.displayName}, and your email address is ${mail.email}. Your mailbox, a web mail app, is open in`,
+          "the browser's second tab: switch tabs with browser_tabs. A link in an email may open in a new tab.",
+        ]),
     "",
     `Your task (in the app's language, Japanese): ${task.task}`,
     "",
@@ -189,13 +280,15 @@ const verdictSchema = JSON.stringify({
 });
 
 /** Runs the agent on `task` in `dir` and returns its stream-json transcript. */
-async function runAgent(task: Task, dir: string, mcpArgs: string[]): Promise<string> {
+async function runAgent(task: Task, roles: Roles, dir: string, mcpArgs: string[]): Promise<string> {
   const config = join(dir, "mcp.json");
   writeFileSync(config, JSON.stringify({ mcpServers: { playwright: { command: "npx", args: mcpArgs } } }, null, 2));
-  const tools = [...stepTools, ...readTools].map((tool) => mcpPrefix + tool);
+  const tools = [...stepTools, ...readTools, ...(roles.mail === undefined ? [] : [tabTool])].map(
+    (tool) => mcpPrefix + tool,
+  );
   const args = [
     "-p",
-    prompt(task),
+    prompt(task, roles),
     "--output-format",
     "stream-json",
     "--verbose",
@@ -236,13 +329,16 @@ async function runAgent(task: Task, dir: string, mcpArgs: string[]): Promise<str
   return text;
 }
 
-/** Opens `startURL` through the Playwright MCP server as the agent's first snapshot would, and checks it. */
-async function probe(dir: string, mcpArgs: string[], start: string): Promise<void> {
+/**
+ * Opens `start` through the Playwright MCP server as the agent's first snapshot would, and checks it, and the
+ * mailbox's tab of a task that reads email.
+ */
+async function probe(dir: string, mcpArgs: string[], start: string, mail: boolean): Promise<void> {
   const client = new MCPClient("npx", mcpArgs, dir);
   try {
     await client.start();
     const tools = await client.tools();
-    for (const tool of [...stepTools, ...readTools]) {
+    for (const tool of [...stepTools, ...readTools, ...(mail ? [tabTool] : [])]) {
       if (!tools.includes(tool)) {
         throw new Error(`the Playwright MCP server has no tool ${tool}`);
       }
@@ -251,11 +347,19 @@ async function probe(dir: string, mcpArgs: string[], start: string): Promise<voi
     writeFileSync(join(dir, "probe-snapshot.md"), snapshot);
     const url = /- Page URL: (\S+)/.exec(snapshot)?.[1] ?? "";
     if (new URL(url).pathname !== start) {
-      throw new Error(`the browser opened ${url}, not ${start}: the sign-in did not carry over`);
+      throw new Error(`the browser opened ${url}, not ${start}: the sign-in (or its absence) did not carry over`);
+    }
+    if (mail) {
+      const tabs = await client.call(tabTool, { action: "list" });
+      if (!tabs.includes(`${mailOrigin}/`)) {
+        throw new Error(`the browser has no tab of the mailbox ${mailOrigin}: ${tabs}`);
+      }
     }
     // A screenshot would be the agent's only way to an image; the server must leave it out.
     await client.call("browser_take_screenshot");
-    console.log(`l4: ${start} opens signed in (${String(snapshot.split("\n").length)} lines of ARIA snapshot).`);
+    console.log(
+      `l4: ${start} opens (${String(snapshot.split("\n").length)} lines of ARIA snapshot)${mail ? ", with the mailbox in a second tab" : ""}.`,
+    );
   } finally {
     client.stop();
   }
@@ -276,6 +380,7 @@ function emptyResult(task: Task, start: string, status: TaskResult["status"], re
     lostness: null,
     costUSD: null,
     path: [],
+    mailPath: [],
   };
 }
 
@@ -307,12 +412,14 @@ async function main(): Promise<number> {
   let failed = false;
   try {
     const executablePath = chromium.executablePath();
+    const context = setupContext();
     const seeded = new Set<string>();
     for (const [index, task] of tasks.entries()) {
       const setup = setupOf(task.screen);
+      const start = setup.starts?.[task.task] ?? setup.start;
       const unavailable = setup.unavailable?.[task.task];
       if (unavailable !== undefined) {
-        result.tasks.push(emptyResult(task, setup.start, "unavailable", unavailable));
+        result.tasks.push(emptyResult(task, start, "unavailable", unavailable));
         continue;
       }
       console.log(`l4: ${task.screen}: ${task.task}`);
@@ -322,47 +429,64 @@ async function main(): Promise<number> {
       try {
         if (!seeded.has(task.screen)) {
           seeded.add(task.screen);
-          setup.seed?.({ runMy: (args, input) => runMy(args, input), database: serverDatabaseOf("main") });
+          await applySeed(setup.seed ?? [], context);
+        }
+        const mailUser = setup.mail?.[task.task];
+        const roles: Roles = {
+          signedIn: setup.persona === null ? undefined : personaOf(setup.persona),
+          mail: mailUser === undefined ? undefined : personaOf(mailUser),
+        };
+        if (roles.mail !== undefined) {
+          await clearMailbox(roles.mail);
         }
         // A sign-in of its own for every task: the client rotates the refresh token, so a storage state works once.
-        const storageState = join(dir, "storage-state.json");
-        await signIn(storageState);
+        let storageState: string | undefined;
+        if (roles.signedIn !== undefined) {
+          storageState = join(dir, "storage-state.json");
+          await signIn(roles.signedIn, storageState);
+        }
         const mcpArgs = mcpCommand({
           dir,
-          startURL: serverURL + setup.start,
-          storageState,
+          startURL: demoServerURL + start,
+          ...(storageState === undefined ? {} : { storageState }),
+          ...(roles.mail === undefined ? {} : { mailURL: `${mailOrigin}/` }),
           executablePath,
           sandbox,
         });
         if (dryRun) {
-          await probe(dir, mcpArgs, setup.start);
-          result.tasks.push(emptyResult(task, setup.start, "dry-run"));
+          await probe(dir, mcpArgs, start, roles.mail !== undefined);
+          result.tasks.push(emptyResult(task, start, "dry-run"));
           continue;
         }
-        const transcript = parseTranscript(await runAgent(task, dir, mcpArgs));
+        const transcript = parseTranscript(
+          await runAgent(task, roles, dir, mcpArgs),
+          roles.mail === undefined ? undefined : mailOrigin,
+        );
         const failure = failureOf(transcript);
         if (failure !== null) {
           // Not a measure of the screen: recorded as `error` (no issue), and the run exits non-zero.
           throw new Error(failure);
         }
-        const measures = measure(transcript.path, task.shortest, setup.start);
+        const measures = measure(transcript.path, task.shortest, start);
         result.tasks.push({
-          ...emptyResult(task, setup.start, "measured"),
+          ...emptyResult(task, start, "measured"),
           ...measures,
           completed: transcript.completed,
           ending: transcript.ending,
           summary: transcript.summary,
           costUSD: transcript.costUSD,
           path: transcript.path,
+          mailPath: transcript.mailPath,
         });
         console.log(
-          `l4:   ${transcript.completed ? "done" : "not done"} in ${String(measures.steps)} step(s), lostness ${String(measures.lostness)}.`,
+          `l4:   ${transcript.completed ? "done" : "not done"} in ${String(measures.steps)} step(s), lostness ${String(measures.lostness)}` +
+            `${transcript.mailPath.length > 0 ? `, and ${String(transcript.mailPath.length)} step(s) in the mailbox` : ""}.`,
         );
       } catch (error) {
         failed = true;
         const reason = error instanceof Error ? error.message : String(error);
         console.error(`l4:   error: ${reason}`);
-        result.tasks.push(emptyResult(task, setup.start, "error", reason));
+        result.tasks.push(emptyResult(task, start, "error", reason));
       } finally {
         write();
       }

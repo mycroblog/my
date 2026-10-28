@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -117,6 +118,9 @@ const (
 	// SettingPublicOperators whether it shows the accounts that show the badge of a staff role.
 	SettingPublicCounts    SettingKey = "public_counts"
 	SettingPublicOperators SettingKey = "public_operators"
+	// SettingFeaturedAccounts are the local accounts that the suggestions of accounts show first,
+	// in this order (FR-308).
+	SettingFeaturedAccounts SettingKey = "featured_accounts"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -348,7 +352,13 @@ const (
 	KindEmail Kind = "email"
 	// KindURI is an https: or mailto: URI, or "" for none.
 	KindURI Kind = "uri"
+	// KindAccounts is the usernames of up to MaxSettingAccounts local accounts, lowercase,
+	// separated by single spaces, without repeats, or "" for none.
+	KindAccounts Kind = "accounts"
 )
+
+// MaxSettingAccounts bounds the usernames of a KindAccounts value.
+const MaxSettingAccounts = 20
 
 // MaxURILength bounds a KindURI value, in bytes.
 const MaxURILength = 2048
@@ -559,6 +569,10 @@ var definitions = []Definition{
 		Key: SettingPublicOperators, Kind: KindBool, Default: "true",
 		Doc: "Whether the landing page and GET /instance/overview list the local accounts that show the badge of a staff role (an administrator or moderator role) on their profile, with their badges.",
 	},
+	{
+		Key: SettingFeaturedAccounts, Kind: KindAccounts, Default: "",
+		Doc: "Usernames of up to 20 local accounts, separated by spaces or commas, that the suggestions of accounts show first, in this order; an account that turned off being suggested is left out (FR-308).",
+	},
 }
 
 // Definitions returns the definitions of every setting key, in a fixed order.
@@ -627,6 +641,22 @@ func (d Definition) Parse(raw string) (string, error) {
 			return "", invalid("is not a username")
 		}
 		return strings.ToLower(raw), nil
+	case KindAccounts:
+		names := strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || unicode.IsSpace(r) })
+		out := make([]string, 0, len(names))
+		for _, n := range names {
+			n = strings.ToLower(strings.TrimPrefix(n, "@"))
+			if !wellFormedUsername(n) {
+				return "", invalid("is not a list of usernames")
+			}
+			if !slices.Contains(out, n) {
+				out = append(out, n)
+			}
+		}
+		if len(out) > MaxSettingAccounts {
+			return "", invalid(fmt.Sprintf("names more than %d accounts", MaxSettingAccounts))
+		}
+		return strings.Join(out, " "), nil
 	case KindEmail:
 		if raw != "" && !wellFormedEmail(raw) {
 			return "", invalid("is not an email address")
@@ -1015,6 +1045,12 @@ func (s Settings) PublicCounts() bool { return s.boolValue(SettingPublicCounts) 
 
 // PublicOperators returns the value of SettingPublicOperators.
 func (s Settings) PublicOperators() bool { return s.boolValue(SettingPublicOperators) }
+
+// FeaturedAccounts returns the usernames of SettingFeaturedAccounts, in order; none when unset.
+func (s Settings) FeaturedAccounts() []string {
+	v, _ := s.Value(SettingFeaturedAccounts)
+	return strings.Fields(v)
+}
 
 // VoicePublicSummary returns the value of SettingVoicePublicSummary.
 func (s Settings) VoicePublicSummary() bool { return s.boolValue(SettingVoicePublicSummary) }

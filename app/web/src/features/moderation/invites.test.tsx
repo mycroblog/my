@@ -150,7 +150,11 @@ describe("the invites", () => {
   test("is in the moderation menu", async () => {
     invitesServer([]);
     const { user } = await renderApp({ path: "/moderation" });
-    await user.click(await within(await screen.findByRole("main")).findByRole("link", { name: "Invites" }));
+    await user.click(
+      await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole("link", {
+        name: "Invites",
+      }),
+    );
 
     expect(await screen.findByRole("heading", { level: 1, name: "Invites" })).toBeInTheDocument();
   });

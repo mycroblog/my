@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The links to the moderation screens (ADR-0058): the moderation page that the navigation's Moderation entry
-// opens, and the badges of the admin mode's menu. The screens with things awaiting the moderators (open reports,
+// The badges of the moderation screens in the admin mode's menu (ADR-0058). The screens with things awaiting the moderators (open reports,
 // registrations awaiting approval, appeals awaiting a decision; FR-712) show the count as a badge.
 import { useT } from "../../../lib/i18n";
 import type { AdminCount } from "../api/counts";
 import { useModerationCounts } from "../hooks/useModerationCounts";
-import { moderationPages } from "./moderationPages";
-import { type StaffPageBadge, StaffPages } from "./StaffPages";
+import type { StaffPageBadge } from "./StaffPages";
 
 /** The count that a screen's link shows, by the screen's address, and the words of its badge. */
 const pageCounts: Readonly<
@@ -36,19 +34,4 @@ export function useModerationBadges(): StaffPageBadge {
     const count = counts[counted.count] ?? 0;
     return { count, label: t(counted.label, { count }) };
   };
-}
-
-/** The moderation page's links to the moderation screens, or why there are none for the viewer's roles. */
-export function ModerationPages() {
-  const badgeOf = useModerationBadges();
-  return (
-    <StaffPages
-      pages={moderationPages}
-      badgeOf={badgeOf}
-      none={{
-        heading: "client:admin.moderation.none.heading",
-        description: "client:admin.moderation.none.description",
-      }}
-    />
-  );
 }

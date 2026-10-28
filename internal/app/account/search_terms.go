@@ -15,8 +15,8 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 )
 
-// The account_search_terms projection (ADR-0092 §1, data-model §4.2): the words that the prefix
-// search of accounts matches. It is synchronous (ADR-0020 rule 7): the projector rewrites the
+// The account_search_terms projection (ADR-0092 §1, FR-307, data-model §4.2): the words that
+// the search of accounts matches by their start. It is synchronous (ADR-0020 rule 7): the projector rewrites the
 // rows of an account from its handle, its profile head, its lifecycle state, and whether the
 // moderation module suspends it, whenever one of them changes.
 
@@ -137,14 +137,14 @@ func (p *SearchTermProjector) derive(ctx context.Context, tx uow.Tx, accountID s
 	if err != nil || suspended {
 		return nil, err
 	}
-	displayName := ""
+	displayName, discoverable := "", false
 	switch rev, err := p.repo.FindCurrentProfileTx(ctx, tx, accountID); {
 	case err == nil:
-		displayName = rev.DisplayName
+		displayName, discoverable = rev.DisplayName, rev.Discoverable
 	case !errors.Is(err, ErrNotFound):
 		return nil, err
 	}
-	return SearchTerms(h, a.IsLocal(), displayName), nil
+	return SearchTerms(h, a.IsLocal(), discoverable, displayName), nil
 }
 
 // Rebuild empties the account_search_terms projection and derives it again for every account
@@ -175,11 +175,17 @@ const (
 	maxDisplayNameWords = 20
 )
 
-// SearchTerms returns the search terms of an account with handle h (ADR-0092 §1): the
+// SearchTerms returns the search terms of an account with handle h (ADR-0092 §1, FR-307): the
 // normalized username, username@domain for a remote account, and the display name under
 // NormalizeSearchText without its :shortcode:s, whole and each of its words separated by white
 // space. A CJK display name has no spaces to split at, so it matches from its start.
-func SearchTerms(h account.Handle, local bool, displayName string) []account.SearchTerm {
+//
+// A local account that is discoverable also has the suffixes of its username and its whole
+// display name that start after their first character (SearchTermInfix, none starting with a
+// space), so that a query matches the middle of its names. A local account that is not
+// discoverable has its username only, as SearchTermExactUsername. A remote account's
+// discoverable does not matter.
+func SearchTerms(h account.Handle, local, discoverable bool, displayName string) []account.SearchTerm {
 	var out []account.SearchTerm
 	add := func(kind account.SearchTermKind, term string) {
 		term = cutRunes(term, MaxSearchQueryLength)
@@ -193,15 +199,30 @@ func SearchTerms(h account.Handle, local bool, displayName string) []account.Sea
 		}
 		out = append(out, account.SearchTerm{AccountID: h.AccountID, Kind: kind, Term: term, IsLocal: local})
 	}
+	if local && !discoverable {
+		add(account.SearchTermExactUsername, h.UsernameNormalized)
+		return out
+	}
 	add(account.SearchTermUsername, h.UsernameNormalized)
 	if !local {
 		add(account.SearchTermUsername, remoteHandleTerm(h))
 	}
 	words := strings.Fields(NormalizeSearchText(stripShortcodes(displayName)))
-	add(account.SearchTermDisplayName, strings.Join(words, " "))
+	whole := cutRunes(strings.Join(words, " "), MaxSearchQueryLength)
+	add(account.SearchTermDisplayName, whole)
 	if len(words) > 1 {
 		for _, w := range words[:min(len(words), maxDisplayNameWords)] {
 			add(account.SearchTermDisplayName, w)
+		}
+	}
+	if local {
+		for _, name := range []string{h.UsernameNormalized, whole} {
+			for i, r := range name {
+				if i == 0 || r == ' ' {
+					continue
+				}
+				add(account.SearchTermInfix, name[i:])
+			}
 		}
 	}
 	return out

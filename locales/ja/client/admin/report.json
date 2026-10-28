@@ -216,19 +216,19 @@
     "description": "Heading of the region of a report's page where it is resolved or reopened."
   },
   "admin.report.resolve.actioned": {
-    "defaultMessage": "処分済みとして解決する",
+    "defaultMessage": "ほかの画面で処分済みとして解決する",
     "description": "Button that resolves a report as actioned, with the action taken elsewhere."
   },
   "admin.report.resolve.description": {
-    "defaultMessage": "ここでは処分を出さずに解決します。処分の必要がないときか、ほかの画面で処分したときに使います。",
+    "defaultMessage": "処分が要らないときは「対応不要として解決する」を、アカウントの画面などで処分を出したときは「ほかの画面で処分済みとして解決する」を使います。",
     "description": "Help of the buttons that resolve a report without an action."
   },
   "admin.report.resolve.dismissed": {
-    "defaultMessage": "処分せずに解決する",
+    "defaultMessage": "対応不要として解決する",
     "description": "Button that resolves a report as dismissed."
   },
   "admin.report.resolve.title": {
-    "defaultMessage": "処分せずに解決する",
+    "defaultMessage": "ここで処分せずに解決する",
     "description": "Heading of the buttons that resolve a report without an action."
   },
   "admin.report.resolve_failed": {
@@ -510,5 +510,13 @@
   "admin.report.voice.ended": {
     "defaultMessage": "ルームを終えました。",
     "description": "Message after a moderator ended the reported voice chat room."
+  },
+  "admin.report.assignee.other": {
+    "defaultMessage": "担当あり",
+    "description": "Badge of an open report that another moderator handles; their name follows it."
+  },
+  "admin.report.assignee.unassigned": {
+    "defaultMessage": "未担当",
+    "description": "Badge of an open report that nobody handles yet."
   }
 }

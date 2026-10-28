@@ -256,7 +256,9 @@ complaints are recorded from the SES notifications
 - Moderators see the kind and origin of a suppression on the account page of the admin screen (`email_suppression` in
   `GET /api/v1/admin/accounts/{id}`).
 - There are two ways to **lift** it. When the user asks for a confirmation email and confirms the address again, the hard-bounce
-  suppression is lifted (the confirmation email is sent even while the address is suppressed). When you have verified that it is
+  suppression is lifted (the confirmation email is sent even while the address is suppressed). The user asks for it through the
+  client API (`POST /api/v1/accounts/email/verification`, at most 3 an hour) or on the sign-in
+  status page. When you have verified that it is
   fine to send, for example because the mailbox was fixed, a moderator lifts it with
   `POST /api/v1/admin/accounts/{id}/email_suppression/lift` (permission `manage_accounts`). It records
   `email_suppression_lifted` in the audit log ([moderation](moderation.md)).

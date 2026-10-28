@@ -32,6 +32,7 @@ func insertRemoteRevisionParts(ctx context.Context, q *sqlitegen.Queries, rev co
 	if r := rev.Remote; r != nil {
 		err := q.InsertRemoteStatusRevision(ctx, sqlitegen.InsertRemoteStatusRevisionParams{
 			RevisionID: rev.ID, ActivityUri: toNullString(r.ActivityURI), HtmlPolicyVersion: int64(r.HTMLPolicyVersion),
+			OmittedAttachmentCount: int64(r.OmittedAttachments),
 		})
 		if err != nil {
 			return wrap(err, "insert remote status revision")
@@ -64,7 +65,9 @@ func findRemoteRevisionParts(ctx context.Context, q *sqlitegen.Queries, rev *con
 	case err != nil:
 		return wrap(err, "get remote status revision")
 	default:
-		rev.Remote = &content.RemoteRevisionSource{ActivityURI: remote.ActivityUri.String, HTMLPolicyVersion: int(remote.HtmlPolicyVersion)}
+		rev.Remote = &content.RemoteRevisionSource{ActivityURI: remote.ActivityUri.String, HTMLPolicyVersion: int(remote.HtmlPolicyVersion),
+			OmittedAttachments: int(remote.OmittedAttachmentCount),
+		}
 	}
 	return nil
 }

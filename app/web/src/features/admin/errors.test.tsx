@@ -39,10 +39,11 @@ describe("the errors screen", () => {
   test("is in the administration menu of a viewer with manage_errors", async () => {
     await renderApp({ path: "/admin" });
 
-    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /^Errors/u })).toHaveAttribute(
-      "href",
-      "/admin/errors",
-    );
+    expect(
+      await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole("link", {
+        name: /^Errors/u,
+      }),
+    ).toHaveAttribute("href", "/admin/errors");
   });
 
   test("lists the open groups, and filters them by state and source in the URL", async () => {

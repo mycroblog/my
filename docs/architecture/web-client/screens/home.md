@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/routes/home.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**", "app/ui/src/RailItem.tsx"]
+---
+
 ## ホームタイムライン（`/home`）
 
 ログインした利用者が、自分とフォローしているアカウントの投稿を新しい順に読む画面（FR-201）。ログインした利用者がアプリを開くと最初に出る。

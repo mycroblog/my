@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/routes/local.tsx", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**"]
+---
+
 ## ローカルタイムライン（`/local`）
 
 このサーバーのアカウントの公開の投稿（ログインした利用者には、加えて `local` の投稿。ADR-0017）を新しい順に読む画面（FR-202）。

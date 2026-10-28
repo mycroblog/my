@@ -157,7 +157,9 @@ describe("the terms and policies screen", () => {
     await renderApp({ path: "/admin" });
 
     expect(
-      await within(await screen.findByRole("main")).findByRole("link", { name: "Terms and policies" }),
+      await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole("link", {
+        name: "Terms and policies",
+      }),
     ).toHaveAttribute("href", "/admin/documents");
   });
 });
