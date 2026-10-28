@@ -58,5 +58,17 @@
   "admin.reports.title": {
     "defaultMessage": "Reports",
     "description": "Heading and title of the report queue."
+  },
+  "admin.reports.wait.days": {
+    "defaultMessage": "{count, plural, one {Waiting # day} other {Waiting # days}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole days."
+  },
+  "admin.reports.wait.hours": {
+    "defaultMessage": "{count, plural, one {Waiting # hr.} other {Waiting # hr.}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole hours."
+  },
+  "admin.reports.wait.minutes": {
+    "defaultMessage": "{count, plural, one {Waiting # min.} other {Waiting # min.}}",
+    "description": "Badge of an item of a queue (a report): how long it has waited, in whole minutes."
   }
 }

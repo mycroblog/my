@@ -70,6 +70,11 @@ import {
   PiArrowLeft,
   PiArrowSquareOut,
   PiArrowDown,
+  PiHourglassMedium,
+  PiEnvelopeSimple,
+  PiGavel,
+  PiUserCircleCheck,
+  PiUserCircleDashed,
   PiArrowUp,
   PiBell,
   PiBookmarkSimple,
@@ -279,6 +284,14 @@ export const iconTable = {
   // writing direction, so they do not mirror.
   IncreaseIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
   DecreaseIcon: { off: glyph(PiArrowDown, "PiArrowDown") },
+  // How long something has waited in a queue (`AgeBadge`); an hourglass has no direction.
+  WaitingIcon: { off: glyph(PiHourglassMedium, "PiHourglassMedium") },
+  // The categories of a report, beside their names (`StatusBadge`): unwanted mail, a gavel for the law.
+  SpamIcon: { off: glyph(PiEnvelopeSimple, "PiEnvelopeSimple") },
+  LegalIcon: { off: glyph(PiGavel, "PiGavel") },
+  // Who handles an item of a queue: a person checked (the viewer or another moderator), or a dashed outline (nobody).
+  AssignedIcon: { off: glyph(PiUserCircleCheck, "PiUserCircleCheck") },
+  UnassignedIcon: { off: glyph(PiUserCircleDashed, "PiUserCircleDashed") },
 } as const satisfies Record<string, IconEntry>;
 
 function renderIcon(entry: IconEntry, on = false) {
@@ -830,4 +843,29 @@ export function IncreaseIcon() {
 /** An arrow down, beside the text of a number that fell from the period before (`StatTile`). */
 export function DecreaseIcon() {
   return renderIcon(iconTable.DecreaseIcon);
+}
+
+/** An hourglass, beside how long something has waited in a queue (`AgeBadge`). */
+export function WaitingIcon() {
+  return renderIcon(iconTable.WaitingIcon);
+}
+
+/** An envelope, beside the spam category of a report. */
+export function SpamIcon() {
+  return renderIcon(iconTable.SpamIcon);
+}
+
+/** A gavel, beside the legal category of a report. */
+export function LegalIcon() {
+  return renderIcon(iconTable.LegalIcon);
+}
+
+/** A person with a check, beside the moderator who handles an item of a queue. */
+export function AssignedIcon() {
+  return renderIcon(iconTable.AssignedIcon);
+}
+
+/** A dashed person, beside an item of a queue that nobody handles yet. */
+export function UnassignedIcon() {
+  return renderIcon(iconTable.UnassignedIcon);
 }

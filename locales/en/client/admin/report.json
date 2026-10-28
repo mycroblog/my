@@ -510,5 +510,13 @@
   "admin.report.voice.ended": {
     "defaultMessage": "Ended the room.",
     "description": "Message after a moderator ended the reported voice chat room."
+  },
+  "admin.report.assignee.other": {
+    "defaultMessage": "Assigned",
+    "description": "Badge of an open report that another moderator handles; their name follows it."
+  },
+  "admin.report.assignee.unassigned": {
+    "defaultMessage": "Unassigned",
+    "description": "Badge of an open report that nobody handles yet."
   }
 }
