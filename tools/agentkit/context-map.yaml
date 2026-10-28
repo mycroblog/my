@@ -498,6 +498,13 @@ entries:
   - name: web-tests
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
     docs: ["docs/architecture/web-client/README.md#テストの置き場所と道具"]
+  - name: web-l4
+    paths: ["app/web/l4/**", ".github/workflows/nightly.yml"]
+    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/architecture/web-client/screens/README.md"]
+    userdocs: ["docs/reference/commands.md"]
+    notes:
+      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md; app/web/l4/screens.ts gives each screen its start and the data its tasks need, so a new L1 whose tasks need data adds an entry there (check with DRY_RUN=1)."
+      - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
   - name: web-shell
     paths: ["app/web/src/*", "app/web/src/routes/**", "app/web/sw/**", "app/web/public/**", "app/web/vite-plugins/**", "app/web/scripts/**", "app/web/*"]
     docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/11-pwa.md#11-pwa"]
