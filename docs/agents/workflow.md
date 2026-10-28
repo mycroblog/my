@@ -16,6 +16,8 @@ gh issue list -R mycroblog/my --label agent:ready --search "no:assignee" --json 
 
 - Prefer the earliest milestone, then `priority:p0` > `p1` > `p2`.
 - Read the full issue including comments: `gh issue view <N> --comments`.
+- An issue that changes the UI is `agent:ready` only when its screen has a requirements file (L1) in
+  [docs/architecture/web-client/screens/](../architecture/web-client/screens/README.md). If it has none, comment and stop.
 - Check that every ADR the issue depends on is `Accepted` in [docs/adr/README.md](../adr/README.md). If not, comment and stop.
 - Claim it: `gh issue edit <N> --add-assignee @me` and comment a one-line plan.
   `scripts/agentkit.sh issue claim <N> --plan "<one line>"` checks the conditions above (and that nothing the issue waits
@@ -67,6 +69,13 @@ compile, type, lint, and test checks of the changed contexts run in the merge qu
 broken PR out of the queue. To run the full check on the PR itself (to look into a failure in the queue, or to check
 an outside contributor's PR early), add the label `ci:full`.
 If a check is wrong or flaky, fix it in a separate commit and explain in the PR.
+
+An issue that changes the UI also gets the L4 task test ([ADR-0110 §7](../adr/0110-web-experience-principles.md)) before the PR:
+do each task of the screen's L1 using only Playwright ARIA snapshots, and count the steps, the backtracks, and the lostness
+(Smith, 1996: √((N/S − 1)² + (R/N − 1)²), with S the places visited in total, N the distinct places, R the shortest number of steps).
+Report the per-task numbers in the PR. A task above 0.4 needs a reason in the PR, or a fix of the L1 or the screen.
+Check the change against the four viewpoints (signifier, feedback, UX writing, information architecture) of the
+[experience principles](../architecture/web-client/21-experience-principles.md).
 
 Pull requests do not run the web E2E. In single-issue work, when the change touches the web client, run `scripts/task.sh web:e2e`
 locally, or run the workflow on the PR's branch and wait for it (in a parallel batch, see [§9](#9-parallel-batches) instead):
@@ -127,6 +136,8 @@ EOF
 `main` takes pull requests only through GitHub's merge queue. CI runs the full check on each merge group (the PR on top
 of `main` and of the PRs queued ahead of it) and the queue merges the group when its required `check` passes.
 
+- The critique (L5) runs after the merge, not before: UI PRs are queued as usual. The decider reviews the catalogue of `main`
+  ([ADR-0112](../adr/0112-pr-ui-preview.md)) and files issues for what to fix.
 - Once the PR's CI is green, the orchestrator or the decider queues it: `gh pr merge <PR> -R mycroblog/my --auto --merge`.
 - Merge `main` into the branch only when the PR conflicts or the queue drops it, never just to stay current: the queue
   already checks the PR on top of the latest `main`.
