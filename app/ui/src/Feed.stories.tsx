@@ -29,6 +29,7 @@ function renderPost(post: Post) {
       avatar={<Avatar name={post.author} decorative size="sm" />}
       author={<strong>{post.author}</strong>}
       time={<time dateTime="2026-10-16T09:00:00Z">2h</time>}
+      visibility={{ level: "public", label: "Public" }}
       content={<PostContent html={serverSanitizedHtml(`<p>${post.body}</p>`)} lang="en" />}
       actions={
         <Button variant="ghost" size="sm">

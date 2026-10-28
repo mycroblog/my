@@ -1215,46 +1215,6 @@
     "defaultMessage": "パスキーでの確認に時間がかかりすぎました。もう一度試してください。",
     "description": "Alert when the passkey that confirms an operation was given after the confirmation expired (5 minutes)."
   },
-  "settings.visibility.direct": {
-    "defaultMessage": "メンションした相手",
-    "description": "Visibility option: only the mentioned accounts."
-  },
-  "settings.visibility.direct.description": {
-    "defaultMessage": "メンションした相手だけ",
-    "description": "Description of the 'Mentioned people' visibility option."
-  },
-  "settings.visibility.local": {
-    "defaultMessage": "このサーバー",
-    "description": "Visibility option: signed-in users of this server and followers."
-  },
-  "settings.visibility.local.description": {
-    "defaultMessage": "このサーバーにログインしている人と、フォロワー",
-    "description": "Description of the 'This server' visibility option."
-  },
-  "settings.visibility.private": {
-    "defaultMessage": "フォロワー",
-    "description": "Visibility option: followers and mentioned accounts."
-  },
-  "settings.visibility.private.description": {
-    "defaultMessage": "フォロワーと、メンションした相手",
-    "description": "Description of the 'Followers' visibility option."
-  },
-  "settings.visibility.public": {
-    "defaultMessage": "公開",
-    "description": "Visibility option: everyone, listed on public timelines."
-  },
-  "settings.visibility.public.description": {
-    "defaultMessage": "誰でも見られ、公開タイムラインにも載ります",
-    "description": "Description of the 'Public' visibility option."
-  },
-  "settings.visibility.unlisted": {
-    "defaultMessage": "未収載",
-    "description": "Visibility option: everyone, but kept off public timelines."
-  },
-  "settings.visibility.unlisted.description": {
-    "defaultMessage": "誰でも見られますが、公開タイムラインには載りません",
-    "description": "Description of the 'Unlisted' visibility option."
-  },
   "settings.profile.display_name.emoji": {
     "defaultMessage": "表示名に絵文字を入れる",
     "description": "Accessible name and tooltip of the button that opens the custom emoji picker for the display name."
