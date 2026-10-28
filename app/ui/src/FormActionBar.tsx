@@ -9,24 +9,17 @@
 // any field.
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
-import { CheckIcon, WarningIcon } from "./Icons";
+import { ActionResult, type ActionResultValue } from "./ActionResult";
 
 /** The result of the last submit, already translated. */
-export type FormActionResult = { tone: "success" | "danger"; message: string };
+export type FormActionResult = ActionResultValue;
 
 const formActionBar = tv({
   slots: {
     base: "flex flex-wrap items-center gap-x-4 gap-y-2",
     buttons: "flex flex-wrap items-center gap-2",
-    // The result takes the room left beside the buttons; its words wrap there. The regions stay in the accessibility
-    // tree while empty (not display: none), or a screen reader would not read what arrives in them.
+    // The result takes the room left beside the buttons; its words wrap there.
     result: "min-w-0 flex-1",
-    message: [
-      "flex items-start gap-2 text-sm font-medium wrap-anywhere",
-      "motion-safe:transition-[opacity,translate] motion-safe:duration-normal motion-safe:ease-enter",
-      "motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0",
-    ],
-    icon: "mt-0.5 shrink-0 [&>svg]:size-4",
   },
   variants: {
     // The bar stays above what the app shell fixes at the bottom of the screen: the app's stylesheet sets
@@ -43,10 +36,6 @@ const formActionBar = tv({
       },
       false: {},
     },
-    tone: {
-      success: { message: "text-success" },
-      danger: { message: "text-danger" },
-    },
   },
 });
 
@@ -62,22 +51,11 @@ export type FormActionBarProps = {
 /** The submit button of a form with the result of its last submit beside it. Put it last in the form. */
 export function FormActionBar({ children, result, sticky = false }: FormActionBarProps) {
   const slots = formActionBar({ sticky });
-  const message = (tone: FormActionResult["tone"]) =>
-    result?.tone === tone && (
-      // A new result enters again (keyed by its words).
-      <p key={result.message} className={slots.message({ tone })}>
-        <span aria-hidden="true" className={slots.icon()}>
-          {tone === "success" ? <CheckIcon /> : <WarningIcon filled />}
-        </span>
-        <span>{result.message}</span>
-      </p>
-    );
   return (
     <div className={slots.base()} data-form-action-bar="" data-sticky={sticky ? "" : undefined}>
       <div className={slots.buttons()}>{children}</div>
       <div className={slots.result()}>
-        <div role="status">{message("success")}</div>
-        <div role="alert">{message("danger")}</div>
+        <ActionResult result={result} />
       </div>
     </div>
   );

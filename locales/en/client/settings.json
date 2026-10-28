@@ -1001,7 +1001,7 @@
   },
   "settings.passkeys.add.title": {
     "defaultMessage": "Add a passkey",
-    "description": "Heading of the form that adds a passkey on the passkeys settings page."
+    "description": "Button above the list of passkeys that opens the form that adds one, and the heading of that form."
   },
   "settings.passkeys.add.description": {
     "defaultMessage": "Name the passkey so that you can tell it apart, and enter your password to confirm. Your browser then asks where to save the passkey.",
@@ -1285,7 +1285,7 @@
   },
   "settings.domain_mutes.new.title": {
     "defaultMessage": "Mute a domain",
-    "description": "Heading of the section of the muted domains page with the form that mutes a domain."
+    "description": "Button above the list of muted domains that opens the form that mutes one, and the heading of that form."
   },
   "settings.domain_mutes.list.title": {
     "defaultMessage": "Domains you mute",
@@ -1789,7 +1789,7 @@
   },
   "settings.linked_accounts.add.title": {
     "defaultMessage": "Link an account",
-    "description": "Heading of the section that links an account at a sign-in service."
+    "description": "Button above the list of linked accounts that opens the sign-in services to link an account at, and the heading of that panel."
   },
   "settings.linked_accounts.add.description": {
     "defaultMessage": "You sign in at the service, which then sends you back here. An account linked to someone else on this server cannot be linked.",
@@ -2366,5 +2366,41 @@
   "settings.profile.discoverable.description": {
     "defaultMessage": "People of this server see your account among the suggestions to follow and find it by part of your name. When this is off, they can still find you by your whole username, and the people who follow you still find you.",
     "description": "Help text of the discoverable checkbox."
+  },
+  "settings.list.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the panel that adds to a settings list without adding."
+  },
+  "settings.passkeys.count": {
+    "defaultMessage": "{count, plural, one {# passkey} other {# passkeys}}",
+    "description": "Read for the count beside the heading of the list of passkeys. {count} is the number of passkeys."
+  },
+  "settings.passkeys.empty.description": {
+    "defaultMessage": "Add one to sign in without typing your password.",
+    "description": "Text of the empty list of passkeys, above the button that adds one."
+  },
+  "settings.domain_mutes.count": {
+    "defaultMessage": "{count, plural, one {# muted domain} other {# muted domains}}",
+    "description": "Read for the count beside the heading of the list of muted domains. {count} is the number of domains."
+  },
+  "settings.domain_mutes.count_at_least": {
+    "defaultMessage": "{count, plural, one {At least # muted domain} other {At least # muted domains}}",
+    "description": "Read for the count beside the heading of the list of muted domains while more of them can be loaded. {count} is the number loaded."
+  },
+  "settings.domain_mutes.empty.description": {
+    "defaultMessage": "Mute one to keep its posts out of your timelines.",
+    "description": "Text of the empty list of muted domains, above the button that mutes one."
+  },
+  "settings.domain_mutes.unmute_failed": {
+    "defaultMessage": "Couldn't unmute {domain}: {reason}",
+    "description": "Error above the list of muted domains when unmuting one failed. {domain} is the domain; {reason} is the server's explanation."
+  },
+  "settings.linked_accounts.count": {
+    "defaultMessage": "{count, plural, one {# linked account} other {# linked accounts}}",
+    "description": "Read for the count beside the heading of the list of linked accounts. {count} is the number of accounts."
+  },
+  "settings.linked_accounts.empty.description": {
+    "defaultMessage": "Link one to sign in with that service.",
+    "description": "Text of the empty list of linked accounts, above the button that links one."
   }
 }

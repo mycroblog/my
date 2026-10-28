@@ -45,12 +45,14 @@ export type UnmuteDomain = {
   run: (domain: string, onDone: () => void) => void;
   /** The domain being unmuted. */
   pendingDomain: string | undefined;
+  /** Why the last unmute failed, localized, shown above the list; undefined when it did not. */
+  error: string | undefined;
 };
 
 /**
  * Unmuting a domain: the row leaves the list once the posts and notifications on screen are fetched again (the row stays
  * pending until then), then the caller moves focus to the next row and the result is announced. A failure keeps the row and its focus,
- * and says why (web-client/README.md E2).
+ * and says why above the list (web-client/README.md E2).
  */
 export function useUnmuteDomain(): UnmuteDomain {
   const api = useApi();
@@ -65,15 +67,18 @@ export function useUnmuteDomain(): UnmuteDomain {
   });
   return {
     pendingDomain: unmute.isPending ? unmute.variables : undefined,
+    error: unmute.isError
+      ? t("client:settings.domain_mutes.unmute_failed", {
+          domain: domainInText(unmute.variables),
+          reason: errorMessage(unmute.error),
+        })
+      : undefined,
     run: (domain, onDone) => {
       unmute.mutate(domain, {
         onSuccess: () => {
           removeDomainMute(queryClient, api, domain);
           onDone();
           notice.inPlace(t("client:settings.domain_mutes.unmuted", { domain: domainInText(domain) }));
-        },
-        onError: (error) => {
-          notice.inPlace(errorMessage(error), "assertive");
         },
       });
     },
@@ -84,12 +89,12 @@ export function useUnmuteDomain(): UnmuteDomain {
 export type MuteDomainForm = {
   domain: string;
   setDomain: (domain: string) => void;
-  /** Mutes the domain once the browser has checked the field. */
-  submit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  /** Mutes the domain once the browser has checked the field; `onAdded` is called once it is on the list. */
+  submit: (event: SyntheticEvent<HTMLFormElement>, onAdded?: () => void) => void;
   isPending: boolean;
   /** Why muting failed, localized, for the field; the domain typed stays. */
   error: string | undefined;
-  /** What the last mute did, for the form's StatusMessage; undefined before the first one. */
+  /** What the last mute did, shown above the list; undefined before the first one. */
   status: string | undefined;
 };
 
@@ -117,12 +122,12 @@ export function useMuteDomainForm(): MuteDomainForm {
       setDomain(value);
       if (mute.isError) mute.reset();
     },
-    submit: (event) => {
+    submit: (event, onAdded) => {
       event.preventDefault();
       const value = domain.trim();
       if (mute.isPending || value === "") return;
       mute.reset();
-      mute.mutate(value);
+      mute.mutate(value, { onSuccess: () => onAdded?.() });
     },
     isPending: mute.isPending,
     error: mute.isError ? errorMessage(mute.error) : undefined,

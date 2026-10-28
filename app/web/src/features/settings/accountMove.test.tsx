@@ -2,13 +2,14 @@
 // The aliases and moving the account through the whole app (web-client/README.md T4, FR-009, ADR-0089): adding and
 // removing aliases with their limit and errors, the move behind a dialog that says what moves and what stays and asks
 // for the password, the moved state with the cancellation, with MSW playing the API.
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
 import { accountFixture, type Schemas, viewerFixture } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -95,21 +96,24 @@ describe("the aliases", () => {
     await user.click(await screen.findByRole("link", { name: "Aliases" }));
 
     expect(await screen.findByRole("heading", { level: 1, name: "Aliases" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-aliases.md §3
+    expect(sectionHeadings()).toEqual(["Your aliases"]);
     const list = screen.getByRole("region", { name: "Your aliases" });
     expect(within(list).getByText("@alice@old.example")).toHaveAttribute("dir", "ltr");
     expect(within(list).getByText("https://old.example/users/alice")).toBeInTheDocument();
 
-    const field = screen.getByRole("textbox", { name: /Account to move from/ });
+    expect(within(list).getByText("1 alias")).toBeInTheDocument();
+    await user.click(within(list).getByRole("button", { name: "Add an alias" }));
+    const field = within(list).getByRole("textbox", { name: /Account to move from/ });
     expect(field).toHaveAccessibleDescription(/up to 5 aliases/);
     await user.type(field, "bob@other.example");
-    await user.click(screen.getByRole("button", { name: "Add alias" }));
+    await user.click(within(list).getByRole("button", { name: "Add alias" }));
 
+    // The panel closes; the result shows above the list, where the new row is.
     expect(await within(list).findByText("@bob@other.example")).toBeInTheDocument();
-    expect(within(screen.getByRole("main")).getByRole("status")).toHaveTextContent(
-      "Added the alias ⁨@bob@other.example⁩.",
-    );
+    expect(within(list).getByRole("status")).toHaveTextContent("Added the alias ⁨@bob@other.example⁩.");
     expect(api.added).toEqual(["bob@other.example"]);
-    expect(field).toHaveValue("");
+    expect(within(list).getByRole("button", { name: "Add an alias" })).toHaveFocus();
   });
 
   test("says why an alias cannot be added and keeps what was typed", async () => {
@@ -117,13 +121,19 @@ describe("the aliases", () => {
     const { user } = await renderApp({ path: "/settings/aliases" });
 
     expect(await screen.findByText("You have no aliases.")).toBeInTheDocument();
-    const field = screen.getByRole("textbox", { name: /Account to move from/ });
+    // The empty list leads to the form.
+    await user.click(screen.getByRole("button", { name: "Add an alias" }));
+    const form = screen.getByRole("region", { name: "Add an alias" });
+    const field = within(form).getByRole("textbox", { name: /Account to move from/ });
     await user.type(field, "nobody@nowhere.example");
-    await user.click(screen.getByRole("button", { name: "Add alias" }));
+    await user.click(within(form).getByRole("button", { name: "Add alias" }));
 
-    expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
-      "The alias could not be added: That account cannot be an alias.",
-    );
+    // In the form's action bar, beside the button.
+    await waitFor(() => {
+      expect(within(form).getByRole("alert")).toHaveTextContent(
+        "The alias could not be added: That account cannot be an alias.",
+      );
+    });
     expect(field).toHaveValue("nobody@nowhere.example");
   });
 
@@ -150,7 +160,7 @@ describe("the aliases", () => {
     expect(
       await screen.findByText("You have 5 aliases, the most there can be. Remove one to add another."),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add alias" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add an alias" })).not.toBeInTheDocument();
   });
 });
 

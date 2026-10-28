@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's linked accounts at the login providers (FR-010): the list, unlinking one from its row, and linking one
 // after the password, a passkey, or (for a user with neither) a linked provider confirms it. Linking leaves the app
-// for the provider, which sends the browser back to this page with the outcome; the page tells it in its
-// StatusMessage or an alert (web-client/README.md E2).
+// for the provider, which sends the browser back to this page with the outcome; the page tells it above the list of
+// linked accounts (web-client/README.md E2).
 import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";

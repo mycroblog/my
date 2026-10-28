@@ -1,25 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The linked accounts page below its heading (FR-010): what a linked account does, the accounts the user links,
-// oldest first, each with when it was linked and its button that unlinks it after an alert dialog (ConfirmDialog), and
-// the providers that the user can link an account at, each with its button that opens the dialog that confirms the
-// link (the password, a passkey, or for a user with neither a linked provider first) and leaves for the provider.
-// Provider names are shown as the administrators wrote them (dir="auto"). What the provider's round trip did stays on
-// the page in a StatusMessage or an alert at its top; unlinking is announced and moves focus to the next row
-// (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).
-import {
-  Box,
-  Button,
-  Cluster,
-  ConfirmDialog,
-  EmptyState,
-  Hint,
-  InlineError,
-  Section,
-  Stack,
-  StatusMessage,
-  Text,
-  TextField,
-} from "@my/ui";
+// The linked accounts page below its heading (FR-010; web-client/screens/settings-linked-accounts.md): the list-and-add
+// part (`ListSection`) with the accounts the user links, oldest first, each with when it was linked and its button
+// that unlinks it after an alert dialog (ConfirmDialog), and the button that opens the providers that the user can link
+// an account at, each with its button that opens the dialog that confirms the link (the password, a passkey, or for a
+// user with neither a linked provider first) and leaves for the provider. Provider names are shown as the
+// administrators wrote them (dir="auto"). What the provider's round trip did shows above the list, where the new row
+// appears; unlinking is announced and moves focus to the next row (web-client/README.md E2,
+// web-client/16-look-states-and-wording.md G16, G24).
+import { Button, Cluster, ConfirmDialog, Hint, ListSection, Stack, Text, TextField } from "@my/ui";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
@@ -38,52 +26,53 @@ import { ExternalConfirmationChoice } from "./ExternalConfirmationChoice";
 export function LinkedAccountSettings() {
   const t = useT();
   const outcome = useLinkOutcome();
-  return (
-    <Stack container gap="8">
-      <StatusMessage>{outcome.status}</StatusMessage>
-      {outcome.error !== undefined && (
-        <InlineError alert size="inherit">
-          {outcome.error}
-        </InlineError>
-      )}
-      <p>{t("client:settings.linked_accounts.description")}</p>
-      <Section title={t("client:settings.linked_accounts.list.title")}>
-        <LinkedAccountList />
-      </Section>
-      <Section title={t("client:settings.linked_accounts.add.title")}>
-        <AddLinkedAccount />
-      </Section>
-    </Stack>
-  );
-}
-
-function LinkedAccountList() {
-  const t = useT();
   const links = useLinkedAccountList();
+  const link = useLinkAccount();
   const unlink = useUnlinkAccount();
   const listRef = useRef<HTMLUListElement>(null);
   const removed = useFocusAfterRemoval(
     listRef,
-    links.map((link) => link.id),
+    links.map((item) => item.id),
   );
   const [confirming, setConfirming] = useState<LinkedIdentity | null>(null);
-  if (links.length === 0) return <EmptyState headingLevel={3} heading={t("client:settings.linked_accounts.empty")} />;
+  let result: { tone: "success" | "danger"; message: string } | undefined;
+  if (outcome.error !== undefined) result = { tone: "danger", message: outcome.error };
+  else if (outcome.status !== undefined) result = { tone: "success", message: outcome.status };
   return (
     <>
-      <Stack as="ul" ref={listRef} divided>
-        {links.map((link) => (
-          <Box as="li" key={link.id} data-row-id={link.id} container paddingY="3">
-            <LinkedAccountRow
-              link={link}
-              unlink={unlink}
-              onUnlink={() => {
-                unlink.reset();
-                setConfirming(link);
-              }}
-            />
-          </Box>
-        ))}
-      </Stack>
+      <ListSection
+        title={t("client:settings.linked_accounts.list.title")}
+        description={t("client:settings.linked_accounts.description")}
+        items={links}
+        itemKey={(item) => item.id}
+        renderItem={(item) => (
+          <LinkedAccountRow
+            link={item}
+            unlink={unlink}
+            onUnlink={() => {
+              unlink.reset();
+              setConfirming(item);
+            }}
+          />
+        )}
+        listRef={listRef}
+        countLabel={t("client:settings.linked_accounts.count", { count: links.length })}
+        empty={{
+          heading: t("client:settings.linked_accounts.empty"),
+          description: t("client:settings.linked_accounts.empty.description"),
+        }}
+        add={
+          link.providers.length === 0
+            ? { unavailable: t("client:settings.linked_accounts.add.none") }
+            : {
+                label: t("client:settings.linked_accounts.add.title"),
+                panel: (close) => <AddLinkedAccount link={link} close={close} />,
+                // Back from confirming at a linked provider: choosing the provider to link goes on.
+                defaultOpen: link.external.confirmed !== undefined || link.external.error !== undefined,
+              }
+        }
+        result={result}
+      />
       <ConfirmDialog
         isOpen={confirming !== null}
         onOpenChange={(isOpen) => {
@@ -149,10 +138,9 @@ function LinkedAccountRow({
   );
 }
 
-function AddLinkedAccount() {
+/** The providers to link an account at, in the panel of the list, and the dialog that confirms the one chosen. */
+function AddLinkedAccount({ link, close }: { link: LinkAccount; close: () => void }) {
   const t = useT();
-  const link = useLinkAccount();
-  if (link.providers.length === 0) return <p>{t("client:settings.linked_accounts.add.none")}</p>;
   return (
     <Stack align="start" gap="4">
       <p>{t("client:settings.linked_accounts.add.description")}</p>
@@ -172,6 +160,7 @@ function AddLinkedAccount() {
           ))}
         </Cluster>
       )}
+      <Button onPress={close}>{t("client:settings.list.cancel")}</Button>
       <LinkDialog link={link} />
     </Stack>
   );

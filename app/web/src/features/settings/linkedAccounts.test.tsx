@@ -10,6 +10,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, oauthPaths, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -79,9 +80,13 @@ describe("linked accounts", () => {
     const { user, leftTo } = await renderApp({ path: "/settings/linked-accounts" });
 
     const list = await screen.findByRole("region", { name: "Your linked accounts" });
+    // docs/architecture/web-client/screens/settings-linked-accounts.md §3
+    expect(sectionHeadings()).toEqual(["Your linked accounts"]);
     expect(within(list).getByText("Corp SSO")).toHaveAttribute("dir", "auto");
-    // Only the providers without a link are offered.
-    const add = screen.getByRole("region", { name: "Link an account" });
+    expect(within(list).getByText("1 linked account")).toBeInTheDocument();
+    // Only the providers without a link are offered, in the panel that the one button opens.
+    await user.click(within(list).getByRole("button", { name: "Link an account" }));
+    const add = within(list).getByRole("region", { name: "Link an account" });
     expect(within(add).queryByRole("button", { name: "Link Corp SSO" })).not.toBeInTheDocument();
     await user.click(within(add).getByRole("button", { name: "Link Lab ID" }));
 
@@ -107,7 +112,9 @@ describe("linked accounts", () => {
   test("says what the provider's round trip did, and takes the outcome out of the address", async () => {
     linkServer([corpLink]);
     const { router } = await renderApp({ path: `/settings/linked-accounts#linked=${corp}&provider=${corp}` });
-    expect(await screen.findByText("Linked your account at Corp SSO.")).toBeInTheDocument();
+    // Above the list, where the new row is.
+    const list = await screen.findByRole("region", { name: "Your linked accounts" });
+    expect(await within(list).findByRole("status")).toHaveTextContent("Linked your account at Corp SSO.");
     await waitFor(() => {
       expect(router.state.location.hash).toBe("");
     });
@@ -116,9 +123,9 @@ describe("linked accounts", () => {
   test("says why a link failed", async () => {
     linkServer([]);
     await renderApp({ path: `/settings/linked-accounts#external_error=linked_elsewhere&provider=${lab}` });
-    expect(await screen.findByText("That account is linked to another user of this server.")).toHaveAttribute(
-      "role",
-      "alert",
+    const list = await screen.findByRole("region", { name: "Your linked accounts" });
+    expect(await within(list).findByRole("alert")).toHaveTextContent(
+      "That account is linked to another user of this server.",
     );
   });
 

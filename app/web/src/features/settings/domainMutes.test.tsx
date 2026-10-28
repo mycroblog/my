@@ -7,6 +7,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -45,17 +46,26 @@ describe("muted domains", () => {
 
     await user.click(await screen.findByRole("link", { name: "Muted domains" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Muted domains" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-domain-mutes.md §3
+    expect(sectionHeadings()).toEqual(["Domains you mute"]);
     // A domain in IDNA A-labels shows the U-labels it stands for, and the A-labels too.
     const list = screen.getByRole("region", { name: "Domains you mute" });
     expect(within(list).getByText("例え.テスト")).toBeInTheDocument();
     expect(within(list).getByText("xn--r8jz45g.xn--zckzah")).toBeInTheDocument();
 
-    const form = screen.getByRole("region", { name: "Mute a domain" });
-    await user.type(within(form).getByRole("textbox", { name: "Domain" }), "Spam.Example");
+    // The count beside the heading, and the one button that opens the form.
+    expect(within(list).getByText("1 muted domain")).toBeInTheDocument();
+    await user.click(within(list).getByRole("button", { name: "Mute a domain" }));
+    const form = within(list).getByRole("region", { name: "Mute a domain" });
+    const field = within(form).getByRole("textbox", { name: "Domain" });
+    expect(field).toHaveFocus();
+    await user.type(field, "Spam.Example");
     await user.click(within(form).getByRole("button", { name: "Mute" }));
 
-    expect(await within(form).findByText("You muted ⁦spam.example⁩.")).toBeInTheDocument();
-    expect(within(form).getByRole("textbox", { name: "Domain" })).toHaveValue("");
+    // The panel closes; the result shows above the list and focus is back on the button.
+    expect(await within(list).findByRole("status")).toHaveTextContent("You muted ⁦spam.example⁩.");
+    expect(within(list).queryByRole("region", { name: "Mute a domain" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "Mute a domain" })).toHaveFocus();
     expect(changes).toEqual(["mute spam.example"]);
     const rows = await within(list).findAllByRole("listitem");
     expect(rows.map((row) => row.getAttribute("data-row-id"))).toEqual(["spam.example", "xn--r8jz45g.xn--zckzah"]);
@@ -74,11 +84,32 @@ describe("muted domains", () => {
     expect(await screen.findByText("You unmuted ⁦a.example⁩.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Unmute: b.example" }));
-    expect(await screen.findByRole("heading", { level: 2, name: "You do not mute any domain" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: "You do not mute any domain" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     });
     expect(changes).toEqual(["unmute a.example", "unmute b.example"]);
+  });
+
+  test("a failed unmute says why above the list and keeps the row", async () => {
+    useMutedDomains(["a.example"]);
+    server.use(
+      http.delete(`${apiBase}/domain_mutes/:domain`, () =>
+        HttpResponse.json(
+          { type: "about:blank", title: "Internal Server Error", status: 500, detail: "The server is busy." },
+          { status: 500, headers: { "Content-Type": "application/problem+json" } },
+        ),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/domain-mutes" });
+
+    await user.click(await screen.findByRole("button", { name: "Unmute: a.example" }));
+
+    const list = screen.getByRole("region", { name: "Domains you mute" });
+    expect(await within(list).findByRole("alert")).toHaveTextContent(
+      "Couldn't unmute ⁦a.example⁩: The server is busy.",
+    );
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
   });
 
   test("a domain the server refuses says why and stays in the field", async () => {
@@ -93,14 +124,19 @@ describe("muted domains", () => {
     );
     const { user } = await renderApp({ path: "/settings/domain-mutes" });
 
-    const field = await screen.findByRole("textbox", { name: "Domain" });
+    // The empty list leads to the form.
+    await user.click(await screen.findByRole("button", { name: "Mute a domain" }));
+    const field = screen.getByRole("textbox", { name: "Domain" });
     await user.type(field, "not a domain");
     await user.click(screen.getByRole("button", { name: "Mute" }));
 
-    expect(await screen.findByText("Could not mute the domain: domain is not a valid value.")).toHaveAttribute(
-      "role",
-      "alert",
-    );
+    // The failure is in the form's action bar, beside the button.
+    const form = screen.getByRole("region", { name: "Mute a domain" });
+    await waitFor(() => {
+      expect(within(form).getByRole("alert")).toHaveTextContent(
+        "Could not mute the domain: domain is not a valid value.",
+      );
+    });
     expect(field).toHaveValue("not a domain");
   });
 });

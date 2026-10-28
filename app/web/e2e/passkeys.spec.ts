@@ -88,6 +88,7 @@ test.describe("passkeys", () => {
     // The settings page adds a passkey after the password.
     await page.goto("/settings/passkeys");
     const main = page.getByRole("main");
+    await main.getByRole("button", { name: message("client", "settings.passkeys.add.title"), exact: true }).click();
     const form = main.getByRole("region", { name: message("client", "settings.passkeys.add.title") });
     await form.getByRole("textbox", { name: message("client", "settings.passkeys.name") }).fill("E2E authenticator");
     await form.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);
@@ -130,6 +131,7 @@ test.describe("passkeys", () => {
 
     await page.goto("/settings/passkeys");
     const main = page.getByRole("main");
+    await main.getByRole("button", { name: message("client", "settings.passkeys.add.title"), exact: true }).click();
     const form = main.getByRole("region", { name: message("client", "settings.passkeys.add.title") });
     await form.getByRole("textbox", { name: message("client", "settings.passkeys.name") }).fill("Only key");
     await form.locator('input[type="password"][autocomplete="current-password"]').fill(user.password);
@@ -155,7 +157,7 @@ test.describe("passkeys", () => {
     // The last passkey stays while there is no password.
     await page.goto("/settings/passkeys");
     const list = main.getByRole("region", { name: message("client", "settings.passkeys.list.title") });
-    await list.getByRole("button").click();
+    await list.getByRole("button", { name: new RegExp(message("client", "settings.passkeys.remove")) }).click();
     const confirm = page.getByRole("alertdialog");
     await confirm.getByRole("button", { name: message("client", "settings.passkeys.remove"), exact: true }).click();
     await expect(

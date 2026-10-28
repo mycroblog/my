@@ -17,7 +17,7 @@
   },
   "account_move.aliases.add.title": {
     "defaultMessage": "Add an alias",
-    "description": "Heading of the section with the form that adds an alias."
+    "description": "Button above the list of aliases that opens the form that adds one, and the heading of that form."
   },
   "account_move.aliases.add_failed": {
     "defaultMessage": "The alias could not be added: {reason}",
@@ -226,5 +226,13 @@
   "account_move.move.confirm.description_external": {
     "defaultMessage": "Your followers follow {handle}, and this account says that it moved. You cannot move again for 30 days.",
     "description": "Description of the dialog that moves the account of a user who confirmed by signing in again at a linked service (an external login provider). {handle} is the new account's handle."
+  },
+  "account_move.aliases.count": {
+    "defaultMessage": "{count, plural, one {# alias} other {# aliases}}",
+    "description": "Read for the count beside the heading of the list of aliases. {count} is the number of aliases."
+  },
+  "account_move.aliases.empty.description": {
+    "defaultMessage": "Add the account you are moving from before it moves its followers to you.",
+    "description": "Text of the empty list of aliases, above the button that adds one."
   }
 }

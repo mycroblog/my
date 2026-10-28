@@ -1001,7 +1001,7 @@
   },
   "settings.passkeys.add.title": {
     "defaultMessage": "パスキーを追加",
-    "description": "Heading of the form that adds a passkey on the passkeys settings page."
+    "description": "Button above the list of passkeys that opens the form that adds one, and the heading of that form."
   },
   "settings.passkeys.add.description": {
     "defaultMessage": "見分けられるようにパスキーに名前を付け、確認のためにパスワードを入力してください。続いて、ブラウザがパスキーの保存先を尋ねます。",
@@ -1285,7 +1285,7 @@
   },
   "settings.domain_mutes.new.title": {
     "defaultMessage": "ドメインをミュートする",
-    "description": "Heading of the section of the muted domains page with the form that mutes a domain."
+    "description": "Button above the list of muted domains that opens the form that mutes one, and the heading of that form."
   },
   "settings.domain_mutes.list.title": {
     "defaultMessage": "ミュートしているドメイン",
@@ -1789,7 +1789,7 @@
   },
   "settings.linked_accounts.add.title": {
     "defaultMessage": "アカウントを連携",
-    "description": "Heading of the section that links an account at a sign-in service."
+    "description": "Button above the list of linked accounts that opens the sign-in services to link an account at, and the heading of that panel."
   },
   "settings.linked_accounts.add.description": {
     "defaultMessage": "サービスでログインすると、この画面に戻ります。このサーバーのほかの利用者に連携されているアカウントは連携できません。",
@@ -2366,5 +2366,41 @@
   "settings.profile.discoverable.description": {
     "defaultMessage": "このサーバーの人へのおすすめにあなたのアカウントを出し、名前の一部で見つかるようにします。オフにしても、ユーザー名の全体と、あなたをフォローしている人からは見つかります。",
     "description": "Help text of the discoverable checkbox."
+  },
+  "settings.list.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the panel that adds to a settings list without adding."
+  },
+  "settings.passkeys.count": {
+    "defaultMessage": "{count, plural, other {パスキー # 件}}",
+    "description": "Read for the count beside the heading of the list of passkeys. {count} is the number of passkeys."
+  },
+  "settings.passkeys.empty.description": {
+    "defaultMessage": "追加すると、パスワードを入力せずにログインできます。",
+    "description": "Text of the empty list of passkeys, above the button that adds one."
+  },
+  "settings.domain_mutes.count": {
+    "defaultMessage": "{count, plural, other {ミュートしているドメイン # 件}}",
+    "description": "Read for the count beside the heading of the list of muted domains. {count} is the number of domains."
+  },
+  "settings.domain_mutes.count_at_least": {
+    "defaultMessage": "{count, plural, other {ミュートしているドメイン # 件以上}}",
+    "description": "Read for the count beside the heading of the list of muted domains while more of them can be loaded. {count} is the number loaded."
+  },
+  "settings.domain_mutes.empty.description": {
+    "defaultMessage": "ミュートすると、そのドメインの投稿がタイムラインに出なくなります。",
+    "description": "Text of the empty list of muted domains, above the button that mutes one."
+  },
+  "settings.domain_mutes.unmute_failed": {
+    "defaultMessage": "{domain} のミュートを解除できませんでした：{reason}",
+    "description": "Error above the list of muted domains when unmuting one failed. {domain} is the domain; {reason} is the server's explanation."
+  },
+  "settings.linked_accounts.count": {
+    "defaultMessage": "{count, plural, other {連携しているアカウント # 件}}",
+    "description": "Read for the count beside the heading of the list of linked accounts. {count} is the number of accounts."
+  },
+  "settings.linked_accounts.empty.description": {
+    "defaultMessage": "連携すると、そのサービスでログインできます。",
+    "description": "Text of the empty list of linked accounts, above the button that links one."
   }
 }

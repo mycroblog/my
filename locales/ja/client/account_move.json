@@ -17,7 +17,7 @@
   },
   "account_move.aliases.add.title": {
     "defaultMessage": "別名を追加",
-    "description": "Heading of the section with the form that adds an alias."
+    "description": "Button above the list of aliases that opens the form that adds one, and the heading of that form."
   },
   "account_move.aliases.add_failed": {
     "defaultMessage": "別名を追加できませんでした：{reason}",
@@ -226,5 +226,13 @@
   "account_move.move.confirm.description_external": {
     "defaultMessage": "フォロワーは{handle}をフォローし、このアカウントには移転したことが表示されます。30日間は再び移転できません。",
     "description": "Description of the dialog that moves the account of a user who confirmed by signing in again at a linked service (an external login provider). {handle} is the new account's handle."
+  },
+  "account_move.aliases.count": {
+    "defaultMessage": "{count, plural, other {別名 # 件}}",
+    "description": "Read for the count beside the heading of the list of aliases. {count} is the number of aliases."
+  },
+  "account_move.aliases.empty.description": {
+    "defaultMessage": "移転元のアカウントがフォロワーを移す前に、そのアカウントを追加します。",
+    "description": "Text of the empty list of aliases, above the button that adds one."
   }
 }

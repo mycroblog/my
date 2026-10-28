@@ -9,6 +9,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 import { installPasskeys, removePasskeys } from "../../test/webauthn";
 
 beforeEach(() => {
@@ -85,10 +86,14 @@ describe("passkeys", () => {
     const { user } = await renderApp({ path: "/settings/passkeys" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Passkeys" })).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-passkeys.md §3
+    expect(sectionHeadings()).toEqual(["Your passkeys"]);
     const list = screen.getByRole("region", { name: "Your passkeys" });
     expect(within(list).getByText("Phone")).toHaveAttribute("dir", "auto");
+    expect(within(list).getByText("1 passkey")).toBeInTheDocument();
 
-    const form = screen.getByRole("region", { name: "Add a passkey" });
+    await user.click(within(list).getByRole("button", { name: "Add a passkey" }));
+    const form = within(list).getByRole("region", { name: "Add a passkey" });
     await user.type(within(form).getByRole("textbox", { name: "Name" }), " Laptop ");
     const password = within(form).getByLabelText(/^Current password/);
     await user.type(password, "wrong");
@@ -101,8 +106,11 @@ describe("passkeys", () => {
     await user.type(password, "correct horse");
     await user.click(within(form).getByRole("button", { name: "Add passkey" }));
 
-    expect(await screen.findByText("The passkey “Laptop” was added.")).toBeInTheDocument();
+    // The panel closes; the result shows above the list, where the new row is.
+    expect(await within(list).findByRole("status")).toHaveTextContent("The passkey “Laptop” was added.");
     expect(await within(list).findByText("Laptop")).toBeInTheDocument();
+    expect(within(list).queryByRole("region", { name: "Add a passkey" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "Add a passkey" })).toHaveFocus();
     expect(api.registrations).toEqual([
       { name: "Laptop", password: "wrong" },
       { name: "Laptop", password: "correct horse" },
@@ -123,8 +131,6 @@ describe("passkeys", () => {
         },
       },
     ]);
-    expect(within(form).getByRole("textbox", { name: "Name" })).toHaveValue("");
-    expect(password).toHaveValue("");
   });
 
   test("says why when the prompt is dismissed or the server refuses the passkey", async () => {
@@ -134,6 +140,8 @@ describe("passkeys", () => {
     const { user } = await renderApp({ path: "/settings/passkeys" });
 
     expect(await screen.findByRole("heading", { level: 3, name: "No passkeys yet" })).toBeInTheDocument();
+    // The empty list leads to the form.
+    await user.click(screen.getByRole("button", { name: "Add a passkey" }));
     const form = screen.getByRole("region", { name: "Add a passkey" });
     await user.type(within(form).getByRole("textbox", { name: "Name" }), "Laptop");
     await user.type(within(form).getByLabelText(/^Current password/), "correct horse");
@@ -161,7 +169,7 @@ describe("passkeys", () => {
         "This browser cannot create passkeys. Open this page in a browser that supports them to add one.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add passkey" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add a passkey" })).not.toBeInTheDocument();
     expect(screen.getByText("Phone")).toBeInTheDocument();
   });
 
@@ -186,7 +194,8 @@ describe("passkeys", () => {
     server.use(http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: false })));
     const { user } = await renderApp({ path: "/settings/passkeys" });
 
-    const form = await screen.findByRole("region", { name: "Add a passkey" });
+    await user.click(await screen.findByRole("button", { name: "Add a passkey" }));
+    const form = screen.getByRole("region", { name: "Add a passkey" });
     expect(
       within(form).getByText(
         /^Name the passkey so that you can tell it apart. Your browser asks for one of your passkeys/,
