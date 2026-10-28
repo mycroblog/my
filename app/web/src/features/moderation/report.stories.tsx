@@ -61,7 +61,7 @@ export const Sparse: Story = { parameters: { screen: { path: `/moderation/report
 export const Resolved: Story = { parameters: { screen: { path: `/moderation/reports/${storyId("c0", 6)}` } } };
 
 /** A report that does not exist. */
-export const NotFound: Story = { parameters: { screen: { path: `/moderation/reports/${storyId("c0", 404)}` } } };
+export const NotFound: Story = { parameters: { screen: { path: `/moderation/reports/${storyId("c0", 404)}`, errorPage: "request" } } };
 
 /** The report has not arrived yet. */
 export const Loading: Story = loadingOn("get", "/admin/reports/:id");

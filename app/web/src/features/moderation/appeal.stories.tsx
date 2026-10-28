@@ -39,7 +39,9 @@ export const Upheld: Story = at(upheld);
 export const Overturned: Story = at(overturned);
 
 /** An appeal that does not exist. */
-export const NotFound: Story = at({ id: storyId("f1", 404) });
+export const NotFound: Story = {
+  parameters: { screen: { ...at({ id: storyId("f1", 404) }).parameters.screen, errorPage: "request" } },
+};
 
 /** The appeal has not arrived yet. */
 export const Loading: Story = loadingOn("get", "/admin/appeals/:id");
