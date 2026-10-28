@@ -108,6 +108,50 @@ CREATE TABLE instance_theme (
 ) STRICT;
 
 -- ---------------------------------------------------------------------------------------------
+-- instance: brand images (data-model §4.9, ADR-0116). Owned by internal/app/instance.
+-- The files live in the BlobStore under keys the server makes from the revision ID.
+-- ---------------------------------------------------------------------------------------------
+
+-- Event (revision): one change of the icon, the logo, or the dark logo. A set revision has its
+-- files in instance_brand_files; a clear revision has none and brings back the built-in images.
+-- background_color is the #rrggbb color behind the opaque renditions of a set icon, NULL
+-- otherwise. revised_by_user_id is NULL for a change from the CLI.
+CREATE TABLE instance_brand_revisions (
+  id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('icon', 'logo', 'logo_dark')),
+  action TEXT NOT NULL CHECK (action IN ('set', 'clear')),
+  background_color TEXT CHECK (background_color IS NULL OR background_color GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'),
+  revised_by_user_id TEXT,
+  revised_at INTEGER NOT NULL,
+  CHECK ((kind = 'icon' AND action = 'set') = (background_color IS NOT NULL))
+) STRICT;
+CREATE INDEX instance_brand_revisions_kind_id ON instance_brand_revisions (kind, id DESC);
+
+-- Event (child of a set revision): one stored file, the sanitized SVG or one of its PNG
+-- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
+-- sha256 is the hex SHA-256 of the content.
+CREATE TABLE instance_brand_files (
+  brand_revision_id TEXT NOT NULL,
+  rendition TEXT NOT NULL CHECK (rendition IN (
+    'svg', 'favicon-32', 'favicon-48', 'apple-touch-180', 'pwa-192', 'pwa-512', 'maskable-512',
+    'logo-mail', 'logo-dark-mail', 'preview-1200x630'
+  )),
+  blob_key TEXT NOT NULL,
+  content_type TEXT NOT NULL CHECK (content_type IN ('image/svg+xml', 'image/png')),
+  width INTEGER NOT NULL CHECK (width > 0),
+  height INTEGER NOT NULL CHECK (height > 0),
+  byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  PRIMARY KEY (brand_revision_id, rendition)
+) STRICT;
+
+-- Projection: the current set revision of each kind; a clear revision deletes the row.
+CREATE TABLE instance_brands (
+  kind TEXT NOT NULL PRIMARY KEY,
+  revision_id TEXT NOT NULL
+) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
 -- instance: rules (data-model §4.9, FR-705). Owned by internal/app/instance.
 -- A rule keeps its ID across revisions, so reports cite it by rule_id; retired rules stay.
 -- ---------------------------------------------------------------------------------------------

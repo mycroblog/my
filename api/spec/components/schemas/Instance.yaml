@@ -95,6 +95,12 @@ properties:
     enum: [everyone, permitted]
   theme:
     $ref: ./InstanceTheme.yaml
+  icon:
+    $ref: ./InstanceBrandImage.yaml
+  logo:
+    $ref: ./InstanceBrandImage.yaml
+  logo_dark:
+    $ref: ./InstanceBrandImage.yaml
   contact:
     $ref: ./InstanceContact.yaml
   thumbnail:

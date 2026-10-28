@@ -55,6 +55,8 @@
         .mail-muted div { color: #b7a7a5 !important; }
         .mail-button td, .mail-button a { background-color: #ff8585 !important; color: #241f20 !important; }
         .mail-link { color: #ff8585 !important; }
+        .mail-logo-light { display: none !important; }
+        .mail-logo-dark { display: block !important; }
       }
     </style>
     <meta name="color-scheme" content="light dark">
@@ -98,7 +100,19 @@
          border="0" cellpadding="0" cellspacing="0" role="presentation" style="" width="100%"
       >
         <tbody>
-          {{range .Paragraphs}}
+          {{with .Logo}}
+              <tr>
+                <td
+                   align="{{$.Start}}" class="mail-text" style="font-size:0px;padding:0 0 24px 0;word-break:break-word;"
+                >
+                  
+      <div
+         style="font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans CJK JP', 'Hiragino Sans', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:{{$.Start}};color:#2e2e2e;"
+      ><img src="{{.URL}}" width="{{.Width}}" height="{{.Height}}" alt="{{$.Site.Name}}" class="{{if $.LogoDark}}mail-logo-light{{end}}" style="display: block; border: 0; max-width: 100%; height: auto;">{{with $.LogoDark}}<img src="{{.URL}}" width="{{.Width}}" height="{{.Height}}" alt="{{$.Site.Name}}" class="mail-logo-dark" style="display: none; border: 0; max-width: 100%; height: auto;">{{end}}</div>
+    
+                </td>
+              </tr>
+            {{end}}{{range .Paragraphs}}
               <tr>
                 <td
                    align="{{$.Start}}" class="mail-text" style="font-size:0px;padding:0 0 16px 0;word-break:break-word;"

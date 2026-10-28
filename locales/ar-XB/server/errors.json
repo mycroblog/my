@@ -119,6 +119,10 @@
     "defaultMessage": "‮∀u nuǝxdǝɔʇǝp ǝɹɹoɹ oɔɔnɹɹǝp. Ԁʅǝɐsǝ ʇɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.invalid_brand": {
+    "defaultMessage": "‮⊥ɥǝ ıɯɐƃǝ ɔɐuuoʇ qǝ sɐʌǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.invalid_custom_emoji": {
     "defaultMessage": "‮⊥ɥǝ ɔnsʇoɯ ǝɯoɾı ɔɐuuoʇ qǝ sɐʌǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."

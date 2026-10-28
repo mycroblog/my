@@ -281,17 +281,24 @@ func (h *Handler) profileImage(ctx context.Context, lang string, p appcontent.Pr
 	return h.instanceImage(ctx, lang)
 }
 
-// instanceImage returns the instance's preview image for a preview in language lang, or the
-// built-in image when the instance has none. An image without alt text gets a generic one
-// naming the instance.
+// instanceImage returns the instance's preview image for a preview in language lang, the
+// preview image drawn from its logo when it has none (ADR-0116), or the built-in image when it
+// has neither. An image without alt text gets a generic one naming the instance.
 func (h *Handler) instanceImage(ctx context.Context, lang string) (*Image, error) {
 	l := h.o.Messages.Localizer(lang)
-	if h.o.DefaultImage == nil {
-		return h.builtInImage(l.ServerPreviewBuiltinImageAlt()), nil
+	var img *Image
+	if h.o.DefaultImage != nil {
+		var err error
+		if img, err = h.o.DefaultImage(ctx); err != nil {
+			return nil, err
+		}
 	}
-	img, err := h.o.DefaultImage(ctx)
-	if err != nil {
-		return nil, err
+	if img == nil || img.URL == "" {
+		brand, err := h.currentBrand(ctx)
+		if err != nil {
+			return nil, err
+		}
+		img = brand.Preview
 	}
 	if img == nil || img.URL == "" {
 		return h.builtInImage(l.ServerPreviewBuiltinImageAlt()), nil
@@ -361,17 +368,21 @@ func (h *Handler) renderPreview(ctx context.Context, lang string, meta previewMe
 	if err != nil {
 		return document{}, err
 	}
+	brand, err := h.currentBrand(ctx)
+	if err != nil {
+		return document{}, err
+	}
 	crawlers := directivesOf(policy)
 	d, err := renderShell(shellData{
-		Lang: lang, Dir: i18n.Direction(lang), Title: meta.Title, Theme: theme, Crawlers: crawlers,
+		Lang: lang, Dir: i18n.Direction(lang), Title: meta.Title, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
 		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
-		Config:  h.runtimeConfig(locale, name),
+		Config:  h.runtimeConfig(locale, name, brand),
 		Preview: &meta,
 	})
 	if err != nil {
 		return document{}, err
 	}
-	key := append([]string{h.previewVersion, lang, locale, name, theme.Stylesheet, theme.Light, theme.Dark, string(policy.Search), string(policy.AI)}, version...)
+	key := append([]string{h.previewVersion, lang, locale, name, theme.Stylesheet, theme.Light, theme.Dark, brand.Version, string(policy.Search), string(policy.AI)}, version...)
 	d.etag = etag([]byte(strings.Join(key, "\x00")))
 	d.crawlers = &crawlers
 	return d, nil

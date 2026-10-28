@@ -74,7 +74,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The instance settings, and the invites with the registration page they open (#624).
 		Settings: a.Instance, Invites: a.Identity, OwnInvites: a.Identity, OAuthClients: a.Identity, LoginProviders: a.Identity, SignUpPath: authpages.PathSignUp,
 		// The instance theme (ADR-0059) and the URLs of its stylesheets, which the web handler serves.
-		Themes: a.Instance, Closures: a.Instance, ClosureEvents: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
+		Themes: a.Instance, BrandImages: a.Instance, Closures: a.Instance, ClosureEvents: a.Instance, ThemeStylesheetPath: web.ThemeStylesheetPath,
 		// The custom emoji of the picker and their administration (ADR-0051).
 		CustomEmojis:        a.CustomEmojis,
 		CustomEmojiRequests: a.CustomEmojis,

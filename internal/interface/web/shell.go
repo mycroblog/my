@@ -25,12 +25,19 @@ type runtimeConfig struct {
 	AccountDomain string `json:"accountDomain"`
 	// DefaultLocale is the instance's default locale.
 	DefaultLocale string `json:"defaultLocale"`
+	// Icon, Logo, and LogoDark are the instance's own brand images (ADR-0116): the path of the SVG
+	// and the size of its viewBox; each is left out while the built-in image applies.
+	Icon     *runtimeBrandImage `json:"icon,omitempty"`
+	Logo     *runtimeBrandImage `json:"logo,omitempty"`
+	LogoDark *runtimeBrandImage `json:"logoDark,omitempty"`
 }
 
 type shellData struct {
 	Lang, Dir, Title string
 	// Theme gives the theme colors and the theme's stylesheet (ADR-0059).
 	Theme themeState
+	// Brand holds the paths of the instance's own icon (ADR-0116), nil for the build's icons.
+	Brand *brandIcon
 	// Crawlers state the page's crawler policy in its meta tags (ADR-0057).
 	Crawlers                   crawlerDirectives
 	HasIcon, HasAppleTouchIcon bool
@@ -103,11 +110,24 @@ const shellSource = `<!doctype html>
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="{{.Theme.Light}}">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="{{.Theme.Dark}}">
 <link rel="manifest" href="` + PathWebManifest + `">
+{{- with .Brand}}
+{{- with .Favicon32}}
+<link rel="icon" href="{{.}}" type="image/png" sizes="32x32">
+{{- end}}
+{{- with .Favicon48}}
+<link rel="icon" href="{{.}}" type="image/png" sizes="48x48">
+{{- end}}
+<link rel="icon" href="{{.SVG}}" type="image/svg+xml">
+{{- with .AppleTouch}}
+<link rel="apple-touch-icon" href="{{.}}">
+{{- end}}
+{{- else}}
 {{- if .HasIcon}}
 <link rel="icon" href="/` + iconPath + `" type="image/svg+xml">
 {{- end}}
 {{- if .HasAppleTouchIcon}}
 <link rel="apple-touch-icon" href="/` + appleTouchIconPath + `">
+{{- end}}
 {{- end}}
 {{- if .HasThemeScript}}
 <script src="/` + themeScriptPath + `"></script>

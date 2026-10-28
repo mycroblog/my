@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A 422 of the brand image operations. For the type `/api/v1/problems/invalid-brand`,
+  `brand_error` says why the image cannot be saved; another 422 (a malformed request) has none.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      brand_error:
+        $ref: ./BrandError.yaml

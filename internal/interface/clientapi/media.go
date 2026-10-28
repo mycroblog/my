@@ -80,6 +80,9 @@ func (s *Server) maxBody(pattern string) int64 {
 	if pattern == uploadPattern && s.o.Media != nil {
 		return s.o.Media.MaxUploadBytes() + s.o.Media.Limits().MaxBytes + uploadOverhead
 	}
+	if pattern == setBrandPattern {
+		return maxSetBrandBody
+	}
 	return maxRequestBody
 }
 

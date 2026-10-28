@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The brand images of the instance; a kind that uses the built-in images is omitted.
+type: object
+properties:
+  icon:
+    $ref: ./AdminBrandImage.yaml
+  logo:
+    $ref: ./AdminBrandImage.yaml
+  logo_dark:
+    $ref: ./AdminBrandImage.yaml
