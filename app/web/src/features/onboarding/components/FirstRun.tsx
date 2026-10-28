@@ -13,6 +13,7 @@ import {
   PlusIcon,
   ProfileIcon,
   ProgressMeter,
+  RegionError,
   SearchIcon,
   Section,
   Stack,
@@ -166,20 +167,15 @@ function Suggestions() {
     );
   } else if (query.isError) {
     content = (
-      <Stack gap="2">
-        <Text as="p">{t("client:onboarding.suggestions.failed", { reason: errorMessage(query.error) })}</Text>
-        <div>
-          <Button
-            size="sm"
-            isPending={query.isFetching}
-            onPress={() => {
-              void query.refetch();
-            }}
-          >
-            {t("client:onboarding.suggestions.retry")}
-          </Button>
-        </div>
-      </Stack>
+      <RegionError
+        heading={t("client:onboarding.suggestions.failed")}
+        reason={errorMessage(query.error)}
+        retryLabel={t("client:onboarding.suggestions.retry")}
+        onRetry={() => {
+          void query.refetch();
+        }}
+        isRetrying={query.isFetching}
+      />
     );
   } else {
     content =

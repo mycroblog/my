@@ -181,13 +181,14 @@ describe("editing a post", () => {
     const { user } = await renderApp({ path: "/local" });
 
     const dialog = await openEditor(user, "My first words");
-    expect(await within(dialog).findByText("Could not load the post to edit: Service Unavailable")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Could not load the post to edit")).toBeInTheDocument();
+    expect(within(dialog).getByText("Service Unavailable")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Try again" }));
 
     expect(await within(dialog).findByRole("textbox", { name: "Your post" })).toHaveValue("My first words");
   });
 
-  test("does not save an empty text or one over the limit", async () => {
+  test("says why it cannot save an empty text or one over the limit, with the button pressable (G23)", async () => {
     signedIn();
     serveOwnPost();
     const { user } = await renderApp({ path: "/local" });
@@ -195,8 +196,17 @@ describe("editing a post", () => {
     const dialog = await openEditor(user, "My first words");
     const text = await within(dialog).findByRole("textbox", { name: "Your post" });
     await user.clear(text);
+    const save = within(dialog).getByRole("button", { name: "Save" });
+    expect(save).toBeEnabled();
+    await user.click(save);
 
-    expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(within(dialog).getByText("Write something to save.")).toBeInTheDocument();
+    expect(save).toHaveAccessibleDescription("Write something to save.");
+    expect(text).toHaveFocus();
+    await user.paste("x".repeat(600));
+    expect(within(dialog).queryByText("Write something to save.")).not.toBeInTheDocument();
+    await user.click(save);
+    expect(within(dialog).getByText("The text is too long. Shorten it to save.")).toBeInTheDocument();
   });
 
   test("does not save an image without a description when the server requires one", async () => {

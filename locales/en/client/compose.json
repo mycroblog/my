@@ -143,7 +143,7 @@
     "defaultMessage": "Posts being sent",
     "description": "Accessible name of the list of posts that are being sent or could not be sent."
   },
-  "compose.outbox.retry": {
+  "compose.outbox.resend": {
     "defaultMessage": "Send again",
     "description": "Button that sends a post that could not be sent again."
   },

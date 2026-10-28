@@ -17,7 +17,7 @@ export function SignInFailure({ error }: SignInFailureProps) {
       <p>{t(failureMessage(error))}</p>
       <p>
         <Link href="/login" variant="standalone">
-          {t("client:login.failed.retry")}
+          {t("client:login.failed.try_again")}
         </Link>
       </p>
     </>

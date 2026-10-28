@@ -12,6 +12,7 @@ import {
   IconToggleButton,
   InlineError,
   LanguageIcon,
+  RegionError,
   Select,
   SelectItem,
   Spinner,
@@ -19,12 +20,12 @@ import {
   WarningIcon,
 } from "@my/ui";
 import { type SubmitEvent, useId } from "react";
-import { useT } from "../../../lib/i18n";
+import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { AttachmentList, CompletionTextArea, CompletionTextField, useFormatRemaining } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import type { Status, StatusSource } from "../api/status";
-import { useEditSource, useEditStatusForm } from "../hooks/useEditStatus";
+import { type EditBlocker, useEditSource, useEditStatusForm } from "../hooks/useEditStatus";
 
 export type EditStatusDialogProps = {
   /** The viewer's post. */
@@ -60,12 +61,12 @@ function EditStatusContent({ status, close }: EditStatusContentProps) {
       return <Spinner label={t("client:status.edit.loading")} />;
     case "error":
       return (
-        <Stack align="start" gap="2">
-          <p>{t("client:status.edit.load_failed", { reason: source.message })}</p>
-          <Button size="sm" onPress={source.retry}>
-            {t("client:status.edit.retry")}
-          </Button>
-        </Stack>
+        <RegionError
+          heading={t("client:status.edit.load_failed")}
+          reason={source.message}
+          retryLabel={t("client:status.edit.retry")}
+          onRetry={source.retry}
+        />
       );
     case "ready":
       return (
@@ -80,6 +81,11 @@ function EditStatusContent({ status, close }: EditStatusContentProps) {
   }
 }
 
+const blockerMessages: Readonly<Record<EditBlocker, ClientMessageKey>> = {
+  empty: "client:status.edit.blocked.empty",
+  too_long: "client:status.edit.blocked.too_long",
+};
+
 type EditStatusFormProps = {
   status: Status;
   source: StatusSource;
@@ -93,13 +99,15 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
   const t = useT();
   const formatRemaining = useFormatRemaining();
   const errorId = useId();
+  const blockedId = useId();
   const textId = useId();
   const form = useEditStatusForm(status, source, maxCharacters);
   const shortcodes = useCustomEmojiShortcodes();
   const warningLabel = t("client:compose.warning.toggle");
+  const describedBy = [form.error !== null && errorId, form.blocked !== null && blockedId].filter(Boolean).join(" ");
   const onSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    form.save(close);
+    form.save(close, textId);
   };
   return (
     <Stack as="form" aria-label={t("client:status.edit.title")} onSubmit={onSubmit} gap="3" container>
@@ -171,6 +179,13 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
           {form.error}
         </InlineError>
       )}
+      {/* The save button is never disabled by the text (G23); pressed while the text cannot be saved, it says why here,
+          until the reason is gone. */}
+      {form.blocked !== null && (
+        <InlineError id={blockedId} size="inherit" alert>
+          {t(blockerMessages[form.blocked])}
+        </InlineError>
+      )}
       {/* The same row as the compose form's tools: the content warning and the language, then the buttons. */}
       <Cluster align="center" gap="2">
         <Cluster align="center" gap="1" shrink>
@@ -208,9 +223,8 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
           <Button
             type="submit"
             variant="primary"
-            isDisabled={!form.canSave && !form.isSaving}
             isPending={form.isSaving}
-            {...(form.error !== null && { "aria-describedby": errorId })}
+            {...(describedBy !== "" && { "aria-describedby": describedBy })}
           >
             {t("client:status.edit.save")}
           </Button>

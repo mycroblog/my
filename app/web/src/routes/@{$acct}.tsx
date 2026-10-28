@@ -17,7 +17,7 @@ const searchSchema = z.object({
 /** The profile of an account (FR-204), at the address the server's HTML shell gives it (ADR-0028). */
 export const Route = createFileRoute("/@{$acct}")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { composeButton: true },
+  staticData: { composeButton: true, back: true },
   params: { parse: (params) => profileParamsSchema.parse(params) },
   validateSearch: searchSchema,
   loaderDeps: ({ search: { tab } }): { tab: AccountTimelineFilter } => ({ tab: tab ?? "posts" }),

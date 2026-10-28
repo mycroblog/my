@@ -19,6 +19,7 @@ const paramsSchema = z.object({ id: z.string().min(1).max(64) });
  * signed-in user who sees the room, its summary for everyone else. It needs no session.
  */
 export const Route = createFileRoute("/voice_/$id")({
+  staticData: { back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   loader: async ({ context: { queryClient, api, session }, params: { id } }) => {
     await session.restore();

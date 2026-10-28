@@ -6,6 +6,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import type { Key } from "react-aria-components";
 import { expect, fn, waitFor } from "storybook/test";
+import { BoostIcon, NotificationsIcon, StarIcon } from "./Icons";
 import { Tab, TabList, TabPanel, Tabs, type TabsProps } from "./Tabs";
 
 const timelines = [
@@ -229,5 +230,36 @@ export const PanelLayout: Story = {
   ),
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("tabpanel", { name: "Emoji" })).toHaveClass("gap-8", "pt-4");
+  },
+};
+
+/** Tabs with an icon before the text (the notifications' filters): the icon is decorative, and the text names the tab. */
+export const WithIcons: Story = {
+  render: () => (
+    <Tabs>
+      <TabList aria-label="Filter">
+        <Tab id="all" icon={<NotificationsIcon />}>
+          All
+        </Tab>
+        <Tab id="boosts" icon={<BoostIcon filled />}>
+          Boosts
+        </Tab>
+        <Tab id="favourites" icon={<StarIcon filled />}>
+          Favourites
+        </Tab>
+      </TabList>
+      <TabPanel id="all">
+        <p>Every notification.</p>
+      </TabPanel>
+      <TabPanel id="boosts">
+        <p>Boosts of your posts.</p>
+      </TabPanel>
+      <TabPanel id="favourites">
+        <p>Favourites of your posts.</p>
+      </TabPanel>
+    </Tabs>
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("tab", { name: "Boosts" })).toBeInTheDocument();
   },
 };

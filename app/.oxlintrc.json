@@ -805,6 +805,62 @@
         "./oxlint/restrictions.js"
       ]
     },
+    // G14, G16 (C9): a feature words a region's failure and emptiness only in the region's own states: the retry of a
+    // failure in RegionError, the emptiness of a whole list in EmptyState (or SignInState, or a Hint beside the list), so
+    // that each state keeps one form (web-client/16-look-states-and-wording.md). The keys are the literals of t(...); a
+    // no_* key is one of a whole list (no_replies), not the absence of one value (no_image). A widget of the kit that
+    // draws its own emptiness (a chart, a picker, a completion list) takes the message as its `empty*` label.
+    {
+      "files": [
+        "web/src/features/**/*.{ts,tsx}"
+      ],
+      "excludeFiles": [
+        "**/*.test.{ts,tsx}",
+        "**/*.stories.tsx"
+      ],
+      "jsPlugins": [
+        "./oxlint/restrictions.js"
+      ],
+      "rules": {
+        "restrict/states": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='t'][arguments.0.value=/\\.retry$/]:not(JSXElement[openingElement.name.name='RegionError'] CallExpression)",
+            "message": "A *.retry message is the retry of a region's failure; show it in RegionError, or give an action of another kind a key of its own (web-client/16-look-states-and-wording.md G16)."
+          },
+          {
+            "selector": "CallExpression[callee.name='t'][arguments.0.value=/(\\.empty(\\.|$)|\\.no_(replies|posts|results|items|accounts|entries)(\\.|$))/]:not(JSXElement[openingElement.name.name=/^(EmptyState|SignInState|Hint)$/] CallExpression):not(Property[key.name=/^empty/] > CallExpression):not(JSXAttribute[name.name=/^empty/] CallExpression)",
+            "message": "An *.empty* or no_* message says that a whole list is empty; show it in EmptyState (or SignInState, or a Hint), not as text of its own (web-client/16-look-states-and-wording.md G14)."
+          }
+        ]
+      }
+    },
+    // G23 (C11): a form's submit button stays pressable while the input is wrong, so that pressing it shows what is wrong
+    // (native validation, or a blocked state that says why); a submit button disabled by the input alone gives no reason.
+    // The input is read from the names in its isDisabled (canSave, isValid, isEmpty, length, trim, ...); a button whose
+    // reason is stated beside it (aria-describedby) is allowed. A warning, since names only suggest where a value comes
+    // from: a line whose value is not of the input disables the rule with the reason.
+    {
+      "files": [
+        "web/src/features/*/components/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/*.test.tsx",
+        "**/*.stories.tsx"
+      ],
+      "jsPlugins": [
+        "./oxlint/restrictions.js"
+      ],
+      "rules": {
+        "restrict/submit": [
+          "warn",
+          {
+            "selector": "JSXOpeningElement[name.name='Button']:has(> JSXAttribute[name.name='type'][value.value='submit']):not(:has(> JSXAttribute[name.name='aria-describedby'])) > JSXAttribute[name.name='isDisabled']:has(Identifier[name=/^(can[A-Z]\\w*|has(Input|Text|Value|Changes)|is(Valid|Invalid|Empty|Blank|Complete|Incomplete|Dirty|Changed|Unchanged)|valid|invalid|empty|blank|dirty|changed|length|trim)$/])",
+            "message": "Do not disable a submit button by its input; keep it pressable and show what is wrong when it is pressed, or say beside it why it cannot be pressed (aria-describedby) (web-client/16-look-states-and-wording.md G23)."
+          }
+        ]
+      }
+    },
     // S1: the API client and fetch are allowed here.
     {
       "files": [

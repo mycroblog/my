@@ -15,6 +15,7 @@ import { client } from "../../../lib/api/client"; // expect: eslint(no-restricte
 import { createClient } from "@mycroblog/mykit"; // expect: eslint(no-restricted-imports) S1
 import type { components } from "@mycroblog/mykit";
 import { Button, Heading, MoreIcon, Stack, useAnnouncer } from "@my/ui";
+import { useT } from "../../../lib/i18n";
 
 let renders = 0;
 const CountContext = createContext(0);
@@ -201,6 +202,27 @@ export function More({ label }: { label: string }) {
   return (
     <Button aria-label={label}> {/* expect: restrict(icons) */}
       <MoreIcon />
+    </Button>
+  );
+}
+
+// G14, G16
+export function States({ retry }: { retry: () => void }) {
+  const t = useT();
+  return (
+    <Stack>
+      <p>{t("client:reaction.list.empty")}</p> {/* expect: restrict(states) */}
+      <Button onPress={retry}>{t("client:timeline.retry")}</Button> {/* expect: restrict(states) */}
+    </Stack>
+  );
+}
+
+// G23
+export function Send({ text }: { text: string }) {
+  const t = useT();
+  return (
+    <Button type="submit" isDisabled={text.trim() === ""}> {/* expect: restrict(submit) */}
+      {t("client:compose.submit")}
     </Button>
   );
 }

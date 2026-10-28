@@ -300,7 +300,7 @@ function PostsStep({ form, headingId }: { form: ReportForm; headingId: string })
       )}
       {posts.status === "ready" &&
         (posts.value.length === 0 ? (
-          <p>{t("client:report.posts.empty")}</p>
+          <Hint>{t("client:report.posts.empty")}</Hint>
         ) : (
           <Stack as="ul" divided>
             {posts.value.map((post) => (

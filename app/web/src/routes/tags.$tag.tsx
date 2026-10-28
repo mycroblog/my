@@ -14,7 +14,7 @@ const paramsSchema = z.object({ tag: z.string().min(1).max(256) });
 /** The timeline of one hashtag (FR-203), under the open voice chat rooms with the hashtag (ADR-0100 §8). */
 export const Route = createFileRoute("/tags/$tag")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { composeButton: true },
+  staticData: { composeButton: true, back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   loader: async ({ context: { queryClient, api }, params: { tag } }) => {
     // Cached pages that no write has marked stale are shown at once (and refetched in the background once

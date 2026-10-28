@@ -31,7 +31,7 @@
     "defaultMessage": "What this page shows was not found",
     "description": "Heading of the error that replaces a page's content when the server found nothing to show (a 404); the server's reason follows."
   },
-  "shell.error.retry": {
+  "shell.error.reload": {
     "defaultMessage": "Try again",
     "description": "Button that loads the failed page again."
   },
