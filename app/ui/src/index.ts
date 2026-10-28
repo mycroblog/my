@@ -108,6 +108,20 @@ export { Wordmark, type WordmarkProps } from "./Wordmark";
 export { StatusMessage, type StatusMessageProps } from "./StatusMessage";
 export { VisuallyHidden, type VisuallyHiddenProps } from "./VisuallyHidden";
 
+// Data visualisation (ADR-0113): numbers, trends, shares and amounts, each with its values in text.
+export { BreakdownBar, type BreakdownBarProps, type BreakdownItem } from "./BreakdownBar";
+export { ProgressMeter, type ProgressMeterProps } from "./ProgressMeter";
+export { Sparkline, type SparklineProps } from "./Sparkline";
+export { StatTile, type StatTileChange, type StatTileProps } from "./StatTile";
+export {
+  TrendChart,
+  type TrendChartLabels,
+  type TrendChartProps,
+  type TrendChartView,
+  type TrendPeriod,
+  type TrendSeries,
+} from "./TrendChart";
+
 // Icons (web-client/16-look-states-and-wording.md §16.3): Phosphor through react-icons/pi (ADR-0043), decorative, sized by the control around them.
 export {
   AboutIcon,

@@ -39,6 +39,9 @@ export type AvatarTint = (typeof avatarTints)[number];
 /** The kinds of the highlight layer behind a text field (ADR-0092 §4); each is a token `highlight-<kind>` under fg text. */
 const highlightKinds = ["mention", "hashtag", "url", "shortcode", "over"] as const;
 
+/** The series of a chart (ADR-0113), each a token `data-<n>` drawn on the surfaces a chart sits on. */
+const dataSeries = ["data-1", "data-2", "data-3"] as const;
+
 const onEverySurface = (fg: string, use: ContrastUse): ColorPair[] => surfaces.map((bg) => ({ fg, bg, use }));
 
 export const colorPairs: readonly ColorPair[] = [
@@ -51,6 +54,9 @@ export const colorPairs: readonly ColorPair[] = [
   ...onEverySurface("warning", "text"),
   ...onEverySurface("border-strong", "ui"),
   ...onEverySurface("focus", "ui"),
+  ...dataSeries.flatMap((series): ColorPair[] =>
+    (["surface", "surface-raised"] as const).map((bg) => ({ fg: series, bg, use: "ui" })),
+  ),
   { fg: "accent-fg", bg: "accent", use: "text" },
   { fg: "accent-fg", bg: "accent-hover", use: "text" },
   { fg: "danger-fg", bg: "danger", use: "text" },

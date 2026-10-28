@@ -486,7 +486,7 @@ entries:
       - "The Service Worker caches the fonts at run time, never in the precache (globIgnores in app/web/vite.config.ts, sw/routing.ts)."
   - name: ui-kit
     paths: ["app/ui/**"]
-    docs: ["app/ui/README.md", "docs/architecture/web-client/16-look-states-and-wording.md#16-見た目状態文言", "docs/architecture/web-client/README.md#5-アクセシビリティ"]
+    docs: ["app/ui/README.md", "docs/architecture/web-client/16-look-states-and-wording.md#16-見た目状態文言", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
     checks: [ui, web]
   - name: web-client
     paths: ["app/web/**"]

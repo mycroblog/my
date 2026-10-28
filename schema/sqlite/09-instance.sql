@@ -86,7 +86,7 @@ CREATE TABLE instance_theme_tokens (
    'color-warning-fg', 'color-warning-bg', 'color-border', 'color-border-strong', 'color-focus',
    'color-toast', 'color-toast-fg', 'color-toast-action', 'color-toast-success',
    'color-toast-danger', 'color-toast-muted', 'color-overlay', 'color-alt-overlay', 'color-highlight-mention', 'color-highlight-hashtag', 'color-highlight-url',
-   'color-highlight-shortcode', 'color-highlight-over', 'color-pressed', 'color-pressed-fg', 'color-media-chip', 'color-wave', 'color-spark', 'font-sans',
+   'color-highlight-shortcode', 'color-highlight-over', 'color-pressed', 'color-pressed-fg', 'color-media-chip', 'color-wave', 'color-spark', 'color-data-1', 'color-data-2', 'color-data-3', 'font-sans',
    'font-mono', 'font-serif', 'text-xs', 'text-xs--line-height', 'text-sm', 'text-sm--line-height',
    'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
    'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',

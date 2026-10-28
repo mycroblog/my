@@ -277,6 +277,10 @@ export const iconTable = {
   // The arrow points into the door along the line, so it mirrors in right-to-left text.
   SignInIcon: { off: glyph(PiSignIn, "PiSignIn"), directional: true },
   SignUpIcon: { off: glyph(PiUserPlus, "PiUserPlus") },
+  // Data (ADR-0113): the change of a number from the period before. Up and down are the value's direction in any
+  // writing direction, so they do not mirror.
+  IncreaseIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
+  DecreaseIcon: { off: glyph(PiArrowDown, "PiArrowDown") },
 } as const satisfies Record<string, IconEntry>;
 
 function renderIcon(entry: IconEntry, on = false) {
@@ -821,4 +825,16 @@ export function SignInIcon() {
 /** A person with a plus, for creating an account. */
 export function SignUpIcon() {
   return renderIcon(iconTable.SignUpIcon);
+}
+
+// Data.
+
+/** An arrow up, beside the text of a number that rose from the period before (`StatTile`). */
+export function IncreaseIcon() {
+  return renderIcon(iconTable.IncreaseIcon);
+}
+
+/** An arrow down, beside the text of a number that fell from the period before (`StatTile`). */
+export function DecreaseIcon() {
+  return renderIcon(iconTable.DecreaseIcon);
 }
