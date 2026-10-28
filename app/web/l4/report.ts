@@ -4,15 +4,37 @@
 import type { RunResult, TaskResult } from "./results.ts";
 import { screensDir } from "./tasks.ts";
 
-/** The measured tasks of `result` over its threshold, by screen in the order of the run. */
+/** Whether `task` was measured and ended without completion: the strongest sign of a lost user (ADR-0110 P1). */
+function isNotCompleted(task: TaskResult): boolean {
+  return task.status === "measured" && !task.completed;
+}
+
+/**
+ * The measured tasks of `result` that are over its threshold or not completed, by screen in the order of the run.
+ * Tasks that are `unavailable` (the environment cannot set them up) or `error` (the agent failed to run) say nothing
+ * about the screen and are left out; see `skippedTasks`.
+ */
 export function lostByScreen(result: RunResult): Map<string, TaskResult[]> {
   const screens = new Map<string, TaskResult[]>();
   for (const task of result.tasks) {
-    if (task.status === "measured" && task.lostness !== null && task.lostness > result.threshold) {
+    const over = task.status === "measured" && task.lostness !== null && task.lostness > result.threshold;
+    if (isNotCompleted(task) || over) {
       screens.set(task.screen, [...(screens.get(task.screen) ?? []), task]);
     }
   }
   return screens;
+}
+
+/** The tasks that were not measured because of the environment (`unavailable`) or a failed run (`error`). */
+export function skippedTasks(result: RunResult): TaskResult[] {
+  return result.tasks.filter((task) => task.status === "unavailable" || task.status === "error");
+}
+
+/** One line per skipped task for the run summary. */
+export function skippedSummary(tasks: readonly TaskResult[]): string[] {
+  return tasks.map(
+    (task) => `- ${task.status}: ${task.screen}: ${task.task}${task.reason === undefined ? "" : ` (${task.reason})`}`,
+  );
 }
 
 /** The title of the issue of `screen`, the same every night so that later runs find it. */
@@ -37,7 +59,7 @@ export function issueBody(result: RunResult, tasks: readonly TaskResult[], runUR
   }
   const l1 = `${screensDir}/${first.screen}.md`;
   const lines = [
-    `The nightly L4 task test found tasks of this screen with lostness above ${String(result.threshold)} on ` +
+    `The nightly L4 task test found tasks of this screen with lostness above ${String(result.threshold)}, or not completed, on ` +
       `${result.commit.slice(0, 12)}${runURL === "" ? "" : ` ([run](${runURL}), artifact \`l4-results\`)`}.`,
     `The tasks and their shortest paths are in the L1: [${l1}](https://github.com/${repo}/blob/${result.commit}/${l1}#2-作業).`,
     "Fix the L1 or the screen, or explain why the path is right (ADR-0110 §7, ADR-0114).",
@@ -45,7 +67,7 @@ export function issueBody(result: RunResult, tasks: readonly TaskResult[], runUR
   for (const task of tasks) {
     lines.push(
       "",
-      `### ${task.task}`,
+      `### ${task.task}${isNotCompleted(task) ? " (not completed)" : ""}`,
       "",
       `- Lostness: **${String(task.lostness)}** (steps S = ${String(task.steps)}, distinct places N = ${String(task.distinct)}, ` +
         `L1 shortest path R = ${String(task.shortest)}), backtracks: ${String(task.backtracks)}`,

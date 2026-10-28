@@ -332,6 +332,10 @@ async function main(): Promise<number> {
           continue;
         }
         const transcript = parseTranscript(await runAgent(task, dir, mcpArgs));
+        if (transcript.apiError !== null) {
+          // Not a measure of the screen: recorded as `error` (no issue), and the run exits non-zero.
+          throw new Error(`agent run failed: ${transcript.apiError}`);
+        }
         const measures = measure(transcript.path, task.shortest, setup.start);
         result.tasks.push({
           ...emptyResult(task, setup.start, "measured"),

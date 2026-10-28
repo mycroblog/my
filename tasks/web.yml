@@ -222,10 +222,10 @@ tasks:
         node l4/run.ts --cap {{.CAP | default "10"}} --out "{{.ROOT_DIR}}/.tmp/l4/results.json"
         {{if .SCREEN}}--screen {{.SCREEN}}{{end}} {{if .SINCE}}--since {{.SINCE}}{{end}} {{if .DRY_RUN}}--dry-run{{end}}
 
-  # Files or updates one issue per screen for the tasks of .tmp/l4/results.json over lostness 0.4 (app/web/l4/issues.ts),
+  # Files or updates one issue per screen for the tasks of .tmp/l4/results.json over lostness 0.4 or not completed (app/web/l4/issues.ts),
   # with `gh`; DRY_RUN=1 prints them instead.
   l4-issues:
-    desc: File or update the issues of the last web:l4 run's tasks over lostness 0.4 (DRY_RUN=1 prints them)
+    desc: File or update the issues of the last web:l4 run's tasks over lostness 0.4 or not completed (DRY_RUN=1 prints them)
     dir: app/web
     cmds:
       - node l4/issues.ts --results "{{.ROOT_DIR}}/.tmp/l4/results.json" {{if .DRY_RUN}}--dry-run{{end}}
