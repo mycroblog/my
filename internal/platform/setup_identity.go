@@ -96,10 +96,13 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		RequireEmailVerification: cfg.Mail != "none",
 		// Users ask for password reset links by email only when the mailer delivers it (FR-002).
 		EmailDelivery: sendsEmail(cfg),
-		Messages:      a.Messages,
-		BaseURL:       cfg.ServerOrigin(),
-		WebOrigin:     cfg.WebOrigin,
-		MailSite:      a.mailSite,
+		// An unsubscribe link turns off the email of a row of the notification settings
+		// (ADR-0109 §4).
+		Unsubscriptions: emailUnsubscriptions{a},
+		Messages:        a.Messages,
+		BaseURL:         cfg.ServerOrigin(),
+		WebOrigin:       cfg.WebOrigin,
+		MailSite:        a.mailSite,
 	})
 	// The dynamically registered clients that nobody uses are deleted (ADR-0090 §1).
 	a.Identity.RegisterClientJobs(a.Handlers, a.Scheduler)

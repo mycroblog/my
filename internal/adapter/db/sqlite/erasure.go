@@ -363,6 +363,9 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 	if err := q.EraseNotificationReadMarker(ctx, accountID); err != nil {
 		return 0, wrap(err, "erase notification read marker")
 	}
+	if err := q.EraseNotificationSettingsOf(ctx, accountID); err != nil {
+		return 0, wrap(err, "erase notification settings")
+	}
 	if err := runSteps(ctx, accountID, "erase push subscriptions", q.ErasePushSubscriptionAlertsOf, q.ErasePushSubscriptionsOf); err != nil {
 		return 0, err
 	}

@@ -161,6 +161,8 @@ paths:
     $ref: ./paths/preferences_badges.yaml
   /preferences/badges/{role_id}:
     $ref: ./paths/preferences_badges_{role_id}.yaml
+  /preferences/notifications:
+    $ref: ./paths/preferences_notifications.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
   /accounts/delete:
@@ -1480,12 +1482,22 @@ components:
       $ref: ./components/schemas/NewCustomEmojiRequest.yaml
     Notification:
       $ref: ./components/schemas/Notification.yaml
+    NotificationGroup:
+      $ref: ./components/schemas/NotificationGroup.yaml
     NotificationMarker:
       $ref: ./components/schemas/NotificationMarker.yaml
     NotificationMarkerUpdate:
       $ref: ./components/schemas/NotificationMarkerUpdate.yaml
     NotificationPage:
       $ref: ./components/schemas/NotificationPage.yaml
+    NotificationSettingCell:
+      $ref: ./components/schemas/NotificationSettingCell.yaml
+    NotificationSettingRow:
+      $ref: ./components/schemas/NotificationSettingRow.yaml
+    NotificationSettings:
+      $ref: ./components/schemas/NotificationSettings.yaml
+    NotificationSettingsUpdate:
+      $ref: ./components/schemas/NotificationSettingsUpdate.yaml
     NotificationType:
       $ref: ./components/schemas/NotificationType.yaml
     OAuthApp:

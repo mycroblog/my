@@ -52,6 +52,9 @@ type ProjectorDeps struct {
 	IDs   kernel.IDGenerator
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
 	Push *Pusher
+	// Email enqueues the emails of the new notifications whose recipients get them by email;
+	// nil emails none.
+	Email *EmailScheduler
 }
 
 // RegisterProjectors registers the synchronous projectors that create notifications from the
@@ -93,12 +96,13 @@ type ProjectorDeps struct {
 //
 // A notification goes only to a local recipient other than its source, and not when either
 // blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
-// (FR-304), or the source has
-// unsolicited_reach (a limit on it or its domain) and the recipient does not follow it. Each notification
+// (FR-304), the source has unsolicited_reach (a limit on it or its domain) and the recipient
+// does not follow it, or the recipient turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
 // ModerationNoticeKey),
 // so projecting an event again, or a repeated boost or favourite, creates nothing more. Each new
-// notification enqueues its Web Push messages through d.Push in the same transaction.
+// notification enqueues its Web Push messages through d.Push, and its email through d.Email when
+// the recipient gets its group by email, in the same transaction.
 //
 // The exclusion projectors keep notification_exclusions, which the list and the unread count
 // apply at read time, so that a later block or mute also hides the notifications that came
@@ -387,8 +391,8 @@ func (p *projector) interaction(ctx context.Context, tx uow.Tx, t notification.T
 
 // notify inserts n, with its source's domain, unless its recipient is its source or not local,
 // the relationship between them hides it, the source may reach only its followers and the
-// recipient is none, or the recipient mutes the source's domain. A
-// notification with the same dedupe key leaves n out.
+// recipient is none, the recipient mutes the source's domain, or the recipient turned its group
+// off in the app. A notification with the same dedupe key leaves n out.
 func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notification) error {
 	if n.RecipientAccountID == n.SourceAccountID {
 		return nil
@@ -417,6 +421,13 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 			}
 		}
 	}
+	choices, err := choicesTx(ctx, p.d.Repository, tx, n.RecipientAccountID)
+	if err != nil {
+		return err
+	}
+	if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
+		return nil // turned off in the app: not created, so delivered nowhere (ADR-0109 §3)
+	}
 	n.ID = p.d.IDs.NewID()
 	if err := n.Validate(); err != nil {
 		return err
@@ -425,7 +436,10 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 	if err != nil || !created {
 		return err
 	}
-	return p.d.Push.enqueue(ctx, tx, n)
+	if err := p.d.Push.enqueue(ctx, tx, n); err != nil {
+		return err
+	}
+	return p.d.Email.enqueue(ctx, tx, n, choices)
 }
 
 // reaches reports whether sourceID may notify recipientID: always, unless the source has

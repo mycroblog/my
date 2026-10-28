@@ -2474,6 +2474,123 @@ func (e NotificationErrorGroupChange) Valid() bool {
 	}
 }
 
+// Defines values for NotificationGroup.
+const (
+	NotificationGroupAccountMoved            NotificationGroup = "account_moved"
+	NotificationGroupAdminAccountMoved       NotificationGroup = "admin_account_moved"
+	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
+	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
+	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
+	NotificationGroupAdminReport             NotificationGroup = "admin_report"
+	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
+	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
+	NotificationGroupAdminWebhookDisabled    NotificationGroup = "admin_webhook_disabled"
+	NotificationGroupBoost                   NotificationGroup = "boost"
+	NotificationGroupFavourite               NotificationGroup = "favourite"
+	NotificationGroupFollow                  NotificationGroup = "follow"
+	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
+	NotificationGroupFollowRequest           NotificationGroup = "follow_request"
+	NotificationGroupMention                 NotificationGroup = "mention"
+	NotificationGroupModeration              NotificationGroup = "moderation"
+	NotificationGroupPollClosed              NotificationGroup = "poll_closed"
+	NotificationGroupQuote                   NotificationGroup = "quote"
+	NotificationGroupReaction                NotificationGroup = "reaction"
+	NotificationGroupServiceClosure          NotificationGroup = "service_closure"
+	NotificationGroupSupporter               NotificationGroup = "supporter"
+	NotificationGroupVoice                   NotificationGroup = "voice"
+)
+
+// Valid indicates whether the value is a known member of the NotificationGroup enum.
+func (e NotificationGroup) Valid() bool {
+	switch e {
+	case NotificationGroupAccountMoved:
+		return true
+	case NotificationGroupAdminAccountMoved:
+		return true
+	case NotificationGroupAdminAppeal:
+		return true
+	case NotificationGroupAdminCustomEmojiRequest:
+		return true
+	case NotificationGroupAdminErrorGroup:
+		return true
+	case NotificationGroupAdminReport:
+		return true
+	case NotificationGroupAdminServiceClosureDue:
+		return true
+	case NotificationGroupAdminSignUp:
+		return true
+	case NotificationGroupAdminWebhookDisabled:
+		return true
+	case NotificationGroupBoost:
+		return true
+	case NotificationGroupFavourite:
+		return true
+	case NotificationGroupFollow:
+		return true
+	case NotificationGroupFollowAccepted:
+		return true
+	case NotificationGroupFollowRequest:
+		return true
+	case NotificationGroupMention:
+		return true
+	case NotificationGroupModeration:
+		return true
+	case NotificationGroupPollClosed:
+		return true
+	case NotificationGroupQuote:
+		return true
+	case NotificationGroupReaction:
+		return true
+	case NotificationGroupServiceClosure:
+		return true
+	case NotificationGroupSupporter:
+		return true
+	case NotificationGroupVoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationSettingRowSection.
+const (
+	NotificationSettingRowSectionInstance  NotificationSettingRowSection = "instance"
+	NotificationSettingRowSectionModerator NotificationSettingRowSection = "moderator"
+	NotificationSettingRowSectionOrdinary  NotificationSettingRowSection = "ordinary"
+)
+
+// Valid indicates whether the value is a known member of the NotificationSettingRowSection enum.
+func (e NotificationSettingRowSection) Valid() bool {
+	switch e {
+	case NotificationSettingRowSectionInstance:
+		return true
+	case NotificationSettingRowSectionModerator:
+		return true
+	case NotificationSettingRowSectionOrdinary:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationSettingsUpdateChangesChannel.
+const (
+	NotificationSettingsUpdateChangesChannelEmail NotificationSettingsUpdateChangesChannel = "email"
+	NotificationSettingsUpdateChangesChannelInApp NotificationSettingsUpdateChangesChannel = "in_app"
+)
+
+// Valid indicates whether the value is a known member of the NotificationSettingsUpdateChangesChannel enum.
+func (e NotificationSettingsUpdateChangesChannel) Valid() bool {
+	switch e {
+	case NotificationSettingsUpdateChangesChannelEmail:
+		return true
+	case NotificationSettingsUpdateChangesChannelInApp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NotificationType.
 const (
 	NotificationTypeAccountMoved               NotificationType = "account_moved"
@@ -8284,8 +8401,8 @@ type Instance struct {
 	SearchIndexing SearchIndexing `json:"search_indexing"`
 
 	// SendsEmail Whether the instance sends email (the server setting `mail` is not `none`). Without
-	// email, the moderator notifications come only in the app, so clients do not offer
-	// the preference `email_moderator_notifications`.
+	// email, notifications come only in the app, so clients do not offer the email column of
+	// the notification settings (`GET /preferences/notifications`).
 	SendsEmail bool `json:"sends_email"`
 
 	// ShortDescription A one-paragraph summary of the instance, as plain text; omitted when there is none.
@@ -9343,6 +9460,18 @@ type NotificationErrorGroup struct {
 // NotificationErrorGroupChange defines model for NotificationErrorGroup.Change.
 type NotificationErrorGroupChange string
 
+// NotificationGroup A row of the notification settings: one or more notification types that the user turns on
+// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+// `service_closure`, and `supporter` (the `supporter_*` types).
+type NotificationGroup string
+
 // NotificationMarker How far the authenticated user has read the notifications.
 type NotificationMarker struct {
 	// LastReadId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -9369,6 +9498,93 @@ type NotificationPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// NotificationSettingCell One channel of one row of the notification settings.
+type NotificationSettingCell struct {
+	// Enabled Whether the user gets the row's notifications through the channel.
+	Enabled bool `json:"enabled"`
+
+	// Fixed Whether the channel is always on and cannot be changed: clients show it on and
+	// disabled.
+	Fixed bool `json:"fixed"`
+}
+
+// NotificationSettingRow One row of the notification settings with its channels. `in_app` creates the notifications:
+// turned off, the row's notifications are not created, so neither Web Push nor email delivers
+// them, and clients show the row's other channels disabled; the notifications from before stay.
+// `email` sends each notification to the primary address once it is confirmed and while emails
+// reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
+// emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+// the read marker and not dismissed); the moderator notifications are emailed at once. Clients
+// offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
+// each subscription (`putPushSubscription`).
+type NotificationSettingRow struct {
+	// Email One channel of one row of the notification settings.
+	Email NotificationSettingCell `json:"email"`
+
+	// Group A row of the notification settings: one or more notification types that the user turns on
+	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+	// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+	// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+	// `service_closure`, and `supporter` (the `supporter_*` types).
+	Group NotificationGroup `json:"group"`
+
+	// InApp One channel of one row of the notification settings.
+	InApp NotificationSettingCell `json:"in_app"`
+
+	// Section The kind of the row: `ordinary` (what other users did; in the app on and email off by
+	// default), `moderator` (to the holders of the permission it needs; both on by default),
+	// or `instance` (the instance's notices to the user; always in the app).
+	Section NotificationSettingRowSection `json:"section"`
+
+	// Types The notification types of the row.
+	Types []NotificationType `json:"types"`
+}
+
+// NotificationSettingRowSection The kind of the row: `ordinary` (what other users did; in the app on and email off by
+// default), `moderator` (to the holders of the permission it needs; both on by default),
+// or `instance` (the instance's notices to the user; always in the app).
+type NotificationSettingRowSection string
+
+// NotificationSettings The authenticated user's notification settings: the rows the user gets, in the order to
+// show them. The moderator rows are only those whose permission the user's roles grant, and
+// `supporter` is there only while the supporter program is enabled (`Instance.supporters_enabled`).
+type NotificationSettings struct {
+	Rows []NotificationSettingRow `json:"rows"`
+}
+
+// NotificationSettingsUpdate Changes of the authenticated user's notification settings.
+type NotificationSettingsUpdate struct {
+	// Changes The cells to change; the others keep their values. Each names a row the user gets and a
+	// channel that is not fixed.
+	Changes []struct {
+		// Channel The channel to change.
+		Channel NotificationSettingsUpdateChangesChannel `json:"channel"`
+
+		// Enabled Whether the user gets the row's notifications through the channel.
+		Enabled bool `json:"enabled"`
+
+		// Group A row of the notification settings: one or more notification types that the user turns on
+		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+		// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+		// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+		// `service_closure`, and `supporter` (the `supporter_*` types).
+		Group NotificationGroup `json:"group"`
+	} `json:"changes"`
+}
+
+// NotificationSettingsUpdateChangesChannel The channel to change.
+type NotificationSettingsUpdateChangesChannel string
 
 // NotificationType The kind of a notification. `account` is the account that acted: the follower
 // (`follow`, `follow_request`), the followed account (`follow_accepted`), the author
@@ -9935,11 +10151,6 @@ type Preferences struct {
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
 	DefaultVisibility Visibility `json:"default_visibility"`
-
-	// EmailModeratorNotifications Whether the moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
-	// `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
-	// primary address. Off for a new user.
-	EmailModeratorNotifications bool `json:"email_moderator_notifications"`
 
 	// EmailSuppression Whether emails no longer reach the primary address, read-only; omitted when they do.
 	// After a `hard_bounce`, the user asks for the verification email again to show that the
@@ -11488,9 +11699,6 @@ type UpdatePreferencesRequest struct {
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
 	DefaultVisibility *Visibility `json:"default_visibility,omitempty"`
-
-	// EmailModeratorNotifications Whether the moderator notifications also come by email.
-	EmailModeratorNotifications *bool `json:"email_moderator_notifications,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale *string `json:"locale,omitempty"`
@@ -13231,6 +13439,9 @@ type UpdateAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
+
+// UpdateNotificationSettingsJSONRequestBody defines body for UpdateNotificationSettings for application/json ContentType.
+type UpdateNotificationSettingsJSONRequestBody = NotificationSettingsUpdate
 
 // UpdateSupporterListingJSONRequestBody defines body for UpdateSupporterListing for application/json ContentType.
 type UpdateSupporterListingJSONRequestBody = SupporterListing
@@ -18637,6 +18848,34 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNotificationSettings Get the authenticated user's notification settings
+	//
+	// Whether the user gets each kind of notification in the app and by email, for the kinds
+	// the user gets.
+	//
+	// Corresponds with GET /preferences/notifications (the `GetNotificationSettings` operationId).
+	GetNotificationSettings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationSettingsWithBody Change the authenticated user's notification settings
+	//
+	// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+	// row the user does not get or a channel that is fixed; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+	UpdateNotificationSettingsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationSettings Change the authenticated user's notification settings
+	//
+	// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+	// row the user does not get or a channel that is fixed; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+	UpdateNotificationSettings(ctx context.Context, body UpdateNotificationSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSupporterListing Get whether the authenticated user is on the supporter list
 	//
@@ -26889,6 +27128,64 @@ func (c *Client) UpdateBadgeChoiceWithBody(ctx context.Context, roleId BadgeRole
 // Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 func (c *Client) UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateBadgeChoiceRequest(c.Server, roleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetNotificationSettings Get the authenticated user's notification settings
+//
+// Whether the user gets each kind of notification in the app and by email, for the kinds
+// the user gets.
+//
+// Corresponds with GET /preferences/notifications (the `GetNotificationSettings` operationId).
+func (c *Client) GetNotificationSettings(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNotificationSettingsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationSettingsWithBody Change the authenticated user's notification settings
+//
+// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+// row the user does not get or a channel that is fixed; nothing is changed then.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+func (c *Client) UpdateNotificationSettingsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationSettingsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationSettings Change the authenticated user's notification settings
+//
+// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+// row the user does not get or a channel that is fixed; nothing is changed then.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+func (c *Client) UpdateNotificationSettings(ctx context.Context, body UpdateNotificationSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationSettingsRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -39734,6 +40031,73 @@ func NewUpdateBadgeChoiceRequestWithBody(server string, roleId BadgeRoleId, cont
 	return req, nil
 }
 
+// NewGetNotificationSettingsRequest constructs an http.Request for the GetNotificationSettings method
+func NewGetNotificationSettingsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/notifications")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateNotificationSettingsRequest calls the generic UpdateNotificationSettings builder with application/json body
+func NewUpdateNotificationSettingsRequest(server string, body UpdateNotificationSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateNotificationSettingsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateNotificationSettingsRequestWithBody constructs an http.Request for the UpdateNotificationSettings method, with any body, and a specified content type
+func NewUpdateNotificationSettingsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/notifications")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetSupporterListingRequest constructs an http.Request for the GetSupporterListing method
 func NewGetSupporterListingRequest(server string) (*http.Request, error) {
 	var err error
@@ -47333,6 +47697,36 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoiceWithResponse(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBadgeChoiceResponse, error)
+
+	// GetNotificationSettingsWithResponse Get the authenticated user's notification settings
+	//
+	// Whether the user gets each kind of notification in the app and by email, for the kinds
+	// the user gets.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /preferences/notifications (the `GetNotificationSettings` operationId).
+	GetNotificationSettingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationSettingsResponse, error)
+
+	// UpdateNotificationSettingsWithBodyWithResponse Change the authenticated user's notification settings
+	//
+	// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+	// row the user does not get or a channel that is fixed; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+	UpdateNotificationSettingsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationSettingsResponse, error)
+
+	// UpdateNotificationSettingsWithResponse Change the authenticated user's notification settings
+	//
+	// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+	// row the user does not get or a channel that is fixed; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+	UpdateNotificationSettingsWithResponse(ctx context.Context, body UpdateNotificationSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationSettingsResponse, error)
 
 	// GetSupporterListingWithResponse Get whether the authenticated user is on the supporter list
 	//
@@ -64434,6 +64828,136 @@ func (r UpdateBadgeChoiceResponse) ContentType() string {
 	return ""
 }
 
+// GetNotificationSettingsResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationSettings
+type GetNotificationSettingsResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetNotificationSettingsResponseDefaultHeaders the declared response headers of an HTTP default response for GetNotificationSettings
+type GetNotificationSettingsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetNotificationSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetNotificationSettingsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetNotificationSettingsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetNotificationSettingsResponse) GetJSON200() *NotificationSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetNotificationSettingsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetNotificationSettingsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNotificationSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNotificationSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetNotificationSettingsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateNotificationSettingsResponse200Headers the declared response headers of an HTTP 200 response for UpdateNotificationSettings
+type UpdateNotificationSettingsResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateNotificationSettingsResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateNotificationSettings
+type UpdateNotificationSettingsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateNotificationSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateNotificationSettingsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateNotificationSettingsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateNotificationSettingsResponse) GetJSON200() *NotificationSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateNotificationSettingsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateNotificationSettingsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateNotificationSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateNotificationSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateNotificationSettingsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetSupporterListingResponse200Headers the declared response headers of an HTTP 200 response for GetSupporterListing
 type GetSupporterListingResponse200Headers struct {
 	CacheControl *string
@@ -75436,6 +75960,54 @@ func (c *ClientWithResponses) UpdateBadgeChoiceWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateBadgeChoiceResponse(rsp)
+}
+
+// GetNotificationSettingsWithResponse Get the authenticated user's notification settings
+//
+// Whether the user gets each kind of notification in the app and by email, for the kinds
+// the user gets.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /preferences/notifications (the `GetNotificationSettings` operationId).
+func (c *ClientWithResponses) GetNotificationSettingsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationSettingsResponse, error) {
+	rsp, err := c.GetNotificationSettings(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNotificationSettingsResponse(rsp)
+}
+
+// UpdateNotificationSettingsWithBodyWithResponse Change the authenticated user's notification settings
+//
+// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+// row the user does not get or a channel that is fixed; nothing is changed then.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+func (c *ClientWithResponses) UpdateNotificationSettingsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationSettingsResponse, error) {
+	rsp, err := c.UpdateNotificationSettingsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationSettingsResponse(rsp)
+}
+
+// UpdateNotificationSettingsWithResponse Change the authenticated user's notification settings
+//
+// Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+// row the user does not get or a channel that is fixed; nothing is changed then.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /preferences/notifications (the `UpdateNotificationSettings` operationId).
+func (c *ClientWithResponses) UpdateNotificationSettingsWithResponse(ctx context.Context, body UpdateNotificationSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationSettingsResponse, error) {
+	rsp, err := c.UpdateNotificationSettings(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationSettingsResponse(rsp)
 }
 
 // GetSupporterListingWithResponse Get whether the authenticated user is on the supporter list
@@ -96304,6 +96876,160 @@ func ParseUpdateBadgeChoiceResponse(rsp *http.Response) (*UpdateBadgeChoiceRespo
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateBadgeChoiceResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetNotificationSettingsResponse parses an HTTP response from a GetNotificationSettingsWithResponse call
+func ParseGetNotificationSettingsResponse(rsp *http.Response) (*GetNotificationSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNotificationSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetNotificationSettingsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetNotificationSettingsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateNotificationSettingsResponse parses an HTTP response from a UpdateNotificationSettingsWithResponse call
+func ParseUpdateNotificationSettingsResponse(rsp *http.Response) (*UpdateNotificationSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateNotificationSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateNotificationSettingsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateNotificationSettingsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

@@ -8,5 +8,5 @@ Example Social
 https://social.example
 連絡先：admin@social.example
 
-モデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。
+通知の設定で「閉鎖日の経過」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
 このメールを止める：https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

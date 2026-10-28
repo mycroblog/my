@@ -16,7 +16,7 @@ import {
   viewerFixture,
   viewerStatusFixture,
 } from "../../test/fixtures";
-import { apiBase, problem, signedInHandler, withViewer } from "../../test/msw/http";
+import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { nodeUploadFile } from "../../test/multipart";
 import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
@@ -432,74 +432,6 @@ describe("time zone of the device", () => {
       "(UTC+05:30) India Standard Time",
     );
     expect(screen.queryByText(/different time zone/)).not.toBeInTheDocument();
-  });
-});
-
-describe("moderator notifications by email", () => {
-  /** The viewer's account with the permissions `permissions`. */
-  function viewerWith(permissions: Schemas["Permission"][]) {
-    server.use(
-      http.get(`${apiBase}/accounts/verify_credentials`, ({ request }) =>
-        withViewer(request, () => HttpResponse.json({ ...viewerFixture, permissions })),
-      ),
-    );
-  }
-
-  test("a moderator switches them on, and the change is saved", async () => {
-    viewerWith(["manage_reports"]);
-    const prefs = preferencesServer();
-    const { user } = await renderApp({ path: "/settings/preferences" });
-    const section = await screen.findByRole("region", { name: "Moderator notifications" });
-    const toggle = within(section).getByRole("switch", { name: "Also send them by email" });
-    expect(toggle).not.toBeChecked();
-    expect(toggle).toHaveAccessibleDescription(expect.stringContaining("that your role handles") as string);
-
-    await user.click(toggle);
-
-    await waitFor(() => {
-      expect(prefs.changes).toEqual([{ email_moderator_notifications: true }]);
-    });
-    expect(toggle).toBeChecked();
-    expect(prefs.current.email_moderator_notifications).toBe(true);
-  });
-
-  test("the page opens with the saved value as the switch's state", async () => {
-    viewerWith(["manage_accounts"]);
-    preferencesServer({ email_moderator_notifications: true, locale: "ja" });
-    await renderApp({ path: "/settings/preferences" });
-
-    const section = await screen.findByRole("region", { name: "モデレーターへの通知" });
-    expect(within(section).getByRole("switch", { name: "メールでも受け取る" })).toBeChecked();
-  });
-
-  test("is not offered to a viewer whose roles get no moderator notifications", async () => {
-    viewerWith(["manage_domains", "view_audit"]);
-    preferencesServer();
-    await renderApp({ path: "/settings/preferences" });
-
-    expect(await screen.findByRole("heading", { level: 1, name: "Preferences" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Moderator notifications" })).not.toBeInTheDocument();
-    // The switches left are this browser's autoplay of animations, the request for descriptions and the automatic new posts.
-    expect(screen.getAllByRole("switch")).toEqual([
-      screen.getByRole("switch", { name: "Play animations automatically" }),
-      screen.getByRole("switch", { name: "Ask me for a description of every attachment" }),
-      screen.getByRole("switch", { name: "Show new posts automatically" }),
-    ]);
-  });
-
-  test("says why there is no switch when the server sends no email", async () => {
-    viewerWith(["manage_reports", "manage_accounts"]);
-    preferencesServer();
-    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, sends_email: false })));
-    await renderApp({ path: "/settings/preferences" });
-
-    const section = await screen.findByRole("region", { name: "Moderator notifications" });
-    expect(
-      await within(section).findByText(
-        "This server does not send email, so the moderator notifications come only in the app.",
-      ),
-    ).toBeInTheDocument();
-    expect(within(section).queryByRole("switch")).not.toBeInTheDocument();
   });
 });
 

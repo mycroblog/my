@@ -21,15 +21,14 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 		return err
 	}
 	err = q.InsertUserPreferences(ctx, sqlitegen.InsertUserPreferencesParams{
-		UserID:                      p.UserID,
-		Locale:                      p.Locale,
-		DefaultVisibility:           string(p.DefaultVisibility),
-		DefaultQuotePolicy:          string(p.DefaultQuotePolicy),
-		DefaultPostLanguage:         p.DefaultPostLanguage,
-		RequireMediaDescription:     boolToInt(p.RequireMediaDescription),
-		EmailModeratorNotifications: boolToInt(p.EmailModeratorNotifications),
-		TimelineAutoInsert:          boolToInt(p.TimelineAutoInsert),
-		UpdatedAt:                   toMillis(p.UpdatedAt),
+		UserID:                  p.UserID,
+		Locale:                  p.Locale,
+		DefaultVisibility:       string(p.DefaultVisibility),
+		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
+		DefaultPostLanguage:     p.DefaultPostLanguage,
+		RequireMediaDescription: boolToInt(p.RequireMediaDescription),
+		TimelineAutoInsert:      boolToInt(p.TimelineAutoInsert),
+		UpdatedAt:               toMillis(p.UpdatedAt),
 	})
 	if err != nil {
 		return wrap(err, "insert preferences")
@@ -44,15 +43,14 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 		return err
 	}
 	n, err := q.UpdateUserPreferences(ctx, sqlitegen.UpdateUserPreferencesParams{
-		Locale:                      p.Locale,
-		DefaultVisibility:           string(p.DefaultVisibility),
-		DefaultQuotePolicy:          string(p.DefaultQuotePolicy),
-		DefaultPostLanguage:         p.DefaultPostLanguage,
-		RequireMediaDescription:     boolToInt(p.RequireMediaDescription),
-		EmailModeratorNotifications: boolToInt(p.EmailModeratorNotifications),
-		TimelineAutoInsert:          boolToInt(p.TimelineAutoInsert),
-		UpdatedAt:                   toMillis(p.UpdatedAt),
-		UserID:                      p.UserID,
+		Locale:                  p.Locale,
+		DefaultVisibility:       string(p.DefaultVisibility),
+		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
+		DefaultPostLanguage:     p.DefaultPostLanguage,
+		RequireMediaDescription: boolToInt(p.RequireMediaDescription),
+		TimelineAutoInsert:      boolToInt(p.TimelineAutoInsert),
+		UpdatedAt:               toMillis(p.UpdatedAt),
+		UserID:                  p.UserID,
 	})
 	if err != nil {
 		return wrap(err, "update preferences")
@@ -133,17 +131,16 @@ func userPreferencesFrom(ctx context.Context, q *sqlitegen.Queries, row sqlitege
 		return identity.Preferences{}, wrap(err, "get time zone")
 	}
 	return identity.Preferences{
-		UserID:                      row.UserID,
-		TimeZone:                    tz,
-		TimeZoneChosen:              chosen,
-		Locale:                      row.Locale,
-		DefaultVisibility:           identity.Visibility(row.DefaultVisibility),
-		DefaultQuotePolicy:          identity.QuotePolicy(row.DefaultQuotePolicy),
-		DefaultPostLanguage:         row.DefaultPostLanguage,
-		RequireMediaDescription:     row.RequireMediaDescription != 0,
-		EmailModeratorNotifications: row.EmailModeratorNotifications != 0,
-		TimelineAutoInsert:          row.TimelineAutoInsert != 0,
-		UpdatedAt:                   fromMillis(row.UpdatedAt),
+		UserID:                  row.UserID,
+		TimeZone:                tz,
+		TimeZoneChosen:          chosen,
+		Locale:                  row.Locale,
+		DefaultVisibility:       identity.Visibility(row.DefaultVisibility),
+		DefaultQuotePolicy:      identity.QuotePolicy(row.DefaultQuotePolicy),
+		DefaultPostLanguage:     row.DefaultPostLanguage,
+		RequireMediaDescription: row.RequireMediaDescription != 0,
+		TimelineAutoInsert:      row.TimelineAutoInsert != 0,
+		UpdatedAt:               fromMillis(row.UpdatedAt),
 	}, nil
 }
 

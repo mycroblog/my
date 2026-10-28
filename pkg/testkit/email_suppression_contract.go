@@ -157,12 +157,8 @@ func emailComplaintStopsNotifications(t *testing.T, e *accountEnv) {
 	e.withMailer(m)
 	reg := e.sessionUser(t)
 	addressID := e.primaryEmailID(t, reg.User.ID)
-	on := true
-	if _, err := e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{EmailModeratorNotifications: &on}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok, err := e.identity.ModeratorMailbox(ctx, reg.User.ID); err != nil || !ok {
-		t.Fatalf("ModeratorMailbox before the complaint = %v, %v; want ok", ok, err)
+	if _, ok, err := e.identity.NotificationMailbox(ctx, reg.User.ID); err != nil || !ok {
+		t.Fatalf("NotificationMailbox before the complaint = %v, %v; want ok", ok, err)
 	}
 
 	if err := e.identity.RecordDeliveryFailure(ctx, appidentity.DeliveryFailure{
@@ -174,8 +170,8 @@ func emailComplaintStopsNotifications(t *testing.T, e *accountEnv) {
 	if sup, ok := e.suppression(t, addressID); !ok || sup.Kind != identity.EmailComplaint {
 		t.Fatalf("suppression = %+v, %v; want a complaint", sup, ok)
 	}
-	if _, ok, err := e.identity.ModeratorMailbox(ctx, reg.User.ID); err != nil || ok {
-		t.Errorf("ModeratorMailbox after a complaint = %v, %v; want none", ok, err)
+	if _, ok, err := e.identity.NotificationMailbox(ctx, reg.User.ID); err != nil || ok {
+		t.Errorf("NotificationMailbox after a complaint = %v, %v; want none", ok, err)
 	}
 	if _, ok, err := e.identity.NotificationAddress(ctx, reg.User.ID); err != nil || ok {
 		t.Errorf("NotificationAddress after a complaint = %v, %v; want none", ok, err)

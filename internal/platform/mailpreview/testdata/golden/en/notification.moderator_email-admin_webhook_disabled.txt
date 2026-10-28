@@ -10,5 +10,5 @@ Example Social
 https://social.example
 Contact: admin@social.example
 
-You get this email because you chose to get moderator notifications by email. You can turn it off in your preferences.
+You get this email because email is on for “Disabled webhooks” in your notification settings. You can turn it off there.
 Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

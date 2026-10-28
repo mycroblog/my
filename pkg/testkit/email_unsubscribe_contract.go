@@ -3,9 +3,11 @@
 package testkit
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,34 +16,73 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The unsubscribe case of AccountRepositoryContract (ADR-0086 §4).
+// The unsubscribe case of AccountRepositoryContract (ADR-0086 §4, ADR-0109 §4).
+
+// stubUnsubscriptions is an in-memory identity.EmailUnsubscriptions: the categories that
+// unsubscribe links turn off, and those each user turned off.
+type stubUnsubscriptions struct {
+	mu  sync.Mutex
+	off map[string][]identity.UnsubscribeCategory
+}
+
+func newStubUnsubscriptions() *stubUnsubscriptions {
+	return &stubUnsubscriptions{off: map[string][]identity.UnsubscribeCategory{}}
+}
+
+// Unsubscribable takes the rows of the notification settings whose email the user chooses, of
+// which the contract uses these.
+func (s *stubUnsubscriptions) Unsubscribable(c identity.UnsubscribeCategory) bool {
+	return c == "mention" || c == "admin_report"
+}
+
+func (s *stubUnsubscriptions) Unsubscribe(_ context.Context, userID string, c identity.UnsubscribeCategory) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, done := range s.off[userID] {
+		if done == c {
+			return nil
+		}
+	}
+	s.off[userID] = append(s.off[userID], c)
+	return nil
+}
+
+// turnedOff returns the categories that userID turned off, in order.
+func (s *stubUnsubscriptions) turnedOff(userID string) []identity.UnsubscribeCategory {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]identity.UnsubscribeCategory(nil), s.off[userID]...)
+}
+
+// reset forgets what userID turned off.
+func (s *stubUnsubscriptions) reset(userID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.off, userID)
+}
 
 // emailUnsubscribeTurnsOffNotifications issues an unsubscribe link and uses it: checking it
-// changes nothing, using it turns the preference off, using it again answers the same, and an
-// unknown, foreign, or expired token changes nothing. The transactional emails carry no
-// unsubscribe headers.
+// changes nothing, using it turns off the email of its category and nothing else, using it again
+// answers the same, and an unknown, foreign, or expired token or a category that no link turns
+// off changes nothing. The transactional emails carry no unsubscribe headers.
 func emailUnsubscribeTurnsOffNotifications(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	m := &Mailer{}
 	e.withMailer(m)
 	reg := e.sessionUser(t)
-	on := true
-	turnOn := func() {
+	const category identity.UnsubscribeCategory = "admin_report"
+	wantOff := func(when string, want ...identity.UnsubscribeCategory) {
 		t.Helper()
-		if _, err := e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{EmailModeratorNotifications: &on}); err != nil {
-			t.Fatal(err)
+		got := e.unsubscriptions.turnedOff(reg.User.ID)
+		if len(got) != len(want) || len(want) == 1 && got[0] != want[0] {
+			t.Errorf("turned off %s = %v, want %v", when, got, want)
 		}
 	}
-	wantOn := func(want bool, when string) {
-		t.Helper()
-		p, err := e.identity.Preferences(ctx, reg.User.ID)
-		if err != nil || p.EmailModeratorNotifications != want {
-			t.Errorf("email_moderator_notifications %s = %v, %v; want %v", when, p.EmailModeratorNotifications, err, want)
-		}
-	}
-	turnOn()
 
-	link, err := e.identity.IssueUnsubscribeLink(ctx, reg.User.ID, identity.UnsubscribeModeratorNotifications)
+	if _, err := e.identity.IssueUnsubscribeLink(ctx, reg.User.ID, "service_closure"); err == nil {
+		t.Error("IssueUnsubscribeLink(service_closure) = nil, want an error: its emails cannot be turned off")
+	}
+	link, err := e.identity.IssueUnsubscribeLink(ctx, reg.User.ID, category)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,27 +96,27 @@ func emailUnsubscribeTurnsOffNotifications(t *testing.T, e *accountEnv) {
 	}
 	stored, err := e.h.Identity.FindUserTokenByHash(ctx, appidentity.HashToken(token))
 	if err != nil || stored.Purpose != identity.PurposeEmailUnsubscribe || stored.UserID != reg.User.ID ||
-		stored.UnsubscribeCategory != identity.UnsubscribeModeratorNotifications ||
+		stored.UnsubscribeCategory != category ||
 		!stored.ExpiresAt.Equal(e.clock.Now().Add(appidentity.EmailUnsubscribeTTL)) {
 		t.Errorf("stored token = %+v, %v; want an unsubscribe token of the user for %v", stored, err, appidentity.EmailUnsubscribeTTL)
 	}
 
 	// Checking the link changes nothing.
-	if c, err := e.identity.CheckUnsubscribeToken(ctx, token); err != nil || c != identity.UnsubscribeModeratorNotifications {
+	if c, err := e.identity.CheckUnsubscribeToken(ctx, token); err != nil || c != category {
 		t.Errorf("CheckUnsubscribeToken = %q, %v", c, err)
 	}
-	wantOn(true, "after the check")
+	wantOff("after the check")
 
-	// Using it turns the preference off; using it again changes nothing and answers the same.
+	// Using it turns off its category; using it again changes nothing and answers the same.
 	for range 2 {
-		if c, err := e.identity.Unsubscribe(ctx, token); err != nil || c != identity.UnsubscribeModeratorNotifications {
+		if c, err := e.identity.Unsubscribe(ctx, token); err != nil || c != category {
 			t.Errorf("Unsubscribe = %q, %v", c, err)
 		}
-		wantOn(false, "after the unsubscribe")
+		wantOff("after the unsubscribe", category)
 	}
 
 	// Unknown tokens and tokens of other purposes do not work.
-	turnOn()
+	e.unsubscriptions.reset(reg.User.ID)
 	e.requestReset(t, sessionEmail)
 	reset := resetToken(t, m, "Alice@Example.com")
 	for _, bad := range []string{"", appidentity.EmailUnsubscribeTokenPrefix + "unknown", strings.TrimPrefix(token, appidentity.EmailUnsubscribeTokenPrefix), reset} {
@@ -98,5 +139,5 @@ func emailUnsubscribeTurnsOffNotifications(t *testing.T, e *accountEnv) {
 	if _, err := e.identity.Unsubscribe(ctx, token); !errors.Is(err, appidentity.ErrInvalidToken) {
 		t.Errorf("Unsubscribe with an expired token = %v, want ErrInvalidToken", err)
 	}
-	wantOn(true, "after an expired unsubscribe")
+	wantOff("after an expired unsubscribe")
 }

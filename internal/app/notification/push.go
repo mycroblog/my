@@ -131,7 +131,8 @@ type PushNotifications interface {
 const JobPush = "notification.push"
 
 // pushJob is the payload of JobPush: the subscription, and the notification as far as the
-// message needs it, so that the job reads no notification row.
+// message needs it, so that the job reads no notification row. Without the subscription, it is
+// the payload of JobNotificationEmail.
 type pushJob struct {
 	SubscriptionID  string            `json:"subscription_id"`
 	NotificationID  string            `json:"notification_id"`
@@ -148,6 +149,17 @@ type pushJob struct {
 	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
 	ErrorGroupChange notification.ErrorGroupChange `json:"error_group_change,omitempty"`
 	ErrorGroupID     string                        `json:"error_group_id,omitempty"`
+}
+
+// jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
+// JobNotificationEmail without one.
+func jobOf(n notification.Notification, subscriptionID string) pushJob {
+	return pushJob{
+		SubscriptionID: subscriptionID, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
+		SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
+		ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
+		ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID,
+	}
 }
 
 // PushTTL is how long a push service keeps a message for a browser that is offline.
@@ -173,12 +185,7 @@ func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notifica
 	}
 	jobs := make([]queue.NewJob, 0, len(ids))
 	for _, id := range ids {
-		payload, err := json.Marshal(pushJob{
-			SubscriptionID: id, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
-			SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
-			ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
-			ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID,
-		})
+		payload, err := json.Marshal(jobOf(n, id))
 		if err != nil {
 			return err
 		}
@@ -349,7 +356,7 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 	if !active {
 		return s.retire(ctx, sub.ID)
 	}
-	switch shown, err := s.stillShown(ctx, job); {
+	switch shown, err := stillShown(ctx, s.d.Notifications, s.d.Audience, job); {
 	case err != nil:
 		return queue.Retry(0, err)
 	case !shown:
@@ -380,9 +387,10 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 // stillShown reports whether job's notification may still reach its recipient at the time of
 // sending, which can be long after the notification was created: the notification list still
 // shows it (no block, mute, or dismissal since), and the recipient may still see its status.
-func (s *PushService) stillShown(ctx context.Context, job pushJob) (bool, error) {
-	if s.d.Notifications != nil {
-		listed, err := s.d.Notifications.Listed(ctx, job.AccountID, job.NotificationID)
+// A nil notifications skips the check of the list. The email of a notification checks the same.
+func stillShown(ctx context.Context, notifications PushNotifications, audience PushAudience, job pushJob) (bool, error) {
+	if notifications != nil {
+		listed, err := notifications.Listed(ctx, job.AccountID, job.NotificationID)
 		if err != nil || !listed {
 			return false, err
 		}
@@ -390,7 +398,7 @@ func (s *PushService) stillShown(ctx context.Context, job pushJob) (bool, error)
 	if job.StatusID == "" {
 		return true, nil
 	}
-	return s.d.Audience.StatusVisible(ctx, job.AccountID, job.StatusID)
+	return audience.StatusVisible(ctx, job.AccountID, job.StatusID)
 }
 
 // retire deletes a subscription that can take no more messages.
@@ -426,42 +434,90 @@ type PushPayload struct {
 
 // message returns the payload of job's message, worded in the recipient's locale.
 func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) {
-	locale, err := s.d.Audience.Locale(ctx, job.AccountID)
+	p, _, err := describer{
+		audience: s.d.Audience, messages: s.d.Messages, host: s.d.Host, instanceName: s.d.InstanceName,
+	}.describe(ctx, job)
 	if err != nil {
 		return nil, err
 	}
-	bundle := s.d.Messages
+	return json.Marshal(p)
+}
+
+// describer words a notification for its recipient: the title and the page of a Web Push
+// message, which are also the subject and the link of the notification's email.
+type describer struct {
+	audience     PushAudience
+	messages     *i18n.Bundle
+	host         string
+	instanceName func(ctx context.Context) string
+}
+
+// describe returns how job's notification reads in the recipient's locale, with the localizer
+// of that locale. It fails with ErrNotFound when an account it names is gone.
+func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18n.Localizer, error) {
+	locale, err := d.audience.Locale(ctx, job.AccountID)
+	if err != nil {
+		return PushPayload{}, nil, err
+	}
+	bundle := d.messages
 	if bundle == nil {
 		if bundle, err = i18n.Load(); err != nil {
-			return nil, err
+			return PushPayload{}, nil, err
 		}
 	}
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return locale }}
 	l := users.Localizer(ctx, "")
 	var source, recipient PushAccount
 	if job.SourceAccountID != "" {
-		if source, err = s.d.Audience.Account(ctx, job.SourceAccountID); err != nil {
-			return nil, err
+		if source, err = d.audience.Account(ctx, job.SourceAccountID); err != nil {
+			return PushPayload{}, nil, err
 		}
 	}
 	if job.Type == notification.TypeBoost || job.Type == notification.TypeFavourite || job.Type == notification.TypeReaction ||
 		(job.Type == notification.TypePollClosed && job.SourceAccountID == "") {
-		if recipient, err = s.d.Audience.Account(ctx, job.AccountID); err != nil {
-			return nil, err
+		if recipient, err = d.audience.Account(ctx, job.AccountID); err != nil {
+			return PushPayload{}, nil, err
 		}
 	}
+	instance := d.host
+	if d.instanceName != nil {
+		if n := d.instanceName(ctx); n != "" {
+			instance = n
+		}
+	}
+	return DescribeNotification(l, NotificationText{
+		NotificationID: job.NotificationID, Type: job.Type, Source: source, Recipient: recipient,
+		StatusID: job.StatusID, ReportID: job.ReportID, AppealID: job.AppealID, VoiceRoomID: job.VoiceRoomID,
+		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
+	}, instance), l, nil
+}
+
+// NotificationText is what words a notification: its type, the accounts it names, and the
+// objects it links to.
+type NotificationText struct {
+	NotificationID string
+	Type           notification.Type
+	// Source is the account the notification is from, zero for none. Recipient is the
+	// recipient's account, which the notifications about the recipient's statuses link to.
+	Source, Recipient                         PushAccount
+	StatusID, ReportID, AppealID, VoiceRoomID string
+	// ServiceClosureChange is what a service_closure tells of.
+	ServiceClosureChange notification.ClosureChange
+	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
+	ErrorGroupChange notification.ErrorGroupChange
+	ErrorGroupID     string
+}
+
+// DescribeNotification words n in the locale of l for the instance named instance: the title
+// and the page of its Web Push message, which are also the subject and the link of its email.
+func DescribeNotification(l *i18n.Localizer, n NotificationText, instance string) PushPayload {
+	source, recipient := n.Source, n.Recipient
 	name := source.DisplayName
 	if name == "" && source.Acct != "" {
 		name = "@" + source.Acct
 	}
-	instance := s.d.Host
-	if s.d.InstanceName != nil {
-		if n := s.d.InstanceName(ctx); n != "" {
-			instance = n
-		}
-	}
-	p := PushPayload{NotificationID: job.NotificationID, Type: job.Type, Lang: l.RequestedLocale(), Path: "/notifications"}
-	switch job.Type {
+	p := PushPayload{NotificationID: n.NotificationID, Type: n.Type, Lang: l.RequestedLocale(), Path: "/notifications"}
+	switch n.Type {
 	case notification.TypeFollow:
 		p.Title, p.Path = l.ServerPushFollow(name), "/@"+source.Acct
 	case notification.TypeFollowRequest:
@@ -469,32 +525,32 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 	case notification.TypeFollowAccepted:
 		p.Title, p.Path = l.ServerPushFollowAccepted(name), "/@"+source.Acct
 	case notification.TypeMention:
-		p.Title, p.Path = l.ServerPushMention(name), statusPath(source.Acct, job.StatusID)
+		p.Title, p.Path = l.ServerPushMention(name), statusPath(source.Acct, n.StatusID)
 	case notification.TypeBoost:
-		p.Title, p.Path = l.ServerPushBoost(name), statusPath(recipient.Acct, job.StatusID)
+		p.Title, p.Path = l.ServerPushBoost(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeFavourite:
-		p.Title, p.Path = l.ServerPushFavourite(name), statusPath(recipient.Acct, job.StatusID)
+		p.Title, p.Path = l.ServerPushFavourite(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeReaction:
-		p.Title, p.Path = l.ServerPushReaction(name), statusPath(recipient.Acct, job.StatusID)
+		p.Title, p.Path = l.ServerPushReaction(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeQuote:
-		p.Title, p.Path = l.ServerPushQuote(name), statusPath(source.Acct, job.StatusID)
+		p.Title, p.Path = l.ServerPushQuote(name), statusPath(source.Acct, n.StatusID)
 	case notification.TypePollClosed:
 		// The voters' notifications are from the poll's author; the author's own has no source.
 		author := source.Acct
-		if job.SourceAccountID == "" {
+		if source.Acct == "" {
 			author = recipient.Acct
 		}
-		p.Title, p.Path = l.ServerPushPollClosed(), statusPath(author, job.StatusID)
+		p.Title, p.Path = l.ServerPushPollClosed(), statusPath(author, n.StatusID)
 	case notification.TypeModerationNotice:
 		p.Title, p.Path = l.ServerPushModerationNotice(instance), "/settings/account-status"
 	case notification.TypeAppealDecided:
 		p.Title, p.Path = l.ServerPushAppealDecided(instance), "/settings/account-status"
 	case notification.TypeAdminReport:
-		p.Title, p.Path = l.ServerPushAdminReport(instance), "/moderation/reports/"+job.ReportID
+		p.Title, p.Path = l.ServerPushAdminReport(instance), "/moderation/reports/"+n.ReportID
 	case notification.TypeAdminSignUp:
 		p.Title, p.Path = l.ServerPushAdminSignUp(instance), "/moderation/registrations"
 	case notification.TypeAdminAppeal:
-		p.Title, p.Path = l.ServerPushAdminAppeal(instance), "/moderation/appeals/"+job.AppealID
+		p.Title, p.Path = l.ServerPushAdminAppeal(instance), "/moderation/appeals/"+n.AppealID
 	case notification.TypeAdminWebhookDisabled:
 		p.Title, p.Path = l.ServerPushAdminWebhookDisabled(instance), "/admin/webhooks"
 	case notification.TypeAdminCustomEmojiRequest:
@@ -518,7 +574,7 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 	case notification.TypeAdminAccountMoved:
 		p.Title = l.ServerPushAdminAccountMoved(instance)
 	case notification.TypeServiceClosure:
-		switch job.ServiceClosureChange {
+		switch n.ServiceClosureChange {
 		case notification.ClosureWithdrawn:
 			p.Title = l.ServerPushServiceClosureWithdrawn(instance)
 		case notification.ClosureRescheduled:
@@ -530,24 +586,24 @@ func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) 
 		p.Title = l.ServerPushAdminServiceClosureDue(instance)
 	case notification.TypeAdminErrorGroup:
 		p.Path = "/admin/errors"
-		switch job.ErrorGroupChange {
+		switch n.ErrorGroupChange {
 		case notification.ErrorGroupCreated:
-			p.Title, p.Path = l.ServerPushAdminErrorGroupCreated(instance), "/admin/errors/"+job.ErrorGroupID
+			p.Title, p.Path = l.ServerPushAdminErrorGroupCreated(instance), "/admin/errors/"+n.ErrorGroupID
 		case notification.ErrorGroupRegressed:
-			p.Title, p.Path = l.ServerPushAdminErrorGroupRegressed(instance), "/admin/errors/"+job.ErrorGroupID
+			p.Title, p.Path = l.ServerPushAdminErrorGroupRegressed(instance), "/admin/errors/"+n.ErrorGroupID
 		default:
 			p.Title = l.ServerPushAdminErrorGroupOthers(instance)
 		}
 	case notification.TypeSupporterServiceClosure:
 		p.Title = l.ServerPushSupporterServiceClosure(instance)
 	case notification.TypeVoiceRoomStarted:
-		p.Title, p.Path = l.ServerPushVoiceRoomStarted(name), "/voice/"+job.VoiceRoomID
+		p.Title, p.Path = l.ServerPushVoiceRoomStarted(name), "/voice/"+n.VoiceRoomID
 	case notification.TypeVoiceRoomInvited:
-		p.Title, p.Path = l.ServerPushVoiceRoomInvited(name), "/voice/"+job.VoiceRoomID
+		p.Title, p.Path = l.ServerPushVoiceRoomInvited(name), "/voice/"+n.VoiceRoomID
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}
-	return json.Marshal(p)
+	return p
 }
 
 // statusPath is the web client's page of a status by the account acct (ADR-0053).

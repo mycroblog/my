@@ -15,9 +15,27 @@ the user is told "we sent a confirmation email", and asks for it again if it doe
 | Transactional | Password reset | `identity.password_reset_email` | No |
 | Transactional | Notice of a password change or deletion | `identity.password_notice_email` | No |
 | Transactional | Service shutdown (the announcement, a change of date, a cancellation, 7 days and 1 day before the closing date, the closing, and 7 days before the export deadline) | `identity.closure_email` | No |
-| Notification (`notification`) | Notice to moderators (the user setting `email_moderator_notifications`) | `notification.moderator_email` | Yes |
+| Notification (`notification`) | Notice to moderators (on by default, per kind of notice) | `notification.moderator_email` | Yes |
+| Notification (`notification`) | A notification that stayed unread for 15 minutes: mentions, follows, boosts, and the other notifications from other users, and notices from the moderators (off by default, per kind) | `notification.email` | Yes |
 
 Notification emails for supporters (`notification.supporter_email`) go through the same job queue.
+
+### Which notifications are emailed
+
+Each user chooses, per kind of notification, whether it arrives in the app and by email, in the notification settings
+(`GET` and `PATCH /api/v1/preferences/notifications`). A kind turned off in the app is not created at all, so it is not emailed
+or pushed either.
+
+| Kind | Email by default | When it is sent |
+| --- | --- | --- |
+| Notifications from other users (mentions, new followers, follow requests, accepted follow requests, boosts, favourites, emoji reactions, quotes, ended polls, accounts you follow moving, voice chats) | Off | 15 minutes after the notification, only if it is still unread (not marked read, not dismissed) and still visible, and the user still gets that kind by email. One email per notification |
+| Notices from the moderators (a moderation action on the account, a resolved report, a decided appeal, follows lost to a suspension, a decided custom emoji request) | Off | The same as above |
+| Notices to moderators (new reports, registrations awaiting approval, appeals, disabled webhooks, custom emoji requests, limited accounts moving, the closing date passing, new and recurring errors), to the people whose role has the permission | On | At once, without waiting for it to be read |
+| Service shutdown, and the notices of supporter plans | Always | At once; these cannot be turned off |
+
+Notification emails go only to the user's primary address once it is confirmed, and never to an address whose emails are
+stopped (see below). The subject of the email of a notification from another user is the same text as its Web Push message,
+and the email links to the post, the profile, or the notifications.
 
 Service shutdown emails go to every user whose primary address is confirmed. Missing one can mean losing data, so they are sent
 as transactional email, carry no unsubscribe link, and are not stopped by a complaint (a hard bounce does stop them).
@@ -251,16 +269,17 @@ complaints are recorded from the SES notifications
 Notification emails carry an unsubscribe link and the headers `List-Unsubscribe` and `List-Unsubscribe-Post:
 List-Unsubscribe=One-Click` (RFC 8058). The "unsubscribe" button of email clients uses them.
 
-- The unsubscribe classes map one to one to the email items of the user settings. The only class today is
-  `email_moderator_notifications` (notices to moderators).
+- The unsubscribe classes map one to one to the rows of the notification settings whose email the user can choose, such as
+  `mention` or `admin_report` (one per kind of notice to moderators, and `moderation` for the notices from the moderators).
 - The link is `https://{host}/mail/unsubscribe?token=...` and needs no sign-in. A token is issued per email, only its hash is
   kept in the database, and it expires after 90 days.
   - `GET` only shows a confirmation screen and changes nothing (so that scanners that prefetch links do not stop the email).
     The button sends the same `POST`.
-  - `POST` (one click) turns the setting of the class off. Until the token expires, sending it again gives the same result.
+  - `POST` (one click) turns off the email of that row of the notification settings, and nothing else. Until the token
+    expires, sending it again gives the same result.
 - **Transactional email cannot be unsubscribed from.** Confirmation, reset, and the notice of a password change would stop
   security-relevant notices from arriving. These emails carry no such headers either.
-- Users can switch the same setting on the settings screen.
+- Users can switch the same setting in their notification settings.
 
 ## The HTML version
 

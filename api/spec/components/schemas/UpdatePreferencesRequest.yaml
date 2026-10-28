@@ -18,9 +18,6 @@ properties:
   require_media_description:
     description: Whether clients ask for a description before posting media without one.
     type: boolean
-  email_moderator_notifications:
-    description: Whether the moderator notifications also come by email.
-    type: boolean
   timeline_auto_insert:
     description: Whether the web client inserts new timeline posts without asking.
     type: boolean

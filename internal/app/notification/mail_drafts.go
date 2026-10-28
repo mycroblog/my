@@ -22,10 +22,11 @@ import (
 // the email's one-click unsubscribe link, which the handler issues once it knows the email is
 // sent. ok is false for a type without an email.
 func ModeratorEmailDraft(l *i18n.Localizer, name, to string, t notification.Type, webOrigin, unsubscribeURL string) (d kernel.MailDraft, ok bool) {
+	g, _ := notification.GroupOf(t)
 	d = kernel.MailDraft{
 		Category: kernel.MailNotification, To: to,
 		Action:         &kernel.MailAction{Label: l.ServerMailActionOpenNotifications(), URL: strings.TrimSuffix(webOrigin, "/") + "/notifications"},
-		Reason:         l.ServerMailReasonModeratorNotifications(),
+		Reason:         l.ServerMailReasonNotification(GroupLabel(l, g.Group)),
 		UnsubscribeURL: unsubscribeURL,
 	}
 	switch t {
@@ -50,6 +51,26 @@ func ModeratorEmailDraft(l *i18n.Localizer, name, to string, t notification.Type
 		return kernel.MailDraft{}, false
 	}
 	return d, true
+}
+
+// NotificationEmailDraft is the email to to of the notification p, worded by
+// DescribeNotification in the locale of l, from the instance named name: its subject is what
+// the notification's Web Push message says, and it links to the same page on webOrigin.
+// unsubscribeURL is the email's one-click unsubscribe link, which the handler issues once it
+// knows the email is sent. ok is false for a notification whose group is not emailed after
+// notification.EmailDelay (notification.GroupSpec.DelayedEmail).
+func NotificationEmailDraft(l *i18n.Localizer, name, to string, p PushPayload, webOrigin, unsubscribeURL string) (d kernel.MailDraft, ok bool) {
+	g, ok := notification.GroupOf(p.Type)
+	if !ok || !g.DelayedEmail() {
+		return kernel.MailDraft{}, false
+	}
+	return kernel.MailDraft{
+		Category: kernel.MailNotification, To: to, Subject: p.Title,
+		Paragraphs:     []string{l.ServerMailNotificationBody(name)},
+		Action:         &kernel.MailAction{Label: l.ServerMailActionOpenNotification(), URL: strings.TrimSuffix(webOrigin, "/") + p.Path},
+		Reason:         l.ServerMailReasonNotification(GroupLabel(l, g.Group)),
+		UnsubscribeURL: unsubscribeURL,
+	}, true
 }
 
 // SupporterMail is what the email of a supporter notification says, as of the transition that

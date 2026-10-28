@@ -43,6 +43,14 @@ type Repository interface {
 	// AdvanceReadMarker sets the account's marker to m.LastReadID unless it is already there or
 	// past it, and reports whether it moved.
 	AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notification.ReadMarker) (bool, error)
+	// SaveNotificationSettings stores the account's choices of settings (FR-210), replacing an
+	// earlier choice of the same group and channel, as chosen at at.
+	SaveNotificationSettings(ctx context.Context, tx uow.Tx, settings []notification.Setting, at time.Time) error
+	// NotificationSettingsTx returns inside tx the settings that the account chose, in order of
+	// group and channel.
+	NotificationSettingsTx(ctx context.Context, tx uow.Tx, accountID string) ([]notification.Setting, error)
+	// NotificationSettings is NotificationSettingsTx outside any transaction.
+	NotificationSettings(ctx context.Context, accountID string) ([]notification.Setting, error)
 
 	// Projections, written only by this module's projectors.
 

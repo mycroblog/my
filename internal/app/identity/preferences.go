@@ -56,8 +56,6 @@ type PreferencesInput struct {
 	DefaultQuotePolicy      identity.QuotePolicy
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
-	// EmailModeratorNotifications sends the user's moderator notifications also by email.
-	EmailModeratorNotifications bool
 	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077).
 	TimelineAutoInsert bool
 }
@@ -108,17 +106,16 @@ func (s *Service) SetPreferences(ctx context.Context, userID string, in Preferen
 		return identity.Preferences{}, err
 	}
 	p := identity.Preferences{
-		UserID:                      userID,
-		Locale:                      locale,
-		TimeZone:                    in.TimeZone,
-		TimeZoneChosen:              true,
-		DefaultVisibility:           in.DefaultVisibility,
-		DefaultQuotePolicy:          quotePolicy,
-		DefaultPostLanguage:         postLang,
-		RequireMediaDescription:     in.RequireMediaDescription,
-		EmailModeratorNotifications: in.EmailModeratorNotifications,
-		TimelineAutoInsert:          in.TimelineAutoInsert,
-		UpdatedAt:                   s.d.Clock.Now(),
+		UserID:                  userID,
+		Locale:                  locale,
+		TimeZone:                in.TimeZone,
+		TimeZoneChosen:          true,
+		DefaultVisibility:       in.DefaultVisibility,
+		DefaultQuotePolicy:      quotePolicy,
+		DefaultPostLanguage:     postLang,
+		RequireMediaDescription: in.RequireMediaDescription,
+		TimelineAutoInsert:      in.TimelineAutoInsert,
+		UpdatedAt:               s.d.Clock.Now(),
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.UpdatePreferences(ctx, tx, p) })
 	if err != nil {
@@ -157,8 +154,6 @@ type PreferencesUpdate struct {
 	DefaultQuotePolicy      *identity.QuotePolicy
 	DefaultPostLanguage     *string
 	RequireMediaDescription *bool
-	// EmailModeratorNotifications sends the user's moderator notifications also by email.
-	EmailModeratorNotifications *bool
 	// TimelineAutoInsert is the preference of that name (ADR-0077).
 	TimelineAutoInsert *bool
 	// TimelineLanguages replace the languages timelines show; empty shows every language.
@@ -275,9 +270,6 @@ func (in PreferencesUpdate) applyTo(cur UserPreferences) UserPreferences {
 	}
 	if in.RequireMediaDescription != nil {
 		p.RequireMediaDescription = *in.RequireMediaDescription
-	}
-	if in.EmailModeratorNotifications != nil {
-		p.EmailModeratorNotifications = *in.EmailModeratorNotifications
 	}
 	if in.TimelineAutoInsert != nil {
 		p.TimelineAutoInsert = *in.TimelineAutoInsert

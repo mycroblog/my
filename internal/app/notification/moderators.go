@@ -28,11 +28,13 @@ import (
 // whose users' roles grant the permission the type needs (notification.ModeratorPermission).
 // The recipients are those who hold it in the transaction that creates the notifications; the
 // list leaves out the notifications of a recipient who no longer holds it (Service.List). A
-// recipient who wants the notifications by email gets an email from a job that the same
-// transaction enqueues, so it is sent only once the notification is committed.
+// recipient who turned a type off in the app gets none of it (ADR-0109 §3); one who gets it by
+// email, as every recipient does until they turn it off (ADR-0109 §2), gets an email from a job
+// that the same transaction enqueues, so it is sent at once but only once the notification is
+// committed.
 
-// Staff is what the moderator notifications read of the roles and preferences of the users of
-// local accounts (the identity module). The composition root implements it on the identity and
+// Staff is what the moderator notifications read of the roles of the users of local accounts
+// (the identity module). The composition root implements it on the identity and
 // account modules.
 type Staff interface {
 	// PermissionHolders returns inside tx the local accounts whose users' roles grant p.
@@ -40,22 +42,14 @@ type Staff interface {
 	// GrantedPermissions returns the permissions that the roles of the user of a local account
 	// grant now; none for any other account.
 	GrantedPermissions(ctx context.Context, accountID string) ([]notification.Permission, error)
-	// Mailbox returns where the moderator notifications of a local account are sent by email;
-	// ok is false when its user does not want them by email or has no usable address.
-	Mailbox(ctx context.Context, accountID string) (m Mailbox, ok bool, err error)
-	// UnsubscribeLink issues a new one-click unsubscribe link (ADR-0086 §4) that turns off the
-	// moderator notification emails of the user of a local account, for one email.
-	UnsubscribeLink(ctx context.Context, accountID string) (string, error)
 }
 
 // StaffMember is a local account whose user holds a permission.
 type StaffMember struct {
 	AccountID string
-	// Email reports that the user wants the moderator notifications also by email.
-	Email bool
 }
 
-// Mailbox is the address and the locale of the moderator notification emails to a user.
+// Mailbox is the address and the locale of the notification emails to a user.
 type Mailbox struct {
 	// EmailAddressID identifies Address, for the record of a rejected recipient.
 	EmailAddressID string
@@ -128,8 +122,9 @@ type ModeratorDeps struct {
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
 // AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminErrorGroupKey,
 // AdminErrorGroupOthersKey) make projecting an event again
-// create nothing more. For each recipient who wants them by email and whose notification is
-// new, the projector enqueues JobModeratorEmail through d.Outbox.
+// create nothing more. A recipient who turned the type off in the app gets nothing. For each
+// recipient who gets the type by email and whose notification is new, the projector enqueues
+// JobModeratorEmail through d.Outbox.
 func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 	p := &moderatorProjector{d: d}
 	r.Register(appmoderation.EventReportFiled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -203,6 +198,13 @@ func (p *moderatorProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 		if slices.Contains(except, m.AccountID) {
 			continue
 		}
+		choices, err := choicesTx(ctx, p.d.Repository, tx, m.AccountID)
+		if err != nil {
+			return err
+		}
+		if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
+			continue // turned off in the app (ADR-0109 §3)
+		}
 		n.ID, n.RecipientAccountID = p.d.IDs.NewID(), m.AccountID
 		if err := n.Validate(); err != nil {
 			return err
@@ -216,7 +218,7 @@ func (p *moderatorProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 				return err
 			}
 		}
-		if !created || !m.Email || p.d.Outbox == nil {
+		if !created || !choices.TypeEnabled(n.Type, notification.ChannelEmail) || p.d.Outbox == nil {
 			continue
 		}
 		payload, err := json.Marshal(moderatorEmail{NotificationID: n.ID, AccountID: m.AccountID, Type: n.Type})
@@ -233,8 +235,11 @@ func (p *moderatorProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 
 // MailDeps are the ports of the job that sends the moderator notifications by email.
 type MailDeps struct {
-	Staff  Staff
-	Mailer kernel.Mailer
+	Staff Staff
+	// Settings tells whether the recipient still gets the type by email; *Service implements it.
+	Settings  EmailSettings
+	Mailboxes Mailboxes
+	Mailer    kernel.Mailer
 	// Rejections records the rejected recipients; nil records none.
 	Rejections RecipientRejections
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
@@ -265,9 +270,14 @@ func mailSite(ctx context.Context, host string, site func(context.Context) kerne
 	return s
 }
 
+// EmailSettings tells whether a local account gets the notifications of a type by email now.
+type EmailSettings interface {
+	EmailEnabled(ctx context.Context, accountID string, t notification.Type) (bool, error)
+}
+
 // RegisterModeratorJobs registers the handler of JobModeratorEmail on reg. The handler sends
-// nothing when the recipient no longer holds the notification's permission or no longer wants
-// it by email; a permanent rejection of the email fails the job and any other failure is
+// nothing when the recipient no longer holds the notification's permission, no longer gets its
+// type by email, or has no usable address (Mailboxes); a permanent rejection of the email fails the job and any other failure is
 // retried (queue.MailResult). An email names only the kind of notification and links to the
 // notifications page, never the report or the user it is about.
 func RegisterModeratorJobs(reg *queue.JobHandlerRegistry, d MailDeps) {
@@ -289,10 +299,14 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 	if err != nil || !slices.Contains(granted, perm) {
 		return err
 	}
-	box, ok, err := d.Staff.Mailbox(ctx, job.AccountID)
+	if on, err := d.Settings.EmailEnabled(ctx, job.AccountID, job.Type); err != nil || !on {
+		return err
+	}
+	box, ok, err := d.Mailboxes.Mailbox(ctx, job.AccountID)
 	if err != nil || !ok {
 		return err
 	}
+	g, _ := notification.GroupOf(job.Type)
 	bundle := d.Messages
 	if bundle == nil {
 		if bundle, err = i18n.Load(); err != nil {
@@ -308,7 +322,7 @@ func sendModeratorEmail(ctx context.Context, d MailDeps, run queue.Job, job mode
 	}
 	// Each email carries its own unsubscribe link, issued only now that it is sent, so that the
 	// secret is in the email and nowhere else (ADR-0086 §4).
-	if draft.UnsubscribeURL, err = d.Staff.UnsubscribeLink(ctx, job.AccountID); err != nil {
+	if draft.UnsubscribeURL, err = d.Mailboxes.UnsubscribeLink(ctx, job.AccountID, g.Group); err != nil {
 		return fmt.Errorf("notification: issue the unsubscribe link of %s: %w", job.NotificationID, err)
 	}
 	m, err := kernel.MailComposer{Site: site, Words: l}.Compose(draft)

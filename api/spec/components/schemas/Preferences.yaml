@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: The authenticated user's preferences.
 type: object
-required: [locale, time_zone, time_zone_chosen, default_visibility, default_quote_policy, default_post_language, require_media_description, email_moderator_notifications, timeline_auto_insert, timeline_languages]
+required: [locale, time_zone, time_zone_chosen, default_visibility, default_quote_policy, default_post_language, require_media_description, timeline_auto_insert, timeline_languages]
 properties:
   locale:
     description: The UI locale, a BCP 47 language tag.
@@ -25,12 +25,6 @@ properties:
     type: string
   require_media_description:
     description: Whether clients ask for a description before posting media without one.
-    type: boolean
-  email_moderator_notifications:
-    description: |
-      Whether the moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
-      `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
-      primary address. Off for a new user.
     type: boolean
   email_suppression:
     description: |

@@ -15,8 +15,7 @@ type PreferenceKey =
   | "default_post_language"
   | "require_media_description"
   | "timeline_languages"
-  | "timeline_auto_insert"
-  | "email_moderator_notifications";
+  | "timeline_auto_insert";
 
 /** One preference as a control shows it: it is saved as soon as it changes. */
 export type PreferenceControl<T> = {
@@ -37,7 +36,6 @@ export type PreferencesControls = {
   requireMediaDescription: PreferenceControl<boolean>;
   timelineLanguages: PreferenceControl<string[]>;
   timelineAutoInsert: PreferenceControl<boolean>;
-  emailModeratorNotifications: PreferenceControl<boolean>;
   /** Why emails do not reach the primary address (read-only); undefined when they do. */
   emailSuppression: Preferences["email_suppression"];
 };
@@ -59,10 +57,6 @@ export function usePreferences(): PreferencesControls {
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
     timelineAutoInsert: usePreferenceControl("timeline_auto_insert", data.timeline_auto_insert),
-    emailModeratorNotifications: usePreferenceControl(
-      "email_moderator_notifications",
-      data.email_moderator_notifications,
-    ),
     emailSuppression: data.email_suppression,
   };
 }

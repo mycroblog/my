@@ -1,4 +1,8 @@
 {
+  "mail.action.open_notification": {
+    "defaultMessage": "‮Odǝu‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.action.open_notifications": {
     "defaultMessage": "‮Odǝu ʎonɹ uoʇıɟıɔɐʇıous‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -75,6 +79,90 @@
     "defaultMessage": "‮∀ ʍǝqɥooʞ oɟ {instance} ʍɐs ʇnɹuǝp oɟɟ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.group.account_moved": {
+    "defaultMessage": "‮∀ɔɔonuʇs ʎon ɟoʅʅoʍ ɯoʌıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_account_moved": {
+    "defaultMessage": "‮⅂ıɯıʇǝp ɐɔɔonuʇs ɯoʌıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_appeal": {
+    "defaultMessage": "‮Nǝʍ ɐddǝɐʅs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_custom_emoji_request": {
+    "defaultMessage": "‮Ↄnsʇoɯ ǝɯoɾı ɹǝbnǝsʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_error_group": {
+    "defaultMessage": "‮Nǝʍ ɐup ɹǝɔnɹɹıuƃ ǝɹɹoɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_report": {
+    "defaultMessage": "‮Nǝʍ ɹǝdoɹʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_service_closure_due": {
+    "defaultMessage": "‮Ↄʅosıuƃ pɐʇǝ dɐssǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_sign_up": {
+    "defaultMessage": "‮ᴚǝƃısʇɹɐʇıous ɐʍɐıʇıuƃ ɐddɹoʌɐʅ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_webhook_disabled": {
+    "defaultMessage": "‮ᗡısɐqʅǝp ʍǝqɥooʞs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.boost": {
+    "defaultMessage": "‮Ԑoosʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.favourite": {
+    "defaultMessage": "‮Ⅎɐʌonɹıʇǝs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.follow": {
+    "defaultMessage": "‮Nǝʍ ɟoʅʅoʍǝɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.follow_accepted": {
+    "defaultMessage": "‮∀ɔɔǝdʇǝp ɟoʅʅoʍ ɹǝbnǝsʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.follow_request": {
+    "defaultMessage": "‮Ⅎoʅʅoʍ ɹǝbnǝsʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.mention": {
+    "defaultMessage": "‮Wǝuʇıous‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.moderation": {
+    "defaultMessage": "‮Noʇıɔǝs ɟɹoɯ ʇɥǝ ɯopǝɹɐʇoɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.poll_closed": {
+    "defaultMessage": "‮Ǝupǝp doʅʅs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.quote": {
+    "defaultMessage": "‮Ònoʇǝs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.reaction": {
+    "defaultMessage": "‮Ǝɯoɾı ɹǝɐɔʇıous‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.voice": {
+    "defaultMessage": "‮Ʌoıɔǝ ɔɥɐʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.notification.body": {
+    "defaultMessage": "‮⅄on ɥɐʌǝ ɐ uoʇıɟıɔɐʇıou ou {instance} ʇɥɐʇ ʎon ɥɐʌǝ uoʇ ɹǝɐp ʎǝʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.password_changed.body": {
     "defaultMessage": "‮⊥ɥǝ dɐssʍoɹp oɟ ʎonɹ ɐɔɔonuʇ ou {instance} ʍɐs ɔɥɐuƃǝp, ɐup ʎonɹ oʇɥǝɹ sǝssıous ɐup ɐdds ʍǝɹǝ sıƃuǝp onʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -119,8 +207,8 @@
     "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʇɥıs ɐppɹǝss qǝʅouƃs ʇo ʎonɹ ɐɔɔonuʇ ou {instance}.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "mail.reason.moderator_notifications": {
-    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ʎon ɔɥosǝ ʇo ƃǝʇ ɯopǝɹɐʇoɹ uoʇıɟıɔɐʇıous qʎ ǝɯɐıʅ. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ıu ʎonɹ dɹǝɟǝɹǝuɔǝs.‬",
+  "mail.reason.notification": {
+    "defaultMessage": "‮⅄on ƃǝʇ ʇɥıs ǝɯɐıʅ qǝɔɐnsǝ ǝɯɐıʅ ıs ou ɟoɹ “{group}” ıu ʎonɹ uoʇıɟıɔɐʇıou sǝʇʇıuƃs. ⅄on ɔɐu ʇnɹu ıʇ oɟɟ ʇɥǝɹǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.reason.supporter": {

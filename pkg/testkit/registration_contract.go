@@ -685,24 +685,13 @@ func registrationModerators(t *testing.T, e *accountEnv) {
 
 	mailbox := func(userID string, wantOK bool) {
 		t.Helper()
-		box, ok, err := r.ModeratorMailbox(ctx, userID)
+		box, ok, err := r.NotificationMailbox(ctx, userID)
 		if err != nil || ok != wantOK || (ok && (box.Address != "root@example.com" || box.Locale != "en" || box.EmailAddressID == "")) {
-			t.Errorf("ModeratorMailbox(%s) = %+v, %v, %v; want ok %v", userID, box, ok, err, wantOK)
-		}
-	}
-	mailbox(root.User.ID, false) // off for a new user
-	on := true
-	for _, id := range []string{root.User.ID, alice.User.ID} {
-		if _, err := r.UpdatePreferences(ctx, id, appidentity.PreferencesUpdate{EmailModeratorNotifications: &on}); err != nil {
-			t.Fatal(err)
+			t.Errorf("NotificationMailbox(%s) = %+v, %v, %v; want ok %v", userID, box, ok, err, wantOK)
 		}
 	}
 	mailbox(root.User.ID, true)
 	mailbox(alice.User.ID, false) // an unverified address gets no email
-	want[0].EmailModeratorNotifications = true
-	if got := holders(identity.PermManageReports); !reflect.DeepEqual(got, want) {
-		t.Errorf("PermissionHolders after opting in = %+v, want %+v", got, want)
-	}
 
 	if _, err := r.DecideRegistration(ctx, appidentity.DecideInput{UserID: alice.User.ID, Decision: identity.DecisionApproved}); err != nil {
 		t.Fatal(err)

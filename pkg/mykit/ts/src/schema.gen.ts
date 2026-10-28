@@ -552,6 +552,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/preferences/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated user's notification settings
+         * @description Whether the user gets each kind of notification in the app and by email, for the kinds
+         *     the user gets.
+         */
+        get: operations["getNotificationSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the authenticated user's notification settings
+         * @description Changes the cells of `changes` and keeps the others. A 422 problem when a change names a
+         *     row the user does not get or a channel that is fixed; nothing is changed then.
+         */
+        patch: operations["updateNotificationSettings"];
+        trace?: never;
+    };
     "/preferences/supporter_listing": {
         parameters: {
             query?: never;
@@ -10355,8 +10381,8 @@ export interface components {
             closure?: components["schemas"]["InstanceClosure"];
             /**
              * @description Whether the instance sends email (the server setting `mail` is not `none`). Without
-             *     email, the moderator notifications come only in the app, so clients do not offer
-             *     the preference `email_moderator_notifications`.
+             *     email, notifications come only in the app, so clients do not offer the email column of
+             *     the notification settings (`GET /preferences/notifications`).
              */
             sends_email: boolean;
             /**
@@ -11076,6 +11102,20 @@ export interface components {
             /** @description What an `admin_error_group` tells of; omitted for the other types. */
             error_group?: components["schemas"]["NotificationErrorGroup"];
         };
+        /**
+         * @description A row of the notification settings: one or more notification types that the user turns on
+         *     and off together. The ordinary notifications are one row per type (`mention`, `follow`,
+         *     `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
+         *     `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
+         *     `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+         *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+         *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
+         *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+         *     `service_closure`, and `supporter` (the `supporter_*` types).
+         * @enum {string}
+         */
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter";
         /** @description How far the authenticated user has read the notifications. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -11093,6 +11133,66 @@ export interface components {
         /** @description A page of notifications, newest first. */
         NotificationPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["Notification"][];
+        };
+        /** @description One channel of one row of the notification settings. */
+        NotificationSettingCell: {
+            /** @description Whether the user gets the row's notifications through the channel. */
+            enabled: boolean;
+            /**
+             * @description Whether the channel is always on and cannot be changed: clients show it on and
+             *     disabled.
+             */
+            fixed: boolean;
+        };
+        /**
+         * @description One row of the notification settings with its channels. `in_app` creates the notifications:
+         *     turned off, the row's notifications are not created, so neither Web Push nor email delivers
+         *     them, and clients show the row's other channels disabled; the notifications from before stay.
+         *     `email` sends each notification to the primary address once it is confirmed and while emails
+         *     reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
+         *     emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
+         *     the read marker and not dismissed); the moderator notifications are emailed at once. Clients
+         *     offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
+         *     each subscription (`putPushSubscription`).
+         */
+        NotificationSettingRow: {
+            group: components["schemas"]["NotificationGroup"];
+            /**
+             * @description The kind of the row: `ordinary` (what other users did; in the app on and email off by
+             *     default), `moderator` (to the holders of the permission it needs; both on by default),
+             *     or `instance` (the instance's notices to the user; always in the app).
+             * @enum {string}
+             */
+            section: "ordinary" | "moderator" | "instance";
+            /** @description The notification types of the row. */
+            types: components["schemas"]["NotificationType"][];
+            in_app: components["schemas"]["NotificationSettingCell"];
+            email: components["schemas"]["NotificationSettingCell"];
+        };
+        /**
+         * @description The authenticated user's notification settings: the rows the user gets, in the order to
+         *     show them. The moderator rows are only those whose permission the user's roles grant, and
+         *     `supporter` is there only while the supporter program is enabled (`Instance.supporters_enabled`).
+         */
+        NotificationSettings: {
+            rows: components["schemas"]["NotificationSettingRow"][];
+        };
+        /** @description Changes of the authenticated user's notification settings. */
+        NotificationSettingsUpdate: {
+            /**
+             * @description The cells to change; the others keep their values. Each names a row the user gets and a
+             *     channel that is not fixed.
+             */
+            changes: {
+                group: components["schemas"]["NotificationGroup"];
+                /**
+                 * @description The channel to change.
+                 * @enum {string}
+                 */
+                channel: "in_app" | "email";
+                /** @description Whether the user gets the row's notifications through the channel. */
+                enabled: boolean;
+            }[];
         };
         /**
          * @description The kind of a notification. `account` is the account that acted: the follower
@@ -11609,12 +11709,6 @@ export interface components {
             default_post_language: string;
             /** @description Whether clients ask for a description before posting media without one. */
             require_media_description: boolean;
-            /**
-             * @description Whether the moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
-             *     `admin_webhook_disabled`, `admin_custom_emoji_request`) also come by email, to the
-             *     primary address. Off for a new user.
-             */
-            email_moderator_notifications: boolean;
             /**
              * @description Whether emails no longer reach the primary address, read-only; omitted when they do.
              *     After a `hard_bounce`, the user asks for the verification email again to show that the
@@ -12798,8 +12892,6 @@ export interface components {
             default_post_language?: string;
             /** @description Whether clients ask for a description before posting media without one. */
             require_media_description?: boolean;
-            /** @description Whether the moderator notifications also come by email. */
-            email_moderator_notifications?: boolean;
             /** @description Whether the web client inserts new timeline posts without asking. */
             timeline_auto_insert?: boolean;
             /** @description The languages that timelines show, at most 64; empty shows every language. */
@@ -14457,6 +14549,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BadgeChoice"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settings. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description The settings after the change. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
                 };
             };
             default: components["responses"]["Problem"];

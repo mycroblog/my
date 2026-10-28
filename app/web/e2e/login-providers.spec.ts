@@ -207,7 +207,10 @@ test.describe("login providers", () => {
     const form = main.getByRole("region", { name: message("admin.login_providers.new.title"), exact: true });
     await expect(form).toBeVisible();
 
-    await form.getByRole("radio", { name: message("admin.login_providers.kind.discord"), exact: true }).check();
+    await form.getByText(message("admin.login_providers.kind.discord"), { exact: true }).click();
+    await expect(
+      form.getByRole("radio", { name: message("admin.login_providers.kind.discord"), exact: true }),
+    ).toBeChecked();
     await expect(form.getByRole("textbox", { name: message("admin.login_providers.issuer"), exact: true })).toHaveCount(
       0,
     );

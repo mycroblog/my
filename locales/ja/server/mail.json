@@ -119,10 +119,6 @@
     "defaultMessage": "{instance} のアカウントのメールアドレスに送っています。",
     "description": "Sentence of the signature of an email about the security of a user's account: why it comes. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.reason.moderator_notifications": {
-    "defaultMessage": "モデレーターへの通知をメールでも受け取る設定にしているため、このメールを送りました。設定から止められます。",
-    "description": "Why a moderator who chose to get moderator notifications by email gets an email about a new item."
-  },
   "mail.reason.supporter": {
     "defaultMessage": "{instance} のサポーターのプランに加入している、または加入していたため、このメールが届いています。",
     "description": "Sentence of the signature of an email about a user's supporter plan: why it comes. {instance} is the server's display name, or its domain name when it has none."
@@ -282,5 +278,97 @@
   "mail.verify_email.subject": {
     "defaultMessage": "{instance} のメールアドレスの確認",
     "description": "Subject of the email that confirms a new account's email address. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.reason.notification": {
+    "defaultMessage": "通知の設定で「{group}」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。",
+    "description": "Sentence of the signature of a notification email: why it comes. {group} is the name of the kind of notification, as the notification settings name it (such as Mentions)."
+  },
+  "mail.notification.body": {
+    "defaultMessage": "{instance} に、まだ読んでいない通知があります。",
+    "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.action.open_notification": {
+    "defaultMessage": "開く",
+    "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
+  },
+  "mail.group.mention": {
+    "defaultMessage": "メンション",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow": {
+    "defaultMessage": "新しいフォロワー",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_request": {
+    "defaultMessage": "フォローリクエスト",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.follow_accepted": {
+    "defaultMessage": "承認されたフォローリクエスト",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.boost": {
+    "defaultMessage": "ブースト",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.favourite": {
+    "defaultMessage": "お気に入り",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.reaction": {
+    "defaultMessage": "絵文字リアクション",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.quote": {
+    "defaultMessage": "引用",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.poll_closed": {
+    "defaultMessage": "終了した投票",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.account_moved": {
+    "defaultMessage": "フォロー中のアカウントの移転",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.voice": {
+    "defaultMessage": "通話",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_report": {
+    "defaultMessage": "新しい通報",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_sign_up": {
+    "defaultMessage": "承認待ちの登録",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_appeal": {
+    "defaultMessage": "新しい異議申し立て",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_webhook_disabled": {
+    "defaultMessage": "止まった Webhook",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_custom_emoji_request": {
+    "defaultMessage": "カスタム絵文字の申請",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_account_moved": {
+    "defaultMessage": "制限中のアカウントの移転",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_service_closure_due": {
+    "defaultMessage": "閉鎖日の経過",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.admin_error_group": {
+    "defaultMessage": "新しいエラーと再発したエラー",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.moderation": {
+    "defaultMessage": "モデレーターからのお知らせ",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

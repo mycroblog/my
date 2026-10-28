@@ -56,6 +56,18 @@ var sampleClosure = identity.ServiceClosureView{
 // sampleGraceEndsAt is the end of the grace period of the sample failed payment.
 var sampleGraceEndsAt = time.Date(2027, 2, 7, 9, 30, 0, 0, time.UTC)
 
+// sampleNotification is a notification of type t from a remote account to the sample
+// recipient, about one of the recipient's statuses.
+func sampleNotification(t notification.Type) appnotification.NotificationText {
+	return appnotification.NotificationText{
+		NotificationID: "01JSAMPLE0NOTIFICATION00000", Type: t,
+		Source:    appnotification.PushAccount{DisplayName: "Bob", Acct: "bob@remote.example"},
+		Recipient: appnotification.PushAccount{DisplayName: "Alice", Acct: "alice"},
+		StatusID:  "01JSAMPLE0STATUS00000000000", ReportID: "01JSAMPLE0REPORT00000000000", AppealID: "01JSAMPLE0APPEAL00000000000",
+		VoiceRoomID: "01JSAMPLE0VOICEROOM0000000",
+	}
+}
+
 // Sample is what an entry's draft is worded with: the localizer of one locale.
 type Sample struct {
 	L *i18n.Localizer
@@ -126,6 +138,17 @@ func Catalog() []Entry {
 	} {
 		entries = append(entries, Entry{JobType: appnotification.JobModeratorEmail, Variant: string(t), Draft: func(s Sample) (kernel.MailDraft, bool) {
 			return appnotification.ModeratorEmailDraft(s.L, sampleName, sampleTo, t, sampleWebOrigin, sampleUnsubscribeURL)
+		}})
+	}
+	// The email of an ordinary notification or a moderation notice that stayed unread: one per
+	// type whose group is emailed after the delay.
+	for _, t := range notification.Types {
+		if g, ok := notification.GroupOf(t); !ok || !g.DelayedEmail() {
+			continue
+		}
+		entries = append(entries, Entry{JobType: appnotification.JobNotificationEmail, Variant: string(t), Draft: func(s Sample) (kernel.MailDraft, bool) {
+			p := appnotification.DescribeNotification(s.L, sampleNotification(t), sampleName)
+			return appnotification.NotificationEmailDraft(s.L, sampleName, sampleTo, p, sampleWebOrigin, sampleUnsubscribeURL)
 		}})
 	}
 	for _, m := range []struct {

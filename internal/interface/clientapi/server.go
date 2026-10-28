@@ -103,6 +103,9 @@ type Options struct {
 	Graph Graph
 	// Notifications runs the use cases of the viewer's notifications.
 	Notifications Notifications
+	// NotificationPreferences reads and changes the viewer's notification settings; nil answers
+	// their operations 404.
+	NotificationPreferences NotificationPreferences
 	// Push runs the Web Push subscription use cases and gives Instance.push_server_key; nil
 	// sends no Web Push.
 	Push WebPush

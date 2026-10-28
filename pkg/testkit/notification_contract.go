@@ -50,8 +50,10 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // it; leaving out notifications about deleted statuses; listing with a type filter and keyset paging; the read marker,
 // unread count, and dismissals; and the moderator notifications of the first open report of an
 // account, of a pending registration, and of an appeal, to the holders of the permission they
-// need, emailed by a job to those who want that, and left out once the permission is gone; and the
-// decision on an appeal to the account that appealed.
+// need, emailed by a job to those who get them by email, and left out once the permission is
+// gone; the decision on an appeal to the account that appealed; the notification settings, their
+// defaults and fixed rows, and the types turned off in the app, which create nothing; and the
+// emails of the notifications that stay unread.
 func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 	t.Helper()
 	cases := []struct {
@@ -78,6 +80,8 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"NotifiesTheServiceClosure", notificationServiceClosure},
 		{"NotifiesVoiceRooms", notificationVoiceRooms},
 		{"NotifiesErrorGroups", notificationErrorGroups},
+		{"AppliesNotificationSettings", notificationSettings},
+		{"EmailsUnreadNotifications", notificationEmails},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newNotificationEnv(t, newHarness)) })
@@ -94,8 +98,8 @@ type notificationEnv struct {
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
-	// staff stands in for the roles and preferences of the moderators; outbox keeps the jobs
-	// that the moderator projectors enqueue.
+	// staff stands in for the roles and addresses of the moderators and users; outbox keeps the
+	// email jobs that the projectors enqueue.
 	staff  *stubStaff
 	outbox *recordingOutbox
 }
@@ -122,6 +126,7 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	appcontent.RegisterInteractionProjectors(captured.Projectors, nh.Interactions)
 	deps := appnotification.ProjectorDeps{
 		Repository: nh.Notifications, Accounts: ae.accounts, Relationships: e.graph, Reach: e.reach, IDs: ae.ids,
+		Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.clock},
 	}
 	appnotification.RegisterProjectors(captured.Projectors, deps)
 	appnotification.RegisterProjectors(e.only, deps)

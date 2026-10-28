@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+description: Changes of the authenticated user's notification settings.
+type: object
+required: [changes]
+properties:
+  changes:
+    description: |
+      The cells to change; the others keep their values. Each names a row the user gets and a
+      channel that is not fixed.
+    type: array
+    maxItems: 64
+    items:
+      type: object
+      required: [group, channel, enabled]
+      properties:
+        group:
+          $ref: ./NotificationGroup.yaml
+        channel:
+          description: The channel to change.
+          type: string
+          enum: [in_app, email]
+        enabled:
+          description: Whether the user gets the row's notifications through the channel.
+          type: boolean

@@ -8,7 +8,9 @@ import (
 	"net/http"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -36,15 +38,11 @@ type unsubscribeView struct {
 	Done   string
 }
 
-// unsubscribePrompt and unsubscribeDone word the page of each category.
-var (
-	unsubscribePrompt = map[identity.UnsubscribeCategory]func(*i18n.Localizer) string{
-		identity.UnsubscribeModeratorNotifications: (*i18n.Localizer).ServerAuthMailUnsubscribePromptModeratorNotifications,
-	}
-	unsubscribeDone = map[identity.UnsubscribeCategory]func(*i18n.Localizer) string{
-		identity.UnsubscribeModeratorNotifications: (*i18n.Localizer).ServerAuthMailUnsubscribeDoneModeratorNotifications,
-	}
-)
+// unsubscribeGroup names the category of an unsubscribe link: the row of the notification
+// settings whose email it turns off; "" for a category that no email carries.
+func unsubscribeGroup(l *i18n.Localizer, category identity.UnsubscribeCategory) string {
+	return appnotification.GroupLabel(l, notification.Group(category))
+}
 
 // mailUnsubscribePage asks to stop the emails of an unsubscribe link, without changing anything.
 func (h *Handler) mailUnsubscribePage(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +52,8 @@ func (h *Handler) mailUnsubscribePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	category, err := h.o.MailUnsubscribe.CheckUnsubscribeToken(r.Context(), token)
-	prompt, ok := unsubscribePrompt[category]
 	switch {
-	case errors.Is(err, appidentity.ErrInvalidToken) || err == nil && !ok:
+	case errors.Is(err, appidentity.ErrInvalidToken) || err == nil && !appnotification.Unsubscribable(notification.Group(category)):
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerAuthMailUnsubscribeInvalid)
 		return
 	case err != nil:
@@ -65,7 +62,7 @@ func (h *Handler) mailUnsubscribePage(w http.ResponseWriter, r *http.Request) {
 	}
 	p := h.newPage(r, (*i18n.Localizer).ServerAuthMailUnsubscribeTitle)
 	p.Token = token
-	p.Unsubscribe = &unsubscribeView{Prompt: prompt(p.L)}
+	p.Unsubscribe = &unsubscribeView{Prompt: p.L.ServerAuthMailUnsubscribePrompt(unsubscribeGroup(p.L, category))}
 	h.render(w, r, http.StatusOK, pageMailUnsubscribe, p)
 }
 
@@ -83,9 +80,8 @@ func (h *Handler) mailUnsubscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	category, err := h.o.MailUnsubscribe.Unsubscribe(r.Context(), token)
-	done, ok := unsubscribeDone[category]
 	switch {
-	case errors.Is(err, appidentity.ErrInvalidToken) || err == nil && !ok:
+	case errors.Is(err, appidentity.ErrInvalidToken) || err == nil && !appnotification.Unsubscribable(notification.Group(category)):
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerAuthMailUnsubscribeInvalid)
 		return
 	case err != nil:
@@ -93,6 +89,6 @@ func (h *Handler) mailUnsubscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := h.newPage(r, (*i18n.Localizer).ServerAuthMailUnsubscribeDoneTitle)
-	p.Unsubscribe = &unsubscribeView{Done: done(p.L)}
+	p.Unsubscribe = &unsubscribeView{Done: p.L.ServerAuthMailUnsubscribeDone(unsubscribeGroup(p.L, category))}
 	h.render(w, r, http.StatusOK, pageMailUnsubscribed, p)
 }

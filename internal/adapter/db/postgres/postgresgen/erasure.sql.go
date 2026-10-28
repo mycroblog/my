@@ -799,6 +799,15 @@ func (q *Queries) EraseNotificationReadMarker(ctx context.Context, accountID str
 	return err
 }
 
+const eraseNotificationSettingsOf = `-- name: EraseNotificationSettingsOf :exec
+DELETE FROM notification_settings WHERE account_id = $1
+`
+
+func (q *Queries) EraseNotificationSettingsOf(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, eraseNotificationSettingsOf, accountID)
+	return err
+}
+
 const eraseNotifications = `-- name: EraseNotifications :exec
 DELETE FROM notifications WHERE id = ANY($1::uuid[])
 `
