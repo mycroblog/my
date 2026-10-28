@@ -1,6 +1,6 @@
 # ADR-0114: L4 の課題テストを nightly で回す
 
-- Status: Accepted
+- Status: Accepted（API キーを environment に置くことを ADR-0115（CI から Claude API への認証に Workload Identity Federation を使う） が置き換える）
 - Date: 2026-10-28
 - Deciders: @rosylilly
 - Issue: #1674
