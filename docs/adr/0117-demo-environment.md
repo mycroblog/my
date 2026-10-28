@@ -1,6 +1,6 @@
 # ADR-0117: デモ環境: 筋書きのシードと、試験用のビルドだけに入る fake の決済
 
-- Status: Accepted
+- Status: Accepted（§3 の表の Web Push の行を ADR-0118（デモ環境の Web Push: 自前の fake のプッシュサービスと CDP での配達）が置き換える）
 - Date: 2026-10-28
 - Deciders: @rosylilly
 - Issue: #1712
