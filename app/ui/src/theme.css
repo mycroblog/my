@@ -313,11 +313,27 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-enter: cubic-bezier(0, 0, 0, 1);
   --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  /* The only easing that overshoots: the little bounce of a celebrated moment (web-client/21-experience-principles.md
+     §21.5), never a quiet reaction. */
+  --ease-celebrate: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-duration-fast: 100ms;
   --transition-duration-normal: 200ms;
   --transition-duration-slow: 300ms;
   --default-transition-duration: 200ms;
   --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  /* The bounce of a celebrated moment (src/celebration.ts): a fixed shorthand of the keyframes below; a theme changes
+     it through --ease-celebrate. */
+  --animate-celebrate: celebrate var(--transition-duration-slow) var(--ease-celebrate);
+}
+
+/* Outside @theme: scripts/theme-source.ts reads @theme blocks without nested braces. */
+@keyframes celebrate {
+  from {
+    scale: 0.6;
+  }
+  to {
+    scale: 1;
+  }
 }
 
 /* `dark:` follows the same rule as the color tokens: data-theme wins, otherwise the OS setting. */
@@ -339,6 +355,24 @@
 /* While the page floats the new-post button (data-compose-fab on main, AppShell's floatingVisible), for
    the other elements fixed to the bottom edge that must stand clear of it (web-client/16-look-states-and-wording.md G4). */
 @custom-variant with-compose-fab (:root:has([data-compose-fab]) &);
+
+/* The screen under the offline bar, for the shell (AppShell, AppNavigation, AdminShell): the bar sticks to the top edge
+   before the shell and writes its height to --offline-bar-block-size (0 while online, unset where there is no bar),
+   so the shell's heights that are the screen's take it off, and what sticks to the top starts under it; the bar and
+   the shell share the screen instead of adding up to more than it. On a short screen the bar does not stick but
+   scrolls away (OfflineBanner), so what sticks there sticks to the top edge itself. */
+@utility min-h-svh-under-bar {
+  min-block-size: calc(100svh - var(--offline-bar-block-size, 0px));
+}
+@utility h-svh-under-bar {
+  block-size: calc(100svh - var(--offline-bar-block-size, 0px));
+}
+@utility top-under-bar {
+  inset-block-start: var(--offline-bar-block-size, 0px);
+  @media (width < 48rem) and (height <= 32rem) {
+    inset-block-start: 0;
+  }
+}
 
 /* A visible focus indicator. Use it as `focus-visible:focus-ring` (or `data-focus-visible:focus-ring`
    on React Aria Components); an outline survives forced-colors mode, unlike a box-shadow. */

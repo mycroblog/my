@@ -104,7 +104,7 @@ func (h *Handler) restrictionActions(ctx context.Context, l *i18n.Localizer, acc
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now()
+	now := h.o.Clock.Now()
 	out := make([]statusAction, 0, len(vs))
 	for _, v := range vs {
 		if !slices.Contains(v.Kind.Restrictions(), moderation.RestrictLogin) {
@@ -149,6 +149,11 @@ func describeAppeal(a *statusAction, l *i18n.Localizer, v appmoderation.TargetAc
 		a.NoAppeal = l.ServerErrorsAppealNotAppealable()
 	}
 }
+
+// systemClock is the clock of Options without one.
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now() }
 
 // daysUntil returns the days from now to t, rounded up and at least 1.
 func daysUntil(now, t time.Time) int {
