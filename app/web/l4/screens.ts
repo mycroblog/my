@@ -41,6 +41,13 @@ export type ScreenSetup = {
 const noFile = "the agent has no file to choose: the browser tools give it none";
 
 /**
+ * Why the first run is not measured: the demo server takes sign-ups for a moderator's approval, and every person of the
+ * scenario has followed and posted already, so no one sees the first steps of a new user.
+ */
+const firstRunUnavailable =
+  "the demo server takes sign-ups for approval and every person of the scenario has followed and posted already";
+
+/**
  * yuki holds the supporter role, shows its badge, and is on the list of supporters (demo/scenario.ts). The badge
  * tasks need a badge she holds but does not show: the role `translator`, granted without showing it; the task of
  * being listed needs her off the list.
@@ -88,6 +95,26 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
     unavailable: { "アイコンの画像を選び直して保存する（ファイルの選択は 1 つと数える）": noFile },
   },
   "settings-auto-delete": { start: "/settings", persona: "yuki" },
+  welcome: {
+    start: "/welcome",
+    persona: "yuki",
+    unavailable: {
+      "アイコンの画像を選び、ホームへ進む（ファイルの選択は 1 つと数える）": noFile,
+      "ランディングページからアカウントを作り、1 人をフォローする（最初の実行の全体、L4）": firstRunUnavailable,
+    },
+  },
+  "home-first-run": {
+    start: "/home",
+    persona: "yuki",
+    unavailable: {
+      "おすすめのアカウントを 1 人フォローする": firstRunUnavailable,
+      おすすめのアカウントのプロフィールを開く: firstRunUnavailable,
+      "チェックリストから、プロフィールの設定を開く": firstRunUnavailable,
+      "チェックリストから、最初の投稿を書き始める": firstRunUnavailable,
+      "もっと多くの人を探す（アカウントの検索を開く）": firstRunUnavailable,
+      チェックリストを閉じる: firstRunUnavailable,
+    },
+  },
 };
 
 /** The setup of `screen`: its entry, or a start at `/home` as yuki. */
