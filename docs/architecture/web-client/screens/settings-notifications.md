@@ -1,3 +1,10 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+unavailable: {"この端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "the demo server has no Web Push: it sets no VAPID keys and reaches no push service"}
+---
+
 ## 通知（`/settings/notifications`）
 
 通知の種類ごとに、届く経路（アプリ内・プッシュ・メール・音）を選ぶ設定の画面（FR-210、ADR-0109）。どの操作も、変えるとすぐ保存する。

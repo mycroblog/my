@@ -67,10 +67,10 @@ describe("the navigation's staff entries", () => {
     const rail = await within(navigation()).findByRole("link", { name: "Moderation, 3 pending" });
     expect(rail).toHaveAttribute("href", "/moderation");
     expect(within(navigation()).queryByRole("link", { name: /^Administration/ })).not.toBeInTheDocument();
-    // The digits are drawn (not color alone) and hidden from the tree, which reads the link's name instead.
-    expect(within(rail).getByText("3")).toHaveAttribute("aria-hidden", "true");
+    // The digits are drawn as generated content (not color alone), so they are neither the link's text nor read.
+    expect(rail).not.toHaveTextContent("3");
     const menu = within(navigation()).getByRole("button", { name: "Menu, 3 pending in moderation" });
-    expect(within(menu).getByText("3")).toHaveAttribute("aria-hidden", "true");
+    expect(menu).not.toHaveTextContent("3");
 
     await user.click(menu);
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
@@ -94,14 +94,11 @@ describe("the navigation's staff entries", () => {
       "href",
       "/moderation/registrations",
     );
-    // The page links to the screens of the viewer's roles, each with its own count in its name.
-    const main = within(screen.getByRole("main"));
-    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAttribute(
+    // The overview has a tile for each queue of the viewer's roles, a link to it, with what waits there.
+    const waiting = within(screen.getByRole("region", { name: "Waiting for you" }));
+    expect(await waiting.findByRole("link", { name: "Registrations awaiting approval" })).toHaveAttribute(
       "href",
       "/moderation/registrations",
-    );
-    expect(main.getByRole("link", { name: "Registrations 1 awaits approval" })).toHaveAccessibleDescription(
-      "Sign-ups that await approval, and approving or rejecting them.",
     );
   });
 
@@ -203,12 +200,10 @@ describe("the navigation's Administration", () => {
     expect(
       within(groups.getByRole("group", { name: "Moderation" })).getByRole("link", { name: "Reports 2 open reports" }),
     ).not.toHaveAttribute("aria-current");
-    const main = within(screen.getByRole("main"));
-    expect(main.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-      "/admin/settings",
-      "/admin/theme",
-      "/admin/documents",
-      "/admin/relays",
+    // The overview says how the server runs, not a copy of the menu: with manage_jobs, the queue's tiles.
+    const health = within(await screen.findByRole("region", { name: "Server health" }));
+    expect(health.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/admin/jobs?state=dead",
       "/admin/jobs",
     ]);
   });

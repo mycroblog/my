@@ -68,6 +68,24 @@ func (e AccountMoveOutcome) Valid() bool {
 	}
 }
 
+// Defines values for AccountSuggestionSource.
+const (
+	AccountSuggestionSourceFeatured       AccountSuggestionSource = "featured"
+	AccountSuggestionSourceRecentlyActive AccountSuggestionSource = "recently_active"
+)
+
+// Valid indicates whether the value is a known member of the AccountSuggestionSource enum.
+func (e AccountSuggestionSource) Valid() bool {
+	switch e {
+	case AccountSuggestionSourceFeatured:
+		return true
+	case AccountSuggestionSourceRecentlyActive:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
@@ -2224,6 +2242,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
@@ -2282,6 +2301,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyFeaturedAccounts:
 		return true
 	case InstanceSettingKeyFederatedTimelineAccess:
 		return true
@@ -2362,20 +2383,23 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount InstanceSettingKind = "account"
-	InstanceSettingKindBool    InstanceSettingKind = "bool"
-	InstanceSettingKindEmail   InstanceSettingKind = "email"
-	InstanceSettingKindEnum    InstanceSettingKind = "enum"
-	InstanceSettingKindInt     InstanceSettingKind = "int"
-	InstanceSettingKindLocale  InstanceSettingKind = "locale"
-	InstanceSettingKindMedia   InstanceSettingKind = "media"
-	InstanceSettingKindUri     InstanceSettingKind = "uri"
+	InstanceSettingKindAccount  InstanceSettingKind = "account"
+	InstanceSettingKindAccounts InstanceSettingKind = "accounts"
+	InstanceSettingKindBool     InstanceSettingKind = "bool"
+	InstanceSettingKindEmail    InstanceSettingKind = "email"
+	InstanceSettingKindEnum     InstanceSettingKind = "enum"
+	InstanceSettingKindInt      InstanceSettingKind = "int"
+	InstanceSettingKindLocale   InstanceSettingKind = "locale"
+	InstanceSettingKindMedia    InstanceSettingKind = "media"
+	InstanceSettingKindUri      InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
 func (e InstanceSettingKind) Valid() bool {
 	switch e {
 	case InstanceSettingKindAccount:
+		return true
+	case InstanceSettingKindAccounts:
 		return true
 	case InstanceSettingKindBool:
 		return true
@@ -4067,6 +4091,24 @@ func (e ListAdminAccountsParamsOrigin) Valid() bool {
 	}
 }
 
+// Defines values for ListReportsParamsOrder.
+const (
+	ListReportsParamsOrderNewest ListReportsParamsOrder = "newest"
+	ListReportsParamsOrderOldest ListReportsParamsOrder = "oldest"
+)
+
+// Valid indicates whether the value is a known member of the ListReportsParamsOrder enum.
+func (e ListReportsParamsOrder) Valid() bool {
+	switch e {
+	case ListReportsParamsOrderNewest:
+		return true
+	case ListReportsParamsOrderOldest:
+		return true
+	default:
+		return false
+	}
+}
+
 // AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
@@ -4260,6 +4302,20 @@ type AccountStatusPage struct {
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
 }
+
+// AccountSuggestion An account suggested to follow, with why it is suggested.
+type AccountSuggestion struct {
+	// Account An account, as clients show it (FR-006).
+	Account Account `json:"account"`
+
+	// Source Why the account is suggested: `featured` when the administrators feature it,
+	// `recently_active` when it posted recently.
+	Source AccountSuggestionSource `json:"source"`
+}
+
+// AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
+// `recently_active` when it posted recently.
+type AccountSuggestionSource string
 
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
@@ -4904,6 +4960,10 @@ type AdminBrands struct {
 
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
+	// OldestOpenReportFiledAt When the open report that has waited longest was filed; omitted when no report is open.
+	// Needs `manage_reports`.
+	OldestOpenReportFiledAt *time.Time `json:"oldest_open_report_filed_at,omitempty"`
+
 	// OpenReports The reports that are open. Needs `manage_reports`.
 	OpenReports *int64 `json:"open_reports,omitempty"`
 
@@ -6007,7 +6067,8 @@ type AdminSetting struct {
 	// `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 	// the username of a local account, or empty for none. `email`: an email address such as
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-	// none.
+	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+	// a leading `@` are accepted), in order, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -7549,7 +7610,9 @@ type CredentialAccount struct {
 	// CreatedAt When the account was created.
 	CreatedAt time.Time `json:"created_at"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in
+	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
 	// DisplayName The display name; empty when the account has none.
@@ -9033,7 +9096,8 @@ type InstanceSettingKey string
 // `media`: the ID of an image uploaded with `POST /media`, or empty for none. `account`:
 // the username of a local account, or empty for none. `email`: an email address such as
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
-// none.
+// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
+// a leading `@` are accepted), in order, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -11358,6 +11422,11 @@ type Status struct {
 	// Mentions The accounts the text mentions.
 	Mentions []StatusMention `json:"mentions"`
 
+	// OmittedMediaCount The number of media attachments of a remote status that the server left out: it keeps
+	// the first four attachments of a remote post. Clients show that there are more and link
+	// to `url` (or `uri`). Omitted when none were left out.
+	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
+
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
@@ -11975,7 +12044,9 @@ type UpdateCredentialsRequest struct {
 	// Bot Whether the account is automated.
 	Bot *bool `json:"bot,omitempty"`
 
-	// Discoverable Whether the account may be suggested to others and listed in directories.
+	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
+	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
 	// DisplayName The display name, at most 30 characters; empty removes it.
@@ -12942,6 +13013,12 @@ type SearchAccountsParams struct {
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAccountSuggestionsParams defines parameters for ListAccountSuggestions.
+type ListAccountSuggestionsParams struct {
+	// Limit The maximum number of suggestions.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListAccountFollowersParams defines parameters for ListAccountFollowers.
 type ListAccountFollowersParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -13264,12 +13341,27 @@ type ListReportsParams struct {
 	// State Keep only the reports in this state; omitted keeps both.
 	State *AdminReportState `form:"state,omitempty" json:"state,omitempty"`
 
+	// Category Keep only the reports of this category; omitted keeps every category.
+	Category *ReportCategory `form:"category,omitempty" json:"category,omitempty"`
+
+	// Assignee Keep only the reports assigned to someone: `me` for the viewer, `none` for the reports
+	// that nobody handles, or the ID of a local account. Omitted keeps every report; any
+	// other value is a `400`.
+	Assignee *string `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Order `newest` (the default) lists the most recently filed report first; `oldest` lists the
+	// report that has waited longest first. The cursor continues the page in the same order.
+	Order *ListReportsParamsOrder `form:"order,omitempty" json:"order,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListReportsParamsOrder defines parameters for ListReports.
+type ListReportsParamsOrder string
 
 // ListInstanceRulesParams defines parameters for ListInstanceRules.
 type ListInstanceRulesParams struct {
@@ -15702,10 +15794,11 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/relationships (the `GetRelationships` operationId).
 	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SearchAccounts Search accounts by prefix
+	// SearchAccounts Search accounts by name
 	//
 	// The accounts whose username, `username@domain`, or a word of the display name starts
-	// with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+	// with `q`, and the accounts of this server whose username or display name contains `q`,
+	// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
 	// ADR-0092). The search covers the local accounts and the remote accounts that the
 	// instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 	// (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -15715,14 +15808,31 @@ type ClientInterface interface {
 	// word, split at white space and without its `:shortcode:`s, so a display name in a script
 	// without spaces (Chinese, Japanese) matches from its start.
 	//
+	// An account of this server that is not `discoverable` is found only by its whole username,
+	// unless the viewer follows it; a remote account's `discoverable` does not matter.
 	// Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
 	// deleted, or suspended, and accounts of a suspended domain are left out. An account's
 	// `indexable` does not matter. The results come in this order: an exact match of the
-	// username or `username@domain`, then the accounts that the viewer follows, then the local
-	// accounts, then those with more followers. There is no paging.
+	// username or `username@domain`, then the matches from the start of a name, then the
+	// accounts that the viewer follows, then the local accounts, then those with more
+	// followers. There is no paging.
 	//
 	// Corresponds with GET /accounts/search (the `SearchAccounts` operationId).
 	SearchAccounts(ctx context.Context, params *SearchAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAccountSuggestions Suggest accounts to follow
+	//
+	// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+	// administrators feature (the instance setting `featured_accounts`), in the order they gave,
+	// then the accounts that published a public or local post in the last 30 days, the one that
+	// posted last first. Each account comes once.
+	//
+	// Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+	// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+	// deactivated, deleted, or suspended are left out. There is no paging.
+	//
+	// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
+	ListAccountSuggestions(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateAccountCredentialsWithBody Change the authenticated user's profile
 	//
@@ -17559,8 +17669,8 @@ type ClientInterface interface {
 
 	// ListReports List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-	// permission.
+	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// Needs the `manage_reports` permission.
 	//
 	// Corresponds with GET /admin/reports (the `ListReports` operationId).
 	ListReports(ctx context.Context, params *ListReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21053,10 +21163,11 @@ func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsP
 	return c.Client.Do(req)
 }
 
-// SearchAccounts Search accounts by prefix
+// SearchAccounts Search accounts by name
 //
 // The accounts whose username, `username@domain`, or a word of the display name starts
-// with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+// with `q`, and the accounts of this server whose username or display name contains `q`,
+// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
 // ADR-0092). The search covers the local accounts and the remote accounts that the
 // instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 // (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -21066,15 +21177,42 @@ func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsP
 // word, split at white space and without its `:shortcode:`s, so a display name in a script
 // without spaces (Chinese, Japanese) matches from its start.
 //
+// An account of this server that is not `discoverable` is found only by its whole username,
+// unless the viewer follows it; a remote account's `discoverable` does not matter.
 // Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
 // deleted, or suspended, and accounts of a suspended domain are left out. An account's
 // `indexable` does not matter. The results come in this order: an exact match of the
-// username or `username@domain`, then the accounts that the viewer follows, then the local
-// accounts, then those with more followers. There is no paging.
+// username or `username@domain`, then the matches from the start of a name, then the
+// accounts that the viewer follows, then the local accounts, then those with more
+// followers. There is no paging.
 //
 // Corresponds with GET /accounts/search (the `SearchAccounts` operationId).
 func (c *Client) SearchAccounts(ctx context.Context, params *SearchAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchAccountsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAccountSuggestions Suggest accounts to follow
+//
+// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+// administrators feature (the instance setting `featured_accounts`), in the order they gave,
+// then the accounts that published a public or local post in the last 30 days, the one that
+// posted last first. Each account comes once.
+//
+// Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+// deactivated, deleted, or suspended are left out. There is no paging.
+//
+// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
+func (c *Client) ListAccountSuggestions(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAccountSuggestionsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -24440,8 +24578,8 @@ func (c *Client) UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...Re
 
 // ListReports List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-// permission.
+// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// Needs the `manage_reports` permission.
 //
 // Corresponds with GET /admin/reports (the `ListReports` operationId).
 func (c *Client) ListReports(ctx context.Context, params *ListReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30486,6 +30624,60 @@ func NewSearchAccountsRequest(server string, params *SearchAccountsParams) (*htt
 	return req, nil
 }
 
+// NewListAccountSuggestionsRequest constructs an http.Request for the ListAccountSuggestions method
+func NewListAccountSuggestionsRequest(server string, params *ListAccountSuggestionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/suggestions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdateAccountCredentialsRequest calls the generic UpdateAccountCredentials builder with application/json body
 func NewUpdateAccountCredentialsRequest(server string, body UpdateAccountCredentialsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -36002,6 +36194,42 @@ func NewListReportsRequest(server string, params *ListReportsParams) (*http.Requ
 		if params.State != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Category != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "category", *params.Category, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Assignee != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "assignee", *params.Assignee, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Order != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order", *params.Order, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -44625,10 +44853,11 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/relationships (the `GetRelationships` operationId).
 	GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
 
-	// SearchAccountsWithResponse Search accounts by prefix
+	// SearchAccountsWithResponse Search accounts by name
 	//
 	// The accounts whose username, `username@domain`, or a word of the display name starts
-	// with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+	// with `q`, and the accounts of this server whose username or display name contains `q`,
+	// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
 	// ADR-0092). The search covers the local accounts and the remote accounts that the
 	// instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 	// (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -44638,16 +44867,35 @@ type ClientWithResponsesInterface interface {
 	// word, split at white space and without its `:shortcode:`s, so a display name in a script
 	// without spaces (Chinese, Japanese) matches from its start.
 	//
+	// An account of this server that is not `discoverable` is found only by its whole username,
+	// unless the viewer follows it; a remote account's `discoverable` does not matter.
 	// Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
 	// deleted, or suspended, and accounts of a suspended domain are left out. An account's
 	// `indexable` does not matter. The results come in this order: an exact match of the
-	// username or `username@domain`, then the accounts that the viewer follows, then the local
-	// accounts, then those with more followers. There is no paging.
+	// username or `username@domain`, then the matches from the start of a name, then the
+	// accounts that the viewer follows, then the local accounts, then those with more
+	// followers. There is no paging.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/search (the `SearchAccounts` operationId).
 	SearchAccountsWithResponse(ctx context.Context, params *SearchAccountsParams, reqEditors ...RequestEditorFn) (*SearchAccountsResponse, error)
+
+	// ListAccountSuggestionsWithResponse Suggest accounts to follow
+	//
+	// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+	// administrators feature (the instance setting `featured_accounts`), in the order they gave,
+	// then the accounts that published a public or local post in the last 30 days, the one that
+	// posted last first. Each account comes once.
+	//
+	// Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+	// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+	// deactivated, deleted, or suspended are left out. There is no paging.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
+	ListAccountSuggestionsWithResponse(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*ListAccountSuggestionsResponse, error)
 
 	// UpdateAccountCredentialsWithBodyWithResponse Change the authenticated user's profile
 	//
@@ -46656,8 +46904,8 @@ type ClientWithResponsesInterface interface {
 
 	// ListReportsWithResponse List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-	// permission.
+	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// Needs the `manage_reports` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50666,6 +50914,71 @@ func (r SearchAccountsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SearchAccountsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAccountSuggestionsResponse200Headers the declared response headers of an HTTP 200 response for ListAccountSuggestions
+type ListAccountSuggestionsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAccountSuggestionsResponseDefaultHeaders the declared response headers of an HTTP default response for ListAccountSuggestions
+type ListAccountSuggestionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAccountSuggestionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]AccountSuggestion
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAccountSuggestionsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAccountSuggestionsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAccountSuggestionsResponse) GetJSON200() *[]AccountSuggestion {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAccountSuggestionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAccountSuggestionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAccountSuggestionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAccountSuggestionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAccountSuggestionsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -71559,10 +71872,11 @@ func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, 
 	return ParseGetRelationshipsResponse(rsp)
 }
 
-// SearchAccountsWithResponse Search accounts by prefix
+// SearchAccountsWithResponse Search accounts by name
 //
 // The accounts whose username, `username@domain`, or a word of the display name starts
-// with `q`, for the autocomplete of mentions and the account search (FR-119, FR-306,
+// with `q`, and the accounts of this server whose username or display name contains `q`,
+// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
 // ADR-0092). The search covers the local accounts and the remote accounts that the
 // instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 // (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
@@ -71572,11 +71886,14 @@ func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, 
 // word, split at white space and without its `:shortcode:`s, so a display name in a script
 // without spaces (Chinese, Japanese) matches from its start.
 //
+// An account of this server that is not `discoverable` is found only by its whole username,
+// unless the viewer follows it; a remote account's `discoverable` does not matter.
 // Accounts that the viewer blocks, mutes, or is blocked by, accounts that are deactivated,
 // deleted, or suspended, and accounts of a suspended domain are left out. An account's
 // `indexable` does not matter. The results come in this order: an exact match of the
-// username or `username@domain`, then the accounts that the viewer follows, then the local
-// accounts, then those with more followers. There is no paging.
+// username or `username@domain`, then the matches from the start of a name, then the
+// accounts that the viewer follows, then the local accounts, then those with more
+// followers. There is no paging.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -71587,6 +71904,28 @@ func (c *ClientWithResponses) SearchAccountsWithResponse(ctx context.Context, pa
 		return nil, err
 	}
 	return ParseSearchAccountsResponse(rsp)
+}
+
+// ListAccountSuggestionsWithResponse Suggest accounts to follow
+//
+// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+// administrators feature (the instance setting `featured_accounts`), in the order they gave,
+// then the accounts that published a public or local post in the last 30 days, the one that
+// posted last first. Each account comes once.
+//
+// Only accounts that are `discoverable` are suggested. The viewer itself, the accounts that
+// it follows, the accounts that it blocks, mutes, or is blocked by, and accounts that are
+// deactivated, deleted, or suspended are left out. There is no paging.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/suggestions (the `ListAccountSuggestions` operationId).
+func (c *ClientWithResponses) ListAccountSuggestionsWithResponse(ctx context.Context, params *ListAccountSuggestionsParams, reqEditors ...RequestEditorFn) (*ListAccountSuggestionsResponse, error) {
+	rsp, err := c.ListAccountSuggestions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAccountSuggestionsResponse(rsp)
 }
 
 // UpdateAccountCredentialsWithBodyWithResponse Change the authenticated user's profile
@@ -74508,8 +74847,8 @@ func (c *ClientWithResponses) UnfollowRelayWithResponse(ctx context.Context, id 
 
 // ListReportsWithResponse List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first. Needs the `manage_reports`
-// permission.
+// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// Needs the `manage_reports` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -80169,6 +80508,83 @@ func ParseSearchAccountsResponse(rsp *http.Response) (*SearchAccountsResponse, e
 		response.Headers200 = &headers
 	case true:
 		var headers SearchAccountsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAccountSuggestionsResponse parses an HTTP response from a ListAccountSuggestionsWithResponse call
+func ParseListAccountSuggestionsResponse(rsp *http.Response) (*ListAccountSuggestionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAccountSuggestionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []AccountSuggestion
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAccountSuggestionsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAccountSuggestionsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

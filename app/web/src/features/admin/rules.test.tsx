@@ -201,7 +201,11 @@ describe("the rules", () => {
   test("is in the administration menu", async () => {
     rulesServer([]);
     const { user } = await renderApp({ path: "/admin" });
-    await user.click(await within(await screen.findByRole("main")).findByRole("link", { name: "Rules" }));
+    await user.click(
+      await within(await screen.findByRole("navigation", { name: "Admin and moderation" })).findByRole("link", {
+        name: "Rules",
+      }),
+    );
 
     expect(await screen.findByRole("heading", { level: 1, name: "Rules" })).toBeInTheDocument();
   });

@@ -91,3 +91,18 @@ func (r *InteractionRepository) ListLocalStatusBoosters(ctx context.Context, tx 
 	ids, err := q.ListLocalStatusBoosters(ctx, statusID)
 	return ids, wrap(err, "list local boosters of "+statusID)
 }
+
+// ListRecentLocalPosters implements content.Repository.
+func (r *StatusRepository) ListRecentLocalPosters(ctx context.Context, since time.Time, limit int) ([]string, error) {
+	rows, err := r.db.reader().ListRecentLocalPosters(ctx, sqlitegen.ListRecentLocalPostersParams{
+		FromID: kernel.UUIDv7Floor(since), SinceMs: toMillis(since), Lim: int64(limit),
+	})
+	if err != nil {
+		return nil, wrap(err, "list recent local posters")
+	}
+	out := make([]string, len(rows))
+	for i, row := range rows {
+		out[i] = row.AccountID
+	}
+	return out, nil
+}

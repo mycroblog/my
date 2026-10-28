@@ -4,6 +4,7 @@ package instance_test
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -408,6 +409,16 @@ func TestParseContact(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	featured, err := instance.Lookup(instance.SettingFeaturedAccounts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	many := strings.Repeat("a ", instance.MaxSettingAccounts)
+	var names []string
+	for i := range instance.MaxSettingAccounts + 1 {
+		names = append(names, fmt.Sprintf("u%d", i))
+	}
+	tooMany := strings.Join(names, " ")
 	for _, tc := range []struct {
 		d        instance.Definition
 		raw      string
@@ -419,6 +430,11 @@ func TestParseContact(t *testing.T) {
 		{account, "admin@example.com", "", false},
 		{account, "@admin", "", false},
 		{account, strings.Repeat("a", 31), "", false},
+		{featured, "", "", true},
+		{featured, " Alice, @bob\ncarol alice ", "alice bob carol", true},
+		{featured, "alice bob@example.com", "", false},
+		{featured, many, "a", true},
+		{featured, tooMany, "", false},
 		{email, "", "", true},
 		{email, "admin@example.com", "admin@example.com", true},
 		{email, "Admin <admin@example.com>", "", false},

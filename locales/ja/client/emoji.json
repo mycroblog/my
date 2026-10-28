@@ -17,7 +17,7 @@
   },
   "emoji.picker.loading": {
     "defaultMessage": "絵文字を読み込んでいます",
-    "description": "Accessible name of the spinner the emoji picker shows while its emoji load, the first time it opens."
+    "description": "What the emoji picker tells assistive technology while its emoji load, the first time it opens."
   },
   "emoji.picker.load_failed": {
     "defaultMessage": "絵文字を読み込めませんでした。ピッカーを閉じて開き直すと、もう一度読み込みます。",

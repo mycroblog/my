@@ -12,6 +12,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_valkey` | The Valkey client (`valkey-go`): the key-value store and the broker on `valkey_url` | `kv = valkey`, `stream = valkey` |
 | `no_sns` | The Amazon SNS / SQS broker (AWS SDK) | `stream = sns` |
 | `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |
+| `no_s3` | The S3-compatible blob store (AWS SDK for Amazon S3) | `blob = s3` |
 | `no_pubsub` | The Google Cloud Pub/Sub broker; with `no_billing_gcp`, the Pub/Sub client library too | `stream = pubsub` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |

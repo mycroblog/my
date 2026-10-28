@@ -31,10 +31,42 @@ func TestSearchTerms(t *testing.T) {
 		{"cut", local, true, strings.Repeat("あ", 150), []string{"username:alice", "display_name:" + strings.Repeat("あ", MaxSearchQueryLength)}},
 	} {
 		var got []string
-		for _, term := range SearchTerms(c.h, c.local, c.displayName) {
+		for _, term := range SearchTerms(c.h, c.local, true, c.displayName) {
 			if term.AccountID != c.h.AccountID || term.IsLocal != c.local {
 				t.Errorf("%s: term %+v", c.name, term)
 			}
+			if term.Kind == account.SearchTermInfix {
+				continue
+			}
+			got = append(got, string(term.Kind)+":"+term.Term)
+		}
+		if !slices.Equal(got, c.want) {
+			t.Errorf("%s: SearchTerms = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+func TestSearchTermsInfixAndUndiscoverable(t *testing.T) {
+	local := account.Handle{AccountID: "a", Username: "Ann", UsernameNormalized: "ann", Domain: account.LocalDomain}
+	remote := account.Handle{AccountID: "b", Username: "Bo", UsernameNormalized: "bo", Domain: "remote.example"}
+	for _, c := range []struct {
+		name         string
+		h            account.Handle
+		local        bool
+		discoverable bool
+		displayName  string
+		want         []string
+	}{
+		{"local", local, true, true, "Mo Li", []string{
+			"username:ann", "display_name:mo li", "display_name:mo", "display_name:li",
+			"infix:nn", "infix:n", "infix:o li", "infix:li", "infix:i",
+		}},
+		{"CJK", local, true, true, "アリス", []string{"username:ann", "display_name:アリス", "infix:nn", "infix:n", "infix:リス", "infix:ス"}},
+		{"not discoverable", local, true, false, "Mo Li", []string{"exact_username:ann"}},
+		{"remote not discoverable", remote, false, false, "Bo", []string{"username:bo", "username:bo@remote.example", "display_name:bo"}},
+	} {
+		var got []string
+		for _, term := range SearchTerms(c.h, c.local, c.discoverable, c.displayName) {
 			got = append(got, string(term.Kind)+":"+term.Term)
 		}
 		if !slices.Equal(got, c.want) {

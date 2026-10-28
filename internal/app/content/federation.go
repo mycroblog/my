@@ -182,3 +182,10 @@ func (s *Service) LocalPostCount(ctx context.Context) (int64, error) {
 func (s *Service) DailyLocalPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error) {
 	return s.d.Repository.DailyLocalPublicPosts(ctx, to, days)
 }
+
+// ListRecentLocalPosters returns up to limit local accounts with a public or local status that
+// is not deleted, published at since or later, the one that posted last first: the recently
+// active accounts of the suggestions (FR-308).
+func (s *Service) ListRecentLocalPosters(ctx context.Context, since time.Time, limit int) ([]string, error) {
+	return s.d.Repository.ListRecentLocalPosters(ctx, since, limit)
+}

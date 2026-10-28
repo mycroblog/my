@@ -78,6 +78,20 @@ export const Four: Story = {
 
 export const NoDescription: Story = { args: { items: pictures.slice(3) } };
 
+/** A remote post with six attachments, of which the server keeps four: the mark in the corner links to the original post. */
+export const More: Story = {
+  args: {
+    items: pictures,
+    more: { text: "+2", label: "+2 more — see the original post", href: "https://remote.example/@carol/1" },
+  },
+  play: async ({ canvas }) => {
+    const link = canvas.getByRole("link", { name: "+2 more — see the original post" });
+    await expect(link).toHaveTextContent("+2");
+    await expect(link).toHaveAttribute("href", "https://remote.example/@carol/1");
+    await expect(link).toHaveAttribute("target", "_blank");
+  },
+};
+
 /**
  * Sensitive media are not loaded until the reader presses the toggle, which keeps focus. Until then each cell shows
  * the blur of its picture (its blurhash).
