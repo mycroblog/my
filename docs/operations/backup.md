@@ -8,7 +8,7 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 | What | Where it lives | Back up | Lost without a backup |
 | --- | --- | --- | --- |
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
-| The media | the directory `blob_fs_dir` of the `fs` blob store | [Media](#media) | the uploaded images, videos, and audio files, and the cached remote files |
+| The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
 | The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
 | The configuration | the environment variables, the configuration file (`MY_CONFIG_FILE`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
 
@@ -101,11 +101,69 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 `rsync` to the backup host keeps the copy small after the first time, since media files never change once written.
 
-Only the `fs` blob store is available today; the server refuses to start with `blob = s3`.
+### Media in a bucket
+
+The `s3` blob store keeps every file as an object of the bucket `blob_s3_bucket`, named by its key: the processed media under `media/`,
+the uploads as received under `uploads/`, and the cached remote files under `remote/`. The bucket stays private: the server reads the
+files and serves them under `/media/`. An object appears only once it is written whole, so a copy taken while the server runs never holds
+half a file. Protect the bucket in three layers, from the cheapest to the safest.
+
+**Versioning.** Turn on the bucket's object versioning where the service offers it (Amazon S3, Google Cloud Storage, MinIO, and others).
+A deleted or overwritten object then stays as a noncurrent version, and the bucket can go back to the moment of a database backup.
+
+```sh
+aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
+```
+
+**Lifecycle rules.** With versioning, every deleted file keeps its storage cost until a rule removes it. Add a rule that deletes noncurrent versions
+after the age of your oldest database backup (35 days for the generations of [How often and where](#how-often-and-where) without the monthly ones),
+so that every database backup you keep still finds its files and a file a user deleted does not stay longer than your privacy policy says.
+Add a rule that aborts incomplete multipart uploads after a day: the server aborts a failed upload of a large file itself, but a process
+that stops in the middle of one leaves its parts behind.
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "noncurrent-versions",
+      "Status": "Enabled",
+      "Filter": {},
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 35 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}
+```
+
+```sh
+aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-configuration file://lifecycle.json
+```
+
+**A copy in another account or region.** Versioning protects against a mistake, not against losing the bucket or the account that owns it,
+and the server's own credentials can delete objects. Keep a copy that those credentials cannot reach:
+
+- **Replication.** Amazon S3 replicates a versioned bucket to a bucket in another region or another account (Cross-Region or Same-Region Replication,
+  with the destination owned by the other account). Turn versioning on for the destination too, and do not replicate deletions
+  (leave delete marker replication off), so that a deletion on the instance does not reach the copy.
+  Other services have their own replication, such as the dual-region buckets of Cloud Storage and the bucket replication of MinIO.
+- **A scheduled copy.** Where there is no replication, or to copy to another provider, copy the bucket on the schedule of the database backup,
+  right after it, with credentials that can only read the instance's bucket and only write the backup bucket:
+
+  ```sh
+  rclone copy --checksum source:my-media backup:my-media-backup
+  ```
+
+  `rclone copy` and `aws s3 sync` without `--delete` add new objects and never remove one from the copy. Files never change once written,
+  so after the first run each copy transfers only the new ones. Delete old objects from the copy on the schedule of your retention policy,
+  or turn on versioning and a lifecycle rule there as well.
+
+Credentials stay out of the copy: the bucket holds no secret, but the configuration names the key in `blob_s3_access_key_id`
+and `blob_s3_secret_access_key`, which belong with the configuration.
 
 ### The order of the database and the media
 
-Back up **the database first, then the media**, and keep the two together as one generation.
+Back up **the database first, then the media**, and keep the two together as one generation. For a bucket, the copy or the replication
+that runs after the database backup is the media backup; with versioning, the versions as of the time of the database backup are.
 
 The database names the media files that it uses, and the media copy is taken a moment later. In that moment:
 
@@ -124,7 +182,7 @@ with your deployment files, without the KEK.
 
 ## Restoring
 
-Restore into an empty environment (a new machine, new volumes, or a new database), in this order: the database, the media,
+Restore into an empty environment (a new machine, new volumes, or a new database), in this order: the database, the media (the directory or the bucket),
 then the configuration with **the same KEK** (and the same `kek_previous`) that was in use when the backup was taken. Then start the server as usual.
 
 ### SQLite
@@ -164,6 +222,29 @@ To restore over an existing database instead (rolling back an upgrade), use `pg_
 ### Media
 
 Extract the media copy into `blob_fs_dir` before the server starts, owned by the user the server runs as.
+
+### Media in a bucket
+
+Restore the objects into an empty bucket before the server starts, then set `blob_s3_bucket` (and the endpoint, region, and credentials) to it.
+The keys must stay the same: the database names each file by its key.
+
+- From a copy in another bucket, copy it back:
+
+  ```sh
+  rclone copy --checksum backup:my-media-backup target:my-media-restored
+  ```
+
+- From the versions of the instance's own bucket, copy the objects as they were at the time of the database backup to a new bucket.
+  `rclone` reads the versions of that moment with `--s3-version-at`:
+
+  ```sh
+  rclone copy --s3-version-at "2026-01-01 00:00:00" source:my-media target:my-media-restored
+  ```
+
+- From a replica, point `blob_s3_bucket` at the replica, or copy it back to a bucket in the original account.
+
+The server's credentials need to read, write, and delete objects of the restored bucket (`s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`,
+and `s3:AbortMultipartUpload` on Amazon S3).
 
 ### Starting and checking
 

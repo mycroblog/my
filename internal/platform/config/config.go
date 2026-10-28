@@ -65,6 +65,14 @@ type Config struct {
 	Media              string
 	// BlobFSDir is the directory of the fs blob store.
 	BlobFSDir string
+	// The bucket, endpoint, region, addressing, and credentials of the s3 blob store; no
+	// credentials take the AWS SDK's default chain.
+	BlobS3Bucket          string
+	BlobS3Endpoint        string
+	BlobS3Region          string
+	BlobS3PathStyle       bool
+	BlobS3AccessKeyID     string
+	BlobS3SecretAccessKey string
 	// Limits of image uploads and how long an upload may stay unattached.
 	MediaMaxImageBytes  int64
 	MediaMaxImageSide   int
@@ -295,6 +303,12 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
 		slog.String("blob_fs_dir", c.BlobFSDir),
+		slog.String("blob_s3_bucket", c.BlobS3Bucket),
+		slog.String("blob_s3_endpoint", c.BlobS3Endpoint),
+		slog.String("blob_s3_region", c.BlobS3Region),
+		slog.Bool("blob_s3_path_style", c.BlobS3PathStyle),
+		slog.String("blob_s3_access_key_id", c.BlobS3AccessKeyID),
+		slog.String("blob_s3_secret_access_key", redact(c.BlobS3SecretAccessKey != "")),
 		slog.String("media_origin", c.MediaOrigin),
 		slog.Int64("media_max_image_bytes", c.MediaMaxImageBytes),
 		slog.Int("media_max_image_side", c.MediaMaxImageSide),

@@ -66,6 +66,12 @@ An instance setting that has never been set reads as its default, which is defin
 | [`blob`](#blob) | `MY_BLOB` | `fs` | no | no |
 | [`media`](#media) | `MY_MEDIA` | `native` | no | no |
 | [`blob_fs_dir`](#blob_fs_dir) | `MY_BLOB_FS_DIR` | `blobs` | no | no |
+| [`blob_s3_bucket`](#blob_s3_bucket) | `MY_BLOB_S3_BUCKET` | none | when `blob = s3` | no |
+| [`blob_s3_endpoint`](#blob_s3_endpoint) | `MY_BLOB_S3_ENDPOINT` | none | no | no |
+| [`blob_s3_region`](#blob_s3_region) | `MY_BLOB_S3_REGION` | none | no | no |
+| [`blob_s3_path_style`](#blob_s3_path_style) | `MY_BLOB_S3_PATH_STYLE` | `false` | no | no |
+| [`blob_s3_access_key_id`](#blob_s3_access_key_id) | `MY_BLOB_S3_ACCESS_KEY_ID` | none | no | no |
+| [`blob_s3_secret_access_key`](#blob_s3_secret_access_key) | `MY_BLOB_S3_SECRET_ACCESS_KEY` | none | when `blob_s3_access_key_id` is set | yes |
 | [`media_origin`](#media_origin) | `MY_MEDIA_ORIGIN` | the server's own origin (`https://{host}`) | no | no |
 | [`media_max_image_bytes`](#media_max_image_bytes) | `MY_MEDIA_MAX_IMAGE_BYTES` | `16777216` | no | no |
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
@@ -356,7 +362,7 @@ Blob storage adapter for media.
 | Value | In v0 | Description |
 | --- | --- | --- |
 | `fs` | yes | Local file system. |
-| `s3` | yes | S3-compatible API (AWS S3, Cloudflare R2, GCS XML API, MinIO). |
+| `s3` | yes | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
 | `gcs` | not in v0 | Native Google Cloud Storage API. |
 
 ### `media`
@@ -380,6 +386,59 @@ Directory of the `fs` blob store, relative to the working directory or absolute.
 - Environment variable: `MY_BLOB_FS_DIR`
 - Default: `blobs`
 - Required: no
+
+### `blob_s3_bucket`
+
+Bucket of the `s3` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).
+
+- Environment variable: `MY_BLOB_S3_BUCKET`
+- Default: none
+- Required: when `blob = s3`
+
+### `blob_s3_endpoint`
+
+Origin of the S3-compatible API of `blob = s3`, such as `https://<account>.r2.cloudflarestorage.com` (Cloudflare R2), `https://storage.googleapis.com` (Google Cloud Storage with an HMAC key), or `http://minio:9000`. Empty uses Amazon S3's endpoint of `blob_s3_region`. Use `https` unless the server is on a private network that you trust: the requests carry the blobs.
+
+- Environment variable: `MY_BLOB_S3_ENDPOINT`
+- Default: none
+- Required: no
+
+### `blob_s3_region`
+
+Region of the bucket of `blob = s3`, such as `eu-west-1`; `auto` for Cloudflare R2 and Google Cloud Storage. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`), and with `blob_s3_endpoint` set and no region there, `us-east-1`, which MinIO and most S3-compatible servers expect.
+
+- Environment variable: `MY_BLOB_S3_REGION`
+- Default: none
+- Required: no
+
+### `blob_s3_path_style`
+
+How `blob = s3` addresses the bucket.
+
+- Environment variable: `MY_BLOB_S3_PATH_STYLE`
+- Default: `false`
+- Required: no
+
+| Value | In v0 | Description |
+| --- | --- | --- |
+| `false` | yes | In the host name (`https://<bucket>.<endpoint>/<key>`), as Amazon S3, R2, and Cloud Storage take it. |
+| `true` | yes | In the path (`https://<endpoint>/<bucket>/<key>`), for MinIO and other servers without a host name per bucket. |
+
+### `blob_s3_access_key_id`
+
+Access key ID of `blob = s3`, with `blob_s3_secret_access_key`. Empty takes the credentials of the AWS SDK's default chain: the environment (`AWS_ACCESS_KEY_ID`), the shared files, or the role of the instance or container, which needs no key in the configuration on AWS.
+
+- Environment variable: `MY_BLOB_S3_ACCESS_KEY_ID`
+- Default: none
+- Required: no
+
+### `blob_s3_secret_access_key`
+
+Secret access key of `blob_s3_access_key_id`.
+
+- Environment variable: `MY_BLOB_S3_SECRET_ACCESS_KEY` or `MY_BLOB_S3_SECRET_ACCESS_KEY_FILE`
+- Default: none
+- Required: when `blob_s3_access_key_id` is set
 
 ### `media_origin`
 
