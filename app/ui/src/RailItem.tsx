@@ -85,7 +85,7 @@ const railItem = tv({
 /** A count on an item: the number, what it means, and the name of the item while it shows it. */
 export type RailItemBadge = {
   count: number;
-  /** What the number means, read instead of the digits ("3 unread notifications"). */
+  /** What the number means ("3 unread notifications"); `name` says it, and the drawn digits are not read. */
   label: string;
   /** The item's accessible name while it shows the count, starting with the visible label ("Notifications, 3 unread"). */
   name: string;
@@ -126,7 +126,7 @@ export function RailItem({ href, icon, label, current = false, badge, form, prom
       <span className={slots.pill({ className: classNames?.pill })}>
         {icon}
         {badge !== undefined && (
-          <Badge count={badge.count} label={badge.label} className={slots.badge({ className: classNames?.badge })} />
+          <Badge count={badge.count} decorative className={slots.badge({ className: classNames?.badge })} />
         )}
       </span>
       <span className={slots.label({ className: classNames?.label })}>{label}</span>

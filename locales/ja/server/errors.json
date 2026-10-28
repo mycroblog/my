@@ -43,6 +43,10 @@
     "defaultMessage": "このリクエストはリソースの現在の状態と矛盾しています。",
     "description": "API error title for HTTP 409 when no more specific message applies."
   },
+  "errors.email.already_verified": {
+    "defaultMessage": "このメールアドレスは確認済みです。",
+    "description": "Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email."
+  },
   "errors.email.not_suppressed": {
     "defaultMessage": "このメールアドレスへの送信は止まっていません。",
     "description": "Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it)."

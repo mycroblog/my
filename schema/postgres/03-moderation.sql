@@ -147,6 +147,8 @@ CREATE TABLE report_states (
   CHECK ((state = 'resolved') = (outcome IS NOT NULL))
 );
 CREATE INDEX report_states_state_report_id ON report_states (state, report_id);
+-- The moderators list the reports assigned to one of them.
+CREATE INDEX report_states_assignee_user_id_report_id ON report_states (assignee_user_id, report_id);
 
 -- Event: a moderator took a report, or gave it up (assignee_user_id NULL).
 -- assigned_by_user_id is NULL for the CLI.

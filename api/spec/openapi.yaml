@@ -177,6 +177,8 @@ paths:
     $ref: ./paths/accounts_password.yaml
   /accounts/password/remove:
     $ref: ./paths/accounts_password_remove.yaml
+  /accounts/email/verification:
+    $ref: ./paths/accounts_email_verification.yaml
   /exports:
     $ref: ./paths/exports.yaml
   /exports/{id}/archive:
@@ -229,6 +231,8 @@ paths:
     $ref: ./paths/accounts_relationships.yaml
   /accounts/search:
     $ref: ./paths/accounts_search.yaml
+  /accounts/suggestions:
+    $ref: ./paths/accounts_suggestions.yaml
   /accounts/{id}:
     $ref: ./paths/accounts_{id}.yaml
   /accounts/{id}/block:
@@ -908,6 +912,8 @@ components:
       $ref: ./components/schemas/AccountSource.yaml
     AccountStatusPage:
       $ref: ./components/schemas/AccountStatusPage.yaml
+    AccountSuggestion:
+      $ref: ./components/schemas/AccountSuggestion.yaml
     AddAccountAliasRequest:
       $ref: ./components/schemas/AddAccountAliasRequest.yaml
     AdminAccount:

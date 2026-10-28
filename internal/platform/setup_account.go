@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/moderation"
@@ -40,6 +41,39 @@ func (a *App) setUpAccount(cfg *config.Config, repo account.Repository) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)
 		},
 	})
+	a.setUpAccountSuggestions()
+}
+
+// setUpAccountSuggestions builds the suggestions of accounts to follow (FR-308): the featured
+// accounts of the instance settings, then the local accounts that posted recently. The instance,
+// content, and graph modules, which the account module does not import, are built after it;
+// the functions read them when they run.
+func (a *App) setUpAccountSuggestions() {
+	a.AccountSuggestions = account.NewSuggestions(account.SuggestionDeps{
+		Accounts: a.Accounts, Clock: a.Clock,
+		Featured: func(ctx context.Context) ([]string, error) {
+			s, err := a.Instance.Settings(ctx)
+			return s.FeaturedAccounts(), err
+		},
+		RecentPosters: func(ctx context.Context, since time.Time, limit int) ([]string, error) {
+			return a.Content.ListRecentLocalPosters(ctx, since, limit)
+		},
+		Relations: a.searchRelations,
+	})
+}
+
+// searchRelations returns the relations of a viewer with accounts that the search and the
+// suggestions of accounts read from the graph module.
+func (a *App) searchRelations(ctx context.Context, viewerID string, ids []string) (map[string]account.SearchRelation, error) {
+	rels, err := a.Graph.CandidateRelations(ctx, viewerID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]account.SearchRelation, len(rels))
+	for id, r := range rels {
+		out[id] = account.SearchRelation(r)
+	}
+	return out, nil
 }
 
 // setUpAccountSearch registers the projector of the account search terms and builds the prefix
@@ -55,17 +89,7 @@ func (a *App) setUpAccountSearch(repo account.Repository) {
 	})
 	a.AccountSearch = account.NewPrefixSearch(account.SearchDeps{
 		Repository: repo,
-		Relations: func(ctx context.Context, viewerID string, ids []string) (map[string]account.SearchRelation, error) {
-			rels, err := a.Graph.CandidateRelations(ctx, viewerID, ids)
-			if err != nil {
-				return nil, err
-			}
-			out := make(map[string]account.SearchRelation, len(rels))
-			for id, r := range rels {
-				out[id] = account.SearchRelation(r)
-			}
-			return out, nil
-		},
+		Relations:  a.searchRelations,
 		DomainSuspended: func(ctx context.Context, domain string) (bool, error) {
 			return a.ModerationPolicy.FederationSuspended(ctx, domain)
 		},

@@ -426,6 +426,31 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"valkey_url (MY_VALKEY_URL): required when kv is valkey"},
 		},
 		{
+			name: "blob s3 without a bucket",
+			env:  with(minimal(), "MY_BLOB", "s3"),
+			want: []string{"blob_s3_bucket (MY_BLOB_S3_BUCKET): required when blob is s3"},
+		},
+		{
+			name: "malformed blob s3 settings",
+			env: with(minimal(), "MY_BLOB", "s3", "MY_BLOB_S3_BUCKET", "My_Bucket",
+				"MY_BLOB_S3_ENDPOINT", "https://r2.example.com/bucket", "MY_BLOB_S3_REGION", "EU West"),
+			want: []string{
+				"blob_s3_bucket (MY_BLOB_S3_BUCKET): must be a bucket name",
+				"blob_s3_endpoint (MY_BLOB_S3_ENDPOINT): must be an origin",
+				"blob_s3_region (MY_BLOB_S3_REGION): must be a region",
+			},
+		},
+		{
+			name: "blob s3 access key without its secret",
+			env:  with(minimal(), "MY_BLOB", "s3", "MY_BLOB_S3_BUCKET", "media", "MY_BLOB_S3_ACCESS_KEY_ID", "AKIAEXAMPLE"),
+			want: []string{"blob_s3_secret_access_key (MY_BLOB_S3_SECRET_ACCESS_KEY): required when blob_s3_access_key_id is set"},
+		},
+		{
+			name: "blob s3 secret without its access key",
+			env:  with(minimal(), "MY_BLOB", "s3", "MY_BLOB_S3_BUCKET", "media", "MY_BLOB_S3_SECRET_ACCESS_KEY", "s3cr3t"),
+			want: []string{"blob_s3_access_key_id (MY_BLOB_S3_ACCESS_KEY_ID): required when blob_s3_secret_access_key is set"},
+		},
+		{
 			name: "stream valkey without a URL",
 			env:  with(minimal(), "MY_STREAM", "valkey"),
 			want: []string{"valkey_url (MY_VALKEY_URL): required when stream is valkey"},
@@ -808,7 +833,8 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc",
 		"MY_VOICE_TURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
-		"MY_VOICE_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1"), nil))
+		"MY_VOICE_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1",
+		"MY_BLOB_S3_ACCESS_KEY_ID", "AKIAEXAMPLE", "MY_BLOB_S3_SECRET_ACCESS_KEY", "s3cr3t"), nil))
 	if err != nil {
 		t.Fatal(err)
 	}

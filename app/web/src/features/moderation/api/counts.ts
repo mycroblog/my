@@ -11,7 +11,7 @@ import type { Permission } from "./staff";
 export type AdminCounts = components["schemas"]["AdminCounts"];
 
 /** A count of AdminCounts. */
-export type AdminCount = keyof AdminCounts;
+export type AdminCount = Exclude<keyof AdminCounts, "oldest_open_report_filed_at">;
 
 /** The permission that each count needs; a viewer with none of them has nothing to count. */
 export const countPermissions: Readonly<Record<AdminCount, Permission>> = {

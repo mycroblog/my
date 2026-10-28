@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/routes/@{$acct}_.status.$id.tsx", "app/web/src/features/status/**", "app/web/src/routes/-layout/PageHeading.tsx"]
+---
+
 ## 投稿の詳細（`/@{acct}/status/{id}`）
 
 1 つの投稿と、その前後のスレッド（返信先と返信）を読む画面（FR-113。[§13](../13-status-detail-and-actions.md)）。

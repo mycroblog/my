@@ -24,7 +24,7 @@ CREATE TABLE instance_setting_revisions (
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in',
-    'public_counts', 'public_operators'
+    'public_counts', 'public_operators', 'featured_accounts'
   )),
   value TEXT NOT NULL,
   revised_by_user_id TEXT,
@@ -92,7 +92,7 @@ CREATE TABLE instance_theme_tokens (
    'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
    'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',
    'spacing', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-2xl', 'elevation-card',
-   'elevation-sm', 'elevation-md', 'elevation-lg', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
+   'elevation-sm', 'elevation-md', 'elevation-lg', 'elevation-soft-raised', 'elevation-soft-inset', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
    'transition-duration-fast', 'transition-duration-normal', 'transition-duration-slow',
    'default-transition-duration', 'default-transition-timing-function'
   )),

@@ -1,70 +1,138 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What each screen's L4 tasks need beyond the web E2E fixtures of e2e/server.ts (the admin alice, signed in): the
-// address the agent starts at, the data the tasks act on, and the tasks the fixtures cannot set up, with the reason.
-// A screen without an entry starts at `/` with nothing more. Add an entry with a screen's L1 file when its tasks need
-// more, and keep the starts in line with the "入口" of the L1.
-import { randomUUID } from "node:crypto";
-import { DatabaseSync } from "node:sqlite";
+// What each screen's L4 tasks need on the demo server (`node e2e/server.ts demo`, the scenario of demo/scenario.ts),
+// read from the front matter of the screen's L1 file (docs/architecture/web-client/screens/<screen>.md, whose
+// README.md documents the keys): the address the agent starts at, the person of the scenario it is signed in as (or
+// nobody), the code of the screen that --since watches, the changes to the scenario that the tasks need, the tasks
+// that read email in Mailpit, and the tasks the demo server cannot set up, with the reason. Each line of the front
+// matter is `<key>: <JSON value>`, so the block is YAML and needs no YAML parser. screens.test.ts checks every L1
+// file: that its tasks named here are rows of its task table, and that its people are of the scenario.
 
-/** What a screen's setup can reach: `bin/my` and the database of the running server. */
-type SetupContext = {
-  /** Runs `bin/my` with `args` against the server's database and returns its standard output. */
+/** What a screen's setup can reach on the demo server. */
+export type SetupContext = {
+  /** Runs `bin/my` with `args` against the demo server's database and returns its standard output. */
   runMy: (args: readonly string[], input?: string) => string;
-  /** The SQLite database of the server. */
-  database: string;
+  /** Calls the client API (`/api/v1` + `path`) as the person `username` of the scenario; a failure throws. */
+  api: (username: string, method: ApiMethod, path: string, body?: unknown) => Promise<void>;
 };
+
+type ApiMethod = "GET" | "PUT" | "PATCH" | "POST" | "DELETE";
+
+/** One change to the scenario: a command of `bin/my`, or a call of the client API as a person of the scenario. */
+export type SeedStep = { my: string[] } | { api: string; method: ApiMethod; path: string; body?: unknown };
 
 export type ScreenSetup = {
   /** The path the browser opens before the agent starts. */
   start: string;
-  /** Writes the data the tasks need; it runs once per run, before the first task of the screen. */
-  seed?: (context: SetupContext) => void;
-  /** The tasks (by their text in the L1) that the fixtures cannot set up, and why; they are recorded, not measured. */
+  /** The person of the scenario the tasks begin signed in as, by username; null begins signed out. */
+  persona: string | null;
+  /** The code of the screen (context-map patterns: `*` within a segment, `**` across): --since measures the screen when they change. */
+  paths: readonly string[];
+  /** The paths of the tasks (by their text in the L1) that start elsewhere than `start`. */
+  starts?: Readonly<Record<string, string>>;
+  /** Changes the scenario as the tasks need, in order; they run once per run, before the first task of the screen. */
+  seed?: readonly SeedStep[];
+  /**
+   * The tasks that read an email: the username of the person of the scenario whose mailbox the agent reads in
+   * Mailpit's web UI, in a second tab. The harness removes that person's earlier email from Mailpit before the task.
+   */
+  mail?: Readonly<Record<string, string>>;
+  /** The tasks (by their text in the L1) that the demo server cannot set up, and why; they are recorded, not measured. */
   unavailable?: Readonly<Record<string, string>>;
 };
 
-/**
- * Gives alice two roles with badges: `admin`, which she holds and shows on her profile, and a role `l4-helper`
- * granted to her, which she does not show yet. The badge tables have no command of `bin/my`, so the rows are written
- * directly (data-model/04-tables/01-identity.md §4.1).
- */
-function seedBadges({ runMy, database }: SetupContext): void {
-  const db = new DatabaseSync(database);
-  const now = Date.now();
-  const helperRoleID = randomUUID();
-  db.prepare("INSERT INTO roles (id, key, position, created_at) VALUES (?, 'l4-helper', 50, ?)").run(helperRoleID, now);
-  db.close();
-  runMy(["admin", "role", "grant", "alice", "l4-helper"]);
-  const seed = new DatabaseSync(database);
-  const adminRole = seed.prepare("SELECT id FROM roles WHERE key = 'admin'").get() as { id: string } | undefined;
-  const alice = seed.prepare("SELECT user_id FROM local_accounts WHERE username_normalized = 'alice'").get() as
-    { user_id: string } | undefined;
-  if (adminRole === undefined || alice === undefined) {
-    seed.close();
-    throw new Error("seedBadges: the admin role or alice is missing from the E2E fixtures");
-  }
-  const badge = seed.prepare("INSERT INTO role_badges (role_id, label, color, updated_at) VALUES (?, ?, ?, ?)");
-  badge.run(adminRole.id, "Admin", "red", now);
-  badge.run(helperRoleID, "Helper", "teal", now);
-  seed
-    .prepare("INSERT INTO user_role_badge_displays (user_id, role_id, created_at) VALUES (?, ?, ?)")
-    .run(alice.user_id, adminRole.id, now);
-  seed.close();
+const methods = new Set<string>(["GET", "PUT", "PATCH", "POST", "DELETE"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const screenSetups: Readonly<Record<string, ScreenSetup>> = {
-  badges: {
-    start: "/settings",
-    seed: seedBadges,
-    unavailable: {
-      "サポーターの一覧に載る（加入者）":
-        "the fixtures have no supporter plan subscription, which needs a payment provider",
-    },
-  },
-  "settings-menu": { start: "/settings" },
+function isStrings(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return isRecord(value) && Object.values(value).every((item) => typeof item === "string");
+}
+
+function isSeedStep(value: unknown): value is SeedStep {
+  if (!isRecord(value)) {
+    return false;
+  }
+  if ("my" in value) {
+    return Object.keys(value).length === 1 && isStrings(value["my"]);
+  }
+  return (
+    typeof value["api"] === "string" &&
+    typeof value["method"] === "string" &&
+    methods.has(value["method"]) &&
+    typeof value["path"] === "string" &&
+    Object.keys(value).every((key) => ["api", "method", "path", "body"].includes(key))
+  );
+}
+
+/** The check of each key of the front matter, and the form it expects. */
+const keys: Readonly<Record<keyof ScreenSetup, [(value: unknown) => boolean, string]>> = {
+  start: [(v) => typeof v === "string" && v.startsWith("/"), "a path"],
+  persona: [(v) => v === null || typeof v === "string", "a username or null"],
+  paths: [isStrings, "a list of patterns"],
+  starts: [isStringRecord, "an object of tasks and paths"],
+  seed: [
+    (v) => Array.isArray(v) && v.every(isSeedStep),
+    'a list of {"my": [...]} or {"api", "method", "path", "body"}',
+  ],
+  mail: [isStringRecord, "an object of tasks and usernames"],
+  unavailable: [isStringRecord, "an object of tasks and reasons"],
 };
 
-/** The setup of `screen`: its entry, or a start at `/` with nothing more. */
-export function setupOf(screen: string): ScreenSetup {
-  return screenSetups[screen] ?? { start: "/" };
+/**
+ * Parses the front matter of the L1 file `markdown` of `screen`: the lines between a first line `---` and the next
+ * `---`, each `<key>: <JSON value>`. `start`, `persona`, and `paths` are required; an unknown key or a value of the
+ * wrong form is an error, so that a broken L1 fails the run instead of measuring the wrong thing.
+ */
+export function parseSetup(screen: string, markdown: string): ScreenSetup {
+  const file = `screens/${screen}.md`;
+  const lines = markdown.split("\n");
+  const end = lines.indexOf("---", 1);
+  if (lines[0] !== "---" || end < 0) {
+    throw new Error(`${file}: no front matter (a block between two "---" lines at the top)`);
+  }
+  const values: Record<string, unknown> = {};
+  for (const line of lines.slice(1, end)) {
+    const match = /^([a-z]+):\s*(.+)$/.exec(line);
+    if (match === null) {
+      throw new Error(`${file}: a front matter line is not "<key>: <JSON value>": ${line}`);
+    }
+    const [, key = "", raw = ""] = match;
+    const check = keys[key as keyof ScreenSetup] as (typeof keys)[keyof ScreenSetup] | undefined;
+    if (check === undefined) {
+      throw new Error(`${file}: unknown front matter key "${key}"`);
+    }
+    let value: unknown;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      throw new Error(`${file}: the value of "${key}" is not JSON: ${raw}`);
+    }
+    if (!check[0](value)) {
+      throw new Error(`${file}: "${key}" must be ${check[1]}`);
+    }
+    values[key] = value;
+  }
+  for (const key of ["start", "persona", "paths"]) {
+    if (!(key in values)) {
+      throw new Error(`${file}: the front matter has no "${key}"`);
+    }
+  }
+  return values as ScreenSetup;
+}
+
+/** Applies the seed steps of a screen to the demo server. */
+export async function applySeed(steps: readonly SeedStep[], { runMy, api }: SetupContext): Promise<void> {
+  for (const step of steps) {
+    if ("my" in step) {
+      runMy(step.my);
+    } else {
+      await api(step.api, step.method, step.path, step.body);
+    }
+  }
 }

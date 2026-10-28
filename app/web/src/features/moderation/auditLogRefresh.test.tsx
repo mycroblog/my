@@ -165,7 +165,7 @@ const writes: Write[] = [
     method: "post",
     path: "/admin/reports/:id/resolve",
     page: `/moderation/reports/${report.id}`,
-    write: (user) => changeReport(user, "Handling", "Resolve without action", "The report is resolved: No action."),
+    write: (user) => changeReport(user, "Handling", "Dismiss the report", "The report is resolved: No action."),
   },
   {
     action: "report_reopened",

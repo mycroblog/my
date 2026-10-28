@@ -1056,8 +1056,8 @@ test.describe("handling a report with the keyboard alone", () => {
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
 
-    // The moderation page leads to the report queue.
-    await tabTo(page, main.locator('a[href="/moderation/reports"]'));
+    // The moderation overview leads to the report queue: its tile of the open reports comes first.
+    await tabTo(page, main.locator('a[href="/moderation/reports"]').first());
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/moderation\/reports$/);
     const queue = main.getByRole("table");
@@ -1087,7 +1087,8 @@ test.describe("handling a report with the keyboard alone", () => {
     await expectPageReached(page, makeAxeBuilder);
 
     // An action, chosen with the arrow keys in its radio group, resolves the report (FR-710).
-    const handling = main.getByRole("region").last();
+    // The decision of the report's page: its last region is the handling.
+    const handling = main.locator("[data-triage-decision]").getByRole("region").last();
     const limit = handling.locator('input[type="radio"][value="limit"]');
     await tabTo(page, handling.getByRole("radiogroup"));
     for (let presses = 0; presses < 20 && !(await limit.isChecked()); presses++) await page.keyboard.press("ArrowDown");

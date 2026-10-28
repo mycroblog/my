@@ -11,6 +11,7 @@
 - [Domain blocks and handling reports](operations/moderation.md)
 - [Managing the key encryption key (KEK)](operations/key-management.md)
 - [Database: initializing, upgrading, and recreating](operations/database.md)
+- [Backup and restore (database, media, KEK, configuration, and the recovery drill)](operations/backup.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Serving media through a CDN (media_origin, origin pull, caching and purging)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)

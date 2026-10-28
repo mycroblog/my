@@ -568,6 +568,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 			Width: at.Width, Height: at.Height, Focus: at.FocalPoint,
 		})
 	}
+	in.OmittedAttachments = obj.OmittedAttachments
 	if p := obj.Poll; p != nil && len(p.Options) > 0 {
 		in.Poll = pollInput(p)
 	}

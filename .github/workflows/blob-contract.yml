@@ -1,0 +1,33 @@
+name: Blob contract
+
+# The BlobStore contract of blob = s3 on a Garage container (pkg/testkit/s3test), an S3-compatible server: the
+# adapter's calls of the S3 API checked against a real server rather than the in-memory fake that pull requests and
+# merge groups run. They need Docker and pull an image, which the offline `check` does not (ADR-0015), so they run in
+# the slow suite (slow-suite.yml, ADR-0079) and by hand on any branch.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
+  GOTOOLCHAIN: local
+
+jobs:
+  blob-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache that main.yml builds, without saving one.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      # testcontainers-go starts dxflrs/garage on the runner's Docker; TEST_S3=container makes the tests run, and a
+      # missing Docker fail them instead of skipping.
+      - name: go:test-blob
+        run: scripts/task.sh go:test-blob

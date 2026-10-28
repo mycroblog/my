@@ -1491,6 +1491,13 @@ func (l *Localizer) ServerErrorsDomainMutesTooMany() string {
 	return l.format("server:errors.domain_mutes.too_many", nil)
 }
 
+// ServerErrorsEmailAlreadyVerified formats "server:errors.email.already_verified". Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email.
+//
+//	en: The email address is already verified.
+func (l *Localizer) ServerErrorsEmailAlreadyVerified() string {
+	return l.format("server:errors.email.already_verified", nil)
+}
+
 // ServerErrorsEmailNotSuppressed formats "server:errors.email.not_suppressed". Title of the HTTP 409 API error when a moderator lifts the suppression of the email address of an account whose address is not suppressed (emails are still sent to it).
 //
 //	en: The email address is not suppressed.

@@ -591,6 +591,18 @@ describe("a post of another server", () => {
     expect(within(article).queryByText("No description", { selector: "span" })).not.toBeInTheDocument();
   });
 
+  test("marks the attachments that the server left out with a link to the original post", async () => {
+    signedIn();
+    serveThread({ ...remote, omitted_media_count: 2 });
+    const { user } = await renderApp({ path: `/@${remote.account.acct}/status/${remote.id}` });
+
+    const article = await screen.findByRole("article", { name: /^Opened post Carol @carol@remote\.example / });
+    await user.click(within(article).getByRole("button", { name: "Show content", expanded: false }));
+    const more = within(article).getByRole("link", { name: "+2 more — see the original post (opens in a new tab)" });
+    expect(more).toHaveTextContent("+2");
+    expect(more).toHaveAttribute("href", "https://remote.example/@carol/1");
+  });
+
   test("draws the custom emoji of its author's name, its content warning and its text, read as their shortcodes", async () => {
     signedIn();
     const blobcat = {

@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notifications/**", "app/ui/src/NotificationKindMark.tsx"]
+---
+
 ## 通知（`/notifications`）
 
 自分への反応（フォロー・メンション・ブースト・お気に入り・リアクション・引用）と、サーバーからの知らせを新しい順に読む画面（FR-205）。

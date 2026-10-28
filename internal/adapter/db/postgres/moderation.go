@@ -462,7 +462,22 @@ func (r *ModerationRepository) ListReports(ctx context.Context, q appmoderation.
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.reader().ListReports(ctx, postgresgen.ListReportsParams{State: string(q.State), Before: toNullString(q.Before), Lim: lim})
+	var rows []postgresgen.ListReportsRow
+	if q.OldestFirst {
+		var oldest []postgresgen.ListReportsOldestFirstRow
+		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, postgresgen.ListReportsOldestFirstParams{
+			State: string(q.State), Category: string(q.Category), Assignee: toNullString(q.AssigneeUserID), Unassigned: q.Unassigned,
+			After: toNullString(q.After), Lim: lim,
+		})
+		for _, row := range oldest {
+			rows = append(rows, postgresgen.ListReportsRow(row))
+		}
+	} else {
+		rows, err = r.db.reader().ListReports(ctx, postgresgen.ListReportsParams{
+			State: string(q.State), Category: string(q.Category), Assignee: toNullString(q.AssigneeUserID), Unassigned: q.Unassigned,
+			Before: toNullString(q.After), Lim: lim,
+		})
+	}
 	if err != nil {
 		return nil, wrap(err, "list reports")
 	}

@@ -1074,7 +1074,8 @@
     // Dependency direction (A1–A3). Elements: the app shell (main.tsx, App.tsx and the router wiring) assembles
     // everything; rtc (web/src/features/*/rtc) is a feature's plain TypeScript for WebRTC, which only that feature's
     // hooks import and which imports nothing of the app (ADR-0101 §7); test (web/src/test) holds the test helpers and the MSW setup, feature-test a feature's default
-    // MSW handlers and fixtures, ui-test the helpers of the @my/ui component tests. T4: only tests import them.
+    // MSW handlers and fixtures, ui-test the helpers of the @my/ui component tests. T4: only tests, and the screen stories of app/web
+    // (ADR-0112 §1, which render with the same MSW handlers), import them.
     // A2: @my/ui knows only React, React Aria, TanStack Virtual (for Feed), the Tailwind helpers and Phosphor
     // (in Icons.tsx); T5: its stories and tests also import Storybook, Testing Library and Vitest.
     {
@@ -1185,7 +1186,7 @@
                       "feature",
                       "lib"
                     ],
-                    "fileInternalPath": "**/*.test.{ts,tsx}"
+                    "fileInternalPath": "**/*.{test.ts,test.tsx,stories.tsx}"
                   }
                 },
                 "allow": {
@@ -1248,7 +1249,7 @@
                 "from": {
                   "element": {
                     "type": "feature",
-                    "fileInternalPath": "**/*.test.{ts,tsx}"
+                    "fileInternalPath": "**/*.{test.ts,test.tsx,stories.tsx}"
                   }
                 },
                 "allow": {

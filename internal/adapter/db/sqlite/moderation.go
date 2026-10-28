@@ -451,7 +451,23 @@ func (r *ModerationRepository) ReportStatusForUpdate(ctx context.Context, tx uow
 
 // ListReports implements moderation.Repository.
 func (r *ModerationRepository) ListReports(ctx context.Context, q appmoderation.ReportQuery, limit int) ([]moderation.ReportRecord, error) {
-	rows, err := r.db.reader().ListReports(ctx, sqlitegen.ListReportsParams{State: string(q.State), Before: q.Before, Lim: int64(limit)})
+	var rows []sqlitegen.ListReportsRow
+	var err error
+	if q.OldestFirst {
+		var oldest []sqlitegen.ListReportsOldestFirstRow
+		oldest, err = r.db.reader().ListReportsOldestFirst(ctx, sqlitegen.ListReportsOldestFirstParams{
+			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: boolToInt(q.Unassigned),
+			After: q.After, Lim: int64(limit),
+		})
+		for _, row := range oldest {
+			rows = append(rows, sqlitegen.ListReportsRow(row))
+		}
+	} else {
+		rows, err = r.db.reader().ListReports(ctx, sqlitegen.ListReportsParams{
+			State: string(q.State), Category: string(q.Category), Assignee: q.AssigneeUserID, Unassigned: boolToInt(q.Unassigned),
+			Before: q.After, Lim: int64(limit),
+		})
+	}
 	if err != nil {
 		return nil, wrap(err, "list reports")
 	}

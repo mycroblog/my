@@ -1,11 +1,17 @@
 name: UI story tests
 
-# The @my/ui story tests (ADR-0027): axe on every story and the screenshots at 3 container widths × light / dark
-# × LTR / RTL, in the pinned Playwright image. Called by ci.yml when a pull request touches the ui context
-# (ADR-0079).
+# The story tests in the pinned Playwright image, called by ci.yml on pull requests (ADR-0079): the @my/ui stories
+# (ui:test, ADR-0027: axe on every story and the screenshots at 3 container widths × light / dark × LTR / RTL) when the
+# ui context changes, and the app/web screen stories (web:story-test, ADR-0112 §1: their play functions and axe, no
+# screenshots) when the client changes.
 
 on:
   workflow_call:
+    inputs:
+      task:
+        description: The task that runs the story tests, ui:test or web:story-test
+        type: string
+        default: ui:test
 
 permissions:
   contents: read
@@ -42,11 +48,13 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-ui-${{ runner.os }}-${{ hashFiles('app/bun.lock') }}
           restore-keys: bun-ui-${{ runner.os }}-
-      - name: ui:test
-        run: scripts/task.sh ui:test
+      - name: ${{ inputs.task }}
+        run: scripts/task.sh "$TASK"
+        env:
+          TASK: ${{ inputs.task }}
       # On a visual difference, the actual and diff images are under app/ui/.vitest/attachments/.
       - name: Upload the screenshot diffs
-        if: failure()
+        if: failure() && inputs.task == 'ui:test'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-test-screenshots

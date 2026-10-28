@@ -52,6 +52,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"CountsPosts", statusCountsPosts},
 		{"CountsLocalPosts", statusCountsLocalPosts},
 		{"CountsDailyLocalPublicPosts", statusCountsDailyLocalPublicPosts},
+		{"ListsRecentLocalPosters", statusListsRecentLocalPosters},
 		{"EnsuresTags", statusEnsuresTags},
 		{"ListsLiveRemoteStatusesOfAnAuthor", statusListsLiveRemote},
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
@@ -829,6 +830,46 @@ func statusCountsDailyLocalPublicPosts(t *testing.T, e *statusEnv) {
 	}
 	if got, err := e.h.Statuses.DailyLocalPublicPosts(ctx, to, 1); err != nil || !reflect.DeepEqual(got, []int{1}) {
 		t.Errorf("DailyLocalPublicPosts of 1 day = %v, %v; want [1]", got, err)
+	}
+}
+
+// statusListsRecentLocalPosters checks ListRecentLocalPosters, the recently active accounts of
+// the suggestions: the local accounts with a public or local status that is not deleted,
+// published since the given time, the one that posted last first.
+func statusListsRecentLocalPosters(t *testing.T, e *statusEnv) {
+	ctx := t.Context()
+	post := func(author string, v content.Visibility) content.Status {
+		t.Helper()
+		s := e.newStatus(author, v)
+		local := content.LocalStatus{StatusID: s.ID, AuthorAccountID: author}
+		if err := e.create(t, s, &local, e.firstRevision(s)); err != nil {
+			t.Fatalf("create status %s: %v", s.URI, err)
+		}
+		e.clock.Advance(time.Minute)
+		return s
+	}
+	old, alice, bob, carol, quiet, gone := e.ids.NewID(), e.ids.NewID(), e.ids.NewID(), e.ids.NewID(), e.ids.NewID(), e.ids.NewID()
+	post(old, content.VisibilityPublic)
+	e.clock.Advance(24 * time.Hour)
+	since := e.clock.Now()
+	post(alice, content.VisibilityPublic)
+	post(bob, content.VisibilityLocal)
+	post(alice, content.VisibilityUnlisted)
+	post(quiet, content.VisibilityPrivate)
+	post(quiet, content.VisibilityDirect)
+	e.mustRemove(t, post(gone, content.VisibilityPublic))
+	remote := e.newStatus(e.ids.NewID(), content.VisibilityPublic)
+	remote.IsLocal = false
+	remote.URI = "https://remote.example/notes/recent"
+	e.mustCreate(t, remote)
+	post(carol, content.VisibilityPublic)
+
+	got, err := e.h.Statuses.ListRecentLocalPosters(ctx, since, 10)
+	if want := []string{carol, bob, alice}; err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("ListRecentLocalPosters = %v, %v; want %v", got, err, want)
+	}
+	if got, err := e.h.Statuses.ListRecentLocalPosters(ctx, since, 1); err != nil || !reflect.DeepEqual(got, []string{carol}) {
+		t.Errorf("ListRecentLocalPosters limit 1 = %v, %v; want [%s]", got, err, carol)
 	}
 }
 

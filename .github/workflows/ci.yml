@@ -4,7 +4,7 @@ name: CI
 # depend on the event:
 #
 # - pull_request: `preflight`, the checks a pull request's own files decide; the @my/ui story tests (ui-test.yml) when
-#   the ui context changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
+#   the ui context changes; the app/web screen stories (ui-test.yml with web:story-test) when the client changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
 #   the docker context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
@@ -185,6 +185,15 @@ jobs:
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.ui == 'true'
     uses: ./.github/workflows/ui-test.yml
+
+  web-story-test:
+    # The app/web screen stories (ADR-0112 §1): their play functions and axe, on pull requests alone, like ui-test. They
+    # render the whole app with the features' MSW handlers, so any change to the client can break them.
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
+    uses: ./.github/workflows/ui-test.yml
+    with:
+      task: web:story-test
 
   lint:
     # golangci-lint over the modules a pull request changes (ADR-0079), through the area tasks. The merge queue does not
@@ -597,7 +606,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, lint, docker-smoke, db-lint, server-static, server-test, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, db-lint, server-static, server-test, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

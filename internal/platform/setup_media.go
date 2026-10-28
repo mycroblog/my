@@ -91,6 +91,12 @@ func (a *App) setBlobs(cfg *config.Config) error {
 			return err
 		}
 		a.Blobs, a.closeBlobs = sysmetrics.Blobs(store, a.Meter, "blob."+cfg.Blob), store.Close
+	case "s3":
+		store, err := newS3Blobs(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+		a.Blobs = sysmetrics.Blobs(store, a.Meter, "blob."+cfg.Blob)
 	default:
 		return fmt.Errorf("blob %q is not implemented yet", cfg.Blob)
 	}
