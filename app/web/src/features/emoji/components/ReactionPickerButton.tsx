@@ -16,7 +16,7 @@ export type ReactionPickerButtonProps = {
  * An icon button of a post's action bar (or of a call's dock) that opens the picker of reactions in a popover
  * (WAI-ARIA APG, dialog pattern): the post form's emoji picker (ADR-0091 §7), with the emoji used often, the custom
  * emoji of this server and every Unicode emoji in the skin tone chosen here. Hovering or focusing it (in the dock,
- * opening it) starts loading the Unicode emoji, and the popover shows a spinner until they arrive. The search field
+ * opening it) starts loading the Unicode emoji, and the popover opens at once with skeleton rows until they arrive. The search field
  * takes focus; picking an emoji closes the popover, which returns focus to the button, and reacts with it, also when
  * Shift is held (one reaction per post, ADR-0052 §1). The button is named by its label and shows the same words as a
  * tooltip (web-client/16-look-states-and-wording.md G12).
