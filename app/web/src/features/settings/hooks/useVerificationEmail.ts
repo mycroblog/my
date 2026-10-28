@@ -8,7 +8,7 @@ import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage, rateLimitedUntil } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
-import { preferencesQueryOptions, resendVerificationEmailMutation } from "../api/me";
+import { refreshPreferencesAfterVerification, resendVerificationEmailMutation } from "../api/me";
 
 /** The problem type of the 409 for an address that is verified and receives email again. */
 const alreadyVerifiedType = "/api/v1/problems/email-already-verified";
@@ -41,7 +41,7 @@ export function useVerificationEmail(): VerificationEmail {
     },
     onError: async (error) => {
       if (error instanceof ApiError && error.type === alreadyVerifiedType)
-        await queryClient.invalidateQueries({ queryKey: preferencesQueryOptions(api).queryKey });
+        await refreshPreferencesAfterVerification(api, queryClient);
     },
   });
 

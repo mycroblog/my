@@ -117,3 +117,11 @@ export function resendVerificationEmailMutation(api: Api) {
     },
   };
 }
+
+/**
+ * Fetches the preferences again after the server said the address no longer needs a verification email (409
+ * `email-already-verified`): another tab verified it meanwhile, so `email_suppression` is gone.
+ */
+export async function refreshPreferencesAfterVerification(api: Api, queryClient: QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: preferencesQueryOptions(api).queryKey });
+}
