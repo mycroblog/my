@@ -4,11 +4,9 @@ import { describe, expect, it } from "vitest";
 import { HomeIcon, LocalIcon } from "./Icons";
 import { RailItem } from "./RailItem";
 
-/** The element that holds the item's icon: the pill of the tab bar. */
-function pillOf(name: string): HTMLElement {
-  const icon = screen.getByRole("link", { name }).querySelector("svg");
-  if (icon?.parentElement == null) throw new Error(`no icon in ${name}`);
-  return icon.parentElement;
+/** Whether the link draws a part with the soft fill: in the tab bar, the pill behind the icon of the current item. */
+function hasFilledPart(name: string): boolean {
+  return /class="[^"]*\bbg-soft\b/.test(screen.getByRole("link", { name }).innerHTML);
 }
 
 describe("RailItem", () => {
@@ -26,7 +24,7 @@ describe("RailItem", () => {
     );
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Local" })).not.toHaveAttribute("aria-current");
-    expect(pillOf("Home")).toHaveClass("bg-soft");
-    expect(pillOf("Local")).not.toHaveClass("bg-soft");
+    expect(hasFilledPart("Home")).toBe(true);
+    expect(hasFilledPart("Local")).toBe(false);
   });
 });
