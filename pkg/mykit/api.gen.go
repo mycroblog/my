@@ -1304,6 +1304,147 @@ func (e BillingSourceName) Valid() bool {
 	}
 }
 
+// Defines values for BrandDroppedKind.
+const (
+	BrandDroppedKindAttribute BrandDroppedKind = "attribute"
+	BrandDroppedKindElement   BrandDroppedKind = "element"
+)
+
+// Valid indicates whether the value is a known member of the BrandDroppedKind enum.
+func (e BrandDroppedKind) Valid() bool {
+	switch e {
+	case BrandDroppedKindAttribute:
+		return true
+	case BrandDroppedKindElement:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandErrorCode.
+const (
+	BrandErrorCodeAspectRatio         BrandErrorCode = "aspect_ratio"
+	BrandErrorCodeDimensions          BrandErrorCode = "dimensions"
+	BrandErrorCodeDoctype             BrandErrorCode = "doctype"
+	BrandErrorCodeInvalidColor        BrandErrorCode = "invalid_color"
+	BrandErrorCodeInvalidPng          BrandErrorCode = "invalid_png"
+	BrandErrorCodeMalformed           BrandErrorCode = "malformed"
+	BrandErrorCodeMissingRendition    BrandErrorCode = "missing_rendition"
+	BrandErrorCodeNoViewbox           BrandErrorCode = "no_viewbox"
+	BrandErrorCodeNotOpaque           BrandErrorCode = "not_opaque"
+	BrandErrorCodeNotSvg              BrandErrorCode = "not_svg"
+	BrandErrorCodeText                BrandErrorCode = "text"
+	BrandErrorCodeTooDeep             BrandErrorCode = "too_deep"
+	BrandErrorCodeTooLarge            BrandErrorCode = "too_large"
+	BrandErrorCodeTooManyElements     BrandErrorCode = "too_many_elements"
+	BrandErrorCodeTooManyUses         BrandErrorCode = "too_many_uses"
+	BrandErrorCodeUnexpectedRendition BrandErrorCode = "unexpected_rendition"
+	BrandErrorCodeUnsafeCss           BrandErrorCode = "unsafe_css"
+)
+
+// Valid indicates whether the value is a known member of the BrandErrorCode enum.
+func (e BrandErrorCode) Valid() bool {
+	switch e {
+	case BrandErrorCodeAspectRatio:
+		return true
+	case BrandErrorCodeDimensions:
+		return true
+	case BrandErrorCodeDoctype:
+		return true
+	case BrandErrorCodeInvalidColor:
+		return true
+	case BrandErrorCodeInvalidPng:
+		return true
+	case BrandErrorCodeMalformed:
+		return true
+	case BrandErrorCodeMissingRendition:
+		return true
+	case BrandErrorCodeNoViewbox:
+		return true
+	case BrandErrorCodeNotOpaque:
+		return true
+	case BrandErrorCodeNotSvg:
+		return true
+	case BrandErrorCodeText:
+		return true
+	case BrandErrorCodeTooDeep:
+		return true
+	case BrandErrorCodeTooLarge:
+		return true
+	case BrandErrorCodeTooManyElements:
+		return true
+	case BrandErrorCodeTooManyUses:
+		return true
+	case BrandErrorCodeUnexpectedRendition:
+		return true
+	case BrandErrorCodeUnsafeCss:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandKind.
+const (
+	BrandKindIcon     BrandKind = "icon"
+	BrandKindLogo     BrandKind = "logo"
+	BrandKindLogoDark BrandKind = "logo_dark"
+)
+
+// Valid indicates whether the value is a known member of the BrandKind enum.
+func (e BrandKind) Valid() bool {
+	switch e {
+	case BrandKindIcon:
+		return true
+	case BrandKindLogo:
+		return true
+	case BrandKindLogoDark:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BrandRendition.
+const (
+	BrandRenditionAppleTouch180   BrandRendition = "apple-touch-180"
+	BrandRenditionFavicon32       BrandRendition = "favicon-32"
+	BrandRenditionFavicon48       BrandRendition = "favicon-48"
+	BrandRenditionLogoDarkMail    BrandRendition = "logo-dark-mail"
+	BrandRenditionLogoMail        BrandRendition = "logo-mail"
+	BrandRenditionMaskable512     BrandRendition = "maskable-512"
+	BrandRenditionPreview1200x630 BrandRendition = "preview-1200x630"
+	BrandRenditionPwa192          BrandRendition = "pwa-192"
+	BrandRenditionPwa512          BrandRendition = "pwa-512"
+)
+
+// Valid indicates whether the value is a known member of the BrandRendition enum.
+func (e BrandRendition) Valid() bool {
+	switch e {
+	case BrandRenditionAppleTouch180:
+		return true
+	case BrandRenditionFavicon32:
+		return true
+	case BrandRenditionFavicon48:
+		return true
+	case BrandRenditionLogoDarkMail:
+		return true
+	case BrandRenditionLogoMail:
+		return true
+	case BrandRenditionMaskable512:
+		return true
+	case BrandRenditionPreview1200x630:
+		return true
+	case BrandRenditionPwa192:
+		return true
+	case BrandRenditionPwa512:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ClientErrorReportKind.
 const (
 	ClientErrorReportKindBoundaryError      ClientErrorReportKind = "boundary_error"
@@ -4724,6 +4865,43 @@ type AdminAvailabilityEventPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// AdminBrandImage A brand image as the administrators see it: the image of `Instance` with the background color
+// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+// removed from the upload.
+type AdminBrandImage struct {
+	// Background The `#rrggbb` color behind the opaque renditions of the icon; omitted for a logo.
+	Background *string         `json:"background,omitempty"`
+	Dropped    *[]BrandDropped `json:"dropped,omitempty"`
+
+	// Height The height of the SVG's viewBox, rounded.
+	Height     int         `json:"height"`
+	Renditions []BrandFile `json:"renditions"`
+	RevisedAt  time.Time   `json:"revised_at"`
+	Revision   string      `json:"revision"`
+	SvgUrl     string      `json:"svg_url"`
+
+	// Width The width of the SVG's viewBox, rounded.
+	Width int `json:"width"`
+}
+
+// AdminBrands The brand images of the instance; a kind that uses the built-in images is omitted.
+type AdminBrands struct {
+	// Icon A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	Icon *AdminBrandImage `json:"icon,omitempty"`
+
+	// Logo A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	Logo *AdminBrandImage `json:"logo,omitempty"`
+
+	// LogoDark A brand image as the administrators see it: the image of `Instance` with the background color
+	// of the icon and when it was set, and, in the answer to `setAdminBrand`, what the sanitizer
+	// removed from the upload.
+	LogoDark *AdminBrandImage `json:"logo_dark,omitempty"`
+}
+
 // AdminCounts What awaits the moderators; a count whose permission the user lacks is omitted.
 type AdminCounts struct {
 	// OpenReports The reports that are open. Needs `manage_reports`.
@@ -6599,6 +6777,136 @@ type BillingImportRunOutcome string
 // BillingSourceName A cloud provider of the billing imports (`billing_sources`).
 type BillingSourceName string
 
+// BrandDropped Something the server removed from an uploaded SVG: an `element` with everything in it, or an
+// `attribute`, by its local name.
+type BrandDropped struct {
+	Kind BrandDroppedKind `json:"kind"`
+	Name string           `json:"name"`
+}
+
+// BrandDroppedKind defines model for BrandDropped.Kind.
+type BrandDroppedKind string
+
+// BrandError Why a brand image cannot be saved. `code` is `malformed` (not well-formed XML in UTF-8),
+// `doctype` (a DOCTYPE or an entity declaration), `not_svg` (the root is not `svg`),
+// `no_viewbox` (no `viewBox` of four numbers with a positive size), `too_large` (the SVG is
+// over 262,144 bytes, or 131,072 once sanitized, or a PNG is over 1,048,576), `too_many_elements`
+// (over 5,000), `too_deep` (elements nested over 32 deep), `too_many_uses` (over 200 `use`
+// elements, references that expand to too many elements, or a reference cycle),
+// `aspect_ratio` (an icon that is not square within 1%, a logo not 1 to 8 times as wide as
+// it is high), `text` (`text` or `tspan`: convert the text to outlines), `unsafe_css` (CSS with
+// `@import`, `@font-face`, `@namespace`, a `url()` other than `url(#id)`, `expression(`, an
+// escape, or `<`), `missing_rendition`, `unexpected_rendition` (a rendition of another
+// kind), `invalid_png`, `dimensions` (a PNG of the wrong size), `not_opaque` (a rendition that
+// must be opaque has transparent pixels), or `invalid_color` (the background is not `#rrggbb`,
+// or a logo has one). `rendition` names the file, `svg` for the SVG.
+type BrandError struct {
+	Code BrandErrorCode `json:"code"`
+
+	// Detail More about the problem, in English.
+	Detail    *string `json:"detail,omitempty"`
+	Rendition *string `json:"rendition,omitempty"`
+}
+
+// BrandErrorCode defines model for BrandError.Code.
+type BrandErrorCode string
+
+// BrandFile A PNG rendition of a brand image, served at a URL whose content never changes.
+type BrandFile struct {
+	Height int `json:"height"`
+
+	// Rendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+	// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+	// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+	// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+	// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+	// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+	// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+	// instance has no `preview_image`.
+	Rendition BrandRendition `json:"rendition"`
+	Url       string         `json:"url"`
+	Width     int            `json:"width"`
+}
+
+// BrandKind A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+// instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+// `logo_dark` for dark backgrounds (the `logo` is used there without it).
+type BrandKind string
+
+// BrandProblem A 422 of the brand image operations. For the type `/api/v1/problems/invalid-brand`,
+// `brand_error` says why the image cannot be saved; another 422 (a malformed request) has none.
+type BrandProblem struct {
+	// BrandError Why a brand image cannot be saved. `code` is `malformed` (not well-formed XML in UTF-8),
+	// `doctype` (a DOCTYPE or an entity declaration), `not_svg` (the root is not `svg`),
+	// `no_viewbox` (no `viewBox` of four numbers with a positive size), `too_large` (the SVG is
+	// over 262,144 bytes, or 131,072 once sanitized, or a PNG is over 1,048,576), `too_many_elements`
+	// (over 5,000), `too_deep` (elements nested over 32 deep), `too_many_uses` (over 200 `use`
+	// elements, references that expand to too many elements, or a reference cycle),
+	// `aspect_ratio` (an icon that is not square within 1%, a logo not 1 to 8 times as wide as
+	// it is high), `text` (`text` or `tspan`: convert the text to outlines), `unsafe_css` (CSS with
+	// `@import`, `@font-face`, `@namespace`, a `url()` other than `url(#id)`, `expression(`, an
+	// escape, or `<`), `missing_rendition`, `unexpected_rendition` (a rendition of another
+	// kind), `invalid_png`, `dimensions` (a PNG of the wrong size), `not_opaque` (a rendition that
+	// must be opaque has transparent pixels), or `invalid_color` (the background is not `#rrggbb`,
+	// or a logo has one). `rendition` names the file, `svg` for the SVG.
+	BrandError *BrandError `json:"brand_error,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type                 string                 `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// BrandRendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+// instance has no `preview_image`.
+type BrandRendition string
+
+// BrandRenditionSize A rendition that a brand image needs, and its size in pixels.
+type BrandRenditionSize struct {
+	Height int `json:"height"`
+
+	// Rendition A PNG rendition of a brand image, drawn from its SVG for the places that take no SVG:
+	// `favicon-32` and `favicon-48` (32 and 48 pixels), `apple-touch-180` (180 pixels, opaque, the
+	// iOS home screen), `pwa-192` and `pwa-512` (the app icons), and `maskable-512` (512 pixels,
+	// opaque, the mark within the middle 80%) of the icon; `logo-mail` of the logo and
+	// `logo-dark-mail` of the dark logo (96 pixels high and as wide as the aspect ratio makes it, up
+	// to 600 pixels, which then sets the height; a pixel off is accepted), shown in emails; and
+	// `preview-1200x630` of the logo (1200 × 630 pixels, opaque), the link preview image when the
+	// instance has no `preview_image`.
+	Rendition BrandRendition `json:"rendition"`
+	Width     int            `json:"width"`
+}
+
+// BrandSanitized An SVG as the server would save it: the sanitized document, the size of its viewBox, the
+// renditions to draw from it with their sizes, and what was removed.
+type BrandSanitized struct {
+	Dropped    []BrandDropped       `json:"dropped"`
+	Renditions []BrandRenditionSize `json:"renditions"`
+
+	// Svg The sanitized SVG document.
+	Svg           string  `json:"svg"`
+	ViewBoxHeight float32 `json:"view_box_height"`
+	ViewBoxWidth  float32 `json:"view_box_width"`
+}
+
 // CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
@@ -7305,6 +7613,11 @@ type CredentialAccount struct {
 
 	// Source The profile as the user typed it, for editing.
 	Source AccountSource `json:"source"`
+
+	// StatusesCount The number of the account's own posts that are not deleted, of every visibility.
+	// Only the owner sees it; other accounts do not carry it. A client that creates a post
+	// adds one to it, so a count of 1 after the create is the account's first post.
+	StatusesCount int64 `json:"statuses_count"`
 
 	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
 	Uri string `json:"uri"`
@@ -8359,6 +8672,15 @@ type Instance struct {
 	// the names, memos, or individual payments of the cost items.
 	FinanceVisibility FinanceVisibility `json:"finance_visibility"`
 
+	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	Icon *InstanceBrandImage `json:"icon,omitempty"`
+
 	// IncomeVisibility How much of the instance's income everyone may read (the instance setting
 	// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
 	// nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
@@ -8369,6 +8691,24 @@ type Instance struct {
 
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
+
+	// Logo A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	Logo *InstanceBrandImage `json:"logo,omitempty"`
+
+	// LogoDark A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+	// under `/brand/` on the server that name the revision, so their content never changes and
+	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+	// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+	// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+	// (`logo` is used there without it); each is omitted while the instance uses the built-in
+	// image.
+	LogoDark *InstanceBrandImage `json:"logo_dark,omitempty"`
 
 	// Name The display name of the instance; the domain when the instance has none.
 	Name string `json:"name"`
@@ -8455,6 +8795,24 @@ type Instance struct {
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+// under `/brand/` on the server that name the revision, so their content never changes and
+// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+// never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+// name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+// (`logo` is used there without it); each is omitted while the instance uses the built-in
+// image.
+type InstanceBrandImage struct {
+	// Height The height of the SVG's viewBox, rounded.
+	Height     int         `json:"height"`
+	Renditions []BrandFile `json:"renditions"`
+	Revision   string      `json:"revision"`
+	SvgUrl     string      `json:"svg_url"`
+
+	// Width The width of the SVG's viewBox, rounded.
+	Width int `json:"width"`
+}
 
 // InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the
@@ -10280,6 +10638,8 @@ type PreviewDomainBlockImportRequest struct {
 //     deleted; `reason` says why.
 //   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
 //     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
+//     why (`/admin/instance/brand/...`).
 //   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
 //     allow the operation: withdrawing an announcement when none is in effect, announcing the
 //     closure of a server that is closed already (`/admin/closure/announcement`), or closing a
@@ -10767,6 +11127,17 @@ type RotateLoginProviderSecretRequest struct {
 	ClientSecret string `json:"client_secret"`
 }
 
+// SanitizeBrandRequest An SVG to check before setting it as a brand image.
+type SanitizeBrandRequest struct {
+	// Kind A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+	// instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+	// `logo_dark` for dark backgrounds (the `logo` is used there without it).
+	Kind BrandKind `json:"kind"`
+
+	// Svg The SVG file, at most 262,144 bytes.
+	Svg openapi_types.File `json:"svg"`
+}
+
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
 // `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
@@ -10815,6 +11186,29 @@ type ServiceClosureNoticeChange string
 //     other servers. The users can still sign in and export their data until `export_until`.
 //   - `delivery_completed`: the server is closed and those deliveries have ended.
 type ServiceClosureState string
+
+// SetBrandRequest A brand image: the SVG and every PNG rendition of its kind, each in the part named after the
+// rendition with `_` for `-` (`BrandRendition`). The icon takes `favicon_32`, `favicon_48`,
+// `apple_touch_180`, `pwa_192`, `pwa_512`, and `maskable_512`; the logo `logo_mail` and
+// `preview_1200x630`; the dark logo `logo_dark_mail`. Other parts are ignored.
+type SetBrandRequest struct {
+	AppleTouch180 *openapi_types.File `json:"apple_touch_180,omitempty"`
+
+	// Background The `#rrggbb` color behind the opaque renditions of the icon; the theme's light surface
+	// color when it is left out. A logo takes none.
+	Background      *string             `json:"background,omitempty"`
+	Favicon32       *openapi_types.File `json:"favicon_32,omitempty"`
+	Favicon48       *openapi_types.File `json:"favicon_48,omitempty"`
+	LogoDarkMail    *openapi_types.File `json:"logo_dark_mail,omitempty"`
+	LogoMail        *openapi_types.File `json:"logo_mail,omitempty"`
+	Maskable512     *openapi_types.File `json:"maskable_512,omitempty"`
+	Preview1200x630 *openapi_types.File `json:"preview_1200x630,omitempty"`
+	Pwa192          *openapi_types.File `json:"pwa_192,omitempty"`
+	Pwa512          *openapi_types.File `json:"pwa_512,omitempty"`
+
+	// Svg The SVG file, at most 262,144 bytes.
+	Svg openapi_types.File `json:"svg"`
+}
 
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
@@ -13300,6 +13694,12 @@ type ImportDomainBlocksJSONRequestBody = ImportDomainBlocksRequest
 // PreviewDomainBlockImportJSONRequestBody defines body for PreviewDomainBlockImport for application/json ContentType.
 type PreviewDomainBlockImportJSONRequestBody = PreviewDomainBlockImportRequest
 
+// SanitizeAdminBrandMultipartRequestBody defines body for SanitizeAdminBrand for multipart/form-data ContentType.
+type SanitizeAdminBrandMultipartRequestBody = SanitizeBrandRequest
+
+// SetAdminBrandMultipartRequestBody defines body for SetAdminBrand for multipart/form-data ContentType.
+type SetAdminBrandMultipartRequestBody = SetBrandRequest
+
 // SetInstanceTextJSONRequestBody defines body for SetInstanceText for application/json ContentType.
 type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 
@@ -13503,6 +13903,143 @@ type SetVoiceMicJSONRequestBody = VoiceMic
 
 // ReactInVoiceRoomJSONRequestBody defines body for ReactInVoiceRoom for application/json ContentType.
 type ReactInVoiceRoomJSONRequestBody = VoiceReaction
+
+// Getter for additional properties for BrandProblem. Returns the specified
+// element and whether it was found
+func (a BrandProblem) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for BrandProblem
+func (a *BrandProblem) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for BrandProblem to handle AdditionalProperties
+func (a *BrandProblem) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["brand_error"]; found {
+		err = json.Unmarshal(raw, &a.BrandError)
+		if err != nil {
+			return fmt.Errorf("error reading 'brand_error': %w", err)
+		}
+		delete(object, "brand_error")
+	}
+
+	if raw, found := object["detail"]; found {
+		err = json.Unmarshal(raw, &a.Detail)
+		if err != nil {
+			return fmt.Errorf("error reading 'detail': %w", err)
+		}
+		delete(object, "detail")
+	}
+
+	if raw, found := object["request_id"]; found {
+		err = json.Unmarshal(raw, &a.RequestId)
+		if err != nil {
+			return fmt.Errorf("error reading 'request_id': %w", err)
+		}
+		delete(object, "request_id")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for BrandProblem to handle AdditionalProperties
+func (a BrandProblem) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.BrandError != nil {
+		object["brand_error"], err = json.Marshal(a.BrandError)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'brand_error': %w", err)
+		}
+	}
+
+	if a.Detail != nil {
+		object["detail"], err = json.Marshal(a.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'detail': %w", err)
+		}
+	}
+
+	if a.RequestId != nil {
+		object["request_id"], err = json.Marshal(a.RequestId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'request_id': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
 
 // Getter for additional properties for CustomEmojiProblem. Returns the specified
 // element and whether it was found
@@ -16391,6 +16928,63 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/income_totals (the `GetIncomeTotals` operationId).
 	GetIncomeTotals(ctx context.Context, params *GetIncomeTotalsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAdminBrands Read the brand images
+	//
+	// The instance's own icon, logo, and dark logo, each with the background color of the icon.
+	// A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/instance/brand (the `GetAdminBrands` operationId).
+	GetAdminBrands(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SanitizeAdminBrandWithBody Check an SVG for a brand image
+	//
+	// Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+	// sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+	// SVG and sends them with it to `setAdminBrand`.
+	//
+	// The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+	// groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+	// `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+	// `class`, `style`) only. Other elements are removed with their content (scripts,
+	// `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+	// (event handlers among them), references other than to an element of the same document
+	// (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+	// a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+	// `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/instance/brand/sanitize (the `SanitizeAdminBrand` operationId).
+	SanitizeAdminBrandWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ClearAdminBrand Clear a brand image
+	//
+	// Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+	// kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+	//
+	// Corresponds with DELETE /admin/instance/brand/{kind} (the `ClearAdminBrand` operationId).
+	ClearAdminBrand(ctx context.Context, kind BrandKind, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetAdminBrandWithBody Set a brand image
+	//
+	// Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+	// `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+	// previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+	// again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+	// most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+	// without their metadata. A problem with any file saves nothing: a 422
+	// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+	// the PNGs show the same picture as the SVG.
+	//
+	// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+	// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+	// revision stay at their URLs. Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /admin/instance/brand/{kind} (the `SetAdminBrand` operationId).
+	SetAdminBrandWithBody(ctx context.Context, kind BrandKind, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListInstanceTexts List the instance texts
 	//
@@ -22672,6 +23266,103 @@ func (c *Client) ListIncomeMovements(ctx context.Context, params *ListIncomeMove
 // Corresponds with GET /admin/income_totals (the `GetIncomeTotals` operationId).
 func (c *Client) GetIncomeTotals(ctx context.Context, params *GetIncomeTotalsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetIncomeTotalsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminBrands Read the brand images
+//
+// The instance's own icon, logo, and dark logo, each with the background color of the icon.
+// A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/instance/brand (the `GetAdminBrands` operationId).
+func (c *Client) GetAdminBrands(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminBrandsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SanitizeAdminBrandWithBody Check an SVG for a brand image
+//
+// Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+// sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+// SVG and sends them with it to `setAdminBrand`.
+//
+// The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+// groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+// `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+// `class`, `style`) only. Other elements are removed with their content (scripts,
+// `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+// (event handlers among them), references other than to an element of the same document
+// (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+// a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+// `manage_settings` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/instance/brand/sanitize (the `SanitizeAdminBrand` operationId).
+func (c *Client) SanitizeAdminBrandWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSanitizeAdminBrandRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ClearAdminBrand Clear a brand image
+//
+// Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+// kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+//
+// Corresponds with DELETE /admin/instance/brand/{kind} (the `ClearAdminBrand` operationId).
+func (c *Client) ClearAdminBrand(ctx context.Context, kind BrandKind, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewClearAdminBrandRequest(c.Server, kind)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetAdminBrandWithBody Set a brand image
+//
+// Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+// `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+// previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+// again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+// most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+// without their metadata. A problem with any file saves nothing: a 422
+// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+// the PNGs show the same picture as the SVG.
+//
+// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+// revision stay at their URLs. Needs the `manage_settings` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /admin/instance/brand/{kind} (the `SetAdminBrand` operationId).
+func (c *Client) SetAdminBrandWithBody(ctx context.Context, kind BrandKind, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAdminBrandRequestWithBody(c.Server, kind, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -33422,6 +34113,132 @@ func NewGetIncomeTotalsRequest(server string, params *GetIncomeTotalsParams) (*h
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetAdminBrandsRequest constructs an http.Request for the GetAdminBrands method
+func NewGetAdminBrandsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/instance/brand")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSanitizeAdminBrandRequestWithBody constructs an http.Request for the SanitizeAdminBrand method, with any body, and a specified content type
+func NewSanitizeAdminBrandRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/instance/brand/sanitize")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewClearAdminBrandRequest constructs an http.Request for the ClearAdminBrand method
+func NewClearAdminBrandRequest(server string, kind BrandKind) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "kind", kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/instance/brand/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetAdminBrandRequestWithBody constructs an http.Request for the SetAdminBrand method, with any body, and a specified content type
+func NewSetAdminBrandRequestWithBody(server string, kind BrandKind, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "kind", kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/instance/brand/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -45080,6 +45897,67 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/income_totals (the `GetIncomeTotals` operationId).
 	GetIncomeTotalsWithResponse(ctx context.Context, params *GetIncomeTotalsParams, reqEditors ...RequestEditorFn) (*GetIncomeTotalsResponse, error)
 
+	// GetAdminBrandsWithResponse Read the brand images
+	//
+	// The instance's own icon, logo, and dark logo, each with the background color of the icon.
+	// A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/instance/brand (the `GetAdminBrands` operationId).
+	GetAdminBrandsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminBrandsResponse, error)
+
+	// SanitizeAdminBrandWithBodyWithResponse Check an SVG for a brand image
+	//
+	// Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+	// sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+	// SVG and sends them with it to `setAdminBrand`.
+	//
+	// The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+	// groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+	// `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+	// `class`, `style`) only. Other elements are removed with their content (scripts,
+	// `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+	// (event handlers among them), references other than to an element of the same document
+	// (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+	// a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+	// `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/instance/brand/sanitize (the `SanitizeAdminBrand` operationId).
+	SanitizeAdminBrandWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SanitizeAdminBrandResponse, error)
+
+	// ClearAdminBrandWithResponse Clear a brand image
+	//
+	// Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+	// kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/instance/brand/{kind} (the `ClearAdminBrand` operationId).
+	ClearAdminBrandWithResponse(ctx context.Context, kind BrandKind, reqEditors ...RequestEditorFn) (*ClearAdminBrandResponse, error)
+
+	// SetAdminBrandWithBodyWithResponse Set a brand image
+	//
+	// Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+	// `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+	// previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+	// again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+	// most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+	// without their metadata. A problem with any file saves nothing: a 422
+	// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+	// the PNGs show the same picture as the SVG.
+	//
+	// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+	// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+	// revision stay at their URLs. Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /admin/instance/brand/{kind} (the `SetAdminBrand` operationId).
+	SetAdminBrandWithBodyWithResponse(ctx context.Context, kind BrandKind, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminBrandResponse, error)
+
 	// ListInstanceTextsWithResponse List the instance texts
 	//
 	// The current text of every key that has one (FR-705): the name, the descriptions, the
@@ -54765,6 +55643,282 @@ func (r GetIncomeTotalsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetIncomeTotalsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminBrandsResponse200Headers the declared response headers of an HTTP 200 response for GetAdminBrands
+type GetAdminBrandsResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminBrandsResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminBrands
+type GetAdminBrandsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminBrandsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminBrands
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminBrandsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminBrandsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminBrandsResponse) GetJSON200() *AdminBrands {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminBrandsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminBrandsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminBrandsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminBrandsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminBrandsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SanitizeAdminBrandResponse200Headers the declared response headers of an HTTP 200 response for SanitizeAdminBrand
+type SanitizeAdminBrandResponse200Headers struct {
+	CacheControl *string
+}
+
+// SanitizeAdminBrandResponse422Headers the declared response headers of an HTTP 422 response for SanitizeAdminBrand
+type SanitizeAdminBrandResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// SanitizeAdminBrandResponseDefaultHeaders the declared response headers of an HTTP default response for SanitizeAdminBrand
+type SanitizeAdminBrandResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SanitizeAdminBrandResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *BrandSanitized
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *BrandProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SanitizeAdminBrandResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *SanitizeAdminBrandResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SanitizeAdminBrandResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SanitizeAdminBrandResponse) GetJSON200() *BrandSanitized {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SanitizeAdminBrandResponse) GetApplicationproblemJSON422() *BrandProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SanitizeAdminBrandResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SanitizeAdminBrandResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SanitizeAdminBrandResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SanitizeAdminBrandResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SanitizeAdminBrandResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ClearAdminBrandResponseDefaultHeaders the declared response headers of an HTTP default response for ClearAdminBrand
+type ClearAdminBrandResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ClearAdminBrandResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ClearAdminBrandResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ClearAdminBrandResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ClearAdminBrandResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ClearAdminBrandResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ClearAdminBrandResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ClearAdminBrandResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SetAdminBrandResponse200Headers the declared response headers of an HTTP 200 response for SetAdminBrand
+type SetAdminBrandResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetAdminBrandResponse422Headers the declared response headers of an HTTP 422 response for SetAdminBrand
+type SetAdminBrandResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// SetAdminBrandResponseDefaultHeaders the declared response headers of an HTTP default response for SetAdminBrand
+type SetAdminBrandResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetAdminBrandResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminBrandImage
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *BrandProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetAdminBrandResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *SetAdminBrandResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetAdminBrandResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetAdminBrandResponse) GetJSON200() *AdminBrandImage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetAdminBrandResponse) GetApplicationproblemJSON422() *BrandProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetAdminBrandResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetAdminBrandResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetAdminBrandResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetAdminBrandResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetAdminBrandResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -72216,6 +73370,91 @@ func (c *ClientWithResponses) GetIncomeTotalsWithResponse(ctx context.Context, p
 	return ParseGetIncomeTotalsResponse(rsp)
 }
 
+// GetAdminBrandsWithResponse Read the brand images
+//
+// The instance's own icon, logo, and dark logo, each with the background color of the icon.
+// A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/instance/brand (the `GetAdminBrands` operationId).
+func (c *ClientWithResponses) GetAdminBrandsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminBrandsResponse, error) {
+	rsp, err := c.GetAdminBrands(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminBrandsResponse(rsp)
+}
+
+// SanitizeAdminBrandWithBodyWithResponse Check an SVG for a brand image
+//
+// Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+// sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+// SVG and sends them with it to `setAdminBrand`.
+//
+// The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+// groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+// `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+// `class`, `style`) only. Other elements are removed with their content (scripts,
+// `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+// (event handlers among them), references other than to an element of the same document
+// (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+// a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+// `manage_settings` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/instance/brand/sanitize (the `SanitizeAdminBrand` operationId).
+func (c *ClientWithResponses) SanitizeAdminBrandWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SanitizeAdminBrandResponse, error) {
+	rsp, err := c.SanitizeAdminBrandWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSanitizeAdminBrandResponse(rsp)
+}
+
+// ClearAdminBrandWithResponse Clear a brand image
+//
+// Brings the icon, the logo, or the dark logo back to the built-in images. The change is
+// kept like that of `setAdminBrand`. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/instance/brand/{kind} (the `ClearAdminBrand` operationId).
+func (c *ClientWithResponses) ClearAdminBrandWithResponse(ctx context.Context, kind BrandKind, reqEditors ...RequestEditorFn) (*ClearAdminBrandResponse, error) {
+	rsp, err := c.ClearAdminBrand(ctx, kind, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseClearAdminBrandResponse(rsp)
+}
+
+// SetAdminBrandWithBodyWithResponse Set a brand image
+//
+// Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
+// `SetBrandRequest` and `BrandRendition`), which the web client, the Web App Manifest, link
+// previews, and emails then show instead of the built-in images. The server sanitizes the SVG
+// again (`sanitizeAdminBrand`), checks that each PNG is a PNG of its rendition's size (at
+// most 1,048,576 bytes, opaque where the rendition must be), and writes the PNGs again
+// without their metadata. A problem with any file saves nothing: a 422
+// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
+// the PNGs show the same picture as the SVG.
+//
+// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
+// revision stay at their URLs. Needs the `manage_settings` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /admin/instance/brand/{kind} (the `SetAdminBrand` operationId).
+func (c *ClientWithResponses) SetAdminBrandWithBodyWithResponse(ctx context.Context, kind BrandKind, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAdminBrandResponse, error) {
+	rsp, err := c.SetAdminBrandWithBody(ctx, kind, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetAdminBrandResponse(rsp)
+}
+
 // ListInstanceTextsWithResponse List the instance texts
 //
 // The current text of every key that has one (FR-705): the name, the descriptions, the
@@ -84845,6 +86084,348 @@ func ParseGetIncomeTotalsResponse(rsp *http.Response) (*GetIncomeTotalsResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers GetIncomeTotalsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminBrandsResponse parses an HTTP response from a GetAdminBrandsWithResponse call
+func ParseGetAdminBrandsResponse(rsp *http.Response) (*GetAdminBrandsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminBrandsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminBrands
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminBrandsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminBrandsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSanitizeAdminBrandResponse parses an HTTP response from a SanitizeAdminBrandWithResponse call
+func ParseSanitizeAdminBrandResponse(rsp *http.Response) (*SanitizeAdminBrandResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SanitizeAdminBrandResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BrandSanitized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest BrandProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SanitizeAdminBrandResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers SanitizeAdminBrandResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers SanitizeAdminBrandResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseClearAdminBrandResponse parses an HTTP response from a ClearAdminBrandWithResponse call
+func ParseClearAdminBrandResponse(rsp *http.Response) (*ClearAdminBrandResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ClearAdminBrandResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers ClearAdminBrandResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSetAdminBrandResponse parses an HTTP response from a SetAdminBrandWithResponse call
+func ParseSetAdminBrandResponse(rsp *http.Response) (*SetAdminBrandResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetAdminBrandResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminBrandImage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest BrandProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetAdminBrandResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers SetAdminBrandResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers SetAdminBrandResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

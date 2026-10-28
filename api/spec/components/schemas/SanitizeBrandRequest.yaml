@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: An SVG to check before setting it as a brand image.
+type: object
+required: [kind, svg]
+properties:
+  kind:
+    $ref: ./BrandKind.yaml
+  svg:
+    description: The SVG file, at most 262,144 bytes.
+    type: string
+    format: binary

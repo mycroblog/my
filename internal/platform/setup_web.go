@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -41,6 +42,9 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		// The instance theme (ADR-0059), read per request so that a saved theme applies at once.
 		Theme:         a.Instance.Theme,
 		ThemeRevision: a.themeRevision,
+		// The instance's own icon and logos (ADR-0116), read per request so that a change applies at once.
+		Brands:    a.Instance.Brands,
+		BrandFile: a.brandFile,
 		// What /robots.txt, the pages, and /.well-known/ state to crawlers (ADR-0057), read per request.
 		Settings: a.Instance.Settings,
 		Now:      a.Clock.Now,
@@ -65,6 +69,15 @@ func (a *App) themeRevision(ctx context.Context, id string) (domaininstance.Them
 		return domaininstance.ThemeRevision{}, false, nil
 	}
 	return rev, err == nil, err
+}
+
+// brandFile opens a file of a brand revision, and false when there is none.
+func (a *App) brandFile(ctx context.Context, revisionID string, r domaininstance.BrandRendition) (domaininstance.BrandFile, io.ReadCloser, bool, error) {
+	f, rc, err := a.Instance.BrandFile(ctx, revisionID, r)
+	if errors.Is(err, instance.ErrNotFound) {
+		return domaininstance.BrandFile{}, nil, false, nil
+	}
+	return f, rc, err == nil, err
 }
 
 // themeStylesheet returns the path of the current theme's stylesheet for the server-rendered

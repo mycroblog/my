@@ -211,6 +211,10 @@
     "defaultMessage": "Posted.",
     "description": "Notice after a post was published."
   },
+  "compose.posted.first": {
+    "defaultMessage": "Posted your first post. Welcome.",
+    "description": "Notice after the account's first post was published: the post is done, and the account has started posting."
+  },
   "compose.remaining": {
     "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
     "description": "Counter under a text field: how many more characters fit. {count} is a number."

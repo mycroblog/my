@@ -67,6 +67,15 @@ type Options struct {
 	// ThemeRevision returns a theme revision, current or not, for its stylesheet at
 	// ThemeStylesheetPath, and false when there is none; nil serves no theme stylesheets.
 	ThemeRevision func(ctx context.Context, id string) (instance.ThemeRevision, bool, error)
+	// Brands returns the instance's own icon and logos (ADR-0116). The shell, the manifest, and
+	// /apple-touch-icon.png use the icon's files instead of the build's, the runtime config names
+	// the logos, and link previews fall back to the logo's preview image before the built-in one.
+	// It is called per request, so that a change applies without a restart; nil means the
+	// built-in images.
+	Brands func(ctx context.Context) (instance.Brands, error)
+	// BrandFile opens a file of a brand revision, current or not, for PathBrand, and false when
+	// there is none; nil serves no brand files.
+	BrandFile func(ctx context.Context, revisionID string, r instance.BrandRendition) (instance.BrandFile, io.ReadCloser, bool, error)
 
 	// Previews reads the profiles and statuses that the shells of profile pages (/@alice) and
 	// post pages (/@alice/status/{id}) describe in their link preview meta tags; nil serves the
@@ -117,7 +126,7 @@ const (
 // reservedPrefixes are the paths of the server's other endpoints. The SPA has no routes under
 // them, so a request there that no endpoint serves is the server's 404, never the shell.
 // /uploads is the blob prefix of media as received, which is never served (it may carry EXIF).
-var reservedPrefixes = []string{"/api", "/oauth", "/auth", "/mail", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/" + licensesDir, PathRobots}
+var reservedPrefixes = []string{"/api", "/oauth", "/auth", "/mail", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/brand", "/" + licensesDir, PathRobots}
 
 // Cache-Control values (ADR-0028).
 const (
@@ -159,6 +168,7 @@ type Handler struct {
 type localizedDocuments struct {
 	name            string
 	theme           themeState
+	brand           string
 	policy          instance.CrawlerPolicy
 	shell, manifest document
 }
@@ -264,7 +274,7 @@ func New(o Options) (*Handler, error) {
 	version = append(append(version, tags.Stylesheet...), tags.Preload...)
 	h.previewVersion = etag([]byte(strings.Join(version, "\x00")))
 	// Render once now, so that a template or encoding error fails the start.
-	if _, err := h.render(i18n.SourceLocale, o.Host, defaultTheme(), instance.DenyAll); err != nil {
+	if _, err := h.render(i18n.SourceLocale, o.Host, defaultTheme(), brandState{}, instance.DenyAll); err != nil {
 		return nil, err
 	}
 	return h, nil
@@ -315,27 +325,32 @@ func (h *Handler) documents(ctx context.Context) (*localizedDocuments, error) {
 	if err != nil {
 		return nil, err
 	}
+	brand, err := h.currentBrand(ctx)
+	if err != nil {
+		return nil, err
+	}
 	settings, err := h.settings(ctx)
 	if err != nil {
 		return nil, err
 	}
 	policy := settings.CrawlerPolicy().NoIndex()
 	if d, ok := h.localized.Load(locale); ok {
-		if d := d.(*localizedDocuments); d.name == name && d.theme == theme && d.policy == policy {
+		if d := d.(*localizedDocuments); d.name == name && d.theme == theme && d.brand == brand.Version && d.policy == policy {
 			return d, nil
 		}
 	}
-	return h.render(locale, name, theme, policy)
+	return h.render(locale, name, theme, brand, policy)
 }
 
-// render renders the documents of a default locale that show the instance name, the theme, and
-// the crawler policy, and caches them in place of those of an earlier name, theme, or policy.
-func (h *Handler) render(locale, name string, theme themeState, policy instance.CrawlerPolicy) (*localizedDocuments, error) {
+// render renders the documents of a default locale that show the instance name, the theme, the
+// brand images, and the crawler policy, and caches them in place of those of an earlier name,
+// theme, brand, or policy.
+func (h *Handler) render(locale, name string, theme themeState, brand brandState, policy instance.CrawlerPolicy) (*localizedDocuments, error) {
 	crawlers := directivesOf(policy)
 	shell, err := renderShell(shellData{
-		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Crawlers: crawlers,
+		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
 		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
-		Config: h.runtimeConfig(locale, name),
+		Config: h.runtimeConfig(locale, name, brand),
 	})
 	if err != nil {
 		return nil, err
@@ -344,20 +359,21 @@ func (h *Handler) render(locale, name string, theme themeState, policy instance.
 	// The headers state more than the meta tags (Content-Usage tells deny_training from deny), so
 	// the ETag covers the policy too.
 	shell.etag = etag([]byte(string(shell.body) + "\x00" + string(policy.Search) + "\x00" + string(policy.AI)))
-	manifest, err := renderWebManifest(locale, name, theme, h.icons)
+	manifest, err := renderWebManifest(locale, name, theme, h.manifestIcons(brand))
 	if err != nil {
 		return nil, err
 	}
-	d := &localizedDocuments{name: name, theme: theme, policy: policy, shell: shell, manifest: manifest}
+	d := &localizedDocuments{name: name, theme: theme, brand: brand.Version, policy: policy, shell: shell, manifest: manifest}
 	h.localized.Store(locale, d)
 	return d, nil
 }
 
-// runtimeConfig returns the runtime config of the shell for the default locale and the
-// instance's name in it.
-func (h *Handler) runtimeConfig(locale, name string) runtimeConfig {
+// runtimeConfig returns the runtime config of the shell for the default locale, the instance's
+// name in it, and its brand images.
+func (h *Handler) runtimeConfig(locale, name string, brand brandState) runtimeConfig {
 	return runtimeConfig{
 		APIOrigin: h.apiOrigin, InstanceName: name, AccountDomain: h.o.AccountDomain, DefaultLocale: locale,
+		Icon: brand.IconImage, Logo: brand.Logo, LogoDark: brand.LogoDark,
 	}
 }
 
@@ -423,6 +439,7 @@ func (h *Handler) Register(r Router) {
 	r.Handle("GET "+PathLicenses+"{file}", http.HandlerFunc(h.license))
 	r.Handle("GET "+PathDefaultImage, http.HandlerFunc(h.serveDefaultImage))
 	r.Handle("GET "+PathTheme+"{file}", http.HandlerFunc(h.serveThemeStylesheet))
+	r.Handle("GET "+PathBrand+"{revision}/{file}", http.HandlerFunc(h.serveBrandFile))
 	r.Handle("GET "+PathRobots, http.HandlerFunc(h.serveRobots))
 	r.Handle("GET "+PathTDMRep, http.HandlerFunc(h.serveTDMRep))
 	r.Handle("GET "+PathSecurityTxt, http.HandlerFunc(h.serveSecurityTxt))
@@ -439,6 +456,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if name := strings.TrimPrefix(p, "/"); name != "" && !strings.Contains(name, "/") {
+		if name == appleTouchIconPath && h.serveAppleTouchIcon(w, r) {
+			return
+		}
 		if _, ok := h.files[name]; ok {
 			if name == serviceWorkerPath {
 				// A worker runs under the CSP of its own script's response, not the page's; the server's

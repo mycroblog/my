@@ -78,10 +78,16 @@ type Options struct {
 	// LoginProvider lists the destinations that the requests of kernel.HTTPPurposeLoginProvider
 	// may reach although the guard refuses them (login_provider_allowed_destinations, ADR-0106 §5).
 	LoginProvider Destinations
+	// WebPush lists the destinations that the requests of kernel.HTTPPurposeWebPush may reach
+	// although the guard refuses them (push_allowed_destinations, ADR-0118 §3): the demo
+	// environment's fake push service on loopback. The configuration accepts it only in the
+	// development profile. Unlike the other lists it keeps https, and a request to one of these
+	// destinations never follows a redirect.
+	WebPush Destinations
 }
 
 // Destinations are the destinations exempt from the guard for one purpose alone
-// (kernel.HTTPPurposeWebhook or kernel.HTTPPurposeLoginProvider): a URL whose host is one of
+// (kernel.HTTPPurposeWebhook, kernel.HTTPPurposeLoginProvider, or kernel.HTTPPurposeWebPush): a URL whose host is one of
 // Hosts, or an IP address in one of Prefixes, may use http and any port, and the connection may
 // go to any address (for Hosts) or to the addresses in Prefixes. The requests of each such
 // purpose use connections of their own, so that no other purpose reuses a connection to an
@@ -127,7 +133,10 @@ type Client struct {
 	// loginProvider sends the requests of kernel.HTTPPurposeLoginProvider the same way, with the
 	// exempt destinations of Options.LoginProvider.
 	loginProvider *http.Client
-	open          *net.Dialer
+	// webPush sends the requests of kernel.HTTPPurposeWebPush to the exempt destinations of
+	// Options.WebPush, never following a redirect; every other Web Push request goes through http.
+	webPush *http.Client
+	open    *net.Dialer
 	// noRedirect sends the requests of kernel.HTTPPurposeClientMetadata through the guarded
 	// transport of http, but never follows a redirect.
 	noRedirect *http.Client
@@ -176,6 +185,11 @@ func New(opts Options) *Client {
 	c.loginProvider = &http.Client{
 		Transport: c.transport(c.dialExempt(opts.LoginProvider)),
 		// Identity providers: a redirect is a failure, never followed (ADR-0106 §5).
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+	c.webPush = &http.Client{
+		Transport: c.transport(c.dialExempt(opts.WebPush)),
+		// A redirect never leaves the fake push service for another destination (ADR-0118 §3).
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	return c
@@ -236,6 +250,15 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 		client, exempt = c.loginProvider, c.opts.LoginProvider
 	case kernel.HTTPPurposeClientMetadata:
 		client = c.noRedirect
+	case kernel.HTTPPurposeWebPush:
+		// Only a request to an exempt destination uses the exempt client: the others keep the
+		// guarded client and its redirect checks, as without the list.
+		if c.opts.WebPush.host(u.Hostname()) {
+			if u.Scheme != "https" {
+				return nil, fmt.Errorf("%w: scheme %q", kernel.ErrForbiddenDestination, u.Scheme)
+			}
+			client, exempt = c.webPush, c.opts.WebPush
+		}
 	}
 	if exempt.host(u.Hostname()) {
 		if err := checkExemptURL(u); err != nil {

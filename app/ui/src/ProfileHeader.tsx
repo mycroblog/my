@@ -17,6 +17,7 @@ const profileHeader = tv({
     root: "@container flex flex-col",
     top: "flex flex-wrap items-end justify-between gap-3 px-4",
     avatar: "-mt-10 ring-4 ring-surface",
+    mark: "-mt-10 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface-raised p-2 shadow-card ring-4 ring-surface",
     body: "mt-3 flex flex-col gap-3 px-4",
     identity: "min-w-0 wrap-anywhere",
     handle: "text-fg-muted",
@@ -42,12 +43,17 @@ export type ProfileHeaderProps = {
   avatarSeed?: string | undefined;
   /** The account's name, for the avatar's fallback letter. */
   name: string;
+  /**
+   * Something else in the avatar's place, on a rounded tile of the avatar's size: the mark of a server on its landing
+   * page. It is decorative too, as the heading names the page.
+   */
+  mark?: ReactNode;
   /** The relationship buttons, at the end of the avatar's row. */
   actions?: ReactNode;
   /** The page heading around the name (the route's level-one heading). */
   heading: ReactNode;
-  /** The handle (`@name@domain`); it reads left to right whatever the page's direction. */
-  handle: string;
+  /** The handle (`@name@domain`), or a server's domain; it reads left to right whatever the page's direction. */
+  handle?: string;
   /** The role badges. */
   badges?: ReactNode;
   /** Short words about the account or the relationship ("Follows you"), shown as pills. */
@@ -57,7 +63,7 @@ export type ProfileHeaderProps = {
   /** A `ProfileFields`. */
   fields?: ReactNode;
   /** The text saying when the account joined. */
-  joined: ReactNode;
+  joined?: ReactNode;
   /** The counts, side by side. */
   counts?: readonly ProfileHeaderCount[];
 };
@@ -72,6 +78,7 @@ export function ProfileHeader({
   avatar,
   avatarSeed,
   name,
+  mark,
   actions,
   heading,
   handle,
@@ -89,16 +96,24 @@ export function ProfileHeader({
       <AnimationsPlayContext value={scope.playing}>
         <ProfileHeaderImage sources={image} size="banner" />
         <div className={styles.top()}>
-          <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
+          {mark === undefined ? (
+            <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
+          ) : (
+            <span aria-hidden="true" className={styles.mark()}>
+              {mark}
+            </span>
+          )}
           {actions}
         </div>
         <div className={styles.body()}>
           <div className={styles.identity()}>
             {heading}
             {/* The handle reads left to right, and lines up with the page's start in either direction. */}
-            <p className={styles.handle()}>
-              <span dir="ltr">{handle}</span>
-            </p>
+            {handle !== undefined && (
+              <p className={styles.handle()}>
+                <span dir="ltr">{handle}</span>
+              </p>
+            )}
           </div>
           {badges}
           {tags.length > 0 && (
@@ -112,7 +127,7 @@ export function ProfileHeader({
           )}
           {note}
           {fields}
-          <p className={styles.joined()}>{joined}</p>
+          {joined !== undefined && <p className={styles.joined()}>{joined}</p>}
           {counts.length > 0 && (
             <ul className={styles.counts()}>
               {counts.map((count) => (

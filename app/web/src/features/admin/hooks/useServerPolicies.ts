@@ -2,7 +2,7 @@
 // The server's policies (FR-001, FR-105, FR-202, FR-408, FR-409, FR-413, FR-718, FR-725, FR-903, ADR-0009, ADR-0057): who may sign
 // up, who may create invites of their own and the caps of those invites (ADR-0108 §1, §2), the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0076, which asks before it narrows), who may read the
-// list of the domain actions, how much of the running costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5), how much of the income is published (FR-917), who may read the supporter list (ADR-0071 §4),
+// list of the domain actions, how much of the running costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5), how much of the income is published (FR-917), who may read the supporter list (ADR-0071 §4), whether the landing page shows the server's numbers and who runs it,
 // what the server states to search engines and AI crawlers, and voice chat (ADR-0100 §2, §9, §13: who may start a
 // room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
 // instance settings that used to change only from the CLI (`my instance set`); the form sends the ones that
@@ -48,6 +48,8 @@ const policyKeys = [
   "finance_viewer_income",
   "income_visibility",
   "supporter_list_visibility",
+  "public_counts",
+  "public_operators",
   "search_indexing",
   "indexable_default",
   "ai_usage",

@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getAdminBrands
+  summary: Read the brand images
+  description: |
+    The instance's own icon, logo, and dark logo, each with the background color of the icon.
+    A kind that uses the built-in images is omitted. Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The brand images.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminBrands.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

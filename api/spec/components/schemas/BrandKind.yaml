@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A brand image of the instance: the square `icon` (the favicon, the app icons, and the
+  instance's avatar), the wide `logo` (a wordmark that includes the instance's name), or the
+  `logo_dark` for dark backgrounds (the `logo` is used there without it).
+type: string
+enum: [icon, logo, logo_dark]

@@ -28,9 +28,15 @@ type PostingPolicy interface {
 	PostingLimits(ctx context.Context, accountID string) (appcontent.PostingLimits, error)
 }
 
+// PostCounts reads how many posts an account has that are not deleted (the
+// account_post_counters projection). *appcontent.Service implements it.
+type PostCounts interface {
+	PostCount(ctx context.Context, accountID string) (int64, error)
+}
+
 // newCredentialAccount presents the viewer's own actor as the CredentialAccount schema: the
 // account with its follow counts and images (newProfile), the source of its profile, its
-// posting limits, and the permissions of the user's roles.
+// posting limits, the count of its own posts, and the permissions of the user's roles.
 func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appaccount.Actor) (CredentialAccount, error) {
 	base, err := s.newProfile(ctx, a)
 	if err != nil {
@@ -44,6 +50,10 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 	if err != nil {
 		return CredentialAccount{}, err
 	}
+	statuses, err := s.postCount(ctx, a.Account.ID)
+	if err != nil {
+		return CredentialAccount{}, err
+	}
 	out := CredentialAccount{
 		Id: base.Id, Username: base.Username, Acct: base.Acct, DisplayName: base.DisplayName, Note: base.Note,
 		Url: base.Url, Locked: base.Locked, Bot: base.Bot, CreatedAt: base.CreatedAt, Fields: base.Fields, Emojis: base.Emojis,
@@ -51,6 +61,7 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		Avatar: base.Avatar, Header: base.Header,
 		FollowersCount: base.FollowersCount, FollowingCount: base.FollowingCount,
 		Source: AccountSource{Fields: []AccountFieldSource{}}, Posting: posting, Permissions: permissions,
+		StatusesCount: statuses,
 	}
 	p := a.Profile
 	if p == nil {
@@ -74,6 +85,18 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		out.Source.HeaderMediaId = &p.HeaderMediaID
 	}
 	return out, nil
+}
+
+// postCount presents the count of accountID's own posts; without Options.PostCounts it is 0.
+func (s *Server) postCount(ctx context.Context, accountID string) (int64, error) {
+	if s.o.PostCounts == nil {
+		return 0, nil
+	}
+	n, err := s.o.PostCounts.PostCount(ctx, accountID)
+	if err != nil {
+		return 0, fmt.Errorf("clientapi: post count of %s: %w", accountID, err)
+	}
+	return n, nil
 }
 
 // postingLimits presents the posting limits of accountID; without Options.Posting the account

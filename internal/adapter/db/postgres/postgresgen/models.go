@@ -423,6 +423,20 @@ type InstanceAvailabilityEvent struct {
 	OccurredAt time.Time
 }
 
+type InstanceBrand struct {
+	Kind       string
+	RevisionID string
+}
+
+type InstanceBrandRevision struct {
+	ID              string
+	Kind            string
+	Action          string
+	BackgroundColor *string
+	RevisedByUserID *string
+	RevisedAt       time.Time
+}
+
 type InstanceHealth struct {
 	Domain         string
 	State          string

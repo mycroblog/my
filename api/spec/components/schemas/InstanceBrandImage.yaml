@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
+  under `/brand/` on the server that name the revision, so their content never changes and
+  they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
+  never inline. `Instance` has the `icon`, the `logo` (a wordmark that includes the instance's
+  name, which clients show instead of the name), and the `logo_dark` for dark backgrounds
+  (`logo` is used there without it); each is omitted while the instance uses the built-in
+  image.
+type: object
+required: [revision, svg_url, width, height, renditions]
+properties:
+  revision:
+    type: string
+  svg_url:
+    type: string
+    format: uri
+  width:
+    description: The width of the SVG's viewBox, rounded.
+    type: integer
+    minimum: 1
+  height:
+    description: The height of the SVG's viewBox, rounded.
+    type: integer
+    minimum: 1
+  renditions:
+    type: array
+    items:
+      $ref: ./BrandFile.yaml

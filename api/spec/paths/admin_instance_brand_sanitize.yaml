@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: sanitizeAdminBrand
+  summary: Check an SVG for a brand image
+  description: |
+    Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the
+    sanitized SVG with the renditions to draw from it. The admin screen draws them from this
+    SVG and sends them with it to `setAdminBrand`.
+
+    The server reads the SVG as XML and writes a new document of the allowed elements (shapes,
+    groups, `defs`, `symbol`, `use`, gradients, `clipPath`, `mask`, `pattern`, `style`,
+    `title`, `desc`) and attributes (geometry, transforms, presentation attributes, `id`,
+    `class`, `style`) only. Other elements are removed with their content (scripts,
+    `foreignObject`, embedded images, links, animations, filters), and so are other attributes
+    (event handlers among them), references other than to an element of the same document
+    (`#id`), and `data:` URLs; `dropped` lists what was removed. What removing cannot mend is
+    a 422 `/api/v1/problems/invalid-brand` (`brand_error`): see `BrandError`. Needs the
+    `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          $ref: ../components/schemas/SanitizeBrandRequest.yaml
+  responses:
+    "200":
+      description: The sanitized SVG; nothing was saved.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/BrandSanitized.yaml
+    "422":
+      $ref: ../components/responses/BrandProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
