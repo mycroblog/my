@@ -1,8 +1,4 @@
 {
-  "login.body": {
-    "defaultMessage": "Sign in to {instance} to post, follow people and read your home timeline.",
-    "description": "Text on the sign-in page. {instance} is the name of this server."
-  },
   "login.failed.denied": {
     "defaultMessage": "The sign-in was cancelled on the server's screen.",
     "description": "Why signing in failed: the user declined on the server's authorization screen."
@@ -23,12 +19,8 @@
     "defaultMessage": "Could not sign in",
     "description": "Heading and document title of the page shown when signing in failed on the way back from the server's sign-in screen."
   },
-  "login.submit": {
-    "defaultMessage": "Continue to sign in",
-    "description": "Button on the sign-in page that opens the server's sign-in screen."
-  },
   "login.title": {
     "defaultMessage": "Sign in",
-    "description": "Heading and document title of the page that starts signing in."
+    "description": "Document title and the busy indicator's label of /login, which starts signing in at once and sends the browser to the server's sign-in screen."
   }
 }

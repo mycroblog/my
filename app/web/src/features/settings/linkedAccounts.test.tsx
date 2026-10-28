@@ -181,7 +181,8 @@ describe("a user who signs in only with a linked account", () => {
     expect(within(dialog).queryByLabelText(/Password/)).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    // Signed out, the landing page opens (/login would start signing in again).
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(bodies).toEqual([{ external_confirmation: "tok-1" }]);
   });
 

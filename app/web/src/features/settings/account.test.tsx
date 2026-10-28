@@ -143,7 +143,8 @@ describe("deleting the account", () => {
     await user.type(password, "secret");
     await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    // Signed out, the landing page opens (/login would start signing in again).
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(passwords).toEqual(["wrong", "secret"]);
     expect(revoked).toBe(1);
   });
@@ -177,7 +178,8 @@ describe("deleting the account", () => {
     );
     await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    // Signed out, the landing page opens (/login would start signing in again).
+    expect(await screen.findByRole("heading", { level: 1, name: "my example" })).toBeInTheDocument();
     expect(credentials.get).toHaveBeenCalledTimes(2);
     expect(bodies[1]?.passkey?.confirmation_token).toBe("conf-1");
     expect(bodies[1]?.password).toBeUndefined();

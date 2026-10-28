@@ -48,5 +48,6 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 			autoDeletes: d.StatusRepository(),
 		},
 		projections: d.ProjectionStore(), dataUpgrades: d.DataUpgradeRepository(),
+		sealedValues: d.SealedValueStore(),
 	}, nil
 }

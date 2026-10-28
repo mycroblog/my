@@ -51,6 +51,24 @@ func (q *Queries) AddToFollowCounters(ctx context.Context, arg AddToFollowCounte
 	return result.RowsAffected()
 }
 
+const countFollowersInState = `-- name: CountFollowersInState :one
+SELECT count(*) FROM follow_edges
+WHERE followee_account_id = ?1 AND state = ?2
+`
+
+type CountFollowersInStateParams struct {
+	AccountID string
+	State     string
+}
+
+// CountFollowersInState counts the edges into an account in one state.
+func (q *Queries) CountFollowersInState(ctx context.Context, arg CountFollowersInStateParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countFollowersInState, arg.AccountID, arg.State)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteAllFollowCounters = `-- name: DeleteAllFollowCounters :exec
 DELETE FROM follow_counters
 `

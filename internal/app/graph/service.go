@@ -516,6 +516,11 @@ func (s *Service) FollowRequests(ctx context.Context, accountID string, p Page) 
 	return s.d.Repository.ListFollowers(ctx, accountID, graph.StatePending, p.Before, p.limit())
 }
 
+// FollowRequestCount returns the number of pending follow requests to accountID.
+func (s *Service) FollowRequestCount(ctx context.Context, accountID string) (int64, error) {
+	return s.d.Repository.CountFollowers(ctx, accountID, graph.StatePending)
+}
+
 // Counters returns the numbers of accountID's active followers and followees.
 func (s *Service) Counters(ctx context.Context, accountID string) (graph.Counters, error) {
 	c, err := s.d.Repository.FindCounters(ctx, accountID)

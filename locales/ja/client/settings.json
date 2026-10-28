@@ -171,6 +171,10 @@
     "defaultMessage": "フォローリクエスト",
     "description": "Heading and document title of the settings page with the follow requests awaiting approval."
   },
+  "settings.follow_requests.waiting": {
+    "defaultMessage": "{count, plural, other {承認待ち # 件}}",
+    "description": "Badge of the settings menu's Follow requests item: how many follow requests await the user's approval. The item's name is its label followed by this."
+  },
   "settings.import_export.export.description": {
     "defaultMessage": "Mastodon と同じ形式の CSV ファイルをダウンロードします。Mastodon や、この形式を読めるほかのサーバーでインポートできます。",
     "description": "Explains the CSV files the user can download, above the list of them."
