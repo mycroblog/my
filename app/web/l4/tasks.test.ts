@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { capTasks, globToRegExp, parseContextMap, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
+import { capTasks, globToRegExp, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
 
 const root = resolve(import.meta.dirname, "../../..");
 
@@ -48,36 +48,18 @@ describe("parseTasks", () => {
 });
 
 describe("screenChanged", () => {
-  const entries = parseContextMap(
-    [
-      "entries:",
-      "  - name: web-feature-settings",
-      '    paths: ["app/web/src/features/settings/**"]',
-      '    docs: ["docs/architecture/web-client/screens/badges.md", "docs/x.md#anchor"]',
-      "  - name: other",
-      '    paths: ["app/web/src/features/other/*.ts"]',
-      '    docs: ["docs/architecture/web-client/screens/settings-menu.md#heading"]',
-    ].join("\n"),
-  );
+  const paths = ["app/web/src/features/settings/**", "app/web/src/features/other/*.ts"];
 
-  it("is true for the L1 file and the paths of the entries that name it", () => {
-    expect(screenChanged("badges", ["docs/architecture/web-client/screens/badges.md"], entries)).toBe(true);
-    expect(screenChanged("badges", ["app/web/src/features/settings/components/Badges.tsx"], entries)).toBe(true);
-    expect(screenChanged("settings-menu", ["app/web/src/features/other/a.ts"], entries)).toBe(true);
+  it("is true for the L1 file and the paths of its front matter", () => {
+    expect(screenChanged("badges", ["docs/architecture/web-client/screens/badges.md"], [])).toBe(true);
+    expect(screenChanged("badges", ["app/web/src/features/settings/components/Badges.tsx"], paths)).toBe(true);
+    expect(screenChanged("badges", ["app/web/src/features/other/a.ts"], paths)).toBe(true);
   });
 
   it("is false for other paths", () => {
-    expect(screenChanged("badges", ["app/web/src/features/other/a.ts", "README.md"], entries)).toBe(false);
-    expect(screenChanged("settings-menu", ["app/web/src/features/other/deep/a.ts"], entries)).toBe(false);
-  });
-
-  it("reads the repository's context map", () => {
-    const map = parseContextMap(readFileSync(join(root, "tools/agentkit/context-map.yaml"), "utf8"));
-    expect(screenChanged("badges", ["app/web/src/features/settings/index.ts"], map)).toBe(true);
-  });
-
-  it("rejects a list it cannot read", () => {
-    expect(() => parseContextMap("  - name: a\n    paths:\n      - x\n")).toThrow(/one-line list/);
+    expect(screenChanged("badges", ["app/web/src/features/third/a.ts", "README.md"], paths)).toBe(false);
+    expect(screenChanged("badges", ["app/web/src/features/other/deep/a.ts"], paths)).toBe(false);
+    expect(screenChanged("badges", ["docs/architecture/web-client/screens/settings.md"], paths)).toBe(false);
   });
 });
 
