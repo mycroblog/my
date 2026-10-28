@@ -96,7 +96,7 @@ export function RouteError({ error: pageError, reset, heading }: RouteErrorProps
         // anything else is a fault of the page, and its message is not for the user.
         reason={kind === "unexpected" ? t("client:shell.error.unexpected.reason") : errorMessage(error)}
         {...(retryableKinds.has(kind) && {
-          retryLabel: t("client:shell.error.retry"),
+          retryLabel: t("client:shell.error.reload"),
           onRetry: () => {
             void retry();
           },

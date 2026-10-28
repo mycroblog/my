@@ -95,20 +95,24 @@ import { aboutPath, followListPath, profilePath, signInPath } from "../../lib/pa
 import { imageSources } from "../../lib/images";
 import { ServerNameLink } from "./ServerNameLink";
 
-type Section =
-  | "/home"
-  | "/local"
-  | "/public"
-  | "/search"
-  | "/notifications"
-  | "/profile"
-  | "/bookmarks"
-  | "/settings"
-  | "/voice"
-  | "/finance"
-  | "/moderation"
-  | "/admin"
-  | "/about";
+/** The app's sections, the places the navigation's items lead to; a page outside them has a way back (routeBack.test.ts). */
+export const navigationSections = [
+  "/home",
+  "/local",
+  "/public",
+  "/search",
+  "/notifications",
+  "/profile",
+  "/bookmarks",
+  "/settings",
+  "/voice",
+  "/finance",
+  "/moderation",
+  "/admin",
+  "/about",
+] as const;
+
+type Section = (typeof navigationSections)[number];
 
 type NavigationItem = {
   /** The item's key in the list. */
