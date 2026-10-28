@@ -14,6 +14,6 @@ export function useMediaViewerLabels(): MediaViewerLabels {
     next: t("client:timeline.media.viewer.next"),
     loading: t("client:media.loading"),
     failed: t("client:media.failed"),
-    retry: t("client:media.retry"),
+    retry: t("client:media.reload"),
   };
 }

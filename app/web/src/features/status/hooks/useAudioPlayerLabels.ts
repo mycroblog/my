@@ -11,6 +11,6 @@ export function useAudioPlayerLabels(): AudioPlayerLabels {
     seek: t("client:timeline.media.audio.seek"),
     loading: t("client:media.loading"),
     failed: t("client:media.failed"),
-    retry: t("client:media.retry"),
+    retry: t("client:media.reload"),
   };
 }

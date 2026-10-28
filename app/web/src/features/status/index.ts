@@ -10,6 +10,7 @@ export {
   statusPath,
   statusQueryOptions,
 } from "./api/status";
+export { CompactStatus } from "./components/QuotedStatus";
 export { StatusCard } from "./components/StatusCard";
 export { StatusHistory } from "./components/StatusHistory";
 export { StatusThread } from "./components/StatusThread";

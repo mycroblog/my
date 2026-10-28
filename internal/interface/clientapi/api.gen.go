@@ -6706,6 +6706,19 @@ type AutoDeletePolicy struct {
 	MinAgeDays int `json:"min_age_days"`
 }
 
+// AutoDeletePreview What a draft automatic deletion policy would delete now: how many of the user's posts, up
+// to a cap, and the oldest of them.
+type AutoDeletePreview struct {
+	// Count How many posts the policy would delete, at most 1000.
+	Count int `json:"count"`
+
+	// Examples Up to 3 of those posts, oldest first.
+	Examples []Status `json:"examples"`
+
+	// More Whether the policy would delete more posts than `count`.
+	More bool `json:"more"`
+}
+
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
 // the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
 // role or its badge hides it again.
@@ -13935,6 +13948,9 @@ type UpdatePreferencesJSONRequestBody = UpdatePreferencesRequest
 // UpdateAutoDeletePolicyJSONRequestBody defines body for UpdateAutoDeletePolicy for application/json ContentType.
 type UpdateAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
+// PreviewAutoDeletePolicyJSONRequestBody defines body for PreviewAutoDeletePolicy for application/json ContentType.
+type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
+
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
 
@@ -14762,6 +14778,9 @@ type ServerInterface interface {
 	// UpdateAutoDeletePolicy Replace the authenticated user's automatic deletion of old posts
 	// (PUT /preferences/auto_delete)
 	UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.Request)
+	// PreviewAutoDeletePolicy Estimate what a draft automatic deletion of old posts would delete
+	// (POST /preferences/auto_delete/preview)
+	PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request)
 	// ListBadgeChoices List the badges that the authenticated user may show
 	// (GET /preferences/badges)
 	ListBadgeChoices(w http.ResponseWriter, r *http.Request)
@@ -22232,6 +22251,20 @@ func (siw *ServerInterfaceWrapper) UpdateAutoDeletePolicy(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// PreviewAutoDeletePolicy operation middleware
+func (siw *ServerInterfaceWrapper) PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewAutoDeletePolicy(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListBadgeChoices operation middleware
 func (siw *ServerInterfaceWrapper) ListBadgeChoices(w http.ResponseWriter, r *http.Request) {
 
@@ -24588,6 +24621,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences", wrapper.UpdatePreferences)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/auto_delete", wrapper.GetAutoDeletePolicy)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/auto_delete", wrapper.UpdateAutoDeletePolicy)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/preferences/auto_delete/preview", wrapper.PreviewAutoDeletePolicy)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/badges", wrapper.ListBadgeChoices)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/badges/{role_id}", wrapper.UpdateBadgeChoice)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/notifications", wrapper.GetNotificationSettings)
@@ -40306,6 +40340,68 @@ func (response UpdateAutoDeletePolicydefaultApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type PreviewAutoDeletePolicyRequestObject struct {
+	Body *PreviewAutoDeletePolicyJSONRequestBody
+}
+
+type PreviewAutoDeletePolicyResponseObject interface {
+	VisitPreviewAutoDeletePolicyResponse(w http.ResponseWriter) error
+}
+
+type PreviewAutoDeletePolicy200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type PreviewAutoDeletePolicy200JSONResponse struct {
+	Body    AutoDeletePreview
+	Headers PreviewAutoDeletePolicy200ResponseHeaders
+}
+
+func (response PreviewAutoDeletePolicy200JSONResponse) VisitPreviewAutoDeletePolicyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewAutoDeletePolicydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response PreviewAutoDeletePolicydefaultApplicationProblemPlusJSONResponse) VisitPreviewAutoDeletePolicyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListBadgeChoicesRequestObject struct {
 }
 
@@ -45725,6 +45821,9 @@ type StrictServerInterface interface {
 	// UpdateAutoDeletePolicy Replace the authenticated user's automatic deletion of old posts
 	// (PUT /preferences/auto_delete)
 	UpdateAutoDeletePolicy(ctx context.Context, request UpdateAutoDeletePolicyRequestObject) (UpdateAutoDeletePolicyResponseObject, error)
+	// PreviewAutoDeletePolicy Estimate what a draft automatic deletion of old posts would delete
+	// (POST /preferences/auto_delete/preview)
+	PreviewAutoDeletePolicy(ctx context.Context, request PreviewAutoDeletePolicyRequestObject) (PreviewAutoDeletePolicyResponseObject, error)
 	// ListBadgeChoices List the badges that the authenticated user may show
 	// (GET /preferences/badges)
 	ListBadgeChoices(ctx context.Context, request ListBadgeChoicesRequestObject) (ListBadgeChoicesResponseObject, error)
@@ -52930,6 +53029,37 @@ func (sh *strictHandler) UpdateAutoDeletePolicy(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateAutoDeletePolicyResponseObject); ok {
 		if err := validResponse.VisitUpdateAutoDeletePolicyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewAutoDeletePolicy operation middleware
+func (sh *strictHandler) PreviewAutoDeletePolicy(w http.ResponseWriter, r *http.Request) {
+	var request PreviewAutoDeletePolicyRequestObject
+
+	var body PreviewAutoDeletePolicyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewAutoDeletePolicy(ctx, request.(PreviewAutoDeletePolicyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewAutoDeletePolicy")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewAutoDeletePolicyResponseObject); ok {
+		if err := validResponse.VisitPreviewAutoDeletePolicyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

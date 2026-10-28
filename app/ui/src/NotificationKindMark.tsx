@@ -67,6 +67,11 @@ export type NotificationKindMarkProps = {
   children?: ReactNode;
 };
 
+/** The icon of a notification's kind, as its mark shows it, for a place that names the kind in words too (a filter's tab). */
+export function NotificationKindIcon({ kind }: { kind: NotificationKind }) {
+  return kindIcons[kind]();
+}
+
 /** The avatar slot of a notification's row: the avatar with the mark of the kind on its corner, or the mark alone. */
 export function NotificationKindMark({ kind, children }: NotificationKindMarkProps) {
   const slots = kindMark({ kind, placement: children === undefined ? "alone" : "corner" });

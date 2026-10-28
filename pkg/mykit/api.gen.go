@@ -6704,6 +6704,19 @@ type AutoDeletePolicy struct {
 	MinAgeDays int `json:"min_age_days"`
 }
 
+// AutoDeletePreview What a draft automatic deletion policy would delete now: how many of the user's posts, up
+// to a cap, and the oldest of them.
+type AutoDeletePreview struct {
+	// Count How many posts the policy would delete, at most 1000.
+	Count int `json:"count"`
+
+	// Examples Up to 3 of those posts, oldest first.
+	Examples []Status `json:"examples"`
+
+	// More Whether the policy would delete more posts than `count`.
+	More bool `json:"more"`
+}
+
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
 // the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
 // role or its badge hides it again.
@@ -13943,6 +13956,9 @@ type UpdatePreferencesJSONRequestBody = UpdatePreferencesRequest
 // UpdateAutoDeletePolicyJSONRequestBody defines body for UpdateAutoDeletePolicy for application/json ContentType.
 type UpdateAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
+// PreviewAutoDeletePolicyJSONRequestBody defines body for PreviewAutoDeletePolicy for application/json ContentType.
+type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
+
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
 
@@ -19558,6 +19574,34 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /preferences/auto_delete (the `UpdateAutoDeletePolicy` operationId).
 	UpdateAutoDeletePolicy(ctx context.Context, body UpdateAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewAutoDeletePolicyWithBody Estimate what a draft automatic deletion of old posts would delete
+	//
+	// Counts the user's posts that the given policy, which is not saved, would delete now,
+	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+	// true), so the call stays cheap enough to repeat as the user edits the policy. The
+	// response also shows the oldest of those posts. A 422 problem names the property that
+	// is invalid in `detail`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+	PreviewAutoDeletePolicyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewAutoDeletePolicy Estimate what a draft automatic deletion of old posts would delete
+	//
+	// Counts the user's posts that the given policy, which is not saved, would delete now,
+	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+	// true), so the call stays cheap enough to repeat as the user edits the policy. The
+	// response also shows the oldest of those posts. A 422 problem names the property that
+	// is invalid in `detail`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+	PreviewAutoDeletePolicy(ctx context.Context, body PreviewAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListBadgeChoices List the badges that the authenticated user may show
 	//
@@ -27978,6 +28022,54 @@ func (c *Client) UpdateAutoDeletePolicyWithBody(ctx context.Context, contentType
 // Corresponds with PUT /preferences/auto_delete (the `UpdateAutoDeletePolicy` operationId).
 func (c *Client) UpdateAutoDeletePolicy(ctx context.Context, body UpdateAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateAutoDeletePolicyRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewAutoDeletePolicyWithBody Estimate what a draft automatic deletion of old posts would delete
+//
+// Counts the user's posts that the given policy, which is not saved, would delete now,
+// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+// true), so the call stays cheap enough to repeat as the user edits the policy. The
+// response also shows the oldest of those posts. A 422 problem names the property that
+// is invalid in `detail`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+func (c *Client) PreviewAutoDeletePolicyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewAutoDeletePolicyRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewAutoDeletePolicy Estimate what a draft automatic deletion of old posts would delete
+//
+// Counts the user's posts that the given policy, which is not saved, would delete now,
+// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+// true), so the call stays cheap enough to repeat as the user edits the policy. The
+// response also shows the oldest of those posts. A 422 problem names the property that
+// is invalid in `detail`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+func (c *Client) PreviewAutoDeletePolicy(ctx context.Context, body PreviewAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewAutoDeletePolicyRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -41140,6 +41232,46 @@ func NewUpdateAutoDeletePolicyRequestWithBody(server string, contentType string,
 	return req, nil
 }
 
+// NewPreviewAutoDeletePolicyRequest calls the generic PreviewAutoDeletePolicy builder with application/json body
+func NewPreviewAutoDeletePolicyRequest(server string, body PreviewAutoDeletePolicyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPreviewAutoDeletePolicyRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPreviewAutoDeletePolicyRequestWithBody constructs an http.Request for the PreviewAutoDeletePolicy method, with any body, and a specified content type
+func NewPreviewAutoDeletePolicyRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/auto_delete/preview")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListBadgeChoicesRequest constructs an http.Request for the ListBadgeChoices method
 func NewListBadgeChoicesRequest(server string) (*http.Request, error) {
 	var err error
@@ -48955,6 +49087,34 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /preferences/auto_delete (the `UpdateAutoDeletePolicy` operationId).
 	UpdateAutoDeletePolicyWithResponse(ctx context.Context, body UpdateAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAutoDeletePolicyResponse, error)
+
+	// PreviewAutoDeletePolicyWithBodyWithResponse Estimate what a draft automatic deletion of old posts would delete
+	//
+	// Counts the user's posts that the given policy, which is not saved, would delete now,
+	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+	// true), so the call stays cheap enough to repeat as the user edits the policy. The
+	// response also shows the oldest of those posts. A 422 problem names the property that
+	// is invalid in `detail`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+	PreviewAutoDeletePolicyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewAutoDeletePolicyResponse, error)
+
+	// PreviewAutoDeletePolicyWithResponse Estimate what a draft automatic deletion of old posts would delete
+	//
+	// Counts the user's posts that the given policy, which is not saved, would delete now,
+	// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+	// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+	// true), so the call stays cheap enough to repeat as the user edits the policy. The
+	// response also shows the oldest of those posts. A 422 problem names the property that
+	// is invalid in `detail`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+	PreviewAutoDeletePolicyWithResponse(ctx context.Context, body PreviewAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewAutoDeletePolicyResponse, error)
 
 	// ListBadgeChoicesWithResponse List the badges that the authenticated user may show
 	//
@@ -66448,6 +66608,71 @@ func (r UpdateAutoDeletePolicyResponse) ContentType() string {
 	return ""
 }
 
+// PreviewAutoDeletePolicyResponse200Headers the declared response headers of an HTTP 200 response for PreviewAutoDeletePolicy
+type PreviewAutoDeletePolicyResponse200Headers struct {
+	CacheControl *string
+}
+
+// PreviewAutoDeletePolicyResponseDefaultHeaders the declared response headers of an HTTP default response for PreviewAutoDeletePolicy
+type PreviewAutoDeletePolicyResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PreviewAutoDeletePolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AutoDeletePreview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *PreviewAutoDeletePolicyResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PreviewAutoDeletePolicyResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PreviewAutoDeletePolicyResponse) GetJSON200() *AutoDeletePreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PreviewAutoDeletePolicyResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PreviewAutoDeletePolicyResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PreviewAutoDeletePolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PreviewAutoDeletePolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PreviewAutoDeletePolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListBadgeChoicesResponse200Headers the declared response headers of an HTTP 200 response for ListBadgeChoices
 type ListBadgeChoicesResponse200Headers struct {
 	CacheControl *string
@@ -77809,6 +78034,46 @@ func (c *ClientWithResponses) UpdateAutoDeletePolicyWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseUpdateAutoDeletePolicyResponse(rsp)
+}
+
+// PreviewAutoDeletePolicyWithBodyWithResponse Estimate what a draft automatic deletion of old posts would delete
+//
+// Counts the user's posts that the given policy, which is not saved, would delete now,
+// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+// true), so the call stays cheap enough to repeat as the user edits the policy. The
+// response also shows the oldest of those posts. A 422 problem names the property that
+// is invalid in `detail`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+func (c *ClientWithResponses) PreviewAutoDeletePolicyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewAutoDeletePolicyResponse, error) {
+	rsp, err := c.PreviewAutoDeletePolicyWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewAutoDeletePolicyResponse(rsp)
+}
+
+// PreviewAutoDeletePolicyWithResponse Estimate what a draft automatic deletion of old posts would delete
+//
+// Counts the user's posts that the given policy, which is not saved, would delete now,
+// as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+// days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+// true), so the call stays cheap enough to repeat as the user edits the policy. The
+// response also shows the oldest of those posts. A 422 problem names the property that
+// is invalid in `detail`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /preferences/auto_delete/preview (the `PreviewAutoDeletePolicy` operationId).
+func (c *ClientWithResponses) PreviewAutoDeletePolicyWithResponse(ctx context.Context, body PreviewAutoDeletePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewAutoDeletePolicyResponse, error) {
+	rsp, err := c.PreviewAutoDeletePolicy(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewAutoDeletePolicyResponse(rsp)
 }
 
 // ListBadgeChoicesWithResponse List the badges that the authenticated user may show
@@ -99183,6 +99448,83 @@ func ParseUpdateAutoDeletePolicyResponse(rsp *http.Response) (*UpdateAutoDeleteP
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateAutoDeletePolicyResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePreviewAutoDeletePolicyResponse parses an HTTP response from a PreviewAutoDeletePolicyWithResponse call
+func ParsePreviewAutoDeletePolicyResponse(rsp *http.Response) (*PreviewAutoDeletePolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PreviewAutoDeletePolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AutoDeletePreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers PreviewAutoDeletePolicyResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers PreviewAutoDeletePolicyResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

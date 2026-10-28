@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a draft automatic deletion policy would delete now: how many of the user's posts, up
+  to a cap, and the oldest of them.
+type: object
+required: [count, more, examples]
+properties:
+  count:
+    description: How many posts the policy would delete, at most 1000.
+    type: integer
+    minimum: 0
+    maximum: 1000
+  more:
+    description: Whether the policy would delete more posts than `count`.
+    type: boolean
+  examples:
+    description: Up to 3 of those posts, oldest first.
+    type: array
+    maxItems: 3
+    items:
+      $ref: ./Status.yaml

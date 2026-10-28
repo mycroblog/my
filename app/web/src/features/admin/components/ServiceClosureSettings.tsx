@@ -46,6 +46,15 @@ import {
 } from "../hooks/useServiceClosure";
 
 export function ServiceClosureSettings() {
+  // The permission first: a viewer without it does not ask the server for the closure, as the route's loader does not.
+  return (
+    <RequirePermission permission="manage_service_closure">
+      <ServiceClosure />
+    </RequirePermission>
+  );
+}
+
+function ServiceClosure() {
   const t = useT();
   const closure = useAdminClosure();
   const [status, setStatus] = useState<string | undefined>(undefined);
@@ -62,20 +71,18 @@ export function ServiceClosureSettings() {
     };
   }, [status]);
   return (
-    <RequirePermission permission="manage_service_closure">
-      <Stack gap="8">
-        <Hint size="inherit">{t("client:admin.closure.description")}</Hint>
-        {/* In the page from the first render, empty, so that what a change did is announced. */}
-        <StatusMessage>{status}</StatusMessage>
-        {closure.state === "none" && (
-          <Section surface="card" title={t("client:admin.closure.announce.title")}>
-            <AnnounceForm closure={closure} onDone={setStatus} />
-          </Section>
-        )}
-        {closure.state === "announced" && <Announced closure={closure} onDone={setStatus} />}
-        {(closure.state === "closed" || closure.state === "delivery_completed") && <Closed closure={closure} />}
-      </Stack>
-    </RequirePermission>
+    <Stack gap="8">
+      <Hint size="inherit">{t("client:admin.closure.description")}</Hint>
+      {/* In the page from the first render, empty, so that what a change did is announced. */}
+      <StatusMessage>{status}</StatusMessage>
+      {closure.state === "none" && (
+        <Section surface="card" title={t("client:admin.closure.announce.title")}>
+          <AnnounceForm closure={closure} onDone={setStatus} />
+        </Section>
+      )}
+      {closure.state === "announced" && <Announced closure={closure} onDone={setStatus} />}
+      {(closure.state === "closed" || closure.state === "delivery_completed") && <Closed closure={closure} />}
+    </Stack>
   );
 }
 

@@ -60,8 +60,8 @@
     "description": "Link under the suggested accounts to the account search."
   },
   "onboarding.suggestions.failed": {
-    "defaultMessage": "おすすめを読み込めませんでした：{reason}",
-    "description": "Shown when the suggested accounts fail to load. {reason} is the error."
+    "defaultMessage": "おすすめを読み込めませんでした",
+    "description": "Heading of the error shown when the suggested accounts fail to load, above the reason and the button to try again."
   },
   "onboarding.suggestions.retry": {
     "defaultMessage": "もう一度試す",

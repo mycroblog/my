@@ -102,6 +102,17 @@ describe("where the restrictions apply", () => {
     for (const file of [files.story, files.featureComponentTest, files.featureTest])
       assert.equal(ruleValue("restrict/icons", file), undefined);
   });
+  it("keeps the wording of a region's states to its state components in a feature, and leaves tests alone (G14, G16)", () => {
+    for (const file of [files.featureComponent, files.featureHook])
+      assert.ok(ruleOptions("restrict/states", file).length > 0);
+    for (const file of [files.route, files.component, files.featureTest, files.featureComponentTest])
+      assert.equal(ruleValue("restrict/states", file), undefined);
+  });
+  it("warns of a submit button disabled by its input in a feature's components (G23)", () => {
+    assert.equal(/** @type {unknown[]} */ (ruleValue("restrict/submit", files.featureComponent))[0], "warn");
+    for (const file of [files.route, files.component, files.featureHook, files.featureComponentTest])
+      assert.equal(ruleValue("restrict/submit", file), undefined);
+  });
   it("allows the API client and fetch in features/<x>/api and lib/ (S1)", () => {
     for (const file of [files.featureApi, files.lib]) {
       assert.equal(ruleValue("no-restricted-globals", file), "off");
@@ -301,6 +312,57 @@ ruleTester.run("restrict/icons (G12)", restrict.rules.icons, {
     { ...fails("<AriaButton slot='close' aria-label={label}><CloseIcon /></AriaButton>"), options: icons },
     // A menu's trigger is not a tooltip's.
     { ...fails("<MenuTrigger><Button aria-label={label}><MoreIcon /></Button><Menu /></MenuTrigger>"), options: icons },
+  ],
+});
+
+const states = ruleOptions("restrict/states", files.featureHook);
+ruleTester.run("restrict/states (G14, G16)", restrict.rules.states, {
+  valid: [
+    {
+      code: "<RegionError heading={t('client:timeline.failed')} retryLabel={t('client:timeline.retry')} onRetry={f} />",
+      options: states,
+    },
+    { code: "<EmptyState heading={t('client:timeline.empty.home.heading')} />", options: states },
+    { code: "<EmptyState heading={t('client:status.thread.no_replies')} />", options: states },
+    { code: "<SignInState heading={t('client:notifications.empty.heading')} />", options: states },
+    { code: "<Hint>{t('client:report.posts.empty')}</Hint>", options: states },
+    // A widget of the kit that draws its own emptiness takes the message as its empty label.
+    { code: "useChartLabels({ empty: t('client:costs.chart.empty') });", options: states },
+    { code: "<Picker emptyLabel={t('client:emoji.picker.empty')} />", options: states },
+    // An action of another kind, and the absence of one value, have keys of their own.
+    { code: "<Button onPress={f}>{t('client:compose.outbox.resend')}</Button>", options: states },
+    { code: "<p>{t('client:timeline.media.no_description')}</p>", options: states },
+    { code: "<p>{t('client:timeline.retry_count')}</p>", options: states },
+  ],
+  invalid: [
+    { ...fails("<Button onPress={f}>{t('client:timeline.retry')}</Button>"), options: states },
+    { ...fails("const label = t('client:timeline.retry');"), options: states },
+    { ...fails("<p>{t('client:reaction.list.empty')}</p>"), options: states },
+    { ...fails("<Text>{t('client:admin.rules.empty.description')}</Text>"), options: states },
+    { ...fails("<p>{t('client:status.thread.no_replies')}</p>"), options: states },
+  ],
+});
+
+// A warning (see .oxlintrc.json), whose options ruleOptions does not read.
+const submit = /** @type {unknown[]} */ (ruleValue("restrict/submit", files.featureComponent)).slice(1);
+ruleTester.run("restrict/submit (G23)", restrict.rules.submit, {
+  valid: [
+    { code: "<Button type='submit' isPending={form.isSaving}>Save</Button>", options: submit },
+    { code: "<Button type='submit' isDisabled={pending === 'remove'}>Save</Button>", options: submit },
+    { code: "<Button type='submit' isDisabled={form.avatar.isUploading}>Save</Button>", options: submit },
+    // The reason is stated beside the button.
+    {
+      code: "<Button type='submit' isDisabled={!form.canSave} aria-describedby={reasonId}>Save</Button>",
+      options: submit,
+    },
+    // Not a submit button.
+    { code: "<Button isDisabled={!canSave} onPress={f}>Save</Button>", options: submit },
+  ],
+  invalid: [
+    { ...fails("<Button type='submit' isDisabled={!form.canSave}>Save</Button>"), options: submit },
+    { ...fails("<Button type='submit' isDisabled={text.trim() === ''}>Send</Button>"), options: submit },
+    { ...fails("<Button type='submit' isDisabled={!isValid || isSaving}>Save</Button>"), options: submit },
+    { ...fails("<Button type='submit' isDisabled={items.length === 0}>Save</Button>"), options: submit },
   ],
 });
 

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: previewAutoDeletePolicy
+  summary: Estimate what a draft automatic deletion of old posts would delete
+  description: |
+    Counts the user's posts that the given policy, which is not saved, would delete now,
+    as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+    days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+    true), so the call stays cheap enough to repeat as the user edits the policy. The
+    response also shows the oldest of those posts. A 422 problem names the property that
+    is invalid in `detail`.
+  tags: [preferences]
+  security:
+    - oauth2: ["read:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AutoDeletePolicy.yaml
+  responses:
+    "200":
+      description: The estimate.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AutoDeletePreview.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

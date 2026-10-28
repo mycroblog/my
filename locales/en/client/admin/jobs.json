@@ -135,7 +135,7 @@
     "defaultMessage": "The job {type} is queued to run again.",
     "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
   },
-  "admin.jobs.retry": {
+  "admin.jobs.run_again": {
     "defaultMessage": "Run again",
     "description": "Button of a failed job that runs it again."
   },

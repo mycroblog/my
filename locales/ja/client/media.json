@@ -7,7 +7,7 @@
     "defaultMessage": "このメディアを読み込めませんでした。",
     "description": "Shown over a picture or an audio attachment of a post that could not load."
   },
-  "media.retry": {
+  "media.reload": {
     "defaultMessage": "もう一度試す",
     "description": "Button over a picture or an audio attachment of a post that could not load: it loads it again."
   }

@@ -9,9 +9,11 @@ import {
   Cluster,
   Dialog,
   EmojiText,
+  EmptyState,
   ReactionChip as UIReactionChip,
   ReactionEmoji as UIReactionEmoji,
   ReactionRow,
+  RegionError,
   Stack,
 } from "@my/ui";
 import { useState } from "react";
@@ -91,14 +93,17 @@ function ReactorsDialog({ statusId, isOpen, onOpenChange }: ReactorsDialogProps)
       {state.status === "loading" ? (
         <p role="status">{t("client:reaction.list.loading")}</p>
       ) : state.status === "error" ? (
-        <Stack role="alert" align="start" gap="2">
-          <p>{t("client:reaction.list.failed", { reason: state.error })}</p>
-          <Button onPress={state.retry}>{t("client:reaction.list.retry")}</Button>
-        </Stack>
+        <RegionError
+          heading={t("client:reaction.list.failed")}
+          reason={state.error}
+          retryLabel={t("client:reaction.list.retry")}
+          onRetry={state.retry}
+          alert
+        />
       ) : (
         <Stack gap="3">
           {state.items.length === 0 ? (
-            <p>{t("client:reaction.list.empty")}</p>
+            <EmptyState headingLevel={3} heading={t("client:reaction.list.empty")} />
           ) : (
             <Stack as="ul" divided>
               {state.items.map((item) => (

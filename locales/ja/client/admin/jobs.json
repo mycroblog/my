@@ -135,7 +135,7 @@
     "defaultMessage": "ジョブ {type} をもう一度実行するようにキューに入れました。",
     "description": "Announcement after an operator ran a failed job again. {type} is the job type, such as federation.deliver."
   },
-  "admin.jobs.retry": {
+  "admin.jobs.run_again": {
     "defaultMessage": "再実行",
     "description": "Button of a failed job that runs it again."
   },

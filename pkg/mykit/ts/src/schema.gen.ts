@@ -528,6 +528,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/preferences/auto_delete/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Estimate what a draft automatic deletion of old posts would delete
+         * @description Counts the user's posts that the given policy, which is not saved, would delete now,
+         *     as if it were enabled (`enabled` is ignored): posts published more than `min_age_days`
+         *     days ago that none of the exceptions keeps. The count stops at 1000 (`more` is then
+         *     true), so the call stays cheap enough to repeat as the user edits the policy. The
+         *     response also shows the oldest of those posts. A 422 problem names the property that
+         *     is invalid in `detail`.
+         */
+        post: operations["previewAutoDeletePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences/badges": {
         parameters: {
             query?: never;
@@ -9370,6 +9395,18 @@ export interface components {
             keep_min_favourites: number;
         };
         /**
+         * @description What a draft automatic deletion policy would delete now: how many of the user's posts, up
+         *     to a cap, and the oldest of them.
+         */
+        AutoDeletePreview: {
+            /** @description How many posts the policy would delete, at most 1000. */
+            count: number;
+            /** @description Whether the policy would delete more posts than `count`. */
+            more: boolean;
+            /** @description Up to 3 of those posts, oldest first. */
+            examples: components["schemas"]["Status"][];
+        };
+        /**
          * @description A role that the authenticated user holds and that has a badge, with whether the user shows
          *     the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
          *     role or its badge hides it again.
@@ -14969,6 +15006,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AutoDeletePolicy"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    previewAutoDeletePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoDeletePolicy"];
+            };
+        };
+        responses: {
+            /** @description The estimate. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoDeletePreview"];
                 };
             };
             default: components["responses"]["Problem"];
