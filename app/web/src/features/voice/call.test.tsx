@@ -221,7 +221,7 @@ describe("a listener in the call", () => {
     expect(within(listeners).getByText("You")).toBeInTheDocument();
     // A listener has no microphone, but asks to speak.
     const dock = screen.getByRole("toolbar", { name: "Call controls" });
-    expect(within(dock).queryByRole("button", { name: "Microphone" })).not.toBeInTheDocument();
+    expect(within(dock).queryByRole("button", { name: /^Turn microphone/u })).not.toBeInTheDocument();
     expect(within(dock).getByRole("button", { name: "Speak" })).toBeInTheDocument();
     // Only the host and the co-hosts invite and see the raised hands.
     expect(within(dock).queryByRole("button", { name: "Invite" })).not.toBeInTheDocument();
@@ -245,8 +245,8 @@ describe("a listener in the call", () => {
       participants: live.participants.map((p) => (p.account.id === viewerFixture.id ? { ...p, role: "speaker" } : p)),
     });
     expect(await screen.findByText("You can speak now. Turn on the microphone to talk.")).toBeInTheDocument();
-    const mic = await screen.findByRole("button", { name: "Microphone" });
-    expect(mic).toHaveAttribute("aria-pressed", "false");
+    const mic = await screen.findByRole("button", { name: "Turn microphone on" });
+    expect(mic).not.toHaveAttribute("aria-pressed");
     // The user's own microphone is off on the stage too (the host's is not known).
     const you = within(screen.getByRole("list", { name: "Speakers · 2" }))
       .getAllByRole("listitem")
@@ -260,7 +260,7 @@ describe("a listener in the call", () => {
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: false,
     });
-    expect(mic).toHaveAttribute("aria-pressed", "true");
+    expect(mic).toHaveAccessibleName("Turn microphone off");
 
     srv.send("muted", { by: otherAccountFixture.id });
     // Shown on the dock, not only read out, until it is dismissed.
@@ -269,7 +269,7 @@ describe("a listener in the call", () => {
     });
     expect(muted).toBeVisible();
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Microphone" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "Turn microphone on" })).toBeInTheDocument();
     });
     // The server turned it off for everyone: the app does not tell it again.
     expect(srv.sent(`/voice/rooms/${roomId}/mic`)).toEqual([{ session: "s1", on: true }]);
@@ -285,12 +285,12 @@ describe("a listener in the call", () => {
     await screen.findByText("Connected");
     srv.send("state", live);
     await user.click(await screen.findByRole("button", { name: "Speak" }));
-    await user.click(await screen.findByRole("button", { name: "Microphone" }));
+    await user.click(await screen.findByRole("button", { name: "Turn microphone on" }));
     await waitFor(() => {
       expect(srv.sent(`/voice/rooms/${roomId}/mic`)).toEqual([{ session: "s1", on: true }]);
     });
     expect(getUserMedia).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "Microphone" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Turn microphone off" })).toBeInTheDocument();
   });
 
   test("says why the browser did not give the microphone", async () => {
@@ -301,10 +301,10 @@ describe("a listener in the call", () => {
     await user.click(await screen.findByRole("button", { name: "Join" }));
     await screen.findByText("Connected");
     await user.click(await screen.findByRole("button", { name: "Speak" }));
-    await user.click(await screen.findByRole("button", { name: "Microphone" }));
+    await user.click(await screen.findByRole("button", { name: "Turn microphone on" }));
     // The dock's notice says it.
     expect(await screen.findByText("No microphone was found. Connect one, then try again.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Microphone" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Turn microphone on" })).toBeInTheDocument();
   });
 
   test("sends a reaction with the picker", async () => {
@@ -354,6 +354,55 @@ describe("a listener in the call", () => {
     expect(screen.getByText(room.name)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
     expect(screen.queryByRole("list", { name: /^Speakers/u })).not.toBeInTheDocument();
+    // The next step: the rooms open now.
+    expect(screen.getByRole("link", { name: "See all rooms" })).toHaveAttribute("href", "/voice");
+  });
+
+  test("the badge of the connection shows beside the Live pill, which stays filled while connected", async () => {
+    const { room, joined, live } = bobsRoom();
+    const srv = serve(room, joined);
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    expect(await screen.findByText("Connected")).toHaveAttribute("data-connection", "connected");
+    srv.send("state", live);
+    expect(screen.getByText("Live")).not.toHaveAttribute("data-interrupted");
+  });
+});
+
+describe("the room of the call elsewhere", () => {
+  const otherId = "0192f0c4-7a8e-7000-8000-0000000000f9";
+
+  test("the list marks the room of the call as joined, and another room says that joining it leaves the call", async () => {
+    const { room, joined } = bobsRoom();
+    serve(room, joined);
+    const other = voiceRoomFixture({ id: otherId, name: "Morning call" });
+    server.use(
+      http.get(`${apiBase}/voice/rooms/${otherId}`, ({ request }) =>
+        withViewer(request, () => HttpResponse.json(other)),
+      ),
+      http.get(`${apiBase}/voice/rooms`, ({ request }) =>
+        withViewer(request, () => HttpResponse.json({ items: [joined, other] })),
+      ),
+    );
+    const { user, router } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+
+    await act(() => router.navigate({ to: "/voice" }));
+    const list = await screen.findByRole("list", { name: "Open rooms" });
+    const [first, second] = within(list)
+      .getAllByRole("listitem")
+      .filter((item) => within(item).queryByRole("heading") !== null);
+    expect(first).toHaveTextContent("Joined");
+    expect(second).not.toHaveTextContent("Joined");
+
+    await user.click(within(list).getByRole("link", { name: "Morning call" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Morning call" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/^You are in .*Friday night radio.*\. Joining this room leaves it\.$/u),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Move here" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join" })).not.toBeInTheDocument();
   });
 });
 
@@ -375,7 +424,7 @@ describe("the call across pages", () => {
     expect(srv.sessions).toEqual(["s1"]);
     expect(FakePeerConnection.all.every((pc) => !pc.closed)).toBe(true);
     // A listener has no microphone in it, only leaving.
-    expect(within(bar).queryByRole("button", { name: "Microphone" })).not.toBeInTheDocument();
+    expect(within(bar).queryByRole("button", { name: /^Turn microphone/u })).not.toBeInTheDocument();
     // Who is talking takes the place of the call's state.
     srv.send("signal", { from: "s9", kind: "offer", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=sendrecv\r\n" });
     await waitFor(() => {
@@ -391,7 +440,21 @@ describe("the call across pages", () => {
 
     await user.click(screen.getByRole("link", { name: "Home" }));
     const again = await screen.findByRole("region", { name: "Voice chat call" });
+    // Leaving from the mini-player asks first: "Stay" keeps the call.
     await user.click(within(again).getByRole("button", { name: "Leave" }));
+    const confirm = await screen.findByRole("alertdialog", { name: /^Leave .*Friday night radio.*\?$/u });
+    await user.click(within(confirm).getByRole("button", { name: "Stay" }));
+    expect(screen.getByRole("region", { name: "Voice chat call" })).toBeInTheDocument();
+    expect(srv.requests.some((r) => r.method === "DELETE")).toBe(false);
+    await user.click(within(again).getByRole("button", { name: "Leave" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: /^Leave .*Friday night radio.*\?$/u })).getByRole(
+        "button",
+        {
+          name: "Leave",
+        },
+      ),
+    );
     await waitFor(() => {
       expect(screen.queryByRole("region", { name: "Voice chat call" })).not.toBeInTheDocument();
     });
@@ -513,7 +576,9 @@ describe("the host in the call", () => {
 
     expect(await screen.findByText("Connected")).toBeInTheDocument();
     const dock = screen.getByRole("toolbar", { name: "Call controls" });
-    expect(within(dock).getByRole("button", { name: "Microphone" })).toBeInTheDocument();
+    expect(within(dock).getByRole("button", { name: /^Turn microphone/u })).toBeInTheDocument();
+    // A speaker goes back to listening from the dock too.
+    expect(within(dock).getByRole("button", { name: "Just listen" })).toBeInTheDocument();
     expect(within(dock).getByRole("button", { name: "Invite" })).toBeInTheDocument();
     expect(within(dock).getByRole("button", { name: "Hands" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Room settings" })).toBeInTheDocument();

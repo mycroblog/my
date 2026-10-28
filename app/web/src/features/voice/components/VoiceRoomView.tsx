@@ -3,8 +3,8 @@
 // room's head with its name as the page's heading, the speakers and the listeners, and the dock of the call; on wide
 // screens the third column adds the raised hands and about the room (VoiceRoomAside). To a visitor who does not see
 // the room, its summary: that only the users of this server join, with the way to sign in; a room that ended says
-// so, by its name when the summary has one.
-import { Callout, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
+// so, by its name when the summary has one, with the way to the rooms open now.
+import { ButtonLink, Callout, Link, RegionError, Spinner, Stack, Text } from "@my/ui";
 import type { ReactNode } from "react";
 import { useT } from "../../../lib/i18n";
 import { signInPath } from "../../../lib/paths";
@@ -60,11 +60,20 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       return (
         <>
           {renderHeading(t("client:voice.room.ended"))}
-          {page.name !== undefined && (
-            <Text as="p" dir="auto" wrap="anywhere">
-              {page.name}
-            </Text>
-          )}
+          <Stack gap="3">
+            {page.name !== undefined && (
+              <Text as="p" dir="auto" wrap="anywhere">
+                {page.name}
+              </Text>
+            )}
+            {/* The next step: the rooms open now, where the user may also start one. */}
+            <Text as="p">{t("client:voice.room.ended.next")}</Text>
+            <div>
+              <ButtonLink href="/voice" variant="primary">
+                {t("client:voice.rail.all")}
+              </ButtonLink>
+            </div>
+          </Stack>
         </>
       );
     case "summary": {
