@@ -25,6 +25,7 @@ import {
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
+import { useBlockSizeProperty } from "./blockSizeProperty";
 import { Sheet, DialogTrigger } from "./Dialog";
 import { CloseIcon, MenuIcon } from "./Icons";
 import { Link } from "./Link";
@@ -144,6 +145,8 @@ export function AppNav({
   const topSlots = appNavTop();
   const listId = useId();
   const navRef = useRef<HTMLElement>(null);
+  // The top bar's height, under which what sticks to the top of the page starts (`top-under-top-bar`).
+  useBlockSizeProperty(navRef, top ? "--top-bar-block-size" : undefined);
   const isOpen = menu?.isOpen ?? false;
   const close = menu?.onOpenChange;
   // A press outside the bar closes the items, as focus leaving it does; the page under the panel stays usable.

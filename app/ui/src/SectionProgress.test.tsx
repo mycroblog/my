@@ -44,4 +44,17 @@ describe("SectionProgress", () => {
     expect(beta).toHaveAttribute("aria-current", "location");
     expect(links.map((link) => link.hasAttribute("data-passed"))).toEqual([true, false, false]);
   });
+
+  it("writes the line's height to --section-progress-block-size while it is mounted, for the headings' scroll margin", () => {
+    const { unmount } = render(
+      <SectionProgress label="Parts of this page" parts={[{ id: "a", title: "Alpha" }]}>
+        <Section title="Alpha" headingId="a">
+          <p>Text</p>
+        </Section>
+      </SectionProgress>,
+    );
+    expect(document.documentElement.style.getPropertyValue("--section-progress-block-size")).toBe("0px");
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--section-progress-block-size")).toBe("");
+  });
 });
