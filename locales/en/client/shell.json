@@ -165,7 +165,7 @@
   },
   "shell.sign_in_required.sign_in": {
     "defaultMessage": "Sign in",
-    "description": "Link, on a page that only signed-in users may read (a timeline the server keeps for them), that opens the sign-in page and comes back to that page afterwards."
+    "description": "Link of the sign-in state, shown on a page that needs a session while nobody is signed in (the home timeline, the notifications, a timeline the server keeps for signed-in users), that opens the sign-in page and comes back to that page afterwards."
   },
   "shell.not_found.title": {
     "defaultMessage": "Page not found",

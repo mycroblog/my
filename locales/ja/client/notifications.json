@@ -131,13 +131,9 @@
     "defaultMessage": "モデレーターが{domain}を凍結したため、そのサーバーのフォロワー{followers, plural, other {#人}}とフォロー{following, plural, other {#人}}の関係が解除されました。",
     "description": "Notification sentence: the moderators of this server suspended another server, which ended the follows between its accounts and the user in both directions; they are not restored when the suspension ends. {domain} is the server's domain name. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   },
-  "notifications.sign_in": {
-    "defaultMessage": "ログイン",
-    "description": "Link on the notifications page, when nobody is signed in, that opens the sign-in page."
-  },
   "notifications.signed_out": {
     "defaultMessage": "通知を見るにはログインしてください。",
-    "description": "Text on the notifications page when nobody is signed in."
+    "description": "Description of the sign-in state that the notifications page shows when nobody is signed in, under its heading and above the link to sign in."
   },
   "notifications.title": {
     "defaultMessage": "通知",
@@ -374,5 +370,9 @@
   "notifications.link.errors": {
     "defaultMessage": "エラーの一覧を開く",
     "description": "Link of an admin_error_group notification about more groups to the list of error groups."
+  },
+  "notifications.signed_out.heading": {
+    "defaultMessage": "ログインしていません",
+    "description": "Heading of the sign-in state that the notifications page shows, instead of the notifications, when nobody is signed in."
   }
 }

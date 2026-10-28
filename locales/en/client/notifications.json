@@ -131,13 +131,9 @@
     "defaultMessage": "The moderators suspended {domain}. You lost {followers, plural, one {# follower} other {# followers}} and {following, plural, one {# account you followed} other {# accounts you followed}} there.",
     "description": "Notification sentence: the moderators of this server suspended another server, which ended the follows between its accounts and the user in both directions; they are not restored when the suspension ends. {domain} is the server's domain name. {followers} is the number of the suspended accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   },
-  "notifications.sign_in": {
-    "defaultMessage": "Sign in",
-    "description": "Link on the notifications page, when nobody is signed in, that opens the sign-in page."
-  },
   "notifications.signed_out": {
     "defaultMessage": "Sign in to see your notifications.",
-    "description": "Text on the notifications page when nobody is signed in."
+    "description": "Description of the sign-in state that the notifications page shows when nobody is signed in, under its heading and above the link to sign in."
   },
   "notifications.title": {
     "defaultMessage": "Notifications",
@@ -374,5 +370,9 @@
   "notifications.link.errors": {
     "defaultMessage": "Open the errors",
     "description": "Link of an admin_error_group notification about more groups to the list of error groups."
+  },
+  "notifications.signed_out.heading": {
+    "defaultMessage": "You are not signed in",
+    "description": "Heading of the sign-in state that the notifications page shows, instead of the notifications, when nobody is signed in."
   }
 }

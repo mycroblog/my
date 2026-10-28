@@ -10,7 +10,7 @@ import { PostCard } from "./PostCard";
 import {
   PostCardAuthorLink,
   PostCardAvatarLink,
-  PostCardBoostContext,
+  PostCardContext,
   PostCardNameLink,
   PostCardOrigin,
   PostCardTimeLink,
@@ -225,9 +225,9 @@ export const WithContentWarning: Story = {
 export const Boosted: Story = {
   args: {
     context: (
-      <PostCardBoostContext>
+      <PostCardContext kind="boost">
         <PostCardNameLink href="#bob">Bob</PostCardNameLink> boosted
-      </PostCardBoostContext>
+      </PostCardContext>
     ),
   },
   play: async ({ canvas }) => {

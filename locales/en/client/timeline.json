@@ -159,13 +159,9 @@
     "defaultMessage": "Try again",
     "description": "Button at the end of a timeline that tries again to load older posts after a failure."
   },
-  "timeline.signed_out.action": {
-    "defaultMessage": "Sign in",
-    "description": "Link on the home page, when nobody is signed in, that opens the sign-in page."
-  },
   "timeline.signed_out.description": {
     "defaultMessage": "Sign in to read the posts of the people you follow.",
-    "description": "Text on the home page when nobody is signed in."
+    "description": "Description of the sign-in state that the home page shows when nobody is signed in, under its heading and above the link to sign in."
   },
   "timeline.signed_out.heading": {
     "defaultMessage": "You are not signed in",
@@ -178,5 +174,9 @@
   "timeline.empty.quotes.description": {
     "defaultMessage": "Posts that quote this post appear here.",
     "description": "Description of the empty list of the posts that quote one of the user's posts."
+  },
+  "timeline.load_more.failed.heading": {
+    "defaultMessage": "Could not load more posts",
+    "description": "Heading of the error shown at the end of a timeline when older posts failed to load, above the reason and the button to try again."
   }
 }

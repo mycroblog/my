@@ -9,11 +9,11 @@
   },
   "public.sign_in_required.body": {
     "defaultMessage": "このサーバーに届いた公開投稿を見るには、ログインしてください。",
-    "description": "Text below the heading of the federated timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+    "description": "Description of the sign-in state on the federated timeline's page for visitors who are not signed in, under its heading and above the link to sign in."
   },
   "public.sign_in_required.title": {
     "defaultMessage": "連合タイムラインはログインした利用者向けです",
-    "description": "Heading and document title of the federated timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
+    "description": "Heading of the sign-in state on the federated timeline's page for visitors who are not signed in, when the server shows that timeline only to signed-in users."
   },
   "public.title": {
     "defaultMessage": "連合タイムライン",

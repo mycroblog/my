@@ -131,7 +131,7 @@ describe("the federated timeline", () => {
     await renderApp({ path: "/public" });
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "The federated timeline is for signed-in users" }),
+      await screen.findByRole("heading", { level: 2, name: "The federated timeline is for signed-in users" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Sign in to read the public posts that reach this server.")).toBeInTheDocument();
     for (const link of screen.getAllByRole("link", { name: "Sign in" }))

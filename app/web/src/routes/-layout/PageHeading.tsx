@@ -12,7 +12,7 @@ export type PageHeadingProps = {
    * `staticData.hideHeading`; a state of such a page that says more than where the user is (a timeline the
    * server has turned off) shows its heading with `false`.
    */
-  visuallyHidden?: boolean;
+  visuallyHidden?: boolean | "wide";
   /** The brand's spark beside the heading, for a heading that opens a page (the landing). */
   spark?: ViewProps["spark"];
 };
@@ -25,7 +25,7 @@ export type PageHeadingProps = {
  */
 export function PageHeading({ children, id, visuallyHidden, spark }: PageHeadingProps) {
   // The heading renders inside its route's match, as do the route's pending and error components.
-  const hideHeading = useMatch({ strict: false, select: (match) => match.staticData.hideHeading === true });
+  const hideHeading = useMatch({ strict: false, select: (match) => match.staticData.hideHeading ?? false });
   const hidden = visuallyHidden ?? hideHeading;
   return (
     <PageHeadingView {...(id !== undefined && { id })} {...(spark !== undefined && { spark })} visuallyHidden={hidden}>

@@ -101,7 +101,7 @@ describe("while signed out", () => {
     await renderApp({ path: "/local" });
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "The local timeline is for signed-in users" }),
+      await screen.findByRole("heading", { level: 2, name: "The local timeline is for signed-in users" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Sign in to read the public posts of this server's accounts.")).toBeInTheDocument();
     // The page's own link and the navigation's both sign in and come back here.

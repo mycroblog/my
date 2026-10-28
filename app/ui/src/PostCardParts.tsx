@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { ExternalLink } from "./ExternalLink";
-import { BoostIcon } from "./Icons";
+import { BoostIcon, PinIcon } from "./Icons";
 import { Link } from "./Link";
 import { PostCardAuthor, type PostCardAuthorProps } from "./PostCard";
 import { Text } from "./Text";
@@ -102,11 +102,25 @@ export function PostCardAvatarLink({ href, children }: PostCardAvatarLinkProps) 
   );
 }
 
-/** The context line of a boost: the boost icon and the sentence ("Bob boosted"), which has a PostCardNameLink in it. */
-export function PostCardBoostContext({ children }: { children: ReactNode }) {
+/** The icon of each kind of context line. */
+const contextIcons = { boost: BoostIcon, pin: PinIcon } as const;
+
+export type PostCardContextProps = {
+  /** Why the post is here: boosted by someone (`boost`), or pinned to the top of a profile (`pin`). */
+  kind: keyof typeof contextIcons;
+  /** The sentence ("Bob boosted", "Pinned"), which may have a PostCardNameLink in it. */
+  children: ReactNode;
+};
+
+/**
+ * The context line of a post (PostCard's `context`): the icon of its kind and the sentence, the one form of every
+ * such line (web-client §21 P4), so that a boost and a pinned post are told apart by shape before they are read.
+ */
+export function PostCardContext({ kind, children }: PostCardContextProps) {
+  const Icon = contextIcons[kind];
   return (
     <>
-      <BoostIcon />
+      <Icon />
       <span>{children}</span>
     </>
   );
