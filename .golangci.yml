@@ -502,6 +502,18 @@ linters:
           deny:
             - pkg: github.com/mycroblog/my/internal/adapter/payment/fake
               desc: only internal/platform/adapters_payments_fake.go (build tag e2e_fakes) and tests import the fake payment provider
+        # The fake push service accepts any push message for its own subscriptions: besides the tests, only the test
+        # builds (build tag e2e_fakes) link it, through the one file of my dev push-service (ADR-0118 §1).
+        push-service-fake:
+          list-mode: lax
+          files:
+            - $all
+            - "!$test"
+            - "!**/internal/adapter/pushservice/fake/**"
+            - "!**/cmd/my/dev_push_service.go"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/pushservice/fake
+              desc: only cmd/my/dev_push_service.go (build tag e2e_fakes) and tests import the fake push service
         # The live interoperability scenarios are black-box clients of running servers (federation.md §12):
         # HTTP to the client APIs and a read of this server's database (pgx), nothing of this module.
         federation-live:

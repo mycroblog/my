@@ -31,15 +31,15 @@ released binary or image has it. Never run a test build for real users.
 
 | Tag | Adds | Settings it allows |
 | --- | --- | --- |
-| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. | `payments_provider = fake`, with `profile = development` only |
+| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The command `my dev push-service`, a fake Web Push service ([below](#the-fake-push-service)). | `payments_provider = fake`, with `profile = development` only |
 
 ```sh
 scripts/task.sh go:bin GO_TAGS=e2e_fakes
 MY_PROFILE=development MY_PAYMENTS_PROVIDER=fake bin/my serve
 ```
 
-A fake that records payments as paid would give anyone a supporter's role without paying, so four checks keep it out
-of production; each one stops it on its own when another one is bypassed:
+A fake that records payments as paid would give anyone a supporter's role without paying, so four checks keep the
+fakes out of production; each one stops them on its own when another one is bypassed:
 
 - **At start.** A binary without the tag rejects `payments_provider = fake` like a left-out adapter:
 
@@ -47,16 +47,47 @@ of production; each one stops it on its own when another one is bypassed:
   payments_provider (MY_PAYMENTS_PROVIDER): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)
   ```
 
-  A test build refuses `payments_provider = fake` unless `profile = development`, and logs a warning at start that it
-  is a test build.
+  A binary without the tag has no `my dev` command (`my: unknown command "dev"`). A test build refuses
+  `payments_provider = fake` and `my dev push-service` unless `profile = development`, and both log a warning at start
+  that it is a test build.
 - **The build check.** `scripts/task.sh go:build-tags` fails when `cmd/my` without the tag (with no tags, or with any
-  representative set of `no_*` tags) depends on the fake. `internal/platform/adapters_payments_fake.go`, which has the
-  constraint `//go:build e2e_fakes`, is the only file outside the tests that imports it.
+  representative set of `no_*` tags) depends on a fake. Only files with the constraint `//go:build e2e_fakes` import
+  them outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider, and
+  `cmd/my/dev_push_service.go` the fake push service.
 - **The container image.** The `Dockerfile` stops when `GO_TAGS` has `e2e_fakes`, before it compiles anything, and
   checks the binary it built as the release check does.
 - **The release.** `scripts/check-release-build.sh BINARY...` fails when the Go build info of a binary
   (`go version -m`, its `build -tags=` line) has `e2e_fakes`, or cannot be read. Every job that publishes a binary or an
   image runs it on what it publishes.
+
+### The fake push service
+
+A browser's Web Push subscription points at its vendor's push service, which the browsers of the end-to-end tests
+cannot reach. `my dev push-service` stands in for it: it serves HTTPS on this machine, issues subscriptions, and receives
+the server's push messages the way a push service does. It verifies each message's VAPID authorization, decrypts its
+`aes128gcm` body with the keys it issued, and keeps what it received in memory for the tests to read.
+
+```sh
+scripts/mailpit-cert.sh   # the development CA and .tmp/mailpit/push-service.pem
+MY_PROFILE=development bin/my dev push-service   # https://localhost:8930
+```
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `-listen` | `127.0.0.1:8930` | The address to listen on |
+| `-origin` | `https://localhost:<port of -listen>` | The origin of the endpoints, which the VAPID token's `aud` must name |
+| `-cert`, `-key` | `.tmp/mailpit/push-service.pem`, `.tmp/mailpit/push-service.key` | The TLS certificate and its key, for `localhost` and `127.0.0.1`, signed by the development CA |
+| `-config` | `$MY_CONFIG` | The configuration file; it reads only `profile`, which must be `development` |
+
+`my serve` sends to it only when it trusts the development CA (`SSL_CERT_FILE=.tmp/mailpit/ca.pem`, as for the
+development Mailpit in [Email](../operations/email.md#development)). Its HTTP API, in JSON:
+
+| Request | Answer |
+| --- | --- |
+| `POST /subscriptions` with `{"applicationServerKey": "<base64url>"}` | `201` and a new subscription in the shape of the browser's `PushSubscription.toJSON()`: `endpoint` and `keys` (`p256dh`, `auth`) |
+| `POST /push/<id>`, a push message to the endpoint | `201` with `Location` when it is accepted; `401` without a `vapid` `Authorization`; `403` when the token's signature, its `k` (other than the subscription's `applicationServerKey`), its `aud` (other than the origin), its `exp` (past, or more than 24 hours ahead), or its `sub` (missing) fails; `400` without `TTL`, with a `Content-Encoding` other than `aes128gcm`, a bad `Urgency` or `Topic`, or a body that does not decrypt; `413` over 4096 bytes; `404` for an unknown subscription; `410` once it has expired |
+| `POST /subscriptions/<id>/expire` | `204`; later push messages to it answer `410` |
+| `GET /subscriptions/<id>/messages` | `200` and `{"messages": [...]}`: every push message to it, oldest first, with `status`, `error` (why it was refused), `plaintext`, `ttl`, `urgency`, `topic`, `subject`, and `received_at` |
 
 ## Building
 
