@@ -16055,7 +16055,7 @@ export interface operations {
             /** @description The suggestions, featured accounts first. */
             200: {
                 headers: {
-                    /** @description `private, no-store`: the suggestions depend on the viewer and change as it follows. */
+                    /** @description `no-store`: the suggestions depend on the viewer and change as it follows. */
                     "Cache-Control"?: string;
                     [name: string]: unknown;
                 };

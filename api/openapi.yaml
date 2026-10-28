@@ -2346,7 +2346,7 @@ paths:
           description: The suggestions, featured accounts first.
           headers:
             Cache-Control:
-              description: '`private, no-store`: the suggestions depend on the viewer and change as it follows.'
+              description: '`no-store`: the suggestions depend on the viewer and change as it follows.'
               schema:
                 type: string
           content:
