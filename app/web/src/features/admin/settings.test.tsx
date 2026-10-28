@@ -313,63 +313,6 @@ describe("the server's policies", () => {
     expect(within(apps).getByRole("checkbox", { name: "Client ID Metadata Documents" })).toBeChecked();
   });
 
-  test("publishes the running costs, saying that the breakdown reveals the providers", async () => {
-    const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
-    const costs = await screen.findByRole("region", { name: "Running costs" });
-    const choice = within(costs).getByRole("radiogroup", { name: "What to publish" });
-    expect(within(choice).getByRole("radio", { name: "Nothing" })).toBeChecked();
-    const breakdown = within(choice).getByRole("radio", { name: "Totals and breakdown" });
-    expect(breakdown).toHaveAccessibleDescription(
-      /This reveals which providers, such as cloud services, run this server\./u,
-    );
-
-    await user.click(breakdown);
-    await user.click(screen.getByRole("button", { name: "Save the settings" }));
-
-    expect(
-      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
-    ).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { finance_visibility: "breakdown" } }]);
-    expect(breakdown).toBeChecked();
-  });
-
-  test("publishes the income apart from the costs, saying that the members of a small plan may be guessed", async () => {
-    const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
-    const income = await screen.findByRole("region", { name: "Income" });
-    const choice = within(income).getByRole("radiogroup", { name: "What to publish" });
-    expect(within(choice).getByRole("radio", { name: "Nothing" })).toBeChecked();
-    const plans = within(choice).getByRole("radio", { name: "Totals and members of each plan" });
-    expect(plans).toHaveAccessibleDescription(/On a plan with few members, people may guess who they are\./u);
-
-    await user.click(plans);
-    await user.click(screen.getByRole("button", { name: "Save the settings" }));
-
-    expect(
-      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
-    ).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { income_visibility: "plans" } }]);
-  });
-
-  test("publishes the supporter list to everyone or to signed-in users, to nobody by default", async () => {
-    const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
-    const list = await screen.findByRole("region", { name: "Supporter list" });
-    const choice = within(list).getByRole("radiogroup", { name: "Who may read the supporter list" });
-    expect(within(choice).getByRole("radio", { name: "Nobody" })).toBeChecked();
-    const signedIn = within(choice).getByRole("radio", { name: "Signed-in users" });
-    expect(signedIn).toHaveAccessibleDescription(/Only people signed in to this server/u);
-
-    await user.click(signedIn);
-    await user.click(screen.getByRole("button", { name: "Save the settings" }));
-
-    expect(
-      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
-    ).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { supporter_list_visibility: "signed_in" } }]);
-  });
-
   test("hides the counts or the operators on the landing page, both shown by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });
@@ -403,32 +346,6 @@ describe("the server's policies", () => {
       await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
     ).toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { featured_accounts: "bob carol" } }]);
-  });
-
-  test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
-    const settings = settingsServer();
-    const { user } = await renderApp({ path: "/admin/settings" });
-    const costs = await screen.findByRole("region", { name: "Running costs" });
-    const names = within(costs).getByRole("checkbox", { name: "Show the names of the items" });
-    const memos = within(costs).getByRole("checkbox", { name: "Show the memos of the items" });
-    const income = within(costs).getByRole("radiogroup", { name: "Income" });
-    expect(names).not.toBeChecked();
-    expect(memos).not.toBeChecked();
-    expect(memos).toHaveAccessibleDescription(/meant for the operators only/u);
-    expect(within(income).getByRole("radio", { name: "Totals only" })).toBeChecked();
-
-    await user.click(memos);
-    await user.click(within(income).getByRole("radio", { name: "Totals and members of each plan" }));
-    await user.click(screen.getByRole("button", { name: "Save the settings" }));
-
-    expect(
-      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
-    ).toBeInTheDocument();
-    expect(settings.patches).toEqual([
-      { values: { finance_viewer_item_memos: "true", finance_viewer_income: "plans" } },
-    ]);
-    expect(names).not.toBeChecked();
-    expect(memos).toBeChecked();
   });
 
   test("requires a description of every image", async () => {

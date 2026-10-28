@@ -356,71 +356,8 @@ const choices = {
       description: "client:admin.settings.domain_actions.comments.all",
     },
   ],
-  finance_visibility: [
-    {
-      value: "private",
-      label: "client:admin.settings.finance.private",
-      description: "client:admin.settings.finance.private.description",
-    },
-    {
-      value: "totals",
-      label: "client:admin.settings.finance.totals",
-      description: "client:admin.settings.finance.totals.description",
-    },
-    {
-      value: "breakdown",
-      label: "client:admin.settings.finance.breakdown",
-      description: "client:admin.settings.finance.breakdown.description",
-    },
-  ],
-  finance_viewer_income: [
-    {
-      value: "totals",
-      label: "client:admin.settings.finance.viewer.income.totals",
-      description: "client:admin.settings.finance.viewer.income.totals.description",
-    },
-    {
-      value: "plans",
-      label: "client:admin.settings.finance.viewer.income.plans",
-      description: "client:admin.settings.finance.viewer.income.plans.description",
-    },
-  ],
-  income_visibility: [
-    {
-      value: "private",
-      label: "client:admin.settings.income.private",
-      description: "client:admin.settings.income.private.description",
-    },
-    {
-      value: "totals",
-      label: "client:admin.settings.income.totals",
-      description: "client:admin.settings.income.totals.description",
-    },
-    {
-      value: "plans",
-      label: "client:admin.settings.income.plans",
-      description: "client:admin.settings.income.plans.description",
-    },
-  ],
   local_timeline_access: timelineAccessChoices,
   federated_timeline_access: timelineAccessChoices,
-  supporter_list_visibility: [
-    {
-      value: "off",
-      label: "client:admin.settings.supporter_list.off",
-      description: "client:admin.settings.supporter_list.off.description",
-    },
-    {
-      value: "public",
-      label: "client:admin.settings.supporter_list.public",
-      description: "client:admin.settings.supporter_list.public.description",
-    },
-    {
-      value: "signed_in",
-      label: "client:admin.settings.supporter_list.signed_in",
-      description: "client:admin.settings.supporter_list.signed_in.description",
-    },
-  ],
   search_indexing: [
     {
       value: "allow",
@@ -720,40 +657,6 @@ function PoliciesForm() {
           form={form}
           setting="domain_actions_rationale_visibility"
           label={t("client:admin.settings.domain_actions.comments")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.finance.title")}>
-        <Hint size="inherit">{t("client:admin.settings.finance.description")}</Hint>
-        <PolicyRadios form={form} setting="finance_visibility" label={t("client:admin.settings.finance.visibility")} />
-        <Hint size="inherit">{t("client:admin.settings.finance.viewer.description")}</Hint>
-        <PolicyCheckbox
-          form={form}
-          setting="finance_viewer_item_names"
-          label={t("client:admin.settings.finance.viewer.item_names")}
-          description={t("client:admin.settings.finance.viewer.item_names.description")}
-        />
-        <PolicyCheckbox
-          form={form}
-          setting="finance_viewer_item_memos"
-          label={t("client:admin.settings.finance.viewer.item_memos")}
-          description={t("client:admin.settings.finance.viewer.item_memos.description")}
-        />
-        <PolicyRadios
-          form={form}
-          setting="finance_viewer_income"
-          label={t("client:admin.settings.finance.viewer.income")}
-        />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.income.title")}>
-        <Hint size="inherit">{t("client:admin.settings.income.description")}</Hint>
-        <PolicyRadios form={form} setting="income_visibility" label={t("client:admin.settings.income.visibility")} />
-      </Section>
-      <Section surface="card" title={t("client:admin.settings.supporter_list.title")}>
-        <Hint size="inherit">{t("client:admin.settings.supporter_list.description")}</Hint>
-        <PolicyRadios
-          form={form}
-          setting="supporter_list_visibility"
-          label={t("client:admin.settings.supporter_list.visibility")}
         />
       </Section>
       <Section surface="card" title={t("client:admin.settings.landing.title")}>

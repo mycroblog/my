@@ -37,11 +37,24 @@ import {
   TextArea,
   TextField,
 } from "@my/ui";
+import { useQuery } from "@tanstack/react-query";
 import { type SubmitEvent, useState } from "react";
 import { useIntl } from "react-intl";
+import { useApi } from "../../../lib/auth/SessionProvider";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { shellQueryReader } from "../../../lib/query";
 import { useFormatMoney } from "../../costs";
-import { DateTime, Section, type Permission, RecordList, RecordTable, RequirePermission } from "../../moderation";
+import {
+  DateTime,
+  Section,
+  type Permission,
+  RecordList,
+  RecordTable,
+  RequirePermission,
+  useHasPermission,
+} from "../../moderation";
+import { instanceQueryOptions } from "../api/documents";
+import { SupporterListPublicationForm } from "./PublicationSettings";
 import {
   type PaymentReconcileRun,
   type PaymentStatus,
@@ -158,9 +171,28 @@ export function SupporterSettings({ filter, onFilterChange }: SupporterSettingsP
         <Section surface="card" title={t("client:admin.supporters.subscriptions.title")}>
           <Subscriptions filter={filter} onFilterChange={onFilterChange} />
         </Section>
+        <Section surface="card" title={t("client:admin.settings.supporter_list.title")}>
+          <Card>
+            <SupporterListPublication />
+          </Card>
+        </Section>
       </Stack>
     </RequirePermission>
   );
+}
+
+/**
+ * Who may read the supporter list (the server setting `supporter_list_visibility`, ADR-0071 §4), next to the
+ * subscriptions it lists (audit A8): its form for a viewer with manage_settings, else what it is now.
+ */
+function SupporterListPublication() {
+  const t = useT();
+  const api = useApi();
+  const maySet = useHasPermission("manage_settings");
+  const { data: instance } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader, enabled: !maySet });
+  if (maySet) return <SupporterListPublicationForm />;
+  if (instance === undefined) return null;
+  return <p>{t("client:admin.supporters.list_visibility", { visibility: instance.supporter_list_visibility })}</p>;
 }
 
 function Program() {
