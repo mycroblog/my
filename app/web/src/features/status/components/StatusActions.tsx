@@ -106,6 +106,7 @@ export function StatusActions({ status, onDeleted }: StatusActionsProps) {
         tone="warning"
         icon={(on) => <StarIcon filled={on} />}
         describedBy={note}
+        celebrate
       />
       <ReactionPickerButton
         onSelect={(choice) => {
@@ -238,9 +239,11 @@ type RelationButtonProps = {
   icon: (on: boolean) => ReactNode;
   /** The id of another description of the toggle: the note that the action does not reach the post's server. */
   describedBy?: string | undefined;
+  /** Turning it on is a celebrated moment (web-client §21.5): only the favourite. */
+  celebrate?: boolean;
 };
 
-function RelationButton({ label, toggle, tone, icon, describedBy }: RelationButtonProps) {
+function RelationButton({ label, toggle, tone, icon, describedBy, celebrate = false }: RelationButtonProps) {
   const countId = useId();
   const hasCount = toggle.count !== null && toggle.count > 0;
   const description = [hasCount ? countId : undefined, describedBy].filter((id) => id !== undefined).join(" ");
@@ -249,6 +252,7 @@ function RelationButton({ label, toggle, tone, icon, describedBy }: RelationButt
       label={label}
       {...(description !== "" && { "aria-describedby": description })}
       tone={tone}
+      celebrate={celebrate}
       isSelected={toggle.isSelected}
       isDisabled={toggle.isDisabled}
       onChange={toggle.onChange}

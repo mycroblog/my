@@ -286,6 +286,8 @@ describe("the actions on a post", () => {
     // Optimistic: pressed with the count moved before the server answers.
     expect(favourite).toHaveAttribute("aria-pressed", "true");
     expect(favourite).toHaveAccessibleDescription("3");
+    // A favourite is a celebrated moment (web-client §21.5): the star bounces a little, and only while turning on.
+    expect(favourite).toHaveAttribute("data-celebrating");
     pending.release(HttpResponse.json({ ...post, favourited: true, favourites_count: 5 }));
     expect(await within(politeAnnouncements()).findByText("Added to favourites")).toBeInTheDocument();
     // The server's count, which includes the others' favourites.
@@ -294,6 +296,7 @@ describe("the actions on a post", () => {
     await user.click(favourite);
 
     expect(favourite).toHaveAttribute("aria-pressed", "false");
+    expect(favourite).not.toHaveAttribute("data-celebrating");
     expect(await within(politeAnnouncements()).findByText("Removed from favourites")).toBeInTheDocument();
     expect(requests).toEqual([
       `POST ${apiBase}/statuses/${postId}/favourite`,
