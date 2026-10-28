@@ -1,0 +1,13 @@
+A payment for your supporter plan “Supporter” on Example Social failed.
+
+You keep the plan's benefits until 2027-02-07 09:30 (UTC). If no payment succeeds by then, they end.
+
+Update your payment method
+https://social.example/settings/supporter
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you subscribe, or subscribed, to a supporter plan on Example Social.

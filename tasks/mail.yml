@@ -39,3 +39,32 @@ tasks:
     dir: app/mail
     cmds:
       - bun run typecheck
+
+  preview:
+    desc: Write every email, rendered from sample inputs in en, ja, en-XA, and ar-XB, to .tmp/mail/preview/ and print the path of its index.html (no database, server, or mail server)
+    deps: [gen, ":i18n:gen"]
+    cmds:
+      - go run ./scripts/mail-preview -out .tmp/mail/preview
+
+  preview-watch:
+    desc: Run mail:preview, then again whenever app/mail, the locale catalogs, or the Go code change (reload index.html to see the change)
+    watch: true
+    sources:
+      - app/mail/frame.mjml
+      - app/mail/src/*.ts
+      - "locales/*/**/*.json"
+      - exclude: "locales/en-XA/**"
+      - exclude: "locales/ar-XB/**"
+      - "internal/**/*.go"
+      - exclude: internal/i18n/messages_gen.go
+      - internal/platform/mailpreview/index.html.tmpl
+      - scripts/mail-preview/*.go
+    cmds:
+      # A new go-task process on every change: in one process, the run-once generators (mail:gen, i18n:gen)
+      # would not run again.
+      - scripts/task.sh mail:preview
+
+  golden:
+    desc: Rewrite the golden files of every email (internal/platform/mailpreview/testdata/golden, en and ja) after a change to an email or its layout; review and commit the diff
+    cmds:
+      - go test ./internal/platform/mailpreview -run '^TestGolden$' -update

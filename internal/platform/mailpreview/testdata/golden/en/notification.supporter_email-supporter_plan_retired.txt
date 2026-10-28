@@ -1,0 +1,13 @@
+The administrators of Example Social retired the supporter plan “Supporter” that you subscribe to.
+
+Your subscription is canceled and will not renew. You keep the plan's benefits until the end of the period you paid for, unless a payment is overdue.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because you subscribe, or subscribed, to a supporter plan on Example Social.

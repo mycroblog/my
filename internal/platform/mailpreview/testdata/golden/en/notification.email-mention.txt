@@ -1,0 +1,12 @@
+You have a notification on Example Social that you have not read yet.
+
+Open
+https://social.example/@bob@remote.example/status/01JSAMPLE0STATUS00000000000
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because email is on for “Mentions” in your notification settings. You can turn it off there.
+Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

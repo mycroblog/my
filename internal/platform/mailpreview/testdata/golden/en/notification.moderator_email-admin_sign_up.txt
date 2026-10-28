@@ -1,0 +1,12 @@
+A new user signed up on Example Social and awaits approval.
+
+Open your notifications
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because email is on for “Registrations awaiting approval” in your notification settings. You can turn it off there.
+Stop these emails: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

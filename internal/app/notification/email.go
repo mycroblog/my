@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -146,11 +145,9 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 		return err
 	}
 	site := mailSite(ctx, d.Host, d.MailSite)
-	draft := kernel.MailDraft{
-		Category: kernel.MailNotification, To: box.Address, Subject: p.Title,
-		Paragraphs: []string{l.ServerMailNotificationBody(site.Name)},
-		Action:     &kernel.MailAction{Label: l.ServerMailActionOpenNotification(), URL: strings.TrimSuffix(d.WebOrigin, "/") + p.Path},
-		Reason:     l.ServerMailReasonNotification(GroupLabel(l, g.Group)),
+	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, p, d.WebOrigin, "")
+	if !ok {
+		return nil
 	}
 	// Each email carries its own unsubscribe link, issued only now that it is sent, so that the
 	// secret is in the email and nowhere else (ADR-0086 §4).

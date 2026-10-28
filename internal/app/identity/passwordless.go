@@ -239,6 +239,6 @@ func (s *Service) RemovePassword(ctx context.Context, in RemovePasswordInput) er
 		if err := s.endOtherSessions(ctx, tx, in.UserID, in.KeepFamilyID, now); err != nil {
 			return err
 		}
-		return s.enqueuePasswordNotice(ctx, tx, in.UserID, passwordRemoved, cred.ID)
+		return s.enqueuePasswordNotice(ctx, tx, in.UserID, PasswordRemoved, cred.ID)
 	})
 }

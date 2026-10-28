@@ -1,0 +1,123 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email preview</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f6f6; --fg: #1d1d1f; --muted: #6b6b70; --line: #d9d9de; --panel: #ffffff; --accent: #c2410c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #18181a; --fg: #ececf0; --muted: #a0a0a8; --line: #36363c; --panel: #222226; --accent: #fb923c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); display: grid; grid-template-columns: 300px 1fr; min-height: 100vh; }
+  nav { border-inline-end: 1px solid var(--line); padding: 12px; overflow-y: auto; max-height: 100vh; position: sticky; top: 0; }
+  nav h1 { font-size: 16px; margin: 0 0 8px; }
+  .row { display: flex; gap: 4px; flex-wrap: wrap; margin-block-end: 8px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 6px; padding: 2px 10px; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  nav ul { list-style: none; margin: 0; padding: 0; }
+  nav li a { display: block; padding: 4px 6px; border-radius: 4px; color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+  nav li a[aria-current="page"] { background: var(--panel); color: var(--accent); font-weight: 600; }
+  nav li small { display: block; color: var(--muted); }
+  main { padding: 16px; min-width: 0; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  table { border-collapse: collapse; margin-block-end: 12px; }
+  th, td { text-align: start; vertical-align: top; padding: 2px 12px 2px 0; }
+  th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+  td { overflow-wrap: anywhere; }
+  .frame { border: 1px solid var(--line); background: var(--panel); height: 70vh; display: block; margin-block-end: 16px; max-width: 100%; }
+  pre { background: var(--panel); border: 1px solid var(--line); padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  a.file { color: var(--accent); }
+</style>
+</head>
+<body>
+<nav>
+  <h1>Email preview</h1>
+  <div class="row" id="locales">{{range .Locales}}<button type="button" data-locale="{{.}}">{{.}}</button>{{end}}</div>
+  <div class="row"><button type="button" data-width="375">Phone</button><button type="button" data-width="720">Desktop</button></div>
+  <div class="row"><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button></div>
+  <ul id="list"></ul>
+</nav>
+<main>
+  <h2 id="subject" dir="auto"></h2>
+  <table><tbody id="headers"></tbody></table>
+  <p><a class="file" id="open-html" target="_blank">HTML</a> · <a class="file" id="open-text" target="_blank">Text</a></p>
+  <iframe class="frame" id="frame" title="The HTML version"></iframe>
+  <h2>Text</h2>
+  <pre id="text" dir="auto"></pre>
+</main>
+<script>
+"use strict";
+const emails = {{.Emails}};
+const state = { locale: {{index .Locales 0}}, name: "", width: "720", theme: "light" };
+
+function read() {
+  const [locale, name, width, theme] = decodeURIComponent(location.hash.slice(1)).split("/");
+  if (emails.some((e) => e.locale === locale)) state.locale = locale;
+  state.name = name || "";
+  if (width === "375" || width === "720") state.width = width;
+  if (theme === "light" || theme === "dark") state.theme = theme;
+}
+
+function write() {
+  location.hash = [state.locale, state.name, state.width, state.theme].join("/");
+}
+
+function show() {
+  const inLocale = emails.filter((e) => e.locale === state.locale);
+  const email = inLocale.find((e) => e.name === state.name) || inLocale[0];
+  state.name = email.name;
+  for (const b of document.querySelectorAll("[data-locale]")) b.setAttribute("aria-pressed", String(b.dataset.locale === state.locale));
+  for (const b of document.querySelectorAll("[data-width]")) b.setAttribute("aria-pressed", String(b.dataset.width === state.width));
+  for (const b of document.querySelectorAll("[data-theme]")) b.setAttribute("aria-pressed", String(b.dataset.theme === state.theme));
+  const list = document.getElementById("list");
+  list.replaceChildren(...inLocale.map((e) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#" + [e.locale, e.name, state.width, state.theme].join("/");
+    a.textContent = e.name;
+    if (e === email) a.setAttribute("aria-current", "page");
+    const small = document.createElement("small");
+    small.dir = "auto";
+    small.textContent = e.subject;
+    a.append(small);
+    li.append(a);
+    return li;
+  }));
+  document.getElementById("subject").textContent = email.subject;
+  document.getElementById("headers").replaceChildren(...email.headers.map(([k, v]) => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = k;
+    const td = document.createElement("td");
+    td.dir = "auto";
+    td.textContent = v;
+    tr.append(th, td);
+    return tr;
+  }));
+  const src = state.theme === "dark" ? email.dark : email.html;
+  const frame = document.getElementById("frame");
+  if (frame.getAttribute("src") !== src) frame.setAttribute("src", src);
+  frame.style.width = state.width + "px";
+  frame.style.colorScheme = state.theme;
+  document.getElementById("open-html").href = src;
+  document.getElementById("open-text").href = email.html.replace(/\.html$/, ".txt");
+  document.getElementById("text").textContent = email.text;
+}
+
+document.addEventListener("click", (event) => {
+  const b = event.target.closest("button");
+  if (!b) return;
+  if (b.dataset.locale) state.locale = b.dataset.locale;
+  if (b.dataset.width) state.width = b.dataset.width;
+  if (b.dataset.theme) state.theme = b.dataset.theme;
+  write();
+});
+window.addEventListener("hashchange", () => { read(); show(); });
+read();
+show();
+</script>
+</body>
+</html>

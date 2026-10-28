@@ -1,0 +1,11 @@
+Example Social のサポーターのプラン「Supporter」の加入が終わり、特典もなくなりました。支払いの失敗から 7 日のうちに支払いが成功しなかったか、加入が一時停止されました。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先：admin@social.example
+
+Example Social のサポーターのプランに加入している、または加入していたため、このメールが届いています。
