@@ -7,9 +7,11 @@
 // says so, and still lists the dead jobs. The tabs follow the WAI-ARIA APG tabs pattern with automatic activation
 // (React Aria Tabs); only the selected panel is mounted.
 import {
+  Badge,
   Box,
   Button,
   Card,
+  Cluster,
   CodeBlock,
   DescriptionItem,
   DescriptionList,
@@ -20,6 +22,8 @@ import {
   SectionHeader,
   Spinner,
   Stack,
+  StatTile,
+  StatTileGrid,
   Tab,
   TabList,
   TabPanel,
@@ -39,6 +43,7 @@ import {
   type JobState,
   jobStates,
 } from "../api/jobs";
+import { useJobWait } from "../hooks/useJobWait";
 import { type RetryJob, useJobAttempts, useJobQueue, useJobs, useRetryJob } from "../hooks/useJobs";
 import { DateTime, Section, RecordList, RequirePermission } from "../../moderation";
 
@@ -100,9 +105,7 @@ function Dashboard({ filter, onFilterChange }: JobDashboardProps) {
         >
           <TabList aria-label={t("client:admin.jobs.filter.label")}>
             {jobFilters.map((item) => (
-              <Tab key={item} id={item}>
-                {t(filterLabels[item])}
-              </Tab>
+              <FilterTab key={item} queue={queue} filter={item} />
             ))}
           </TabList>
           {/* One panel per tab: React Aria mounts only the selected one, and each keeps the id its tab's aria-controls names. */}
@@ -127,62 +130,93 @@ function Dashboard({ filter, onFilterChange }: JobDashboardProps) {
   );
 }
 
-/** The number of jobs in each state, overall and by type, and since when the oldest due job waits. */
+/** The number of jobs of `state` in `queue`, of every type or of `type`. */
+function stateCount(queue: JobQueue, state: JobState, type?: string): number {
+  return queue.counts
+    .filter((item) => item.state === state && (type === undefined || item.type === type))
+    .reduce((sum, item) => sum + item.count, 0);
+}
+
+/** The number of jobs under `filter`: the pending filter counts every state but dead. */
+function filterCount(queue: JobQueue, filter: JobFilter): number {
+  return filter === "pending"
+    ? jobStates.filter((state) => state !== "dead").reduce((sum, state) => sum + stateCount(queue, state), 0)
+    : stateCount(queue, filter);
+}
+
+/** The tab of a filter with its count; a queue that cannot list its pending jobs counts only the dead ones. */
+function FilterTab({ queue, filter }: { queue: JobQueue; filter: JobFilter }) {
+  const t = useT();
+  const counted = filter === "dead" || queue.pending_listing;
+  const count = filterCount(queue, filter);
+  return (
+    <Tab id={filter}>
+      <Cluster gap="2" align="center" wrap={false}>
+        {t(filterLabels[filter])}
+        {counted && (
+          <Badge
+            count={count}
+            max={999}
+            tone={filter === "dead" && count > 0 ? "danger" : "neutral"}
+            label={t("client:admin.jobs.filter.count", { count })}
+          />
+        )}
+      </Cluster>
+    </Tab>
+  );
+}
+
+/**
+ * The state of the queue (ADR-0113): how long its oldest due job waits and the jobs of each state as tiles, each a link
+ * to its tab, the failed ones marked when there are any; then the queue's kind and its jobs by type.
+ */
 function QueueSummary({ queue }: { queue: JobQueue }) {
   const t = useT();
   const intl = useIntl();
+  const wait = useJobWait(queue.oldest_ready_at);
   const types = [...new Set(queue.counts.map((count) => count.type))];
-  const count = (state: JobState, type?: string) =>
-    queue.counts
-      .filter((item) => item.state === state && (type === undefined || item.type === type))
-      .reduce((sum, item) => sum + item.count, 0);
+  const dead = stateCount(queue, "dead");
+  const shownStates = queue.pending_listing ? jobStates : (["dead"] as const);
   return (
     <Stack gap="4">
+      <StatTileGrid aria-label={t("client:admin.jobs.queue.by_state")}>
+        {queue.pending_listing && <StatTile as="li" label={t("client:admin.overview.health.job_wait")} {...wait} />}
+        {shownStates.map((state) => (
+          <StatTile
+            key={state}
+            as="li"
+            label={t(stateLabels[state])}
+            value={intl.formatNumber(stateCount(queue, state))}
+            href={`/admin/jobs?state=${state}`}
+            {...(state === "dead" &&
+              dead > 0 && { status: "danger", statusLabel: t("client:admin.overview.health.failed_jobs.status") })}
+          />
+        ))}
+      </StatTileGrid>
+      {!queue.pending_listing && <Hint>{t("client:admin.jobs.queue.no_listing")}</Hint>}
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.jobs.queue.adapter")}>
           <code dir="ltr">{queue.adapter}</code>
         </DescriptionItem>
-        {queue.pending_listing && (
-          <DescriptionItem term={t("client:admin.jobs.queue.oldest_ready")}>
-            {queue.oldest_ready_at === undefined ? (
-              t("client:admin.jobs.queue.none_waiting")
-            ) : (
-              <DateTime value={queue.oldest_ready_at} />
-            )}
-          </DescriptionItem>
-        )}
       </DescriptionList>
-      {queue.pending_listing ? (
-        <>
-          <DescriptionList columns={4}>
-            {jobStates.map((state) => (
-              <DescriptionItem key={state} term={t(stateLabels[state])}>
-                {intl.formatNumber(count(state))}
-              </DescriptionItem>
-            ))}
-          </DescriptionList>
-          {types.length > 0 && (
-            <Stack as="ul" divided aria-label={t("client:admin.jobs.queue.by_type")}>
-              {types.map((type) => (
-                <Stack as="li" container gap="2" paddingY="3" key={type}>
-                  {/* Job types are identifiers, read left to right in every locale. */}
-                  <Heading level={3} wrap="anywhere" mono>
-                    <span dir="ltr">{type}</span>
-                  </Heading>
-                  <DescriptionList columns={4}>
-                    {jobStates.map((state) => (
-                      <DescriptionItem key={state} term={t(stateLabels[state])}>
-                        {intl.formatNumber(count(state, type))}
-                      </DescriptionItem>
-                    ))}
-                  </DescriptionList>
-                </Stack>
-              ))}
+      {queue.pending_listing && types.length > 0 && (
+        <Stack as="ul" divided aria-label={t("client:admin.jobs.queue.by_type")}>
+          {types.map((type) => (
+            <Stack as="li" container gap="2" paddingY="3" key={type}>
+              {/* Job types are identifiers, read left to right in every locale. */}
+              <Heading level={3} wrap="anywhere" mono>
+                <span dir="ltr">{type}</span>
+              </Heading>
+              <DescriptionList columns={4}>
+                {jobStates.map((state) => (
+                  <DescriptionItem key={state} term={t(stateLabels[state])}>
+                    {intl.formatNumber(stateCount(queue, state, type))}
+                  </DescriptionItem>
+                ))}
+              </DescriptionList>
             </Stack>
-          )}
-        </>
-      ) : (
-        <Hint>{t("client:admin.jobs.queue.no_listing")}</Hint>
+          ))}
+        </Stack>
       )}
     </Stack>
   );

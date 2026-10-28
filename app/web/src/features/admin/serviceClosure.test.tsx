@@ -190,6 +190,9 @@ describe("the service closure screen", () => {
     await renderApp({ path: "/admin/closure" });
     const progress = await screen.findByRole("region", { name: "Progress of the deliveries" });
     expect(within(progress).getByText(/Keep the workers running/u)).toBeInTheDocument();
+    // The ended deliveries of all of them as a progress bar that says its value in words.
+    const meter = within(progress).getByRole("progressbar", { name: "Deliveries ended" });
+    expect(meter).toHaveAttribute("aria-valuetext", "3,027 of 3,327 deliveries");
     expect(within(progress).getByText("3,000")).toBeInTheDocument();
     expect(within(progress).getByText("Out of attempts")).toBeInTheDocument();
   });

@@ -2,8 +2,8 @@
 // One error group's page below its heading (ADR-0103 §8, manage_errors): its state with resolving, muting and
 // unmuting it; what the group is (where, the type, the message, when and on which versions it was seen, and how
 // often); its latest occurrence, with the request ID and the trace ID that find it in the logs and the traces, each
-// with a copy button, and its stack; its occurrences by the hour, newest first, a day to a page; and the changes of its
-// state, newest first. The actions change which buttons there are, so focus then moves to the state's heading, and
+// with a copy button, and its stack; its occurrences in the last 48 hours as a TrendChart of bars (or its table), then
+// every hour that had any, newest first, a day to a page; and the changes of its state, newest first. The actions change which buttons there are, so focus then moves to the state's heading, and
 // what happened stays in the section's StatusMessage. Types, places, messages and stacks are the server's own text,
 // in English, read left to right.
 import {
@@ -13,6 +13,7 @@ import {
   DescriptionItem,
   DescriptionList,
   EmptyState,
+  Heading,
   Hint,
   Stack,
   StatusMessage,
@@ -21,9 +22,13 @@ import {
   TableRow,
   TableRowHeader,
   Text,
+  TrendChart,
+  type TrendPeriod,
 } from "@my/ui";
 import { useId, useRef } from "react";
 import { useIntl } from "react-intl";
+import { useChartLabels, useChartView } from "../../../lib/charts";
+import { useNow } from "../../../lib/clock";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   DateTime,
@@ -52,6 +57,11 @@ const actorLabels: Readonly<Record<ErrorGroupEvent["actor"], ClientMessageKey>> 
 
 /** The hours of a page of the hourly counts: a day. */
 const hoursPerPage = 24;
+
+const hour = 3_600_000;
+
+/** The hours the chart of the occurrences shows, up to the current one. */
+const chartHours = 48;
 
 export function ErrorGroupDetail({ id }: { id: string }) {
   return (
@@ -308,11 +318,65 @@ function hourPages(counts: readonly ErrorGroupHourCount[]): PagedPages<ErrorGrou
   return { items, pages, hasMore: false, isLoadingMore: false, loadMore: () => undefined };
 }
 
+/**
+ * The occurrences of each of the last 48 hours, the current one last, as bars (ADR-0113): the hours without any count
+ * zero. The summary says the total and the busiest hour.
+ */
+function HourlyChart({ counts }: { counts: readonly ErrorGroupHourCount[] }) {
+  const t = useT();
+  const intl = useIntl();
+  const now = useNow();
+  const chartView = useChartView();
+  const labels = useChartLabels({
+    period: t("client:admin.errors.hourly.hour"),
+    empty: t("client:admin.errors.hourly.empty"),
+  });
+  const byHour = new Map(counts.map((count) => [Date.parse(count.hour), count.count]));
+  const last = Math.floor(now / hour) * hour;
+  const starts = Array.from({ length: chartHours }, (_, index) => last - (chartHours - 1 - index) * hour);
+  const values = starts.map((start) => byHour.get(start) ?? 0);
+  // The first hour of the chart and each midnight say their day too.
+  const periods: TrendPeriod[] = starts.map((start, index) => ({
+    id: String(start),
+    label:
+      index === 0 || new Date(start).getHours() === 0
+        ? intl.formatDate(start, { month: "short", day: "numeric", hour: "numeric" })
+        : intl.formatTime(start, { hour: "numeric" }),
+  }));
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const peak = Math.max(...values);
+  const peakAt = starts[values.indexOf(peak)] ?? last;
+  return (
+    <TrendChart
+      title={t("client:admin.errors.hourly.chart", { hours: chartHours })}
+      summary={
+        total === 0
+          ? t("client:admin.errors.hourly.chart.none", { hours: chartHours })
+          : t("client:admin.errors.hourly.chart.summary", {
+              total,
+              hours: chartHours,
+              peak,
+              peakAt: intl.formatDate(peakAt, { month: "short", day: "numeric", hour: "numeric" }),
+              latest: values.at(-1) ?? 0,
+            })
+      }
+      kind="bar"
+      periods={periods}
+      series={[{ id: "occurrences", name: t("client:admin.errors.hourly.count"), values }]}
+      formatValue={(value) => intl.formatNumber(value)}
+      labels={labels}
+      {...chartView}
+    />
+  );
+}
+
 function HourlyCounts({ counts }: { counts: readonly ErrorGroupHourCount[] }) {
   const t = useT();
   const intl = useIntl();
   return (
     <Stack gap="3">
+      <HourlyChart counts={counts} />
+      <Heading level={3}>{t("client:admin.errors.hourly.all")}</Heading>
       <Hint size="inherit">{t("client:admin.errors.hourly.description")}</Hint>
       <RecordTable
         list={hourPages(counts)}

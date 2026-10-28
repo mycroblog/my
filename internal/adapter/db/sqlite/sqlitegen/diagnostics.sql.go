@@ -10,6 +10,7 @@ package sqlitegen
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 const addErrorGroupCount = `-- name: AddErrorGroupCount :exec
@@ -425,6 +426,59 @@ func (q *Queries) ListErrorGroupCounts(ctx context.Context, groupID string) ([]L
 			&i.LastSeenAt,
 			&i.LastVersion,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listErrorGroupCountsSince = `-- name: ListErrorGroupCountsSince :many
+SELECT group_id, hour_start, occurrences FROM error_group_counts
+WHERE hour_start >= ?1 AND group_id IN (/*SLICE:group_ids*/?)
+ORDER BY group_id, hour_start
+`
+
+type ListErrorGroupCountsSinceParams struct {
+	Since    int64
+	GroupIds []string
+}
+
+type ListErrorGroupCountsSinceRow struct {
+	GroupID     string
+	HourStart   int64
+	Occurrences int64
+}
+
+// ListErrorGroupCountsSince lists the hourly counts of the groups of group_ids from the hour of
+// since on: the recent counts of a page of the admin list.
+func (q *Queries) ListErrorGroupCountsSince(ctx context.Context, arg ListErrorGroupCountsSinceParams) ([]ListErrorGroupCountsSinceRow, error) {
+	query := listErrorGroupCountsSince
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Since)
+	if len(arg.GroupIds) > 0 {
+		for _, v := range arg.GroupIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:group_ids*/?", strings.Repeat(",?", len(arg.GroupIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:group_ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListErrorGroupCountsSinceRow{}
+	for rows.Next() {
+		var i ListErrorGroupCountsSinceRow
+		if err := rows.Scan(&i.GroupID, &i.HourStart, &i.Occurrences); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

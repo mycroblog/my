@@ -252,6 +252,18 @@ export const autoplayKey = declareKey<boolean>("my:display:autoplay", {
 });
 
 /**
+ * How this browser shows the TrendCharts (ADR-0113 §2): as charts, or as their tables. One choice for every chart, so
+ * that a reader who prefers the tables keeps them on every screen.
+ */
+export const chartViewKey = declareKey<"chart" | "table">("my:display:chart-view", {
+  area: "local",
+  version: 1,
+  defaultValue: "chart",
+  parse: schemaParser(z.enum(["chart", "table"])),
+  userData: false,
+});
+
+/**
  * The notification sound of this browser (lib/notificationSound, ADR-0109 §5): the switch of the whole sound, off by
  * default, and the notification types that sound while it is on. It is how this device behaves, not the user's data.
  */

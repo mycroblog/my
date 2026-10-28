@@ -6,6 +6,7 @@ import type { FinanceViewerSettings } from "../api/costs";
 import { useFinanceAccess, useFinanceCosts } from "../hooks/useFinanceCosts";
 import { useFinanceIncome } from "../hooks/useIncome";
 import { CostTotalsPanel, type CostTotalsPanelProps, CostTotalsView } from "./CostTotals";
+import { chartsTotals, financeCurrency, FinanceOverview } from "./FinanceOverview";
 import { IncomeState } from "./IncomeTotals";
 
 /** What the instance shows of the items to the holders of view_finance, for the sentence that says it. */
@@ -36,6 +37,11 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
   const costs = useFinanceCosts(panel.granularity, panel.basis, today);
   const income = useFinanceIncome(panel.granularity, panel.basis, today);
   if (!access.allowed) return <MissingPermission permission="view_finance" />;
+  // The overview waits for both, so that its numbers do not change under the reader.
+  const ready = costs.status === "ready" && income.status === "ready";
+  const costPeriods = costs.status === "ready" ? costs.totals.periods : undefined;
+  const incomePeriods = income.status === "ready" ? income.totals.periods : undefined;
+  const charted = ready && chartsTotals(financeCurrency(costPeriods, incomePeriods));
   return (
     <Stack gap="6">
       <p>{t("client:finance.description")}</p>
@@ -44,6 +50,7 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
       )}
       <CostTotalsPanel {...panel}>
         <Stack gap="8">
+          {ready && <FinanceOverview granularity={panel.granularity} costs={costPeriods} income={incomePeriods} />}
           <Section surface="card" title={t("client:finance.costs.title")}>
             {costs.status === "loading" && (
               <div aria-busy="true">
@@ -59,10 +66,12 @@ export function FinanceCosts({ today, ...panel }: FinanceCostsProps) {
                 isRetrying={costs.isRetrying}
               />
             )}
-            {costs.status === "ready" && <CostTotalsView totals={costs.totals} breakdown items={costs.items} />}
+            {costs.status === "ready" && (
+              <CostTotalsView totals={costs.totals} breakdown items={costs.items} table={!charted} />
+            )}
           </Section>
           <Section surface="card" title={t("client:income.title")}>
-            <IncomeState income={income} />
+            <IncomeState income={income} table={!charted} />
           </Section>
         </Stack>
       </CostTotalsPanel>

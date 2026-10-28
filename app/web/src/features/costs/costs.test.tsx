@@ -181,19 +181,21 @@ describe("a server that publishes the breakdown", () => {
 describe("a server that publishes its income", () => {
   test("shows the income without the balance while the costs are private, and no payment", async () => {
     const { incomeQueries, paths } = serveCosts("private", "totals");
-    await renderApp({ path: "/about/costs" });
+    const { user } = await renderApp({ path: "/about/costs" });
 
     const income = await screen.findByRole("region", { name: "Income" });
     expect(screen.queryByRole("region", { name: "Costs" })).not.toBeInTheDocument();
-    const table = await within(income).findByRole("table", {
-      name: "Income by Months, Spread over the period paid for",
-    });
+    // In one currency, the chart shows the income, and its table is the only one.
+    expect(await screen.findByRole("img", { name: "Income by month" })).toBeInTheDocument();
+    expect(within(income).queryByRole("table", { name: /^Income by/u })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Table" }));
+    const table = screen.getByRole("table", { name: "Income by month" });
     expect(
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual(["Period", "Income after fees"]);
-    expect(within(table).getAllByRole("row")[1]).toHaveTextContent("¥4,800");
+    expect(within(table).getAllByRole("row").at(-1)).toHaveTextContent("¥4,800");
     expect(income).toHaveTextContent("The balance is not published, since this server does not publish its costs.");
     expect(within(income).queryByRole("region", { name: "Members of each plan" })).not.toBeInTheDocument();
     expect(within(income).getByRole("region", { name: "How the income is counted" })).toHaveTextContent(

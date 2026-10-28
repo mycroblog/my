@@ -2,7 +2,8 @@
 // The error groups below their heading (ADR-0103 §8), in the admin mode's list form: a toolbar with the state and
 // source filters (kept in the URL by the route, web-client/README.md S3), a table of one page, and previous / next.
 // The groups are the most recently seen first; each row's first cell links to the group's page, where it is resolved
-// or muted. Types, places and messages are the server's own text, in English, read left to right.
+// or muted. The occurrences say the counts of the last day and week in words, beside a Sparkline of the week by the day
+// (ADR-0113), which repeats them. Types, places and messages are the server's own text, in English, read left to right.
 import {
   EmptyState,
   Hint,
@@ -10,6 +11,7 @@ import {
   ListToolbar,
   Select,
   SelectItem,
+  Sparkline,
   Stack,
   TableCell,
   TableColumnHeader,
@@ -197,6 +199,7 @@ function ErrorGroupRow({ group }: { group: ErrorGroup }) {
         <Stack gap="1">
           <span>{t("client:admin.errors.count_24h.value", { count: group.count_24h })}</span>
           <span>{t("client:admin.errors.count_7d.value", { count: group.count_7d })}</span>
+          {group.daily_counts !== undefined && <Sparkline values={group.daily_counts} />}
         </Stack>
       </TableCell>
       <TableCell>

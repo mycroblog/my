@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -649,6 +650,13 @@ func diagnosticsSummaries(t *testing.T, e *diagnosticsEnv) {
 	if o.CountDay != 1 || o.CountWeek != 3 || o.LastVersion != "1.0.2" || !o.LastSeenAt.Equal(e.clock.Now()) ||
 		!o.Group.FirstSeenAt.Equal(start) || o.Head.State != diagnostics.StateOpen {
 		t.Errorf("fp-old = %+v", o)
+	}
+	// The days of the week: the 2 occurrences 3 days ago in the fourth, and the one now in the last.
+	if !slices.Equal(o.DayCounts, []int64{0, 0, 0, 2, 0, 0, 1}) {
+		t.Errorf("fp-old days = %v, want [0 0 0 2 0 0 1]", o.DayCounts)
+	}
+	if m := all[2]; !slices.Equal(m.DayCounts, []int64{0, 0, 0, 0, 0, 0, 1}) {
+		t.Errorf("fp-mid days = %v, want [0 0 0 0 0 0 1]", m.DayCounts)
 	}
 	// Page by page.
 	first, err := e.svc.Summaries(ctx, appdiagnostics.SummaryQuery{Limit: 2})

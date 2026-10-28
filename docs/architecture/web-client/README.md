@@ -86,6 +86,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:display:theme` | localStorage | 表示のテーマ（§9）。`public/theme.js` も同じキーと形式を読む | いいえ |
 | `my:display:locale` | localStorage | 最後に表示したロケール（§9） | いいえ |
 | `my:display:autoplay` | localStorage | アニメーションの自動再生（§13） | いいえ |
+| `my:display:chart-view` | localStorage | 推移のグラフ（`TrendChart`）をグラフで出すか表で出すか。すべてのグラフで共通（§14、ADR-0113） | いいえ |
 | `my:display:navigation` | localStorage | ナビゲーションの項目の順番と隠した項目（§9） | いいえ |
 | `my:notifications:sound` | localStorage | 通知音を鳴らすか（全体のスイッチ。既定はオフ）と、鳴らす通知の種類（§9、ADR-0109 §5） | いいえ |
 | `my:instance:timelines` | localStorage | インスタンスが提供する公開タイムライン（§9） | いいえ |

@@ -356,6 +356,7 @@ export function errorGroupFixture(id: string, overrides: Partial<Schemas["ErrorG
     message: "runtime error: invalid memory address or nil pointer dereference",
     count_24h: 3,
     count_7d: 12,
+    daily_counts: [0, 9, 0, 0, 0, 0, 3],
     first_seen_at: "2026-10-20T00:00:00Z",
     last_seen_at: "2026-10-21T05:30:00Z",
     first_version: "0.3.0",

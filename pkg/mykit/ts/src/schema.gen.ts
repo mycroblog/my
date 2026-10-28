@@ -10343,6 +10343,12 @@ export interface components {
              * @description The occurrences in the last 7 days, by the hour, the current hour included.
              */
             count_7d: number;
+            /**
+             * @description The occurrences of each of the last 7 days, oldest first, each day 24 hours and the last
+             *     one ending with the current hour: the last is `count_24h` and their sum `count_7d`. Only
+             *     the list of the error groups has it.
+             */
+            daily_counts?: number[];
             /** Format: date-time */
             first_seen_at: string;
             /** Format: date-time */

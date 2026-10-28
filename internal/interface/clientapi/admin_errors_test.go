@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -121,7 +122,7 @@ func errorSummary(id, source string, state diagnostics.State, seen time.Time) ap
 			Message: "query failed: <id>", Where: "client_api GET /api/v1/statuses/{id}", FirstVersion: "1.0.0", FirstSeenAt: seen.Add(-48 * time.Hour),
 		},
 		Head:       appdiagnostics.Head{GroupID: id, State: state, Since: seen.Add(-48 * time.Hour)},
-		LastSeenAt: seen, LastVersion: "1.2.0", CountDay: 3, CountWeek: 7,
+		LastSeenAt: seen, LastVersion: "1.2.0", CountDay: 3, CountWeek: 7, DayCounts: []int64{0, 0, 2, 0, 0, 2, 3},
 	}
 }
 
@@ -153,7 +154,8 @@ func TestListErrorGroups(t *testing.T) {
 	g := page.Items[0]
 	if g.State != clientapi.ErrorGroupStateOpen || g.Source != clientapi.ErrorGroupSourceServer || g.Kind != clientapi.ErrorGroupKindPanic ||
 		g.Count24h != 3 || g.Count7d != 7 || g.Type != "*pgconn.PgError" || g.Where != "client_api GET /api/v1/statuses/{id}" ||
-		g.FirstVersion != "1.0.0" || g.LastVersion != "1.2.0" || !g.LastSeenAt.Equal(adminNow) || g.ResolvedVersion != nil {
+		g.FirstVersion != "1.0.0" || g.LastVersion != "1.2.0" || !g.LastSeenAt.Equal(adminNow) || g.ResolvedVersion != nil ||
+		g.DailyCounts == nil || !slices.Equal(*g.DailyCounts, []int64{0, 0, 2, 0, 0, 2, 3}) {
 		t.Errorf("group = %+v", g)
 	}
 	rest := decodeJSON[clientapi.ErrorGroupPage](t, e.admin(t, http.MethodGet, "/admin/error_groups?limit=2&cursor="+url.QueryEscape(*page.NextCursor), "admin", nil))
