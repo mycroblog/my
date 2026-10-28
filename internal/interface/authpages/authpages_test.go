@@ -316,6 +316,53 @@ func TestPagesLoadTheThemeStylesheet(t *testing.T) {
 	}
 }
 
+// The instance's own logo takes the place of the built-in wordmark and the name, which is its alt
+// text, with the dark logo on a dark ground (ADR-0116).
+func TestPagesShowTheInstanceLogo(t *testing.T) {
+	b, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, logo, dark string
+		want, notWant    []string
+	}{
+		{name: "built-in", want: []string{`<span class="site-logo" aria-hidden="true"></span>`, `<p class="site-name" dir="auto">Example</p>`}, notWant: []string{"<picture>"}},
+		{
+			name: "logo", logo: "/brand/r1/logo.svg",
+			want:    []string{`<img class="site-own-logo" src="/brand/r1/logo.svg" alt="Example">`},
+			notWant: []string{`class="site-logo"`, `class="site-name"`, "<source"},
+		},
+		{
+			name: "dark logo", logo: "/brand/r1/logo.svg", dark: "/brand/r2/logo_dark.svg",
+			want: []string{`<source srcset="/brand/r2/logo_dark.svg" media="(prefers-color-scheme: dark)">`, `src="/brand/r1/logo.svg"`},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := mux{http.NewServeMux()}
+			o := authpages.Options{
+				Identity: newFakeIdentity(), Locales: &i18n.Resolver{Bundle: b},
+				InstanceName: func(context.Context) string { return "Example" },
+			}
+			if tc.logo != "" {
+				o.Logos = func(context.Context) (string, string) { return tc.logo, tc.dark }
+			}
+			authpages.New(o).Register(m)
+			body := newBrowser(t, m).do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
+			for _, s := range tc.want {
+				if !strings.Contains(body, s) {
+					t.Errorf("page lacks %s:\n%s", s, body)
+				}
+			}
+			for _, s := range tc.notWant {
+				if strings.Contains(body, s) {
+					t.Errorf("page has %s:\n%s", s, body)
+				}
+			}
+		})
+	}
+}
+
 func TestSignInIssuesANewSession(t *testing.T) {
 	id := newFakeIdentity()
 	b := newBrowser(t, newServer(t, id))

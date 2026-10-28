@@ -2,6 +2,7 @@
 import { type SaveState, useNotice } from "@my/ui";
 import { useMutation, useMutationState, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -86,12 +87,32 @@ type NotificationTableRow = {
   label: ClientMessageKey;
   /** The cells of the shown channels, by channel. */
   cells: Readonly<Partial<Record<NotificationChannel, NotificationCell>>>;
+  /**
+   * Why some of the row's cells cannot be changed, localized, shown under the row's name and describing those cells:
+   * the in-app notification is off, so nothing else arrives; or the channels that are always on.
+   */
+  note: string | undefined;
+};
+
+/**
+ * The checkbox in a column's header that turns the column's cells of the section on or off at once: checked when
+ * every cell that can change is on, mixed when some are, and not operable when none can change.
+ */
+type NotificationColumn = {
+  selected: boolean;
+  indeterminate: boolean;
+  disabled: boolean;
+  onChange: (selected: boolean) => void;
 };
 
 export type NotificationTableSection = {
   section: Section;
   label: ClientMessageKey;
   rows: readonly NotificationTableRow[];
+  /** The column checkbox of each shown channel. */
+  columns: Readonly<Partial<Record<NotificationChannel, NotificationColumn>>>;
+  /** Why the last change of an in-app or email cell of this section was not saved, localized, under its table. */
+  error: string | undefined;
 };
 
 export type NotificationSettingsView = {
@@ -105,22 +126,31 @@ export type NotificationSettingsView = {
   sound: { enabled: boolean; setEnabled: (enabled: boolean) => void };
   /** Why emails do not reach the primary address, when the email column is shown and they do not. */
   emailSuppression: Preferences["email_suppression"];
-  /** Why the last change of an in-app or email cell was not saved, localized; undefined when it was. */
-  error: string | undefined;
 };
+
+/** Whether a save has a change of the cell of `group` and `channel`. */
+function touchesCell(
+  list: readonly NotificationSettingChange[],
+  group: NotificationGroup,
+  channel: "in_app" | "email",
+) {
+  return list.some((change) => change.group === group && change.channel === channel);
+}
 
 /**
  * Returns the notification settings as a table of the rows the user gets (FR-210, ADR-0109 §1, §2), on a page whose
  * loader has loaded them and the preferences (it suspends until then). The in-app and email cells save themselves at
  * once on the server, and show the value being saved meanwhile (web-client/README.md S8); the Web Push cells register
- * this device's subscription again; the sound cells are kept on this device. The supporter row is left out in the
- * Tauri app, which shows nothing of the supporter plans (ADR-0072 §14).
+ * this device's subscription again; the sound cells are kept on this device. A column's checkbox changes the cells of
+ * its section that can change, in one request. The supporter row is left out in the Tauri app, which shows nothing of
+ * the supporter plans (ADR-0072 §14).
  */
 export function useNotificationSettings(): NotificationSettingsView {
   const api = useApi();
   const queryClient = useQueryClient();
   const notice = useNotice();
   const t = useT();
+  const intl = useIntl();
   const settings = useSuspenseQuery(notificationSettingsQueryOptions(api)).data;
   const preferences = useSuspenseQuery(preferencesQueryOptions(api)).data;
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
@@ -137,15 +167,15 @@ export function useNotificationSettings(): NotificationSettingsView {
   // Every change being saved, so that clicking several cells in a row shows them all.
   const pending = useMutationState({
     filters: { mutationKey: options.mutationKey, status: "pending" },
-    select: (m) => m.state.variables as NotificationSettingChange,
-  });
-  // Every change since the page opened, the last one last, for the save mark of each cell.
-  const changes = useMutationState({
+    select: (m) => m.state.variables as readonly NotificationSettingChange[],
+  }).flat();
+  // Every save since the page opened, the last one last, for the save mark of each cell.
+  const saves = useMutationState({
     filters: { mutationKey: options.mutationKey },
-    select: (m) => ({ change: m.state.variables as NotificationSettingChange, status: m.state.status }),
+    select: (m) => ({ changes: m.state.variables as readonly NotificationSettingChange[], status: m.state.status }),
   });
   const cellSaveState = (row: NotificationSettingRow, channel: "in_app" | "email"): SaveState => {
-    const last = changes.findLast(({ change }) => change.group === row.group && change.channel === channel);
+    const last = saves.findLast((save) => touchesCell(save.changes, row.group, channel));
     if (last === undefined) return "idle";
     return saveStateOf({
       isPending: last.status === "pending",
@@ -175,10 +205,22 @@ export function useNotificationSettings(): NotificationSettingsView {
       selected: cell.fixed || serverValue(row, channel),
       disabled: cell.fixed || (channel !== "in_app" && !inApp),
       onChange: (enabled) => {
-        mutation.mutate({ group: row.group, channel, enabled });
+        mutation.mutate([{ group: row.group, channel, enabled }]);
       },
       saveState: cellSaveState(row, channel),
     };
+  };
+
+  const rowNote = (row: NotificationSettingRow, inApp: boolean): string | undefined => {
+    if (!inApp) return t("client:settings.notifications.row.in_app_off");
+    const fixed = (["in_app", "email"] as const).filter((channel) => channels.includes(channel) && row[channel].fixed);
+    if (fixed.length === 0) return undefined;
+    return t("client:settings.notifications.row.always_on", {
+      channels: intl.formatList(
+        fixed.map((channel) => t(notificationChannelLabels[channel])),
+        { type: "conjunction" },
+      ),
+    });
   };
 
   const tableRow = (row: NotificationSettingRow): NotificationTableRow => {
@@ -205,15 +247,72 @@ export function useNotificationSettings(): NotificationSettingsView {
         saveState: "idle",
       };
     }
-    return { group: row.group, label: notificationGroupLabels[row.group], cells };
+    return { group: row.group, label: notificationGroupLabels[row.group], cells, note: rowNote(row, inApp) };
   };
 
+  /** Turns the cells of `channel` of the section's rows that can change and differ to `selected`, at once. */
+  const setColumn = (
+    sectionRows: readonly { row: NotificationSettingRow; table: NotificationTableRow }[],
+    channel: NotificationChannel,
+    selected: boolean,
+  ) => {
+    const changing = sectionRows
+      .filter(({ table }) => {
+        const cell = table.cells[channel];
+        return cell !== undefined && !cell.disabled && cell.selected !== selected;
+      })
+      .map(({ row }) => row);
+    if (changing.length === 0) return;
+    const types = changing.flatMap((row) => row.types);
+    switch (channel) {
+      case "in_app":
+      case "email":
+        mutation.mutate(changing.map((row) => ({ group: row.group, channel, enabled: selected })));
+        break;
+      case "push":
+        if (push.status === "available") push.setTypes(types, selected);
+        break;
+      case "sound":
+        setNotificationSoundTypes(types, selected);
+        break;
+    }
+  };
+
+  const column = (
+    sectionRows: readonly { row: NotificationSettingRow; table: NotificationTableRow }[],
+    channel: NotificationChannel,
+  ): NotificationColumn => {
+    const operable = sectionRows.flatMap(({ table }) => {
+      const cell = table.cells[channel];
+      return cell === undefined || cell.disabled ? [] : [cell];
+    });
+    const on = operable.filter((cell) => cell.selected).length;
+    return {
+      selected: operable.length > 0 && on === operable.length,
+      indeterminate: on > 0 && on < operable.length,
+      disabled: operable.length === 0,
+      onChange: (selected) => {
+        setColumn(sectionRows, channel, selected);
+      },
+    };
+  };
+
+  // The groups of the last save when the server refused it, for the error under the table of their section.
+  const failed = mutation.isError ? mutation.variables : undefined;
   const sections = (["ordinary", "moderator", "instance"] as const)
-    .map((section) => ({
-      section,
-      label: notificationSectionLabels[section],
-      rows: rows.filter((row) => row.section === section).map(tableRow),
-    }))
+    .map((section): NotificationTableSection => {
+      const sectionRows = rows.filter((row) => row.section === section).map((row) => ({ row, table: tableRow(row) }));
+      return {
+        section,
+        label: notificationSectionLabels[section],
+        rows: sectionRows.map(({ table }) => table),
+        columns: Object.fromEntries(channels.map((channel) => [channel, column(sectionRows, channel)])),
+        error:
+          failed?.some((change) => sectionRows.some(({ row }) => row.group === change.group)) === true
+            ? errorMessage(mutation.error)
+            : undefined,
+      };
+    })
     .filter((section) => section.rows.length > 0);
 
   return {
@@ -222,7 +321,6 @@ export function useNotificationSettings(): NotificationSettingsView {
     push,
     sound: { enabled: sound.enabled, setEnabled: setNotificationSoundEnabled },
     emailSuppression: sendsEmail ? preferences.email_suppression : undefined,
-    error: mutation.isError ? errorMessage(mutation.error) : undefined,
   };
 }
 

@@ -22,6 +22,7 @@ import { nodeUploadFile } from "../../test/multipart";
 import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
+import { sectionHeadings } from "../../test/sections";
 
 /**
  * Makes `zone` the time zone of this device: the zone of every Intl.DateTimeFormat that names none, as in a
@@ -85,16 +86,41 @@ function expectBeside(control: HTMLElement, mark: HTMLElement) {
 }
 
 describe("preferences", () => {
+  test("the sections follow the screen's requirements, each saying where it is saved", async () => {
+    preferencesServer();
+    await renderApp({ path: "/settings/preferences" });
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
+    // docs/architecture/web-client/screens/settings-preferences.md §3
+    expect(sectionHeadings()).toEqual(["Display", "Navigation", "New posts", "Timelines"]);
+    expect(screen.getByRole("region", { name: "Display" })).toHaveAccessibleDescription(
+      "The language and the time zone are saved to your account; the theme and animations are kept on this browser.",
+    );
+    expect(
+      within(screen.getByRole("region", { name: "New posts" })).getByRole("radiogroup", {
+        name: "Who sees your posts by default",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Timelines" })).getByRole("group", {
+        name: "Languages of your timelines",
+      }),
+    ).toBeInTheDocument();
+  });
+
   test("switching the display language saves it and displays the app in it at once", async () => {
     const prefs = preferencesServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
-    expect(await screen.findByRole("heading", { level: 1, name: "Display and posting" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("lang", "en");
 
     await user.click(screen.getByRole("button", { name: /Display language/ }));
     await user.click(await screen.findByRole("option", { name: "日本語" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: "表示と投稿" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "表示・投稿・タイムライン" })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("lang", "ja");
     expect(document.documentElement).toHaveAttribute("dir", "ltr");
     expect(prefs.changes).toEqual([{ locale: "ja" }]);
@@ -537,6 +563,54 @@ describe("profile", () => {
     return changes;
   }
 
+  test("the sections follow the screen's requirements, and the preview follows the edits", async () => {
+    profileServer();
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const displayName = await screen.findByRole("textbox", { name: "Display name" });
+    // docs/architecture/web-client/screens/settings-profile.md §3
+    expect(sectionHeadings()).toEqual([
+      "Preview",
+      "Avatar",
+      "Header image",
+      "Name and bio",
+      "Fields",
+      "Followers and bots",
+      "Search engines and AI",
+    ]);
+    // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+    await user.clear(displayName);
+    await user.type(displayName, "Alice Liddell");
+    await user.type(screen.getByRole("textbox", { name: "Bio" }), "Down the rabbit hole.");
+    await user.click(screen.getByRole("button", { name: "Add a field" }));
+    const field = screen.getByRole("group", { name: "Field 1" });
+    await user.type(within(field).getByRole("textbox", { name: "Label" }), "Home");
+    await user.type(within(field).getByRole("textbox", { name: "Content" }), "Wonderland");
+
+    const preview = screen.getByRole("region", { name: "Preview" });
+    expect(within(preview).getByText("Alice Liddell")).toBeInTheDocument();
+    expect(within(preview).getByText(/Down the rabbit hole\./)).toBeInTheDocument();
+    expect(within(preview).getByRole("term")).toHaveTextContent("Home");
+    expect(within(preview).getByRole("definition")).toHaveTextContent("Wonderland");
+  });
+
+  test("the save result shows beside the button until the next edit", async () => {
+    profileServer();
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const displayName = await screen.findByRole("textbox", { name: "Display name" });
+    await user.type(displayName, " Liddell");
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+    const saved = await screen.findByText("Your profile has been saved.");
+    // In the status region right after the button.
+    expect(screen.getByRole("button", { name: "Save profile" }).compareDocumentPosition(saved)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    await user.type(displayName, "!");
+    expect(screen.queryByText("Your profile has been saved.")).not.toBeInTheDocument();
+  });
+
   test("a value over its limit is reported on its field, which gets focus, and nothing is sent", async () => {
     const changes = profileServer();
     const { user } = await renderApp({ path: "/settings/profile" });
@@ -777,7 +851,13 @@ describe("profile", () => {
 
     await user.click(await screen.findByRole("button", { name: "Save profile" }));
 
-    expect(await screen.findByText("fields is not a valid value.")).toHaveAttribute("role", "alert");
+    // Beside the save button, in the alert region of its bar.
+    expect(await screen.findByText("The profile could not be saved: fields is not a valid value.")).toBeVisible();
+    expect(
+      screen
+        .getAllByRole("alert")
+        .filter((alert) => alert.textContent === "The profile could not be saved: fields is not a valid value."),
+    ).toHaveLength(1);
   });
 });
 
@@ -902,6 +982,38 @@ function expectMenuGroups(menu: HTMLElement, expected: Record<string, string[]>)
 }
 
 describe("the settings page", () => {
+  test("sums up the security of the account first, each row a link to its page with its state", async () => {
+    server.use(
+      http.get(`${apiBase}/passkeys`, () =>
+        HttpResponse.json({
+          items: [
+            { id: "1", name: "Laptop", created_at: "2026-01-01T00:00:00Z" },
+            { id: "2", name: "Phone", created_at: "2026-02-01T00:00:00Z" },
+          ],
+        }),
+      ),
+    );
+    await renderApp({ path: "/settings" });
+
+    const security = await screen.findByRole("region", { name: "Security" });
+    // docs/architecture/web-client/screens/settings.md §3 (no staff permissions, no documents on this server)
+    expect(sectionHeadings()[0]).toBe("Security");
+    expect(await within(security).findByRole("link", { name: "Password Set" })).toHaveAttribute(
+      "href",
+      "/settings/password",
+    );
+    expect(await within(security).findByRole("link", { name: "Two-factor authentication Off" })).toHaveAttribute(
+      "href",
+      "/settings/two-factor",
+    );
+    expect(await within(security).findByRole("link", { name: "Passkeys 2 added" })).toHaveAttribute(
+      "href",
+      "/settings/passkeys",
+    );
+    // No login providers on this server: no row for linked accounts.
+    expect(within(security).queryByRole("link", { name: /Linked accounts/ })).not.toBeInTheDocument();
+  });
+
   test("lists the settings pages in named groups", async () => {
     await renderApp({ path: "/settings" });
 

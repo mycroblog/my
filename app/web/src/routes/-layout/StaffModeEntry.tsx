@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Badge, Heading, Hint, Link, Stack } from "@my/ui";
+import { Badge, Hint, Link, Section, Stack } from "@my/ui";
 import { useId } from "react";
 import { useAdminEntry } from "../../features/admin";
 import { useModerationEntry } from "../../features/moderation";
@@ -20,10 +20,7 @@ export function StaffModeEntry() {
   const pending = moderation.available ? moderation.pending : 0;
   const descriptionId = `${id}-description`;
   return (
-    <Stack as="section" aria-labelledby={id} gap="3">
-      <Heading id={id} level={2}>
-        {t("client:admin.mode.title")}
-      </Heading>
+    <Section title={t("client:admin.mode.title")}>
       <Stack border="lg" paddingX="4" paddingY="3">
         <Link
           href={moderation.available ? "/moderation" : "/admin"}
@@ -43,6 +40,6 @@ export function StaffModeEntry() {
           {t("client:admin.mode.summary")}
         </Hint>
       </Stack>
-    </Stack>
+    </Section>
   );
 }

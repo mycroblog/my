@@ -324,8 +324,8 @@ Until one is set, the built-in images of my are used, and clearing one brings th
 
 | Image | Shape | Where it appears |
 | --- | --- | --- |
-| `icon` | Square (within 1%) | The favicon, the home screen icon of iOS (`apple-touch-icon`), the icons of the installed app (Web App Manifest), and wherever a client shows the server as a square picture |
-| `logo` | 1 to 8 times as wide as it is high | The header of the web client instead of the server name (the logo should contain the name), the HTML version of every email, and the link preview image when `preview_image` is not set |
+| `icon` | Square (within 1%) | The favicon, the home screen icon of iOS (`apple-touch-icon`), the icons of the installed app (Web App Manifest), the server's card on the landing page and beside its name in the web client's side panel, and wherever a client shows the server as a square picture |
+| `logo` | 1 to 8 times as wide as it is high | The header of the web client and the top of the sign-in, registration, and consent pages instead of the built-in wordmark and the server name (the logo should contain the name, which is its alt text), the HTML version of every email, and the link preview image when `preview_image` is not set |
 | `logo_dark` | As `logo` | Dark backgrounds; without it, `logo` is used there too |
 
 - **The server sanitizes the SVG.** It reads it as XML and writes a new document from the allowed elements (shapes, groups,
@@ -357,7 +357,14 @@ Until one is set, the built-in images of my are used, and clearing one brings th
   on desktops the app keeps its old icon until it is installed again.
 - `GET /api/v1/instance` returns `icon`, `logo`, and `logo_dark` with the URL of the SVG, the URL and size of each PNG version,
   and the revision; each is left out while the built-in image is in use.
-- Set and clear them with the client API, which needs the role permission `manage_settings`:
+- Set them in the web client under **Server settings** > **Icon and logo** (role permission `manage_settings`). Choose an SVG
+  file for the icon, the logo, or the logo for dark backgrounds: the server checks it, the browser draws the PNG versions, and the
+  form previews them (a browser tab, the home screen, the app icon, an email on a light and a dark background, and the link
+  preview) with the list of what the server removed. If the server refuses the file, the reason shows under the button with how
+  to fix it. For the icon, set the background color of its opaque versions there too. **Save** sends the SVG with every PNG
+  version; **Use the built-in icon**, **Use the built-in logo**, and **Remove the logo for dark backgrounds** clear them. The
+  web client keeps the images it has shown for offline use.
+- The client API does the same, with the role permission `manage_settings`:
   `POST /api/v1/admin/instance/brand/sanitize` checks an SVG and returns the sanitized SVG with the PNG versions to draw (it
   saves nothing), `PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` saves the SVG with every PNG version
   (`multipart/form-data`, one part per version), `DELETE` on the same path clears one, and `GET /api/v1/admin/instance/brand` returns the current

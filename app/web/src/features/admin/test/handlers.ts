@@ -458,7 +458,82 @@ const createdCustomEmojiId = "0199f0e0-0000-7000-8000-00000000e001";
 /** The ID the default POST /admin/roles handler gives a new role. */
 export const createdRoleId = "0199f0e0-0000-7000-8000-0000000000c1";
 
+/** The renditions the server asks for of each brand image (BrandRendition). */
+const brandRenditionSizes: Record<Schemas["BrandKind"], Schemas["BrandRenditionSize"][]> = {
+  icon: [
+    { rendition: "favicon-32", width: 32, height: 32 },
+    { rendition: "favicon-48", width: 48, height: 48 },
+    { rendition: "apple-touch-180", width: 180, height: 180 },
+    { rendition: "pwa-192", width: 192, height: 192 },
+    { rendition: "pwa-512", width: 512, height: 512 },
+    { rendition: "maskable-512", width: 512, height: 512 },
+  ],
+  logo: [
+    { rendition: "logo-mail", width: 384, height: 96 },
+    { rendition: "preview-1200x630", width: 1200, height: 630 },
+  ],
+  logo_dark: [{ rendition: "logo-dark-mail", width: 384, height: 96 }],
+};
+
+/** A sanitized SVG of `kind` as POST /admin/instance/brand/sanitize answers it: a square icon or a 4:1 logo. */
+export function brandSanitizedFixture(
+  kind: Schemas["BrandKind"],
+  overrides: Partial<Schemas["BrandSanitized"]> = {},
+): Schemas["BrandSanitized"] {
+  const [width, height] = kind === "icon" ? [64, 64] : [160, 40];
+  return {
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}"/></svg>`,
+    view_box_width: width,
+    view_box_height: height,
+    renditions: brandRenditionSizes[kind],
+    dropped: [],
+    ...overrides,
+  };
+}
+
+/** A brand image as GET /admin/instance/brand and PUT /admin/instance/brand/{kind} answer it. */
+export function adminBrandImageFixture(
+  kind: Schemas["BrandKind"],
+  revision: string,
+  overrides: Partial<Schemas["AdminBrandImage"]> = {},
+): Schemas["AdminBrandImage"] {
+  const [width, height] = kind === "icon" ? [64, 64] : [160, 40];
+  return {
+    revision,
+    svg_url: `https://my.example/brand/${revision}/${kind}.svg`,
+    width,
+    height,
+    renditions: brandRenditionSizes[kind].map((size) => ({
+      ...size,
+      url: `https://my.example/brand/${revision}/${size.rendition}.png`,
+    })),
+    revised_at: "2026-10-20T00:00:00Z",
+    ...(kind === "icon" && { background: "#fffaf2" }),
+    ...overrides,
+  };
+}
+
 export const handlers = [
+  // operationIds getAdminBrands, sanitizeAdminBrand, setAdminBrand, clearAdminBrand: the built-in images; an SVG is
+  // answered as a sanitized square icon or 4:1 logo of its kind, and a saved image at a new revision.
+  http.get(`${apiBase}/admin/instance/brand`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({} satisfies Schemas["AdminBrands"])),
+  ),
+  http.post(`${apiBase}/admin/instance/brand/sanitize`, async ({ request }) => {
+    // Node.js's parser of FormData refuses the files of a body that jsdom's globals took part in: read the text.
+    const kind = (/name="kind"\r\n\r\n([a-z_]+)/u.exec(await request.clone().text())?.[1] ??
+      "icon") as Schemas["BrandKind"];
+    return withViewer(request, () => HttpResponse.json(brandSanitizedFixture(kind)));
+  }),
+  http.put(`${apiBase}/admin/instance/brand/:kind`, ({ request, params }) => {
+    const kind = params["kind"] as Schemas["BrandKind"];
+    return withViewer(request, () =>
+      HttpResponse.json(adminBrandImageFixture(kind, "0199f0e0-0000-7000-8000-00000000b001")),
+    );
+  }),
+  http.delete(`${apiBase}/admin/instance/brand/:kind`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
   // operationIds createRole, updateRole, deleteRole (the roles themselves are the moderation feature's): a new
   // role is answered as sent; a changed one is the moderator role with the changes sent.
   http.post(`${apiBase}/admin/roles`, async ({ request }) => {

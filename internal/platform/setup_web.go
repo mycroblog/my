@@ -94,6 +94,30 @@ func (a *App) themeStylesheet(ctx context.Context) string {
 	return web.ThemeStylesheetPath(rev.ID)
 }
 
+// brandLogos returns the paths of the SVGs of the instance's own logo and dark logo for the
+// server-rendered pages, or "" for each when there is no logo or the brands cannot be read (the
+// pages then show the built-in wordmark).
+func (a *App) brandLogos(ctx context.Context) (logo, logoDark string) {
+	b, err := a.Instance.Brands(ctx)
+	if err != nil {
+		a.Logger.WarnContext(ctx, "read the instance brand images", slog.Any("error", err))
+		return "", ""
+	}
+	svg := func(rev *domaininstance.BrandRevision) string {
+		if rev == nil {
+			return ""
+		}
+		if _, ok := rev.File(domaininstance.RenditionSVG); !ok {
+			return ""
+		}
+		return domaininstance.BrandFilePath(rev.ID, domaininstance.RenditionSVG)
+	}
+	if logo = svg(b.Logo); logo == "" {
+		return "", ""
+	}
+	return logo, svg(b.LogoDark)
+}
+
 // previewImage returns the instance's link preview image (the preview_image setting), or nil when it is unset or its media file is not a processed
 // image, which leaves the web client's built-in image.
 func (a *App) previewImage(ctx context.Context) (*web.Image, error) {

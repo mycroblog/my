@@ -7,6 +7,8 @@
 - `my serve` はビルドのマニフェストのキー `src/server-pages.css` からファイル名を引き（`web.Handler.Stylesheet`）、画面の `<link rel="stylesheet">` にする。SPA の外枠はこの CSS を読み込まない。
   サーバーのテーマ（§9 の「サーバーのテーマ」）があれば、その後にテーマのスタイルシートも読む（`authpages.Options.ThemeStylesheet`）。この CSS はユーティリティを持たないので、テーマのトークンは `@apply` で作った規則と `theme.css` の基本の規則を通して効く。
   Vite の開発サーバーを使うときはビルドがないので、画面にスタイルは付かない。
+- カードの上には、組み込みのワードマーク（`.site-logo`、CSS の背景）とサーバーの名前を出す。サーバーがロゴを設定しているとき（[ADR-0116](../../adr/0116-custom-logo-and-icon.md)、`authpages.Options.Logos`）は、
+  その代わりにロゴの SVG の `<img class="site-own-logo">`（`alt` はサーバーの名前）だけを出し、暗いロゴがあれば `<picture>` の `prefers-color-scheme: dark` の `<source>` にする。
 - CSP は `style-src 'self'` で、インラインのスタイルとスクリプトを置かない。
 - ダークモードは `prefers-color-scheme` に従う（トークンの `light-dark()` と `<meta name="color-scheme" content="light dark">`）。フォーカスのリングは `theme.css` の `:focus-visible`、
   タップ領域は `pointer-coarse:` で 44 px 以上、方向は論理プロパティ（`px-`・`ps-`・`pe-`）で書く（D4・D7・Y4）。
