@@ -315,6 +315,48 @@ describe("an account's admin page", () => {
     expect(requests.filter((request) => request.includes("/reveal"))).toEqual([]);
   });
 
+  test("shows the invite the account signed up with and who created it", async () => {
+    const invited = adminAccountDetailFixture(otherAccountFixture, {
+      registration: {
+        submitted_at: "2026-10-01T00:00:00Z",
+        state_changed_at: "2026-10-01T00:00:00Z",
+        invite_id: "0192f0c4-7a8e-7000-8000-0000000006a1",
+        invite: {
+          id: "0192f0c4-7a8e-7000-8000-0000000006a1",
+          creator_kind: "member",
+          created_by: dave,
+          created_by_deleted: false,
+        },
+      },
+    });
+    accountServer(invited);
+    const { unmount } = await renderApp({ path: `/moderation/accounts/${invited.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    const summary = region("Account");
+    expect(within(summary).getByText("Member invite")).toBeInTheDocument();
+    expect(within(summary).getByRole("link", { name: "@dave" })).toHaveAttribute(
+      "href",
+      `/moderation/accounts/${dave.id}`,
+    );
+    unmount();
+
+    const byCli = adminAccountDetailFixture(otherAccountFixture, {
+      registration: {
+        submitted_at: "2026-10-01T00:00:00Z",
+        state_changed_at: "2026-10-01T00:00:00Z",
+        invite_id: "0192f0c4-7a8e-7000-8000-0000000006a2",
+        invite: { id: "0192f0c4-7a8e-7000-8000-0000000006a2", creator_kind: "staff", created_by_deleted: false },
+      },
+    });
+    accountServer(byCli);
+    await renderApp({ path: `/moderation/accounts/${byCli.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByText("Moderator invite")).toBeInTheDocument();
+    expect(within(region("Account")).getByText("Command line")).toBeInTheDocument();
+  });
+
   test("shows the email and IP addresses only when asked, once, with the other accounts of the same addresses", async () => {
     const requests = recordAccountRequests();
     accountServer(bobDetail);

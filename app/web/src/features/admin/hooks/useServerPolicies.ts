@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's policies (FR-001, FR-105, FR-202, FR-408, FR-409, FR-413, FR-718, FR-725, FR-903, ADR-0009, ADR-0057): who may sign
-// up, the default language, the public timelines, whether images need a description, the federation (its direction,
+// up, who may create invites of their own and the caps of those invites (ADR-0108 §1, §2), the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0076, which asks before it narrows), who may read the
 // list of the domain actions, how much of the running costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5), how much of the income is published (FR-917), who may read the supporter list (ADR-0071 §4),
 // what the server states to search engines and AI crawlers, and voice chat (ADR-0100 §2, §9, §13: who may start a
@@ -24,6 +24,10 @@ import { languageName, selectableLocales } from "./languages";
 /** The settings of the form, in the order of its sections. */
 const policyKeys = [
   "registration_mode",
+  "invite_creators",
+  "member_invite_max_active",
+  "member_invite_max_uses",
+  "member_invite_max_expires_in",
   "user_app_registration",
   "oauth_metadata_document_clients",
   "dynamic_client_registration",
@@ -57,6 +61,44 @@ export type PolicyKey = (typeof policyKeys)[number];
 
 /** The lengths of time offered for how long remote media may be kept, in seconds: an hour to a year. */
 const cacheTtlChoices: readonly number[] = [3600, 86_400, 7 * 86_400, 30 * 86_400, 365 * 86_400];
+
+/** The lengths of time offered for how long a member's invite may work at most, in seconds: an hour to a year. */
+const inviteExpiryChoices: readonly number[] = [
+  3600,
+  86_400,
+  7 * 86_400,
+  30 * 86_400,
+  90 * 86_400,
+  180 * 86_400,
+  365 * 86_400,
+];
+
+/**
+ * The settings typed as a whole number in a text field, with the bounds to use until the server gives its own: the
+ * days to keep the participants' records of voice chat rooms (ADR-0100 §13) and the caps of the members' invites
+ * (ADR-0108 §2).
+ */
+const numberFields = {
+  retention_voice_participants: { min: 30, max: 3650 },
+  member_invite_max_active: { min: 0, max: 100 },
+  member_invite_max_uses: { min: 1, max: 1000 },
+} as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
+
+/** A setting typed as a whole number. */
+export type NumberPolicyKey = keyof typeof numberFields;
+
+const numberKeys: readonly NumberPolicyKey[] = [
+  "retention_voice_participants",
+  "member_invite_max_active",
+  "member_invite_max_uses",
+];
+
+function isNumberField(key: PolicyKey): key is NumberPolicyKey {
+  return key in numberFields;
+}
+
+/** A field of a whole number: its bounds, and why its value cannot be saved (undefined when it can). */
+export type NumberField = { min: number; max: number; error: string | undefined };
 
 /** A choice of a setting: the value the server stores and its words. */
 export type PolicyChoice = { value: string; label: string };
@@ -104,8 +146,8 @@ export function useServerPolicies() {
 
   const savedValue = (key: PolicyKey) => saved.get(key)?.value ?? "";
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
-  // A number of days is sent without the spaces around it.
-  const sentValue = (key: PolicyKey) => (key === "retention_voice_participants" ? valueOf(key).trim() : valueOf(key));
+  // A typed number is sent without the spaces around it.
+  const sentValue = (key: PolicyKey) => (isNumberField(key) ? valueOf(key).trim() : valueOf(key));
   const changes = Object.fromEntries(
     policyKeys.filter((key) => sentValue(key) !== savedValue(key)).map((key) => [key, sentValue(key)]),
   );
@@ -130,22 +172,34 @@ export function useServerPolicies() {
     return t("client:admin.settings.duration.seconds", { count: seconds });
   };
   const currentTtl = Number(savedValue("remote_media_cache_ttl"));
-  // The days the participants' records of voice chat rooms are kept (ADR-0100 §13), within the bounds the server gives.
-  const retentionSetting = saved.get("retention_voice_participants");
-  const retentionBounds = { min: retentionSetting?.minimum ?? 30, max: retentionSetting?.maximum ?? 3650 };
-  const retentionText = valueOf("retention_voice_participants").trim();
-  const retentionDays = /^\d+$/u.test(retentionText) ? Number(retentionText) : Number.NaN;
-  // Only what the operator typed is checked: the saved value is the server's.
-  const retentionError =
-    drafts.retention_voice_participants === undefined ||
-    (retentionDays >= retentionBounds.min && retentionDays <= retentionBounds.max)
-      ? undefined
-      : t("client:admin.settings.voice.retention.invalid", {
-          min: String(retentionBounds.min),
-          max: String(retentionBounds.max),
-        });
+  // A whole number within the bounds the server gives. Only what the operator typed is checked: the saved value is
+  // the server's.
+  const numberField = (key: NumberPolicyKey): NumberField => {
+    const setting = saved.get(key);
+    const bounds = { min: setting?.minimum ?? numberFields[key].min, max: setting?.maximum ?? numberFields[key].max };
+    const text = valueOf(key).trim();
+    const value = /^\d+$/u.test(text) ? Number(text) : Number.NaN;
+    const valid = drafts[key] === undefined || (value >= bounds.min && value <= bounds.max);
+    const range = { min: String(bounds.min), max: String(bounds.max) };
+    return {
+      ...bounds,
+      error: valid
+        ? undefined
+        : key === "retention_voice_participants"
+          ? t("client:admin.settings.voice.retention.invalid", range)
+          : t("client:admin.settings.invites.number.invalid", range),
+    };
+  };
+  const numberErrors = numberKeys.map((key) => numberField(key).error);
   const ttlChoices = [
     ...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])]),
+  ].toSorted((a, b) => a - b);
+  const currentInviteExpiry = Number(savedValue("member_invite_max_expires_in"));
+  const inviteExpiries = [
+    ...new Set([
+      ...inviteExpiryChoices,
+      ...(Number.isInteger(currentInviteExpiry) && currentInviteExpiry > 0 ? [currentInviteExpiry] : []),
+    ]),
   ].toSorted((a, b) => a - b);
   const localeChoices = [...new Set([...selectableLocales(), savedValue("default_locale")])].filter(
     (locale) => locale !== "",
@@ -172,10 +226,15 @@ export function useServerPolicies() {
       value: String(seconds),
       label: durationLabel(seconds),
     })),
+    /** The longest times a member's invite may work, with the saved one when it is not among them. */
+    inviteExpiryChoices: inviteExpiries.map((seconds): PolicyChoice => ({
+      value: String(seconds),
+      label: durationLabel(seconds),
+    })),
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
-      // The field under the error says what to fix; nothing is sent until it holds a number of days in bounds.
-      if (save.isPending || retentionError !== undefined) return;
+      // The field under the error says what to fix; nothing is sent until every number is in bounds.
+      if (save.isPending || numberErrors.some((error) => error !== undefined)) return;
       if (Object.keys(changes).length === 0) {
         setStatus(t("client:admin.settings.policies.unchanged"));
         return;
@@ -187,8 +246,8 @@ export function useServerPolicies() {
       }
       save.mutate(changes);
     },
-    /** The days to keep the participants' records of voice chat rooms: the bounds, and why the value cannot be saved. */
-    voiceRetention: { ...retentionBounds, error: retentionError },
+    /** A setting typed as a whole number: its bounds, and why the value cannot be saved. */
+    numberField,
     /** What the chosen federation mode stops compared with the saved one, or null when it stops nothing. */
     narrowing,
     /** Whether the confirmation of `narrowing` is open. */

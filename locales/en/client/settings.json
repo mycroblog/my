@@ -1974,5 +1974,161 @@
   "settings.account.delete.confirm.description_external": {
     "defaultMessage": "Your account is deleted at once, and you are signed out. This cannot be undone.",
     "description": "Description of the dialog that deletes the account of a user who confirmed by signing in again at a linked service."
+  },
+  "settings.invites.title": {
+    "defaultMessage": "Your invites",
+    "description": "Title of the settings page of the invites that the user created, and its item in the settings menu."
+  },
+  "settings.invites.description": {
+    "defaultMessage": "Invite people you know to this server. Each invite has a link that lets a few people sign up for a while. While the server approves sign-ups by hand, the people you invite skip the wait.",
+    "description": "Explanation at the top of the user's invites page."
+  },
+  "settings.invites.new.title": {
+    "defaultMessage": "Create an invite",
+    "description": "Heading of the region of the form of a new invite on the user's invites page."
+  },
+  "settings.invites.not_allowed": {
+    "defaultMessage": "You cannot create invites now. You can still copy the links of your usable invites and revoke them.",
+    "description": "Shown instead of the form of a new invite when the user may not create invites: the server or their roles do not let them, their account is restricted, or the server takes no new accounts."
+  },
+  "settings.invites.usage": {
+    "defaultMessage": "You have {usable, number} of {max, number} usable invites.",
+    "description": "How many usable invites the user holds, and how many the server lets one person hold at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "You have as many usable invites as you may. Revoke one, or wait until one expires or is used up, to create another.",
+    "description": "Shown above the form of a new invite when the user already holds as many usable invites as the server allows."
+  },
+  "settings.invites.max_uses": {
+    "defaultMessage": "Sign-ups",
+    "description": "Label of the choice of how many people may sign up with a new invite."
+  },
+  "settings.invites.max_uses.description": {
+    "defaultMessage": "How many people may sign up with the invite, up to {max, number}.",
+    "description": "Help of the number of sign-ups of a new invite. {max} is the most the server allows."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{count, plural, one {# person} other {# people}}",
+    "description": "An option of the number of sign-ups of a new invite."
+  },
+  "settings.invites.expires_in": {
+    "defaultMessage": "Works for",
+    "description": "Label of the choice of how long a new invite works."
+  },
+  "settings.invites.expires_in.description": {
+    "defaultMessage": "The invite stops working after this time, at most {max}.",
+    "description": "Help of how long a new invite works. {max} is the longest time the server allows, formatted like the options (for example \"30 days\")."
+  },
+  "settings.invites.duration.minutes": {
+    "defaultMessage": "{count, plural, one {# minute} other {# minutes}}",
+    "description": "An option of how long an invite works, in minutes."
+  },
+  "settings.invites.duration.hours": {
+    "defaultMessage": "{count, plural, one {# hour} other {# hours}}",
+    "description": "An option of how long an invite works, in hours."
+  },
+  "settings.invites.duration.days": {
+    "defaultMessage": "{count, plural, one {# day} other {# days}}",
+    "description": "An option of how long an invite works, in days."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "Create invite",
+    "description": "Button that creates a new invite on the user's invites page."
+  },
+  "settings.invites.create_failed": {
+    "defaultMessage": "Could not create the invite: {reason}",
+    "description": "Error when creating an invite failed. {reason} is the server's reason."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "Created the invite {code}.",
+    "description": "Status after the user created an invite. {code} is its code."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "Send this link to the people you invite:",
+    "description": "Text before the sign-up link of a new invite."
+  },
+  "settings.invites.list.title": {
+    "defaultMessage": "Invites you created",
+    "description": "Heading of the list of the user's invites."
+  },
+  "settings.invites.empty": {
+    "defaultMessage": "No invites yet",
+    "description": "Heading of the empty list of the user's invites."
+  },
+  "settings.invites.empty.description": {
+    "defaultMessage": "The invites you create are listed here with how they were used.",
+    "description": "Description of the empty list of the user's invites."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "State",
+    "description": "Term of an invite in the user's list: what it allows now."
+  },
+  "settings.invites.state.usable": {
+    "defaultMessage": "Usable",
+    "description": "State of an invite that people may sign up with."
+  },
+  "settings.invites.state.revoked": {
+    "defaultMessage": "Revoked",
+    "description": "State of an invite that was revoked."
+  },
+  "settings.invites.state.expired": {
+    "defaultMessage": "Expired",
+    "description": "State of an invite whose time ran out."
+  },
+  "settings.invites.state.exhausted": {
+    "defaultMessage": "Used up",
+    "description": "State of an invite that as many people signed up with as it allows."
+  },
+  "settings.invites.state.creator_ineligible": {
+    "defaultMessage": "Not usable while you cannot invite",
+    "description": "State of the user's invite while the user may not create invites (their permission ended, or their account is restricted). It works again when they may."
+  },
+  "settings.invites.used": {
+    "defaultMessage": "Signed up",
+    "description": "Term of an invite in the user's list: how many people signed up with it."
+  },
+  "settings.invites.used.value": {
+    "defaultMessage": "{uses, number} of {max, number}",
+    "description": "How many people signed up with an invite, and how many it allows."
+  },
+  "settings.invites.expires_at": {
+    "defaultMessage": "Expires",
+    "description": "Term of an invite in the user's list: when it stops working."
+  },
+  "settings.invites.created_at": {
+    "defaultMessage": "Created",
+    "description": "Term of an invite in the user's list: when it was created."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "Copy link",
+    "description": "Button that copies the sign-up link of an invite."
+  },
+  "settings.invites.copy_invite": {
+    "defaultMessage": "Copy the link of the invite {code}",
+    "description": "Accessible name of the copy button of an invite. {code} is its code."
+  },
+  "settings.invites.copied": {
+    "defaultMessage": "Copied the link of the invite {code}.",
+    "description": "Toast after an invite's link was copied. {code} is its code."
+  },
+  "settings.invites.copy_failed": {
+    "defaultMessage": "Could not copy the link. Select it and copy it yourself.",
+    "description": "Toast when copying an invite's link failed."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "Revoke",
+    "description": "Button that revokes an invite at once."
+  },
+  "settings.invites.revoke_invite": {
+    "defaultMessage": "Revoke the invite {code}, created {date}",
+    "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
+  },
+  "settings.invites.revoked": {
+    "defaultMessage": "Revoked the invite {code}. The people who signed up with it keep their accounts.",
+    "description": "Status after the user revoked an invite. {code} is its code."
+  },
+  "settings.invites.revoke_failed": {
+    "defaultMessage": "Could not revoke the invite: {reason}",
+    "description": "Toast when revoking an invite failed. {reason} is the server's reason."
   }
 }

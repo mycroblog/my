@@ -120,7 +120,7 @@
     "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
   },
   "admin.invites.summary": {
-    "defaultMessage": "招待制のときに登録できるようにするコード。",
+    "defaultMessage": "登録できるようにするコード。モデレーターと利用者が作成します。",
     "description": "Description of the invites screen in the moderation menu."
   },
   "admin.invites.title": {
@@ -150,5 +150,25 @@
   "admin.invites.column.invite": {
     "defaultMessage": "招待コード",
     "description": "Header of the column of the invites table that holds the invite's code."
+  },
+  "admin.invites.created_by": {
+    "defaultMessage": "作成者",
+    "description": "Column of the invites table: who created the invite, and whether as a moderator or as a member."
+  },
+  "admin.invites.created_by.cli": {
+    "defaultMessage": "コマンドライン",
+    "description": "Who created an invite: an administrator with the command line."
+  },
+  "admin.invites.created_by.deleted": {
+    "defaultMessage": "削除されたアカウント",
+    "description": "Who created an invite: a user whose account no longer exists."
+  },
+  "admin.invites.creator_kind.staff": {
+    "defaultMessage": "モデレーターの招待",
+    "description": "Kind of an invite created on the moderation screen or with the command line, which no limit applies to."
+  },
+  "admin.invites.creator_kind.member": {
+    "defaultMessage": "利用者の招待",
+    "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
   }
 }

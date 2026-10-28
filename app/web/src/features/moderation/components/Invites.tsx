@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The invites screen below its heading (FR-001, manage_invites): the form of a new invite, then the invites, newest
-// first, in the admin mode's table form (one page at a time, previous / next). An invite lets people sign up only while the registration mode is `invite` (a server setting, /admin/settings),
-// which the screen says when it is not. A new invite's code and link stay under the form in a StatusMessage; each
+// first, in the admin mode's table form (one page at a time, previous / next), each with who created it (a moderator,
+// the command line, or a member through their own invites, ADR-0108 §5). An invite lets people sign up in every
+// registration mode but `closed` (a server setting, /admin/settings), which the screen says while it is `closed`. A new invite's code and link stay under the form in a StatusMessage; each
 // usable invite can be copied as its sign-up link or revoked, which takes effect at once and asks nothing first.
 import {
   Box,
@@ -37,6 +38,7 @@ import {
   useInvitesWork,
   useRevokeInvite,
 } from "../hooks/useInvites";
+import { InviteCreator, inviteCreatorKindLabels } from "./inviteParts";
 import { DateTime, DetailSection, RecordTable, RequirePermission } from "./parts";
 
 const stateLabels: Readonly<Record<InviteState, ClientMessageKey>> = {
@@ -169,6 +171,7 @@ function InviteList() {
             <>
               <TableColumnHeader>{t("client:admin.invites.column.invite")}</TableColumnHeader>
               <TableColumnHeader>{t("client:admin.invites.state")}</TableColumnHeader>
+              <TableColumnHeader>{t("client:admin.invites.created_by")}</TableColumnHeader>
               <TableColumnHeader>{t("client:admin.invites.used")}</TableColumnHeader>
               <TableColumnHeader>{t("client:admin.invites.expires_at")}</TableColumnHeader>
               <TableColumnHeader>{t("client:admin.invites.created_at")}</TableColumnHeader>
@@ -202,6 +205,14 @@ function InviteRow({ invite, revoke }: { invite: Invite; revoke: RevokeInvite })
         <Text {...(invite.state === "usable" ? { weight: "semibold" as const } : {})}>
           {t(stateLabels[invite.state])}
         </Text>
+      </TableCell>
+      <TableCell>
+        <Stack as="span" shrink>
+          <InviteCreator invite={invite} />
+          <Text size="sm" tone="muted">
+            {t(inviteCreatorKindLabels[invite.creator_kind])}
+          </Text>
+        </Stack>
       </TableCell>
       <TableCell>
         {invite.max_uses === undefined

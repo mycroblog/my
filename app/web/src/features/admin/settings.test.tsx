@@ -592,6 +592,54 @@ describe("the server's policies", () => {
     ]);
     expect(days).toHaveValue("45");
   });
+
+  test("chooses who creates invites and the caps of the members' invites, checking the numbers", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const invites = await screen.findByRole("region", { name: "Member invites" });
+    const creators = within(invites).getByRole("radiogroup", { name: "Who can create invites" });
+    expect(within(creators).getByRole("radio", { name: "Only people with the permission" })).toBeChecked();
+    const everyone = within(creators).getByRole("radio", { name: "Everyone on this server" });
+    // Inviting skips the review of the approval mode, which the choice says.
+    expect(everyone).toHaveAccessibleDescription(/the people they invite skip the review/);
+    const active = within(invites).getByRole("textbox", { name: "Usable invites per person" });
+    expect(active).toHaveValue("5");
+    expect(active).toHaveAccessibleDescription(/0 to 100\. 0 lets nobody create invites\./);
+    const uses = within(invites).getByRole("textbox", { name: "Sign-ups per invite" });
+    expect(uses).toHaveValue("10");
+    expect(uses).toHaveAccessibleDescription(/1 to 1000\./);
+    const expiry = within(invites).getByRole("button", { name: /Longest time an invite works/ });
+    expect(expiry).toHaveTextContent("30 days");
+
+    await user.click(everyone);
+    await user.clear(uses);
+    await user.type(uses, "2000");
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    // A number out of bounds stays in the form with what to change, and nothing is sent.
+    expect(uses).toHaveAccessibleDescription(/Enter a whole number from 1 to 1000\./);
+    expect(settings.patches).toHaveLength(0);
+
+    await user.clear(uses);
+    await user.type(uses, "3");
+    await user.clear(active);
+    await user.type(active, "0");
+    await user.click(expiry);
+    await user.click(await screen.findByRole("option", { name: "7 days" }));
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      {
+        values: {
+          invite_creators: "everyone",
+          member_invite_max_active: "0",
+          member_invite_max_uses: "3",
+          member_invite_max_expires_in: String(7 * 86_400),
+        },
+      },
+    ]);
+  });
 });
 
 describe("the server's contact and thumbnail", () => {

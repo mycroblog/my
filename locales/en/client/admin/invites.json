@@ -120,7 +120,7 @@
     "description": "State of an invite that a member created who may no longer create invites (their permission ended, or their account is restricted or deleted). It works again when they may."
   },
   "admin.invites.summary": {
-    "defaultMessage": "Codes that let people sign up when the server takes invites.",
+    "defaultMessage": "Codes that let people sign up, created by the moderators and by members.",
     "description": "Description of the invites screen in the moderation menu."
   },
   "admin.invites.title": {
@@ -150,5 +150,25 @@
   "admin.invites.column.invite": {
     "defaultMessage": "Invite code",
     "description": "Header of the column of the invites table that holds the invite's code."
+  },
+  "admin.invites.created_by": {
+    "defaultMessage": "Created by",
+    "description": "Column of the invites table: who created the invite, and whether as a moderator or as a member."
+  },
+  "admin.invites.created_by.cli": {
+    "defaultMessage": "Command line",
+    "description": "Who created an invite: an administrator with the command line."
+  },
+  "admin.invites.created_by.deleted": {
+    "defaultMessage": "Deleted account",
+    "description": "Who created an invite: a user whose account no longer exists."
+  },
+  "admin.invites.creator_kind.staff": {
+    "defaultMessage": "Moderator invite",
+    "description": "Kind of an invite created on the moderation screen or with the command line, which no limit applies to."
+  },
+  "admin.invites.creator_kind.member": {
+    "defaultMessage": "Member invite",
+    "description": "Kind of an invite that a member created on their settings page, which works only while they may create invites."
   }
 }

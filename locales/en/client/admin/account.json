@@ -470,5 +470,9 @@
   "admin.account.email_suppression.failed": {
     "defaultMessage": "Could not lift the suppression: {reason}",
     "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
+  },
+  "admin.account.registration.invited_by": {
+    "defaultMessage": "Invited by",
+    "description": "Term of a local account that registered with an invite: who created the invite."
   }
 }

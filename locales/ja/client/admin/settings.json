@@ -556,8 +556,8 @@
     "description": "Registration mode approval."
   },
   "admin.settings.registration.approval.description": {
-    "defaultMessage": "誰でも理由を添えて登録でき、モデレーターが承認するとアカウントを使えます。",
-    "description": "Description of the registration mode approval."
+    "defaultMessage": "理由を添えて誰でも登録でき、モデレーターが承認するとアカウントを使えます。招待で登録した人はすぐに承認されます。",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
   },
   "admin.settings.registration.closed": {
     "defaultMessage": "停止",
@@ -770,5 +770,61 @@
   "admin.settings.voice.retention.invalid": {
     "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
     "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "利用者の招待",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "利用者は設定のページで自分の招待を作成します。上限は利用者の招待にだけかかり、モデレーターの招待にはかかりません。上限を下げても、すでにある招待は変わりません。",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "招待を作成できる人",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "このサーバーの全員",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "凍結・制限されていない、このサーバーのログイン中の利用者は誰でも招待を作成できます。登録が承認制のときも招待された人は審査なしで承認されるので、誰でも新しいアカウントを承認できることになります。",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "権限を持つ人だけ",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "招待を作成する権限を持つロールの人だけが作成できます。",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "1 人が持てる使える招待",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "1 人が同時に持てる使える招待の数です（{min}〜{max}）。0 にすると誰も招待を作成できません。",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "1 つの招待で登録できる人数",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "1 つの招待で登録できる人数の上限です（{min}〜{max}）。",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "{min} から {max} までの整数を入力してください。",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "招待の有効期間の上限",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "利用者は招待ごとに、この期間までの有効期間を選びます。",
+    "description": "Description of the choice of how long a member invite may work at most."
   }
 }
