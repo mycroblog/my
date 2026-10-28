@@ -39,8 +39,9 @@
 // and in the same order at every width, and narrower layouts hide both.
 //
 // The items above need a session, so people who are not signed in get other ones (web-client/09-app-shell.md §9, "signed-out
-// navigation"): Local, Federated, Search, About and Sign in, the tab bar's five items, and Sign up, in the rail and
-// in the menu's sheet, while the server takes new accounts. Sign in opens the sign-in page, which comes back to the
+// navigation"), in a bar along the top: Local, Federated, Search, About and Sign in, and Sign up while the server takes
+// new accounts. Below lg the items are behind the bar's menu button and the last one (Sign up, or Sign in) stays in
+// the bar as its call to action. Sign in opens the sign-in page, which comes back to the
 // page it was opened from. While the session resumes, the list has no items yet, so that neither set shows to the
 // wrong person; a session that cannot be resumed because the server is not reached (offline) keeps the user's items.
 import {
@@ -56,6 +57,7 @@ import {
   AppNavMenuLink,
   AppNavMenuList,
   AppNavMenuSection,
+  AppNavTopAction,
   Avatar,
   FinanceIcon,
   Link,
@@ -188,8 +190,10 @@ const staffItems: readonly NavigationItem[] = [
 ];
 
 /**
- * The items of people who are not signed in: the pages they can use without a session, the tab bar's five, and the
- * server's registration page (a page of the server, loaded in place of the app) while it takes new accounts.
+ * The items of people who are not signed in, in the top bar: the pages they can use without a session, signing in,
+ * and the server's registration page (a page of the server, loaded in place of the app) while it takes new accounts.
+ * The last one is the call to action (`shows: "rail"`): below md it stays in the bar beside the menu button, and the
+ * others go into the menu.
  */
 function signedOutItems(signInHref: string, signUpHref: string | undefined): NavigationItem[] {
   return [
@@ -233,7 +237,8 @@ function signedOutItems(signInHref: string, signUpHref: string | undefined): Nav
       section: "/login",
       label: "client:shell.nav.sign_in",
       icon: <SignInIcon />,
-      shows: "always",
+      // While the server takes no new accounts, signing in is the call to action.
+      shows: signUpHref === undefined ? "rail" : "always",
     },
     ...(signUpHref === undefined
       ? []
@@ -314,6 +319,7 @@ export function Navigation() {
     }));
   // Offline, a session that could not be resumed is most likely still there: the user's items stay (web-client/11-pwa.md §11).
   const signedOut = useSignedOut();
+  const [topMenuOpen, setTopMenuOpen] = useCloseOnNavigation();
   let items: readonly NavigationItem[] = [];
   if (signedOut) items = signedOutItems(signInHref, signUpHref);
   else if (status !== "unknown")
@@ -347,6 +353,8 @@ export function Navigation() {
   const current = (section: Section | undefined) => section !== undefined && inSection(pathname, section, ownAcct);
   // A line sets the staff's areas apart from the user's items, in the rail and in the menu's sheet.
   const firstStaff = shown.find((item) => item.staff !== undefined)?.id;
+  // Signed out, the call to action stays in the top bar on phones, beside the button of the menu of the other items.
+  const callToAction = signedOut ? shown.find((item) => item.shows === "rail") : undefined;
   return (
     <AppNav
       label={t("client:shell.nav.label")}
@@ -358,6 +366,12 @@ export function Navigation() {
       }
       // Signed out, the navigation is a light bar along the top (AppLayout puts it above the page).
       placement={signedOut ? "top" : "side"}
+      {...(signedOut && {
+        topMenu: { label: t("client:shell.nav.menu"), isOpen: topMenuOpen, onOpenChange: setTopMenuOpen },
+      })}
+      {...(callToAction !== undefined && {
+        topAction: <AppNavTopAction href={callToAction.href} label={t(callToAction.label)} />,
+      })}
       action={
         openCompose === null ? undefined : (
           <AppNavAction label={t("client:compose.open")} icon={<PlusIcon />} onPress={openCompose} />
@@ -381,7 +395,8 @@ export function Navigation() {
           />
         );
       })}
-      {status !== "unknown" && (
+      {/* Signed out, the top bar's own menu holds the items (topMenu): there is no sheet. */}
+      {status !== "unknown" && !signedOut && (
         <NavigationMenu
           items={shown.filter((item) => item.shows === "rail")}
           current={current}
@@ -440,17 +455,8 @@ type NavigationMenuProps = {
  */
 function NavigationMenu({ items, current, badgeOf, firstStaff }: NavigationMenuProps) {
   const t = useT();
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useCloseOnNavigation();
   const pending = items.reduce((sum, item) => sum + (badgeOf(item.section)?.count ?? 0), 0);
-  // The router is outside React: subscribe to its navigations, and unsubscribe on unmount.
-  useEffect(
-    () =>
-      router.subscribe("onBeforeNavigate", (event) => {
-        if (event.pathChanged) setIsOpen(false);
-      }),
-    [router],
-  );
   return (
     <AppNavMenu
       label={t("client:shell.nav.menu")}
@@ -501,4 +507,22 @@ function NavigationMenu({ items, current, badgeOf, firstStaff }: NavigationMenuP
       <DocumentLinks placement="sheet" />
     </AppNavMenu>
   );
+}
+
+/**
+ * Whether a menu is open, closed when a navigation to another page starts, so that the new page's heading can take
+ * focus (useViewChange); a navigation that the unsaved-changes guard holds does not start, and the menu stays.
+ */
+function useCloseOnNavigation(): [boolean, (isOpen: boolean) => void] {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  // The router is outside React: subscribe to its navigations, and unsubscribe on unmount.
+  useEffect(
+    () =>
+      router.subscribe("onBeforeNavigate", (event) => {
+        if (event.pathChanged) setIsOpen(false);
+      }),
+    [router],
+  );
+  return [isOpen, setIsOpen];
 }
