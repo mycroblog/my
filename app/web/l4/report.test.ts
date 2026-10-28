@@ -22,6 +22,7 @@ const base: TaskResult = {
     { action: "browser_click", target: 'link "プロフィール"', url: "/settings/profile" },
     { action: "browser_navigate_back", target: "", url: "/settings" },
   ],
+  mailPath: [],
 };
 
 const result: RunResult = {
@@ -111,5 +112,20 @@ describe("issueBody", () => {
       "Lostness: **0.43** (steps S = 4, distinct places N = 3, L1 shortest path R = 2), backtracks: 1",
     );
     expect(body).toContain('1. `click` link "プロフィール" → `/settings/profile`\n2. `navigate_back` → `/settings`');
+    expect(body).not.toContain("mailbox");
+  });
+
+  it("lists the steps in the mailbox apart from the path", () => {
+    const task: TaskResult = {
+      ...base,
+      path: [{ action: "mail", target: "", url: "/auth/reset_password" }],
+      mailPath: [{ action: "browser_click", target: 'link "Reset"', url: "http://127.0.0.1:8025/view/1" }],
+    };
+    const body = issueBody(result, [task], "", "mycroblog/my");
+    expect(body).toContain("1. `mail` → `/auth/reset_password`");
+    expect(body).toContain(
+      "Steps in the mailbox (Mailpit's web UI), each run counted as the one step `mail` above: 1\n\n" +
+        '1. `click` link "Reset" → `http://127.0.0.1:8025/view/1`',
+    );
   });
 });

@@ -78,6 +78,14 @@ export function issueBody(result: RunResult, tasks: readonly TaskResult[], runUR
       "",
       ...task.path.map(stepLine),
     );
+    if (task.mailPath.length > 0) {
+      lines.push(
+        "",
+        `Steps in the mailbox (Mailpit's web UI), each run counted as the one step \`mail\` above: ${String(task.mailPath.length)}`,
+        "",
+        ...task.mailPath.map(stepLine),
+      );
+    }
   }
   return `${lines.join("\n")}\n`;
 }

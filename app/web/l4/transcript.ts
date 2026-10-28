@@ -10,6 +10,11 @@
 // places and R the steps of the L1 shortest path: 0 when the agent took the shortest path, above 0.4 when it got lost.
 // A backtrack is a step that goes back in the history, or one that returns to an address visited before other than
 // the one it left.
+//
+// A task that reads email has the mailbox, Mailpit's web UI, in a second tab (ADR-0117 §3). The steps on Mailpit's
+// origin (switching to its tab, opening the email, following its link, and switching to the tab the link opened) depend
+// on Mailpit's design, not the app's: they are recorded apart (`mailPath`), and each run of them counts as one step of
+// the path, "open the email and follow its link", as the L1 shortest path counts it.
 
 /** The prefix of the tools of the Playwright MCP server, named `playwright` in the MCP configuration of run.ts. */
 export const mcpPrefix = "mcp__playwright__";
@@ -28,6 +33,15 @@ export const stepTools: readonly string[] = [
 
 /** The tools that only read the page or wait, which the agent may call without taking a step. */
 export const readTools: readonly string[] = ["browser_snapshot", "browser_wait_for", "browser_hover"];
+
+/**
+ * The tool that lists, selects, opens, and closes tabs, which only a task that reads email gets: selecting a tab is a
+ * step, listing the tabs is not.
+ */
+export const tabTool = "browser_tabs";
+
+/** The action of the path that stands for one run of steps in the mailbox. */
+export const mailAction = "mail";
 
 /** One step of the path the agent took. */
 export type Step = {
@@ -54,6 +68,8 @@ export type Measures = {
 /** What the transcript of one task tells. */
 export type Transcript = {
   path: Step[];
+  /** The steps on the mailbox's origin, which the path counts as one step per run of them. */
+  mailPath: Step[];
   /** Whether the agent finished with the task done, by its structured output. */
   completed: boolean;
   /** The agent's summary of what it did or why it stopped. */
@@ -130,6 +146,8 @@ function targetOf(use: ToolUse, refs: ReadonlyMap<string, string>): string {
     }
     case "browser_handle_dialog":
       return `dialog ${use.input["accept"] === true ? "accept" : "dismiss"}`;
+    case tabTool:
+      return `tab ${String(use.input["action"])}${typeof use.input["index"] === "number" ? ` ${String(use.input["index"])}` : ""}`;
     case "browser_drag":
       return `${control({ target: use.input["startTarget"] ?? use.input["startRef"], element: use.input["startElement"] })} → ${control({ target: use.input["endTarget"] ?? use.input["endRef"], element: use.input["endElement"] })}`;
     default:
@@ -137,14 +155,27 @@ function targetOf(use: ToolUse, refs: ReadonlyMap<string, string>): string {
   }
 }
 
-/** Reads the transcript of one task from the stream-json `output` of Claude Code. */
-export function parseTranscript(output: string): Transcript {
+/** Whether the call `use` acts on the page: a step tool, or selecting, opening, or closing a tab. */
+function isStep(use: ToolUse): boolean {
+  return stepTools.includes(use.name) || (use.name === tabTool && use.input["action"] !== "list");
+}
+
+/**
+ * Reads the transcript of one task from the stream-json `output` of Claude Code. `mailOrigin` is the origin of the
+ * mailbox of a task that reads email.
+ */
+export function parseTranscript(output: string, mailOrigin?: string): Transcript {
   const uses = new Map<string, ToolUse>();
   let refs = new Map<string, string>();
   let url = "";
+  let href = "";
   const path: Step[] = [];
+  const mailPath: Step[] = [];
+  const onMail = (address: string) => mailOrigin !== undefined && address.startsWith(`${mailOrigin}/`);
+  let inMail = false;
   const transcript: Transcript = {
     path,
+    mailPath,
     completed: false,
     summary: "",
     ending: "none",
@@ -184,8 +215,10 @@ export function parseTranscript(output: string): Transcript {
         }
         const text = resultText(block["content"]);
         const page = /- Page URL: (\S+)/.exec(text)?.[1];
+        const before = href;
         if (page !== undefined) {
           url = pathOf(page);
+          href = page;
         }
         if (block["is_error"] !== true && page !== undefined) {
           gotPage = true;
@@ -195,8 +228,23 @@ export function parseTranscript(output: string): Transcript {
         if (use.name === "browser_snapshot") {
           refs = snapshotRefs(text);
         }
-        if (block["is_error"] !== true && stepTools.includes(use.name)) {
-          path.push({ action: use.name, target: targetOf(use, refs), url });
+        if (block["is_error"] !== true && isStep(use)) {
+          const step = { action: use.name, target: targetOf(use, refs), url };
+          if (onMail(before) || onMail(href)) {
+            // A step that acts on the mailbox or goes to it: one step of the path per run of them, at the page the
+            // run ends on.
+            mailPath.push({ ...step, url: href });
+            const last = path.at(-1);
+            if (inMail && last !== undefined) {
+              last.url = url;
+            } else {
+              path.push({ action: mailAction, target: "", url });
+            }
+            inMail = true;
+          } else {
+            path.push(step);
+            inMail = false;
+          }
         }
       }
     } else if (event["type"] === "result") {

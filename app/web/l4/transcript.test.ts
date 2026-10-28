@@ -93,6 +93,41 @@ describe("parseTranscript", () => {
     expect(parsed).toMatchObject({ completed: true, summary: "Shown.", ending: "success", costUSD: 0.12 });
   });
 
+  it("counts each run of steps in the mailbox as one step and records them apart", () => {
+    const mail = (path: string) =>
+      `### Open tabs\n- 0: [App] (http://localhost:4000/)\n- 1: (current) [Mailpit] (http://127.0.0.1:8025${path})\n### Page\n- Page URL: http://127.0.0.1:8025${path}`;
+    const parsed = parseTranscript(
+      transcript(
+        [
+          { name: "browser_click", input: { element: "Send", target: "e3" }, text: moved("/auth/forgot_password") },
+          { name: "browser_tabs", input: { action: "list" }, text: moved("/auth/forgot_password") },
+          { name: "browser_tabs", input: { action: "select", index: 1 }, text: mail("/") },
+          { name: "browser_click", input: { element: "the email", target: "e8" }, text: mail("/view/abc") },
+          { name: "browser_click", input: { element: "the link", target: "f1e2" }, text: mail("/view/abc") },
+          { name: "browser_tabs", input: { action: "select", index: 2 }, text: moved("/auth/reset_password?t=1") },
+          {
+            name: "browser_type",
+            input: { element: "Password", target: "e4" },
+            text: moved("/auth/reset_password?t=1"),
+          },
+        ],
+        { subtype: "success", structured_output: { completed: true, summary: "Reset." } },
+      ),
+      "http://127.0.0.1:8025",
+    );
+    expect(parsed.path).toEqual<Step[]>([
+      { action: "browser_click", target: "Send", url: "/auth/forgot_password" },
+      { action: "mail", target: "", url: "/auth/reset_password?t=1" },
+      { action: "browser_type", target: "Password", url: "/auth/reset_password?t=1" },
+    ]);
+    expect(parsed.mailPath).toEqual<Step[]>([
+      { action: "browser_tabs", target: "tab select 1", url: "http://127.0.0.1:8025/" },
+      { action: "browser_click", target: "the email", url: "http://127.0.0.1:8025/view/abc" },
+      { action: "browser_click", target: "the link", url: "http://127.0.0.1:8025/view/abc" },
+      { action: "browser_tabs", target: "tab select 2", url: "http://localhost:4000/auth/reset_password?t=1" },
+    ]);
+  });
+
   it("is not completed when the session ran out of turns", () => {
     const parsed = parseTranscript(
       transcript([], { subtype: "error_max_turns", structured_output: { completed: true, summary: "" } }),
