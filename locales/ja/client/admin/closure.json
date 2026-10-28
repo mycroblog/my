@@ -195,6 +195,14 @@
     "defaultMessage": "inbox への展開中の Delete",
     "description": "Label of the number of recorded Deletes whose inboxes are still being computed."
   },
+  "admin.closure.progress.meter": {
+    "defaultMessage": "終わった配送",
+    "description": "Label of the progress bar of the deliveries of the Deletes after the server closed: the deliveries that ended (delivered, refused, skipped or out of attempts)."
+  },
+  "admin.closure.progress.meter.value": {
+    "defaultMessage": "{total, number} 件のうち {done, number} 件",
+    "description": "Value of the progress bar of the deliveries after the server closed: how many of the recorded deliveries ended."
+  },
   "admin.closure.progress.none": {
     "defaultMessage": "配送はまだ始まっていません。",
     "description": "Note when the progress of the deliveries is not known yet."

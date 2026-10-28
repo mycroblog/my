@@ -83,6 +83,13 @@ WHERE sm.group_id = ?;
 SELECT hour_start, occurrences, last_seen_at, last_version FROM error_group_counts
 WHERE group_id = ? ORDER BY hour_start;
 
+-- ListErrorGroupCountsSince lists the hourly counts of the groups of group_ids from the hour of
+-- since on: the recent counts of a page of the admin list.
+-- name: ListErrorGroupCountsSince :many
+SELECT group_id, hour_start, occurrences FROM error_group_counts
+WHERE hour_start >= sqlc.arg(since) AND group_id IN (sqlc.slice(group_ids))
+ORDER BY group_id, hour_start;
+
 -- name: ListErrorGroupEvents :many
 SELECT id, group_id, kind, actor_kind, actor_user_id, version, occurred_at FROM error_group_events
 WHERE group_id = ? ORDER BY id;

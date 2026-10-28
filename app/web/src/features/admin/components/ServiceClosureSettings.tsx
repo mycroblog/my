@@ -18,6 +18,7 @@ import {
   Heading,
   Hint,
   InlineError,
+  ProgressMeter,
   Stack,
   StatusMessage,
   Text,
@@ -355,15 +356,28 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
   );
 }
 
+/**
+ * The deliveries as a progress bar (ADR-0113): the finished ones (delivered, refused for good, skipped or failed) of all
+ * the recorded ones; the total grows while inboxes are still being computed. Then the counts behind it.
+ */
 function Progress({ progress }: { progress: AdminServiceClosureProgress }) {
   const t = useT();
   const intl = useIntl();
   const count = (value: number) => intl.formatNumber(value);
   const { deliveries } = progress;
+  const done = deliveries.succeeded + deliveries.permanent_failure + deliveries.skipped + deliveries.dead;
+  const total = done + deliveries.pending;
   return (
     // Stacked rather than side by side: a description list is its own size container, so it has no width of its
     // own to give a flex row and would shrink to nothing there.
     <Stack gap="4">
+      <ProgressMeter
+        kind="progress"
+        label={t("client:admin.closure.progress.meter")}
+        value={done}
+        maxValue={Math.max(total, 1)}
+        valueText={t("client:admin.closure.progress.meter.value", { done, total })}
+      />
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:admin.closure.progress.accounts")}>{count(progress.accounts)}</DescriptionItem>
         <DescriptionItem term={t("client:admin.closure.progress.fanouts_pending")}>

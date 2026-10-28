@@ -19,6 +19,10 @@
     "defaultMessage": "Failed",
     "description": "Term in a failed job's details: when the job failed for good."
   },
+  "admin.jobs.filter.count": {
+    "defaultMessage": ", {count, plural, one {# job} other {# jobs}}",
+    "description": "Accessible text of the count beside a tab of the job list, read right after the tab's name (so it starts with a comma): how many jobs the tab lists."
+  },
   "admin.jobs.filter.label": {
     "defaultMessage": "Job state",
     "description": "Accessible name of the tabs that filter the jobs by state."
@@ -111,6 +115,10 @@
     "defaultMessage": "Queue",
     "description": "Term in the queue's details: the kind of job queue the server runs, such as db or sqs."
   },
+  "admin.jobs.queue.by_state": {
+    "defaultMessage": "Jobs by state",
+    "description": "Accessible name of the tiles of the jobs screen: the longest wait and the count of the jobs of each state."
+  },
   "admin.jobs.queue.by_type": {
     "defaultMessage": "Jobs by type",
     "description": "Accessible name of the list of the counts of the jobs of each job type."
@@ -122,14 +130,6 @@
   "admin.jobs.queue.no_listing": {
     "defaultMessage": "This queue cannot list its waiting, running and retrying jobs: see their backlog in the metrics of the platform. Failed jobs and the history of their attempts are listed.",
     "description": "Note of the queue region when the queue (Cloud Tasks or SQS) cannot list its pending jobs."
-  },
-  "admin.jobs.queue.none_waiting": {
-    "defaultMessage": "No job is waiting",
-    "description": "Value of the oldest waiting job when no due job waits."
-  },
-  "admin.jobs.queue.oldest_ready": {
-    "defaultMessage": "Oldest waiting job due",
-    "description": "Term in the queue's details: since when the oldest due job that no worker runs has been waiting."
   },
   "admin.jobs.retried": {
     "defaultMessage": "The job {type} is queued to run again.",

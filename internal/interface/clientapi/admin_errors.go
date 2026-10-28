@@ -54,10 +54,14 @@ func optText(s string) *string {
 // newErrorGroup presents a summary as ErrorGroup.
 func newErrorGroup(sm appdiagnostics.Summary) ErrorGroup {
 	g, h := sm.Group, sm.Head
+	var days *[]int64
+	if sm.DayCounts != nil {
+		days = &sm.DayCounts
+	}
 	return ErrorGroup{
 		Id: g.ID, Fingerprint: g.Fingerprint, State: ErrorGroupState(h.State), StateSince: h.Since,
 		ResolvedVersion: optText(h.ResolvedVersion), Source: ErrorGroupSource(g.Source), Kind: ErrorGroupKind(g.Kind),
-		Where: g.Where, Type: g.ErrorType, Message: g.Message, Count24h: sm.CountDay, Count7d: sm.CountWeek,
+		Where: g.Where, Type: g.ErrorType, Message: g.Message, Count24h: sm.CountDay, Count7d: sm.CountWeek, DailyCounts: days,
 		FirstSeenAt: g.FirstSeenAt, LastSeenAt: sm.LastSeenAt, FirstVersion: g.FirstVersion, LastVersion: sm.LastVersion,
 	}
 }

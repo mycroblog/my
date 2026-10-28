@@ -50,6 +50,8 @@ export type IncomeTotalsViewProps = {
   detailed?: boolean;
   /** The level of the headings of the members of each plan and of the rules: 3 below an h2, 4 below an h3. */
   headingLevel?: 3 | 4;
+  /** Shows the table of the periods: false where the overview's chart shows them (FinanceOverview). */
+  table?: boolean;
 };
 
 /** Formats a balance of each currency with its sign, never converted: "+¥1,200, −$3.40". */
@@ -70,7 +72,7 @@ function useFormatBalance(): (balance: readonly Money[]) => string {
 }
 
 /** The income totals of the shown periods, newest first, the members of each plan, and the rules that place them. */
-export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3 }: IncomeTotalsViewProps) {
+export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3, table = true }: IncomeTotalsViewProps) {
   const t = useT();
   const periodName = usePeriodName();
   const formatTotals = useFormatTotals();
@@ -81,49 +83,51 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3 }:
   const balance = totals.periods.some((period) => period.balance !== undefined);
   return (
     <Stack gap="4">
-      <Table
-        caption={t("client:income.totals.caption", {
-          granularity: t(granularityLabels[granularity]),
-          basis: t(basisLabels[basis]),
-        })}
-      >
-        <TableHead>
-          <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
-          {detailed && (
-            <>
-              <TableColumnHeader>{t("client:income.totals.gross")}</TableColumnHeader>
-              <TableColumnHeader>{t("client:income.totals.fee")}</TableColumnHeader>
-            </>
-          )}
-          <TableColumnHeader>{t("client:income.totals.net")}</TableColumnHeader>
-          {balance && <TableColumnHeader>{t("client:income.totals.balance")}</TableColumnHeader>}
-        </TableHead>
-        <TableBody>
-          {newestFirst.map((period) => (
-            <TableRow key={period.label}>
-              <TableRowHeader>{periodName(granularity, period)}</TableRowHeader>
-              {detailed && (
-                <>
-                  <TableCell numeric wrap="anywhere">
-                    {formatTotals(period.gross ?? [])}
-                  </TableCell>
-                  <TableCell numeric wrap="anywhere">
-                    {formatTotals(period.fee ?? [])}
-                  </TableCell>
-                </>
-              )}
-              <TableCell numeric wrap="anywhere">
-                {formatTotals(period.net)}
-              </TableCell>
-              {balance && (
+      {table && (
+        <Table
+          caption={t("client:income.totals.caption", {
+            granularity: t(granularityLabels[granularity]),
+            basis: t(basisLabels[basis]),
+          })}
+        >
+          <TableHead>
+            <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
+            {detailed && (
+              <>
+                <TableColumnHeader>{t("client:income.totals.gross")}</TableColumnHeader>
+                <TableColumnHeader>{t("client:income.totals.fee")}</TableColumnHeader>
+              </>
+            )}
+            <TableColumnHeader>{t("client:income.totals.net")}</TableColumnHeader>
+            {balance && <TableColumnHeader>{t("client:income.totals.balance")}</TableColumnHeader>}
+          </TableHead>
+          <TableBody>
+            {newestFirst.map((period) => (
+              <TableRow key={period.label}>
+                <TableRowHeader>{periodName(granularity, period)}</TableRowHeader>
+                {detailed && (
+                  <>
+                    <TableCell numeric wrap="anywhere">
+                      {formatTotals(period.gross ?? [])}
+                    </TableCell>
+                    <TableCell numeric wrap="anywhere">
+                      {formatTotals(period.fee ?? [])}
+                    </TableCell>
+                  </>
+                )}
                 <TableCell numeric wrap="anywhere">
-                  {formatBalance(period.balance ?? [])}
+                  {formatTotals(period.net)}
                 </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                {balance && (
+                  <TableCell numeric wrap="anywhere">
+                    {formatBalance(period.balance ?? [])}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       {totals.plans !== undefined && <PlanMembers plans={totals.plans} headingLevel={headingLevel} />}
       <IncomeRules totals={totals} balance={balance} headingLevel={headingLevel} />
     </Stack>
@@ -201,8 +205,11 @@ type ShownIncome =
   | { status: "error"; reason: string; retry: () => void; isRetrying: boolean }
   | { status: "ready"; totals: ShownIncomeTotals };
 
-/** The income totals of the public costs page and the finances page while they load, when they fail, and once read. */
-export function IncomeState({ income }: { income: ShownIncome }) {
+/**
+ * The income totals of the public costs page and the finances page while they load, when they fail, and once read;
+ * `table` as IncomeTotalsView's.
+ */
+export function IncomeState({ income, table = true }: { income: ShownIncome; table?: boolean }) {
   const t = useT();
   if (income.status === "loading") {
     return (
@@ -222,5 +229,5 @@ export function IncomeState({ income }: { income: ShownIncome }) {
       />
     );
   }
-  return <IncomeTotalsView totals={income.totals} />;
+  return <IncomeTotalsView totals={income.totals} table={table} />;
 }

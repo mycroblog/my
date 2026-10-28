@@ -8,23 +8,12 @@ import { EmptyState, Section, StatTile, StatTileGrid, Text } from "@my/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
-import { useNow } from "../../../lib/clock";
 import { useT } from "../../../lib/i18n";
-import { useHasPermission, useShownStaffPages, type WaitThresholds, waitLevel, waitUnits } from "../../moderation";
+import { useHasPermission, useShownStaffPages } from "../../moderation";
 import { errorGroupsQueryOptions } from "../api/errors";
 import { jobQueueQueryOptions } from "../api/jobs";
+import { useJobWait } from "../hooks/useJobWait";
 import { adminPages } from "./AdminMenu";
-
-const minute = 60_000;
-
-/** The queue is backed up when it keeps a job waiting this long, and failing when this long. */
-const jobWait: WaitThresholds = { aging: 15 * minute, overdue: 60 * minute };
-
-const jobWaitValues = {
-  minutes: "client:admin.overview.health.job_wait.minutes",
-  hours: "client:admin.overview.health.job_wait.hours",
-  days: "client:admin.overview.health.job_wait.days",
-} as const;
 
 export function AdminOverview() {
   const t = useT();
@@ -72,27 +61,11 @@ function FailedJobsTile() {
 function JobWaitTile() {
   const t = useT();
   const api = useApi();
-  const now = useNow();
   const queue = useQuery(jobQueueQueryOptions(api));
   const label = t("client:admin.overview.health.job_wait");
+  const wait = useJobWait(queue.data?.oldest_ready_at);
   if (queue.data === undefined) return <PendingTile label={label} failed={queue.isError} />;
-  const oldest = queue.data.oldest_ready_at;
-  if (oldest === undefined) {
-    return (
-      <StatTile as="li" label={label} value={t("client:admin.overview.health.job_wait.none")} href="/admin/jobs" />
-    );
-  }
-  const waited = now - Date.parse(oldest);
-  const { unit, count } = waitUnits(waited);
-  const level = waitLevel(waited, jobWait);
-  const status =
-    level === "fresh"
-      ? {}
-      : ({
-          status: level === "overdue" ? "danger" : "warning",
-          statusLabel: t("client:admin.overview.health.job_wait.status"),
-        } as const);
-  return <StatTile as="li" label={label} value={t(jobWaitValues[unit], { count })} href="/admin/jobs" {...status} />;
+  return <StatTile as="li" label={label} href="/admin/jobs" {...wait} />;
 }
 
 /** The error groups that are open: the first page's, with a "+" when there are more. */

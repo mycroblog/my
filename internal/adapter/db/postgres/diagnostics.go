@@ -217,6 +217,22 @@ func (r *DiagnosticsRepository) HourCounts(ctx context.Context, groupID string) 
 	return out, nil
 }
 
+// CountsSince implements appdiagnostics.Repository.
+func (r *DiagnosticsRepository) CountsSince(ctx context.Context, groupIDs []string, since time.Time) ([]appdiagnostics.GroupHourCount, error) {
+	if len(groupIDs) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.reader().ListErrorGroupCountsSince(ctx, postgresgen.ListErrorGroupCountsSinceParams{GroupIds: groupIDs, Since: since})
+	if err != nil {
+		return nil, wrap(err, "list error group counts since")
+	}
+	out := make([]appdiagnostics.GroupHourCount, len(rows))
+	for i, row := range rows {
+		out[i] = appdiagnostics.GroupHourCount{GroupID: row.GroupID, Hour: utc(row.HourStart), Occurrences: row.Occurrences}
+	}
+	return out, nil
+}
+
 // Events implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) Events(ctx context.Context, groupID string) ([]appdiagnostics.Event, error) {
 	rows, err := r.db.reader().ListErrorGroupEvents(ctx, groupID)

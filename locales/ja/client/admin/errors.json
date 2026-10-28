@@ -159,6 +159,22 @@
     "defaultMessage": "時間ごとの発生回数",
     "description": "Heading of the section of an error group's page with its occurrences of each hour, and the caption of its table."
   },
+  "admin.errors.hourly.all": {
+    "defaultMessage": "発生のあったすべての時間",
+    "description": "Heading of the table of every hour in the last 90 days in which an error group occurred, under the chart of the last hours."
+  },
+  "admin.errors.hourly.chart": {
+    "defaultMessage": "1 時間ごとの発生（直近 {hours, number} 時間）",
+    "description": "Title of the bar chart of an error group's occurrences in each of the last hours."
+  },
+  "admin.errors.hourly.chart.none": {
+    "defaultMessage": "直近 {hours, number} 時間の発生はありません。",
+    "description": "Summary under the chart of an error group's occurrences per hour when none happened."
+  },
+  "admin.errors.hourly.chart.summary": {
+    "defaultMessage": "直近 {hours, number} 時間に {total, number} 回、1 時間で最も多いのは {peak, number} 回（{peakAt}）、今の 1 時間は {latest, number} 回。",
+    "description": "Summary under the chart of an error group's occurrences per hour: the total, the busiest hour, and the current hour. peakAt is a formatted date and hour."
+  },
   "admin.errors.hourly.count": {
     "defaultMessage": "回数",
     "description": "Column header of the hourly counts: how many times the error happened in the hour."

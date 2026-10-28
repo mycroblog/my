@@ -188,8 +188,35 @@ func (s *Service) Summaries(ctx context.Context, q SummaryQuery) ([]Summary, err
 	if err != nil {
 		return nil, fmt.Errorf("diagnostics: list the error groups: %w", err)
 	}
+	if len(out) == 0 {
+		return out, nil
+	}
+	ids := make([]string, len(out))
+	for i, sm := range out {
+		ids[i] = sm.Group.ID
+	}
+	counts, err := s.d.Repository.CountsSince(ctx, ids, q.Window.SinceWeek)
+	if err != nil {
+		return nil, fmt.Errorf("diagnostics: count the days of the error groups: %w", err)
+	}
+	days := make(map[string][]int64, len(out))
+	for _, id := range ids {
+		days[id] = make([]int64, daysPerWeek)
+	}
+	for _, c := range counts {
+		day := int(c.Hour.Sub(q.Window.SinceWeek) / (24 * time.Hour))
+		if d, ok := days[c.GroupID]; ok && day >= 0 && day < daysPerWeek {
+			d[day] += c.Occurrences
+		}
+	}
+	for i := range out {
+		out[i].DayCounts = days[out[i].Group.ID]
+	}
 	return out, nil
 }
+
+// daysPerWeek is the number of DayCounts of a Summary.
+const daysPerWeek = 7
 
 // Summary returns the summary of a group, counted over the window of now; it fails with
 // ErrNotFound for an unknown group.

@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The totals of the instance's costs as the administrators' costs screen, the public costs page and the finances page
 // show them (ADR-0067 §4, §5, FR-902, FR-903, ADR-0070 §5): the choice of the basis and the tabs of the granularity,
-// the table of the periods, newest first, with their totals by currency, the breakdown of the current period by
-// provider and category when it may be shown, the lines of its items on the finances page, and the rules that cut the
+// the table of the periods, newest first, with their totals by currency, where the overview's chart does not show them
+// (FinanceOverview), the breakdown of the current period by provider (a BreakdownBar when its costs are in one
+// currency, ADR-0113) when it may be shown, the lines of its items on the finances page, and the rules that cut the
 // periods. Providers, names and memos are the operators' words, shown with dir="auto".
 import {
+  type BreakdownItem,
+  BreakdownBar,
   Cluster,
   Heading,
   Hint,
@@ -38,6 +41,9 @@ import {
   type FinanceCostItemLine,
 } from "../api/costs";
 import { useFormatMoney, useFormatTotals, usePeriodName } from "../hooks/useCostFormat";
+
+/** The providers a BreakdownBar names; the rest are one "Other" part. */
+const shownProviders = 3;
 
 const granularityLabels: Readonly<Record<CostGranularity, ClientMessageKey>> = {
   week: "client:costs.granularity.week",
@@ -135,10 +141,12 @@ export type CostTotalsViewProps = {
   breakdown: boolean;
   /** Shows the lines of the current period's items: the finances page while the instance shows their names or memos. */
   items?: boolean;
+  /** Shows the table of the periods: false where the overview's chart shows them (FinanceOverview). */
+  table?: boolean;
 };
 
 /** The totals of the shown periods, newest first, and the rules that cut them. */
-export function CostTotalsView({ totals, breakdown, items = false }: CostTotalsViewProps) {
+export function CostTotalsView({ totals, breakdown, items = false, table = true }: CostTotalsViewProps) {
   const t = useT();
   const periodName = usePeriodName();
   const formatTotals = useFormatTotals();
@@ -147,30 +155,32 @@ export function CostTotalsView({ totals, breakdown, items = false }: CostTotalsV
   const current = newestFirst[0];
   return (
     <Stack gap="4">
-      <Table
-        caption={t("client:costs.totals.caption", {
-          granularity: t(granularityLabels[granularity]),
-          basis: t(basisLabels[basis].label),
-        })}
-      >
-        <TableHead>
-          <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
-          <TableColumnHeader>{t("client:costs.totals.total")}</TableColumnHeader>
-        </TableHead>
-        <TableBody>
-          {newestFirst.map((period) => (
-            <TableRow key={period.label}>
-              <TableRowHeader>{periodName(granularity, period)}</TableRowHeader>
-              <TableCell numeric wrap="anywhere">
-                <Cluster as="span" align="center" gap="2">
-                  {formatTotals(period.totals)}
-                  {period.estimated && <Tag>{t("client:costs.totals.estimated")}</Tag>}
-                </Cluster>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {table && (
+        <Table
+          caption={t("client:costs.totals.caption", {
+            granularity: t(granularityLabels[granularity]),
+            basis: t(basisLabels[basis].label),
+          })}
+        >
+          <TableHead>
+            <TableColumnHeader>{t("client:costs.totals.period")}</TableColumnHeader>
+            <TableColumnHeader>{t("client:costs.totals.total")}</TableColumnHeader>
+          </TableHead>
+          <TableBody>
+            {newestFirst.map((period) => (
+              <TableRow key={period.label}>
+                <TableRowHeader>{periodName(granularity, period)}</TableRowHeader>
+                <TableCell numeric wrap="anywhere">
+                  <Cluster as="span" align="center" gap="2">
+                    {formatTotals(period.totals)}
+                    {period.estimated && <Tag>{t("client:costs.totals.estimated")}</Tag>}
+                  </Cluster>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       {breakdown && current !== undefined && <Breakdown name={periodName(granularity, current)} period={current} />}
       {items && current !== undefined && (
         <ItemLines name={periodName(granularity, current)} lines={current.items ?? []} />
@@ -180,11 +190,41 @@ export function CostTotalsView({ totals, breakdown, items = false }: CostTotalsV
   );
 }
 
-/** The breakdown of the current period by provider and category. */
+/**
+ * The parts of the current period's costs by provider, the largest first, the fourth and later as "Other": in one
+ * currency only, since amounts in different currencies are never added up.
+ */
+function useProviderParts(period: CostPeriodTotal): readonly BreakdownItem[] | undefined {
+  const t = useT();
+  const format = useFormatMoney();
+  const currencies = new Set(period.breakdown.map((line) => line.amount.currency));
+  const [currency] = currencies;
+  if (currency === undefined || currencies.size > 1) return undefined;
+  const byProvider = new Map<string, number>();
+  for (const line of period.breakdown) {
+    byProvider.set(line.provider, (byProvider.get(line.provider) ?? 0) + Number(line.amount.amount));
+  }
+  const sorted = [...byProvider].toSorted(([, a], [, b]) => b - a);
+  const named = sorted.length > shownProviders + 1 ? sorted.slice(0, shownProviders) : sorted;
+  const other = sorted.slice(named.length).reduce((sum, [, value]) => sum + value, 0);
+  const part = (id: string, name: string, value: number): BreakdownItem => ({
+    id,
+    name,
+    value,
+    valueText: format({ amount: String(value), currency }),
+  });
+  return [
+    ...named.map(([provider, value]) => part(`provider ${provider}`, provider, value)),
+    ...(named.length < sorted.length ? [part("other", t("client:costs.breakdown.other"), other)] : []),
+  ];
+}
+
+/** The breakdown of the current period: by provider as a bar in one currency, else by provider and category. */
 function Breakdown({ name, period }: { name: string; period: CostPeriodTotal }) {
   const t = useT();
   const format = useFormatMoney();
   const headingId = useId();
+  const parts = useProviderParts(period);
   return (
     <Stack as="section" aria-labelledby={headingId} gap="2">
       <Heading level={3} id={headingId}>
@@ -192,6 +232,8 @@ function Breakdown({ name, period }: { name: string; period: CostPeriodTotal }) 
       </Heading>
       {period.breakdown.length === 0 ? (
         <Hint size="inherit">{t("client:costs.breakdown.empty")}</Hint>
+      ) : parts !== undefined ? (
+        <BreakdownBar label={t("client:costs.breakdown.title", { period: name })} items={parts} />
       ) : (
         <Stack as="ul" gap="1">
           {period.breakdown.map((line) => (
