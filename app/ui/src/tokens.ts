@@ -134,7 +134,8 @@ export const tokenRules: readonly TokenRule[] = [
  * detail of the semantic colors (override those instead), `--shadow-*`, whose values Tailwind copies
  * into its utilities (override `--elevation-*`, which they refer to), the badge and avatar colors, whose
  * pairs keep their contrast only as they are (ADR-0071), the mango of a raised hand in a voice chat call, a brand mark
- * like the logo's spark, and `--radius-avatar`, a percentage of the avatar's side.
+ * like the logo's spark, `--radius-avatar`, a percentage of the avatar's side, and `--animate-*`, shorthands that name
+ * keyframes of theme.css (override their parts, such as `--ease-celebrate`).
  */
 export const fixedTokens: readonly RegExp[] = [
   /^palette-/,
@@ -143,6 +144,7 @@ export const fixedTokens: readonly RegExp[] = [
   /^color-avatar-/,
   /^color-hand(?:-fg)?$/,
   /^radius-avatar$/,
+  /^animate-/,
 ];
 
 /**
