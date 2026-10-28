@@ -148,7 +148,7 @@
     "description": "Navigation item, shown while nobody is signed in and the server takes new accounts, that opens the server's registration page. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
   },
   "shell.nav.viewer": {
-    "defaultMessage": "サインインしているアカウント",
+    "defaultMessage": "ログインしているアカウント",
     "description": "Description read after the name of the link at the bottom of the desktop sidebar that shows the signed-in account (avatar, display name, handle) and opens its profile."
   },
   "shell.not_found.body": {

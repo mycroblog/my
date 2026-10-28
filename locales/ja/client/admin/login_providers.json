@@ -4,7 +4,7 @@
     "description": "Checkbox: whether users may link their accounts to the provider."
   },
   "admin.login_providers.allow_link.description": {
-    "defaultMessage": "サインインした利用者がアカウント設定からひも付け、以後このプロバイダーでサインインできます。",
+    "defaultMessage": "ログインした利用者がアカウント設定からひも付け、以後このプロバイダーでログインできます。",
     "description": "Description of the checkbox that allows linking accounts to a login provider."
   },
   "admin.login_providers.allow_signup": {
@@ -60,7 +60,7 @@
     "description": "Label of the claim name of a condition row. {number} is the row's number."
   },
   "admin.login_providers.claims.description": {
-    "defaultMessage": "ID トークンの各 claim がいずれかの値を持つ利用者だけがサインインできます（Google Workspace のドメインなら hd）。条件がなければ、プロバイダーの利用者すべてがサインインできます。",
+    "defaultMessage": "ID トークンの各 claim がいずれかの値を持つ利用者だけがログインできます（Google Workspace のドメインなら hd）。条件がなければ、プロバイダーの利用者すべてがログインできます。",
     "description": "Description of the claim conditions of an OpenID Connect provider."
   },
   "admin.login_providers.claims.remove": {
@@ -108,7 +108,7 @@
     "description": "Button that deletes a login provider, and the confirming button of its dialog."
   },
   "admin.login_providers.delete.description": {
-    "defaultMessage": "{count, plural, =0 {ひも付けた利用者はいません。この操作は取り消せません。} other {ひも付けた # 人の利用者がこのプロバイダーでサインインできなくなります。パスワード・パスキー・ほかのプロバイダーを持たない利用者は、まったくサインインできなくなります。この操作は取り消せません。}}",
+    "defaultMessage": "{count, plural, =0 {ひも付けた利用者はいません。この操作は取り消せません。} other {ひも付けた # 人の利用者がこのプロバイダーでログインできなくなります。パスワード・パスキー・ほかのプロバイダーを持たない利用者は、まったくログインできなくなります。この操作は取り消せません。}}",
     "description": "Description of the dialog that confirms deleting a login provider. {count} is the number of linked users."
   },
   "admin.login_providers.delete.title": {
@@ -128,7 +128,7 @@
     "description": "Button that disables a login provider, and the confirming button of its dialog."
   },
   "admin.login_providers.disable.description": {
-    "defaultMessage": "{count, plural, =0 {有効に戻すまで、このプロバイダーでのサインイン・登録・ひも付けはできません。ひも付けた利用者はいません。} other {有効に戻すまで、このプロバイダーでのサインイン・登録・ひも付けはできません。ひも付けた # 人の利用者がこのプロバイダーでサインインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たない利用者は、まったくサインインできなくなります。}}",
+    "defaultMessage": "{count, plural, =0 {有効に戻すまで、このプロバイダーでのログイン・登録・ひも付けはできません。ひも付けた利用者はいません。} other {有効に戻すまで、このプロバイダーでのログイン・登録・ひも付けはできません。ひも付けた # 人の利用者がこのプロバイダーでログインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たない利用者は、まったくログインできなくなります。}}",
     "description": "Description of the dialog that confirms disabling a login provider. {count} is the number of linked users."
   },
   "admin.login_providers.disable.title": {
@@ -152,7 +152,7 @@
     "description": "Description of the display name of a GitHub or Mastodon provider."
   },
   "admin.login_providers.display_name.description_oidc": {
-    "defaultMessage": "管理画面での名前で、サインインのボタンにもそのまま表示されます。",
+    "defaultMessage": "管理画面での名前で、ログインのボタンにもそのまま表示されます。",
     "description": "Description of the display name of an OpenID Connect provider."
   },
   "admin.login_providers.edit": {
@@ -176,7 +176,7 @@
     "description": "Heading of the empty list of login providers."
   },
   "admin.login_providers.empty.description": {
-    "defaultMessage": "利用者はパスワードかパスキーでのみサインインします。",
+    "defaultMessage": "利用者はパスワードかパスキーでのみログインします。",
     "description": "Description of the empty list of login providers."
   },
   "admin.login_providers.enable": {
@@ -196,7 +196,7 @@
     "description": "Label of the Discord servers (guilds) a user must belong to."
   },
   "admin.login_providers.guilds.description": {
-    "defaultMessage": "いずれかの Discord サーバーに参加している利用者だけがサインインできます。サーバー ID をカンマか空白で区切ってください。空にすると Discord の利用者すべてがサインインできます。",
+    "defaultMessage": "いずれかの Discord サーバーに参加している利用者だけがログインできます。サーバー ID をカンマか空白で区切ってください。空にすると Discord の利用者すべてがログインできます。",
     "description": "Description of the Discord servers field."
   },
   "admin.login_providers.guilds.invalid": {
@@ -244,7 +244,7 @@
     "description": "Heading of the list of login providers."
   },
   "admin.login_providers.mastodon.conditions": {
-    "defaultMessage": "そのサーバーの利用者すべてがサインインできます。",
+    "defaultMessage": "そのサーバーの利用者すべてがログインできます。",
     "description": "Note that a Mastodon provider has no conditions."
   },
   "admin.login_providers.new.title": {
@@ -256,7 +256,7 @@
     "description": "Label of the GitHub Organizations a user must belong to."
   },
   "admin.login_providers.organizations.description": {
-    "defaultMessage": "いずれかの GitHub Organization に所属する利用者だけがサインインできます。カンマか空白で区切ってください。空にすると GitHub の利用者すべてがサインインできます。",
+    "defaultMessage": "いずれかの GitHub Organization に所属する利用者だけがログインできます。カンマか空白で区切ってください。空にすると GitHub の利用者すべてがログインできます。",
     "description": "Description of the Organizations field."
   },
   "admin.login_providers.provider": {
@@ -328,7 +328,7 @@
     "description": "Note that new users may sign up with a login provider."
   },
   "admin.login_providers.state.signup_closed": {
-    "defaultMessage": "サインインのみ",
+    "defaultMessage": "ログインのみ",
     "description": "Note that new users may not sign up with a login provider."
   },
   "admin.login_providers.submit": {
@@ -336,7 +336,7 @@
     "description": "Button that sets up a login provider."
   },
   "admin.login_providers.summary": {
-    "defaultMessage": "OpenID Connect・GitHub・Discord・Mastodon サーバーでのサインインを設定する。",
+    "defaultMessage": "OpenID Connect・GitHub・Discord・Mastodon サーバーでのログインを設定する。",
     "description": "Description of the login providers screen in the administration menu."
   },
   "admin.login_providers.title": {

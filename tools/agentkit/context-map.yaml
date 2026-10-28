@@ -154,6 +154,7 @@ entries:
     notes:
       - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0082); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
+      - "Call each thing by the term of tools/i18n/glossary.json (web-client G21); `i18n:check` rejects the variants it lists, and a new term goes there."
   - name: mail-templates
     paths: ["app/mail/**", "internal/app/kernel/mail_composer.go", "internal/app/kernel/mail_frame.gen.html"]
     docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
