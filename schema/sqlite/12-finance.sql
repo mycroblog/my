@@ -164,7 +164,7 @@ CREATE TABLE imported_cost_heads (
 -- foreign key (NULL for a fee); no row holds a user.
 CREATE TABLE income_movements (
   id TEXT NOT NULL PRIMARY KEY,
-  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp')),
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
   provider_id TEXT NOT NULL CHECK (length(provider_id) BETWEEN 1 AND 255),
   kind TEXT NOT NULL CHECK (kind IN ('payment', 'refund', 'chargeback', 'chargeback_reversal', 'fee')),
   parent_movement_id TEXT,
