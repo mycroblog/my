@@ -53,6 +53,11 @@ Users who are waiting for approval, were rejected, or have not confirmed their e
 After signing in, they see what they are waiting for (a moderator's approval, or confirmation of the email address), or that their registration was not approved, and they cannot go further.
 Only approved users can use the app (the OAuth authorization and token issuance of the client API), and on setups that require email confirmation, only those who have confirmed their email address.
 
+A new user who can use the app at once goes from the sign-up page straight into the app, to a welcome step that asks for
+a display name and an avatar. The home timeline then shows a checklist of first steps and suggestions of people to
+follow ([suggestions](instance-settings.md#suggestions-of-accounts)). "Continue" on the page that confirms an email
+address leads to the same welcome step.
+
 An administrator created with `my admin create` counts as approved and confirmed.
 
 ## Email confirmation

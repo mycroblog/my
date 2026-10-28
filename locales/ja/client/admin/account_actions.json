@@ -250,5 +250,13 @@
   "admin.account_actions.too_long": {
     "defaultMessage": "{max, number} 文字以内にしてください",
     "description": "Error of a text of an account action that is too long."
+  },
+  "admin.account_actions.severity": {
+    "defaultMessage": "重さ {max, number} 段階の {level, number}",
+    "description": "Hidden words after the name of a kind of moderation action: where it stands on the scale from the lightest (1) to the heaviest; level and max are numbers."
+  },
+  "admin.account_actions.irreversible": {
+    "defaultMessage": "取り消せません",
+    "description": "Badge after the name of a kind of moderation action that cannot be undone (a ban, deleting posts)."
   }
 }

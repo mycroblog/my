@@ -101,7 +101,7 @@ function BrandForm({ kind }: { kind: BrandKind }) {
       aria-busy={form.isChecking}
       onSubmit={form.submit}
     >
-      <Heading level={3} size="medium" id={headingId}>
+      <Heading level={3} id={headingId}>
         {t(messages.title)}
       </Heading>
       <Hint id={descriptionId}>{t(messages.description)}</Hint>

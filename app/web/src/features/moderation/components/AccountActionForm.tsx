@@ -22,6 +22,7 @@ import {
   serverSanitizedHtml,
   Stack,
   Text,
+  SeverityMark,
 } from "@my/ui";
 import { useId } from "react";
 import { useIntl } from "react-intl";
@@ -35,6 +36,7 @@ import {
   takesDuration,
   takesEmailBlock,
   useAccountActionForm,
+  severityOf,
 } from "../hooks/useAccountActionForm";
 import { accountActionKindLabels, isolate, reportCategoryLabels } from "../hooks/useReports";
 
@@ -114,11 +116,31 @@ export function AccountActionForm({ target, handle, posts, onIssued }: AccountAc
           errorMessage={t("client:admin.account_actions.kind.required")}
           {...(target.remote && { description: t("client:admin.account_actions.kind.remote") })}
         >
-          {form.kinds.map((kind) => (
-            <Radio key={kind} value={kind} description={t(kindDescriptions[kind])}>
-              {t(accountActionKindLabels[kind])}
-            </Radio>
-          ))}
+          {form.kinds.map((kind) => {
+            const severity = severityOf(kind);
+            // The kind's place on the scale goes with its description, so that its name stays the kind's alone (A7).
+            return (
+              <Radio
+                key={kind}
+                value={kind}
+                description={
+                  <Stack gap="1">
+                    <SeverityMark
+                      level={severity.level}
+                      max={severity.max}
+                      label={t("client:admin.account_actions.severity", severity)}
+                      {...(severity.irreversible && {
+                        irreversibleLabel: t("client:admin.account_actions.irreversible"),
+                      })}
+                    />
+                    {t(kindDescriptions[kind])}
+                  </Stack>
+                }
+              >
+                {t(accountActionKindLabels[kind])}
+              </Radio>
+            );
+          })}
         </RadioGroup>
         {isPostKind(draft.kind) && <PostChoices form={form} posts={posts} />}
         <Select

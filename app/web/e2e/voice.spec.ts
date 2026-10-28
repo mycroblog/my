@@ -287,7 +287,8 @@ test.describe("the call of a room", () => {
     await expect(dock.getByRole("button", { name: message("voice.call.raise_hand") })).toBeVisible();
     await expect(dock.getByRole("button", { name: message("voice.call.leave") })).toBeVisible();
     // A listener has no microphone.
-    await expect(dock.getByRole("button", { name: message("voice.call.microphone") })).toHaveCount(0);
+    await expect(dock.getByRole("button", { name: message("voice.call.microphone.turn_on") })).toHaveCount(0);
+    await expect(dock.getByRole("button", { name: message("voice.call.microphone.turn_off") })).toHaveCount(0);
     await expect(
       page.getByRole("list", { name: counted("voice.stage.speakers", 1) }).getByRole("listitem"),
     ).toHaveCount(1);

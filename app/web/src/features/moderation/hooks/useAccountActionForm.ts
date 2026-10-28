@@ -43,6 +43,15 @@ const postKinds: readonly AccountActionKind[] = ["mark_statuses_sensitive", "del
 /** The kinds that cannot be undone, which ask first (NFR-MOD-7): a ban deletes the account, the posts go for good. */
 const irreversibleKinds: readonly AccountActionKind[] = ["ban", "delete_statuses"];
 
+/** Where a kind stands on the scale from the lightest to the heaviest (its step of `max`), and whether it can be undone. */
+export function severityOf(kind: AccountActionKind): { level: number; max: number; irreversible: boolean } {
+  return {
+    level: accountActionKinds.indexOf(kind) + 1,
+    max: accountActionKinds.length,
+    irreversible: irreversibleKinds.includes(kind),
+  };
+}
+
 /**
  * Whether a kind takes how long it lasts. A ban and the actions on posts take none (the API refuses
  * `expires_in` on them); a warning is a notice only, so it lasts nothing either.

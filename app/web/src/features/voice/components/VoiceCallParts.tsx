@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The parts of a call that the room's page and the mini-player share (ADR-0100 §5, §6; ADR-0101 §7): the call's
-// state in a few words, who is talking, the mini-player's microphone toggle, what failed (why the browser refused the
-// microphone, leaving), the button that plays the sound the browser blocked, leaving, which asks the host of a
-// room with others in it for the next host or the end of the room, and the notice of what others changed for the user.
+// The parts of a call that the room's page and the mini-player share (ADR-0100 §5, §6; ADR-0101 §7): the badge of the
+// call's connection, the call's state in a few words, who is talking, the mini-player's microphone, what failed (why
+// the browser refused the microphone, leaving), the button that plays the sound the browser blocked, leaving, which
+// asks the host of a room with others in it for the next host or the end of the room (and, in the mini-player, anyone
+// else to confirm), and the notice of what others changed for the user.
 import {
   Button,
+  CallConnectionBadge,
+  type CallConnectionState,
   CallDockButton,
+  CallMicrophoneButton,
   ChangeNotice,
   ConfirmDialog,
   InlineError,
   LeaveIcon,
-  MicrophoneIcon,
   Radio,
   RadioGroup,
 } from "@my/ui";
@@ -34,7 +37,7 @@ const micErrors: Readonly<Record<VoiceMicError, ClientMessageKey>> = {
 };
 
 /** The call's state in a few words ("Connected"). */
-export function callPhaseText(t: ReturnType<typeof useT>, controls: VoiceCallControls): string {
+function callPhaseText(t: ReturnType<typeof useT>, controls: VoiceCallControls): string {
   return t(phaseLabels[controls.phase]);
 }
 
@@ -48,18 +51,35 @@ export function callStatusText(t: ReturnType<typeof useT>, controls: VoiceCallCo
   return t("client:voice.bar.talking", { name: participantName(first), others: controls.talking.length - 1 });
 }
 
-/** The microphone toggle of a speaker in the mini-player; CallErrors says why it could not turn on. */
+const connectionStates: Readonly<Record<Exclude<VoiceCallControls["phase"], "ended">, CallConnectionState>> = {
+  connecting: "connecting",
+  live: "connected",
+  reconnecting: "reconnecting",
+};
+
+/** The badge of the user's connection to the call, the same on the room's page and in the mini-player. */
+export function CallConnection({ controls }: { controls: VoiceCallControls }) {
+  const t = useT();
+  if (controls.phase === "ended") return null;
+  return <CallConnectionBadge state={connectionStates[controls.phase]} label={callPhaseText(t, controls)} />;
+}
+
+/** The names of the microphone button: what a press does. */
+export function microphoneLabels(t: ReturnType<typeof useT>): { turnOn: string; turnOff: string } {
+  return { turnOn: t("client:voice.call.microphone.turn_on"), turnOff: t("client:voice.call.microphone.turn_off") };
+}
+
+/** The microphone of a speaker in the mini-player; CallErrors says why it could not turn on. */
 export function MicrophoneControl({ controls }: { controls: VoiceCallControls }) {
   const t = useT();
   if (!controls.isSpeaker) return null;
   return (
-    <CallDockButton
-      label={t("client:voice.call.microphone")}
-      size="sm"
-      icon={<MicrophoneIcon filled={controls.micOn} />}
-      isSelected={controls.micOn}
+    <CallMicrophoneButton
+      isOn={controls.micOn}
       onChange={controls.setMicrophone}
-      isDisabled={controls.micPending}
+      isPending={controls.micPending}
+      labels={microphoneLabels(t)}
+      size="sm"
     />
   );
 }
@@ -135,17 +155,20 @@ export function PlaybackButton({ controls, size = "md" }: { controls: VoiceCallC
 
 /**
  * The leave button and its dialog: the host of a room with others in it hands it over or ends it (ADR-0100 §6). It is
- * the last control of the room page's dock (`look="dock"`) or of the mini-player (`look="mini"`); CallErrors says why
- * leaving failed.
+ * the last control of the room page's dock (`look="dock"`) or of the mini-player (`look="mini"`), where anyone else
+ * confirms leaving too: there the button sits on a small card near the microphone, and the room's page is not in view
+ * to join again from. CallErrors says why leaving failed.
  */
 export function LeaveCallButton({ controls, look }: { controls: VoiceCallControls; look: "dock" | "mini" }) {
   const t = useT();
   const [asking, setAsking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const onPress = () => {
     if (controls.mustChoose) setAsking(true);
+    else if (look === "mini") setConfirming(true);
     else controls.leave(undefined);
   };
-  const isPending = controls.isLeaving && !asking;
+  const isPending = controls.isLeaving && !asking && !confirming;
   return (
     <>
       {look === "dock" ? (
@@ -174,6 +197,26 @@ export function LeaveCallButton({ controls, look }: { controls: VoiceCallControl
           onClose={() => {
             setAsking(false);
             controls.resetLeave();
+          }}
+        />
+      )}
+      {look === "mini" && !controls.mustChoose && (
+        <ConfirmDialog
+          isOpen={confirming}
+          onOpenChange={(open) => {
+            if (open) return;
+            setConfirming(false);
+            controls.resetLeave();
+          }}
+          title={t("client:voice.call.leave_confirm.title", { room: `⁨${controls.room.name}⁩` })}
+          description={t("client:voice.call.leave_confirm.description")}
+          confirmLabel={t("client:voice.call.leave")}
+          cancelLabel={t("client:voice.call.stay")}
+          tone="danger"
+          isPending={controls.isLeaving}
+          errorMessage={controls.leaveError}
+          onConfirm={() => {
+            controls.leave(undefined);
           }}
         />
       )}

@@ -72,6 +72,8 @@ export function issueBody(result: RunResult, tasks: readonly TaskResult[], runUR
       `- Lostness: **${String(task.lostness)}** (steps S = ${String(task.steps)}, distinct places N = ${String(task.distinct)}, ` +
         `L1 shortest path R = ${String(task.shortest)}), backtracks: ${String(task.backtracks)}`,
       `- Completed: ${task.completed ? "yes" : "no"} (${task.ending})${task.summary === "" ? "" : `: ${task.summary}`}`,
+      ...(task.judgement === undefined ? [] : [`- Judged by the harness: ${task.judgement.detail}`]),
+      ...(task.notes === undefined ? [] : [`- Notes: ${task.notes}`]),
       `- Start: \`${task.start}\`; L1 shortest path: ${String(task.shortest)} step(s)`,
       "",
       "Path taken:",

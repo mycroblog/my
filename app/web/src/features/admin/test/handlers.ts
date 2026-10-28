@@ -282,6 +282,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "supporter_list_visibility", kind: "enum", default: "off", choices: ["off", "public", "signed_in"] },
   { key: "public_counts", kind: "bool", default: "true" },
   { key: "public_operators", kind: "bool", default: "true" },
+  { key: "featured_accounts", kind: "accounts", default: "" },
   { key: "federation_mode", kind: "enum", default: "both", choices: ["off", "inbound", "outbound", "both"] },
   { key: "user_app_registration", kind: "bool", default: "true" },
   { key: "oauth_metadata_document_clients", kind: "bool", default: "true" },
