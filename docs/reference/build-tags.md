@@ -81,7 +81,7 @@ MY_PROFILE=development bin/my dev push-service   # https://localhost:8930
 
 `my serve` sends to it only when it trusts the development CA (`SSL_CERT_FILE=.tmp/mailpit/ca.pem`, as for the
 development Mailpit in [Email](../operations/email.md#development)) and its SSRF guard lets the Web Push sends reach
-`localhost` ([`push_allowed_destinations`](configuration.md#push_allowed_destinations)` = localhost`, with
+`localhost` ([`push_allowed_destinations`](configuration.md#push_allowed_destinations) set to `localhost`, with
 `profile = development`). Its HTTP API, in JSON:
 
 | Request | Answer |
