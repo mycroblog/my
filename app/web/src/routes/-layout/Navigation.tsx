@@ -362,8 +362,6 @@ export function Navigation() {
       {...(signedOut && {
         topMenu: { label: t("client:shell.nav.menu"), isOpen: topMenuOpen, onOpenChange: setTopMenuOpen },
       })}
-      // The theme is a setting of this browser: signed out it stays in the menu's panel and in the bar from lg.
-      {...(signedOut && { topTools: <ThemeRadioGroup layout="sheet" /> })}
       {...(callToAction !== undefined && {
         topAction: <AppNavTopAction href={callToAction.href} label={t(callToAction.label)} />,
       })}

@@ -25,6 +25,7 @@ import {
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
+import { useBlockSizeProperty } from "./blockSizeProperty";
 import { Sheet, DialogTrigger } from "./Dialog";
 import { CloseIcon, MenuIcon } from "./Icons";
 import { Link } from "./Link";
@@ -79,9 +80,6 @@ const appNavTop = tv({
   slots: {
     // The bar's call to action and its menu button: phones only.
     action: "flex-none lg:hidden",
-    // The bar's own controls after the items (`AppNav` `topTools`): a row of the panel below lg, set apart by a line.
-    tools:
-      "mt-1 border-t border-border px-3 pt-3 pb-1 lg:mt-0 lg:border-t-0 lg:p-0 lg:ps-2 lg:*:flex-row lg:*:items-center lg:*:gap-3 lg:*:whitespace-nowrap lg:[&_[role=radiogroup]>div]:flex-nowrap lg:[&_[role=radiogroup]>div]:gap-x-3",
     menuButton: "min-h-11 min-w-11 flex-none lg:hidden [&_svg]:size-6",
   },
 });
@@ -118,11 +116,6 @@ export type AppNavProps = {
    * Its item in the list shows from lg only (`shows="rail"`), so that it is not in the menu twice.
    */
   topAction?: ReactNode;
-  /**
-   * The top bar with `topMenu`: a control of this browser (the color theme) after the items. It is the last row of the
-   * menu's panel below lg and stays in the bar's row from lg, so it is reachable at every width.
-   */
-  topTools?: ReactNode;
 };
 
 const PlacementContext = createContext<"side" | "top">("side");
@@ -145,7 +138,6 @@ export function AppNav({
   placement = "side",
   topMenu,
   topAction,
-  topTools,
 }: AppNavProps) {
   const top = placement === "top";
   const menu = top ? topMenu : undefined;
@@ -153,6 +145,8 @@ export function AppNav({
   const topSlots = appNavTop();
   const listId = useId();
   const navRef = useRef<HTMLElement>(null);
+  // The top bar's height, under which what sticks to the top of the page starts (`top-under-top-bar`).
+  useBlockSizeProperty(navRef, top ? "--top-bar-block-size" : undefined);
   const isOpen = menu?.isOpen ?? false;
   const close = menu?.onOpenChange;
   // A press outside the bar closes the items, as focus leaving it does; the page under the panel stays usable.
@@ -217,7 +211,6 @@ export function AppNav({
           })}
         >
           {children}
-          {menu !== undefined && topTools !== undefined && <li className={topSlots.tools()}>{topTools}</li>}
         </ul>
         {action !== undefined && <div className={slots.action()}>{action}</div>}
         {footer}

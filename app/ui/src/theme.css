@@ -403,6 +403,27 @@
   }
 }
 
+/* Under the signed-out top bar (AppNav placement="top"), which sticks under the offline bar and writes its height to
+   --top-bar-block-size: where a page's own sticky line starts (SectionProgress). */
+@utility top-under-top-bar {
+  inset-block-start: calc(var(--offline-bar-block-size, 0px) + var(--top-bar-block-size, 0px));
+  @media (width < 48rem) and (height <= 32rem) {
+    inset-block-start: var(--top-bar-block-size, 0px);
+  }
+}
+/* A heading of a page of sections under the progress line (SectionProgress), which sticks under the top bar and
+   writes its height to --section-progress-block-size: scrolled to, it stops 1.5rem below them rather than under them.
+   On a short screen the progress line does not stick. */
+@utility scroll-mt-under-section-progress {
+  scroll-margin-block-start: calc(
+    var(--offline-bar-block-size, 0px) + var(--top-bar-block-size, 0px) + var(--section-progress-block-size, 0px) +
+      1.5rem
+  );
+  @media (width < 48rem) and (height <= 32rem) {
+    scroll-margin-block-start: calc(var(--top-bar-block-size, 0px) + 1.5rem);
+  }
+}
+
 /* A visible focus indicator. Use it as `focus-visible:focus-ring` (or `data-focus-visible:focus-ring`
    on React Aria Components); an outline survives forced-colors mode, unlike a box-shadow. */
 @utility focus-ring {

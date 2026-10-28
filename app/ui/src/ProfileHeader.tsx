@@ -15,7 +15,9 @@ const noCounts: readonly ProfileHeaderCount[] = [];
 const profileHeader = tv({
   slots: {
     root: "@container flex flex-col",
-    top: "flex flex-wrap items-end justify-between gap-3 px-4",
+    // The avatar overlaps the header image; the actions start below it, a gap apart, rather than touching it.
+    top: "flex flex-wrap items-start justify-between gap-3 px-4",
+    actions: "pt-3",
     avatar: "-mt-10 ring-4 ring-surface",
     mark: "-mt-10 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface-raised p-2 shadow-card ring-4 ring-surface",
     body: "mt-3 flex flex-col gap-3 px-4",
@@ -103,7 +105,7 @@ export function ProfileHeader({
               {mark}
             </span>
           )}
-          {actions}
+          {actions !== undefined && <div className={styles.actions()}>{actions}</div>}
         </div>
         <div className={styles.body()}>
           <div className={styles.identity()}>
