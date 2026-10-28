@@ -52,15 +52,45 @@ describe("while signed out", () => {
     ]);
     expect(within(list).getByRole("link", { name: "Local" })).toHaveAttribute("aria-current", "page");
 
-    // The tab bar's Menu holds Sign up, the color theme and the server's information page.
-    await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
-    const sheet = await screen.findByRole("dialog", { name: "Menu" });
+    // Below lg the items are behind the menu button (a disclosure, not a dialog), and Sign up stays in the bar.
+    const menu = within(navigation()).getByRole("button", { name: "Menu" });
+    expect(menu).toHaveAttribute("aria-expanded", "false");
+    expect(menu).toHaveAttribute("aria-controls", list.id);
     expect(
-      within(sheet)
-        .getAllByRole("link")
-        .map((link) => link.textContent),
-    ).toEqual(["Sign up", "my example", "More about this server"]);
-    expect(within(sheet).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+      within(navigation())
+        .getAllByRole("link", { name: "Sign up" })
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["http://localhost:3000/auth/sign_up", "http://localhost:3000/auth/sign_up"]);
+    await user.click(menu);
+    expect(menu).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Escape closes the items and leaves focus on the button.
+    within(list).getByRole("link", { name: "Search" }).focus();
+    await user.keyboard("{Escape}");
+    expect(menu).toHaveAttribute("aria-expanded", "false");
+    expect(menu).toHaveFocus();
+
+    // Following one of the items closes them too.
+    await user.click(menu);
+    await user.click(within(list).getByRole("link", { name: "Search" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Search" })).toBeInTheDocument();
+    expect(menu).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("makes Sign in the call to action of the bar while the server takes no new accounts", async () => {
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, registrations: { mode: "closed" } }),
+      ),
+    );
+    await renderApp({ path: "/local" });
+    await screen.findByRole("heading", { level: 1, name: "Local timeline" });
+    // jsdom applies no styles: the bar's call to action (below lg) and the list's item (from lg) are both here.
+    await waitFor(() => {
+      expect(within(navigation()).getAllByRole("link", { name: "Sign in" })).toHaveLength(2);
+    });
+    expect(within(navigation()).queryByRole("link", { name: "Sign up" })).not.toBeInTheDocument();
   });
 
   test("leaves out a timeline kept for signed-in users, and asks to sign in at its address", async () => {
@@ -130,7 +160,7 @@ describe("while signed out", () => {
     await renderApp({ path: "/search", locale: "ja" });
     await screen.findByRole("heading", { level: 1, name: "検索" });
     const nav = screen.getByRole("navigation", { name: "メイン" });
-    expect(await within(nav).findByRole("link", { name: "新規登録" })).toBeInTheDocument();
+    expect(await within(nav).findAllByRole("link", { name: "新規登録" })).toHaveLength(2);
     expect(within(nav).getByRole("link", { name: "サーバー情報" })).toHaveAttribute("href", "/about");
     expect(within(nav).getByRole("link", { name: "ログイン" })).toHaveAttribute("href", "/login?return_to=%2Fsearch");
   });
@@ -372,9 +402,11 @@ describe("the tab bar's Menu", () => {
   });
 
   test("is in Japanese in the ja locale", async () => {
-    // Signed out: the signed-in user's preferences would display the app in their locale.
-    server.resetHandlers();
-    const { user } = await renderApp({ path: "/local", locale: "ja" });
+    server.use(
+      signedInHandler,
+      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, locale: "ja" })),
+    );
+    const { user } = await renderApp({ path: "/home", locale: "ja" });
     const nav = await screen.findByRole("navigation", { name: "メイン" });
     await user.click(await within(nav).findByRole("button", { name: "メニュー" }));
     const sheet = await screen.findByRole("dialog", { name: "メニュー" });
