@@ -6,13 +6,12 @@ import {
   CloseIcon,
   Cluster,
   Fieldset,
+  IconButton,
   InlineError,
   Select,
   SelectItem,
   Stack,
   TextField,
-  Tooltip,
-  TooltipTrigger,
 } from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -66,19 +65,15 @@ export function PollEditor({ poll, draft }: PollEditorProps) {
                 }}
               />
               {canRemove && (
-                <TooltipTrigger>
-                  <Button
-                    variant="ghost"
-                    size="toolbar"
-                    aria-label={removeLabel}
-                    onPress={() => {
-                      poll.removeOption(option.key);
-                    }}
-                  >
-                    <CloseIcon />
-                  </Button>
-                  <Tooltip>{removeLabel}</Tooltip>
-                </TooltipTrigger>
+                <IconButton
+                  size="toolbar"
+                  label={removeLabel}
+                  onPress={() => {
+                    poll.removeOption(option.key);
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
               )}
             </Cluster>
           );

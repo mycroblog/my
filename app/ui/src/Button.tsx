@@ -51,8 +51,8 @@ export type ButtonProps = RACButtonProps & VariantProps<typeof button>;
 
 /**
  * A button (React Aria Button): pressed with a pointer, Enter or Space. Its accessible name is its
- * children, or `aria-label` when they are only an icon. While `isPending` it ignores presses but keeps
- * its focus.
+ * children; a button of only an icon is an `IconButton`, which names it and shows the name as a tooltip (G12). While
+ * `isPending` it ignores presses but keeps its focus.
  *
  * A submit button takes the focus when a pointer press ends rather than when it starts
  * (web-client/16-look-states-and-wording.md G23). A field that loses the focus commits its validation (React Aria's

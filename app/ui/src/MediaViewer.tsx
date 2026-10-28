@@ -14,9 +14,10 @@ import {
   useLocale,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import { Button } from "./Button";
+import { IconButton } from "./IconButton";
 import { AltTextIcon, CloseIcon, NextIcon, PreviousIcon } from "./Icons";
 import { type ImageSources, Picture } from "./Picture";
+import { Tooltip, TooltipTrigger } from "./Tooltip";
 
 // The picture is the frame: no header and no padding, so it fills the panel. The dialog is named by a heading that
 // only screen readers meet, the × sits over the picture's corner and the pager under it, outside the frame.
@@ -128,23 +129,29 @@ function Frame({ item, labels, noDescriptionLabel }: FrameProps) {
           <p id={altId} hidden={!altOpen} aria-hidden="true" className={styles.alt()} {...language}>
             {item.alt}
           </p>
-          <AriaButton
-            aria-label={labels.altText}
-            aria-expanded={altOpen}
-            aria-controls={altId}
-            data-expanded={altOpen}
-            onPress={() => {
-              setAltOpen((open) => !open);
-            }}
-            className={styles.corner({ class: styles.altToggle() })}
-          >
-            <AltTextIcon />
-          </AriaButton>
+          <TooltipTrigger>
+            <AriaButton
+              aria-label={labels.altText}
+              aria-expanded={altOpen}
+              aria-controls={altId}
+              data-expanded={altOpen}
+              onPress={() => {
+                setAltOpen((open) => !open);
+              }}
+              className={styles.corner({ class: styles.altToggle() })}
+            >
+              <AltTextIcon />
+            </AriaButton>
+            <Tooltip>{labels.altText}</Tooltip>
+          </TooltipTrigger>
         </>
       )}
-      <AriaButton slot="close" aria-label={labels.close} className={styles.corner({ class: styles.close() })}>
-        <CloseIcon />
-      </AriaButton>
+      <TooltipTrigger>
+        <AriaButton slot="close" aria-label={labels.close} className={styles.corner({ class: styles.close() })}>
+          <CloseIcon />
+        </AriaButton>
+        <Tooltip>{labels.close}</Tooltip>
+      </TooltipTrigger>
     </div>
   );
 }
@@ -185,29 +192,29 @@ function ViewerContent({ items, index, onIndexChange, labels, noDescriptionLabel
       <Frame key={item.id} item={item} labels={labels} noDescriptionLabel={noDescriptionLabel} />
       {count > 1 && (
         <div className={styles.nav()}>
-          <Button
-            variant="ghost"
-            aria-label={labels.previous}
+          <IconButton
+            size="md"
+            label={labels.previous}
             className={styles.navButton()}
             onPress={() => {
               onIndexChange(step(index, -1, count));
             }}
           >
             <PreviousIcon />
-          </Button>
+          </IconButton>
           <span aria-hidden="true" className={styles.count()}>
             {labels.position(index + 1, count)}
           </span>
-          <Button
-            variant="ghost"
-            aria-label={labels.next}
+          <IconButton
+            size="md"
+            label={labels.next}
             className={styles.navButton()}
             onPress={() => {
               onIndexChange(step(index, 1, count));
             }}
           >
             <NextIcon />
-          </Button>
+          </IconButton>
         </div>
       )}
     </>

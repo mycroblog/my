@@ -6,8 +6,8 @@
 // the screen's top edge.
 import { type ReactNode, type Ref, useId } from "react";
 import { tv } from "tailwind-variants";
-import { Button } from "./Button";
 import { DialogTrigger, Sheet } from "./Dialog";
+import { IconButton } from "./IconButton";
 import { BackIcon, MenuIcon } from "./Icons";
 import { Link } from "./Link";
 
@@ -96,9 +96,9 @@ export function AdminShell({
       <div className="min-w-0">
         <header className={slots.topBar()}>
           <DialogTrigger isOpen={menuOpen} onOpenChange={onMenuOpenChange}>
-            <Button variant="ghost" size="icon" aria-label={menuButtonLabel}>
+            <IconButton label={menuButtonLabel}>
               <MenuIcon />
-            </Button>
+            </IconButton>
             <Sheet title={menuButtonLabel} closeLabel={closeLabel}>
               {menu}
             </Sheet>

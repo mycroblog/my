@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, CallDockButton, EmojiIcon, Popover, PopoverTrigger, Tooltip, TooltipTrigger } from "@my/ui";
+import { CallDockButton, EmojiIcon, IconButton, Popover, PopoverTrigger } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type ReactionChoice, useReactionPicker } from "../hooks/useReactionPicker";
 import { EmojiPickerPanel } from "./EmojiPickerPanel";
@@ -18,7 +18,7 @@ export type ReactionPickerButtonProps = {
  * emoji of this server and every Unicode emoji in the skin tone chosen here. Hovering or focusing it (in the dock,
  * opening it) starts loading the Unicode emoji, and the popover shows a spinner until they arrive. The search field
  * takes focus; picking an emoji closes the popover, which returns focus to the button, and reacts with it, also when
- * Shift is held (one reaction per post, ADR-0052 §1). The button is named by aria-label and shows the same words as a
+ * Shift is held (one reaction per post, ADR-0052 §1). The button is named by its label and shows the same words as a
  * tooltip (web-client/16-look-states-and-wording.md G12).
  */
 export function ReactionPickerButton({
@@ -29,7 +29,7 @@ export function ReactionPickerButton({
   const t = useT();
   const picker = useReactionPicker();
   const name = t("client:reaction.picker.button");
-  const trigger = (
+  return (
     <PopoverTrigger
       onOpenChange={(isOpen) => {
         if (isOpen) picker.preload();
@@ -39,16 +39,16 @@ export function ReactionPickerButton({
         // The dock's control shows its own tooltip.
         <CallDockButton label={name} icon={<EmojiIcon />} isDisabled={isDisabled} />
       ) : (
-        <Button
+        <IconButton
           variant="subtle"
           size="toolbar"
-          aria-label={name}
+          label={name}
           isDisabled={isDisabled}
           onHoverStart={picker.preload}
           onFocus={picker.preload}
         >
           <EmojiIcon />
-        </Button>
+        </IconButton>
       )}
       <Popover
         aria-label={t("client:reaction.picker.title")}
@@ -64,12 +64,5 @@ export function ReactionPickerButton({
         )}
       </Popover>
     </PopoverTrigger>
-  );
-  if (appearance === "dock") return trigger;
-  return (
-    <TooltipTrigger>
-      {trigger}
-      <Tooltip>{name}</Tooltip>
-    </TooltipTrigger>
   );
 }

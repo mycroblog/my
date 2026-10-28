@@ -14,7 +14,7 @@ import { Route as IndexRoute } from "../../../routes/index"; // expect: boundari
 import { client } from "../../../lib/api/client"; // expect: eslint(no-restricted-imports) S1
 import { createClient } from "@mycroblog/mykit"; // expect: eslint(no-restricted-imports) S1
 import type { components } from "@mycroblog/mykit";
-import { Heading, Stack } from "@my/ui";
+import { Button, Heading, MoreIcon, Stack } from "@my/ui";
 
 let renders = 0;
 const CountContext = createContext(0);
@@ -185,5 +185,14 @@ export function Region({ title }: { title: string }) {
     <Stack as="section" aria-labelledby="region">
       <Heading level={2} id="region" size="label">{title}</Heading> {/* expect: restrict(pattern) restrict(pattern) */}
     </Stack>
+  );
+}
+
+// G12
+export function More({ label }: { label: string }) {
+  return (
+    <Button aria-label={label}> {/* expect: restrict(icons) */}
+      <MoreIcon />
+    </Button>
   );
 }
