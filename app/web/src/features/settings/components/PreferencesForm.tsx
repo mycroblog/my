@@ -11,6 +11,7 @@ import {
   RadioGroup,
   Select,
   SelectItem,
+  Section,
   Stack,
   Switch,
   Text,
@@ -38,8 +39,10 @@ import { NavigationSettings } from "./NavigationSettings";
 import { ThemeRadioGroup } from "./ThemeRadioGroup";
 
 /**
- * The preferences: every control saves its value as soon as it changes; the theme, the autoplay of animations and the
- * arrangement of the navigation are kept on this browser.
+ * The preferences in the sections of their screen requirements (web-client/screens/settings-preferences.md): the
+ * display, the navigation, the defaults of new posts, and the timelines. Every control saves its value as soon as it
+ * changes; the theme, the autoplay of animations and the arrangement of the navigation are kept on this browser, the
+ * rest on the account, and each section's description says which.
  */
 export function PreferencesForm() {
   const t = useT();
@@ -56,72 +59,93 @@ export function PreferencesForm() {
   return (
     <Stack gap="8">
       <Hint size="inherit">{t("client:settings.preferences.autosave")}</Hint>
-      <DisplayLanguageSelect control={locale} />
-      <TimeZoneSelect control={timeZone} />
-      <ThemeRadioGroup />
-      <AutoplaySwitch />
+      <Section
+        title={t("client:settings.preferences.display.title")}
+        description={t("client:settings.preferences.display.description")}
+      >
+        <Stack gap="6">
+          <DisplayLanguageSelect control={locale} />
+          <TimeZoneSelect control={timeZone} />
+          <ThemeRadioGroup />
+          <AutoplaySwitch />
+        </Stack>
+      </Section>
       <NavigationSettings />
-      <Autosaved state={defaultVisibility.saveState}>
-        <RadioGroup
-          label={t("client:settings.default_visibility.label")}
-          description={t("client:settings.default_visibility.description")}
-          value={defaultVisibility.value}
-          onChange={(value) => {
-            if (isVisibility(value)) defaultVisibility.onChange(value);
-          }}
-          isInvalid={defaultVisibility.error !== undefined}
-          errorMessage={defaultVisibility.error}
-        >
-          {visibilities.map((visibility) => (
-            <Radio key={visibility} value={visibility} description={t(visibilityDescription[visibility])}>
-              {t(visibilityLabel[visibility])}
-            </Radio>
-          ))}
-        </RadioGroup>
-      </Autosaved>
-      <Autosaved state={defaultQuotePolicy.saveState}>
-        <RadioGroup
-          label={t("client:settings.default_quote_policy.label")}
-          description={t("client:settings.default_quote_policy.description")}
-          value={defaultQuotePolicy.value}
-          onChange={(value) => {
-            const policy = quotePolicies.find((p) => p === value);
-            if (policy !== undefined) defaultQuotePolicy.onChange(policy);
-          }}
-          isInvalid={defaultQuotePolicy.error !== undefined}
-          errorMessage={defaultQuotePolicy.error}
-        >
-          {quotePolicies.map((policy) => (
-            <Radio key={policy} value={policy} description={t(quotePolicyDescription[policy])}>
-              {t(quotePolicyLabel[policy])}
-            </Radio>
-          ))}
-        </RadioGroup>
-      </Autosaved>
-      <DefaultPostLanguageSelect control={defaultPostLanguage} />
-      <Autosaved state={requireMediaDescription.saveState}>
-        <Switch
-          isSelected={requireMediaDescription.value}
-          onChange={requireMediaDescription.onChange}
-          description={t("client:settings.require_media_description.description")}
-          isInvalid={requireMediaDescription.error !== undefined}
-          errorMessage={requireMediaDescription.error}
-        >
-          {t("client:settings.require_media_description.label")}
-        </Switch>
-      </Autosaved>
-      <TimelineLanguages control={timelineLanguages} />
-      <Autosaved state={timelineAutoInsert.saveState}>
-        <Switch
-          isSelected={timelineAutoInsert.value}
-          onChange={timelineAutoInsert.onChange}
-          description={t("client:settings.timeline_auto_insert.description")}
-          isInvalid={timelineAutoInsert.error !== undefined}
-          errorMessage={timelineAutoInsert.error}
-        >
-          {t("client:settings.timeline_auto_insert.label")}
-        </Switch>
-      </Autosaved>
+      <Section
+        title={t("client:settings.preferences.posting.title")}
+        description={t("client:settings.preferences.posting.description")}
+      >
+        <Stack gap="6">
+          <Autosaved state={defaultVisibility.saveState}>
+            <RadioGroup
+              label={t("client:settings.default_visibility.label")}
+              description={t("client:settings.default_visibility.description")}
+              value={defaultVisibility.value}
+              onChange={(value) => {
+                if (isVisibility(value)) defaultVisibility.onChange(value);
+              }}
+              isInvalid={defaultVisibility.error !== undefined}
+              errorMessage={defaultVisibility.error}
+            >
+              {visibilities.map((visibility) => (
+                <Radio key={visibility} value={visibility} description={t(visibilityDescription[visibility])}>
+                  {t(visibilityLabel[visibility])}
+                </Radio>
+              ))}
+            </RadioGroup>
+          </Autosaved>
+          <Autosaved state={defaultQuotePolicy.saveState}>
+            <RadioGroup
+              label={t("client:settings.default_quote_policy.label")}
+              description={t("client:settings.default_quote_policy.description")}
+              value={defaultQuotePolicy.value}
+              onChange={(value) => {
+                const policy = quotePolicies.find((p) => p === value);
+                if (policy !== undefined) defaultQuotePolicy.onChange(policy);
+              }}
+              isInvalid={defaultQuotePolicy.error !== undefined}
+              errorMessage={defaultQuotePolicy.error}
+            >
+              {quotePolicies.map((policy) => (
+                <Radio key={policy} value={policy} description={t(quotePolicyDescription[policy])}>
+                  {t(quotePolicyLabel[policy])}
+                </Radio>
+              ))}
+            </RadioGroup>
+          </Autosaved>
+          <DefaultPostLanguageSelect control={defaultPostLanguage} />
+          <Autosaved state={requireMediaDescription.saveState}>
+            <Switch
+              isSelected={requireMediaDescription.value}
+              onChange={requireMediaDescription.onChange}
+              description={t("client:settings.require_media_description.description")}
+              isInvalid={requireMediaDescription.error !== undefined}
+              errorMessage={requireMediaDescription.error}
+            >
+              {t("client:settings.require_media_description.label")}
+            </Switch>
+          </Autosaved>
+        </Stack>
+      </Section>
+      <Section
+        title={t("client:settings.preferences.timeline.title")}
+        description={t("client:settings.preferences.timeline.description")}
+      >
+        <Stack gap="6">
+          <TimelineLanguages control={timelineLanguages} />
+          <Autosaved state={timelineAutoInsert.saveState}>
+            <Switch
+              isSelected={timelineAutoInsert.value}
+              onChange={timelineAutoInsert.onChange}
+              description={t("client:settings.timeline_auto_insert.description")}
+              isInvalid={timelineAutoInsert.error !== undefined}
+              errorMessage={timelineAutoInsert.error}
+            >
+              {t("client:settings.timeline_auto_insert.label")}
+            </Switch>
+          </Autosaved>
+        </Stack>
+      </Section>
     </Stack>
   );
 }

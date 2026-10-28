@@ -18,12 +18,15 @@ export function notificationSettingsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/preferences/notifications");
 }
 
-/** Saves a change of one cell (PATCH /preferences/notifications), as the options of TanStack Query's useMutation. */
+/**
+ * Saves the changes of one cell, or of a column's cells at once (PATCH /preferences/notifications), as the options of
+ * TanStack Query's useMutation.
+ */
 export function updateNotificationSettingMutation(api: Api) {
   return {
     mutationKey: ["patch", "/preferences/notifications"] as const,
-    mutationFn: async (change: NotificationSettingChange): Promise<NotificationSettings> => {
-      const { data, error } = await api.fetch.PATCH("/preferences/notifications", { body: { changes: [change] } });
+    mutationFn: async (changes: readonly NotificationSettingChange[]): Promise<NotificationSettings> => {
+      const { data, error } = await api.fetch.PATCH("/preferences/notifications", { body: { changes: [...changes] } });
       // The middleware throws an ApiError for every error status, so this is only for the types.
       if (data === undefined) throw new Error(error.title);
       return data;
