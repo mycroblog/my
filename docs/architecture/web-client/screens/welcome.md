@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
+---
+
 ## ようこそ（`/welcome`、アカウントを作った直後）
 
 アカウントを作った人が最初に見る画面。最初の実行（ランディングページ → アカウントを作る → プロフィールの基本 → 最初のフォロー → ホーム）の 3 つ目の場所で、

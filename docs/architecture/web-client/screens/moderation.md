@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "marco"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+---
+
 ## モデレーションのトップ（`/moderation`）
 
 モデレーターが、いま何が待っていて、どれを先に処理するかを知る画面（ADR-0058、FR-712、[§14](../14-admin.md)）。

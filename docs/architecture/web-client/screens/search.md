@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/search/**"]
+---
+
 ## アカウントの検索（`/search`）
 
 アカウントを探して、そのプロフィールを開くかフォローする画面。このサーバーのアカウントは表示名とハンドルの一部で（FR-307）、

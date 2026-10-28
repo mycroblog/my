@@ -506,10 +506,10 @@ entries:
     checks: [ui, web]
   - name: web-client
     paths: ["app/web/**"]
-    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
+    docs: ["docs/architecture/web-client/README.md#1-react-の基本", "docs/architecture/web-client/README.md#2-状態とデータ", "docs/architecture/web-client/README.md#3-構成と責務分離", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則", "docs/architecture/web-client/screens/README.md"]
     checks: [web]
     notes:
-      - "A UI change needs its screen's L1 in docs/architecture/web-client/screens/ (README.md there); add the screen file to this entry's docs when written."
+      - "A UI change needs its screen's L1, docs/architecture/web-client/screens/*.md (one file per screen; the template, the rules, and the front matter in README.md there): read the screen's file before changing it."
       - "Follow docs/architecture/web-client/ (the principles in its README.md and the section of the screen); never write React from memory. User-facing strings go through `client*` messages."
   - name: web-tests
     paths: ["app/web/e2e/**", "app/web/src/test/**", "app/web/**/*.test.ts", "app/web/**/*.test.tsx"]
@@ -519,7 +519,7 @@ entries:
     docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/adr/0117-demo-environment.md", "docs/architecture/web-client/screens/README.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
-      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); app/web/l4/screens.ts gives each screen its start, the person of the scenario it signs in as (or none), the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new L1 adds an entry there (check with DRY_RUN=1; l4/screens.test.ts checks the task names)."
+      - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); the front matter of each screen's L1 (parsed by app/web/l4/screens.ts, documented in screens/README.md) gives its start, the person of the scenario it signs in as (or none), the code that SINCE watches, the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new screen touches only its own L1 file (check with DRY_RUN=1; l4/screens.test.ts checks every L1's front matter)."
       - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
   - name: web-demo
     paths: ["app/web/demo/**"]
@@ -543,13 +543,13 @@ entries:
       - "The API client, the token refresh after a 401, problem parsing, and the event stream are @mycroblog/mykit's (pkg/mykit/ts); app/web keeps the wording, the reports to lib/network and lib/maintenance, and openapi-react-query. The API types come from `@mycroblog/mykit`."
   - name: web-feature-admin
     paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
-    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面", "docs/architecture/web-client/screens/admin-settings.md", "docs/architecture/web-client/screens/moderation.md", "docs/architecture/web-client/screens/admin.md", "docs/architecture/web-client/screens/moderation-reports.md", "docs/architecture/web-client/screens/moderation-report.md"]
+    docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
-    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/screens/welcome.md", "docs/architecture/web-client/screens/home-first-run.md"]
+    docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
   - name: web-feature-emoji
     paths: ["app/web/src/features/emoji/**", "app/web/src/features/custom-emojis/**"]
     docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0052-emoji-reactions.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]
@@ -558,19 +558,19 @@ entries:
       - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0095), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
-    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー", "docs/architecture/web-client/screens/search.md"]
+    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
   - name: web-feature-report
     paths: ["app/web/src/features/report/**"]
     docs: ["docs/architecture/web-client/17-reports.md#17-通報", "docs/architecture/web-client/18-account-status-and-appeals.md#18-アカウントの状態と異議申し立て"]
   - name: web-feature-settings
     paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
-    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/architecture/web-client/screens/badges.md", "docs/architecture/web-client/screens/settings-menu.md", "docs/architecture/web-client/screens/settings.md", "docs/architecture/web-client/screens/settings-preferences.md", "docs/architecture/web-client/screens/settings-notifications.md", "docs/architecture/web-client/screens/settings-profile.md", "docs/architecture/web-client/screens/settings-auto-delete.md"]
+    docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証"]
   - name: web-feature-supporters
     paths: ["app/web/src/features/supporters/**"]
-    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md", "docs/architecture/web-client/screens/badges.md"]
+    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md"]
   - name: web-feature-public
     paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
-    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md", "docs/architecture/web-client/screens/landing.md"]
+    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md"]
 
   # --- Deployment -----------------------------------------------------------------------------------------
   - name: deploy

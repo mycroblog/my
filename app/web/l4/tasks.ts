@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The tasks of the L4 task tests (ADR-0110 §7, ADR-0114): the rows of the "作業" table of each screen's L1 file
 // (docs/architecture/web-client/screens/<screen>.md), and which screens a change touches: a screen is touched when
-// its L1 file changed, or a path of an entry of tools/agentkit/context-map.yaml whose docs name that file.
+// its L1 file changed, or a path of the `paths` of its front matter (screens.ts).
 
 /** One task of a screen's L1: the row of its table and the number of steps of the shortest path. */
 export type Task = {
@@ -67,8 +67,8 @@ export function parseTasks(screen: string, markdown: string): Task[] {
 }
 
 /**
- * Converts a context-map pattern to a regular expression: `*` matches within one path segment, `**` any number
- * of segments (tools/agentkit/context-map.yaml).
+ * Converts a path pattern to a regular expression: `*` matches within one path segment, `**` any number of
+ * segments (as the patterns of tools/agentkit/context-map.yaml).
  */
 export function globToRegExp(pattern: string): RegExp {
   let source = "";
@@ -87,53 +87,9 @@ export function globToRegExp(pattern: string): RegExp {
   return new RegExp(`^${source}$`);
 }
 
-/** An entry of the context map: its paths and its docs. */
-type MapEntry = { paths: string[]; docs: string[] };
-
-/**
- * Reads the entries of tools/agentkit/context-map.yaml that the selection needs: each entry's `paths` and `docs`,
- * which the file writes as one-line flow sequences of double-quoted strings (JSON arrays). Any other form of those
- * two keys is an error rather than a silent miss.
- */
-export function parseContextMap(yaml: string): MapEntry[] {
-  const entries: MapEntry[] = [];
-  let current: MapEntry | undefined;
-  for (const line of yaml.split("\n")) {
-    if (/^ {2}- name: /.test(line)) {
-      current = { paths: [], docs: [] };
-      entries.push(current);
-      continue;
-    }
-    const field = /^ {4}(paths|docs):(.*)$/.exec(line);
-    if (current === undefined || field === null) {
-      continue;
-    }
-    const [, key = "", value = ""] = field;
-    let list: unknown;
-    try {
-      list = JSON.parse(value.trim());
-    } catch {
-      throw new Error(`context-map.yaml: "${key}" must be a one-line list: ${line.trim()}`);
-    }
-    if (!Array.isArray(list) || !list.every((item) => typeof item === "string")) {
-      throw new Error(`context-map.yaml: "${key}" must be a list of strings: ${line.trim()}`);
-    }
-    current[key === "paths" ? "paths" : "docs"] = list;
-  }
-  return entries;
-}
-
-/** The paths of the context map that belong to `screen`: those of every entry whose docs name its L1 file. */
-function screenPaths(screen: string, entries: readonly MapEntry[]): string[] {
-  const file = `${screensDir}/${screen}.md`;
-  return entries
-    .filter((entry) => entry.docs.some((doc) => doc.split("#")[0] === file))
-    .flatMap((entry) => entry.paths);
-}
-
-/** Whether `changed` (repository paths) touch `screen`: its L1 file or one of its context-map paths. */
-export function screenChanged(screen: string, changed: readonly string[], entries: readonly MapEntry[]): boolean {
-  const patterns = [`${screensDir}/${screen}.md`, ...screenPaths(screen, entries)].map(globToRegExp);
+/** Whether `changed` (repository paths) touch `screen`: its L1 file or one of `paths`, the code of its front matter. */
+export function screenChanged(screen: string, changed: readonly string[], paths: readonly string[]): boolean {
+  const patterns = [`${screensDir}/${screen}.md`, ...paths].map(globToRegExp);
   return changed.some((path) => patterns.some((pattern) => pattern.test(path)));
 }
 

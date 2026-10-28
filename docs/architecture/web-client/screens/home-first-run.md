@@ -1,3 +1,9 @@
+---
+start: "/home"
+persona: "yuki"
+paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
+---
+
 ## 始め方のチェックリストとおすすめのアカウント（`/home` の、始めたばかりの人）
 
 ホームのタイムライン（FR-201）のうち、始めたばかりの利用者に出す部分。タイムラインの空の状態はそのままにし、その上に「始め方」のチェックリストと、

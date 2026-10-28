@@ -1,3 +1,10 @@
+---
+start: "/moderation"
+persona: "marco"
+paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+unavailable: {"違法な内容の通報を開く": "the demo scenario has no report of the legal category"}
+---
+
 ## 通報の一覧（`/moderation/reports`）
 
 `manage_reports` を持つモデレーターが、通報の待ち行列から次に処理する通報を選ぶ画面（FR-701、FR-710、[§14](../14-admin.md)）。

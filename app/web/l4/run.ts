@@ -2,16 +2,17 @@
 // Runs the L4 task tests (ADR-0110 §7, ADR-0114): an agent (Claude Code, non-interactive) does each task of the
 // screens' L1 files in a browser it sees only through ARIA snapshots (the Playwright MCP server), against the demo
 // server (`node e2e/server.ts demo`, ADR-0117 §4: the test build with the demo scenario of demo/scenario.ts and its
-// email in Mailpit), signed in as the person of the scenario that screens.ts names for the screen, and the run writes
-// the steps, backtracks, and lostness of every task to one JSON file (transcript.ts says how they are measured). A task
-// that reads email gets the person's mailbox, Mailpit's web UI, in a second tab, and its steps there are recorded
-// apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and the test build of `bin/my`; the Nightly
-// workflow runs it on main with the agent authenticated by Workload Identity Federation (ADR-0115).
+// email in Mailpit), signed in as the person of the scenario that the front matter of the screen's L1 file names
+// (screens.ts), and the run writes the steps, backtracks, and lostness of every task to one JSON file (transcript.ts
+// says how they are measured). A task that reads email gets the person's mailbox, Mailpit's web UI, in a second
+// tab, and its steps there are recorded apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and
+// the test build of `bin/my`; the Nightly workflow runs it on main with the agent authenticated by Workload Identity
+// Federation (ADR-0115).
 //
 //   node l4/run.ts [--screen <name>]... [--since <commit>] [--cap <n>] [--dry-run] [--out <file>]
 //
-// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or
-// context-map paths changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
+// --screen picks screens by the name of their L1 file; otherwise --since picks the screens whose L1 file or the
+// paths of its front matter changed since that commit (tasks.ts), and neither picks every screen. --cap bounds the tasks of
 // the run. --dry-run does everything but call the agent: it selects the tasks, starts and seeds the demo server,
 // signs in, and opens each task's start (and mailbox) through the Playwright MCP server as the agent would, then
 // records the tasks with no measures. L4_MODEL, L4_MAX_TURNS, L4_BUDGET_USD and L4_TIMEOUT_MINUTES tune the agent;
@@ -25,8 +26,8 @@ import { type Persona, personas } from "../demo/scenario.ts";
 import { mailpit, runMy } from "../e2e/server-cli.ts";
 import { demoServerDir, demoServerURL, serverDir, voiceServerDir } from "../e2e/server-origin.ts";
 import { MCPClient, mcpCommand } from "./mcp.ts";
-import { type SetupContext, setupOf } from "./screens.ts";
-import { capTasks, parseContextMap, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
+import { applySeed, parseSetup, type ScreenSetup, type SetupContext } from "./screens.ts";
+import { capTasks, parseTasks, screenChanged, screensDir, type Task } from "./tasks.ts";
 import { lostnessThreshold, type RunResult, type TaskResult } from "./results.ts";
 import { failureOf, mcpPrefix, measure, parseTranscript, readTools, stepTools, tabTool } from "./transcript.ts";
 
@@ -60,10 +61,15 @@ function git(...args: string[]): string {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 }
 
+/** The setup of `screen`, from the front matter of its L1 file. */
+function setupOf(screen: string): ScreenSetup {
+  return parseSetup(screen, readFileSync(join(root, screensDir, `${screen}.md`), "utf8"));
+}
+
 function personaOf(username: string): Persona {
   const p = personas.find((x) => x.username === username);
   if (p === undefined) {
-    throw new Error(`l4/screens.ts: no person ${username} in demo/scenario.ts`);
+    throw new Error(`l4: no person ${username} in demo/scenario.ts`);
   }
   return p;
 }
@@ -92,8 +98,7 @@ function selectTasks(): { tasks: Task[]; selection: RunResult["selection"] } {
       console.log(`l4: ${values.since} is not in the history; measuring every screen.`);
     }
     if (changed !== undefined) {
-      const entries = parseContextMap(readFileSync(join(root, "tools/agentkit/context-map.yaml"), "utf8"));
-      screens = all.filter((screen) => screenChanged(screen, changed, entries));
+      screens = all.filter((screen) => screenChanged(screen, changed, setupOf(screen).paths));
       selection = { mode: "since", since: values.since };
     }
   }
@@ -424,7 +429,7 @@ async function main(): Promise<number> {
       try {
         if (!seeded.has(task.screen)) {
           seeded.add(task.screen);
-          await setup.seed?.(context);
+          await applySeed(setup.seed ?? [], context);
         }
         const mailUser = setup.mail?.[task.task];
         const roles: Roles = {

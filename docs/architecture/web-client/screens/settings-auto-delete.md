@@ -1,3 +1,9 @@
+---
+start: "/settings"
+persona: "yuki"
+paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+---
+
 ## 古い投稿の自動削除（`/settings/auto-delete`）
 
 選んだ日数より古い自分の投稿を、サーバーが 1 時間ごとに削除する設定の画面（FR-118）。決まりの全体をまとめて保存する。
