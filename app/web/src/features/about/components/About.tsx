@@ -4,6 +4,7 @@ import {
   BannerImage,
   Button,
   Cluster,
+  Disclosure,
   EmptyState,
   ExternalLink,
   Hint,
@@ -26,11 +27,13 @@ import type { Instance, PublicDomainAction } from "../api/about";
 import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/useAbout";
 
 /**
- * The body of the instance's information page (`/about`), under the page's heading: the thumbnail, the summary, the
- * description, the rules followed by its terms of service and privacy policy, the remote domains it moderates as far
- * as the instance lists them, what it states to search engines and AI crawlers, what running it costs and what its
- * supporters bring in as far as the instance publishes them, its supporter plans and the supporter list, its commerce disclosures, how to reach the operators,
- * its status page, where to get its source code, and the license notices of what the web app bundles.
+ * The body of the instance's information page (`/about`), under the page's heading, in the order of what someone who
+ * considers joining reads first (web-client/screens/about.md): the thumbnail, the summary, the description, the rules
+ * followed by its terms of service and privacy policy, how to reach the operators, the remote domains it moderates as
+ * far as the instance lists them, what it states to search engines and AI crawlers (its details folded), what running
+ * it costs and what its supporters bring in as far as the instance publishes them, its supporter plans and the
+ * supporter list, its commerce disclosures, its status page, where to get its source code, and the license notices of
+ * what the web app bundles. The information layout builds the table of contents from the sections' headings.
  * Everyone may read it, signed in or not.
  */
 export function About() {
@@ -49,6 +52,8 @@ export function About() {
       {/* What users agree to stands together: the rules, then the terms and policies. */}
       {about.rules.length > 0 && <Rules rules={about.rules} />}
       <DocumentsSection />
+      {/* Who runs it, for someone who considers joining (web-client/screens/about.md). */}
+      {about.contact !== undefined && <Contact contact={about.contact} />}
       {/* How the server treats other servers and crawlers. */}
       <ModeratedDomainsSection />
       {about.crawlers !== undefined && (
@@ -62,7 +67,6 @@ export function About() {
         )}
       <AboutSupportersSection />
       {about.commerceDisclosureUrl !== undefined && <CommerceDisclosure url={about.commerceDisclosureUrl} />}
-      {about.contact !== undefined && <Contact contact={about.contact} />}
       {statusPageUrl !== undefined && <StatusPage url={statusPageUrl} />}
       {about.sourceUrl !== undefined && <SourceCode url={about.sourceUrl} />}
       <Licenses />
@@ -174,9 +178,12 @@ function Crawlers({
     <Section title={t("client:about.crawlers.title")}>
       <p>{t("client:about.crawlers.search", { setting: searchIndexing })}</p>
       <p>{t("client:about.crawlers.ai", { setting: aiUsage })}</p>
-      <Hint>{t("client:about.crawlers.how")}</Hint>
-      <Hint>{t("client:about.crawlers.accounts")}</Hint>
-      <Hint>{t("client:about.crawlers.legal")}</Hint>
+      {/* The statements first; how they are made and what they mean in law are folded under them (P1). */}
+      <Disclosure summary={t("client:about.crawlers.details")}>
+        <Hint>{t("client:about.crawlers.how")}</Hint>
+        <Hint>{t("client:about.crawlers.accounts")}</Hint>
+        <Hint>{t("client:about.crawlers.legal")}</Hint>
+      </Disclosure>
     </Section>
   );
 }

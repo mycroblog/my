@@ -59,7 +59,7 @@ describe("the information page", () => {
     ).toEqual(["/about/terms", "/about/privacy"]);
   });
 
-  test("puts the terms and policies right after the rules, and the operators, the source code and the licenses last", async () => {
+  test("puts the terms and policies right after the rules, then the operators, and the source code and the licenses last", async () => {
     serveInstance({
       description: "We grow vegetables.",
       rules: [{ id: "0192f0c4-7a8e-7000-8000-0000000000r1", text: "Be kind" }],
@@ -79,9 +79,9 @@ describe("the information page", () => {
       "Description",
       "Rules",
       "Terms and policies",
+      "Contact",
       "Moderated servers",
       "Search engines and AI",
-      "Contact",
       "Source code",
       "Licenses",
     ]);
@@ -130,7 +130,7 @@ describe("the information page", () => {
     expect(within(source).queryByRole("term")).not.toBeInTheDocument();
   });
 
-  test("links to the server's status page in a new tab, after the contact, when the server has one (FR-810)", async () => {
+  test("links to the server's status page in a new tab, before the source code, when the server has one (FR-810)", async () => {
     serveInstance({ contact: { email: "admin@my.example" }, status_page_url: "https://status.example/" });
     await renderApp({ path: "/about" });
     const status = await screen.findByRole("region", { name: "Server status" });
@@ -141,8 +141,7 @@ describe("the information page", () => {
     const headings = within(screen.getByRole("main"))
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings.slice(headings.indexOf("Contact"), headings.indexOf("Contact") + 3)).toEqual([
-      "Contact",
+    expect(headings.slice(headings.indexOf("Server status"), headings.indexOf("Server status") + 2)).toEqual([
       "Server status",
       "Source code",
     ]);
