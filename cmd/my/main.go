@@ -106,8 +106,9 @@ Commands:
             (my admin create|account|domain|report|audit|role|signup-block)
   config    Check the configuration and generate the Web Push key
             (my config check|vapid-key)
-  db        Run the data upgrade steps of a release upgrade, or check
-            before applying its schema (my db upgrade [-check])
+  db        Run the data upgrade steps of a release upgrade, check before
+            applying its schema, or back up a SQLite database
+            (my db upgrade [-check]|backup)
   instance  Read and change the instance settings and rules
             (my instance list|get|set|history|rule)
   invite    Manage invite codes (my invite create|list|revoke)
