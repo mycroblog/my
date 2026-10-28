@@ -122,10 +122,12 @@ const callState = (page: Page) => page.getByRole("main").getByText(message("voic
 
 /** Turns the microphone of a speaker on and waits until the stage no longer shows it off. */
 async function turnMicrophoneOn(page: Page, name: string, speakerCount: number): Promise<void> {
-  const microphone = dock(page).getByRole("button", { name: message("voice.call.microphone") });
-  await expect(microphone).toBeEnabled();
-  if ((await microphone.getAttribute("aria-pressed")) !== "true") await microphone.click();
-  await expect(microphone).toHaveAttribute("aria-pressed", "true");
+  // The button is named by what a press does: "Turn microphone on" while it is off.
+  const turnOn = dock(page).getByRole("button", { name: message("voice.call.microphone.turn_on") });
+  const turnOff = dock(page).getByRole("button", { name: message("voice.call.microphone.turn_off") });
+  await expect(turnOn.or(turnOff)).toBeEnabled();
+  if ((await turnOn.count()) > 0) await turnOn.click();
+  await expect(turnOff).toBeVisible();
   await expect(speakers(page, speakerCount).getByRole("listitem").filter({ hasText: name })).not.toContainText(
     message("voice.participant.mic_off"),
   );

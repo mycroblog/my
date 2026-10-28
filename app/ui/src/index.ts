@@ -147,6 +147,9 @@ export {
   BoostIcon,
   CloseIcon,
   EmojiIcon,
+  CallConnectedIcon,
+  CallConnectingIcon,
+  CallReconnectingIcon,
   ExternalLinkIcon,
   FederatedIcon,
   FinanceIcon,
@@ -155,9 +158,12 @@ export {
   InviteIcon,
   LanguageIcon,
   LeaveIcon,
+  ListenIcon,
   LocalIcon,
   MenuIcon,
   MicrophoneIcon,
+  MediaFailedIcon,
+  MenuIndicatorIcon,
   MicrophoneOffIcon,
   ModerationIcon,
   MoreIcon,
@@ -285,7 +291,7 @@ export { SettingsLayout, type SettingsLayoutProps } from "./SettingsLayout";
 export { AdminNavBack, AdminShell, type AdminNavBackProps, type AdminShellProps } from "./AdminShell";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 // An open voice chat room in a list (ADR-0100 §8).
-export { VoiceRoomCard, type VoiceRoomCardProps } from "./VoiceRoomCard";
+export { VoiceRoomCard, type VoiceRoomCardProps, type VoiceRoomCardTag } from "./VoiceRoomCard";
 // The stage of a voice chat room and the controls of its call.
 export { LivePill, type LivePillProps } from "./LivePill";
 export {
@@ -296,7 +302,15 @@ export {
   type StageAvatarReaction,
   type StageGridProps,
 } from "./StageAvatar";
-export { CallDock, CallDockButton, type CallDockButtonProps, type CallDockProps } from "./CallDock";
+export {
+  CallDock,
+  CallDockButton,
+  type CallDockButtonProps,
+  type CallDockProps,
+  CallMicrophoneButton,
+  type CallMicrophoneButtonProps,
+} from "./CallDock";
+export { CallConnectionBadge, type CallConnectionBadgeProps, type CallConnectionState } from "./CallConnectionBadge";
 export { Cluster, type ClusterProps } from "./Cluster";
 export { InfoPage, type InfoPageProps } from "./InfoPage";
 // The landing page's parts read in order, and the steps that follow an action (web-client/screens/landing.md).

@@ -52,6 +52,10 @@ function seedBadges({ runMy, database }: SetupContext): void {
   seed.close();
 }
 
+/** Why the tasks of a call are not measured. */
+const voiceOff =
+  "the server of the E2E fixtures has voice chat off, and a call needs a microphone and a second participant";
+
 const screenSetups: Readonly<Record<string, ScreenSetup>> = {
   badges: {
     start: "/settings",
@@ -62,6 +66,39 @@ const screenSetups: Readonly<Record<string, ScreenSetup>> = {
     },
   },
   "settings-menu": { start: "/settings" },
+  // The server of the E2E fixtures has voice chat off (e2e/server.ts keeps voice chat for the server of
+  // e2e/voice-p2p.spec.ts), and a call needs a microphone and a second participant: none of these tasks can run yet.
+  "voice-rooms": {
+    start: "/voice",
+    unavailable: {
+      "ナビゲーションから来て、開いているルームの 1 つに参加する": voiceOff,
+      "名前を付けてルームを開く（ルームを開ける利用者）": voiceOff,
+      "通話の途中に、参加中のルームを一覧で見つけて、その画面に戻る": voiceOff,
+    },
+  },
+  "voice-room": {
+    start: "/voice",
+    unavailable: {
+      開いているルームに参加する: voiceOff,
+      "話者になり、マイクをオンにする（話者を自由に許すルーム）": voiceOff,
+      挙手する: voiceOff,
+      "話者から、聞くだけに戻る": voiceOff,
+      "自分のマイクをオフにする（話者）": voiceOff,
+      "ホストとして、挙手した人に発言を許可する": voiceOff,
+      "ほかのルームの通話中に、このルームへ移る": voiceOff,
+      "退出する（ホストでない人）": voiceOff,
+      "終わったルームの画面から、開いているルームの一覧へ行く": voiceOff,
+    },
+  },
+  "voice-mini-player": {
+    start: "/home",
+    unavailable: {
+      "ほかの画面から、通話のルームの画面に戻る": voiceOff,
+      "ほかの画面で、自分のマイクをオフにする（話者）": voiceOff,
+      "ほかの画面から、通話を退出する（ホストでない人）": voiceOff,
+      "ほかの画面にいる間に通話が終わった知らせを読み、閉じる": voiceOff,
+    },
+  },
 };
 
 /** The setup of `screen`: its entry, or a start at `/` with nothing more. */

@@ -13,6 +13,12 @@
 // writing direction, so it is not used).
 import {
   PiAirplaneTilt,
+  PiArrowsClockwise,
+  PiCaretDown,
+  PiCellSignalFull,
+  PiCellSignalLow,
+  PiHeadphones,
+  PiImageBroken,
   PiClockCounterClockwise,
   PiFlag,
   PiForkKnife,
@@ -265,6 +271,18 @@ export const iconTable = {
   // The slash is the mark of a microphone that is off (a badge), not a direction, so it does not mirror.
   MicrophoneOffIcon: { off: glyph(PiMicrophoneSlash, "PiMicrophoneSlash") },
   RaiseHandIcon: { off: glyph(PiHandPalm, "PiHandPalm"), on: glyph(PiHandPalmFill, "PiHandPalmFill") },
+  // Headphones, for a speaker going back to listening.
+  ListenIcon: { off: glyph(PiHeadphones, "PiHeadphones") },
+  // The connection of the user's call: one shape per state (G13), beside the state's name. Reconnecting turns
+  // clockwise, which does not mirror.
+  CallConnectingIcon: { off: glyph(PiCellSignalLow, "PiCellSignalLow") },
+  CallConnectedIcon: { off: glyph(PiCellSignalFull, "PiCellSignalFull") },
+  CallReconnectingIcon: { off: glyph(PiArrowsClockwise, "PiArrowsClockwise") },
+  // The caret of a control that opens a menu (an avatar of a room's stage). Down is not a direction along the line,
+  // so it does not mirror.
+  MenuIndicatorIcon: { off: glyph(PiCaretDown, "PiCaretDown") },
+  // A picture that could not load.
+  MediaFailedIcon: { off: glyph(PiImageBroken, "PiImageBroken") },
   // An arrow up out of a tray: up is not a direction along the line, so it does not mirror.
   ShareIcon: { off: glyph(PiExport, "PiExport") },
   InviteIcon: { off: glyph(PiUserPlus, "PiUserPlus") },
@@ -783,6 +801,36 @@ export function MicrophoneOffIcon() {
 /** An open hand, for raising a hand to ask to speak; filled while it is raised. */
 export function RaiseHandIcon({ filled = false }: ToggleIconProps) {
   return renderIcon(iconTable.RaiseHandIcon, filled);
+}
+
+/** Headphones, for a speaker who goes back to only listening. */
+export function ListenIcon() {
+  return renderIcon(iconTable.ListenIcon);
+}
+
+/** A weak signal, for a call that is connecting. */
+export function CallConnectingIcon() {
+  return renderIcon(iconTable.CallConnectingIcon);
+}
+
+/** A full signal, for a call that is connected. */
+export function CallConnectedIcon() {
+  return renderIcon(iconTable.CallConnectedIcon);
+}
+
+/** Two arrows turning, for a call that is reconnecting. */
+export function CallReconnectingIcon() {
+  return renderIcon(iconTable.CallReconnectingIcon);
+}
+
+/** A caret down, the mark of a control that opens a menu. */
+export function MenuIndicatorIcon() {
+  return renderIcon(iconTable.MenuIndicatorIcon);
+}
+
+/** A broken picture, for media that could not load. */
+export function MediaFailedIcon() {
+  return renderIcon(iconTable.MediaFailedIcon);
 }
 
 /** An arrow out of a tray, for sharing a link. */

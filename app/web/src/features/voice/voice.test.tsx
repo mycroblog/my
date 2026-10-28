@@ -472,7 +472,7 @@ describe("the rooms elsewhere", () => {
     ).toEqual(["Cat talk"]);
   });
 
-  test("a profile links the room where the account hosts", async () => {
+  test("a profile shows the card of the room where the account hosts", async () => {
     voiceOn();
     server.use(
       http.get(`${apiBase}/accounts/:id`, ({ request, params }) => {
@@ -488,10 +488,11 @@ describe("the rooms elsewhere", () => {
     await renderApp({ path: "/@bob" });
     const link = await screen.findByRole("link", { name: "Friday night radio" });
     expect(link).toHaveAttribute("href", `/voice/${roomId}`);
-    expect(screen.getByText(/is hosting a voice chat room/u)).toHaveTextContent(
-      "⁨Bob⁩ is hosting a voice chat room: Friday night radio",
-    );
-    expect(screen.getByText("3 people")).toBeInTheDocument();
+    // The same card as in the lists of rooms: the Live pill, the count, and the account with its role.
+    const card = within(screen.getByRole("list", { name: "Voice chat" })).getByRole("listitem");
+    expect(within(card).getByText("Live")).toBeInTheDocument();
+    expect(card).toHaveTextContent("3 people");
+    expect(card).toHaveTextContent("BobHost");
   });
 
   test("the settings list the rooms the user hosted", async () => {

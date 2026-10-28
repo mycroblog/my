@@ -34,7 +34,10 @@ const meta = {
     host,
     hostLabel: "Host",
     description: "Talking about the week's music.\nRequests welcome.",
-    tags: ["#music", "#radio"],
+    tags: [
+      { label: "#music", href: "/tags/music" },
+      { label: "#radio", href: "/tags/radio" },
+    ],
     tagsLabel: "Hashtags",
   },
 } satisfies Meta<typeof VoiceRoomCard>;
@@ -69,6 +72,16 @@ export const Default: Story = {
   },
 };
 
+/** The room of the user's call: the "Joined" badge beside the Live pill. */
+export const Joined: Story = {
+  decorators: inList,
+  args: { joinedLabel: "Joined" },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Joined")).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "#music" })).toHaveAttribute("href", "/tags/music");
+  },
+};
+
 /** Only the host speaks, without a description and hashtags. */
 export const NameOnly: Story = {
   decorators: inList,
@@ -81,7 +94,7 @@ export const LongRightToLeft: Story = {
   args: {
     name: "غرفة الحديث الأسبوعية عن الموسيقى والكتب والأفلام والسفر وكل ما يخطر على البال",
     description: "نتحدث عن موسيقى الأسبوع",
-    tags: ["#موسيقى"],
+    tags: [{ label: "#موسيقى", href: "/tags/موسيقى" }],
     stats: "12 people · 1 hr 5 min",
   },
 };

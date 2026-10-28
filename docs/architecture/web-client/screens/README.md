@@ -47,3 +47,6 @@
 - [通知（`/settings/notifications`）](settings-notifications.md)
 - [プロフィール（`/settings/profile`）](settings-profile.md)
 - [古い投稿の自動削除（`/settings/auto-delete`）](settings-auto-delete.md)
+- [通話のルームの一覧（`/voice`）](voice-rooms.md)
+- [通話のルーム（`/voice/{id}`）](voice-room.md)
+- [ミニプレイヤー（通話中の、ルームの画面以外のすべての画面）](voice-mini-player.md)
