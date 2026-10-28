@@ -92,10 +92,12 @@ const voiceP2PProject: Project = {
   },
 };
 
-// The demo server needs the test build and Mailpit, so its project runs only with E2E_DEMO=1.
+// The demo server needs the test build and Mailpit, so its project runs only with E2E_DEMO=1. Its specs share the one
+// demo server, and the census of e2e/demo-smoke.spec.ts reads all of it, so they run one at a time.
 const demoProject: Project = {
   name: "demo-chromium",
   testMatch: demoSpec,
+  workers: 1,
   use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, locale: "en" },
 };
 
