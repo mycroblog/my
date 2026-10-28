@@ -63,6 +63,50 @@ func (e *roleEnv) badgeChoices(t *testing.T, userID string) []identity.BadgeChoi
 	return got
 }
 
+// roleBadgesNamePublicStaff checks PublicStaffUserIDs, the operators of the landing page: the
+// users who show the badge of a staff role, by their highest such role, and nobody who hides it
+// or shows only the badge of a member role.
+func roleBadgesNamePublicStaff(t *testing.T, e *roleEnv) {
+	staffIDs := func() []string {
+		t.Helper()
+		got, err := e.identity.PublicStaffUserIDs(t.Context())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	if got := staffIDs(); len(got) != 0 {
+		t.Errorf("PublicStaffUserIDs without badges = %v, want none", got)
+	}
+	moderator := e.setBadge(t, identity.RoleModerator, &appidentity.BadgeInput{Label: "Moderator", Color: identity.BadgeBlue})
+	helper := e.createBadgeRole(t, "helper", 50, "Helper", identity.BadgeTeal)
+	if _, err := e.identity.UpdateRole(t.Context(), appidentity.UpdateRoleInput{Key: "helper", Permissions: []identity.Permission{identity.PermManageReports}, SetPermissions: true}); err != nil {
+		t.Fatalf("UpdateRole(helper) = %v", err)
+	}
+	supporter := e.createBadgeRole(t, "supporter", 10, "Supporter", identity.BadgeGreen)
+	bob, carol, dave, erin := e.register(t, "bob").User.ID, e.register(t, "carol").User.ID, e.register(t, "dave").User.ID, e.register(t, "erin").User.ID
+	// bob shows the helper badge, carol the moderator badge and the helper badge, dave hides
+	// the moderator badge, and erin shows only the supporter badge.
+	e.grant(t, bob, "helper", "")
+	e.display(t, bob, helper.ID, true)
+	for _, key := range []string{identity.RoleModerator, "helper"} {
+		e.grant(t, carol, key, "")
+	}
+	e.display(t, carol, moderator.ID, true)
+	e.display(t, carol, helper.ID, true)
+	e.grant(t, dave, identity.RoleModerator, "")
+	e.grant(t, erin, "supporter", "")
+	e.display(t, erin, supporter.ID, true)
+	if got, want := staffIDs(), []string{carol, bob}; !reflect.DeepEqual(got, want) {
+		t.Errorf("PublicStaffUserIDs = %v, want carol (moderator) then bob (helper) %v", got, want)
+	}
+	e.display(t, carol, moderator.ID, false)
+	e.display(t, carol, helper.ID, false)
+	if got, want := staffIDs(), []string{bob}; !reflect.DeepEqual(got, want) {
+		t.Errorf("PublicStaffUserIDs after carol hid her badges = %v, want bob %v", got, want)
+	}
+}
+
 func roleBadgesAreShownByChoice(t *testing.T, e *roleEnv) {
 	ctx := t.Context()
 	bob := e.register(t, "bob").User.ID

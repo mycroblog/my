@@ -131,6 +131,8 @@ paths:
     $ref: ./paths/custom_emoji_requests.yaml
   /custom_emoji_requests/{id}/withdraw:
     $ref: ./paths/custom_emoji_requests_{id}_withdraw.yaml
+  /instance/overview:
+    $ref: ./paths/instance_overview.yaml
   /instance/health:
     $ref: ./paths/instance_health.yaml
   /instance/documents/{kind}:
@@ -1394,6 +1396,10 @@ components:
       $ref: ./components/schemas/Instance.yaml
     InstanceContact:
       $ref: ./components/schemas/InstanceContact.yaml
+    InstanceCounts:
+      $ref: ./components/schemas/InstanceCounts.yaml
+    InstanceOverview:
+      $ref: ./components/schemas/InstanceOverview.yaml
     InstanceDomainAction:
       $ref: ./components/schemas/InstanceDomainAction.yaml
     InstanceDomainActionPage:

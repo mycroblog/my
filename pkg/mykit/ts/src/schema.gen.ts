@@ -164,6 +164,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the counts and the operators of the instance
+         * @description What the landing page shows about the instance besides `GET /instance`: how many members it
+         *     has and how active they are, and who runs it. Only local, public data: the members are
+         *     counted, never listed, and only public posts count. The instance settings `public_counts`
+         *     and `public_operators` decide what it shows; a part that is off is left out. The counts and
+         *     the operators are read again every few minutes, so they may lag behind.
+         */
+        get: operations["getInstanceOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instance/health": {
         parameters: {
             query?: never;
@@ -10453,6 +10477,45 @@ export interface components {
             /** @description The email address to contact; omitted when there is none. */
             email?: string;
         };
+        /**
+         * @description How many members the instance has, how many public posts they made lately, and since when it
+         *     runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+         */
+        InstanceCounts: {
+            /** @description The local accounts that are not deleted, the instance's own actor aside. */
+            members: number;
+            /**
+             * @description The public posts of local accounts that are not deleted, in each of the 7 periods of 24
+             *     hours before `counted_at`, oldest first: the last item counts the posts of the 24 hours
+             *     up to `counted_at`.
+             */
+            daily_posts: number[];
+            /**
+             * Format: date-time
+             * @description When the instance was set up.
+             */
+            started_at: string;
+            /**
+             * Format: date-time
+             * @description When the counts were taken.
+             */
+            counted_at: string;
+        };
+        /**
+         * @description The counts and the operators of the instance (`GET /instance/overview`). Each part is
+         *     omitted while the instance setting that shows it is off.
+         */
+        InstanceOverview: {
+            counts?: components["schemas"]["InstanceCounts"];
+            /**
+             * @description The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
+             *     role, or a role with a moderation or server permission) on their profile, highest role
+             *     first; each has the badges it shows in `badges`. A staff member who shows no such badge,
+             *     and an account that is suspended or deleted, is not listed. Omitted while the instance
+             *     setting `public_operators` is off; empty when nobody shows such a badge.
+             */
+            operators?: components["schemas"]["Account"][];
+        };
         /** @description A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718). */
         InstanceDomainAction: {
             /**
@@ -10592,7 +10655,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "public_operators";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -14106,6 +14169,28 @@ export interface operations {
         responses: {
             200: components["responses"]["CustomEmojiRequest"];
             409: components["responses"]["CustomEmojiRequestProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInstanceOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The overview of the instance. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceOverview"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

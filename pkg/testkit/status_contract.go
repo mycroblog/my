@@ -51,6 +51,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"LinksReplies", statusLinksReplies},
 		{"CountsPosts", statusCountsPosts},
 		{"CountsLocalPosts", statusCountsLocalPosts},
+		{"CountsDailyLocalPublicPosts", statusCountsDailyLocalPublicPosts},
 		{"EnsuresTags", statusEnsuresTags},
 		{"ListsLiveRemoteStatusesOfAnAuthor", statusListsLiveRemote},
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
@@ -787,6 +788,47 @@ func statusCountsLocalPosts(t *testing.T, e *statusEnv) {
 	}
 	if n := total(); n != 1 {
 		t.Errorf("LocalPostsTotal after deletions = %d, want 1", n)
+	}
+}
+
+// statusCountsDailyLocalPublicPosts checks DailyLocalPublicPosts, the posts of the landing page's
+// counts: only the public local statuses that are not deleted count, each in the period of 24
+// hours before to that its publication time falls in.
+func statusCountsDailyLocalPublicPosts(t *testing.T, e *statusEnv) {
+	ctx := t.Context()
+	alice := e.ids.NewID()
+	post := func(v content.Visibility) content.Status {
+		t.Helper()
+		s := e.newStatus(alice, v)
+		local := content.LocalStatus{StatusID: s.ID, AuthorAccountID: alice}
+		if err := e.create(t, s, &local, e.firstRevision(s)); err != nil {
+			t.Fatalf("create status %s: %v", s.URI, err)
+		}
+		return s
+	}
+	const day = 24 * time.Hour
+	post(content.VisibilityPublic) // more than 7 days before to
+	e.clock.Advance(2 * day)
+	post(content.VisibilityPublic) // 5 days and 1 hour before to: the second period
+	e.clock.Advance(3 * day)
+	post(content.VisibilityPublic) // 2 days and 1 hour before to: the fifth period
+	for _, v := range []content.Visibility{content.VisibilityUnlisted, content.VisibilityLocal, content.VisibilityPrivate, content.VisibilityDirect} {
+		post(v)
+	}
+	e.mustRemove(t, post(content.VisibilityPublic))
+	remote := e.newStatus(e.ids.NewID(), content.VisibilityPublic)
+	remote.IsLocal = false
+	remote.URI = "https://remote.example/notes/daily"
+	e.mustCreate(t, remote)
+	e.clock.Advance(2 * day)
+	post(content.VisibilityPublic) // 1 hour before to: the last period
+	to := e.clock.Now().Add(time.Hour)
+	got, err := e.h.Statuses.DailyLocalPublicPosts(ctx, to, 7)
+	if want := []int{0, 1, 0, 0, 1, 0, 1}; err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("DailyLocalPublicPosts = %v, %v; want %v", got, err, want)
+	}
+	if got, err := e.h.Statuses.DailyLocalPublicPosts(ctx, to, 1); err != nil || !reflect.DeepEqual(got, []int{1}) {
+		t.Errorf("DailyLocalPublicPosts of 1 day = %v, %v; want [1]", got, err)
 	}
 }
 

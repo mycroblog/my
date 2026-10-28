@@ -64,6 +64,51 @@ func (q *Queries) AddStatusReplies(ctx context.Context, arg AddStatusRepliesPara
 	return err
 }
 
+const countLocalPublicPostsByDay = `-- name: CountLocalPublicPostsByDay :many
+SELECT FLOOR(EXTRACT(EPOCH FROM (s.published_at - $1::timestamptz)) / 86400)::bigint AS day, COUNT(*)::bigint AS posts
+FROM local_statuses ls
+JOIN statuses s ON s.id = ls.status_id
+JOIN status_heads h ON h.status_id = ls.status_id
+WHERE ls.status_id >= $2::uuid AND s.visibility = 'public'
+  AND s.published_at >= $1::timestamptz AND s.published_at < $3::timestamptz
+GROUP BY day ORDER BY day
+`
+
+type CountLocalPublicPostsByDayParams struct {
+	FromAt time.Time
+	FromID string
+	ToAt   time.Time
+}
+
+type CountLocalPublicPostsByDayRow struct {
+	Day   int64
+	Posts int64
+}
+
+// CountLocalPublicPostsByDay counts the public local statuses that are not deleted, published in
+// [from_at, to_at), by the day of 24 hours from from_at that they fall in (0 the first). The
+// statuses' IDs are UUIDv7 stamped at their creation, so from_id (the floor of from_at) bounds
+// the scan of local_statuses by its primary key.
+func (q *Queries) CountLocalPublicPostsByDay(ctx context.Context, arg CountLocalPublicPostsByDayParams) ([]CountLocalPublicPostsByDayRow, error) {
+	rows, err := q.db.Query(ctx, countLocalPublicPostsByDay, arg.FromAt, arg.FromID, arg.ToAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountLocalPublicPostsByDayRow{}
+	for rows.Next() {
+		var i CountLocalPublicPostsByDayRow
+		if err := rows.Scan(&i.Day, &i.Posts); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteAccountPostCounter = `-- name: DeleteAccountPostCounter :exec
 DELETE FROM account_post_counters WHERE account_id = $1
 `

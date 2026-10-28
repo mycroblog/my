@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The counts and the operators of the instance (`GET /instance/overview`). Each part is
+  omitted while the instance setting that shows it is off.
+type: object
+properties:
+  counts:
+    $ref: ./InstanceCounts.yaml
+  operators:
+    description: |
+      The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
+      role, or a role with a moderation or server permission) on their profile, highest role
+      first; each has the badges it shows in `badges`. A staff member who shows no such badge,
+      and an account that is suspended or deleted, is not listed. Omitted while the instance
+      setting `public_operators` is off; empty when nobody shows such a badge.
+    type: array
+    items:
+      $ref: ./Account.yaml
