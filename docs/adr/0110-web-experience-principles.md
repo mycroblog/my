@@ -1,6 +1,6 @@
 # ADR-0110: Web クライアントの体験の原則と、情報設計の要件・批評のサイクル
 
-- Status: Accepted
+- Status: Accepted（§7 の、L4 を PR の前に行うことと nightly への組み込みを ADR-0114（L4 の課題テストを nightly で回す） が置き換える）
 - Date: 2026-10-28
 - Deciders: @rosylilly
 - Issue: #1638
