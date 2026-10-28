@@ -269,7 +269,8 @@ export const Composition: Story = {
     await canvas.findByRole("listbox");
     // Safari's committing Enter arrives after compositionend with keyCode 229; it does not accept.
     // oxlint-disable-next-line typescript/no-deprecated -- Safari's committing Enter is told apart only by keyCode 229.
-    textbox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", keyCode: 229, bubbles: true, cancelable: true }));
+    const enter = new KeyboardEvent("keydown", { key: "Enter", keyCode: 229, bubbles: true, cancelable: true });
+    textbox.dispatchEvent(enter);
     await expect(textbox).toHaveValue("#fe");
     await expect(canvas.getByRole("listbox")).toBeInTheDocument();
   },

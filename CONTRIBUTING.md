@@ -78,16 +78,34 @@ range WSL gave Linux, outgoing connections (`git`, `gh`, ...) time out.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
 3. Run the checks of the contexts you touched (`scripts/task.sh go:check`, ...) or `scripts/task.sh check:changed`,
    then commit (Conventional Commits, in English). Run the full `scripts/task.sh check` when you change shared
-   configuration.
+   configuration. Format Go with `gofmt` and TypeScript and JavaScript with `scripts/task.sh web:fmt` before you
+   commit ([Formatting](#formatting)).
 4. Open a pull request from the template, with its Documentation section filled (see [Documentation](#documentation)).
 5. When its CI is green, a maintainer or the orchestrator (the role that runs agents in parallel and merges their pull
    requests) adds it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge`. `main` only receives
    merges from the merge queue.
 6. If the queue drops the pull request because of a conflict or a failing `check`, merge `main` into the branch,
    regenerate the committed generated files (those Go reads, the output of `scripts/task.sh generate`) instead of
-   resolving their conflicts by hand, run `scripts/task.sh check:changed`, and push; the person from step 5 queues it
+   resolving their conflicts by hand, run `scripts/task.sh web:fmt` if a TypeScript or JavaScript file conflicted,
+   run `scripts/task.sh check:changed`, and push; the person from step 5 queues it
    again. Merge `main` only when the pull request conflicts or the queue drops it: the queue checks it on top of the
    latest `main` anyway.
+
+## Formatting
+
+Go is formatted with `gofmt` (`scripts/task.sh go:fmt-check` checks it). The TypeScript and JavaScript of `app/`,
+`pkg/mykit/ts`, `pkg/mybot/ts`, `tools/i18n`, and `tools/mail` are formatted with `bun fmt`, the formatter built into
+the pinned Bun: run `scripts/task.sh web:fmt` before you commit them, and again after resolving a conflict in one of
+them. `scripts/task.sh web:fmt-check` fails when a file needs formatting; `check` and CI run it. Its options are in
+the `[fmt]` section of the root `bunfig.toml`, and `.prettierignore` lists the files it leaves alone (generated files
+and the Oxlint violation fixtures). To format from an editor, have it run `bun fmt --stdin-filepath <file>`.
+
+Commits that only reformat are listed in `.git-blame-ignore-revs`. GitHub's blame view skips them; for `git blame`,
+run once:
+
+```sh
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ## CI
 
@@ -99,8 +117,8 @@ step.
 
 | When | Workflow | What runs |
 | --- | --- | --- |
-| Pull request | `ci.yml` | `preflight`: the checks that the pull request's own files and lockfiles decide — markdownlint, shellcheck, gofmt, the Go and npm dependency licenses, the versions of the Dockerfile against `.tool-versions` and of the Playwright image, the design tokens, and the CSS `100vh` check. A change to the ui context also runs the `@my/ui` story tests (`ui-test.yml`); a change to Go or `tools/agentkit` runs golangci-lint on the changed lines (`lint`); a change to the Docker setup (`Dockerfile`, `.dockerignore`, `deploy/`) runs the Docker Compose smoke test (`docker-smoke`). The required check `check` collects the results. A pull request labelled `ci:full` also runs the merge queue's jobs (adding or removing the label runs them again) |
-| Merge queue | `ci.yml` | The full check on the merge group (the pull request on top of `main` and the pull requests queued before it). By the contexts changed (`scripts/changed-contexts.sh`): for go, schema, api, or i18n, `server-static` (tidy, vet, build, the generated files Go reads, the schema of both dialects) and `server-test` (the Go tests, PostgreSQL on pgmem); for ui, web, api, or i18n, `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in two shards); always `repo` (agentkit, the context map, the documentation rules, the ADR numbers, and that CI runs every check of `check`). golangci-lint and the build tag combinations do not run here (the slow suite runs them). At most six jobs; a skipped job counts as passed. The queue merges when `check` passes |
+| Pull request | `ci.yml` | `preflight`: the checks that the pull request's own files and lockfiles decide — markdownlint, shellcheck, gofmt, `bun fmt` (which the merge queue's `repo` job runs again), the Go and npm dependency licenses, the versions of the Dockerfile against `.tool-versions` and of the Playwright image, the design tokens, and the CSS `100vh` check. A change to the ui context also runs the `@my/ui` story tests (`ui-test.yml`); a change to Go or `tools/agentkit` runs golangci-lint on the changed lines (`lint`); a change to the Docker setup (`Dockerfile`, `.dockerignore`, `deploy/`) runs the Docker Compose smoke test (`docker-smoke`). The required check `check` collects the results. A pull request labelled `ci:full` also runs the merge queue's jobs (adding or removing the label runs them again) |
+| Merge queue | `ci.yml` | The full check on the merge group (the pull request on top of `main` and the pull requests queued before it). By the contexts changed (`scripts/changed-contexts.sh`): for go, schema, api, or i18n, `server-static` (tidy, vet, build, the generated files Go reads, the schema of both dialects) and `server-test` (the Go tests, PostgreSQL on pgmem); for ui, web, api, or i18n, `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in two shards); always `repo` (agentkit, the context map, the documentation rules, the ADR numbers, `bun fmt`, and that CI runs every check of `check`). golangci-lint and the build tag combinations do not run here (the slow suite runs them). At most six jobs; a skipped job counts as passed. The queue merges when `check` passes |
 | Push to `main` | `main.yml` | No checks: it only builds the caches that pull requests and the merge queue restore. The Go cache holds what the restoring jobs read (modules, package and tool builds, test binaries, vet and golangci-lint results), built one after another with the same settings (`CGO_ENABLED=0`) and rebuilt from scratch under a key of the Go version, `go.sum`, `tools/go.sum`, and the date; the Bun cache is keyed by the lockfile. Each is built only when no cache of its key exists yet |
 | Release gate, nightly, by hand | `slow-suite.yml` | The slow suite: the full web E2E matrix (eight shards), the live interoperability tests (`federation-live.yml`), the tests on a real PostgreSQL, the `stream.Bus` contract against broker containers, the smoke test and the linux/arm64 image build, golangci-lint on everything and the build tag combinations, and CodeQL code scanning (`codeql.yml`; results go to the Security tab). Never on pull requests or the merge queue, and not part of `check` |
 | Release (by hand) | `release.yml` | Runs the slow suite on the given commit and, only when it passes, creates the tag and a draft GitHub Release |

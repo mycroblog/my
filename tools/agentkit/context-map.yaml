@@ -61,7 +61,7 @@ userdocs:
 entries:
   # --- Repository-wide ------------------------------------------------------------------------------
   - name: repo-meta
-    paths: ["*.md", "LICENSE", ".editorconfig", ".gitattributes", ".gitignore", ".dockerignore", ".markdownlint-cli2.jsonc", ".tool-versions"]
+    paths: ["*.md", "LICENSE", ".editorconfig", ".gitattributes", ".git-blame-ignore-revs", ".gitignore", ".dockerignore", ".markdownlint-cli2.jsonc", ".tool-versions"]
     docs: ["AGENTS.md#hard-rules", "AGENTS.md#documentation"]
     checks: [docs]
   - name: build-and-ci
@@ -464,8 +464,8 @@ entries:
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace
-    paths: ["app/*", "app/oxlint/**"]
-    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0049-client-lint-oxlint.md"]
+    paths: ["app/*", "app/oxlint/**", "bunfig.toml", ".prettierignore"]
+    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0049-client-lint-oxlint.md", "docs/adr/0107-typescript-formatter-bun-fmt.md"]
     checks: [web]
     shared: true
   - name: ui-emoji-fonts

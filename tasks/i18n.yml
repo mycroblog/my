@@ -56,8 +56,8 @@ tasks:
       - cd tools/i18n && bun run src/gen.ts --ts
 
   check:
-    desc: Lint the catalogs, fail on stale committed i18n files, check npm licenses, test and type-check the TS runtime
-    deps: [lint, licenses, test, typecheck]
+    desc: Lint the catalogs, fail on stale committed i18n files, check npm licenses, test and type-check the TS runtime, check the TS formatting (web:fmt-check)
+    deps: [lint, licenses, test, typecheck, ":web:fmt-check"]
 
   lint:
     desc: Lint the catalogs and fail on stale generated i18n files Go reads (server pseudo-locales, Go accessors, golden)

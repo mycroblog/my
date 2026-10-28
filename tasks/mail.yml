@@ -32,8 +32,8 @@ tasks:
       - cd tools/mail && bun run src/frame.ts
 
   check:
-    desc: Fail on a stale email layout, check the npm licenses of tools/mail, and type-check it, in parallel
-    deps: [gen-check, licenses, typecheck]
+    desc: Fail on a stale email layout, check the npm licenses of tools/mail, type-check it, and check the TS formatting (web:fmt-check), in parallel
+    deps: [gen-check, licenses, typecheck, ":web:fmt-check"]
 
   gen-check:
     desc: Fail if the committed internal/app/kernel/mail_frame.gen.html differs from what tools/mail/frame.mjml compiles to

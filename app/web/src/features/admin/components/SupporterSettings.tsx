@@ -706,6 +706,15 @@ function Subscriptions({ filter, onFilterChange }: SupporterSettingsProps) {
   );
 }
 
+/** A date after its label, as one line of text. */
+function LabeledDate({ label, value }: { label: string; value: string }) {
+  return (
+    <span>
+      {label} <DateTime value={value} />
+    </span>
+  );
+}
+
 function SubscriptionRow({ subscription, actions }: { subscription: SupporterSubscription; actions: SubscriptionActions }) {
   const t = useT();
   const format = useFormatMoney();
@@ -732,14 +741,10 @@ function SubscriptionRow({ subscription, actions }: { subscription: SupporterSub
       <TableCell>
         <Stack gap="1">
           {subscription.period_ends_at !== undefined && (
-            <span>
-              {t("client:admin.supporters.subscription.period_ends_at")} <DateTime value={subscription.period_ends_at} />
-            </span>
+            <LabeledDate label={t("client:admin.supporters.subscription.period_ends_at")} value={subscription.period_ends_at} />
           )}
           {subscription.grace_ends_at !== undefined && (
-            <span>
-              {t("client:admin.supporters.subscription.grace_ends_at")} <DateTime value={subscription.grace_ends_at} />
-            </span>
+            <LabeledDate label={t("client:admin.supporters.subscription.grace_ends_at")} value={subscription.grace_ends_at} />
           )}
           {subscription.scheduled_interval !== undefined && (
             <Cluster as="span" gap="1" rowGap="0">

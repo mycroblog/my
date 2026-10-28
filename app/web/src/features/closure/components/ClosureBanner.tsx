@@ -64,7 +64,10 @@ export function OperatorMessage({ message }: { message: string | undefined }) {
   if (message === undefined || message === "") return null;
   return (
     <p>
-      <span>{t("client:closure.message_from")}</span> <span dir="auto" lang="">{message}</span>
+      <span>{t("client:closure.message_from")} </span>
+      <span dir="auto" lang="">
+        {message}
+      </span>
     </p>
   );
 }

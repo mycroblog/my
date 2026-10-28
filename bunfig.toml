@@ -1,0 +1,5 @@
+# The options of `bun fmt` for every TypeScript package (scripts/task.sh web:fmt). bun fmt reads the [fmt] section of
+# the nearest bunfig.toml that has one, so the packages' own bunfig.toml files hold no [fmt]. Indentation and line
+# endings come from .editorconfig; the other options are Prettier's defaults.
+[fmt]
+printWidth = 120

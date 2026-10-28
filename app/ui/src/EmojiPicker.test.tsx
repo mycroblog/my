@@ -100,8 +100,11 @@ describe("EmojiPicker", () => {
   // The virtualizer scrolls no further than the grid's scrollHeight - clientHeight, which jsdom gives as 0: the grid
   // here is 256 px high, and its content as high as the block size the picker gives its rows.
   const sizes = {
-    // eslint-disable-next-line testing-library/no-node-access -- a layout stub, not a query: it reads the block size of the grid's content
-    scrollHeight: (element: HTMLElement) => Number.parseFloat(element.firstElementChild instanceof HTMLElement ? element.firstElementChild.style.blockSize : "") || 0,
+    scrollHeight: (element: HTMLElement) => {
+      // eslint-disable-next-line testing-library/no-node-access -- a layout stub, not a query: it reads the block size of the grid's content
+      const content = element.firstElementChild;
+      return content instanceof HTMLElement ? Number.parseFloat(content.style.blockSize) || 0 : 0;
+    },
     clientHeight: () => 256,
   };
   const originals = new Map<string, PropertyDescriptor | undefined>();

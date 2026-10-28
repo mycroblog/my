@@ -27,10 +27,10 @@ vars:
 
 tasks:
   check:
-    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go and TS checks of pkg/mybot
+    desc: Check pkg/mykit (Go - tidy, vet, lint, tests, the CGO_ENABLED=0 build, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go and TS checks of pkg/mybot, and the TS formatting (web:fmt-check)
     # The license scope check (MIT in pkg/mykit and pkg/mybot) belongs to the api context, which a change of pkg/mykit alone does not
     # select. mybot-ts-runtimes is left out: it needs Node.js 22 and Deno, which the repo job of CI installs for it.
-    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, mybot-integration-vet, mybot-integration-test, mybot-ts-typecheck, mybot-ts-lint, mybot-ts-knip, mybot-ts-test, mybot-ts-build, mybot-ts-licenses, ":api:license-scope"]
+    deps: [mod-check, server-dep-check, vet, lint, test, build, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-build, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-build, mybot-licenses, mybot-integration-vet, mybot-integration-test, mybot-ts-typecheck, mybot-ts-lint, mybot-ts-knip, mybot-ts-test, mybot-ts-build, mybot-ts-licenses, ":api:license-scope", ":web:fmt-check"]
 
   warm:
     desc: Download the modules and build the packages and test binaries of pkg/mykit and pkg/mybot and of the integration tests (with the server's packages) once, so that their checks a CI job runs in parallel read the build cache
