@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AudioPlayer } from "./AudioPlayer";
 
-const labels = { play: "Play", pause: "Pause", seek: "Position" };
+const labels = {
+  play: "Play",
+  pause: "Pause",
+  seek: "Position",
+  loading: "Loading media",
+  failed: "Couldn't load this media.",
+  retry: "Try again",
+};
 
 // jsdom implements no media playback, so the element's methods and properties are replaced.
 function mockMedia() {
@@ -64,5 +71,34 @@ describe("AudioPlayer", () => {
     slider.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(audio.currentTime).toBe(1);
+  });
+
+  it("shows the wait after Play, and a file that could not load with Try again", async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockImplementation(() => new Promise<void>((_, onRejected) => (reject = onRejected)));
+    const load = vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => undefined);
+    render(<AudioPlayer src="/rain.m4a" name="rain.m4a" labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Loading media");
+    expect(screen.getByRole("button", { name: "Play" })).toHaveAttribute("data-waiting");
+    reject(new DOMException("unsupported", "NotSupportedError"));
+    const failure = await screen.findByRole("group", { name: "Couldn't load this media." });
+    expect(screen.getByRole("status")).toHaveTextContent("");
+    await userEvent.click(within(failure).getByRole("button", { name: "Try again" }));
+    expect(load).toHaveBeenCalledOnce();
+    expect(play).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("group", { name: "Couldn't load this media." })).not.toBeInTheDocument();
+  });
+
+  it("leaves the button as it was when the browser refuses to play without a gesture", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockRejectedValue(new DOMException("no", "NotAllowedError"));
+    render(<AudioPlayer src="/rain.m4a" name="rain.m4a" labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Play" })).not.toHaveAttribute("data-waiting");
+    });
+    expect(screen.queryByRole("group", { name: "Couldn't load this media." })).not.toBeInTheDocument();
   });
 });

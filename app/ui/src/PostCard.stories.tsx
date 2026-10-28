@@ -117,7 +117,14 @@ export const WithMedia: Story = {
         ]}
         noDescriptionLabel="No description"
         revealLabel="Show sensitive media"
-        audioLabels={{ play: "Play", pause: "Pause", seek: "Position" }}
+        audioLabels={{
+          play: "Play",
+          pause: "Pause",
+          seek: "Position",
+          loading: "Loading media",
+          failed: "Couldn't load this media.",
+          retry: "Try again",
+        }}
       />
     ),
   },
@@ -192,7 +199,14 @@ export const WithContentWarning: Story = {
           sensitive
           noDescriptionLabel="No description"
           revealLabel="Show sensitive media"
-          audioLabels={{ play: "Play", pause: "Pause", seek: "Position" }}
+          audioLabels={{
+            play: "Play",
+            pause: "Pause",
+            seek: "Position",
+            loading: "Loading media",
+            failed: "Couldn't load this media.",
+            retry: "Try again",
+          }}
         />
       </ContentWarning>
     ),

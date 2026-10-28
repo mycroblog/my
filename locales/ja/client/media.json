@@ -1,0 +1,14 @@
+{
+  "media.loading": {
+    "defaultMessage": "メディアを読み込んでいます",
+    "description": "Accessible name of the progress while a picture of a post loads in the image viewer, and the words read while an audio attachment loads after Play."
+  },
+  "media.failed": {
+    "defaultMessage": "このメディアを読み込めませんでした。",
+    "description": "Shown over a picture or an audio attachment of a post that could not load."
+  },
+  "media.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button over a picture or an audio attachment of a post that could not load: it loads it again."
+  }
+}

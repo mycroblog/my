@@ -9,5 +9,8 @@ export function useAudioPlayerLabels(): AudioPlayerLabels {
     play: t("client:timeline.media.audio.play"),
     pause: t("client:timeline.media.audio.pause"),
     seek: t("client:timeline.media.audio.seek"),
+    loading: t("client:media.loading"),
+    failed: t("client:media.failed"),
+    retry: t("client:media.retry"),
   };
 }

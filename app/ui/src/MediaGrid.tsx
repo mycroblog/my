@@ -6,6 +6,7 @@ import { AudioPlayer, type AudioPlayerLabels } from "./AudioPlayer";
 import { Blurhash } from "./Blurhash";
 import { formatClock } from "./clock";
 import { AltTextIcon, HideMediaIcon, PlayIcon } from "./Icons";
+import { MediaLoadFailure } from "./MediaLoadFailure";
 import { MediaViewer, type MediaViewerLabels } from "./MediaViewer";
 import { type ImageSources, Picture, useAnimationsPlay } from "./Picture";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
@@ -34,6 +35,11 @@ const mediaGrid = tv({
     // Marks a picture that has a description; decorative, and clear of pointer events so the cell's button still gets them.
     badge:
       "pointer-events-none absolute inset-e-1.5 bottom-1.5 grid size-6 place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm [&>svg]:size-4",
+    // The description mark of a picture that opens: a small button of its own (44 px to a coarse pointer).
+    badgeButton: [
+      "absolute inset-e-1 bottom-1 z-10 grid size-8 cursor-default place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm",
+      "data-focus-visible:focus-ring data-hovered:bg-toast pointer-coarse:size-11 [&>svg]:size-4",
+    ],
     toggle:
       "absolute cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
   },
@@ -120,7 +126,7 @@ export type MediaGridProps = Omit<ComponentPropsWithRef<"div">, "children"> & {
    * pictures do not open.
    */
   viewerLabels?: MediaViewerLabels | undefined;
-  /** The texts of the player of an audio file. */
+  /** The texts of the player of an audio file, whose load texts also mark a picture that could not load. */
   audioLabels: AudioPlayerLabels;
 };
 
@@ -132,6 +138,10 @@ type MediaCellProps = {
   audioLabels: AudioPlayerLabels;
   /** Opens the viewer at this picture; undefined when the picture does not open. */
   onOpen?: (() => void) | undefined;
+  /** Opens the viewer at this picture with its description shown, from the description mark. */
+  onOpenDescription?: (() => void) | undefined;
+  /** The name of the description mark as a button ("Show description"). */
+  descriptionLabel?: string | undefined;
 };
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
@@ -260,13 +270,30 @@ function PlaybackCell({
 /**
  * One cell of the grid: the blur of the picture (its blurhash) while it is concealed or loading, and once shown,
  * the picture over it. The blur goes once the picture has loaded, so that a transparent picture shows the surface
- * behind it, and stays should the picture fail to load.
+ * behind it. A picture that fails to load shows `MediaLoadFailure` over its blur, whose "Try again" loads it again.
+ * The description mark of a picture that opens is a button that opens the viewer with the description shown.
  */
-function MediaCell({ item, revealed, count, noDescriptionLabel, onOpen }: MediaCellProps) {
+function MediaCell({
+  item,
+  revealed,
+  count,
+  noDescriptionLabel,
+  audioLabels,
+  onOpen,
+  onOpenDescription,
+  descriptionLabel,
+}: MediaCellProps) {
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  // A new attempt is a new element, so the browser asks for the picture again.
+  const [attempt, setAttempt] = useState(0);
   const slots = mediaGrid({ count, revealed });
   const picture = (
     <Picture
+      key={attempt}
+      onError={() => {
+        setFailed(true);
+      }}
       sources={item.sources ?? { still: [{ url: item.src ?? "" }] }}
       // A post is at most about 40rem wide; two or more pictures share it in two columns.
       sizes={count === 1 ? "(min-width: 40rem) 40rem, 100vw" : "(min-width: 40rem) 20rem, 50vw"}
@@ -286,7 +313,17 @@ function MediaCell({ item, revealed, count, noDescriptionLabel, onOpen }: MediaC
       {item.blurhash !== undefined && !(revealed && loaded) && (
         <Blurhash hash={item.blurhash} className={slots.blur()} />
       )}
-      {revealed && (
+      {revealed && failed && (
+        <MediaLoadFailure
+          labels={audioLabels}
+          onRetry={() => {
+            setFailed(false);
+            setLoaded(false);
+            setAttempt((current) => current + 1);
+          }}
+        />
+      )}
+      {revealed && !failed && (
         <>
           {onOpen === undefined ? (
             picture
@@ -296,11 +333,25 @@ function MediaCell({ item, revealed, count, noDescriptionLabel, onOpen }: MediaC
               {picture}
             </Button>
           )}
-          {item.alt !== null && (
-            <span aria-hidden="true" className={slots.badge()}>
-              <AltTextIcon />
-            </span>
-          )}
+          {item.alt !== null &&
+            (onOpenDescription === undefined || descriptionLabel === undefined ? (
+              <span aria-hidden="true" className={slots.badge()}>
+                <AltTextIcon />
+              </span>
+            ) : (
+              // The mark looks like a button, so it is one: it opens the viewer with the description shown.
+              <TooltipTrigger>
+                <Button
+                  aria-label={descriptionLabel}
+                  aria-haspopup="dialog"
+                  onPress={onOpenDescription}
+                  className={slots.badgeButton()}
+                >
+                  <AltTextIcon />
+                </Button>
+                <Tooltip>{descriptionLabel}</Tooltip>
+              </TooltipTrigger>
+            ))}
         </>
       )}
     </div>
@@ -331,7 +382,11 @@ export function MediaGrid({
 }: MediaGridProps) {
   const [uncontrolled, setUncontrolled] = useState(defaultRevealed);
   // The picture the viewer shows; it stays set while the viewer closes, so the closing panel keeps its picture.
-  const [viewer, setViewer] = useState<{ isOpen: boolean; index: number }>({ isOpen: false, index: 0 });
+  const [viewer, setViewer] = useState<{ isOpen: boolean; index: number; alt: boolean }>({
+    isOpen: false,
+    index: 0,
+    alt: false,
+  });
   const revealed = !sensitive || (isRevealed ?? uncontrolled);
   const shown = items.slice(0, 4);
   const count = Math.min(4, Math.max(1, shown.length)) as 1 | 2 | 3 | 4;
@@ -340,16 +395,26 @@ export function MediaGrid({
   const viewable =
     viewerLabels === undefined
       ? []
-      : shown.flatMap((item) =>
+      : shown.flatMap((item, position) =>
           item.original === undefined || item.playback !== undefined
             ? []
-            : [{ ...item.original, id: item.id, alt: item.alt, lang: item.lang }],
+            : [
+                {
+                  ...item.original,
+                  id: item.id,
+                  alt: item.alt,
+                  lang: item.lang,
+                  blurhash: item.blurhash,
+                  // Its place in the grid, so that the viewer's "3 / 3" matches the cells (videos and audio too).
+                  position: position + 1,
+                },
+              ],
         );
-  const openerOf = (index: number) =>
+  const openerOf = (index: number, alt = false) =>
     index < 0
       ? undefined
       : () => {
-          setViewer({ isOpen: true, index });
+          setViewer({ isOpen: true, index, alt });
         };
 
   return (
@@ -364,6 +429,11 @@ export function MediaGrid({
             noDescriptionLabel={noDescriptionLabel}
             audioLabels={audioLabels}
             onOpen={openerOf(viewable.findIndex((viewed) => viewed.id === item.id))}
+            onOpenDescription={openerOf(
+              viewable.findIndex((viewed) => viewed.id === item.id),
+              true,
+            )}
+            descriptionLabel={viewerLabels?.altText}
           />
         ) : (
           <PlaybackCell
@@ -406,13 +476,15 @@ export function MediaGrid({
           index={Math.min(viewer.index, viewable.length - 1)}
           isOpen={viewer.isOpen && revealed}
           onIndexChange={(index) => {
-            setViewer({ isOpen: true, index });
+            setViewer((current) => ({ ...current, isOpen: true, index }));
           }}
           onOpenChange={(isOpen) => {
             setViewer((current) => ({ ...current, isOpen }));
           }}
           labels={viewerLabels}
           noDescriptionLabel={noDescriptionLabel}
+          total={shown.length}
+          altOpenAtStart={viewer.alt}
         />
       )}
     </div>

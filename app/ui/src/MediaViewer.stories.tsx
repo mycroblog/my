@@ -19,6 +19,9 @@ const labels: MediaViewerLabels = {
   altText: "Description",
   previous: "Previous image",
   next: "Next image",
+  loading: "Loading media",
+  failed: "Couldn't load this media.",
+  retry: "Try again",
 };
 
 const sunset = {
