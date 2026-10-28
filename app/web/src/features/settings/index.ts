@@ -25,7 +25,6 @@ export { ProfileForm } from "./components/ProfileForm";
 // The welcome step after sign-up: the avatar and the display name (web-client/screens/welcome.md).
 export { WelcomeForm } from "./components/WelcomeForm";
 export { SettingsMenu } from "./components/SettingsMenu";
-export { ThemeRadioGroup } from "./components/ThemeRadioGroup";
 // The navigation's items as the user arranges them on this browser, which the app's navigation follows.
 export { navigationEntryIcons } from "./components/navigationEntryIcons";
 export {

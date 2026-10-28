@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { instanceFixture, preferencesFixture } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
-import { navigationKey, signInKey, themeKey } from "../../lib/storage";
+import { navigationKey, signInKey } from "../../lib/storage";
 import { renderApp } from "../../test/render";
 
 /** GET /instance with the given public timelines turned on or off. */
@@ -339,21 +339,6 @@ describe("the tab bar's Menu", () => {
     await waitFor(() => {
       expect(menu).toHaveFocus();
     });
-  });
-
-  test("switches the color theme in place, and the sheet stays open", async () => {
-    const { user } = await renderApp({ path: "/home" });
-    await screen.findByRole("heading", { level: 1, name: "Home" });
-    await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
-    const sheet = await screen.findByRole("dialog", { name: "Menu" });
-
-    const theme = within(sheet).getByRole("radiogroup", { name: "Theme" });
-    expect(theme).toHaveAttribute("aria-orientation", "horizontal");
-    await user.click(within(theme).getByRole("radio", { name: "Dark" }));
-
-    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    expect(themeKey.read()).toBe("dark");
-    expect(screen.getByRole("dialog", { name: "Menu" })).toBeInTheDocument();
   });
 
   test("closes when one of its links is followed, and focus moves to the new page's heading", async () => {
