@@ -263,7 +263,7 @@ my admin report note <report id> "Same person as an earlier report"
 my admin report reopen <report id>
 ```
 
-In the admin API: `GET /api/v1/admin/reports` (filter with `state`), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
+In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, and `assignee`: `me`, `none`, or a local account's ID; `order=oldest` lists the longest-waiting report first instead of the newest), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
 `POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`) and `POST .../{id}/reopen`.
 
 - An assignment (`assign`) can go only to a local user whose role has `manage_reports`. In the admin API you assign yourself.
@@ -308,6 +308,7 @@ New reports, registrations waiting for approval and appeals reach people with th
   email on the **Notifications** page of the settings (`/settings/notifications` in the web client), which lists only the
   kinds their role receives. A kind turned off in the app is not created for them, so it is neither pushed nor emailed; the counts of
   `GET /api/v1/admin/counts` do not change, because they count the reports, registrations, and appeals themselves.
+  With the open reports, the counts also return when the oldest open report was filed (`oldest_open_report_filed_at`).
   The server enqueues the email job in the transaction that records the notification, and the job sends the mail right after the
   commit, without waiting for the notification to be read. If the person has lost the permission or turned that kind's email
   off by the time of sending, or their primary address is not confirmed or its emails are stopped, nothing is sent.
