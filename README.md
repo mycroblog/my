@@ -49,8 +49,8 @@ With the pair `MY_HOST=localhost:8080` and `MY_WEB_ORIGIN=http://localhost:8080`
 client API, and media work over plain HTTP at `http://localhost:8080` (ActivityPub ids stay
 `https://localhost:8080/...`). If you change `MY_HTTP_PORT`, change the port of `MY_HOST` and `MY_WEB_ORIGIN` to match.
 
-1. Open `http://localhost:8080/login` in a browser and press **Continue to sign in**.
-2. On the server's sign-in screen, enter the email address and password of the administrator you created above.
+1. Open `http://localhost:8080/login` in a browser (or press **Sign in** in the web client's top bar); it opens the server's sign-in screen.
+2. On the sign-in screen, enter the email address and password of the administrator you created above.
 3. You are back in the web client, on your home timeline.
 
 - The sign-in cookie is `Secure`. Chrome and Firefox accept it on `http://localhost`; Safari (WebKit) does not, so use

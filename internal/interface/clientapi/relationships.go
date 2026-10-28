@@ -37,6 +37,7 @@ type Graph interface {
 	Followers(ctx context.Context, accountID string, p appgraph.Page) ([]graph.Edge, error)
 	Following(ctx context.Context, accountID string, p appgraph.Page) ([]graph.Edge, error)
 	FollowRequests(ctx context.Context, accountID string, p appgraph.Page) ([]graph.Edge, error)
+	FollowRequestCount(ctx context.Context, accountID string) (int64, error)
 	Blocks(ctx context.Context, accountID string, p appgraph.Page) ([]graph.BlockEdge, error)
 	Mutes(ctx context.Context, accountID string, p appgraph.MutePage) ([]graph.Mute, error)
 

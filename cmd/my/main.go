@@ -65,6 +65,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runInvite(fs.Args()[1:], stdout, stderr)
 	case "job":
 		return runJob(fs.Args()[1:], stdout, stderr)
+	case "kek":
+		return runKEK(fs.Args()[1:], stdout, stderr)
 	case "login-provider":
 		return runLoginProvider(fs.Args()[1:], os.Stdin, stdout, stderr)
 	case "maintenance":
@@ -79,13 +81,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 		usage(stderr)
 		return 2
 	default:
+		if c, ok := testBuildCommands[cmd]; ok {
+			return c(fs.Args()[1:], stdout, stderr)
+		}
 		_, _ = fmt.Fprintf(stderr, "my: unknown command %q\n\n", cmd)
 		usage(stderr)
 		return 2
 	}
 }
 
+// testBuildCommands are the commands that only the test builds (build tag e2e_fakes) add, by
+// name; testBuildUsage is their lines of the usage. The default build has none, so their names
+// are unknown commands there.
+var (
+	testBuildCommands = map[string]func(args []string, stdout, stderr io.Writer) int{}
+	testBuildUsage    string
+)
+
 func usage(w io.Writer) {
+	defer func() { _, _ = fmt.Fprint(w, testBuildUsage) }()
 	_, _ = fmt.Fprint(w, `Usage: my <command>
 
 Commands:
@@ -100,6 +114,8 @@ Commands:
             (my instance list|get|set|history|rule)
   invite    Manage invite codes (my invite create|list|revoke)
   job       List, retry, and delete the dead jobs (my job list|retry|delete)
+  kek       Count the stored secrets by key-encryption key and re-wrap them
+            after a rotation (my kek status|rewrap)
   login-provider
             Set up the external providers that users sign in with
             (my login-provider list|add|set|rotate-secret|enable|disable|delete)

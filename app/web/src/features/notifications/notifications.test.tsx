@@ -10,6 +10,7 @@ import { notificationsFixture } from "./test/handlers";
 import { accountFixture, otherAccountFixture, relationshipFixture, statusFixture } from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
+import { expectSignInStarted } from "../../test/signIn";
 import { expectSelectedTabControlsPanel } from "../../test/tabs";
 import type { Notification, NotificationMarker, NotificationType } from "./api/notifications";
 
@@ -831,11 +832,9 @@ describe("the notifications page", () => {
   });
 
   test("sends to sign in when no session resumes, and back here after it", async () => {
-    const { router } = await renderApp({ path: "/notifications" });
+    const { leftTo } = await renderApp({ path: "/notifications" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/login");
-    expect(router.state.location.search).toEqual({ return_to: "/notifications" });
+    await expectSignInStarted(leftTo, "/notifications");
   });
 });
 

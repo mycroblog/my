@@ -18,6 +18,7 @@ import { server } from "../../test/msw/server";
 import { autoplayKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
+import { expectSignInStarted } from "../../test/signIn";
 
 /** A status like the fixture, with its own ID and text. */
 function status(n: number, overrides: Partial<Status> = {}): Status {
@@ -561,11 +562,9 @@ describe("the hashtag timeline", () => {
 
 describe("the home timeline", () => {
   test("sends to sign in without a session, and back here after it", async () => {
-    const { router } = await renderApp({ path: "/home" });
+    const { leftTo } = await renderApp({ path: "/home" });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/login");
-    expect(router.state.location.search).toEqual({ return_to: "/home" });
+    await expectSignInStarted(leftTo, "/home");
   });
 
   test("shows the signed-in user's timeline", async () => {
@@ -590,11 +589,9 @@ describe("the home timeline", () => {
 
 describe("the bookmarks", () => {
   test("send to sign in without a session, and back here after it", async () => {
-    const { router } = await renderApp({ path: "/bookmarks" });
+    const { leftTo } = await renderApp({ path: "/bookmarks" });
 
-    await screen.findByRole("heading", { level: 1 });
-    expect(router.state.location.pathname).toBe("/login");
-    expect(router.state.location.search).toEqual({ return_to: "/bookmarks" });
+    await expectSignInStarted(leftTo, "/bookmarks");
   });
 
   test("list the bookmarked posts as a feed, opened from the navigation", async () => {

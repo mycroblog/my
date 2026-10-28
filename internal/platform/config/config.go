@@ -505,8 +505,20 @@ func LoadMaintenance(src Source) (*Config, []Setting, error) { return load(src, 
 // file, for my serve to choose between the normal start and the maintenance mode before loading
 // the rest. An invalid value or an unreadable file is an error.
 func MaintenanceRequested(src Source) (bool, error) {
+	v, err := single(src, "maintenance")
+	return v == "true", err
+}
+
+// ProfileRequested reads only the profile setting, from the environment or the TOML file, for the
+// commands of the test builds (build tag e2e_fakes) that refuse every profile but development
+// without needing the rest of the server's configuration. An invalid value or an unreadable file
+// is an error.
+func ProfileRequested(src Source) (string, error) { return single(src, "profile") }
+
+// single resolves and validates the one setting key, ignoring the others.
+func single(src Source, key string) (string, error) {
 	src, file, issues := open(src)
-	f := &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == "maintenance" })]
+	f := &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == key })]
 	v, _, srcIssues := resolve(f, src, file)
 	issues = append(issues, srcIssues...)
 	if len(issues) == 0 {
@@ -519,9 +531,9 @@ func MaintenanceRequested(src Source) (bool, error) {
 		}
 	}
 	if len(issues) > 0 {
-		return false, &ValidationError{Issues: issues}
+		return "", &ValidationError{Issues: issues}
 	}
-	return v == "true", nil
+	return v, nil
 }
 
 // withDefaults fills the zero fields of src.

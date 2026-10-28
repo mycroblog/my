@@ -4,6 +4,7 @@
 // opens, and a failure is the field's error message, linked to it and announced.
 import { Button, Cluster, Link, Stack, TextField } from "@my/ui";
 import { useT } from "../../../lib/i18n";
+import { signInPath } from "../../../lib/paths";
 import { maxSearchLength } from "../api/lookup";
 import { type AccountSearchOptions, useAccountSearch } from "../hooks/useAccountSearch";
 
@@ -51,7 +52,7 @@ export function AccountSearch({ headingId, ...options }: AccountSearchProps) {
       </Stack>
       {search.signedOut && (
         <p>
-          <Link href={`/login?${new URLSearchParams({ return_to: "/search" }).toString()}`} variant="standalone">
+          <Link href={signInPath("/search")} variant="standalone">
             {t("client:search.sign_in")}
           </Link>
         </p>

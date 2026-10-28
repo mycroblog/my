@@ -189,6 +189,13 @@ entries:
     paths: ["internal/platform/adapters*.go", "internal/platform/config/adapters*.go", "scripts/go-build-tags.sh"]
     docs: ["docs/reference/build-tags.md"]
     userdocs: ["docs/reference/build-tags.md"]
+  - name: fake-push-service
+    paths: ["internal/adapter/pushservice/**", "cmd/my/dev_push_service.go"]
+    docs: ["docs/adr/0118-demo-web-push.md", "docs/adr/0117-demo-environment.md", "docs/reference/build-tags.md"]
+    userdocs: ["docs/reference/build-tags.md#the-fake-push-service"]
+    notes:
+      - "Only the test builds (build tag e2e_fakes) link it, through cmd/my/dev_push_service.go; scripts/go-build-tags.sh and depguard check it."
+      - "Its receiving side (VAPID verification, RFC 8291 decryption) is written apart from internal/adapter/webpush; both are tested against RFC 8291 Appendix A."
   - name: server-process
     paths: ["cmd/my/main.go", "cmd/my/serve.go", "cmd/my/job.go", "internal/platform/serve.go", "internal/platform/http.go", "internal/platform/log.go", "internal/platform/health.go"]
     userdocs: ["docs/operations/running.md", "docs/operations/monitoring.md#which-url-to-monitor"]
@@ -344,6 +351,13 @@ entries:
   - name: key-management
     paths: ["internal/adapter/keymanager/**"]
     userdocs: ["docs/operations/key-management.md"]
+  - name: kek-rewrap
+    paths: ["internal/app/rewrap/**", "internal/platform/setup_rewrap.go", "cmd/my/kek.go", "cmd/my/kek_test.go", "internal/adapter/db/*/sealed_value*.go", "queries/*/sealed_value.sql", "pkg/testkit/sealed_value_contract.go"]
+    docs: ["docs/adr/0019-security-baseline.md", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
+    userdocs: ["docs/operations/key-management.md#rotate-the-kek"]
+    notes:
+      - "`my kek rewrap` re-wraps the sealed columns that internal/platform/setup_rewrap.go lists; the Store of each dialect lists the same columns, and testkit.SealedValueStoreContract checks them against the schema (columns named *_enc or sealed_*), so a new sealed column needs all three."
+      - "Rewrap calls the KeyManager outside transactions and writes a batch in one short transaction that replaces a value only while the row still holds what was read, so a stopped or concurrent run never loses or double-wraps a key."
   - name: adapter-http
     paths: ["internal/adapter/httpclient/**"]
     docs: ["docs/adr/0019-security-baseline.md"]
