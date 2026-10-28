@@ -15,7 +15,7 @@ test("the local timeline's heading is seen only where the rail does not show", a
   await renderApp({ path: "/local" });
 
   const heading = await screen.findByRole("heading", { level: 1, name: "Local timeline" });
-  expect(heading).toHaveClass("md:sr-only");
+  expect(heading).toHaveAttribute("data-hidden-with-rail");
   expect(heading).not.toHaveClass("sr-only");
 });
 
@@ -32,7 +32,7 @@ test("a page that failed keeps the visibility of its heading and shows the error
 
   const error = await screen.findByRole("heading", { level: 2, name: "Could not load this page" });
   expect(error).not.toHaveClass("sr-only");
-  expect(screen.getByRole("heading", { level: 1, name: "Local timeline" })).toHaveClass("md:sr-only");
+  expect(screen.getByRole("heading", { level: 1, name: "Local timeline" })).toHaveAttribute("data-hidden-with-rail");
 });
 
 test("the heading that says the timeline is off is shown", async () => {

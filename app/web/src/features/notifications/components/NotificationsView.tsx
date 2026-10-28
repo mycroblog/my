@@ -5,7 +5,7 @@
 // mounted, and switching tabs keeps focus on the tab (the layout moves focus only when the path changes).
 import { EmptyState, Feed, RegionError, Tab, TabList, TabPanel, Tabs } from "@my/ui";
 import { useState } from "react";
-import { SignInPrompt } from "../../../lib/auth/SignInPrompt";
+import { SignInPrompt } from "../../session";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type NotificationFilter, notificationFilters } from "../api/notifications";
 import { useNotifications } from "../hooks/useNotifications";

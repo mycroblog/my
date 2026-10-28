@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { type HeadingLevel, SignInState } from "@my/ui";
-import { useT } from "../i18n";
-import { signInPath } from "../paths";
+import { useT } from "../../../lib/i18n";
+import { signInPath } from "../../../lib/paths";
 
 export type SignInPromptProps = {
   /** The short fact ("You are not signed in"). */
