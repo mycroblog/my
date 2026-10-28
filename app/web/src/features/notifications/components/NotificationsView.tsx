@@ -3,7 +3,17 @@
 // route (web-client/README.md S3), and the notifications of the selected filter as a feed (Y6). The tabs follow
 // the WAI-ARIA APG tabs pattern with automatic activation (React Aria Tabs); only the selected panel is
 // mounted, and switching tabs keeps focus on the tab (the layout moves focus only when the path changes).
-import { EmptyState, Feed, RegionError, Tab, TabList, TabPanel, Tabs } from "@my/ui";
+import {
+  EmptyState,
+  Feed,
+  type NotificationKind,
+  NotificationKindIcon,
+  RegionError,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+} from "@my/ui";
 import { useState } from "react";
 import { SignInPrompt } from "../../session";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -18,6 +28,15 @@ const filterLabels: Readonly<Record<NotificationFilter, ClientMessageKey>> = {
   follows: "client:notifications.filter.follows",
   boosts: "client:notifications.filter.boosts",
   favourites: "client:notifications.filter.favourites",
+};
+
+/** The kind whose icon each filter shows beside its name: the icon of the mark on the rows it keeps (P3). */
+const filterKinds: Readonly<Record<NotificationFilter, NotificationKind>> = {
+  all: "notice",
+  mentions: "mention",
+  follows: "follow",
+  boosts: "boost",
+  favourites: "favourite",
 };
 
 function isFilter(key: unknown): key is NotificationFilter {
@@ -44,7 +63,7 @@ export function NotificationsView({ filter, onFilterChange, headingId }: Notific
     >
       <TabList aria-label={t("client:notifications.filter.label")}>
         {notificationFilters.map((item) => (
-          <Tab key={item} id={item}>
+          <Tab key={item} id={item} icon={<NotificationKindIcon kind={filterKinds[item]} />}>
             {t(filterLabels[item])}
           </Tab>
         ))}
