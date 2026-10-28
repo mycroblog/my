@@ -16,7 +16,7 @@ const props: VoiceRoomCardProps = {
   host: <Link href="/@alice">Alice</Link>,
   hostLabel: "Host",
   description: "Talking about music.",
-  tags: ["#music"],
+  tags: [{ label: "#music", href: "/tags/music" }],
   tagsLabel: "Hashtags",
 };
 
@@ -42,6 +42,22 @@ describe("VoiceRoomCard", () => {
     expect(item).toHaveTextContent("Host");
     expect(item).toHaveTextContent("Talking about music.");
     expect(within(item).getByRole("list", { name: "Hashtags" })).toBeInTheDocument();
+  });
+
+  it("links each hashtag to its page", () => {
+    renderCard();
+    expect(screen.getByRole("link", { name: "#music" })).toHaveAttribute("href", "/tags/music");
+  });
+
+  it("marks the room of the user's call as joined", () => {
+    const { rerender } = renderCard();
+    expect(screen.queryByText("Joined")).toBeNull();
+    rerender(
+      <ul>
+        <VoiceRoomCard {...props} joinedLabel="Joined" />
+      </ul>,
+    );
+    expect(screen.getByText("Joined")).toBeInTheDocument();
   });
 
   it("stacks the speakers as decorative avatars", () => {

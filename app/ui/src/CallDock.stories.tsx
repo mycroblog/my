@@ -4,8 +4,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, waitFor } from "storybook/test";
-import { CallDock, CallDockButton } from "./CallDock";
-import { EmojiIcon, InviteIcon, LeaveIcon, MicrophoneIcon, RaiseHandIcon } from "./Icons";
+import { CallDock, CallDockButton, CallMicrophoneButton } from "./CallDock";
+import { EmojiIcon, InviteIcon, LeaveIcon, RaiseHandIcon } from "./Icons";
 import { InlineError } from "./Text";
 
 const onLeave = fn();
@@ -13,12 +13,11 @@ const onLeave = fn();
 function Microphone({ initial }: { initial: boolean }) {
   const [on, setOn] = useState(initial);
   return (
-    <CallDockButton
-      label="Microphone"
-      icon={<MicrophoneIcon filled={on} />}
-      showLabel
-      isSelected={on}
+    <CallMicrophoneButton
+      isOn={on}
       onChange={setOn}
+      labels={{ turnOn: "Turn microphone on", turnOff: "Turn microphone off" }}
+      showLabel
     />
   );
 }
@@ -61,11 +60,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The host's controls: the microphone is on (coral, pressed), and two people wait with a raised hand. */
+/** The host's controls: the microphone is on (coral, named by what a press does), and two people wait with a raised hand. */
 export const Host: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("toolbar", { name: "Call controls" })).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Microphone", pressed: true })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Turn microphone off" })).toBeVisible();
     // The count describes the button, whose name stays the same.
     await expect(canvas.getByRole("button", { name: "Hands" })).toHaveAccessibleDescription("2 raised hands");
     // Every control is at least 44 px square.
@@ -101,7 +100,7 @@ export const Keyboard: Story = {
     const [next, previous] =
       document.documentElement.dir === "rtl" ? ["{ArrowLeft}", "{ArrowRight}"] : ["{ArrowRight}", "{ArrowLeft}"];
     await userEvent.tab();
-    const microphone = canvas.getByRole("button", { name: "Microphone" });
+    const microphone = canvas.getByRole("button", { name: "Turn microphone off" });
     await expect(microphone).toHaveFocus();
     await userEvent.keyboard(next);
     const reactions = canvas.getByRole("button", { name: "Reactions" });
@@ -111,7 +110,9 @@ export const Keyboard: Story = {
     await userEvent.keyboard(previous);
     await expect(microphone).toHaveFocus();
     await userEvent.keyboard(" ");
-    await expect(microphone).toHaveAttribute("aria-pressed", "false");
+    // The same button, now named by the other action.
+    await expect(microphone).toHaveAccessibleName("Turn microphone on");
+    await expect(microphone).not.toHaveAttribute("aria-pressed");
     // Leaving, at the end of the line, comes last.
     await userEvent.keyboard(next.repeat(4));
     await expect(canvas.getByRole("button", { name: "Leave" })).toHaveFocus();

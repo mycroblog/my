@@ -297,7 +297,7 @@ describe("an account's admin page", () => {
       within(summary).getByRole("link", { name: "Show operations on the account in the audit log" }),
     ).toHaveAttribute("href", `/moderation/audit-log?target_kind=account&target=${bobDetail.id}`);
     expect(
-      within(region("Restrictions"))
+      within(within(region("Account")).getByRole("list", { name: "Restrictions" }))
         .getAllByRole("listitem")
         .map((item) => item.textContent),
     ).toEqual(["Posts are followers-only", "Posts stay off the public timelines and search"]);
@@ -562,7 +562,7 @@ describe("an account's admin page", () => {
     });
     // The account is read again: nothing is taken away now.
     expect(
-      await within(region("Restrictions")).findByText("The account's actions take nothing away now."),
+      await within(region("Account")).findByText("The account's actions take nothing away now."),
     ).toBeInTheDocument();
   });
 

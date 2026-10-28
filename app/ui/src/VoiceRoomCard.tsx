@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An open voice chat room in a list (ADR-0100 §8), in the look of the room's stage: the "Live" pill with how many are
-// in the room and how long it has been open, the room's name as a heading that links to its page, the stacked avatars
-// of its speakers (the host first) beside the host, and, in the full form, its description and hashtags. The name,
-// the description and the hashtags are the host's own text in any language (dir="auto"). The `card` surface is a
-// raised card of a page's list; the `plain` surface is a row of a panel that is a card already (the third column),
-// which never holds another card.
+// in the room and how long it has been open (and "Joined" while the user is in its call), the room's name as a
+// heading that links to its page, the stacked avatars of its speakers (the host first) beside the host, and, in the
+// full form, its description and hashtags, each a link to the hashtag's page as on the stage. It is the one look of
+// an open room wherever one shows: the list page, the third column, a hashtag's page, and a profile. The name, the
+// description and the hashtags are the host's own text in any language (dir="auto"). The `card` surface is a raised
+// card of a page's list; the `plain` surface is a row of a panel that is a card already (the third column), which
+// never holds another card.
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { AvatarStack, type AvatarStackItem } from "./AvatarStack";
 import { Card } from "./Card";
 import type { HeadingLevel } from "./EmptyState";
 import { Heading } from "./Heading";
+import { CheckIcon } from "./Icons";
 import { Link } from "./Link";
 import { LivePill } from "./LivePill";
+import { StatusBadge } from "./StatusBadge";
 import { Tag } from "./Tag";
 
 const voiceRoomCard = tv({
@@ -35,6 +39,9 @@ const voiceRoomCard = tv({
   },
 });
 
+/** A hashtag of the room: its text with the `#`, and its page. */
+export type VoiceRoomCardTag = { label: string; href: string };
+
 export type VoiceRoomCardProps = {
   /** The room's name, the host's text. */
   name: string;
@@ -46,16 +53,21 @@ export type VoiceRoomCardProps = {
   liveLabel: string;
   /** How many are in the room and how long it has been open, formatted ("12 people · 38 min"). */
   stats: string;
+  /**
+   * The word of the badge that marks the room of the user's call ("Joined"); absent for any other room. A user in a
+   * call finds it in every list, and does not join another room by mistake.
+   */
+  joinedLabel?: string | undefined;
   /** The speakers, the host first; the card stacks the first few. They only decorate: `host` and `stats` say who is in. */
   speakers: readonly AvatarStackItem[];
-  /** The host's name, a link to their profile. */
+  /** The host's name, a link to their profile; on a profile, the account's name. */
   host: ReactNode;
-  /** The word after the host's name ("Host"). */
+  /** The word after the host's name ("Host"); on a profile, the account's role ("Host", "Speaker"). */
   hostLabel: string;
   /** The room's description, the host's text; empty or absent for none. Not shown on the `plain` surface. */
   description?: string | undefined;
-  /** The room's hashtags with their `#`. Not shown on the `plain` surface. */
-  tags?: readonly string[] | undefined;
+  /** The room's hashtags, each a link to its page. Not shown on the `plain` surface. */
+  tags?: readonly VoiceRoomCardTag[] | undefined;
   /** The accessible name of the list of hashtags ("Hashtags"). */
   tagsLabel?: string;
   /** `card` (default) for a page's list, `plain` for a row inside a card (the third column). Both are an `li`. */
@@ -69,6 +81,7 @@ export function VoiceRoomCard({
   headingLevel = 2,
   liveLabel,
   stats,
+  joinedLabel,
   speakers,
   host,
   hostLabel,
@@ -83,6 +96,7 @@ export function VoiceRoomCard({
     <div className={slots.base()}>
       <div className={slots.state()}>
         <LivePill label={liveLabel} />
+        {joinedLabel !== undefined && <StatusBadge icon={<CheckIcon />} label={joinedLabel} tone="success" />}
         <span>{stats}</span>
       </div>
       <Heading level={headingLevel} size="subsection" wrap="anywhere">
@@ -105,8 +119,10 @@ export function VoiceRoomCard({
       {full && tags !== undefined && tags.length > 0 && (
         <ul className={slots.tags()} aria-label={tagsLabel}>
           {tags.map((tag) => (
-            <Tag key={tag} as="li" variant="pill" dir="auto">
-              {tag}
+            <Tag key={tag.href} as="li" variant="pill" dir="auto">
+              <Link href={tag.href} variant="standalone">
+                {tag.label}
+              </Link>
             </Tag>
           ))}
         </ul>

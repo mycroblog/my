@@ -2,9 +2,9 @@
 // The mini-player (#1345 answer 45, web-client/09-app-shell.md §9): while the user is in a call, every page but the
 // room's own ends with a small floating card docked at the bottom of the page's column, clear of the tab bar and the
 // floating new-post button: the stacked avatars of the speakers (who is talking first, ringed), the room's name as the
-// link back to its page over who is talking (or the call's state while it is not connected), the microphone of a
-// speaker, the button that plays the sound the browser blocked, and leaving (with the host's choice), with what
-// failed under them. It is a region named "Voice chat call", after the page's content in the focus order.
+// link back to its page over who is talking (or, while nobody talks or the call is not connected, the badge of the
+// call's connection), the microphone of a speaker, the button that plays the sound the browser blocked, and last,
+// apart, leaving (the host's choice of the next host, or anyone else's confirmation), with what failed under them. It is a region named "Voice chat call", after the page's content in the focus order.
 import { ChangeNotice, Link, MiniPlayer, type MiniPlayerAvatar, ShellDock, Stack } from "@my/ui";
 import { useState } from "react";
 import { useT } from "../../../lib/i18n";
@@ -14,6 +14,7 @@ import type { VoiceCallControls } from "../hooks/useVoiceCallControls";
 import { useVoiceCallBar, useVoiceCallEndNotice } from "../hooks/useVoiceCallControls";
 import { participantName, type VoiceCall } from "../hooks/voiceCall";
 import {
+  CallConnection,
   CallErrors,
   CallNotice,
   callStatusText,
@@ -87,7 +88,14 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
             <span dir="auto">{controls.room.name}</span>
           </Link>
         }
-        status={<span dir="auto">{callStatusText(t, controls)}</span>}
+        status={
+          controls.phase === "live" && controls.talking.length > 0 ? (
+            <span dir="auto">{callStatusText(t, controls)}</span>
+          ) : (
+            <CallConnection controls={controls} />
+          )
+        }
+        end={<LeaveCallButton controls={controls} look="mini" />}
         notice={
           controls.notice !== undefined || errors ? (
             <Stack gap="2">
@@ -99,7 +107,6 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
       >
         <PlaybackButton controls={controls} size="sm" />
         <MicrophoneControl controls={controls} />
-        <LeaveCallButton controls={controls} look="mini" />
       </MiniPlayer>
     </ShellDock>
   );

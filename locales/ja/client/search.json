@@ -50,5 +50,25 @@
   "search.title": {
     "defaultMessage": "検索",
     "description": "Heading and document title of the page that finds an account by its handle or URL."
+  },
+  "search.results": {
+    "defaultMessage": "アカウント",
+    "description": "Heading of the accounts found by name while their count is not known yet."
+  },
+  "search.results.title": {
+    "defaultMessage": "アカウント（{count}）",
+    "description": "Heading of the accounts found by name, with their count."
+  },
+  "search.results.count": {
+    "defaultMessage": "{count, plural, =0 {見つかりませんでした} other {# 件見つかりました}}",
+    "description": "Read by screen readers when the accounts found by name change."
+  },
+  "search.results.none": {
+    "defaultMessage": "見つかりませんでした。ほかのサーバーの人は @user@host を入れてください。",
+    "description": "Shown when no account matches the typed name."
+  },
+  "search.results.failed": {
+    "defaultMessage": "アカウントを検索できませんでした：{reason}",
+    "description": "Shown when the search by name fails. {reason} is the error."
   }
 }

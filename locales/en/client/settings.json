@@ -2318,5 +2318,17 @@
   "settings.security.off": {
     "defaultMessage": "Off",
     "description": "Badge of the two-factor authentication row of the security section of the settings page: it is off, which the warning tone suggests turning on."
+  },
+  "settings.profile.discovery": {
+    "defaultMessage": "Discovery",
+    "description": "Heading of the section of the profile settings about being suggested to others and found by name."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "Suggest my account and find it by part of its name",
+    "description": "Label of the checkbox that lets the account appear in the suggestions and in the search by part of its name."
+  },
+  "settings.profile.discoverable.description": {
+    "defaultMessage": "People of this server see your account among the suggestions to follow and find it by part of your name. When this is off, they can still find you by your whole username, and the people who follow you still find you.",
+    "description": "Help text of the discoverable checkbox."
   }
 }

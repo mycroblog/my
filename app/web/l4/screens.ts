@@ -4,15 +4,19 @@
 // README.md documents the keys): the address the agent starts at, the person of the scenario it is signed in as (or
 // nobody), the code of the screen that --since watches, the changes to the scenario that the tasks need, the tasks
 // that read email in Mailpit, and the tasks the demo server cannot set up, with the reason. Each line of the front
-// matter is `<key>: <JSON value>`, so the block is YAML and needs no YAML parser. screens.test.ts checks every L1
+// matter is `<key>: <JSON value>`, so the block is YAML and needs no YAML parser. A task that turns Web Push on names
+// the person whose reply the harness sends after it (push.ts judges it), and a task may carry notes for its result. screens.test.ts checks every L1
 // file: that its tasks named here are rows of its task table, and that its people are of the scenario.
 
 /** What a screen's setup can reach on the demo server. */
 export type SetupContext = {
   /** Runs `bin/my` with `args` against the demo server's database and returns its standard output. */
   runMy: (args: readonly string[], input?: string) => string;
-  /** Calls the client API (`/api/v1` + `path`) as the person `username` of the scenario; a failure throws. */
-  api: (username: string, method: ApiMethod, path: string, body?: unknown) => Promise<void>;
+  /**
+   * Calls the client API (`/api/v1` + `path`) as the person `username` of the scenario and returns the JSON of the
+   * response (undefined when it has none); a failure throws.
+   */
+  api: (username: string, method: ApiMethod, path: string, body?: unknown) => Promise<unknown>;
 };
 
 type ApiMethod = "GET" | "PUT" | "PATCH" | "POST" | "DELETE";
@@ -36,6 +40,13 @@ export type ScreenSetup = {
    * Mailpit's web UI, in a second tab. The harness removes that person's earlier email from Mailpit before the task.
    */
   mail?: Readonly<Record<string, string>>;
+  /**
+   * The tasks that turn Web Push on: the username of the person of the scenario who replies to the signed-in person
+   * after the task. The browser subscribes with the fake push service, and the harness judges the task (push.ts).
+   */
+  push?: Readonly<Record<string, string>>;
+  /** Notes on tasks (by their text in the L1), such as what L4 cannot measure of them; the result carries them. */
+  notes?: Readonly<Record<string, string>>;
   /** The tasks (by their text in the L1) that the demo server cannot set up, and why; they are recorded, not measured. */
   unavailable?: Readonly<Record<string, string>>;
 };
@@ -81,6 +92,8 @@ const keys: Readonly<Record<keyof ScreenSetup, [(value: unknown) => boolean, str
     'a list of {"my": [...]} or {"api", "method", "path", "body"}',
   ],
   mail: [isStringRecord, "an object of tasks and usernames"],
+  push: [isStringRecord, "an object of tasks and usernames"],
+  notes: [isStringRecord, "an object of tasks and notes"],
   unavailable: [isStringRecord, "an object of tasks and reasons"],
 };
 

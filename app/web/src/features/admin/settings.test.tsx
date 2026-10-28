@@ -148,7 +148,12 @@ describe("the server's name", () => {
     await user.type(english, "Example Social");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Could not save the name: body is invalid")).toHaveAttribute("role", "alert");
+    // The failure is beside the save button, in the form's action bar's alert region.
+    expect(await screen.findByText("Could not save the name: body is invalid")).toBeInTheDocument();
+    expect(screen.getAllByRole("alert").filter((alert) => alert.textContent !== "")).toEqual([expect.anything()]);
+    expect(screen.getAllByRole("alert").find((alert) => alert.textContent !== "")).toHaveTextContent(
+      "Could not save the name: body is invalid",
+    );
     expect(english).toHaveValue("Example Social");
   });
 
@@ -384,6 +389,22 @@ describe("the server's policies", () => {
     expect(settings.patches).toEqual([{ values: { public_operators: "false" } }]);
   });
 
+  test("features accounts in the suggestions, in their own section", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const featured = await screen.findByRole("region", { name: "Suggested accounts" });
+    const field = within(featured).getByRole("textbox", { name: "Accounts to suggest first" });
+    expect(field).toHaveValue("");
+
+    await user.type(field, "bob carol");
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+    expect(
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+    ).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { featured_accounts: "bob carol" } }]);
+  });
+
   test("chooses what the holders of view_finance see, nothing of the items by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });
@@ -570,7 +591,11 @@ describe("the server's policies", () => {
 
     expect(
       await screen.findByText("Could not save the settings; nothing was changed: values.registration_mode is invalid"),
-    ).toHaveAttribute("role", "alert");
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("alert").filter((alert) => alert.textContent !== "")).toEqual([expect.anything()]);
+    expect(screen.getAllByRole("alert").find((alert) => alert.textContent !== "")).toHaveTextContent(
+      "Could not save the settings; nothing was changed: values.registration_mode is invalid",
+    );
     expect(within(registration).getByRole("radio", { name: "Nobody" })).toBeChecked();
   });
 
