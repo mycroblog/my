@@ -26,7 +26,7 @@ pgmem（MIT）は、PostgreSQL 18.3（PGlite のフォーク）を WebAssembly �
 - 毎 PR の検査の速さと安定性（Docker に頼らない）
 - 本物の PostgreSQL との互換性（ADR-0003 の契約テストの意味を保つ）
 - 並列のエージェントと CI の runner の、メモリの上限
-- 依存の条件（ライセンス、cgo、2 週間ルール、保守の状況）
+- 依存の条件（ライセンス、cgo、3 日ルール、保守の状況）
 
 ## Considered Options（選択肢）
 
@@ -50,7 +50,7 @@ pgmem（MIT）は、PostgreSQL 18.3（PGlite のフォーク）を WebAssembly �
 - pgmem のテストごとの fork と `Reset` は使わない
   - 時間は選択肢 2 とほとんど変わらない（CI の `go test ./...` で 52 秒と 59 秒）
   - それなのにメモリは 1 桁増える
-- pgmem は、公開から 2 週間を過ぎた `v1.18.x` に `go.mod` で固定する。PostgreSQL のメジャーは、本番で使う `postgres:18` に合わせる
+- pgmem は、公開から 3 日を過ぎた `v1.18.x` に `go.mod` で固定する。PostgreSQL のメジャーは、本番で使う `postgres:18` に合わせる
 - pgmem はテストのヘルパーだけが使い、本番のバイナリ（`cmd/my`）にはリンクしない
 
 ## Consequences（影響）

@@ -66,7 +66,7 @@ M6 のデプロイのテンプレートより前に、ジョブのモデルと�
 3. **依存の向き**（ADR-0002）: ADR-0055 と同じく、コアは OTel を import せず port を通す
 4. **リクエストからジョブ・配送までたどれる**: outbox を通るジョブと、Cloud Tasks・SQS のアダプタをまたいでコンテキストが続く
 5. **ベンダーに縛られない**: 1 つの計測から OTLP のどの受け手（Collector・Cloud Trace・X-Ray・Jaeger・Tempo など）にも出せる
-6. **実装と依存の小ささ**: `CGO_ENABLED=0`、AGPL と両立するライセンス、2 週間以上前に公開された版、ADR-0055 の `otel` のアダプタと SDK を共有する
+6. **実装と依存の小ささ**: `CGO_ENABLED=0`、AGPL と両立するライセンス、3 日以上前に公開された版、ADR-0055 の `otel` のアダプタと SDK を共有する
 
 ## Considered Options（選択肢）
 

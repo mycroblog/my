@@ -27,7 +27,7 @@ Oxc（`oxc-project/oxc`、MIT）はそれを取り込んだ `oxc-transform-react
 2. web-client.md R4 のゲート（諦めた関数で失敗、`"use no memo"` の扱い、1 つも変換しなければ失敗）を保つ
 3. React Compiler のために Babel を持たない。Babel 7 に縛られない
 4. ビルドとテストを速くする
-5. 依存のライセンスが AGPL-3.0 と両立し、公開から 2 週間以上たった版だけを使う（ADR-0011、ADR-0025）
+5. 依存のライセンスが AGPL-3.0 と両立し、公開から 3 日以上たった版だけを使う（ADR-0011、ADR-0025）
 6. 不具合が出たときに、短い手順で Babel 版に戻せる
 
 ## Considered Options（選択肢）
@@ -85,7 +85,7 @@ Oxc（`oxc-project/oxc`、MIT）はそれを取り込んだ `oxc-transform-react
   数が変わったら、変わったファイルの出力を読んで確かめる。
 - Oxc だけの誤変換の issue に当たる書き方をコードで使うときは、その issue を Oxc で直した版にしてから使う。
 - 次のどれかが起きたら、Babel 版に戻す新しい ADR を書く。
-  - Oxc だけの誤変換が本番のコードに当たり、直った版が 2 週間の待ちを含めて 4 週間以内に使えない
+  - Oxc だけの誤変換が本番のコードに当たり、直った版が 3 日の待ちを含めて 4 週間以内に使えない
   - `oxc-transform-react` の公開が 8 週間止まる、または Oxc が React Compiler の移植をやめる
   - `@vitejs/plugin-react` が `compiler` オプションを外し、今の Vite に合う版の `oxc-transform-react` がなくなる
 
@@ -93,7 +93,7 @@ Oxc（`oxc-project/oxc`、MIT）はそれを取り込んだ `oxc-transform-react
 
 - 選択肢 2 は、Babel 版とメモ化する関数がファイルごとに同じで、テストも通る（判断基準 1）。R4 のゲートの 3 つの仕組みを Oxc の診断と Vite のパーサで作れ、
   スパイクで描画中の ref を入れたコードがビルドで失敗した（判断基準 2）。React Compiler のための Babel がなくなり、Babel 7 の縛りが消える（判断基準 3）。
-  `app/web` のビルドは約 5.5 倍速い（判断基準 4）。追加する `oxc-transform-react` は MIT で、公開から 2 週間以上たった版を使う（判断基準 5）。
+  `app/web` のビルドは約 5.5 倍速い（判断基準 4）。追加する `oxc-transform-react` は MIT で、公開から 3 日以上たった版を使う（判断基準 5）。
   プラグインは 1 ファイルで、戻すときは Babel のプリセットと今の検査を戻すだけで済む（判断基準 6）。
 - 選択肢 1 は今いちばん枯れているが、判断基準 3 と 4 を満たさない。Babel 8 への更新は、`babel-plugin-react-compiler` が Babel 8 に対応するまでできない。
 - 選択肢 3 は設定が最も短いが、診断を構造のある形で受け取れず、R4 のゲートを作れない（判断基準 2）。`app/ui` のようにゲートが要らない所には足りる。

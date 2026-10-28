@@ -183,7 +183,7 @@ M6 のデプロイのテンプレートは、この ADR のスケールの設定
 
 ## Open Questions / 要検証
 
-- ADR-0055 が選ぶライブラリ（OpenTelemetry の Go SDK か Prometheus のクライアントか）に応じた、ランタイム・プロセスの指標のパッケージの版と依存（cgo なし、AGPL と両立するライセンス、公開から 2 週間以上）
+- ADR-0055 が選ぶライブラリ（OpenTelemetry の Go SDK か Prometheus のクライアントか）に応じた、ランタイム・プロセスの指標のパッケージの版と依存（cgo なし、AGPL と両立するライセンス、公開から 3 日以上）
 - Cloud Run で SSE のストリームを持つ web の最大同時実行数と CPU の目標の値（M6 の計測）
 - Lambda Insights（メモリの指標を出す拡張）の費用と、ADR-0055 の経路で送る費用のどちらが安いか（要検証）
 - Cloud Run の worker を worker pool（CREMA）に移し、キューの滞留でスケールするか（Cloud Tasks の push をやめることになるので、ADR-0004 に関わる。要検証）

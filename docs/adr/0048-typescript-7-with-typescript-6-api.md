@@ -39,7 +39,7 @@ TypeScript の公式は、API が要るツールのために、TS 6.0 の API �
 1. TypeScript を古い版のままにしない（決定者の意向）
 2. 型検査・lint・API の型生成の検査を弱めない（`make check` の全項目を保つ）
 3. 公式が示す方法に従い、独自の仕組みを作らない
-4. 公開から 2 週間以上たった版だけを使う（`app/bunfig.toml`）。ライセンスが AGPL-3.0 と両立する
+4. 公開から 3 日以上たった版だけを使う（`app/bunfig.toml`）。ライセンスが AGPL-3.0 と両立する
 
 ## Considered Options（選択肢）
 

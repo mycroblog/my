@@ -59,7 +59,7 @@ OpenTelemetry Go（`go.opentelemetry.io/otel`・`otel/metric`・`otel/sdk` v1.47
 3. **依存の向き**（ADR-0002）: コアは外部ライブラリを import しない。計測は port を通し、port の実装はアダプタに置く
 4. **ラベルの濃度と個人情報**: 時系列の数が利用者・連合先の数に比例しない。個人を特定できる値をラベルにしない
 5. **ベンダーに縛られない**: 1 つの計測から Prometheus・OTLP・CloudWatch のどれにも出せる
-6. **実装と依存の小ささ**: `CGO_ENABLED=0` のまま、ライセンスが AGPL と両立し、2 週間以上前に公開された版だけを使う
+6. **実装と依存の小ささ**: `CGO_ENABLED=0` のまま、ライセンスが AGPL と両立し、3 日以上前に公開された版だけを使う
 
 ## Considered Options（選択肢）
 

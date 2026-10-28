@@ -31,7 +31,7 @@ main の現状:
 3. **連合の相互運用**: Mastodon・Misskey・GoToSocial・Pleroma / Akkoma が、送った `attachment` / `icon` / `image` を表示・再生できる。
 4. **配る量を減らす**（NFR-COST-4）: 表示する大きさに合った派生を配る。CDN で長くキャッシュできる不変のキーにする。
 5. **アクセシビリティ**: 動くものは `prefers-reduced-motion` と利用者の設定で止められる（WCAG 2.2 SC 2.2.2）。
-6. 実装と依存を小さく保つ。追加する依存は AGPL と両立し、リリースから 2 週間を過ぎたもの。
+6. 実装と依存を小さく保つ。追加する依存は AGPL と両立し、リリースから 3 日を過ぎたもの。
 
 ## Considered Options（選択肢）
 
@@ -78,7 +78,7 @@ main の現状:
 
 - **L**: JPEG（不透明、品質 85）/ PNG（透過）。連合先がどこでも表示できる形式にする（Driver 3）。
 - **S / M**: WebP（lossy、品質 80、透過は alpha 付き）。純 Go のエンコーダ [`github.com/deepteams/webp`](https://pkg.go.dev/github.com/deepteams/webp)（MIT、cgo なし、lossy / alpha / アニメーションに対応と記載。2026-10-20 確認）を使う。
-  **spike で画質・速度・メモリ・ファズ（壊れた出力を作らないこと）、アニメーション WebP の読み書き、主要ブラウザでの表示を確かめてから採用する**。採用する版は、その時点でリリースから 2 週間を過ぎたもの。spike が通らなければ S / M も JPEG / PNG にし（A1）、他の決定は変えない。
+  **spike で画質・速度・メモリ・ファズ（壊れた出力を作らないこと）、アニメーション WebP の読み書き、主要ブラウザでの表示を確かめてから採用する**。採用する版は、その時点でリリースから 3 日を過ぎたもの。spike が通らなければ S / M も JPEG / PNG にし（A1）、他の決定は変えない。
   WebP は主要ブラウザすべてで表示できる（Safari 14 以降。要検証）。
 - AVIF は出力しない。純 Go のエンコーダがなく、A3 の WASM は 1 枚あたりの CPU が重い（要検証）。入力としての AVIF / HEIC も `media/native` は受け付けない（Mastodon も安全のため止めている。[media_attachment.rb](https://github.com/mastodon/mastodon/blob/main/app/models/media_attachment.rb)）。ADR-0019 §8 の許可リストは上限で、アダプタはその一部だけを受け付けてよい。
 - blurhash は S から作る（いまと同じ）。

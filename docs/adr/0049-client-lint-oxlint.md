@@ -23,7 +23,7 @@
 1. lint の時間を大きく縮める（CI の 4 vCPU で効く）
 2. web-client.md の「強制」の列の行を、できるだけ lint から外さない
 3. 依存とツールの数を減らす
-4. 公開から 2 週間以上たった版だけを使い、ライセンスが AGPL-3.0 と両立する
+4. 公開から 3 日以上たった版だけを使い、ライセンスが AGPL-3.0 と両立する
 5. TypeScript 7（[ADR-0048](0048-typescript-7-with-typescript-6-api.md)）の妨げにならない
 
 ## Considered Options（選択肢）
@@ -77,7 +77,7 @@
 - 選択肢 2 は、時間を約 6 分の 1 にし（判断基準 1）、ESLint の実行をなくす（判断基準 3）。外れる「強制」の行は R14 だけで、決定者は R14 を lint で検査しないことを受け入れている（判断基準 2）。
 - 選択肢 3 は R14 を保つが、ESLint と typescript-eslint を R14 のためだけに残す。選択肢 1 は CI では速くならない。
   選択肢 4 は最速だが、境界・i18n・Tailwind・Testing Library・TanStack の検査を失う。
-- 追加する依存（`oxlint`、`oxlint-tsgolint`）は MIT で、公開から 2 週間以上たった版を使う（判断基準 4）。
+- 追加する依存（`oxlint`、`oxlint-tsgolint`）は MIT で、公開から 3 日以上たった版を使う（判断基準 4）。
 - 型情報の規則は TypeScript 7 の typescript-go で動き、lint は TypeScript 6 の API に依存しなくなる（判断基準 5）。
 
 ## Consequences（影響）

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Dependabot version updates (ADR-0046). Security alerts come from the repository's Dependabot Alerts.
-# The 14-day cooldown matches the rule that no dependency version younger than two weeks is installed
-# (app/bunfig.toml, tools/i18n/bunfig.toml). Cooldown applies to version updates only, so security updates
+# The 3-day cooldown matches the rule that no dependency version younger than three days is installed
+# (app/bunfig.toml, tools/i18n/bunfig.toml, tools/mail/bunfig.toml). Cooldown applies to version updates only, so security updates
 # still open immediately.
 version: 2
 updates:
@@ -13,7 +13,7 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 3
   # Bun workspaces with a text bun.lock.
   - package-ecosystem: bun
     directories:
@@ -22,7 +22,7 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 3
     ignore:
       # @types/node follows the Node.js major in .tool-versions: its major is raised together with Node.js,
       # so the types never offer APIs that the runtime lacks.
@@ -30,17 +30,17 @@ updates:
         update-types: ["version-update:semver-major"]
   # Workflows pin every action, GitHub's own included, to a release's commit SHA with the full version in a
   # trailing comment (`uses: owner/repo@<sha> # vX.Y.Z`): a moving major tag can point at a release younger
-  # than two weeks, and Dependabot updates the SHA and the comment together.
+  # than three days, and Dependabot updates the SHA and the comment together.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 3
   # The Go, Node.js, and Bun image tags in the Dockerfile must match .tool-versions (scripts/task.sh docker:dockerfile-check).
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 3
