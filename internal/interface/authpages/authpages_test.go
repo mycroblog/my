@@ -41,9 +41,9 @@ type fakeIdentity struct {
 	// signUpReady makes a new user able to use the account at once (an open registration
 	// without email confirmation).
 	signUpReady bool
-	verified  map[string]bool // tokens redeemed by VerifyEmail
-	resent    int
-	resendErr error
+	verified    map[string]bool // tokens redeemed by VerifyEmail
+	resent      int
+	resendErr   error
 }
 
 func newFakeIdentity() *fakeIdentity {
