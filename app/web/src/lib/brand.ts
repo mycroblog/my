@@ -2,11 +2,13 @@
 // The instance's own icon and logo (ADR-0116), which its administrators set in the server settings: the logo takes the
 // place of the wordmark and the name in the app's header, and the icon that of the built-in mark where the server is
 // shown as a square picture. Both are SVGs under /brand/, shown only as images (`@my/ui`'s `Wordmark` and `BrandIcon`).
-import type { BrandLogo } from "@my/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "./auth/SessionProvider";
 import { useConfig } from "./config";
 import { shellQueryReader } from "./query";
+
+/** A logo as `@my/ui`'s `Wordmark` takes it (`BrandLogo`). */
+type BrandLogo = { src: string; darkSrc: string | undefined; width: number; height: number };
 
 export type Brand = {
   /** The URL of the instance's own icon, or undefined for the built-in mark. */

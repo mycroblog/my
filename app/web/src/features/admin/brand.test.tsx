@@ -23,21 +23,23 @@ vi.mock("./hooks/brandRenditions", async (importOriginal) => {
     ...actual,
     // A stand-in PNG of each size the server asked for, drawn on the background given.
     drawRenditions: vi.fn(
-      async (
+      (
         _svg: string,
         _viewBox: unknown,
         renditions: readonly Schemas["BrandRenditionSize"][],
         background: string,
       ): Promise<DrawnRendition[]> =>
-        renditions.map(({ rendition, width, height }) => ({
-          rendition,
-          width,
-          height,
-          png: new NodeFile([`png ${rendition} on ${background}`], `${rendition}.png`, {
-            type: "image/png",
-          }) as unknown as Blob,
-          url: `blob:test/${rendition}`,
-        })),
+        Promise.resolve(
+          renditions.map(({ rendition, width, height }) => ({
+            rendition,
+            width,
+            height,
+            png: new NodeFile([`png ${rendition} on ${background}`], `${rendition}.png`, {
+              type: "image/png",
+            }) as unknown as Blob,
+            url: `blob:test/${rendition}`,
+          })),
+        ),
     ),
   };
 });

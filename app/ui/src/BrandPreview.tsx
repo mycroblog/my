@@ -37,7 +37,7 @@ const brandPreview = tv({
         image: "h-12 w-auto max-w-full object-contain",
       },
       /** A link preview: the opaque 1200 × 630 PNG, as wide as the room. */
-      linkPreview: { frame: "w-full max-w-md rounded-lg border border-border", image: "aspect-[1200/630] w-full" },
+      linkPreview: { frame: "w-full max-w-md rounded-lg border border-border", image: "aspect-1200/630 w-full" },
     },
   },
 });

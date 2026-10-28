@@ -116,10 +116,8 @@ export async function cacheSavedBrand(
   image: AdminBrandImage | undefined,
 ): Promise<void> {
   queryClient.setQueryData(brandsQueryOptions(api).queryKey, (brands: AdminBrands | undefined) => {
-    const next: AdminBrands = { ...brands };
-    if (image === undefined) delete next[kind];
-    else next[kind] = image;
-    return next;
+    const { [kind]: _, ...rest }: AdminBrands = brands ?? {};
+    return image === undefined ? rest : { ...rest, [kind]: image };
   });
   await Promise.all([queryClient.invalidateQueries({ queryKey: ["get", "/instance"] }), refreshAuditLog(queryClient)]);
 }

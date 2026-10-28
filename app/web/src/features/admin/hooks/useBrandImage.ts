@@ -103,10 +103,10 @@ export function useBrandImage(kind: BrandKind) {
   const [defaultBackground] = useState(lightSurfaceColor);
   const [result, setResult] = useState<FormActionResult>();
   // The blob: URLs on show, released when they are replaced and when the form goes away.
-  const shown = useRef<BrandDraft | undefined>(undefined);
+  const shownRef = useRef<BrandDraft | undefined>(undefined);
   useEffect(
     () => () => {
-      if (shown.current !== undefined) release(shown.current);
+      if (shownRef.current !== undefined) release(shownRef.current);
     },
     [],
   );
@@ -115,8 +115,8 @@ export function useBrandImage(kind: BrandKind) {
   const backgroundValid = hexColor.test(background);
 
   const show = (next: BrandDraft | undefined) => {
-    if (shown.current !== undefined) release(shown.current);
-    shown.current = next;
+    if (shownRef.current !== undefined) release(shownRef.current);
+    shownRef.current = next;
     setDraft(next);
   };
 

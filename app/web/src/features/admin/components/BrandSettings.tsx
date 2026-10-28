@@ -65,6 +65,11 @@ const renditionPreviews: Partial<
   "preview-1200x630": { place: "linkPreview", caption: "client:admin.brand.preview.link" },
 };
 
+/** An element as it is written in SVG (`<script>`): code, not words to translate. */
+function elementTag(name: string): string {
+  return `<${name}>`;
+}
+
 export function BrandSettings() {
   const t = useT();
   return (
@@ -136,7 +141,7 @@ function BrandForm({ kind }: { kind: BrandKind }) {
           <Cluster as="ul" gap="2">
             {form.dropped.map((dropped) => (
               <Text as="li" key={`${dropped.kind}:${dropped.name}`} size="sm" tone="muted">
-                <code dir="ltr">{dropped.kind === "element" ? `<${dropped.name}>` : dropped.name}</code>
+                <code dir="ltr">{dropped.kind === "element" ? elementTag(dropped.name) : dropped.name}</code>
               </Text>
             ))}
           </Cluster>

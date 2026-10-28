@@ -27,7 +27,7 @@ function serveInstance(overrides: Partial<Schemas["Instance"]>) {
 
 /** The `src` of the images in `root`, whatever their role (the decorative ones have none). */
 function imageSources(root: HTMLElement): string[] {
-  // eslint-disable-next-line testing-library/no-node-access -- decorative images have no role to find them by.
+  // Decorative images have no role to find them by.
   return [...root.querySelectorAll("img")].map((img) => img.getAttribute("src") ?? "");
 }
 
