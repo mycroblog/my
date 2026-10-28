@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// The Cloudflare Worker that serves the UI preview (ADR-0112 §2): the static build of the app/web Storybook of the
+// screens, which composes the @my/ui Storybook under ui/. It only returns static assets: no Worker code, no bindings.
+// scripts/ui-preview.sh copies this file next to the checked build (./site) and runs wrangler on the copy, always from
+// main's checkout: a pull request's build never brings a config or code of its own.
+//
+//   main:          https://my-ui-preview.<subdomain>.workers.dev                 (wrangler deploy)
+//   pull request:  https://pr-<number>-my-ui-preview.<subdomain>.workers.dev     (wrangler preview --name pr-<number>)
+{
+  "name": "my-ui-preview",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./site"
+  }
+}
