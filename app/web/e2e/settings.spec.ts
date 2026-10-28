@@ -435,6 +435,7 @@ function useDeviceButton(page: Page) {
 const pages = [
   "/settings",
   "/settings/profile",
+  "/settings/badges",
   "/settings/preferences",
   "/settings/notifications",
   "/settings/follow-requests",
@@ -653,8 +654,8 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   await signedInServer(page, projectLocale());
   await page.goto("/settings/auto-delete");
   const main = page.getByRole("main");
-  // By keyboard: the inputs of the switch and the checkbox are visually hidden under what they draw.
-  const enabled = main.getByRole("switch", { name: message("settings.auto_delete.enabled") });
+  // By keyboard: the inputs of the checkboxes are visually hidden under what they draw.
+  const enabled = main.getByRole("checkbox", { name: message("settings.auto_delete.enabled") });
   await enabled.focus();
   await page.keyboard.press("Space");
   await expect(enabled).toBeChecked();
@@ -1014,7 +1015,7 @@ test.describe("notification settings", () => {
     await expect(ordinary.getByRole("columnheader")).toHaveCount(2);
     await expect(notificationCell(page, "mention", "email")).toHaveCount(0);
 
-    // By keyboard: the inputs of the switch and the checkbox are visually hidden under what they draw.
+    // By keyboard: the inputs of the checkboxes are visually hidden under what they draw.
     await main.getByRole("switch", { name: message("settings.notifications.sound.enable"), exact: true }).focus();
     await page.keyboard.press("Space");
     await expect(ordinary.getByRole("columnheader")).toHaveCount(3);
@@ -1029,13 +1030,13 @@ test.describe("notification settings", () => {
   });
 });
 
-test.describe("badges on the profile", () => {
+test.describe("badges on the badges page", () => {
   test("a badge is shown from the keyboard, each switch named by its badge, and stays after a reload", async ({
     page,
     makeAxeBuilder,
   }) => {
     const changes = await signedInServer(page, projectLocale());
-    await page.goto("/settings/profile");
+    await page.goto("/settings/badges");
     const section = page
       .getByRole("main")
       .getByRole("region", { name: message("settings.profile.badges"), exact: true });

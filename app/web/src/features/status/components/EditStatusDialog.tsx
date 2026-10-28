@@ -9,15 +9,13 @@ import {
   Cluster,
   Dialog,
   Hint,
+  IconToggleButton,
   InlineError,
   LanguageIcon,
   Select,
   SelectItem,
   Spinner,
   Stack,
-  ToggleButton,
-  Tooltip,
-  TooltipTrigger,
   WarningIcon,
 } from "@my/ui";
 import { type SubmitEvent, useId } from "react";
@@ -176,18 +174,15 @@ function EditStatusForm({ status, source, maxCharacters, isDescriptionRequired, 
       {/* The same row as the compose form's tools: the content warning and the language, then the buttons. */}
       <Cluster align="center" gap="2">
         <Cluster align="center" gap="1" shrink>
-          <TooltipTrigger>
-            <ToggleButton
-              aria-label={warningLabel}
-              isSelected={form.hasWarning}
-              onChange={(hasWarning) => {
-                form.edit({ hasWarning });
-              }}
-            >
-              <WarningIcon filled={form.hasWarning} />
-            </ToggleButton>
-            <Tooltip>{warningLabel}</Tooltip>
-          </TooltipTrigger>
+          <IconToggleButton
+            label={warningLabel}
+            isSelected={form.hasWarning}
+            onChange={(hasWarning) => {
+              form.edit({ hasWarning });
+            }}
+          >
+            <WarningIcon filled={form.hasWarning} />
+          </IconToggleButton>
           <Select
             variant="toolbar"
             aria-label={t("client:compose.language.label")}

@@ -247,7 +247,11 @@ Icons are part of the kit, so that every screen draws the same shapes at the sam
   and `ContentWarning`, the arrow of `Tooltip`, the silhouette of `Avatar`), the data drawn by `QrCode` and by the
   charts `TrendChart` and `Sparkline` ([Data visualisation](#data-visualisation)), and stand-in content in tests and stories.
 - They are decorative: `aria-hidden="true"` and `focusable="false"`. The meaning is in the visible label or the accessible
-  name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text.
+  name of the control. An icon-only control has an `aria-label` and a `Tooltip` with the same text: `IconButton` and
+  `IconToggleButton` take the text once as `label` and give it to both (`ghost` and `icon` by default for `IconButton`; any
+  `variant` and `size` of `Button`, such as `subtle` and `toolbar` in a post's action bar). Oxlint (`restrict/icons`)
+  rejects a `Button` or `ToggleButton` whose children are an icon and no words outside a `TooltipTrigger`; a description
+  the caller passes (a count's `aria-describedby`) stays while the tooltip, which repeats the name, is open.
 - The control sizes its icon: `Button`, `ToggleButton` and `Link` size a child `svg` (`size-5` in buttons, also in a
   `toolbar` button among toggles, `size-4` in a small button and next to a link's text), and a `navigation` link sizes
   every `svg` in it at `size-6`. An icon sets no size of its own, and neither does the screen that places it, so it never
@@ -360,7 +364,7 @@ string through props or children.
 | `TextAreaAutocomplete` | `Autocomplete` + `TextField` + `TextArea`, `Popover` + `ListBox` | as `TextArea`, plus the completion of the word after a trigger character (below) |
 | `TextFieldAutocomplete` | `Autocomplete` + `TextField` + `Input`, `Popover` + `ListBox` | as `TextField`, plus the same completion on one line (below) |
 | `Checkbox` | `CheckboxField` + `CheckboxButton` | children as the label, `description`, `errorMessage`, `isIndeterminate` |
-| `Switch` | `SwitchField` + `SwitchButton` | children as the label, `description`, `errorMessage` |
+| `Switch` | `SwitchField` + `SwitchButton` | children as the label, `description`, `errorMessage`. It takes effect as soon as it changes: a form saved by a submit button uses `Checkbox` instead (checked by `@my/ui/testing`, below) |
 | `RadioGroup`, `Radio` | `RadioGroup`, `RadioField` + `RadioButton` | `orientation`: `vertical` (default) / `horizontal`; a `description` per `Radio` |
 | `Select`, `SelectItem` | `Select` + `Popover` + `ListBox`, `ListBoxItem` | `items` with a render function, or `SelectItem` children; single selection. `SelectItem`'s `description` adds a line under the label (the option's accessible description) that the closed select does not show. `variant="toolbar"` (with `aria-label` and an `icon`) is a ghost `toolbar`-sized button for a row of tools that shows the chosen option |
 | `ReasonField` | `TextArea` | The reason for an operator's action: three rows and a required character count (`characterLimit`, `formatRemaining`) |
@@ -462,6 +466,8 @@ announces only changes made after it is in the page. A failure is not a status; 
 | `Table`, `TableHead`, `TableColumnHeader`, `TableBody`, `TableRow`, `TableRowHeader`, `TableCell` | A table to read: the native `table`, which needs no dependency beyond ADR-0031's list (a table to select or sort in would wrap React Aria's `Table`). It sits in a focusable `group` named like the table that scrolls sideways by itself when the columns do not fit the width, so the page never does. `caption` names it and is visually hidden; without it, `aria-labelledby` names it by a visible heading. `density`: `regular` (body size, a rule under every row) / `compact` (`text-sm`, fixed columns, rules between rows; `TableColumnHeader`'s `width`: `narrow` `w-16` / `wide` `w-2/5`). `TableCell` takes `numeric`, `wrap="anywhere"` and `align="matchParent"`; `TableRowHeader` the last two. |
 | `Segmented`, `SegmentedItem` | A pill switcher for two to four views of the same content (`value` / `onChange` by segment `id`): a React Aria single-selection `ToggleButtonGroup`, so a radiogroup that the arrow keys move through; pressed is `pressed` / `pressed-fg`. |
 | `Tag` | A short word that qualifies the value beside it ("Estimated", `outlined`: `rounded-full border border-border px-2 text-sm text-fg-muted`) or labels an account (`variant="pill"`, `as="li"` in a `ul`). |
+| `StatusBadge` | The state of something in one glance (ADR-0110 P3): a required `icon` from the icon set, the state's `label` always shown beside it, and a `tone` (`neutral` / `accent` / `success` / `warning` / `danger`) that only adds to them, so the state never shows by color alone. |
+| `VisibilityMark`, `VisibilityIcon` | A post's visibility (ADR-0017): one Phosphor shape per level (`public` globe, `local` buildings, `unlisted` open lock, `private` closed lock, `direct` at sign) and the level's `label`, in muted `text-xs`. `PostCard` shows it under the time from its required `visibility` (`{ level, label }`, or `null` for a row that is not a post) and ends the article's name with it; `VisibilityIcon` alone draws the icon of a control's current level. |
 | `ProfileHeader`, `ProfileHeaderImage`, `ProfileFields` / `ProfileField` | The heading of a profile: header image (or band), overlapping avatar, actions slot, name, handle, badges, tag pills, text, metadata fields, joined line and counts; `ProfileHeaderImage size="preview"` is the 3:1 image of the profile form. |
 | `Poll`, `PollResults`, `PollChoices`, `PollSummary`, `PollHint` | A poll (FR-112): `Poll` is the named section; `PollResults` the list of shares with a decorative bar (`aria-hidden`; the percentage and the "your vote" word carry the meaning); `PollChoices` the radio or checkbox form with the vote button; `PollSummary` the total and deadline line; `PollHint` a note. Titles take `dir="auto"`, `lang` and custom emoji. |
 
@@ -670,6 +676,11 @@ against viewport breakpoints.
 Each component has Testing Library tests next to it (`src/<Component>.test.tsx`) that find elements by role and drive them with
 `user-event`: keyboard operation and the label / description / error association. They run in jsdom in the `unit` project of
 [vitest.config.ts](vitest.config.ts) (`bun run test:unit`), which `scripts/task.sh ui:unit-test` (part of `scripts/task.sh check`) runs.
+
+`@my/ui/testing` ([src/testing.ts](src/testing.ts)) holds checks for the tests of the screens built with the kit, kept out of the
+main entry: `watchSwitchesInSubmitForms` watches what a test renders, dialogs opened and closed during it included, and its `stop`
+throws when a `role="switch"` was inside a form with a submit button (web-client §21, ADR-0110 §6). app/web's test setup runs it
+around every test.
 
 ## Stories
 

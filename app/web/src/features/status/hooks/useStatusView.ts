@@ -16,10 +16,12 @@ import { hostOf } from "../../../lib/host";
 import { profilePath } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useT } from "../../../lib/i18n";
+import { visibilityLabel } from "../../compose";
 import {
   type LinkCard,
   type MediaAttachment,
   type Status,
+  type Visibility,
   statusHistoryPath,
   statusPath,
   statusShareUrl,
@@ -44,6 +46,8 @@ export type StatusView = {
   };
   /** When the post was written: the ISO date for `<time>`, the relative time to show, and the full date and time. */
   time: TimeView;
+  /** Who can see the post (ADR-0017): its level, for the level's icon, and the level's name. */
+  visibility: { level: Visibility; label: string };
   /** The web client's address of the post (the boosted post for a boost), which its time links to. */
   path: string;
   /** For a post that was edited, the address of its edit history (FR-109); null for one that never was. */
@@ -181,6 +185,7 @@ function originalOf(post: Status): StatusView["original"] {
 
 /** Returns what the card of `status` shows. A boost shows the boosted post, with the booster above it. */
 export function useStatusView(status: Status): StatusView {
+  const t = useT();
   const post = status.boost ?? status;
   const lang = post.language === "und" ? undefined : post.language;
   const time = useTimeView(post.created_at);
@@ -204,6 +209,7 @@ export function useStatusView(status: Status): StatusView {
       avatar: imageSources(post.account.avatar),
     },
     time,
+    visibility: { level: post.visibility, label: t(visibilityLabel[post.visibility]) },
     path: statusPath(post),
     historyPath: post.edited_at === undefined ? null : statusHistoryPath(post),
     original: originalOf(post),

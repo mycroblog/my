@@ -83,6 +83,7 @@ const meta = {
     ),
     author: <Author name="Alice" handle="@alice" />,
     time: <Time />,
+    visibility: { level: "public", label: "Public" },
     content: (
       <PostContent
         html={serverSanitizedHtml(
@@ -215,7 +216,9 @@ export const Boosted: Story = {
     ),
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("article", { name: /^Bob boosted\s+Alice\s+@alice\s+2h$/ })).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("article", { name: /^Bob boosted\s+Alice\s+@alice\s+2h\s+Public$/ }),
+    ).toBeInTheDocument();
   },
 };
 
@@ -300,7 +303,7 @@ export const Highlighted: Story = {
   },
   play: async ({ canvas }) => {
     await expect(
-      canvas.getByRole("article", { name: /^Selected post\s+Alice\s+@alice\s+2h$/ }),
+      canvas.getByRole("article", { name: /^Selected post\s+Alice\s+@alice\s+2h\s+Public$/ }),
     ).toHaveAccessibleDescription(/The post this page is about/);
     await expect(canvas.getByText("3 boosts")).toBeVisible();
   },
@@ -347,7 +350,7 @@ export const Thread: Story = {
 export const Pinned: Story = {
   args: { context: <span>Pinned</span> },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("article", { name: /^Pinned\s+Alice\s+@alice\s+2h$/ })).toBeInTheDocument();
+    await expect(canvas.getByRole("article", { name: /^Pinned\s+Alice\s+@alice\s+2h\s+Public$/ })).toBeInTheDocument();
   },
 };
 
@@ -380,4 +383,28 @@ export const Edited: Story = {
 
 export const WithoutAvatarOrActions: Story = {
   args: { avatar: undefined, actions: undefined },
+};
+
+const levels = [
+  { level: "public", label: "Public" },
+  { level: "local", label: "This server" },
+  { level: "unlisted", label: "Unlisted" },
+  { level: "private", label: "Followers" },
+  { level: "direct", label: "Mentioned people" },
+] as const;
+
+/** Every visibility under the time, each with its own icon: the shape tells them apart, not a color. */
+export const Visibilities: Story = {
+  render: (args) => (
+    <div>
+      {levels.map((visibility) => (
+        <PostCard key={visibility.level} {...args} visibility={visibility} />
+      ))}
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    for (const { label } of levels) {
+      await expect(canvas.getByRole("article", { name: new RegExp(`2h\\s+${label}$`) })).toBeInTheDocument();
+    }
+  },
 };

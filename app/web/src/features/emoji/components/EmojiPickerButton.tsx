@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Button, EmojiIcon, Popover, PopoverTrigger, Tooltip, TooltipTrigger } from "@my/ui";
+import { EmojiIcon, IconButton, Popover, PopoverTrigger } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type EmojiTarget, useEmojiPicker } from "../hooks/useEmojiPicker";
 import { EmojiPickerPanel } from "./EmojiPickerPanel";
@@ -22,34 +22,24 @@ export function EmojiPickerButton({ label, isDisabled = false, ...target }: Emoj
   const picker = useEmojiPicker(target);
   const name = label ?? t("client:emoji.picker.button");
   return (
-    <TooltipTrigger>
-      <PopoverTrigger
-        onOpenChange={(isOpen) => {
-          if (isOpen) picker.preload();
-        }}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={name}
-          isDisabled={isDisabled}
-          onHoverStart={picker.preload}
-          onFocus={picker.preload}
-        >
-          <EmojiIcon />
-        </Button>
-        <Popover aria-label={t("client:emoji.picker.title")} placement="bottom end">
-          {({ close }) => (
-            <EmojiPickerPanel
-              picker={picker}
-              onSelect={(selection) => {
-                picker.select(selection, close);
-              }}
-            />
-          )}
-        </Popover>
-      </PopoverTrigger>
-      <Tooltip>{name}</Tooltip>
-    </TooltipTrigger>
+    <PopoverTrigger
+      onOpenChange={(isOpen) => {
+        if (isOpen) picker.preload();
+      }}
+    >
+      <IconButton label={name} isDisabled={isDisabled} onHoverStart={picker.preload} onFocus={picker.preload}>
+        <EmojiIcon />
+      </IconButton>
+      <Popover aria-label={t("client:emoji.picker.title")} placement="bottom end">
+        {({ close }) => (
+          <EmojiPickerPanel
+            picker={picker}
+            onSelect={(selection) => {
+              picker.select(selection, close);
+            }}
+          />
+        )}
+      </Popover>
+    </PopoverTrigger>
   );
 }

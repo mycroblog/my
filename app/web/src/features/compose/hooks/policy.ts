@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The rules of a new post that the client applies before the server does: the visibilities and their
-// order (ADR-0017), the default of a reply, the account's visibility ceiling, the mentions a reply starts
-// with and the remote ones a post names, and the character count.
+// The rules of a new post that the client applies before the server does: the narrower of two visibilities
+// (in the order of visibilityMessages.ts, ADR-0017), the default of a reply, the account's visibility ceiling, the
+// mentions a reply starts with and the remote ones a post names, and the character count.
 import { textTokens } from "../../../lib/textTokens";
 import type { PostingLimits, Status, Visibility } from "../api/compose";
-
-/** The visibilities from the widest to the narrowest (ADR-0017). */
-export const visibilities: readonly Visibility[] = ["public", "local", "unlisted", "private", "direct"];
+import { visibilities } from "./visibilityMessages";
 
 /** The narrower of two visibilities. */
 export function narrower(a: Visibility, b: Visibility): Visibility {

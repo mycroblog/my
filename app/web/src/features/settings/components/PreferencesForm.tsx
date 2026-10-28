@@ -15,45 +15,24 @@ import {
   Text,
 } from "@my/ui";
 import { useId, useRef } from "react";
-import { languageOptions, quotePolicies, quotePolicyDescription, quotePolicyLabel } from "../../compose";
-import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import {
+  isVisibility,
+  languageOptions,
+  quotePolicies,
+  quotePolicyDescription,
+  quotePolicyLabel,
+  visibilities,
+  visibilityDescription,
+  visibilityLabel,
+} from "../../compose";
+import { useT } from "../../../lib/i18n";
 import { useDisplaySettings } from "../../../lib/locale";
-import type { Visibility } from "../api/me";
 import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } from "../hooks/languages";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
 import { type PreferenceControl, usePreferences } from "../hooks/usePreferences";
 import { AutoplaySwitch } from "./AutoplaySwitch";
 import { NavigationSettings } from "./NavigationSettings";
 import { ThemeRadioGroup } from "./ThemeRadioGroup";
-
-/** The visibilities in the order of ADR-0017, widest first, with their label and description. */
-const visibilities: readonly { id: Visibility; label: ClientMessageKey; description: ClientMessageKey }[] = [
-  {
-    id: "public",
-    label: "client:settings.visibility.public",
-    description: "client:settings.visibility.public.description",
-  },
-  {
-    id: "local",
-    label: "client:settings.visibility.local",
-    description: "client:settings.visibility.local.description",
-  },
-  {
-    id: "unlisted",
-    label: "client:settings.visibility.unlisted",
-    description: "client:settings.visibility.unlisted.description",
-  },
-  {
-    id: "private",
-    label: "client:settings.visibility.private",
-    description: "client:settings.visibility.private.description",
-  },
-  {
-    id: "direct",
-    label: "client:settings.visibility.direct",
-    description: "client:settings.visibility.direct.description",
-  },
-];
 
 /**
  * The preferences: every control saves its value as soon as it changes; the theme, the autoplay of animations and the
@@ -84,15 +63,14 @@ export function PreferencesForm() {
         description={t("client:settings.default_visibility.description")}
         value={defaultVisibility.value}
         onChange={(value) => {
-          const visibility = visibilities.find((v) => v.id === value);
-          if (visibility !== undefined) defaultVisibility.onChange(visibility.id);
+          if (isVisibility(value)) defaultVisibility.onChange(value);
         }}
         isInvalid={defaultVisibility.error !== undefined}
         errorMessage={defaultVisibility.error}
       >
         {visibilities.map((visibility) => (
-          <Radio key={visibility.id} value={visibility.id} description={t(visibility.description)}>
-            {t(visibility.label)}
+          <Radio key={visibility} value={visibility} description={t(visibilityDescription[visibility])}>
+            {t(visibilityLabel[visibility])}
           </Radio>
         ))}
       </RadioGroup>

@@ -8,13 +8,13 @@
 // co-hosts what they may do to the participant, and on the user's own avatar as a speaker "Just listen". The page
 // ends with the dock (VoiceCallDock).
 import {
-  Button,
   Card,
   Cluster,
   ConfirmDialog,
   CustomEmoji,
   Heading,
   Hint,
+  IconButton,
   InlineError,
   Link,
   LivePill,
@@ -31,8 +31,6 @@ import {
   Stack,
   Tag,
   Text,
-  Tooltip,
-  TooltipTrigger,
 } from "@my/ui";
 import { type ReactNode, useId, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -182,7 +180,9 @@ function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { ph
           {phase !== undefined && <Hint as="span">{phase}</Hint>}
         </Cluster>
         <Cluster gap="1" align="center" wrap={false}>
-          <IconButton label={t("client:voice.room.share")} icon={<ShareIcon />} onPress={share} />
+          <IconButton label={t("client:voice.room.share")} onPress={share}>
+            <ShareIcon />
+          </IconButton>
           {isHost ? <SettingsButton room={room} /> : <RoomMenu room={room} />}
         </Cluster>
       </Cluster>
@@ -207,18 +207,6 @@ function RoomHead({ room, isHost, renderHeading, phase }: VoiceStageProps & { ph
   );
 }
 
-/** An icon button named by its label, which it shows as a tooltip (web-client/16-look-states-and-wording.md G12). */
-function IconButton({ label, icon, onPress }: { label: string; icon: ReactNode; onPress: () => void }) {
-  return (
-    <TooltipTrigger>
-      <Button variant="ghost" size="icon" aria-label={label} onPress={onPress}>
-        {icon}
-      </Button>
-      <Tooltip>{label}</Tooltip>
-    </TooltipTrigger>
-  );
-}
-
 /** The host's button to the room's settings (the visibility and the speakers among them). */
 function SettingsButton({ room }: { room: VoiceRoom }) {
   const t = useT();
@@ -227,11 +215,12 @@ function SettingsButton({ room }: { room: VoiceRoom }) {
     <>
       <IconButton
         label={t("client:voice.form.edit_title")}
-        icon={<SettingsIcon />}
         onPress={() => {
           setIsOpen(true);
         }}
-      />
+      >
+        <SettingsIcon />
+      </IconButton>
       <VoiceRoomFormDialog room={room} isOpen={isOpen} onOpenChange={setIsOpen} />
     </>
   );
@@ -245,12 +234,9 @@ function RoomMenu({ room }: { room: VoiceRoom }) {
   return (
     <>
       <MenuTrigger>
-        <TooltipTrigger>
-          <Button variant="ghost" size="icon" aria-label={label}>
-            <MoreIcon />
-          </Button>
-          <Tooltip>{label}</Tooltip>
-        </TooltipTrigger>
+        <IconButton label={label}>
+          <MoreIcon />
+        </IconButton>
         <Menu aria-label={label} placement="bottom end">
           <MenuItem
             onAction={() => {

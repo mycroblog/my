@@ -195,6 +195,7 @@ export function StatusCard({
         />
       }
       time={time}
+      visibility={view.visibility}
       content={
         view.contentWarning === null ? (
           body

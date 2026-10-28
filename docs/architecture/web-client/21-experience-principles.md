@@ -39,5 +39,11 @@ UI の PR は、次の 4 観点で点検する。各観点は、画面の要件�
 | L1 画面の要件 | [screens/](screens/README.md) の画面ごとの文書 | UI の issue を `agent:ready` にする条件 |
 | L2 パターンの部品 | 判断を型で強制する `@my/ui` の部品 | 画面（`app/web`）は L2 の部品で組む。足りなければ `@my/ui` に足す |
 | L3 機械検査 | ARIA スナップショット・部品のテスト・lint・文言のカタログ | E2E・部品のテスト・Oxlint・`i18n:check` |
-| L4 課題テスト | L1 の作業を ARIA のツリーだけで行い、手数と lostness を測る | UI を変える issue のエージェントが PR の前に行い、PR に書く（[workflow §5](../../agents/workflow.md#5-verify)） |
+| L4 課題テスト | L1 の作業を ARIA のツリーだけで行い、手数と lostness を測る | nightly が main に対して行い、0.4 を超えた作業を画面ごとの issue にする（ADR-0114）。PR は作業ごとの最短の手順を書く（[workflow §5](../../agents/workflow.md#5-verify)） |
 | L5 人の批評 | main の一覧（ADR-0112）を決定者が見て issue にする | merge の後（[workflow §7](../../agents/workflow.md#7-merge-through-the-merge-queue)） |
+
+L3 のうち、今ある検査は次のとおり。
+
+- **送信ボタンのある `form` の中のスイッチ**: `Switch` はすぐ効く操作の部品なので、送信ボタンで保存する `form` の中では `Checkbox` を使う。
+  `@my/ui/testing` の `watchSwitchesInSubmitForms` が、`app/web` の各テスト（`src/test/setup.ts`）の描いたもの（途中で開いて閉じたダイアログも含む）を見て、
+  送信ボタンを持つ `form`（`form=` で外から結び付いたボタンも含む）の中に `role="switch"` があればそのテストを失敗させる。

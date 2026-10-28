@@ -888,6 +888,31 @@
         ]
       }
     },
+    // G12, P3: an icon-only button (a Button or ToggleButton whose children are an icon and no words) shows its name as a
+    // tooltip too, so it is the IconButton or IconToggleButton of @my/ui, or sits in a TooltipTrigger
+    // (web-client/16-look-states-and-wording.md, 21-experience-principles.md). Stories and tests render bare triggers.
+    {
+      "files": [
+        "ui/src/**/*.tsx",
+        "web/src/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/*.test.tsx",
+        "**/*.stories.tsx"
+      ],
+      "jsPlugins": [
+        "./oxlint/restrictions.js"
+      ],
+      "rules": {
+        "restrict/icons": [
+          "error",
+          {
+            "selector": "JSXElement[openingElement.name.name=/^(Aria)?(Toggle)?Button$/]:has(> JSXElement[openingElement.name.name=/Icon$/]):not(:has(> JSXText[value=/\\S/])):not(:has(> JSXExpressionContainer[expression.type=/^(Identifier|CallExpression|MemberExpression|Literal|TemplateLiteral)$/])):not(JSXElement[openingElement.name.name='TooltipTrigger'] JSXElement) > JSXOpeningElement",
+            "message": "An icon-only button shows its name as a tooltip too; use IconButton or IconToggleButton of @my/ui, which take the name once as label (web-client/16-look-states-and-wording.md G12)."
+          }
+        ]
+      }
+    },
     // D2: components use container queries; viewport breakpoints belong to the app shell, whose look is in the kit's
     // AppShell and AppNavigation, and ToastProvider's region, which stands clear of the tab bar they draw.
     {

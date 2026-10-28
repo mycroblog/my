@@ -44,7 +44,7 @@ describe("the local timeline", () => {
     await renderApp({ path: "/local" });
 
     const feed = await screen.findByRole("feed", { name: "Local timeline" });
-    const article = within(feed).getByRole("article", { name: "Bob @bob 3 hr. ago" });
+    const article = within(feed).getByRole("article", { name: "Bob @bob 3 hr. ago Public" });
     expect(article).toHaveAccessibleDescription("Hello from the local timeline!");
     expect(article).toHaveAttribute("aria-posinset", "1");
     // The last page: the feed knows its size and offers nothing more.
@@ -157,8 +157,29 @@ describe("a status card", () => {
     await renderApp({ path: "/local" });
 
     // A booster without a display name is named by the username; the time is the post's.
-    const article = await screen.findByRole("article", { name: "carol boosted Bob @bob 5 min. ago" });
+    const article = await screen.findByRole("article", { name: "carol boosted Bob @bob 5 min. ago Public" });
     expect(article).toHaveAccessibleDescription("Post 1");
+  });
+
+  test("shows the visibility of every post under its time, at the end of the post's name", async () => {
+    const posts = [
+      status(1, { visibility: "local" }),
+      status(2, { visibility: "private" }),
+      status(3, { visibility: "direct" }),
+    ];
+    server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage(posts))));
+    await renderApp({ path: "/local" });
+
+    const feed = await screen.findByRole("feed", { name: "Local timeline" });
+    for (const [post, name] of [
+      ["Post 1", "This server"],
+      ["Post 2", "Followers"],
+      ["Post 3", "Mentioned people"],
+    ] as const) {
+      const article = within(feed).getByRole("article", { description: post });
+      expect(article).toHaveAccessibleName(new RegExp(`${name}$`));
+      expect(within(article).getByText(name)).toBeVisible();
+    }
   });
 
   test("names the author's link by the whole name and handle, however long, in the name's own direction", async () => {
@@ -269,7 +290,7 @@ describe("a status card", () => {
     const { user } = await renderApp({ path: "/local" });
 
     // Two weeks ago: the date instead of a relative time.
-    const article = await screen.findByRole("article", { name: "Bob @bob Oct 1, 2026" });
+    const article = await screen.findByRole("article", { name: "Bob @bob Oct 1, 2026 Public" });
     expect(within(article).getByText("Cake")).toBeVisible();
     expect(within(article).getByText("Post 1")).not.toBeVisible();
 
@@ -513,7 +534,7 @@ describe("a status card", () => {
     await renderApp({ path: "/local", locale: "ja" });
 
     const feed = await screen.findByRole("feed", { name: "ローカルタイムライン" });
-    expect(within(feed).getByRole("article", { name: /3 時間前$/ })).toBeInTheDocument();
+    expect(within(feed).getByRole("article", { name: /3 時間前 公開$/ })).toBeInTheDocument();
   });
 });
 
