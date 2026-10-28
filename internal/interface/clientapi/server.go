@@ -42,6 +42,9 @@ type Options struct {
 	// Instance reads the instance settings and texts; nil reads every setting as its default
 	// and no text.
 	Instance InstanceInfo
+	// Overview reads the counts and the operators for GET /instance/overview; nil leaves both
+	// out.
+	Overview OverviewReader
 	// Documents reads the rendered documents for GET /instance/documents/{kind}; nil answers
 	// 404 to it.
 	Documents InstanceDocuments

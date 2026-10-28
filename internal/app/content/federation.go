@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -172,4 +173,12 @@ func (s *Service) PostCount(ctx context.Context, accountID string) (int64, error
 // direct, and the boosts that are not retracted, of statuses that are not deleted.
 func (s *Service) LocalPostCount(ctx context.Context) (int64, error) {
 	return s.d.Repository.LocalPostsTotal(ctx)
+}
+
+// DailyLocalPublicPosts counts the public posts of local accounts that are not deleted in each
+// of the days periods of 24 hours before to, oldest first, for the counts of the landing page
+// (GET /instance/overview). Only public posts count: the other visibilities are not for every
+// visitor (ADR-0017), and boosts are not posts of their own.
+func (s *Service) DailyLocalPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error) {
+	return s.d.Repository.DailyLocalPublicPosts(ctx, to, days)
 }

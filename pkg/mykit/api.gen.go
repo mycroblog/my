@@ -2100,6 +2100,8 @@ const (
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
+	InstanceSettingKeyPublicOperators                  InstanceSettingKey = "public_operators"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
 	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
@@ -2173,6 +2175,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
 	case InstanceSettingKeyPreviewImage:
+		return true
+	case InstanceSettingKeyPublicCounts:
+		return true
+	case InstanceSettingKeyPublicOperators:
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
@@ -8484,6 +8490,24 @@ type InstanceContact struct {
 	Email *string `json:"email,omitempty"`
 }
 
+// InstanceCounts How many members the instance has, how many public posts they made lately, and since when it
+// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+type InstanceCounts struct {
+	// CountedAt When the counts were taken.
+	CountedAt time.Time `json:"counted_at"`
+
+	// DailyPosts The public posts of local accounts that are not deleted, in each of the 7 periods of 24
+	// hours before `counted_at`, oldest first: the last item counts the posts of the 24 hours
+	// up to `counted_at`.
+	DailyPosts []int `json:"daily_posts"`
+
+	// Members The local accounts that are not deleted, the instance's own actor aside.
+	Members int `json:"members"`
+
+	// StartedAt When the instance was set up.
+	StartedAt time.Time `json:"started_at"`
+}
+
 // InstanceDocument A document that the instance has published, rendered for reading. The administrators write
 // it once, in any language, so every locale gets the same text.
 type InstanceDocument struct {
@@ -8579,6 +8603,21 @@ type InstanceLimits struct {
 	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
+}
+
+// InstanceOverview The counts and the operators of the instance (`GET /instance/overview`). Each part is
+// omitted while the instance setting that shows it is off.
+type InstanceOverview struct {
+	// Counts How many members the instance has, how many public posts they made lately, and since when it
+	// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+	Counts *InstanceCounts `json:"counts,omitempty"`
+
+	// Operators The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
+	// role, or a role with a moderation or server permission) on their profile, highest role
+	// first; each has the badges it shows in `badges`. A staff member who shows no such badge,
+	// and an account that is suspended or deleted, is not listed. Omitted while the instance
+	// setting `public_operators` is off; empty when nobody shows such a badge.
+	Operators *[]Account `json:"operators,omitempty"`
 }
 
 // InstanceRegistrations How people sign up on the instance.
@@ -18133,6 +18172,17 @@ type ClientInterface interface {
 	// Corresponds with GET /instance/income_totals (the `GetInstanceIncomeTotals` operationId).
 	GetInstanceIncomeTotals(ctx context.Context, params *GetInstanceIncomeTotalsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetInstanceOverview Get the counts and the operators of the instance
+	//
+	// What the landing page shows about the instance besides `GET /instance`: how many members it
+	// has and how active they are, and who runs it. Only local, public data: the members are
+	// counted, never listed, and only public posts count. The instance settings `public_counts`
+	// and `public_operators` decide what it shows; a part that is off is left out. The counts and
+	// the operators are read again every few minutes, so they may lag behind.
+	//
+	// Corresponds with GET /instance/overview (the `GetInstanceOverview` operationId).
+	GetInstanceOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListSupporterPlans List the supporter plans
 	//
 	// The supporter plans that take subscriptions, by rank, with their monthly and yearly
@@ -25902,6 +25952,27 @@ func (c *Client) GetServerHealth(ctx context.Context, reqEditors ...RequestEdito
 // Corresponds with GET /instance/income_totals (the `GetInstanceIncomeTotals` operationId).
 func (c *Client) GetInstanceIncomeTotals(ctx context.Context, params *GetInstanceIncomeTotalsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInstanceIncomeTotalsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetInstanceOverview Get the counts and the operators of the instance
+//
+// What the landing page shows about the instance besides `GET /instance`: how many members it
+// has and how active they are, and who runs it. Only local, public data: the members are
+// counted, never listed, and only public posts count. The instance settings `public_counts`
+// and `public_operators` decide what it shows; a part that is off is left out. The counts and
+// the operators are read again every few minutes, so they may lag behind.
+//
+// Corresponds with GET /instance/overview (the `GetInstanceOverview` operationId).
+func (c *Client) GetInstanceOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetInstanceOverviewRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -38485,6 +38556,33 @@ func NewGetInstanceIncomeTotalsRequest(server string, params *GetInstanceIncomeT
 	return req, nil
 }
 
+// NewGetInstanceOverviewRequest constructs an http.Request for the GetInstanceOverview method
+func NewGetInstanceOverviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/instance/overview")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListSupporterPlansRequest constructs an http.Request for the ListSupporterPlans method
 func NewListSupporterPlansRequest(server string) (*http.Request, error) {
 	var err error
@@ -46937,6 +47035,19 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /instance/income_totals (the `GetInstanceIncomeTotals` operationId).
 	GetInstanceIncomeTotalsWithResponse(ctx context.Context, params *GetInstanceIncomeTotalsParams, reqEditors ...RequestEditorFn) (*GetInstanceIncomeTotalsResponse, error)
+
+	// GetInstanceOverviewWithResponse Get the counts and the operators of the instance
+	//
+	// What the landing page shows about the instance besides `GET /instance`: how many members it
+	// has and how active they are, and who runs it. Only local, public data: the members are
+	// counted, never listed, and only public posts count. The instance settings `public_counts`
+	// and `public_operators` decide what it shows; a part that is off is left out. The counts and
+	// the operators are read again every few minutes, so they may lag behind.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /instance/overview (the `GetInstanceOverview` operationId).
+	GetInstanceOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInstanceOverviewResponse, error)
 
 	// ListSupporterPlansWithResponse List the supporter plans
 	//
@@ -62444,6 +62555,71 @@ func (r GetInstanceIncomeTotalsResponse) ContentType() string {
 	return ""
 }
 
+// GetInstanceOverviewResponse200Headers the declared response headers of an HTTP 200 response for GetInstanceOverview
+type GetInstanceOverviewResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetInstanceOverviewResponseDefaultHeaders the declared response headers of an HTTP default response for GetInstanceOverview
+type GetInstanceOverviewResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetInstanceOverviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *InstanceOverview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetInstanceOverviewResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetInstanceOverviewResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetInstanceOverviewResponse) GetJSON200() *InstanceOverview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetInstanceOverviewResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetInstanceOverviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetInstanceOverviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetInstanceOverviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetInstanceOverviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListSupporterPlansResponse200Headers the declared response headers of an HTTP 200 response for ListSupporterPlans
 type ListSupporterPlansResponse200Headers struct {
 	CacheControl *string
@@ -74894,6 +75070,25 @@ func (c *ClientWithResponses) GetInstanceIncomeTotalsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseGetInstanceIncomeTotalsResponse(rsp)
+}
+
+// GetInstanceOverviewWithResponse Get the counts and the operators of the instance
+//
+// What the landing page shows about the instance besides `GET /instance`: how many members it
+// has and how active they are, and who runs it. Only local, public data: the members are
+// counted, never listed, and only public posts count. The instance settings `public_counts`
+// and `public_operators` decide what it shows; a part that is off is left out. The counts and
+// the operators are read again every few minutes, so they may lag behind.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /instance/overview (the `GetInstanceOverview` operationId).
+func (c *ClientWithResponses) GetInstanceOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetInstanceOverviewResponse, error) {
+	rsp, err := c.GetInstanceOverview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetInstanceOverviewResponse(rsp)
 }
 
 // ListSupporterPlansWithResponse List the supporter plans
@@ -94045,6 +94240,83 @@ func ParseGetInstanceIncomeTotalsResponse(rsp *http.Response) (*GetInstanceIncom
 		response.Headers200 = &headers
 	case true:
 		var headers GetInstanceIncomeTotalsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetInstanceOverviewResponse parses an HTTP response from a GetInstanceOverviewWithResponse call
+func ParseGetInstanceOverviewResponse(rsp *http.Response) (*GetInstanceOverviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetInstanceOverviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest InstanceOverview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetInstanceOverviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetInstanceOverviewResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

@@ -2102,6 +2102,8 @@ const (
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
+	InstanceSettingKeyPublicOperators                  InstanceSettingKey = "public_operators"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
 	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
@@ -2175,6 +2177,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
 	case InstanceSettingKeyPreviewImage:
+		return true
+	case InstanceSettingKeyPublicCounts:
+		return true
+	case InstanceSettingKeyPublicOperators:
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
@@ -8484,6 +8490,24 @@ type InstanceContact struct {
 	Email *string `json:"email,omitempty"`
 }
 
+// InstanceCounts How many members the instance has, how many public posts they made lately, and since when it
+// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+type InstanceCounts struct {
+	// CountedAt When the counts were taken.
+	CountedAt time.Time `json:"counted_at"`
+
+	// DailyPosts The public posts of local accounts that are not deleted, in each of the 7 periods of 24
+	// hours before `counted_at`, oldest first: the last item counts the posts of the 24 hours
+	// up to `counted_at`.
+	DailyPosts []int `json:"daily_posts"`
+
+	// Members The local accounts that are not deleted, the instance's own actor aside.
+	Members int `json:"members"`
+
+	// StartedAt When the instance was set up.
+	StartedAt time.Time `json:"started_at"`
+}
+
 // InstanceDocument A document that the instance has published, rendered for reading. The administrators write
 // it once, in any language, so every locale gets the same text.
 type InstanceDocument struct {
@@ -8579,6 +8603,21 @@ type InstanceLimits struct {
 	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
+}
+
+// InstanceOverview The counts and the operators of the instance (`GET /instance/overview`). Each part is
+// omitted while the instance setting that shows it is off.
+type InstanceOverview struct {
+	// Counts How many members the instance has, how many public posts they made lately, and since when it
+	// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
+	Counts *InstanceCounts `json:"counts,omitempty"`
+
+	// Operators The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
+	// role, or a role with a moderation or server permission) on their profile, highest role
+	// first; each has the badges it shows in `badges`. A staff member who shows no such badge,
+	// and an account that is suspended or deleted, is not listed. Omitted while the instance
+	// setting `public_operators` is off; empty when nobody shows such a badge.
+	Operators *[]Account `json:"operators,omitempty"`
 }
 
 // InstanceRegistrations How people sign up on the instance.
@@ -14090,6 +14129,9 @@ type ServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(w http.ResponseWriter, r *http.Request, params GetInstanceIncomeTotalsParams)
+	// GetInstanceOverview Get the counts and the operators of the instance
+	// (GET /instance/overview)
+	GetInstanceOverview(w http.ResponseWriter, r *http.Request)
 	// ListSupporterPlans List the supporter plans
 	// (GET /instance/supporter_plans)
 	ListSupporterPlans(w http.ResponseWriter, r *http.Request)
@@ -20652,6 +20694,20 @@ func (siw *ServerInterfaceWrapper) GetInstanceIncomeTotals(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetInstanceOverview operation middleware
+func (siw *ServerInterfaceWrapper) GetInstanceOverview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstanceOverview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSupporterPlans operation middleware
 func (siw *ServerInterfaceWrapper) ListSupporterPlans(w http.ResponseWriter, r *http.Request) {
 
@@ -23824,6 +23880,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/custom_emoji_requests", wrapper.ListCustomEmojiRequests)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests", wrapper.CreateCustomEmojiRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/custom_emoji_requests/{id}/withdraw", wrapper.WithdrawCustomEmojiRequest)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/overview", wrapper.GetInstanceOverview)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/health", wrapper.GetServerHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/documents/{kind}", wrapper.GetInstanceDocument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/domain_actions", wrapper.ListInstanceDomainActions)
@@ -37030,6 +37087,67 @@ func (response GetInstanceIncomeTotalsdefaultApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type GetInstanceOverviewRequestObject struct {
+}
+
+type GetInstanceOverviewResponseObject interface {
+	VisitGetInstanceOverviewResponse(w http.ResponseWriter) error
+}
+
+type GetInstanceOverview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetInstanceOverview200JSONResponse struct {
+	Body    InstanceOverview
+	Headers GetInstanceOverview200ResponseHeaders
+}
+
+func (response GetInstanceOverview200JSONResponse) VisitGetInstanceOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceOverviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetInstanceOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetInstanceOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSupporterPlansRequestObject struct {
 }
 
@@ -44391,6 +44509,9 @@ type StrictServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(ctx context.Context, request GetInstanceIncomeTotalsRequestObject) (GetInstanceIncomeTotalsResponseObject, error)
+	// GetInstanceOverview Get the counts and the operators of the instance
+	// (GET /instance/overview)
+	GetInstanceOverview(ctx context.Context, request GetInstanceOverviewRequestObject) (GetInstanceOverviewResponseObject, error)
 	// ListSupporterPlans List the supporter plans
 	// (GET /instance/supporter_plans)
 	ListSupporterPlans(ctx context.Context, request ListSupporterPlansRequestObject) (ListSupporterPlansResponseObject, error)
@@ -50538,6 +50659,30 @@ func (sh *strictHandler) GetInstanceIncomeTotals(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetInstanceIncomeTotalsResponseObject); ok {
 		if err := validResponse.VisitGetInstanceIncomeTotalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstanceOverview operation middleware
+func (sh *strictHandler) GetInstanceOverview(w http.ResponseWriter, r *http.Request) {
+	var request GetInstanceOverviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstanceOverview(ctx, request.(GetInstanceOverviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstanceOverview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstanceOverviewResponseObject); ok {
+		if err := validResponse.VisitGetInstanceOverviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
