@@ -11,12 +11,14 @@ const switchStyles = tv({
       "flex min-h-6 cursor-default items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
     ],
-    // The thumb sits at the start and moves to the end with justify-content, so it follows the direction.
+    // The thumb sits at the start and moves to the end with justify-content, so it follows the direction. The groove is
+    // sunk with the inner shadow and the thumb raised (the soft surfaces); the fills keep the track at 3:1 against the
+    // surface and the thumb against the track.
     track: [
-      "flex h-6.5 w-11 shrink-0 items-center justify-start rounded-full bg-border-strong px-1",
+      "flex h-6.5 w-11 shrink-0 items-center justify-start rounded-full bg-border-strong px-1 shadow-soft-inset",
       "motion-safe:transition-colors",
     ],
-    thumb: "size-4.5 rounded-full bg-surface-raised",
+    thumb: "size-4.5 rounded-full bg-surface-raised shadow-soft-raised",
     // Aligns the description and error with the label text: the track (2.75rem) plus the gap (0.75rem).
     text: "ms-14",
   },
