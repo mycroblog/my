@@ -260,6 +260,7 @@ test("a notification from the stream raises the unread badge", async ({ page }) 
   await page.goto("/home");
   const link = page.getByRole("navigation").locator('a[href="/notifications"]');
   await expect(link).toHaveAccessibleName(/2/);
-  await expect(link.locator('[aria-hidden="true"]', { hasText: "2" })).toBeVisible();
+  // The badge draws its digits as generated content (data-count); the link's name says the count.
+  await expect(link.locator('[aria-hidden="true"][data-count="2"]')).toBeVisible();
   await expectNoHorizontalScroll(page);
 });

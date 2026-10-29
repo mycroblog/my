@@ -23,6 +23,7 @@ import {
   localeDir,
   openFromNavigation,
   test as base,
+  newPostButton,
 } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
@@ -153,7 +154,7 @@ async function navigate(page: Page, label: "home" | "local" | "notifications" | 
 
 /** Opens the new-post form from the navigation's button (the tab bar's or the rail's) and returns it. */
 async function openComposer(page: Page) {
-  await page.getByRole("button", { name: message("compose.open") }).click();
+  await newPostButton(page, message("compose.open")).click();
   await expect(page.getByRole("dialog", { name: message("compose.title") })).toBeVisible();
   const form = page.getByRole("form", { name: message("compose.title") });
   await expect(form.getByRole("textbox", { name: message("compose.text.label") })).toBeVisible();
@@ -265,9 +266,14 @@ test.describe("the main flow", () => {
       await form
         .getByRole("textbox", { name: message("compose.media.description.label", { position: "1" }) })
         .fill(description);
+      // The post button stays pressable while the image uploads, and then only says why it cannot post (G23): post
+      // once the image is ready.
+      const attachments = form.getByRole("list", { name: message("compose.media.list") });
+      for (const progress of ["compose.media.uploading", "compose.media.processing"])
+        await expect(attachments.getByText(message(progress))).toHaveCount(0);
       await expectQuality(page);
       await form.getByRole("button", { name: message("compose.submit") }).click();
-      await expectToast(page, message("compose.posted"));
+      await expectToast(page, message("compose.posted.first"));
     });
 
     await test.step("the post is on the first user's home and local timelines", async () => {

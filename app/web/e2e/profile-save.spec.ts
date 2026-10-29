@@ -14,6 +14,7 @@ import {
   expectNoHorizontalScroll,
   openFromNavigation,
   test,
+  newPostButton,
 } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
@@ -67,11 +68,12 @@ async function signIn(page: Page, email: string, password: string): Promise<void
 
 /** Posts `text` from the new-post sheet, opened by the navigation's button. */
 async function post(page: Page, text: string): Promise<void> {
-  await page.getByRole("button", { name: message("compose.open") }).click();
+  await newPostButton(page, message("compose.open")).click();
   const form = page.getByRole("form", { name: message("compose.title") });
   await form.getByRole("textbox", { name: message("compose.text.label") }).fill(text);
   await form.getByRole("button", { name: message("compose.submit") }).click();
-  await expectToast(page, message("compose.posted"));
+  // The new user's first post: its notice welcomes them too.
+  await expectToast(page, message("compose.posted.first"));
 }
 
 /** Asserts that a toast says `text`; an earlier toast may still say it too. */

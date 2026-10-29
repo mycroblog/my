@@ -255,7 +255,10 @@ test.describe("the federated timeline while the server keeps it for signed-in us
     await answered;
     await expect(page.getByRole("main").locator('a[href="/login?return_to=%2Fpublic"]')).toBeVisible();
     await expect(page.getByRole("feed")).toHaveCount(0);
-    await expect(page.getByRole("navigation").locator('a[href="/local"]').filter({ visible: true })).toBeVisible();
+    // Below lg the signed-out top bar keeps its items behind its menu button.
+    const nav = page.getByRole("navigation");
+    if ((page.viewportSize()?.width ?? 0) < 1024) await nav.getByRole("button", { expanded: false }).click();
+    await expect(nav.locator('a[href="/local"]').filter({ visible: true })).toBeVisible();
     await expect(federatedLink(page)).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

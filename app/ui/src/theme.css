@@ -411,14 +411,12 @@
 }
 /* A heading of a page of sections under the progress line (SectionProgress), which sticks under the top bar and
    writes its height to --section-progress-block-size: scrolled to, it stops 1.5rem below them rather than under them.
-   On a short screen the progress line does not stick. */
+   The root's scroll-padding already clears the bars above the line (the base layer below). On a short screen the
+   progress line does not stick. */
 @utility scroll-mt-under-section-progress {
-  scroll-margin-block-start: calc(
-    var(--offline-bar-block-size, 0px) + var(--top-bar-block-size, 0px) + var(--section-progress-block-size, 0px) +
-      1.5rem
-  );
+  scroll-margin-block-start: calc(var(--section-progress-block-size, 0px) + 1.5rem);
   @media (width < 48rem) and (height <= 32rem) {
-    scroll-margin-block-start: calc(var(--top-bar-block-size, 0px) + 1.5rem);
+    scroll-margin-block-start: 1.5rem;
   }
 }
 
@@ -449,6 +447,18 @@
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
+  }
+
+  /* What sticks to the top edge of the page, the offline bar and the signed-out top bar, keeps focused and
+     scrolled-to elements clear of it (WCAG 2.4.11); each writes its height to the document, unset without the bar.
+     On a short screen the offline bar scrolls away and only the top bar sticks. */
+  :root {
+    scroll-padding-block-start: calc(var(--offline-bar-block-size, 0px) + var(--top-bar-block-size, 0px));
+  }
+  @media (width < 48rem) and (height <= 32rem) {
+    :root {
+      scroll-padding-block-start: var(--top-bar-block-size, 0px);
+    }
   }
 
   body {
