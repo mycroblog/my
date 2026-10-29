@@ -1,6 +1,6 @@
 # ADR-0004: ジョブキューとスケジューラの抽象化
 
-- Status: Accepted
+- Status: Accepted（Cloud Tasks・SQS のアダプタの形、push の受け口とその認証、Scheduler の外部トリガーを ADR-0120（外部のジョブキューは DB のジョブを起こす合図だけを運ぶ）が決める。SQS の常駐 worker の pull は作らない）
 - Date: 2026-10-16
 - Deciders: @rosylilly
 - Issue: #4
