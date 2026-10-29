@@ -1,6 +1,6 @@
 # ADR-0064: キューとジョブのダッシュボード（ジョブの一覧と試行の記録）
 
-- Status: Accepted
+- Status: Accepted（ADR-0120（外部のジョブキューは DB のジョブを起こす合図だけを運ぶ）で Cloud Tasks・SQS のジョブも DB の `jobs` に置くので、待ちのジョブの一覧はすべてのキューで出る）
 - Date: 2026-10-21
 - Deciders: @rosylilly
 - Issue: #815

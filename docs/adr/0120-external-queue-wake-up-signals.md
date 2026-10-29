@@ -1,6 +1,6 @@
 # ADR-0120: 外部のジョブキュー（Cloud Tasks / SQS）は DB のジョブを起こす合図だけを運ぶ
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-29
 - Deciders: @rosylilly
 - Issue: #1837
@@ -153,7 +153,6 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
   - `queue.Waker`・`Source.ClaimJob`・push receiver・掃除のジョブ・tick の受け口（`internal/app/queue` と `queue/db`、コントラクトテストの追加）
   - `queue/cloudtasks`（`Waker` と OIDC の検証）、`queue/sqs`（`Waker` と Lambda のイベントの受け口）
   - `queue/db` の `Outbox` の `outbox_events` とリレーは使う人がいなくなる。消すかは実装の PR で決め、消すならスキーマから表を除く（v0.1.0 の前）
-  - [ADR-0004](0004-job-queue-abstraction.md) の「pull runner（DB キュー、SQS 常駐ワーカー）」と、[overview.md](../architecture/overview.md) §3 のキューの行を、この ADR が Accepted になったら更新する
   - `docs/operations/` のキュー・メンテナンス・バックアップの記述（`backup.md` の「SQS・Cloud Tasks のジョブは DB に戻らない」は、A では当てはまらなくなる）
 
 ## Pros and Cons of the Options（詳細比較・任意）

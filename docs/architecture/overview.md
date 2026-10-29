@@ -104,6 +104,8 @@ DB アダプタの実装は受け取った `uow.Tx` から自分のトランザ�
 ジョブキューのポート（`JobQueue` / `Outbox` / `JobHandlerRegistry` / `JobRunner`）も全モジュールと全キューアダプタが共有するので `internal/app/queue` に置く。
 ここにはリトライ方針（指数バックオフ + ジッタ）と、キューアダプタの `queue.Source` を駆動する pull runner、プロセス内の `Scheduler` も置く。
 `Scheduler` は定期ジョブを周期ごとの冪等キー付きで enqueue するだけで、worker と all のロールで動く。
+Cloud Tasks・SQS のキュー（[ADR-0120](../adr/0120-external-queue-wake-up-signals.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
+合図を受ける push receiver・取りこぼした合図を拾う定期ジョブ `queue.wake`・外部のスケジューラから `Scheduler` を起こす tick の受け口も `internal/app/queue` に置く。
 ファイルを持つモジュールとそのアダプタが共有する `BlobStore` は `internal/app/blob`（Go 名 `blob.Store`）、`MediaProcessor` は `internal/app/media`（Go 名 `media.Processor`）に置く。
 リアルタイム更新（§4.4）の `Publisher` / `Subscriber` は、通知する側のモジュールとストリーミングのエンドポイントが共有するので `internal/app/stream` に置く。プロセス間で知らせを同報するブローカーのポート `Bus` と、残された資源を消す `Sweeper` も同じパッケージに置く。
 Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Za-z0-9._-]` のセグメントを `/` でつなぐ）に限る。`media/` で始まるキーだけが公開で、`/media/` で配信する。
@@ -112,8 +114,8 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | --- | --- | --- | --- |
 | `Repositories` / `UnitOfWork` | 永続化。書き込みは **短く再実行可能なトランザクション** 単位 | sqlite / postgres | [0003](../adr/0003-database-abstraction.md) |
 | `JobQueue` | ジョブ投入（遅延・冪等キー付き） | db | [0004](../adr/0004-job-queue-abstraction.md) |
-| `JobRunner` | ジョブ実行（pull ループ or push 受信） | db（pull） | [0004](../adr/0004-job-queue-abstraction.md) |
-| `Scheduler` | 定期実行のトリガー | in-process cron | [0004](../adr/0004-job-queue-abstraction.md) |
+| `JobRunner` | ジョブ実行（pull ループ or push 受信。push は合図のジョブを ID で claim する） | db（pull） | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0120-external-queue-wake-up-signals.md) |
+| `Scheduler` | 定期実行のトリガー。常駐しないターゲットでは Cloud Scheduler・EventBridge Scheduler の tick が起こす | in-process cron | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0120-external-queue-wake-up-signals.md) |
 | `BlobStore` | メディアの保存・署名付き URL | fs | [0005](../adr/0005-blob-storage-and-media.md) |
 | `MediaProcessor` | 用途ごとの S / M / L の版・アニメーションの静止版と動く版・EXIF 除去 | native | [0005](../adr/0005-blob-storage-and-media.md), [0054](../adr/0054-media-variants-video-audio.md) |
 | `KeyValueStore` | キャッシュ・レート制限・連合ライブラリ用 KV。任意の `valkey` は Valkey か Redis 互換のサーバーに置き、ADR-0003 と ADR-0019 の「Redis」の枠をこのアダプタで満たす | db | [0003](../adr/0003-database-abstraction.md), [0019](../adr/0019-security-baseline.md) |
@@ -144,8 +146,8 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 1. Client API の投稿作成 → `PostStatus` ユースケース
 2. ドメインで検証（文字数・公開範囲・メンション解決）→ `Status` を生成
-3. **1 回のトランザクション**（`UnitOfWork.Tx`）で `statuses` + 付随行を書き、同じトランザクションの同期 projector が `outbound_activities`（`Create`）と `outbox_events`（`federation.fanout` ジョブ）を書く（Transactional Outbox）
-4. リレーが outbox のジョブをキューに渡す（コミットした分だけが届く）
+3. **1 回のトランザクション**（`UnitOfWork.Tx`）で `statuses` + 付随行を書き、同じトランザクションの同期 projector が `outbound_activities`（`Create`）と `jobs`（`federation.fanout` ジョブ）を書く（Transactional Outbox）
+4. コミットした分だけがワーカーに見える。Cloud Tasks・SQS のキューでは、コミットの後にジョブの ID の合図を送る（ADR-0120）
 5. ワーカー: `federation.fanout` が文書を 1 回だけ組み立て、公開範囲に応じて宛先 inbox を 500 件ずつ算出し（`local` はリモートフォロワーのみ）、**shared inbox 単位** の `deliveries` ごとに `federation.deliver{deliveryId}` を投入
 6. `federation.deliver` が署名付き POST。失敗時はバックオフで再投入、ドメインが連続失敗したら一時停止
 
@@ -219,7 +221,7 @@ internal/
   app/<module>/      # ユースケースとポート定義
   app/kernel/        # 全モジュール共通のポート（Clock / IDGenerator / KeyManager / KeyValueStore / Mailer / HTMLSanitizer / HTTPClient / HumanVerifier）、UUIDv7 ヘルパー、Sealer、RateLimiter
   app/uow/           # UnitOfWork ポート、トランザクションのリトライ、同期 projector の登録先
-  app/queue/         # ジョブキューのポート、ハンドラの登録先、リトライ方針、pull runner、プロセス内 Scheduler
+  app/queue/         # ジョブキューのポート、ハンドラの登録先、リトライ方針、pull runner、push receiver、プロセス内 Scheduler
   app/blob/          # BlobStore ポートとキーの構文
   app/media/         # MediaProcessor ポート、形式の判定、上限の既定値
   app/stream/        # リアルタイム更新の Publisher / Subscriber / Bus / Sweeper ポート、プロセス内ブローカー Hub、プロセス間の中継 Relay、定期ジョブ stream.sweep
