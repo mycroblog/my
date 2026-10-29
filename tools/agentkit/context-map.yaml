@@ -360,6 +360,13 @@ entries:
     notes:
       - "key_manager = gcpkms (internal/adapter/keymanager/gcpkms) wraps DEKs with Cloud KMS Encrypt / Decrypt on the CryptoKey named in kms_key, without a version, passing the AAD as additionalAuthenticatedData; the key ID is gcpkms:<CryptoKey name>. Decrypt INVALID_ARGUMENT maps to kernel.ErrDecrypt; the other codes are returned with their gRPC status. The platform wraps it in kernel.NewDEKCache and kernel.NewKeyRouter; with key_manager = local, Cloud KMS keys in kms_key / kms_key_previous only unwrap."
       - "Tests run on gcpkmstest, an in-process gRPC stand-in for Cloud KMS (versions, disabled versions, CRC32C checks, injected codes); nothing reaches Google Cloud. The build tag no_gcpkms leaves the adapter and cloud.google.com/go/kms out."
+  - name: keymanager-awskms
+    paths: ["internal/adapter/keymanager/awskms/**", "internal/platform/adapters_*awskms.go", "internal/platform/config/adapters_*awskms.go", "internal/platform/keymanager_awskms_test.go"]
+    docs: ["docs/adr/0121-kms-key-managers.md#decision決定"]
+    userdocs: ["docs/operations/key-management.md#aws-kms", "docs/reference/build-tags.md"]
+    notes:
+      - "key_manager = awskms (internal/adapter/keymanager/awskms) wraps DEKs with AWS KMS Encrypt / Decrypt on the symmetric key of kms_key, which New resolves to its ARN with DescribeKey (an alias can move, so it is never the key ID); Decrypt passes KeyId. The AAD goes into the encryption context {\"my-aad\": base64url(aad)}; the key ID is awskms:<key ARN>. InvalidCiphertextException / IncorrectKeyException map to kernel.ErrDecrypt; the other errors keep the SDK's smithy.APIError. The platform loads the SDK's default chain and wraps it in kernel.NewDEKCache and kernel.NewKeyRouter; with key_manager = local, AWS KMS keys in kms_key / kms_key_previous only unwrap."
+      - "Tests run on awskmstest, an in-process AWS JSON 1.1 stand-in for AWS KMS (aliases, disabled and asymmetric keys, key-bound ciphertexts, injected exceptions); the platform test points AWS_ENDPOINT_URL_KMS at it, and nothing reaches AWS. The build tag no_awskms leaves the adapter and service/kms out."
   - name: kek-rewrap
     paths: ["internal/app/rewrap/**", "internal/platform/setup_rewrap.go", "cmd/my/kek.go", "cmd/my/kek_test.go", "internal/adapter/db/*/sealed_value*.go", "queries/*/sealed_value.sql", "pkg/testkit/sealed_value_contract.go"]
     docs: ["docs/adr/0019-security-baseline.md", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]

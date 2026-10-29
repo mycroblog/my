@@ -66,6 +66,24 @@ func rewrapSecrets(t *testing.T, app *platform.App) rewrap.ColumnReport {
 	return rewrap.ColumnReport{}
 }
 
+// requireAllUnder fails unless `my kek status` counts every sealed value of app under the key
+// ID of the KMS kind.
+func requireAllUnder(t *testing.T, app *platform.App, kind string) {
+	t.Helper()
+	status, err := app.Rewrap.Status(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range status {
+		if c.Outdated() != 0 {
+			t.Errorf("status of %s = %+v, want every value under the current key", c.Column, c)
+		}
+	}
+	if got := kernel.KeyIDKind(app.KeyManager.CurrentKeyID()); got != kind {
+		t.Errorf("current key ID %q, want one of kind %q", app.KeyManager.CurrentKeyID(), kind)
+	}
+}
+
 // TestMediaProxyKeyOutlivesKEKs checks that the media proxy signs with the same key after a
 // restart, a rotation of the KEK with `my kek rewrap`, and a move from the local KEK to a KMS,
 // so that the URLs signed before keep working.

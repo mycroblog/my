@@ -638,7 +638,7 @@ Key manager adapter that encrypts actor private keys.
 | --- | --- | --- |
 | `local` | yes | Uses the key-encryption key from `kek`. |
 | `gcpkms` | yes | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md). |
-| `awskms` | not in v0 | AWS KMS. |
+| `awskms` | yes | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md). |
 
 ### `kek`
 
@@ -658,7 +658,7 @@ Previous key-encryption keys, comma-separated, each in the format of `kek`. They
 
 ### `kms_key`
 
-Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.
+Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.
 
 - Environment variable: `MY_KMS_KEY`
 - Default: none

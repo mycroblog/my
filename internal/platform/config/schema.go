@@ -466,7 +466,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "local", inV0: true, doc: "Uses the key-encryption key from `kek`."},
 			{value: "gcpkms", inV0: true, doc: "Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md)."},
-			{value: "awskms", doc: "AWS KMS."},
+			{value: "awskms", inV0: true, doc: "AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md)."},
 		},
 		set: func(c *Config, v string) { c.KeyManager = v },
 	},
@@ -494,7 +494,7 @@ var schema = []field{
 	},
 	{
 		key:          "kms_key",
-		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.",
+		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.",
 		requiredWhen: "when `key_manager` is not `local`",
 		check:        checkKMSKey,
 		set:          func(c *Config, v string) { c.KMSKey = v },
@@ -1811,28 +1811,42 @@ func checkKMSKey(v string) error {
 }
 
 // kmsKeyChecks checks kms_key and kms_key_previous against the KMS that reads them: that of
-// key_manager, or with key_manager = local, the KMS that their names belong to, which only
-// decrypts. A Cloud KMS key is a CryptoKey resource name, which starts with "projects/".
+// key_manager, or with key_manager = local, the KMS that the first of their names belongs to,
+// which only decrypts; every name must then belong to that KMS. A Cloud KMS key is a CryptoKey
+// resource name, which starts with "projects/"; any other name is of AWS KMS.
 func kmsKeyChecks(vals map[string]string) []Issue {
-	var issues []Issue
-	check := func(key, name string) {
-		var err error
-		switch {
-		case vals["key_manager"] == "gcpkms" || vals["key_manager"] == "local" && strings.HasPrefix(name, "projects/"):
-			err = checkGCPKMSKeyName(name)
-		case vals["key_manager"] == "local":
-			err = errors.New("must be the resource name of a Cloud KMS CryptoKey, projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}, to decrypt with it")
+	kindOf := func(name string) string {
+		if strings.HasPrefix(name, "projects/") {
+			return "gcpkms"
 		}
-		if err != nil {
-			issues = append(issues, Issue{Key: key, Message: fmt.Sprintf("%q %s", name, err)})
-		}
+		return "awskms"
 	}
+	var names [][2]string // setting, name
 	if k, ok := vals["kms_key"]; ok {
-		check("kms_key", k)
+		names = append(names, [2]string{"kms_key", k})
 	}
 	if prev, ok := vals["kms_key_previous"]; ok {
 		for k := range strings.SplitSeq(prev, ",") {
-			check("kms_key_previous", strings.TrimSpace(k))
+			names = append(names, [2]string{"kms_key_previous", strings.TrimSpace(k)})
+		}
+	}
+	kind := vals["key_manager"]
+	if kind == "local" && len(names) > 0 {
+		kind = kindOf(names[0][1])
+	}
+	var issues []Issue
+	for _, n := range names {
+		var err error
+		switch {
+		case vals["key_manager"] == "local" && kindOf(n[1]) != kind:
+			err = errors.New("must be a key of the same KMS as the first of kms_key and kms_key_previous, to decrypt with it")
+		case kind == "gcpkms":
+			err = checkGCPKMSKeyName(n[1])
+		case kind == "awskms":
+			err = checkAWSKMSKeyName(n[1])
+		}
+		if err != nil {
+			issues = append(issues, Issue{Key: n[0], Message: fmt.Sprintf("%q %s", n[1], err)})
 		}
 	}
 	return issues

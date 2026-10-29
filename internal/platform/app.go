@@ -633,7 +633,8 @@ func (a *App) cacheDEKs(cfg *config.Config, km kernel.KeyManager) kernel.KeyMana
 }
 
 // kmsKindOf returns the kind of KMS key manager that the key name belongs to: a Cloud KMS
-// CryptoKey resource name starts with "projects/" (config validated the names).
+// CryptoKey resource name starts with "projects/", and any other name is of AWS KMS (config
+// validated the names).
 func kmsKindOf(name string) string {
 	if strings.HasPrefix(name, "projects/") {
 		return "gcpkms"
@@ -652,6 +653,8 @@ func (a *App) newKMSKeyManager(ctx context.Context, kind, key string, previous [
 		}
 		a.keyManagerClosers = append(a.keyManagerClosers, closer)
 		return km, nil
+	case "awskms":
+		return newAWSKMS(ctx, key, previous)
 	default:
 		return nil, fmt.Errorf("key_manager %q is not implemented yet", kind)
 	}
