@@ -2,7 +2,7 @@
 // The emoji reactions under a post (FR-116, ADR-0052 §5): a row of chips, one per emoji with its count. A chip is a toggle
 // the viewer presses to react with that emoji or to take the reaction back, or, for a custom emoji of another server that
 // nobody here can react with, the same shown only. The row ends with a button that lists the accounts that reacted.
-import { type ReactNode, useId } from "react";
+import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { Button } from "./Button";
 import { Cluster } from "./Cluster";
@@ -38,7 +38,10 @@ export function ReactionEmoji({ image, text }: ReactionEmojiProps) {
 export type ReactionChipProps = ReactionEmojiProps & {
   /** The count, already formatted for the locale. */
   count: string;
-  /** The accessible name of the toggle ("React with 👍"); a chip that is no toggle is read as its emoji and count. */
+  /**
+   * The accessible name of the toggle, which starts with the emoji and the count as they are shown ("👍 3, react with
+   * this emoji"; WCAG 2.5.3); a chip that is no toggle is read as its emoji and count.
+   */
   label: string;
   /** Whether the viewer has reacted with this emoji. */
   isSelected: boolean;
@@ -46,14 +49,9 @@ export type ReactionChipProps = ReactionEmojiProps & {
   onChange: ((isSelected: boolean) => void) | null;
 };
 
-/** One emoji with its count: a toggle named by `label` and described by the count, or the same shown only. */
+/** One emoji with its count: a toggle named by `label`, or the same shown only. */
 export function ReactionChip({ image, text, count, label, isSelected, onChange }: ReactionChipProps) {
-  const countId = useId();
-  const countText = (
-    <Text id={countId} numeric>
-      {count}
-    </Text>
-  );
+  const countText = <Text numeric>{count}</Text>;
   if (onChange === null) {
     return (
       <span className={staticChip()}>
@@ -65,7 +63,6 @@ export function ReactionChip({ image, text, count, label, isSelected, onChange }
   return (
     <ToggleButton
       aria-label={label}
-      aria-describedby={countId}
       tone="accent"
       isSelected={isSelected}
       onChange={onChange}

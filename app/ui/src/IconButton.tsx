@@ -63,16 +63,23 @@ export function IconButtonLink({
   );
 }
 
-export type IconToggleButtonProps = Omit<ToggleButtonProps, "aria-label" | "aria-labelledby" | "children"> & IconProps;
+export type IconToggleButtonProps = Omit<ToggleButtonProps, "aria-label" | "aria-labelledby" | "children"> &
+  IconProps & {
+    /**
+     * The accessible name while the button shows a count: `label` with the count as it is shown ("Favourite, 3"), so
+     * that the name contains the visible text (WCAG 2.5.3). The tooltip keeps `label`. Without it, the name is `label`.
+     */
+    countedLabel?: string | undefined;
+  };
 
 /**
- * A `ToggleButton` that shows only an icon (and a count), named by `label` and its tooltip. The name stays the same in
- * both states ("Favourite"); the icon's shape and `aria-pressed` tell the state.
+ * A `ToggleButton` that shows only an icon (and a count), named by `label` (with the count it shows, `countedLabel`)
+ * and its tooltip. The name stays the same in both states ("Favourite"); the icon's shape and `aria-pressed` tell the state.
  */
-export function IconToggleButton({ label, children, tooltipPlacement, ...props }: IconToggleButtonProps) {
+export function IconToggleButton({ label, countedLabel, children, tooltipPlacement, ...props }: IconToggleButtonProps) {
   return (
     <TooltipTrigger>
-      <ToggleButton {...props} aria-label={label}>
+      <ToggleButton {...props} aria-label={countedLabel ?? label}>
         {children}
       </ToggleButton>
       <Tooltip {...(tooltipPlacement !== undefined && { placement: tooltipPlacement })}>{label}</Tooltip>

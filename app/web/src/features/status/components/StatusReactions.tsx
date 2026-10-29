@@ -54,16 +54,17 @@ function Emoji({ emoji, text }: { emoji: ReactionEmoji; text: string }) {
   return <UIReactionEmoji image={emoji.emoji} text={emoji.shortcode === undefined ? emoji.name : text} />;
 }
 
-/** One emoji with its count: a toggle (named by the emoji, described by the count), or the same shown only. */
+/** One emoji with its count: a toggle (named by the emoji and the count it shows), or the same shown only. */
 function Chip({ chip }: { chip: ReactionChip }) {
   const t = useT();
   const intl = useIntl();
+  const count = intl.formatNumber(chip.count, { notation: "compact" });
   return (
     <UIReactionChip
       image={chip.emoji.emoji}
       text={chip.emoji.shortcode === undefined ? chip.emoji.name : chip.text}
-      count={intl.formatNumber(chip.count, { notation: "compact" })}
-      label={t("client:reaction.toggle", { emoji: chip.text })}
+      count={count}
+      label={t("client:reaction.toggle", { emoji: chip.text, count })}
       isSelected={chip.isSelected}
       onChange={chip.onChange}
     />

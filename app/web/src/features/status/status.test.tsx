@@ -307,7 +307,7 @@ describe("a post's page", () => {
     await renderApp({ path: `/@bob/status/${postId}` });
 
     const article = await findFocusedPost();
-    expect(within(article).queryByRole("button", { name: "Favourite" })).not.toBeInTheDocument();
+    expect(within(article).queryByRole("button", { name: /^Favourite\b/ })).not.toBeInTheDocument();
     expect(within(article).queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
   });
 });
@@ -330,20 +330,20 @@ describe("the actions on a post", () => {
     );
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const article = await findFocusedPost();
-    const favourite = await within(article).findByRole("button", { name: "Favourite", pressed: false });
-    expect(favourite).toHaveAccessibleDescription("2");
+    const favourite = await within(article).findByRole("button", { name: /^Favourite\b/, pressed: false });
+    expect(favourite).toHaveAccessibleName("Favourite, 2");
 
     await user.click(favourite);
 
     // Optimistic: pressed with the count moved before the server answers.
     expect(favourite).toHaveAttribute("aria-pressed", "true");
-    expect(favourite).toHaveAccessibleDescription("3");
+    expect(favourite).toHaveAccessibleName("Favourite, 3");
     // A favourite is a celebrated moment (web-client §21.5): the star bounces a little, and only while turning on.
     expect(favourite).toHaveAttribute("data-celebrating");
     pending.release(HttpResponse.json({ ...post, favourited: true, favourites_count: 5 }));
     expect(await within(politeAnnouncements()).findByText("Added to favourites")).toBeInTheDocument();
     // The server's count, which includes the others' favourites.
-    expect(favourite).toHaveAccessibleDescription("5");
+    expect(favourite).toHaveAccessibleName("Favourite, 5");
 
     await user.click(favourite);
 
@@ -361,7 +361,7 @@ describe("the actions on a post", () => {
     serveThread();
     server.use(http.post(`${apiBase}/statuses/:id/boost`, () => problem(503, "about:blank", "Service Unavailable")));
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
-    const boost = await within(await findFocusedPost()).findByRole("button", { name: "Boost", pressed: false });
+    const boost = await within(await findFocusedPost()).findByRole("button", { name: /^Boost\b/, pressed: false });
 
     await user.click(boost);
 
@@ -370,7 +370,7 @@ describe("the actions on a post", () => {
       within(screen.getByRole("alert")).getByText("Could not save the change: Service Unavailable"),
     ).toBeInTheDocument();
     expect(boost).toHaveAttribute("aria-pressed", "false");
-    expect(boost).toHaveAccessibleDescription("1");
+    expect(boost).toHaveAccessibleName("Boost, 1");
   });
 
   test("send presses one after another, so that the last one wins, and set back only the one that failed", async () => {
@@ -428,9 +428,9 @@ describe("the actions on a post", () => {
     const [boosted, original] = await within(feed).findAllByRole("article", { description: "The post" });
     if (boosted === undefined || original === undefined) throw new Error("two copies expected");
 
-    await user.click(await within(original).findByRole("button", { name: "Favourite", pressed: false }));
+    await user.click(await within(original).findByRole("button", { name: /^Favourite\b/, pressed: false }));
 
-    expect(within(boosted).getByRole("button", { name: "Favourite" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(boosted).getByRole("button", { name: /^Favourite\b/ })).toHaveAttribute("aria-pressed", "true");
     expect(await within(politeAnnouncements()).findByText("Added to favourites")).toBeInTheDocument();
 
     // The page's own answer comes from the server, which now knows the favourite.
@@ -440,7 +440,7 @@ describe("the actions on a post", () => {
     await user.click(within(original).getByRole("link", { name: "3 hr. ago" }));
 
     expect(
-      await within(await findFocusedPost()).findByRole("button", { name: "Favourite", pressed: true }),
+      await within(await findFocusedPost()).findByRole("button", { name: /^Favourite\b/, pressed: true }),
     ).toBeInTheDocument();
   });
 

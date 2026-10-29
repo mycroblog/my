@@ -281,7 +281,6 @@ test.describe("costs", () => {
     await expect(basis.getByRole("radio", { name: message("costs.basis.amortized"), exact: true })).toBeChecked();
     await expect(totalsRegion.getByText(message("costs.totals.estimated"), { exact: true })).toBeVisible();
     await expect(totalsRegion.getByText(message("costs.rules.week_start"), { exact: true })).toBeVisible();
-    await expect(main.getByText("الخادم الرئيسي")).toHaveAttribute("dir", "auto");
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -311,6 +310,8 @@ test.describe("costs", () => {
     await main.getByRole("tab", { name: message("admin.finance.tabs.records"), exact: true }).click();
     await expect(page).toHaveURL(/tab=records/u);
     const list = main.getByRole("region", { name: message("admin.finance.list.title"), exact: true });
+    // The memo, written right to left, keeps its own direction.
+    await expect(list.getByText("الخادم الرئيسي")).toHaveAttribute("dir", "auto");
     await list.getByRole("button", { name: message("admin.finance.new.title"), exact: true }).click();
     const form = list.getByRole("region", { name: message("admin.finance.new.title"), exact: true });
     await form.getByRole("textbox", { name: message("admin.finance.name"), exact: true }).fill("example.com");

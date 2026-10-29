@@ -82,6 +82,11 @@ async function openPicker(user: UserEvent, article: HTMLElement) {
   return picker;
 }
 
+/** The name of the toggle of `emoji`, which starts with the emoji and the count it shows (WCAG 2.5.3). */
+function reactionName(emoji: string): RegExp {
+  return new RegExp(`^${emoji} \\d+, react with this emoji$`, "u");
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-16T12:00:00Z") });
   sessionStorage.clear();
@@ -100,31 +105,33 @@ describe("the reactions of a post", () => {
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const article = await findPost();
     const reactions = within(article).getByRole("group", { name: "Reactions" });
-    const thumbs = await within(reactions).findByRole("button", { name: "React with 👍" });
+    const thumbs = await within(reactions).findByRole("button", { name: reactionName("👍") });
     expect(thumbs).toHaveAttribute("aria-pressed", "false");
-    expect(thumbs).toHaveAccessibleDescription("2");
+    expect(thumbs).toHaveAccessibleName("👍 2, react with this emoji");
     // Another server's custom emoji is shown with its count, but nobody here can react with it (ADR-0052 §2).
     expect(within(reactions).getByRole("img", { name: ":blobcat:" })).toBeInTheDocument();
     expect(within(reactions).queryByRole("button", { name: /blobcat/ })).not.toBeInTheDocument();
-    const favourite = within(article).getByRole("button", { name: "Favourite" });
+    const favourite = within(article).getByRole("button", { name: /^Favourite\b/ });
     expect(favourite).toHaveAttribute("aria-pressed", "true");
 
     await user.click(thumbs);
 
     // The reaction takes the favourite's place at once.
-    expect(within(article).getByRole("button", { name: "React with 👍" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(article).getByRole("button", { name: "Favourite" })).toHaveAttribute("aria-pressed", "false");
+    expect(within(article).getByRole("button", { name: reactionName("👍") })).toHaveAttribute("aria-pressed", "true");
+    expect(within(article).getByRole("button", { name: /^Favourite\b/ })).toHaveAttribute("aria-pressed", "false");
     await waitFor(() => {
       expect(sent).toEqual(["👍"]);
     });
-    expect(within(article).getByRole("button", { name: "React with 👍" })).toHaveAccessibleDescription("3");
+    expect(within(article).getByRole("button", { name: reactionName("👍") })).toHaveAccessibleName(
+      "👍 3, react with this emoji",
+    );
 
     // Pressing it again takes the reaction back.
-    await user.click(within(article).getByRole("button", { name: "React with 👍" }));
+    await user.click(within(article).getByRole("button", { name: reactionName("👍") }));
     await waitFor(() => {
       expect(sent).toEqual(["👍", null]);
     });
-    expect(within(article).getByRole("button", { name: "React with 👍" })).toHaveAttribute("aria-pressed", "false");
+    expect(within(article).getByRole("button", { name: reactionName("👍") })).toHaveAttribute("aria-pressed", "false");
   });
 
   test("react with a Unicode emoji found by searching the picker", async () => {
@@ -144,7 +151,7 @@ describe("the reactions of a post", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Emoji to react with" })).not.toBeInTheDocument();
     });
-    expect(await within(article).findByRole("button", { name: "React with 🎉" })).toHaveAttribute(
+    expect(await within(article).findByRole("button", { name: reactionName("🎉") })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -195,9 +202,9 @@ describe("the reactions of a post", () => {
       expect(sent).toEqual(["👋🏽"]);
     });
     const reactions = within(article).getByRole("group", { name: "Reactions" });
-    const waving = await within(reactions).findByRole("button", { name: "React with 👋🏽" });
+    const waving = await within(reactions).findByRole("button", { name: reactionName("👋🏽") });
     expect(waving).toHaveAttribute("aria-pressed", "true");
-    expect(waving).toHaveAccessibleDescription("1");
+    expect(waving).toHaveAccessibleName("👋🏽 1, react with this emoji");
     // It is counted as used without its skin tone.
     expect(frequentEmojisKey.read().map((use) => use.emoji)).toEqual(["👋"]);
   }, 30_000);
@@ -261,15 +268,15 @@ describe("the reactions of a post", () => {
     const { user } = await renderApp({ path: `/@bob/status/${postId}` });
     const article = await findPost();
 
-    await user.click(await within(article).findByRole("button", { name: "React with 👍" }));
+    await user.click(await within(article).findByRole("button", { name: reactionName("👍") }));
 
     expect(
       await within(await screen.findByRole("region", { name: "Messages" })).findByText(
         /Not an emoji you can react with/,
       ),
     ).toBeInTheDocument();
-    expect(within(article).getByRole("button", { name: "React with 👍" })).toHaveAttribute("aria-pressed", "false");
-    expect(within(article).getByRole("button", { name: "Favourite" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(article).getByRole("button", { name: reactionName("👍") })).toHaveAttribute("aria-pressed", "false");
+    expect(within(article).getByRole("button", { name: /^Favourite\b/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("list the accounts that reacted", async () => {
@@ -298,6 +305,6 @@ describe("the reactions of a post", () => {
     const article = await findPost();
 
     expect(within(article).getByRole("group", { name: "Reactions" })).toHaveTextContent("👍");
-    expect(within(article).queryByRole("button", { name: "React with 👍" })).not.toBeInTheDocument();
+    expect(within(article).queryByRole("button", { name: reactionName("👍") })).not.toBeInTheDocument();
   });
 });
