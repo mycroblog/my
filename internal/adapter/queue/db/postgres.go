@@ -24,7 +24,7 @@ import (
 // NewPostgres returns the queue kept in the PostgreSQL database d.
 func NewPostgres(d *postgres.DB, opts Options) *Queue {
 	opts.check()
-	return &Queue{db: d, st: postgresStore{d}, opts: opts}
+	return newQueue(d, postgresStore{d}, opts)
 }
 
 // NewPostgresOutbox returns the outbox kept in the PostgreSQL database d.
@@ -423,4 +423,74 @@ func (s postgresStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, befo
 		return 0, err
 	}
 	return q.DeleteJobAttemptsBefore(ctx, postgresqueue.DeleteJobAttemptsBeforeParams{FinishedBefore: before, BatchLimit: int32Of(limit)})
+}
+
+func (s postgresStore) jobLease(ctx context.Context, tx uow.Tx, id string) (lease, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return lease{}, false, err
+	}
+	r, err := q.GetJobLease(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return lease{}, false, nil
+	}
+	if err != nil {
+		return lease{}, false, err
+	}
+	l := lease{orderingKey: deref(r.OrderingKey), runAt: kernel.Normalize(r.RunAt)}
+	if r.LockedUntil.Valid {
+		l.lockedUntil = kernel.Normalize(r.LockedUntil.Time)
+	}
+	return l, true, nil
+}
+
+// claimID runs the last two statements of a claim, LockOrderingKey and ClaimJob, for the job id.
+func (s postgresStore) claimID(ctx context.Context, tx uow.Tx, id, orderingKey, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	if orderingKey != "" {
+		if err := q.LockOrderingKey(ctx, orderingLockPrefix+orderingKey); err != nil {
+			return queue.Job{}, false, err
+		}
+	}
+	r, err := q.ClaimJob(ctx, postgresqueue.ClaimJobParams{
+		Worker:      &worker,
+		LockedUntil: pgtype.Timestamptz{Time: until, Valid: true},
+		ID:          id,
+		Now:         now,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return queue.Job{}, false, nil
+	}
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	return claimedJob(r), true, nil
+}
+
+func (s postgresStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]string, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	return q.ListDueJobs(ctx, postgresqueue.ListDueJobsParams{
+		DueBefore: dueBefore, Now: pgtype.Timestamptz{Time: now, Valid: true}, BatchLimit: int32Of(limit),
+	})
+}
+
+func (s postgresStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey string) (queue.Wake, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Wake{}, false, err
+	}
+	r, err := q.NextJobOfKey(ctx, &orderingKey)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return queue.Wake{}, false, nil
+	}
+	if err != nil {
+		return queue.Wake{}, false, err
+	}
+	return queue.Wake{JobID: r.ID, At: kernel.Normalize(r.RunAt)}, true, nil
 }

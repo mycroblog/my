@@ -105,7 +105,8 @@ DB アダプタの実装は受け取った `uow.Tx` から自分のトランザ�
 ここにはリトライ方針（指数バックオフ + ジッタ）と、キューアダプタの `queue.Source` を駆動する pull runner、プロセス内の `Scheduler` も置く。
 `Scheduler` は定期ジョブを周期ごとの冪等キー付きで enqueue するだけで、worker と all のロールで動く。
 Cloud Tasks・SQS のキュー（[ADR-0120](../adr/0120-external-queue-wake-up-signals.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
-合図を受ける push receiver・取りこぼした合図を拾う定期ジョブ `queue.wake`・外部のスケジューラから `Scheduler` を起こす tick の受け口も `internal/app/queue` に置く。
+合図を受ける push receiver（`PushReceiver`）・取りこぼした合図を拾う掃除 `queue.wake`（`WakeSweeper`）・外部のスケジューラから `Scheduler.Tick` と掃除を 1 回ずつ動かす tick（`Trigger`）も `internal/app/queue` に置く。
+掃除は合図を運ぶキューを通らないよう、ジョブとして積まず tick の中で動かす。周期の 2 回目の投入は `Scheduler.UseSharedSlots` で KV に記録した周期の枠で防ぐ。
 ファイルを持つモジュールとそのアダプタが共有する `BlobStore` は `internal/app/blob`（Go 名 `blob.Store`）、`MediaProcessor` は `internal/app/media`（Go 名 `media.Processor`）に置く。
 リアルタイム更新（§4.4）の `Publisher` / `Subscriber` は、通知する側のモジュールとストリーミングのエンドポイントが共有するので `internal/app/stream` に置く。プロセス間で知らせを同報するブローカーのポート `Bus` と、残された資源を消す `Sweeper` も同じパッケージに置く。
 Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Za-z0-9._-]` のセグメントを `/` でつなぐ）に限る。`media/` で始まるキーだけが公開で、`/media/` で配信する。

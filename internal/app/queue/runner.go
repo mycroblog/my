@@ -46,6 +46,34 @@ type Source interface {
 	Release(ctx context.Context, worker string, j Job, attempt int, runAt time.Time, lastErr string) error
 	// Bury moves the claimed job j to the dead jobs with lastErr, failed at failedAt.
 	Bury(ctx context.Context, worker string, j Job, lastErr string, failedAt time.Time) error
+	// ClaimJob leases the job id to worker until now+lease, like Claim but for one job named
+	// by a wake-up signal (PushReceiver, ADR-0120 §2), and increments its Attempt. The result
+	// tells why it did not: the job is not due before its RunAt (ClaimNotDue, with the job's
+	// RunAt), an earlier job of its ordering key holds it back (ClaimHeldBack), or another
+	// worker holds its lease or there is no such job, because it completed, became a dead job,
+	// was never enqueued, or id is not a job ID (ClaimUnavailable).
+	ClaimJob(ctx context.Context, id, worker string, now time.Time, lease time.Duration) (ClaimResult, error)
+}
+
+// ClaimOutcome is the outcome of Source.ClaimJob.
+type ClaimOutcome int
+
+const (
+	// ClaimUnavailable: another worker holds the job's lease, or there is no such job.
+	ClaimUnavailable ClaimOutcome = iota
+	// Claimed: the worker holds the job's lease.
+	Claimed
+	// ClaimNotDue: the job's RunAt is after now.
+	ClaimNotDue
+	// ClaimHeldBack: the job's ordering key holds it back.
+	ClaimHeldBack
+)
+
+// ClaimResult is the result of Source.ClaimJob. Job is the claimed job when Outcome is
+// Claimed; when it is ClaimNotDue, only its ID and RunAt are set.
+type ClaimResult struct {
+	Outcome ClaimOutcome
+	Job     Job
 }
 
 // Defaults applied to the zero fields of RunnerOptions.
@@ -213,6 +241,22 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	if err != nil || !ok {
 		return false, err
 	}
+	_, err = r.runClaimed(ctx, j, now, leaseEnd)
+	return true, err
+}
+
+// settlement is how runClaimed recorded the result of a claimed job: released to run again at
+// runAt, or settled for good (completed or buried).
+type settlement struct {
+	released bool
+	runAt    time.Time
+}
+
+// runClaimed runs the job j that this runner claimed at now, with a handler context that ends
+// at leaseEnd, and records the result: the part of a run that the pull runner and the push
+// receiver share. When the lease ran out while the handler ran and another worker claimed the
+// job, the result is dropped and the error matches ErrLeaseLost.
+func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.Time) (settlement, error) {
 	// The result must be recorded even when ctx ended during the handler; otherwise the job
 	// would wait for its lease to expire. RecordTimeout bounds it.
 	recordCtx, cancelRecord := r.recordContext(ctx)
@@ -221,7 +265,7 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	if j.RunAt.After(now) {
 		// Delivered early by a queue with a delay limit: re-enqueue without running (the
 		// re-enqueue chain) and give the attempt back.
-		return true, r.src.Release(recordCtx, r.opts.Worker, j, j.Attempt-1, j.RunAt, j.LastError)
+		return settlement{released: true, runAt: j.RunAt}, r.src.Release(recordCtx, r.opts.Worker, j, j.Attempt-1, j.RunAt, j.LastError)
 	}
 
 	handler, policy, found := r.reg.Lookup(j.Type)
@@ -269,19 +313,19 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	switch {
 	case res.IsDone():
 		ran(OutcomeSuccess)
-		return true, r.src.Complete(recordCtx, r.opts.Worker, j)
+		return settlement{}, r.src.Complete(recordCtx, r.opts.Worker, j)
 	case res.IsFail():
 		ran(OutcomeDead)
 		lastErr := errorText(res.Err(), "failed")
 		r.reportDead(recordCtx, j, jobType, res)
 		r.recordAttempt(recordCtx, j, OutcomeDead, lastErr, now, done)
-		return true, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
+		return settlement{}, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
 	case j.Attempt >= policy.MaxAttempts:
 		ran(OutcomeDead)
 		lastErr := errorText(res.Err(), "retried") + fmt.Sprintf(" (gave up after %d attempts)", j.Attempt)
 		r.reportDead(recordCtx, j, jobType, res)
 		r.recordAttempt(recordCtx, j, OutcomeDead, lastErr, now, done)
-		return true, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
+		return settlement{}, r.src.Bury(recordCtx, r.opts.Worker, j, lastErr, done)
 	default:
 		ran(OutcomeRetry)
 		after := res.After()
@@ -290,7 +334,8 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 		}
 		lastErr := errorText(res.Err(), "retried")
 		r.recordAttempt(recordCtx, j, OutcomeRetry, lastErr, now, done)
-		return true, r.src.Release(recordCtx, r.opts.Worker, j, j.Attempt, done.Add(after), lastErr)
+		runAt := done.Add(after)
+		return settlement{released: true, runAt: runAt}, r.src.Release(recordCtx, r.opts.Worker, j, j.Attempt, runAt, lastErr)
 	}
 }
 

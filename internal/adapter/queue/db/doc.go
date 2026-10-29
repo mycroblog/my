@@ -22,6 +22,12 @@
 //   - SQLite serializes every write transaction (BEGIN IMMEDIATE), so claims never collide; run
 //     a single worker per database, since more workers only contend for the same lock.
 //
+// With an external queue (Cloud Tasks, SQS), the jobs stay in jobs and the external queue
+// carries only wake-up signals (ADR-0120): a Queue built with Options.Waker signals each job it
+// stores once its transaction commits, queue.Source.ClaimJob claims the job of a signal by ID
+// with the statements of a claim, and queue.WakeFinder finds the jobs whose signal was lost (the
+// condition of a claim without its row locks) and the next job of an ordering key.
+//
 // Outbox keeps jobs in outbox_events for a queue outside the database (SQS, Cloud Tasks):
 // EnqueueTx writes them in the domain transaction and Relay moves them into that queue. One
 // relay runs at a time under a lease in outbox_relay_leases, so that the events keep their order.

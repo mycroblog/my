@@ -156,6 +156,9 @@ func (emptySource) Release(context.Context, string, queue.Job, int, time.Time, s
 	return nil
 }
 func (emptySource) Bury(context.Context, string, queue.Job, string, time.Time) error { return nil }
+func (emptySource) ClaimJob(context.Context, string, string, time.Time, time.Duration) (queue.ClaimResult, error) {
+	return queue.ClaimResult{}, nil
+}
 
 type clock struct{}
 

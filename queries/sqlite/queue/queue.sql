@@ -28,6 +28,42 @@ WHERE id = (
 )
 RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
 
+-- ClaimJobByID leases the job @id under the conditions of ClaimJob, for a claim by ID (a
+-- wake-up signal, ADR-0120 section 2). The claim reads the job's lease with GetJobLease before
+-- and, when this leases nothing, after it, to tell why.
+-- name: ClaimJobByID :one
+UPDATE jobs
+SET locked_by = @worker, locked_until = @locked_until, attempt = attempt + 1
+WHERE id = (
+  SELECT j.id FROM jobs AS j
+  WHERE j.id = @id AND j.run_at <= @now AND (j.locked_until IS NULL OR j.locked_until <= @now)
+    AND NOT EXISTS (
+      SELECT 1 FROM jobs AS k
+      WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+        AND (k.locked_until > @now OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+    )
+)
+RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
+
+-- name: GetJobLease :one
+SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = ?;
+
+-- ListDueJobs is the condition of ClaimJob bounded by @batch_limit, for the sweep of lost
+-- wake-up signals: the jobs due at @due_before that a claim at @now could take.
+-- name: ListDueJobs :many
+SELECT j.id FROM jobs AS j
+WHERE j.run_at <= @due_before AND (j.locked_until IS NULL OR j.locked_until <= @now)
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > @now OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT @batch_limit;
+
+-- name: NextJobOfKey :one
+SELECT id, run_at FROM jobs WHERE ordering_key = ? ORDER BY created_at, id LIMIT 1;
+
 -- name: DeleteClaimedJob :execrows
 DELETE FROM jobs WHERE id = ? AND locked_by = ? AND attempt = ?;
 
