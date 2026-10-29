@@ -12,8 +12,7 @@ A guide for operators. The [configuration reference](../reference/configuration.
 - A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
 - The signing key (HMAC-SHA256) for media proxy URLs is a random key that the server generates on its first start and stores in the database, encrypted like the other secrets.
   It does not change when you rotate the KEK, so media proxy URLs keep working across rotations, and `my kek rewrap` re-wraps it with the other secrets.
-- `key_manager` is `local` (it uses the `kek` setting) only. The settings `kms_key`, `kms_key_previous`, `kms_dek_cache_ttl`, and `kms_dek_cache_entries`
-  are for the KMS key managers (`gcpkms`, `awskms`), which this version does not offer yet; with `key_manager = local` they have no effect.
+- `key_manager` is `local` (the default: it uses the `kek` setting) or `gcpkms` (the KEK stays in Google Cloud KMS; see [Google Cloud KMS](#google-cloud-kms)).
 
 ## What happens if you lose the KEK
 
@@ -89,17 +88,50 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   (the message names the key ID: add that KEK to `kek_previous` and run it again), or the stored value is damaged or was copied from another row.
   Do not remove a KEK from `kek_previous` while `my kek status` still counts secrets under it.
 
+## Google Cloud KMS
+
+With `key_manager = gcpkms`, a symmetric Cloud KMS key (a CryptoKey with the purpose `ENCRYPT_DECRYPT`) wraps the data-encryption keys, and the KEK never leaves Cloud KMS.
+A leaked database dump and a leaked configuration together still do not expose the secrets: decrypting them needs the permission to use the key.
+
+- Set `kms_key` to the resource name of the key, without a version:
+  `projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`. Names longer than 248 bytes are rejected at start.
+  The key ID of the stored secrets is `gcpkms:` followed by this name.
+- The server authenticates with Application Default Credentials: on Cloud Run, the service account of the service; elsewhere, `GOOGLE_APPLICATION_CREDENTIALS`.
+- Grant that service account `roles/cloudkms.cryptoKeyEncrypterDecrypter` on the key (not on the project), for every process, such as web and worker, and for the commands `my kek status` and `my kek rewrap`.
+  Without it, reading a secret fails with an error that names the role; a missing or disabled key version fails likewise, and those errors are not retried until the configuration is fixed.
+  A quota error or an unavailable Cloud KMS is temporary, and the work that needed the secret is retried.
+- The server keeps a data-encryption key that Cloud KMS decrypted for `kms_dek_cache_ttl` (default `10m`), so most reads of a secret do not call Cloud KMS.
+- The build tag `no_gcpkms` leaves the adapter out of the binary ([Build tags](../reference/build-tags.md)).
+
+### Rotate the key in Cloud KMS
+
+A rotation in Cloud KMS (by hand, or with a rotation period on the key) adds a new primary version and keeps the old versions enabled.
+New secrets are wrapped with the new version, the server decrypts each secret with the version that wrapped it, and the key ID does not change, so **a rotation needs no `my kek rewrap`**.
+
+**Do not disable or destroy an old version while secrets still need it**: a secret wrapped with a disabled or destroyed version can no longer be decrypted.
+Cloud KMS does not tell which secrets a version wrapped, so to retire key material, move the secrets to a new key first:
+
+1. Create a new key (it may be in the same key ring) and grant the service account the role on it.
+2. Restart every process with `kms_key` set to the new key and `kms_key_previous` set to the old one. The old key now only decrypts.
+3. Run `my kek rewrap`, with the same configuration. When `my kek status` no longer counts secrets under the old key's ID, remove `kms_key_previous` and restart.
+4. Only then disable the old key's versions, and keep them restorable for as long as you keep database backups taken before step 3: restoring one of them needs them again.
+
 ## Move between the local KEK and a KMS
 
 A key ID starts with the kind of key manager that wrapped it (`local:`, `gcpkms:`, `awskms:`). The server wraps new secrets with the current `key_manager`
 and unwraps each stored secret with the key manager its key ID names, so a move between the local KEK and a KMS is a rotation across kinds.
-This version offers only `key_manager = local`; the steps below apply once a KMS key manager is available.
 
 - With a KMS, `kek` and `kek_previous` only decrypt: they open the secrets still wrapped with the local KEK, and every new secret is wrapped with `kms_key`.
   `kms_key_previous` lists earlier keys of the same KMS, which only decrypt too.
-- From the local KEK to a KMS: set `key_manager` and `kms_key`, keep the current KEK in `kek` (or move it to `kek_previous`), restart every process, and run `my kek rewrap`.
-  When `my kek status` no longer counts secrets under a `local:` key ID, remove `kek` and `kek_previous`.
-- From a KMS back to the local KEK, do the same the other way round: the KMS stays configured, only to decrypt, until `my kek rewrap` has moved every secret.
+- With `key_manager = local`, `kms_key` and `kms_key_previous`, when set, only decrypt: they open the secrets still wrapped with the KMS.
+- From the local KEK to Cloud KMS:
+  1. Create the key and grant the role as in [Google Cloud KMS](#google-cloud-kms).
+  2. Restart every process with `key_manager = gcpkms`, `kms_key` set to the key, and the current KEK moved from `kek` to `kek_previous`.
+     Secrets are now wrapped with Cloud KMS, and the ones wrapped with the local KEK still open.
+  3. Run `my kek rewrap` with the same configuration.
+  4. When `my kek status` no longer counts secrets under a `local:` key ID, remove `kek_previous` and restart. Keep the backup of the KEK for as long as you keep database backups taken before step 3.
+- From a KMS back to the local KEK, do the same the other way round: set `key_manager = local` and a new `kek`, and keep `kms_key` set, which now only decrypts,
+  until `my kek rewrap` has moved every secret and `my kek status` no longer counts secrets under a `gcpkms:` key ID.
 - To move from one cloud's KMS to another's, move to the local KEK first and then to the other KMS; there is no direct move.
 - The server keeps a data-encryption key that the KMS decrypted for `kms_dek_cache_ttl` (default `10m`, at most `kms_dek_cache_entries`, default `1024`),
   so a secret in use reaches the KMS about once per period and process. `0` in either setting disables the cache.

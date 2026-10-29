@@ -19,6 +19,7 @@ import (
 // start goroutines with a bare go statement: kernel.Go itself and the test helpers.
 var goStatementAllowed = []string{
 	"internal/app/kernel/errorreport.go",
+	"internal/adapter/keymanager/gcpkms/gcpkmstest/",
 	"internal/platform/platformtest/",
 }
 

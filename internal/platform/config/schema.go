@@ -465,7 +465,7 @@ var schema = []field{
 		def: "local",
 		choices: []choice{
 			{value: "local", inV0: true, doc: "Uses the key-encryption key from `kek`."},
-			{value: "gcpkms", doc: "Google Cloud KMS."},
+			{value: "gcpkms", inV0: true, doc: "Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md)."},
 			{value: "awskms", doc: "AWS KMS."},
 		},
 		set: func(c *Config, v string) { c.KeyManager = v },
@@ -494,14 +494,14 @@ var schema = []field{
 	},
 	{
 		key:          "kms_key",
-		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes.",
+		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.",
 		requiredWhen: "when `key_manager` is not `local`",
 		check:        checkKMSKey,
 		set:          func(c *Config, v string) { c.KMSKey = v },
 	},
 	{
 		key:   "kms_key_previous",
-		doc:   "Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key` (docs/operations/key-management.md).",
+		doc:   "Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key`. With `key_manager = local`, `kms_key` and these keys only decrypt the secrets still encrypted with the KMS, while they move to `kek` (docs/operations/key-management.md).",
 		check: checkPreviousKMSKeys,
 		set: func(c *Config, v string) {
 			for k := range strings.SplitSeq(v, ",") {
@@ -1234,6 +1234,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	} else if vals["key_manager"] != "" && !present["kms_key"] {
 		issues = append(issues, Issue{Key: "kms_key", Missing: true, Message: "required when key_manager is not local"})
 	}
+	issues = append(issues, kmsKeyChecks(vals)...)
 	if prev, ok := vals["kms_key_previous"]; ok {
 		seen := map[string]bool{vals["kms_key"]: true}
 		for k := range strings.SplitSeq(prev, ",") {
@@ -1807,6 +1808,34 @@ func checkKMSKey(v string) error {
 		return fmt.Errorf("must be at most %d bytes, got %d", maxKMSKeyLen, len(v))
 	}
 	return nil
+}
+
+// kmsKeyChecks checks kms_key and kms_key_previous against the KMS that reads them: that of
+// key_manager, or with key_manager = local, the KMS that their names belong to, which only
+// decrypts. A Cloud KMS key is a CryptoKey resource name, which starts with "projects/".
+func kmsKeyChecks(vals map[string]string) []Issue {
+	var issues []Issue
+	check := func(key, name string) {
+		var err error
+		switch {
+		case vals["key_manager"] == "gcpkms" || vals["key_manager"] == "local" && strings.HasPrefix(name, "projects/"):
+			err = checkGCPKMSKeyName(name)
+		case vals["key_manager"] == "local":
+			err = errors.New("must be the resource name of a Cloud KMS CryptoKey, projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}, to decrypt with it")
+		}
+		if err != nil {
+			issues = append(issues, Issue{Key: key, Message: fmt.Sprintf("%q %s", name, err)})
+		}
+	}
+	if k, ok := vals["kms_key"]; ok {
+		check("kms_key", k)
+	}
+	if prev, ok := vals["kms_key_previous"]; ok {
+		for k := range strings.SplitSeq(prev, ",") {
+			check("kms_key_previous", strings.TrimSpace(k))
+		}
+	}
+	return issues
 }
 
 func checkPreviousKMSKeys(v string) error {

@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	cloud.google.com/go/compute/metadata v0.10.0
+	cloud.google.com/go/kms v1.36.1
 	cloud.google.com/go/pubsub/v2 v2.8.0
 	code.superseriousbusiness.org/httpsig v1.5.0
 	github.com/alicebob/miniredis/v2 v2.40.0
@@ -71,6 +72,7 @@ require (
 	cloud.google.com/go/auth v0.24.1-0.20261001053825-dbc26066f70a // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
+	cloud.google.com/go/longrunning v1.3.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

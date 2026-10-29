@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 
 	"golang.org/x/sync/singleflight"
 
@@ -248,6 +249,8 @@ type App struct {
 	closeBlobs func() error
 	// billingClosers release the clients of the billing sources that hold one (ADR-0068).
 	billingClosers []io.Closer
+	// keyManagerClosers release the clients of the KMS key managers.
+	keyManagerClosers []io.Closer
 	// valkey is the connection to the Valkey server that the adapters configured with
 	// valkey_url share, nil until one of them connects it.
 	valkey valkeyServer
@@ -336,7 +339,8 @@ type AppOptions struct {
 	// clock that never goes back, as the wall clock does when the host steps it.
 	Clock kernel.Clock
 	// KeyManager stands in for the KMS adapter of a key_manager other than local, which then wraps
-	// behind the cache of the DEKs, next to the KEKs of kek and kek_previous. Tests only, to move
+	// behind the cache of the DEKs, next to the KEKs of kek and kek_previous, and with
+	// key_manager = local for the KMS adapter of kms_key that only unwraps. Tests only, to move
 	// the sealed values between kinds of KeyManager.
 	KeyManager kernel.KeyManager
 }
@@ -388,7 +392,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		_ = a.Close()
 		return nil, err
 	}
-	if a.KeyManager, err = newKeyManager(cfg, opts.KeyManager, a.Clock); err != nil {
+	if a.KeyManager, err = a.newKeyManager(ctx, cfg, opts.KeyManager); err != nil {
 		_ = a.Close()
 		return nil, err
 	}
@@ -573,19 +577,41 @@ func hostOnly(host string) string {
 	return host
 }
 
-// newKeyManager builds the KeyManager of cfg. With key_manager = local, the KEKs of kek and
-// kek_previous wrap and unwrap. With a KMS, kms wraps, behind the cache of the DEKs it unwraps,
-// and the KEKs of kek and kek_previous only unwrap the values that are still wrapped locally,
-// until `my kek rewrap` moves them to the KMS (ADR-0121 §3, §4). kms, when set, stands in for
-// the adapter of cfg.KeyManager (tests only).
-func newKeyManager(cfg *config.Config, kms kernel.KeyManager, clock kernel.Clock) (kernel.KeyManager, error) {
+// newKeyManager builds the KeyManager of cfg (ADR-0121 §3, §4). With key_manager = local, the
+// KEKs of kek and kek_previous wrap and unwrap, and the keys of kms_key and kms_key_previous, when
+// set, only unwrap the values still wrapped by their KMS, until `my kek rewrap` moves them to the
+// local KEK. With a KMS, the KMS key manager of kms_key wraps, and the KEKs of kek and kek_previous
+// only unwrap the values that are still wrapped locally, until `my kek rewrap` moves them to the
+// KMS. A KMS key manager sits behind the cache of the DEKs it unwraps. kms, when set, stands in
+// for the KMS key manager (tests only).
+func (a *App) newKeyManager(ctx context.Context, cfg *config.Config, kms kernel.KeyManager) (kernel.KeyManager, error) {
 	if cfg.KeyManager == "local" {
-		return local.New(cfg.KEK, cfg.PreviousKEKs...)
+		current, err := local.New(cfg.KEK, cfg.PreviousKEKs...)
+		if err != nil {
+			return nil, err
+		}
+		var keys []string
+		if cfg.KMSKey != "" {
+			keys = append(keys, cfg.KMSKey)
+		}
+		keys = append(keys, cfg.PreviousKMSKeys...)
+		if len(keys) == 0 {
+			return current, nil
+		}
+		if kms == nil {
+			if kms, err = a.newKMSKeyManager(ctx, kmsKindOf(keys[0]), keys[0], keys[1:]); err != nil {
+				return nil, err
+			}
+		}
+		return kernel.NewKeyRouter(current, a.cacheDEKs(cfg, kms))
 	}
 	if kms == nil {
-		return nil, fmt.Errorf("key_manager %q is not implemented yet", cfg.KeyManager)
+		var err error
+		if kms, err = a.newKMSKeyManager(ctx, cfg.KeyManager, cfg.KMSKey, cfg.PreviousKMSKeys); err != nil {
+			return nil, err
+		}
 	}
-	current := kernel.NewDEKCache(kms, kernel.DEKCacheOptions{TTL: cfg.DEKCacheTTL, Entries: cfg.DEKCacheEntries, Clock: clock})
+	current := a.cacheDEKs(cfg, kms)
 	var keks [][]byte
 	for _, k := range append([][]byte{cfg.KEK}, cfg.PreviousKEKs...) {
 		if len(k) > 0 {
@@ -600,6 +626,35 @@ func newKeyManager(cfg *config.Config, kms kernel.KeyManager, clock kernel.Clock
 		return nil, err
 	}
 	return kernel.NewKeyRouter(current, previous)
+}
+
+func (a *App) cacheDEKs(cfg *config.Config, km kernel.KeyManager) kernel.KeyManager {
+	return kernel.NewDEKCache(km, kernel.DEKCacheOptions{TTL: cfg.DEKCacheTTL, Entries: cfg.DEKCacheEntries, Clock: a.Clock})
+}
+
+// kmsKindOf returns the kind of KMS key manager that the key name belongs to: a Cloud KMS
+// CryptoKey resource name starts with "projects/" (config validated the names).
+func kmsKindOf(name string) string {
+	if strings.HasPrefix(name, "projects/") {
+		return "gcpkms"
+	}
+	return "awskms"
+}
+
+// newKMSKeyManager returns the KMS key manager of kind that wraps with key and also unwraps with
+// previous; Close releases its client.
+func (a *App) newKMSKeyManager(ctx context.Context, kind, key string, previous []string) (kernel.KeyManager, error) {
+	switch kind {
+	case "gcpkms":
+		km, closer, err := newGCPKMS(ctx, key, previous)
+		if err != nil {
+			return nil, err
+		}
+		a.keyManagerClosers = append(a.keyManagerClosers, closer)
+		return km, nil
+	default:
+		return nil, fmt.Errorf("key_manager %q is not implemented yet", kind)
+	}
 }
 
 // Ready reports whether the App can serve requests: the database is reachable, every table
@@ -645,6 +700,10 @@ func (a *App) Close() error {
 		_ = c.Close()
 	}
 	a.billingClosers = nil
+	for _, c := range a.keyManagerClosers {
+		_ = c.Close()
+	}
+	a.keyManagerClosers = nil
 	if a.valkey != nil {
 		a.valkey.Close()
 	}
