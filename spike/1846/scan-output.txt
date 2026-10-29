@@ -1,0 +1,37 @@
+tables: 330, most indexes on a table: [('notifications', 7)]
+   293 x CREATE INDEX without ASYNC (Atlas CE output)
+     4 x key on bytea column
+     6 x index on bytea column
+   - key on bytea column: totp_recovery_codes.code_hash
+   - key on bytea column: totp_recovery_code_uses.code_hash
+   - index on bytea column: passkey_credentials_credential_id (passkey_credentials.credential_id)
+   - index on bytea column: sessions_token_hash (sessions.token_hash)
+   - key on bytea column: oauth_authorization_codes.code_hash
+   - key on bytea column: oauth_authorization_code_redemptions.code_hash
+   - index on bytea column: oauth_access_tokens_access_token_hash (oauth_access_tokens.access_token_hash)
+   - index on bytea column: oauth_access_tokens_refresh_token_hash (oauth_access_tokens.refresh_token_hash)
+   - index on bytea column: user_tokens_token_hash (user_tokens.token_hash)
+   - index on bytea column: account_keys_key_id_fingerprint (account_keys.fingerprint)
+advisory lock: 8
+   - queries/postgres/content.sql:90
+   - queries/postgres/finance.sql:104
+   - queries/postgres/graph_blocks.sql:6
+   - queries/postgres/identity.sql:27
+   - queries/postgres/moderation.sql:6
+   - queries/postgres/oauth.sql:123
+   - queries/postgres/queue/queue.sql:36
+   - queries/postgres/voice.sql:260
+FOR SHARE: 2
+   - queries/postgres/data_export.sql:21
+   - queries/postgres/data_import.sql:75
+SKIP LOCKED: 1
+   - queries/postgres/queue/queue.sql:33
+NOWAIT: 0
+LISTEN/NOTIFY: 2
+   - internal/adapter/stream/postgres/postgres.go:93
+   - internal/adapter/stream/postgres/postgres.go:105
+TRUNCATE: 0
+temporary table: 0
+SAVEPOINT: 0
+READ COMMITTED: 1
+   - internal/adapter/db/postgres/postgres.go:118
