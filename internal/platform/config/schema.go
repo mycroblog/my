@@ -226,10 +226,17 @@ var schema = []field{
 		choices: []choice{
 			{value: "db", inV0: true, doc: "Queue table in the database."},
 			{value: "inline", inV0: true, doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
-			{value: "sqs", inV0: true, doc: "Amazon SQS."},
+			{value: "sqs", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: this build sends the signals but has no receiver for them yet, so the jobs wait in the table (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
 			{value: "cloudtasks", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
+	},
+	{
+		key:          "queue_sqs_queue_url",
+		doc:          "URL of the SQS standard queue of `queue = sqs`, `https://sqs.{region}.amazonaws.com/{account}/{name}`, which carries the wake-up signals; the client uses the region of the URL. The server's credentials need `sqs:SendMessage` on it.",
+		requiredWhen: "when `queue = sqs`",
+		check:        checkSQSQueueURL,
+		set:          func(c *Config, v string) { c.QueueSQSQueueURL = v },
 	},
 	{
 		key:          "queue_cloudtasks_queue",
@@ -1391,7 +1398,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}
-	issues = append(issues, cloudTasksChecks(vals, present)...)
+	issues = append(issues, wakerQueueChecks(vals, present)...)
 	return issues
 }
 

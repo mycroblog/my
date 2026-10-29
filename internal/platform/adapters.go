@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 	"fmt"
+	"io"
 
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/app/account"
@@ -15,9 +16,11 @@ import (
 	"github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/projection"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/rewrap"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
@@ -67,9 +70,9 @@ type repositories struct {
 // queue = db and kv = db it also sets the queue and the key-value store on the database.
 func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositories, error) {
 	queueOpts := queuedb.Options{Clock: a.Clock, IDs: a.IDs, Tracer: a.Tracer}
-	if cfg.Queue == "cloudtasks" {
+	if hasWaker(cfg.Queue) {
 		if a.waker == nil {
-			w, closer, err := newCloudTasksWaker(ctx, cfg, a.Clock, a.ErrorReporter)
+			w, closer, err := newWaker(ctx, cfg, a.Clock, a.ErrorReporter)
 			if err != nil {
 				return nil, err
 			}
@@ -89,9 +92,22 @@ func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositori
 	}
 }
 
-// queueInDatabase reports whether the jobs of the queue are in the database: queue = db, and
-// queue = cloudtasks, which only carries wake-up signals for them (ADR-0120).
-func queueInDatabase(queue string) bool { return queue == "db" || queue == "cloudtasks" }
+// queueInDatabase reports whether the jobs of the queue are in the database: queue = db, and the
+// queues with a waker, which only carry wake-up signals for them (ADR-0120).
+func queueInDatabase(q string) bool { return q == "db" || hasWaker(q) }
+
+// hasWaker reports whether the queue is the database queue with an external queue carrying its
+// wake-up signals: cloudtasks and sqs (ADR-0120).
+func hasWaker(q string) bool { return q == "cloudtasks" || q == "sqs" }
+
+// newWaker returns the waker of the queue of cfg, which hasWaker accepts, and what releases its
+// client.
+func newWaker(ctx context.Context, cfg *config.Config, clock kernel.Clock, reporter kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
+	if cfg.Queue == "sqs" {
+		return newSQSWaker(ctx, cfg, clock)
+	}
+	return newCloudTasksWaker(ctx, cfg, clock, reporter)
+}
 
 // valkeyServer is the connection to valkey_url that the adapters configured with it share.
 type valkeyServer interface {

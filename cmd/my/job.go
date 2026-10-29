@@ -58,7 +58,7 @@ func runJob(args []string, stdout, stderr io.Writer) int {
 	defer func() { _ = app.Close() }()
 	if app.Config.Queue == "inline" || app.DeadJobs == nil {
 		// The inline queue keeps its dead jobs in the memory of the serving process.
-		_, _ = fmt.Fprintf(stderr, "%s: queue %q keeps no dead jobs that this command can reach; only queue = db and cloudtasks do\n", name, app.Config.Queue)
+		_, _ = fmt.Fprintf(stderr, "%s: queue %q keeps no dead jobs that this command can reach; only queue = db, cloudtasks, and sqs do\n", name, app.Config.Queue)
 		return 1
 	}
 	if sub == "list" {
