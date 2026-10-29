@@ -268,7 +268,7 @@ func (q *Queries) ListStalePendingDataExports(ctx context.Context, arg ListStale
 }
 
 const lockDataExport = `-- name: LockDataExport :one
-SELECT id FROM data_exports WHERE id = $1::uuid FOR SHARE
+SELECT id FROM data_exports WHERE id = $1::uuid FOR KEY SHARE
 `
 
 // LockDataExport locks an export against its deletion until the transaction ends.
