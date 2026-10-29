@@ -17,26 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/keymanager/gcpkms"
 	"github.com/mycroblog/my/internal/adapter/keymanager/gcpkms/gcpkmstest"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/platform"
 )
-
-// requireAllUnder fails unless `my kek status` counts every sealed value of app under the key
-// ID of the KMS kind.
-func requireAllUnder(t *testing.T, app *platform.App, kind string) {
-	t.Helper()
-	status, err := app.Rewrap.Status(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, c := range status {
-		if c.Outdated() != 0 {
-			t.Errorf("status of %s = %+v, want every value under the current key", c.Column, c)
-		}
-	}
-	if got := kernel.KeyIDKind(app.KeyManager.CurrentKeyID()); got != kind {
-		t.Errorf("current key ID %q, want one of kind %q", app.KeyManager.CurrentKeyID(), kind)
-	}
-}
 
 // TestMoveBetweenLocalAndGCPKMS checks the moves of the sealed values from the local KEK to
 // Cloud KMS and back with `my kek rewrap`, with the gcpkms adapter on a stand-in for Cloud KMS:

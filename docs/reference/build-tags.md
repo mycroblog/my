@@ -15,6 +15,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_s3` | The S3-compatible blob store (AWS SDK for Amazon S3) | `blob = s3` |
 | `no_pubsub` | The Google Cloud Pub/Sub broker; with `no_billing_gcp`, the Pub/Sub client library too | `stream = pubsub` |
 | `no_gcpkms` | The Google Cloud KMS key manager (Cloud KMS client library) | `key_manager = gcpkms`, and Cloud KMS keys in `kms_key` / `kms_key_previous` |
+| `no_awskms` | The AWS KMS key manager (AWS SDK for AWS KMS) | `key_manager = awskms`, and AWS KMS keys in `kms_key` / `kms_key_previous` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments_provider = stripe` |
@@ -98,7 +99,7 @@ development Mailpit in [Email](../operations/email.md#development)) and its SSRF
 Pass the tags, separated by commas, to the Go build, to `scripts/task.sh go:bin`, or to the container build:
 
 ```sh
-CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
+CGO_ENABLED=0 go build -tags no_postgres,no_valkey,no_sns,no_ses,no_pubsub,no_gcpkms,no_awskms,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe ./cmd/my
 scripts/task.sh go:bin GO_TAGS=no_sqlite,no_valkey,no_pubsub
 scripts/task.sh docker:build GO_TAGS=no_sqlite,no_valkey,no_sns  # docker build --build-arg GO_TAGS=...
 ```
@@ -118,9 +119,9 @@ and fails when `cmd/my` still depends on a package that a tag of the set leaves 
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_pubsub,no_gcpkms,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
-| `no_sqlite,no_valkey,no_pubsub,no_gcpkms,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, and the Stripe payments, without the Sora voice chat |
-| `no_sqlite,no_valkey,no_sns,no_ses,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, and the Cloud KMS key manager, without the LiveKit voice chat |
+| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_pubsub,no_gcpkms,no_awskms,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
+| `no_sqlite,no_valkey,no_pubsub,no_gcpkms,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, and the Stripe payments, without the Sora voice chat |
+| `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, and the Cloud KMS key manager, without the LiveKit voice chat |
 | `e2e_fakes` | The test build; it also runs the tests that only this build has (named `*E2EFakes*`) |
 
 It also fails when `cmd/my` without `e2e_fakes`, the build with no tags among them, depends on a fake, or when the set

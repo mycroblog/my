@@ -22,10 +22,13 @@ var (
 	testKEK2 = base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{2}, kekSize))
 )
 
-// minimal is the smallest valid environment.
 // testGCPKMSKey is the resource name of a Cloud KMS CryptoKey.
 const testGCPKMSKey = "projects/my-project/locations/global/keyRings/my/cryptoKeys/kek"
 
+// testAWSKMSKey is the ARN of an AWS KMS key.
+const testAWSKMSKey = "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+
+// minimal is the smallest valid environment.
 func minimal() map[string]string {
 	return map[string]string{
 		"MY_HOST":         "social.example.org",
@@ -144,6 +147,22 @@ listen = "127.0.0.1:9000"
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "gcpkms", KMSKey: testGCPKMSKey + "-2", PreviousKMSKeys: []string{testGCPKMSKey}, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
+				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
+				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
+				PreviousKEKs: [][]byte{bytes.Repeat([]byte{1}, kekSize)},
+			},
+		},
+		{
+			name: "AWS KMS with an alias and the local KEK only decrypting",
+			env: with(minimal(), "MY_KEY_MANAGER", "awskms", "MY_KMS_KEY", "alias/my-kek", "MY_KMS_KEY_PREVIOUS", testAWSKMSKey,
+				"MY_KEK", unset, "MY_KEK_PREVIOUS", testKEK1),
+			want: Config{
+				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
+				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
+				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
+				KeyManager: "awskms", KMSKey: "alias/my-kek", PreviousKMSKeys: []string{testAWSKMSKey}, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
 				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
 				ErrorsExporter: "none", ErrorsEnvironment: "production",
@@ -421,10 +440,9 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "adapters outside v0",
-			env:  with(minimal(), "MY_BLOB", "gcs", "MY_KEY_MANAGER", "awskms", "MY_KEK", unset),
+			env:  with(minimal(), "MY_BLOB", "gcs"),
 			want: []string{
 				`blob (MY_BLOB): "gcs" is not available in v0; want one of fs, s3`,
-				`key_manager (MY_KEY_MANAGER): "awskms" is not available in v0; want one of local, gcpkms`,
 			},
 		},
 		{
@@ -570,7 +588,24 @@ func TestLoadInvalid(t *testing.T) {
 			name: "local KEK with keys of a KMS that only decrypt",
 			env:  with(minimal(), "MY_KMS_KEY", testGCPKMSKey, "MY_KMS_KEY_PREVIOUS", "alias/my-kek"),
 			want: []string{
-				`kms_key_previous (MY_KMS_KEY_PREVIOUS): "alias/my-kek" must be the resource name of a Cloud KMS CryptoKey, projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}, to decrypt with it`,
+				`kms_key_previous (MY_KMS_KEY_PREVIOUS): "alias/my-kek" must be a key of the same KMS as the first of kms_key and kms_key_previous, to decrypt with it`,
+			},
+		},
+		{
+			name: "AWS KMS keys malformed, AWS managed, or of another KMS",
+			env: with(minimal(), "MY_KEY_MANAGER", "awskms", "MY_KMS_KEY", "alias/aws/ebs",
+				"MY_KMS_KEY_PREVIOUS", testGCPKMSKey+", kek", "MY_KEK", unset),
+			want: []string{
+				`kms_key (MY_KMS_KEY): "alias/aws/ebs" must not be an AWS managed key (alias/aws/...): create a customer managed key`,
+				`kms_key_previous (MY_KMS_KEY_PREVIOUS): "` + testGCPKMSKey + `" must be the ARN, an alias (alias/...), or the key ID of an AWS KMS key`,
+				`kms_key_previous (MY_KMS_KEY_PREVIOUS): "kek" must be the ARN, an alias (alias/...), or the key ID of an AWS KMS key`,
+			},
+		},
+		{
+			name: "local KEK with malformed keys of AWS KMS that only decrypt",
+			env:  with(minimal(), "MY_KMS_KEY_PREVIOUS", "alias/my-kek, "+testGCPKMSKey),
+			want: []string{
+				`kms_key_previous (MY_KMS_KEY_PREVIOUS): "` + testGCPKMSKey + `" must be a key of the same KMS as the first of kms_key and kms_key_previous, to decrypt with it`,
 			},
 		},
 		{
