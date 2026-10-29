@@ -22,6 +22,7 @@ import {
   StarIcon,
 } from "@my/ui";
 import { type ReactNode, useId, useState } from "react";
+import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { type ReactionChoice, ReactionPickerButton } from "../../emoji";
 import { ReportDialog } from "../../report";
@@ -54,7 +55,7 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
  * viewer (ADR-0069 §3) and, for the viewer's own posts, edit (EditStatusDialog), who may quote it (QuotePolicyDialog), the posts that
  * quote it, pin or unpin, and delete behind a confirmation (WAI-ARIA APG, alert dialog pattern). Nothing while
  * nobody is signed in. The toggles keep their names in both states and expose the state with
- * `aria-pressed` (APG, button pattern); a count is the toggle's description. On a post of another server while the
+ * `aria-pressed` (APG, button pattern); a count is part of the toggle's name (WCAG 2.5.3). On a post of another server while the
  * instance sends nothing out (ADR-0076), quoting is not offered and a note at the end of the bar, which also
  * describes the reply, boost and favourite, says that the actions do not reach that server.
  */
@@ -254,13 +255,21 @@ type RelationButtonProps = {
 };
 
 function RelationButton({ label, toggle, tone, icon, describedBy, celebrate = false }: RelationButtonProps) {
-  const countId = useId();
-  const hasCount = toggle.count !== null && toggle.count > 0;
-  const description = [hasCount ? countId : undefined, describedBy].filter((id) => id !== undefined).join(" ");
+  const t = useT();
+  const intl = useIntl();
+  // The count it shows is part of its name (WCAG 2.5.3), formatted as ActionCount shows it.
+  const countedLabel =
+    toggle.count !== null && toggle.count > 0
+      ? t("client:status.action.counted", {
+          action: label,
+          count: intl.formatNumber(toggle.count, { notation: "compact" }),
+        })
+      : undefined;
   return (
     <IconToggleButton
       label={label}
-      {...(description !== "" && { "aria-describedby": description })}
+      countedLabel={countedLabel}
+      {...(describedBy !== undefined && { "aria-describedby": describedBy })}
       tone={tone}
       celebrate={celebrate}
       isSelected={toggle.isSelected}
@@ -268,7 +277,7 @@ function RelationButton({ label, toggle, tone, icon, describedBy, celebrate = fa
       onChange={toggle.onChange}
     >
       {icon(toggle.isSelected)}
-      {toggle.count !== null && <ActionCount id={countId} value={toggle.count} />}
+      {toggle.count !== null && <ActionCount value={toggle.count} />}
     </IconToggleButton>
   );
 }

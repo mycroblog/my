@@ -3,7 +3,7 @@
 // reactions under the post, the picker of reactions, reacting in place of the favourite, and the dialog of the
 // accounts that reacted, each axe-clean and without horizontal scrolling. `vite preview` has no API, so the spec
 // answers the token refresh and the client API with `page.route`. Names come from the project's catalog and match exactly:
-// "React" is a substring of every "React with {emoji}" toggle.
+// a reaction toggle's name holds the words of other buttons ("react").
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
@@ -17,6 +17,13 @@ function message(key: string, emoji = ""): string {
   const text = catalog[key]?.defaultMessage;
   if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
   return text.replace("{emoji}", emoji);
+}
+
+/** The whole name of the toggle of `emoji`, whose `{count}` is the count in the locale's digits. */
+function toggleName(emoji: string): RegExp {
+  const [before = "", after = ""] = message("reaction.toggle", emoji).split("{count}");
+  const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escape(before)}\\S+${escape(after)}$`, "u");
 }
 
 const alice: Status["account"] = {
@@ -189,9 +196,7 @@ test.describe("the reactions of a post", () => {
     await page.goto(`/@bob/status/${postId}`);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     // Signed in: the reactions are toggles.
-    await expect(
-      article(page).getByRole("button", { name: message("reaction.toggle", "👍"), exact: true }),
-    ).toBeVisible();
+    await expect(article(page).getByRole("button", { name: toggleName("👍") })).toBeVisible();
   });
 
   test("are a row of toggles and counts, axe-clean and without horizontal scrolling", async ({
@@ -242,10 +247,7 @@ test.describe("the reactions of a post", () => {
     await picker.getByRole("button", { name: message("emoji.picker.group.activities"), exact: true }).click();
     await page.keyboard.press("Enter");
     await expect(picker).toBeHidden();
-    await expect(post.getByRole("button", { name: message("reaction.toggle", "🎃"), exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await expect(post.getByRole("button", { name: toggleName("🎃") })).toHaveAttribute("aria-pressed", "true");
     await expect(post.getByRole("button", { name: message("status.action.favourite"), exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",

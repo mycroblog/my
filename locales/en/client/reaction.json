@@ -12,8 +12,8 @@
     "description": "Accessible name of the grid of emoji in the picker of reactions."
   },
   "reaction.toggle": {
-    "defaultMessage": "React with {emoji}",
-    "description": "Accessible name of a toggle under a post that reacts to it with an emoji that others reacted with, or takes the reaction back when pressed again. {emoji} is the emoji itself or its :shortcode:. The number of reactions is read as its description."
+    "defaultMessage": "{emoji} {count}, react with this emoji",
+    "description": "Accessible name of a toggle under a post that reacts to it with an emoji that others reacted with, or takes the reaction back when pressed again. It starts with what the toggle shows, the emoji and the number, so that the name contains them. {emoji} is the emoji itself or its :shortcode:; {count} is the number of reactions as it is shown (\"1.2K\")."
   },
   "reaction.list.label": {
     "defaultMessage": "Reactions",

@@ -37,8 +37,8 @@ export type ToggleButtonProps = RACToggleButtonProps & VariantProps<typeof toggl
  * A two-state button (React Aria ToggleButton; WAI-ARIA APG, button pattern): pressed with a pointer,
  * Enter or Space, it exposes its state with `aria-pressed`. Its accessible name stays the same in both
  * states ("Favourite", not "Unfavourite"). When its children are an icon and a count it is an
- * `IconToggleButton`, which names it and shows the name as a tooltip (G12); describe it with the count
- * (`aria-describedby`) if the count matters. Control it with `isSelected` / `onChange`.
+ * `IconToggleButton`, which names it and shows the name as a tooltip (G12); a count it shows is part of
+ * its name (`countedLabel`, WCAG 2.5.3). Control it with `isSelected` / `onChange`.
  *
  * `celebrate` is only for the toggles listed as celebrated moments in §21.5 (a favourite): when the person turns it on,
  * its icon grows in with the small overshoot of `ease-celebrate`, or, with reduced motion, the button takes the `soft`

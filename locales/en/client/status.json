@@ -7,6 +7,10 @@
     "defaultMessage": "Boost",
     "description": "Toggle button under a post that shares (boosts) it with the user's followers, or retracts the boost. The same text is used in both states."
   },
+  "status.action.counted": {
+    "defaultMessage": "{action}, {count}",
+    "description": "Accessible name of a boost, favourite or bookmark toggle under a post while it shows its count beside the icon, so that the name contains the number that is shown. {action} is the toggle's name (Boost, Favourite, Bookmark; also its tooltip); {count} is the number as it is shown (\"1.2K\")."
+  },
   "status.action.copy_link": {
     "defaultMessage": "Copy link",
     "description": "Menu item that copies the address of a post to the clipboard."
