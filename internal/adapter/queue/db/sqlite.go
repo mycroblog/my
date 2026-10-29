@@ -23,11 +23,6 @@ func NewSQLite(d *sqlite.DB, opts Options) *Queue {
 	return newQueue(d, sqliteStore{d}, opts)
 }
 
-// NewSQLiteOutbox returns the outbox kept in the SQLite database d.
-func NewSQLiteOutbox(d *sqlite.DB, opts Options) *Outbox {
-	return newOutbox(d, sqliteStore{d}, opts)
-}
-
 // sqliteStore stores timestamps as Unix milliseconds (data-model/01-conventions.md §1.2).
 type sqliteStore struct{ db *sqlite.DB }
 
@@ -185,76 +180,6 @@ func (s sqliteStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before tim
 		return 0, err
 	}
 	return q.DeleteDeadJobsBefore(ctx, sqlitequeue.DeleteDeadJobsBeforeParams{FailedBefore: millis(before), BatchLimit: int64(limit)})
-}
-
-func (s sqliteStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := s.queries(tx)
-	if err != nil {
-		return err
-	}
-	return q.InsertOutboxEvent(ctx, sqlitequeue.InsertOutboxEventParams{
-		ID:             j.ID,
-		JobType:        j.Type,
-		Payload:        j.Payload,
-		IdempotencyKey: nullString(j.IdempotencyKey),
-		OrderingKey:    nullString(j.OrderingKey),
-		TraceParent:    nullString(j.TraceParent),
-		RunAt:          millis(j.RunAt),
-		CreatedAt:      millis(j.CreatedAt),
-	})
-}
-
-func (s sqliteStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := q.ListOutboxEvents(ctx, int64(limit))
-	if err != nil {
-		return nil, err
-	}
-	out := make([]queue.Job, len(rows))
-	for i, r := range rows {
-		out[i] = queue.Job{
-			ID:             r.ID,
-			Type:           r.JobType,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: r.IdempotencyKey.String,
-			TraceParent:    r.TraceParent.String,
-			OrderingKey:    r.OrderingKey.String,
-			RunAt:          fromMillis(r.RunAt),
-			CreatedAt:      fromMillis(r.CreatedAt),
-		}
-	}
-	return out, nil
-}
-
-func (s sqliteStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := s.queries(tx)
-	if err != nil {
-		return err
-	}
-	return q.DeleteOutboxEvent(ctx, id)
-}
-
-func (s sqliteStore) acquireRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now, until time.Time) (bool, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return false, err
-	}
-	n, err := q.AcquireOutboxRelayLease(ctx, sqlitequeue.AcquireOutboxRelayLeaseParams{
-		Name: name, Holder: holder, LeaseUntil: millis(until), Now: millis(now),
-	})
-	return n == 1, err
-}
-
-func (s sqliteStore) endRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now time.Time) (bool, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return false, err
-	}
-	n, err := q.EndOutboxRelayLease(ctx, sqlitequeue.EndOutboxRelayLeaseParams{Name: name, Holder: holder, Now: millis(now)})
-	return n == 1, err
 }
 
 func (s sqliteStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {

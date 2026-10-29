@@ -14,20 +14,17 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// Options configure a Queue or an Outbox. Clock and IDs are required.
+// Options configure a Queue. Clock and IDs are required.
 type Options struct {
 	Clock kernel.Clock
 	IDs   kernel.IDGenerator
 	// Tracer fills the TraceParent of the enqueued jobs from the span of the caller's context
 	// (ADR-0063 §2); nil leaves it empty.
 	Tracer kernel.Tracer
-	// RelayLease is how long one Outbox.Relay call holds the relay lease, within which it
-	// must enqueue its batch; the default is DefaultRelayLease. Queue does not use it.
-	RelayLease time.Duration
 	// Waker, when set, makes Queue send a wake-up signal for each job it stores, once the
 	// transaction that stores it commits (ADR-0120 §1): the jobs of a server whose external
 	// queue (Cloud Tasks, SQS) delivers them to a queue.PushReceiver. A failed send is logged,
-	// and the queue.WakeSweeper sends the signal again. Outbox does not use it.
+	// and the queue.WakeSweeper sends the signal again.
 	Waker queue.Waker
 	// Projectors are the registry of the database's UnitOfWork, whose commit hook sends the
 	// signals of EnqueueTx. Required with Waker.
@@ -56,11 +53,6 @@ type store interface {
 	requeueDead(ctx context.Context, tx uow.Tx, id string, runAt time.Time) error
 	deleteDead(ctx context.Context, tx uow.Tx, id string) (int64, error)
 	deleteDeadBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error)
-	insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error
-	listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error)
-	deleteOutbox(ctx context.Context, tx uow.Tx, id string) error
-	acquireRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now, until time.Time) (bool, error)
-	endRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now time.Time) (bool, error)
 	backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error)
 	listPending(ctx context.Context, tx uow.Tx, now time.Time, f queue.JobFilter, after queue.JobPosition, limit int) ([]queue.PendingJob, error)
 	summarize(ctx context.Context, tx uow.Tx, now time.Time) (queue.JobSummary, error)

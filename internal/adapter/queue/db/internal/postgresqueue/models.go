@@ -33,14 +33,3 @@ type JobAttempt struct {
 	StartedAt  time.Time
 	FinishedAt time.Time
 }
-
-type OutboxEvent struct {
-	ID             string
-	JobType        string
-	Payload        []byte
-	IdempotencyKey *string
-	OrderingKey    *string
-	TraceParent    *string
-	RunAt          time.Time
-	CreatedAt      time.Time
-}

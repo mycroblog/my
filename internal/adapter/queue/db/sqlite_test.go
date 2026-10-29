@@ -5,10 +5,8 @@
 package db_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
@@ -48,38 +46,22 @@ func openSQLiteWith(t *testing.T, path string, apply bool, opts uow.Options) *sq
 	return d
 }
 
-func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply, relay bool) testkit.QueueHarness {
+func sqliteHarness(t *testing.T, clock *testkit.Clock, path string, apply bool) testkit.QueueHarness {
 	t.Helper()
 	d := openSQLite(t, path, apply)
 	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
 	q := queuedb.NewSQLite(d, opts)
 	h := testkit.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
-	if relay {
-		o := queuedb.NewSQLiteOutbox(d, opts)
-		h.Outbox = o
-		h.Relay = func(ctx context.Context) error {
-			_, err := o.Relay(ctx, q, 0)
-			return err
-		}
-		return h
-	}
 	h.Restart = func(t *testing.T) testkit.QueueHarness {
 		_ = d.Close()
-		return sqliteHarness(t, clock, path, false, false)
+		return sqliteHarness(t, clock, path, false)
 	}
 	return h
 }
 
-func TestSQLiteOverlappingRelays(t *testing.T) {
-	clock := testkit.NewClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
-	d := openSQLite(t, filepath.Join(t.TempDir(), "queue.db"), true)
-	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
-	testOverlappingRelays(t, d, queuedb.NewSQLiteOutbox(d, opts), queuedb.NewSQLiteOutbox(d, opts))
-}
-
 func TestSQLiteBacklogContract(t *testing.T) {
 	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true, true)
+		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
 	})
 }
 
@@ -96,14 +78,6 @@ func TestSQLiteWakeContract(t *testing.T) {
 
 func TestSQLiteQueueContract(t *testing.T) {
 	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true, false)
-	})
-}
-
-// TestSQLiteOutboxContract runs the contract with jobs enqueued in transactions through
-// outbox_events and relayed into the queue.
-func TestSQLiteOutboxContract(t *testing.T) {
-	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true, true)
+		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
 	})
 }

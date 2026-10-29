@@ -31,7 +31,6 @@ func queueInspectsJobsByState(t *testing.T, newHarness QueueFactory) {
 	f.enqueue(later)
 	f.enqueue(queue.NewJob{Type: contractOtherType, Payload: []byte(`{"N":"c"}`)})
 	f.enqueue(probe(`{"N":"d"}`))
-	f.relay()
 
 	a := f.wantClaim("w1", "a")
 	c := f.wantClaim("w1", "c")

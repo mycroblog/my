@@ -84,8 +84,7 @@ type NewJob struct {
 	// adapters do not guarantee how much later.
 	RunAt time.Time
 	// TraceParent is the traceparent of the job (Job.TraceParent). Callers leave it empty: the
-	// adapter fills it from the span of the context of Enqueue or EnqueueTx (TraceJobs). The
-	// outbox relay passes on the one it stored.
+	// adapter fills it from the span of the context of Enqueue or EnqueueTx (TraceJobs).
 	TraceParent string
 }
 
@@ -153,11 +152,10 @@ type JobQueue interface {
 // the jobs exist exactly when the transaction commits, together with the domain writes made
 // through the same tx.
 //
-// An implementation either writes the jobs table of the database queue directly or writes
-// outbox_events, which a relay later moves into the configured JobQueue.
+// The implementation is the database queue, which writes its jobs table in tx; with an external
+// queue (Cloud Tasks, SQS) the jobs stay there too and the queue carries only wake-up signals.
 type Outbox interface {
-	// EnqueueTx records jobs in tx, with the same deduplication as JobQueue.Enqueue (for
-	// outbox_events, deduplication happens when the relay enqueues them), also between
+	// EnqueueTx records jobs in tx, with the same deduplication as JobQueue.Enqueue, also between
 	// concurrent transactions. It is safe to repeat when UnitOfWork.Tx retries the
 	// transaction.
 	//
