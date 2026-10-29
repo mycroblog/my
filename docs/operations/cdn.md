@@ -4,7 +4,7 @@ A guide for operators. The setting is described in the [configuration reference]
 
 A CDN in front of the server (Cloudflare, Google Cloud CDN, CloudFront and so on) can deliver media (`/media/` and `/media/proxy/`).
 Requests answered from the CDN cache use none of the server's CPU or transfer.
-This guide covers the setup where the server is the CDN's origin (origin pull). It applies to both blob stores: with `blob = s3` the server
+This guide covers the setup where the server is the CDN's origin (origin pull). It applies to every blob store: with `blob = s3` or `blob = gcs` the server
 reads the files from the private bucket and serves them under `/media/` as with `blob = fs`, so the bucket is never the CDN's origin.
 
 ## Configure it

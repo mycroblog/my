@@ -458,11 +458,14 @@ func TestLoadInvalid(t *testing.T) {
 			},
 		},
 		{
-			name: "adapters outside v0",
+			name: "blob gcs without a bucket",
 			env:  with(minimal(), "MY_BLOB", "gcs"),
-			want: []string{
-				`blob (MY_BLOB): "gcs" is not available in v0; want one of fs, s3`,
-			},
+			want: []string{"blob_gcs_bucket (MY_BLOB_GCS_BUCKET): required when blob is gcs"},
+		},
+		{
+			name: "malformed blob gcs bucket",
+			env:  with(minimal(), "MY_BLOB", "gcs", "MY_BLOB_GCS_BUCKET", "My_Bucket"),
+			want: []string{"blob_gcs_bucket (MY_BLOB_GCS_BUCKET): must be a bucket name: 3 to 222 lower-case letters, digits, dots, hyphens, and underscores"},
 		},
 		{
 			name: "sentry exporter without a DSN",
