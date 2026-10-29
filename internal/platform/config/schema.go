@@ -226,7 +226,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "db", inV0: true, doc: "Queue table in the database."},
 			{value: "inline", inV0: true, doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
-			{value: "sqs", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: this build sends the signals but has no receiver for them yet, so the jobs wait in the table (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
+			{value: "sqs", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
 			{value: "cloudtasks", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
@@ -237,6 +237,20 @@ var schema = []field{
 		requiredWhen: "when `queue = sqs`",
 		check:        checkSQSQueueURL,
 		set:          func(c *Config, v string) { c.QueueSQSQueueURL = v },
+	},
+	{
+		key:    "queue_sqs_events_path",
+		defDoc: "`/events`",
+		doc:    "Path at which the processes that run the jobs (`role = all` or `worker`) receive the SQS events of `queue = sqs` from the Lambda Web Adapter: set the same value as its `AWS_LWA_PASS_THROUGH_PATH`. Each record is a wake-up signal or the tick message `{\"type\":\"tick\"}`. Only the requests that the adapter passes through (their `x-amzn-request-context` header is `null`) are served; any other request to the path is a `404`.",
+		check:  checkEventsPath,
+		set:    func(c *Config, v string) { c.QueueSQSEventsPath = v },
+	},
+	{
+		key:    "queue_sqs_events_budget",
+		defDoc: "`10m`",
+		doc:    "How long one SQS event of `queue = sqs` may run when its request does not carry the deadline of the Lambda invocation, which the Lambda Web Adapter sends in `x-amzn-lambda-context`: set it to the timeout of the Lambda function. A record starts only while at least the 5-minute lease of a job run and 30 seconds remain; the others are returned to the queue. A Go duration longer than `5m` and at most `15m`.",
+		check:  checkEventsBudget,
+		set:    func(c *Config, v string) { c.QueueSQSEventsBudget, _ = time.ParseDuration(v) },
 	},
 	{
 		key:          "queue_cloudtasks_queue",

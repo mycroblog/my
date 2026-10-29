@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -16,6 +17,13 @@ import (
 // DefaultCloudTasksDispatchDeadline is the default of queue_cloudtasks_dispatch_deadline, the
 // default of Cloud Tasks.
 const DefaultCloudTasksDispatchDeadline = 10 * time.Minute
+
+// DefaultSQSEventsPath is the default of queue_sqs_events_path, the default of the Lambda Web
+// Adapter's AWS_LWA_PASS_THROUGH_PATH, and DefaultSQSEventsBudget that of queue_sqs_events_budget.
+const (
+	DefaultSQSEventsPath   = "/events"
+	DefaultSQSEventsBudget = 10 * time.Minute
+)
 
 // wakerQueueRequired are the settings that each queue with a waker requires.
 var wakerQueueRequired = map[string][]string{
@@ -66,6 +74,25 @@ func checkDispatchDeadline(v string) error {
 	}
 	if d <= queue.DefaultLease {
 		return fmt.Errorf("must be longer than the %s lease of a job run", queue.DefaultLease)
+	}
+	return nil
+}
+
+// checkEventsPath accepts the path of the SQS events: an absolute path other than the root,
+// without a query, a fragment, or a pattern of the router.
+func checkEventsPath(v string) error {
+	if len(v) < 2 || v[0] != '/' || strings.ContainsAny(v, "?#{} \t") || path.Clean(v) != v {
+		return errors.New("must be an absolute path other than /, such as /events")
+	}
+	return nil
+}
+
+// checkEventsBudget accepts a budget of an SQS event longer than the lease of a job run and at
+// most the 15-minute limit of a Lambda invocation.
+func checkEventsBudget(v string) error {
+	d, err := time.ParseDuration(v)
+	if err != nil || d <= queue.DefaultLease || d > 15*time.Minute {
+		return fmt.Errorf("must be a Go duration longer than the %s lease of a job run and at most 15m, for example 10m", queue.DefaultLease)
 	}
 	return nil
 }

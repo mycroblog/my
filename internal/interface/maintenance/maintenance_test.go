@@ -135,6 +135,28 @@ func TestResponses(t *testing.T) {
 	}
 }
 
+// TestLambdaEvent checks that an SQS event that the Lambda Web Adapter passes through gets every
+// record back as a failure, at any path, in the JSON body that is all that reaches Lambda.
+func TestLambdaEvent(t *testing.T) {
+	h := newHandler(t, testPage())
+	req := httptest.NewRequest(http.MethodPost, "https://social.example/events",
+		strings.NewReader(`{"Records":[{"messageId":"m1","body":"01J"},{"messageId":"m2","body":"{\"type\":\"tick\"}"}]}`))
+	req.Header.Set("X-Amzn-Request-Context", "null")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusServiceUnavailable || w.Header().Get("Content-Type") != "application/json" {
+		t.Fatalf("= %d %q", w.Code, w.Header().Get("Content-Type"))
+	}
+	if got, want := strings.TrimSpace(w.Body.String()), `{"batchItemFailures":[{"itemIdentifier":"m1"},{"itemIdentifier":"m2"}]}`; got != want {
+		t.Errorf("body = %s, want %s", got, want)
+	}
+	// A Function URL request to the same path is an ordinary request.
+	w = serve(h, http.MethodPost, "/events", map[string]string{"X-Amzn-Request-Context": `{"http":{"method":"POST"}}`})
+	if w.Header().Get("Content-Type") != "text/html; charset=utf-8" {
+		t.Errorf("Function URL request = %d %q, want the page", w.Code, w.Header().Get("Content-Type"))
+	}
+}
+
 // The problem leaves out the members that are not configured.
 func TestProblemWithoutOptionalMembers(t *testing.T) {
 	w := serve(newHandler(t, maintenance.Page{ServerName: "social.example"}), http.MethodGet, "/api/v1/instance", map[string]string{"Accept-Language": "ja"})

@@ -10,6 +10,10 @@
 // URL. A request answers 2xx once its result is recorded, so that the sender drops it, and 5xx
 // when it could not be, for the sender to deliver it again: the application, not the sender,
 // retries a job that failed.
+//
+// LambdaHandler serves the same receiver and trigger on AWS Lambda (queue = sqs): the Lambda Web
+// Adapter passes each SQS event through to one path, and the records it reports as failed are
+// the ones that SQS delivers again.
 package queuepush
 
 import (

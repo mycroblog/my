@@ -47,7 +47,7 @@ const readinessTimeout = 3 * time.Second
 // no route serves get the web client's HTML (the SPA routes) unless they ask for ActivityPub. Requests whose target or form holds text
 // that no database can look up are a 400 before any route (rejectInvalidText).
 // The worker role serves only the health checks, for the platform's probes, and the endpoints of
-// the push receiver and the trigger of queue = cloudtasks, which the web role does not serve.
+// the push receiver and the trigger of queue = cloudtasks and sqs, which the web role does not serve.
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathLiveness, a.liveness)

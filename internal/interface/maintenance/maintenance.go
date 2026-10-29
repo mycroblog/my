@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/i18n"
+	"github.com/mycroblog/my/internal/interface/queuepush"
 )
 
 // ProblemType is the type of the client API's maintenance problem.
@@ -89,6 +90,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, `{"status":"maintenance"}`)
 	case path == PathInstanceHealth:
 		writeJSON(w, http.StatusServiceUnavailable, `{"status":"maintenance"}`)
+	case r.Method == http.MethodPost && queuepush.PassThrough(r):
+		// An SQS event that the Lambda Web Adapter passed through, whatever the path: only the
+		// body reaches Lambda, so every record goes back to the queue as a failure.
+		queuepush.FailEvent(w, r)
 	case path == "/api" || strings.HasPrefix(path, "/api/") || oauthJSON[path]:
 		h.problem(w, r)
 	case h.federation(r):

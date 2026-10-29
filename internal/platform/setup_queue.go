@@ -75,8 +75,12 @@ func (a *App) setUpPushEndpoints(cfg *config.Config) {
 	}
 	a.Scheduler.UseSharedSlots(a.KV)
 	a.trigger = queue.NewTrigger(a.Scheduler, queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: a.wakeFinder, Waker: a.waker, Clock: a.Clock}))
-	if cfg.Queue != "cloudtasks" {
-		// queue = sqs serves no receiver of its signals: no process of this build runs their jobs.
+	if cfg.Queue == "sqs" {
+		// The Lambda Web Adapter passes the SQS events of the signals and the ticks through.
+		queuepush.NewLambda(queuepush.LambdaOptions{
+			Receiver: a.pushReceiver, Trigger: a.trigger, Path: cfg.QueueSQSEventsPath, Budget: cfg.QueueSQSEventsBudget,
+			Problem: a.writeStatusProblem, Logger: a.Logger,
+		}).Register(internalRouter{a})
 		return
 	}
 	if a.pushAuth == nil {

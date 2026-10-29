@@ -320,8 +320,41 @@ With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), 
   Several signals at once go in batches of up to 10 messages.
 - Use a standard queue, not a FIFO queue. The server's credentials, from the AWS SDK's default chain (the task or execution role, the environment, the shared files),
   need `sqs:SendMessage` on it. The client uses the region in the queue URL.
-- No process polls the table or the SQS queue, and no process runs the periodic jobs by itself. This version does not yet include the receiver of the signals,
-  so with `queue = sqs` the jobs wait in the table and do not run.
+- No process polls the table or the SQS queue, and no process runs the periodic jobs by itself. The processes with `role = all` or `worker` run on
+  AWS Lambda behind the [Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter), and an SQS event source mapping on the queue invokes them.
+  The adapter passes each SQS event through as `POST {AWS_LWA_PASS_THROUGH_PATH}`; set `queue_sqs_events_path` (default `/events`) to the same path.
+  Use the adapter's default, buffered invoke mode, not response streaming.
+- The path accepts only the events that the adapter passes through: the adapter sets the header `x-amzn-request-context` of every request it forwards,
+  to `null` for an event and to the request context for a Function URL request, replacing a header of that name that a client sent.
+  Any other request to the path is a `404`.
+- The records of an event run one after another: a record whose body is a job ID runs that job, as a Cloud Tasks delivery does.
+  The answer lists in `batchItemFailures` the records whose result could not be recorded (the database could not be reached), for SQS to deliver them again;
+  a job that fails is retried by the server at its next attempt time, not by SQS. Turn on `ReportBatchItemFailures` in the event source mapping:
+  without it, the whole batch counts as done whatever the answer says.
+
+  ```sh
+  aws lambda create-event-source-mapping --function-name my-worker \
+    --event-source-arn arn:aws:sqs:ap-northeast-1:123456789012:my-jobs \
+    --batch-size 10 --function-response-types ReportBatchItemFailures
+  ```
+
+- A record starts only while at least the 5-minute lease of a job run and 30 seconds remain before the invocation's deadline, which the adapter
+  sends in `x-amzn-lambda-context` (or, without it, `queue_sqs_events_budget` after the event arrives, default 10 minutes; set it to the function's timeout).
+  The records left are returned in `batchItemFailures`. Set the function's timeout above 5.5 minutes, 10 to 15 minutes to run several records of a batch,
+  and the queue's visibility timeout to at least the function's timeout.
+- Create an EventBridge Scheduler schedule `rate(1 minute)` whose target sends the tick message `{"type":"tick"}` to the same queue
+  (the templated target `SendMessage`, whose `Input` is the message body). Each tick enqueues the periodic jobs whose period came, once for the whole instance
+  (the periods are claimed in the KV, so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running,
+  which recovers a lost signal. Several ticks in one batch tick once. A message that is neither a job ID nor a tick is dropped.
+
+  ```sh
+  aws scheduler create-schedule --name my-tick --schedule-expression 'rate(1 minute)' \
+    --flexible-time-window Mode=OFF \
+    --target '{"Arn":"arn:aws:sqs:ap-northeast-1:123456789012:my-jobs","RoleArn":"arn:aws:iam::123456789012:role/my-scheduler","Input":"{\"type\":\"tick\"}"}'
+  ```
+
+  The schedule's role needs `sqs:SendMessage` on the queue; the function's execution role needs `sqs:ReceiveMessage`, `sqs:DeleteMessage`, and
+  `sqs:GetQueueAttributes` on it for the event source mapping.
 
 ## Health checks
 
