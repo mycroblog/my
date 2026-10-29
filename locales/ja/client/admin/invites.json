@@ -12,8 +12,8 @@
     "description": "Toast when copying an invite's link failed."
   },
   "admin.invites.copy_invite": {
-    "defaultMessage": "招待 {code} のリンクをコピー",
-    "description": "Accessible name of the copy button of an invite. {code} is its code."
+    "defaultMessage": "{action}：{code}",
+    "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
   },
   "admin.invites.create": {
     "defaultMessage": "招待を作成する",

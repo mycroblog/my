@@ -280,7 +280,7 @@ describe("preferences", () => {
     const { user } = await renderApp({ path: "/settings/preferences" });
 
     await user.click(await screen.findByRole("button", { name: /Time zone/ }));
-    await user.click(await screen.findByRole("option", { name: "(UTC+09:00) Japan Standard Time" }));
+    await user.click(await screen.findByRole("option", { name: "(UTC+09:00) Japan Standard Time Asia/Tokyo" }));
 
     const timeZone = screen.getByRole("button", { name: /Time zone/ });
     await waitFor(() => {
@@ -291,27 +291,27 @@ describe("preferences", () => {
     expect(timeZone).toHaveTextContent("(UTC+00:00) Coordinated Universal Time");
   });
 
-  test("time zones are named in the display language with their offset, and described by their IANA name", async () => {
+  test("time zones are named in the display language with their offset and their IANA name", async () => {
     const prefs = preferencesServer({ locale: "ja", time_zone: "Asia/Tokyo" });
     const { user } = await renderApp({ path: "/settings/preferences" });
     // The select's name ends with its label; the button to use the device's time zone also names it.
     const timeZone = await screen.findByRole("button", { name: /タイムゾーン$/ });
+    // The closed select shows the name without the IANA name.
     expect(timeZone).toHaveTextContent("（UTC+09:00）日本標準時");
 
     await user.click(timeZone);
     const listbox = await screen.findByRole("listbox");
-    expect(within(listbox).getByRole("option", { name: "（UTC+09:00）日本標準時" })).toHaveAccessibleDescription(
-      "Asia/Tokyo",
-    );
+    // An option's name is all of its visible text (WCAG 2.5.3): the IANA name follows the CLDR name.
+    expect(within(listbox).getByRole("option", { name: "（UTC+09:00）日本標準時 Asia/Tokyo" })).toBeInTheDocument();
     // Zones of one name are told apart by their IANA name.
-    expect(within(listbox).getByRole("option", { description: "America/New_York" })).toHaveAccessibleName(
-      /^（UTC−0[45]:00）米国東部時間$/,
-    );
-    expect(within(listbox).getByRole("option", { description: "America/Detroit" })).toHaveAccessibleName(
-      /^（UTC−0[45]:00）米国東部時間$/,
-    );
+    expect(
+      within(listbox).getByRole("option", { name: /^（UTC−0[45]:00）米国東部時間 America\/New_York$/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(listbox).getByRole("option", { name: /^（UTC−0[45]:00）米国東部時間 America\/Detroit$/ }),
+    ).toBeInTheDocument();
     // Nepal is ahead of UTC by 5 hours 45 minutes all year; its IANA name depends on the ICU data (Asia/Katmandu).
-    await user.click(within(listbox).getByRole("option", { name: "（UTC+05:45）ネパール時間" }));
+    await user.click(within(listbox).getByRole("option", { name: /^（UTC\+05:45）ネパール時間 / }));
 
     await waitFor(() => {
       expect(prefs.changes).toEqual([{ time_zone: expect.stringMatching(/^Asia\/Kat(h)?mandu$/) as string }]);

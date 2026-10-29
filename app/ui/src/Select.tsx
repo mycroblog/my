@@ -11,7 +11,6 @@ import {
   Select as RACSelect,
   type SelectProps as RACSelectProps,
   SelectValue,
-  Text,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { Tooltip, TooltipTrigger } from "./Tooltip";
@@ -22,7 +21,7 @@ const select = tv({
     root: "group flex flex-col gap-1",
     trigger: "flex cursor-default items-center gap-2 text-start data-focus-visible:focus-ring",
     // The closed select shows only an option's label: its description is for choosing (as React Aria's Select styles do).
-    value: "truncate data-placeholder:text-fg-muted **:[[slot=description]]:hidden",
+    value: "truncate data-placeholder:text-fg-muted **:data-[slot=description]:hidden",
     chevron: "size-4 shrink-0 fill-none stroke-current stroke-2 text-fg-muted",
     // overscroll-contain keeps the scroll from chaining to the page on iOS WebKit (web-client/09-app-shell.md §9).
     popover:
@@ -146,11 +145,15 @@ export type SelectItemProps<T extends object> = Omit<ListBoxItemProps<T>, "child
   /** The option's label. A non-string label needs `textValue` for type-ahead and the closed select. */
   children?: ReactNode;
   /**
-   * A line under the label that tells options with similar labels apart. The label names the option and this
-   * line describes it; the closed select shows only the label.
+   * A line under the label that tells options with similar labels apart. The option's name is all of its visible
+   * text, the label then this line (WCAG 2.5.3, label in name), so that speech input can choose it by either; the
+   * closed select shows only the label.
    */
   description?: ReactNode;
 };
+
+/** Between an option's label and its description in its name: the column layout does not show it. */
+const nameSeparator = " ";
 
 /** One option of a `Select`; its `id` is the select's value when it is chosen. */
 export function SelectItem<T extends object>({ children, description, className, ...props }: SelectItemProps<T>) {
@@ -174,12 +177,14 @@ export function SelectItem<T extends object>({ children, description, className,
           {description === undefined ? (
             children
           ) : (
-            // The label and description slots of React Aria's ListBoxItem (aria-labelledby and aria-describedby).
+            // Plain text, not React Aria's label and description slots: those would name the option by the label
+            // alone, and a visible line outside its name fails WCAG 2.5.3 (label in name).
             <span className={styles.text()}>
-              <Text slot="label">{children}</Text>
-              <Text slot="description" className={styles.description()}>
+              <span>{children}</span>
+              {nameSeparator}
+              <span data-slot="description" className={styles.description()}>
                 {description}
-              </Text>
+              </span>
             </span>
           )}
         </>

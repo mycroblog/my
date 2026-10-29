@@ -78,7 +78,7 @@ describe("the user's invites page", () => {
     expect(within(first).getByRole("heading", { level: 3, name: "AAAABBBBCCCCDDDD" })).toBeInTheDocument();
     expect(within(first).getByText("Usable")).toBeInTheDocument();
     expect(within(first).getByText("2 of 5")).toBeInTheDocument();
-    expect(within(first).getByRole("button", { name: "Copy the link of the invite AAAABBBBCCCCDDDD" })).toBeEnabled();
+    expect(within(first).getByRole("button", { name: "Copy link: AAAABBBBCCCCDDDD" })).toBeEnabled();
     expect(within(second).getByText("Not usable while you cannot invite")).toBeInTheDocument();
     expect(within(second).queryByRole("button")).not.toBeInTheDocument();
     expect(within(third).getByText("Used up")).toBeInTheDocument();

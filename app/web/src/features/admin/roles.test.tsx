@@ -100,7 +100,7 @@ describe("the roles screen", () => {
       within(adminRow)
         .getAllByRole("button")
         .map((b) => b.getAttribute("aria-label")),
-    ).toEqual(["Change the badge of ⁦admin⁩"]);
+    ).toEqual(["Badge: ⁦admin⁩"]);
     expect(within(moderatorRow).getByText("Reports, Accounts and registrations, Audit log")).toBeInTheDocument();
     // No server administration permission and no member permission.
     expect(within(moderatorRow).getAllByText("None")).toHaveLength(2);
@@ -318,7 +318,7 @@ describe("the badge of a role", () => {
     const helperRow = within(list).getAllByRole("listitem")[2] as HTMLElement;
     expect(within(helperRow).getByText("No badge")).toBeInTheDocument();
 
-    await user.click(within(helperRow).getByRole("button", { name: "Change the badge of ⁦helper⁩" }));
+    await user.click(within(helperRow).getByRole("button", { name: "Badge: ⁦helper⁩" }));
     const dialog = await screen.findByRole("dialog", { name: "Badge of ⁦helper⁩" });
     const name = within(dialog).getByRole("textbox", { name: "Name" });
     // Nothing is sent without a name.
@@ -339,7 +339,7 @@ describe("the badge of a role", () => {
     expect(await within(helperRow).findByText("Helper")).toHaveClass("bg-badge-teal");
 
     // Removing it hides it from every profile.
-    await user.click(within(helperRow).getByRole("button", { name: "Change the badge of ⁦helper⁩" }));
+    await user.click(within(helperRow).getByRole("button", { name: "Badge: ⁦helper⁩" }));
     const again = await screen.findByRole("dialog", { name: "Badge of ⁦helper⁩" });
     expect(within(again).getByRole("textbox", { name: "Name" })).toHaveValue("Helper");
     expect(within(again).getByRole("radio", { name: "Teal" })).toBeChecked();
@@ -359,7 +359,7 @@ describe("the badge of a role", () => {
       ),
     );
     const { user } = await renderApp({ path: "/admin/roles" });
-    await user.click(await screen.findByRole("button", { name: "Change the badge of ⁦helper⁩" }));
+    await user.click(await screen.findByRole("button", { name: "Badge: ⁦helper⁩" }));
     const dialog = await screen.findByRole("dialog", { name: "Badge of ⁦helper⁩" });
     const name = within(dialog).getByRole("textbox", { name: "Name" });
     await user.type(name, "Helper");

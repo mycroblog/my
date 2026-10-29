@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { Button } from "./Button";
 import { ImageIcon, LanguageIcon } from "./Icons";
 import { Select, SelectItem } from "./Select";
@@ -96,7 +96,10 @@ const zones = [
   { id: "Asia/Tokyo", name: "(UTC+09:00) Japan Standard Time" },
 ];
 
-/** Options told apart by a description, open; the closed select shows only the label. */
+/**
+ * Options told apart by a description, open; the closed select shows only the label. An option's name is all of
+ * its visible text, the label then the description (WCAG 2.5.3, label in name).
+ */
 export const Descriptions: Story = {
   args: {
     label: "Time zone",
@@ -108,5 +111,15 @@ export const Descriptions: Story = {
         {zone.name}
       </SelectItem>
     ),
+  },
+  play: async ({ canvas, canvasElement }) => {
+    const listbox = await within(canvasElement.ownerDocument.body).findByRole("listbox");
+    await expect(
+      within(listbox).getByRole("option", { name: "(UTC−04:00) Eastern Time America/Detroit" }),
+    ).toBeInTheDocument();
+    // The closed select names and shows the label alone.
+    await expect(canvas.getByRole("button", { name: /Time zone/ })).toHaveAccessibleName(
+      "(UTC−04:00) Eastern Time Time zone",
+    );
   },
 };

@@ -919,7 +919,14 @@ function CancelSubscription({
   return (
     <div>
       <DialogTrigger>
-        <Button size="sm" variant="danger" aria-label={t("client:admin.supporters.subscription.cancel_of", { name })}>
+        <Button
+          size="sm"
+          variant="danger"
+          aria-label={t("client:admin.supporters.subscription.cancel_of", {
+            action: t("client:admin.supporters.subscription.cancel"),
+            name,
+          })}
+        >
           {t("client:admin.supporters.subscription.cancel")}
         </Button>
         <ConfirmDialog

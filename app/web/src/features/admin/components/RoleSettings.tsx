@@ -415,7 +415,10 @@ function EditBadge({ role, actions }: { role: AdminRole; actions: RoleActions })
   const key = isolatedRoleKey(role.key);
   return (
     <DialogTrigger>
-      <Button size="sm" aria-label={t("client:admin.roles.badge.edit_role", { role: key })}>
+      <Button
+        size="sm"
+        aria-label={t("client:admin.roles.badge.edit_role", { action: t("client:admin.roles.badge.edit"), role: key })}
+      >
         {t("client:admin.roles.badge.edit")}
       </Button>
       <Dialog

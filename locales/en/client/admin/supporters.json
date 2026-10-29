@@ -576,8 +576,8 @@
     "description": "Button that ends a subscription at once, and the confirm button of its dialog."
   },
   "admin.supporters.subscription.cancel_of": {
-    "defaultMessage": "End the subscription of {name} now",
-    "description": "Accessible name of the button that ends a subscription at once."
+    "defaultMessage": "{action}: {name}",
+    "description": "Accessible name of the button that ends a subscription at once: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('End now') and {name} the supporter."
   },
   "admin.supporters.subscription.cancel.title": {
     "defaultMessage": "End the subscription of {name} now?",
