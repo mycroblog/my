@@ -309,9 +309,6 @@ test.describe("the new-post form", () => {
     hasTouch,
   }) => {
     await serveApi(page);
-    // Without motion the sheet does not fade in (motion-safe:), so axe never samples its text against a background
-    // still in the middle of its transition, which it can under load.
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const form = await openForm(page, hasTouch);
     const text = form.getByRole("textbox", { name: message("compose.text.label") });

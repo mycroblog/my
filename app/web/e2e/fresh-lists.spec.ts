@@ -22,7 +22,7 @@ import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
 
-test.use({ baseURL: serverURL, reducedMotion: "reduce" });
+test.use({ baseURL: serverURL });
 
 /** The project's locale. */
 function projectLocale(): string {

@@ -121,6 +121,10 @@ export default defineConfig({
     // A Service Worker answers navigations before page.route() sees them, which would bypass the locale
     // fixture (e2e/fixtures.ts). Only e2e/pwa.spec.ts, which tests the worker, allows it.
     serviceWorkers: "block",
+    // Without motion nothing fades or changes its colours over a transition (the app gates motion on
+    // `motion-safe:`), so axe's color-contrast never measures a dialog or a button halfway, whatever the load of the
+    // machine. The specs that test the animated path ask for `reducedMotion: "no-preference"` themselves.
+    reducedMotion: "reduce",
   },
   projects,
   webServer: [
