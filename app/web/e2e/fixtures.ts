@@ -70,6 +70,11 @@ function imageOf(url: URL): { contentType: string; body: Buffer } | null {
 const rtlLocales: ReadonlySet<string> = new Set(["ar-XB"]);
 
 /** The text direction of a project locale. */
+/** `text` as a literal in a regular expression: a message's pseudo-locale (en-XA) text is wrapped in brackets. */
+export function escapeRegExp(text: string): string {
+  return text.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
 export const localeDir = (locale: string): "ltr" | "rtl" => (rtlLocales.has(locale) ? "rtl" : "ltr");
 
 /**

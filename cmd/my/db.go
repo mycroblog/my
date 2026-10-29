@@ -12,9 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/dbupgrade"
-	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -133,15 +131,8 @@ func dbBackup(name string, args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "%s: the database: %v\n", name, err)
 		return 1
 	}
-	ctx := context.Background()
-	db, err := sqlite.Open(ctx, cfg.DatabaseURL, uow.Options{})
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
-		return 1
-	}
-	defer func() { _ = db.Close() }()
 	path := c.fs.Arg(0)
-	if err := db.BackupTo(ctx, path); err != nil {
+	if err := backupSQLite(context.Background(), cfg.DatabaseURL, path); err != nil {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return 1
 	}

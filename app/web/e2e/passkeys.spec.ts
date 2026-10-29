@@ -10,7 +10,7 @@
 // HTTP with the relying party ID "localhost".
 import { randomBytes } from "node:crypto";
 import type { CDPSession, Page } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
@@ -157,7 +157,9 @@ test.describe("passkeys", () => {
     // The last passkey stays while there is no password.
     await page.goto("/settings/passkeys");
     const list = main.getByRole("region", { name: message("client", "settings.passkeys.list.title") });
-    await list.getByRole("button", { name: new RegExp(message("client", "settings.passkeys.remove")) }).click();
+    await list
+      .getByRole("button", { name: new RegExp(escapeRegExp(message("client", "settings.passkeys.remove"))) })
+      .click();
     const confirm = page.getByRole("alertdialog");
     await confirm.getByRole("button", { name: message("client", "settings.passkeys.remove"), exact: true }).click();
     await expect(
