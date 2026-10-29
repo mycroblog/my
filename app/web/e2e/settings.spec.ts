@@ -5,7 +5,7 @@
 // page.route; names change with the locale, so elements are found by role, structure, autocomplete tokens and,
 // where a role is not unique, by their names in the project's catalog.
 import type { Page, Route } from "@playwright/test";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
+import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 /** The signed-in user's account, as GET /accounts/verify_credentials answers. */
@@ -522,7 +522,7 @@ test("linking an account confirms with the password and comes back linked; unlin
   });
 
   await main
-    .getByRole("button", { name: new RegExp(message("settings.linked_accounts.unlink")) })
+    .getByRole("button", { name: new RegExp(escapeRegExp(message("settings.linked_accounts.unlink"))) })
     .first()
     .click();
   const unlink = page.getByRole("alertdialog");
@@ -702,30 +702,52 @@ test.describe("display language", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", localeDir(locale));
     const before = await heading.textContent();
 
-    // The form: the display language and time zone selects, the theme radio group, the autoplay switch, the
-    // visibility radio group, the default post language select, the switch that asks for descriptions, and the
-    // languages group.
+    // The note that changes save at once, then the sections: Display (the display language and time zone selects,
+    // the theme radio group, the autoplay switch), Navigation (the tab bar preview, the items, and the button that
+    // restores them), New posts (the visibility and quote radio groups, the default post language select, the switch
+    // that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading [level=1]
       - link
       - paragraph
-      - button
-      - button
-      - radiogroup:
-        - radio [checked]
-        - radio
-        - radio
-      - switch
-      - radiogroup:
-        - radio [checked]
-        - radio
-        - radio
-        - radio
-        - radio
-      - button
-      - switch
-      - group:
+      - region:
+        - heading [level=2]
+        - paragraph
+        - button
+        - button
+        - radiogroup:
+          - radio [checked]
+          - radio
+          - radio
+        - switch
+      - region:
+        - heading [level=2]
+        - paragraph
+        - figure
         - list
+        - button
+      - region:
+        - heading [level=2]
+        - paragraph
+        - radiogroup:
+          - radio [checked]
+          - radio
+          - radio
+          - radio
+          - radio
+        - radiogroup:
+          - radio
+          - radio
+          - radio
+        - button
+        - switch
+      - region:
+        - heading [level=2]
+        - paragraph
+        - group:
+          - paragraph
+          - list
+        - switch
     `);
     // The names of the display languages are in their own language, whatever the page's locale.
     const target = locale === "ja" ? { locale: "en", name: "English" } : { locale: "ja", name: "日本語" };
