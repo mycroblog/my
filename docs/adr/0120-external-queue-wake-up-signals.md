@@ -26,8 +26,8 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
 
 ほかに、次も決まっていない。
 
-- **push の受け口の認証**: Cloud Run の web は未認証で公開する。Lambda Web Adapter は HTTP でないイベント（SQS・EventBridge）を `POST /events`（`AWS_LWA_PASS_THROUGH_PATH`）でアプリに渡すが、
-  Function URL からの同じパスへの要求と見分ける方法は文書にない（2026-10-29 に [Non-HTTP Event Triggers](https://aws.github.io/aws-lambda-web-adapter/features/non-http-events.html) で確認）
+- **push の受け口の認証**: Cloud Run の web は未認証で公開する。Lambda Web Adapter は HTTP でないイベント（SQS・EventBridge）を `POST /events`（`AWS_LWA_PASS_THROUGH_PATH`）でアプリに渡し、
+  Function URL からの同じパスへの要求も同じパスに届く（[Non-HTTP Event Triggers](https://aws.github.io/aws-lambda-web-adapter/features/non-http-events.html)）
 - **outbox のリレー**: `queue/db` の `Outbox` は外部のキューのために `outbox_events` に書き、`Relay` が移す。常駐しないターゲットで誰がいつリレーを動かすか
 - **Scheduler のトリガー**: `queue.Scheduler` は worker と all のロールのプロセスの中で動き、同じ周期の 2 回目の投入を **プロセスのメモリ** で防ぐ（冪等キー `schedule:<name>:<slot>` は未完了の間だけ効く）。
   外から 1 分ごとに起こされる短命のプロセスでは、完了した後の同じ周期にもう一度ジョブを積んでしまう
@@ -70,6 +70,7 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
 ### 2. push receiver
 
 - 受け口は合図のジョブを **ID で claim** する。`queue.Source` に `ClaimJob(ctx, id, worker, now, lease)` を足し、`queue/db` が実装する。
+  `queue/db` の claim は、候補を選ぶ文（`PickJob`）・順序キーの advisory lock・ID を指定してリースを取る文（`ClaimJob`）に分かれているので、後の 2 つをそのまま使う。
   結果に応じて次のようにする
 
   | claim の結果 | すること |
@@ -81,21 +82,34 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
 
 - 結果を DB に記録できたら成功（Cloud Tasks には 2xx、SQS にはそのメッセージを `batchItemFailures` に入れない）を返す。**リトライはアプリが `RunAt` で行い、外部のキューの再試行には頼らない**。
   外部のキューの再試行は、受け口が落ちた・DB に届かなかったときにだけ働く（5xx・`batchItemFailures`）
-- ハンドラの context はリースで終わる。リースはプラットフォームの上限（Cloud Tasks の dispatch deadline、Lambda のタイムアウト）より短くし、設定の検査で確かめる
+- Cloud Tasks は 200〜299 だけを成功とし、それ以外の状態と無応答を `RetryConfig` で再試行する。429・503 では待ちを長くし、`Retry-After` を考慮する
+  （2026-10-29 に [Task](https://docs.cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks) で確認）
+- ハンドラの context はリースで終わる。リースは全ハンドラで一律 5 分（`queue.DefaultLease`）で、プラットフォームの上限より短い。
+  Cloud Tasks の HTTP ターゲットの `dispatchDeadline` は既定 10 分・15 秒〜30 分、Cloud Run のリクエストのタイムアウトは既定 5 分・最大 60 分（2026-10-29 に
+  [Task](https://docs.cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks)・[Request timeout](https://docs.cloud.google.com/run/docs/configuring/request-timeout) で確認）、
+  Lambda のタイムアウトは最大 15 分。テンプレートは Cloud Run のタイムアウトと `dispatchDeadline` をリースより長く（10 分）にし、設定の検査はリースがそれらを超えないことを確かめる
 - Lambda の SQS のイベントは複数のメッセージをまとめて渡す。受け口は 1 件ずつ順に処理し、残り時間がリースに足りなくなったら残りを `batchItemFailures` で返す
-  （`ReportBatchItemFailures` を使う。2026-10-29 に [Handling errors for an SQS event source](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html) で確認）
+  （`ReportBatchItemFailures` を使う。2026-10-29 に [Handling errors for an SQS event source](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html) で確認）。
+  Lambda Web Adapter は pass-through の応答の **本文だけ** を JSON として Lambda の結果にし、状態とヘッダーを捨てる。本文が JSON として読めないと結果は `null`（バッチ全体の成功）になるので、
+  受け口は必ず `Content-Type: application/json` の JSON を返し、Lambda Web Adapter は応答のストリーミングでない既定の呼び出しの形で使う
+  （v1.1.0 の `lambda_http` 1.3.0 の `response.rs` で確認）
 
 ### 3. 掃除（合図の取りこぼしを拾う）
 
 - 定期のジョブ `queue.wake` が、期限の来た（`run_at <= now - 猶予`）ジョブのうち、リースがない・切れていて順序キーで止められていないものに合図を送り直す。
   猶予（既定 2 分）は送ったばかりの合図との重なりを減らすため。重なっても §2 で 1 回になる
+- 探し方は pull runner が毎回の claim で流す `PickJob` と同じ述語で、`LIMIT` を件数の上限にし `FOR UPDATE SKIP LOCKED` を外したもの。索引 `jobs_run_at` と、順序キーの確かめの `jobs_ordering_key_run_at` に乗る
 - これでコミットとの間のプロセスの停止、合図の送信の失敗、リース中に落ちた worker のジョブを拾う。取りこぼしたジョブの遅れは掃除の周期（§4 のトリガーの周期、1 分）と猶予で決まる
 
 ### 4. Scheduler の外部トリガー
 
 - 受け口に、合図とは別の **tick** を足す。tick は (1) `queue.Scheduler.Tick` で期限の来た周期のジョブを積み、(2) §3 の掃除をする
 - 周期の 2 回目の投入は、プロセスのメモリでなく KV（`KeyValueStore.CompareAndSwap`、TTL は周期）で防ぐ。外部トリガーを使うときは `kv` を `db` か `valkey` にすることを設定の検査で求める
-- Google Cloud: Cloud Scheduler の HTTP ターゲットで tick を 1 分ごとに 1 本（無料枠の 3 本のうち 1 本）。AWS: EventBridge Scheduler が同じ SQS のキューに tick のメッセージを送る（要検証: EventBridge Scheduler の SQS のターゲットとその料金）
+- Google Cloud: Cloud Scheduler の HTTP ターゲットで tick を 1 分ごとに 1 本（無料枠の 3 本のうち 1 本）。
+- AWS: EventBridge Scheduler の `rate(1 minute)`（最小の単位）で、同じ SQS の標準キューに tick のメッセージを送る（templated target の `SendMessage`。`Input` が本文になり、最大 256 KB）。
+  料金は 100 万回 $1.00 で月 1,400 万回まで無料なので、1 分ごと（月約 4.3 万回）は無料枠に収まる
+  （2026-10-29 に [Templated targets](https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-targets-templated.html)・[Schedule types](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)・[EventBridge pricing](https://aws.amazon.com/eventbridge/pricing/) で確認）。
+  Lambda を直接呼ぶ形もあるが、合図と同じ経路（SQS のイベント）に揃える
 - 外部トリガーを使うプロセスはプロセス内の Scheduler を動かさない。Self-hosted（`queue = db`、常駐の worker）は今のまま、プロセス内の Scheduler と pull runner を使い、Kubernetes の CronJob は要らない
 
 ### 5. 受け口と認証
@@ -104,8 +118,10 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
   署名（Google の JWKS）・`iss`・`aud`（設定。既定は受け口の URL で、Cloud Tasks の `OidcToken.audience` の既定と同じ。2026-10-29 に [OidcToken](https://docs.cloud.google.com/tasks/docs/reference/rest/v2/OidcToken) で確認）・
   `email` が設定のサービスアカウントで `email_verified` が真であることを確かめる。JWKS の取得とキャッシュは `internal/adapter/oidc` を使う。
   Cloud Run の Invoker ロールでの認証は、worker を別のサービスに分けたときに足せる追加の守りとし、アプリの検証を省かない
-- **Lambda**: Lambda Web Adapter の pass-through のパスを、テンプレートが作る推測できない値（設定 `queue_sqs_events_path`、`AWS_LWA_PASS_THROUGH_PATH` と同じ値）にする。
-  そのパス以外への非 HTTP の形の要求は受けない。Function URL から届く要求を見分ける仕組みが Lambda Web Adapter にあれば併用する（要検証）
+- **Lambda**: Lambda Web Adapter は転送するすべての要求にヘッダー `x-amzn-request-context` を付ける。pass-through の要求では値が JSON の `null`、
+  Function URL の要求では Function URL が埋めた要求の文脈の JSON で、クライアントが同じ名前のヘッダーを送っても Lambda Web Adapter が置き換える。
+  受け口（設定 `queue_sqs_events_path`、既定 `/events`。`AWS_LWA_PASS_THROUGH_PATH` と同じ値）は、この値が `null` の要求だけを受け、それ以外を 404 にする
+  （2026-10-29 に Lambda Web Adapter v1.1.0 の `src/lib.rs` と、それが使う `lambda_http` 1.3.0 の `request.rs`・`deserializer.rs` で確認）
 - どちらでも、**合図は DB にあるジョブの ID を指すだけ** なので、認証を破られても新しいジョブを作れず、`RunAt` 前のジョブを早められない（§2 の表）。できるのは DB の読み取りを増やすことだけで、レート制限で抑える
 - メンテナンスモード（[ADR-0084](0084-maintenance-mode.md)）では、両方の受け口が 503 を返し、外部のキューの再試行に任せる（今の表の「キューの push の受け口」の行のとおり）
 
@@ -120,7 +136,7 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
 
 - ジョブの数が、DB の `jobs` の書き込み（1 ジョブに INSERT・claim・DELETE）を支えられないほど多いと分かった場合（B・C はこれを外部のキューに逃がせる）
 - 対象の DB（Aurora DSQL など）が ID での claim のトランザクションに耐えない場合（#1846）
-- Lambda Web Adapter の pass-through のパスを推測できない値にできない場合（§5 の守りを組み直す）
+- Lambda Web Adapter が pass-through の要求の印（`x-amzn-request-context` の `null`）を変えた場合（§5 の守りを組み直す）
 
 ## Consequences（影響）
 
@@ -163,7 +179,5 @@ Cloud Tasks の値は [ADR-0004](0004-job-queue-abstraction.md) の Context の�
 
 ## Open Questions / 要検証
 
-- Lambda Web Adapter が pass-through の要求に付けるヘッダーと、Function URL の要求が同じパスに届いたときの扱い（§5）
-- EventBridge Scheduler の SQS のターゲットとその料金（§4）
-- Cloud Tasks の dispatch deadline と、ジョブのリースの既定（5 分）との関係。長いハンドラ（データの取り込み・サービスの終了）のリースが上限に収まるか
-- 掃除のジョブの問い合わせ（期限の来た・リースのない・順序キーで止められていないジョブ）が、大きな `jobs` で索引に乗るか
+- §5 の `x-amzn-request-context` の値と §2 の応答の本文の扱いは、Lambda Web Adapter のソースから読んだもので、実機では見ていない。M6 のデプロイのスモークテストで、
+  pass-through の要求と Function URL の要求の両方のヘッダーの値と、`batchItemFailures` が効くことを確かめる
