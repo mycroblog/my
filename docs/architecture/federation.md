@@ -514,7 +514,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 取り込みは `content.MediaService.RecordRemoteMedia` を受信のトランザクションの中で呼び、同じ所有者・同じ URL のファイルは最初に記録したものを返します。
 - クライアント API は、リモートのメディアの URL を **メディアプロキシの URL** `https://{host}/media/proxy/{media_id}/{variant}?sig=…`（`content.MediaProxy.URL`）で返します。
   `sig` は `media_id` と `variant` の HMAC-SHA256（base64url）で、プロキシを任意の URL の中継に使わせません。
-  鍵は設定 `kek` から HKDF-SHA256 で導くので、プロキシに専用の秘密はありません。`kek_previous` から導いた鍵も検証に使うので、KEK のローテーション中も前の URL が使えます。
+  鍵は最初の起動で作る 32 バイトの乱数で、`Sealer` で封じて `instance_secrets` に置き、プロセスが最初に使うときに 1 回開きます（[ADR-0121](../adr/0121-kms-key-managers.md) §2）。
+  KEK のローテーションや KMS への移行で鍵は変わらないので、前の URL がそのまま使えます。
   `variant` は元のファイルそのものの `full` と、静止画の小さい版の `small` です（[ADR-0054](../adr/0054-media-variants-video-audio.md) §7）。
   - `small` は、記録したときの用途（`remote_media.purpose`: 添付・アイコン・ヘッダー・絵文字）の S の箱（ローカルの版と同じ、data-model §4.4）に縮めた静止画の WebP です。アニメーションは最初のフレームです。
     プロキシが `full` と同じように取得して（キャッシュがあればそこから読んで）、要求のたびに `media.Processor.Preview` で作ります。宣言が動画・音声・`gifv` のもの、中身が画像でないもの、処理できないものは 404 です。

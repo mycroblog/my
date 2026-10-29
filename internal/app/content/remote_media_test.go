@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -324,6 +325,41 @@ func TestNewMediaProxyNeedsAKey(t *testing.T) {
 		if _, err := content.NewMediaProxy(content.ProxyDeps{Keys: keys}); err == nil {
 			t.Errorf("NewMediaProxy(%q) succeeded", keys)
 		}
+	}
+}
+
+func TestMediaProxyLoadsItsKeyOnFirstUse(t *testing.T) {
+	t.Parallel()
+	key := bytes.Repeat([]byte("k"), 32)
+	calls, fail := 0, true
+	lazy, err := content.NewMediaProxy(content.ProxyDeps{
+		KeySource: func(context.Context) ([]byte, error) {
+			calls++
+			if fail {
+				return nil, errors.New("no schema yet")
+			}
+			return key, nil
+		},
+		BaseURL: "https://social.example/", Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := lazy.LoadKeys(t.Context()); err == nil {
+		t.Fatal("LoadKeys succeeded while the key source fails")
+	}
+	if u := lazy.URL(pngID, content.ProxyFull); !strings.HasSuffix(u, "?sig=") {
+		t.Errorf("URL without a key = %q, want an empty signature", u)
+	}
+	fail = false
+	want := newProxyEnv(t, key).proxy.URL(pngID, content.ProxyFull)
+	if got := lazy.URL(pngID, content.ProxyFull); got != want {
+		t.Errorf("URL after the key loads = %q, want %q", got, want)
+	}
+	_ = lazy.LoadKeys(t.Context())
+	_ = lazy.URL(pngID, content.ProxySmall)
+	if calls != 3 {
+		t.Errorf("key source calls = %d, want 3 (none after it succeeded)", calls)
 	}
 }
 

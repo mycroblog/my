@@ -13,6 +13,7 @@ import (
 // sealedValueInserts insert a row holding a sealed value, by column; the other columns hold any
 // valid values.
 var sealedValueInserts = map[string]string{ //nolint:gosec // G101: SQL statements, not credentials
+	sealedInstanceSecrets:       `INSERT INTO instance_secrets (id, name, sealed_secret, created_at) VALUES (?1, ?1, ?2, 0)`,
 	sealedAccountPrivateKeys:    `INSERT INTO local_account_private_keys (account_key_id, private_key_enc) VALUES (?1, ?2)`,
 	sealedLoginProviderSecrets:  `INSERT INTO login_provider_secrets (id, provider_id, sealed_secret, created_at) VALUES (?1, ?1, ?2, 0)`,
 	sealedTOTPEnrollmentSecrets: `INSERT INTO totp_enrollments (id, user_id, secret_enc, enrolled_at) VALUES (?1, ?1, ?2, 0)`,

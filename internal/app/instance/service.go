@@ -39,6 +39,8 @@ type Deps struct {
 	ClosureDeliveries ClosureDeliveries
 	// Blobs stores the files of the brand images (ADR-0116); nil saves none and serves none.
 	Blobs blob.Store
+	// Sealer seals the secrets of the instance (MediaProxyKey); nil keeps none.
+	Sealer *kernel.Sealer
 }
 
 // DocumentRenderer renders the Markdown of a document text to an HTML fragment that is safe to

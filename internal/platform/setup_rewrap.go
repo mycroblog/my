@@ -5,6 +5,7 @@ package platform
 import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
+	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/rewrap"
 	appwebhook "github.com/mycroblog/my/internal/app/webhook"
 	domidentity "github.com/mycroblog/my/internal/domain/identity"
@@ -15,6 +16,7 @@ import (
 // columns, and its contract checks them against the schema, so rewrap.NewService panics when a
 // module adds a sealed column without adding it here.
 var sealedColumns = []rewrap.Column{
+	{Name: "instance_secrets.sealed_secret", AAD: appinstance.SecretAAD},
 	{Name: "local_account_private_keys.private_key_enc", AAD: appaccount.PrivateKeyAAD},
 	{Name: domidentity.LoginProviderSecretColumn, AAD: appidentity.LoginProviderSecretAAD},
 	{Name: domidentity.TOTPSecretColumn, AAD: appidentity.TOTPSecretAAD},

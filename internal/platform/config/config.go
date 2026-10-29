@@ -105,6 +105,12 @@ type Config struct {
 	KeyManager                     string
 	KEK                            []byte
 	PreviousKEKs                   [][]byte
+	// KMSKey and PreviousKMSKeys name the keys of the KMS of a key_manager other than local;
+	// DEKCacheTTL and DEKCacheEntries bound the cache of the DEKs it unwraps (0 disables it).
+	KMSKey          string
+	PreviousKMSKeys []string
+	DEKCacheTTL     time.Duration
+	DEKCacheEntries int
 	// Mail is the Mailer adapter; MailFrom and the SMTP fields configure it.
 	Mail         string
 	MailFrom     string
@@ -333,6 +339,10 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("key_manager", c.KeyManager),
 		slog.String("kek", redact(len(c.KEK) > 0)),
 		slog.Int("kek_previous", len(c.PreviousKEKs)),
+		slog.String("kms_key", c.KMSKey),
+		slog.Int("kms_key_previous", len(c.PreviousKMSKeys)),
+		slog.Duration("kms_dek_cache_ttl", c.DEKCacheTTL),
+		slog.Int("kms_dek_cache_entries", c.DEKCacheEntries),
 		slog.String("mail", c.Mail),
 		slog.String("mail_from", c.MailFrom),
 		slog.String("smtp_host", c.SMTPHost),

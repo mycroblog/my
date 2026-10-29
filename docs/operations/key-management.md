@@ -10,9 +10,10 @@ A guide for operators. The [configuration reference](../reference/configuration.
 - Each ciphertext carries the **key ID** of the KEK that wrapped its DEK. With `key_manager = local`, the key ID is `local:` followed by 16 hexadecimal digits derived from the KEK,
   so the same KEK always gives the same ID. You never assign IDs.
 - A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
-- The signing key (HMAC-SHA256) for media proxy URLs is also derived from the KEK with HKDF-SHA256.
-  Signatures are made with the key derived from `kek` and verified with the keys derived from `kek_previous` too, so URLs issued before a rotation keep working during it.
-- `key_manager` is `local` (it uses the `kek` setting) only.
+- The signing key (HMAC-SHA256) for media proxy URLs is a random key that the server generates on its first start and stores in the database, encrypted like the other secrets.
+  It does not change when you rotate the KEK, so media proxy URLs keep working across rotations, and `my kek rewrap` re-wraps it with the other secrets.
+- `key_manager` is `local` (it uses the `kek` setting) only. The settings `kms_key`, `kms_key_previous`, `kms_dek_cache_ttl`, and `kms_dek_cache_entries`
+  are for the KMS key managers (`gcpkms`, `awskms`), which this version does not offer yet; with `key_manager = local` they have no effect.
 
 ## What happens if you lose the KEK
 
@@ -67,7 +68,6 @@ So that a rolling deploy, where old and new processes run side by side, never pr
 4. Re-wrap the stored secrets with the new KEK: run `my kek rewrap` once, with the same configuration as step 3 (see [Re-wrap the stored secrets](#re-wrap-the-stored-secrets)).
    When it exits with 0, no secret in the database needs the old KEK any more.
 5. Wait at least 30 minutes after step 3, so that the short-lived sign-in tokens issued with the old KEK have expired, then restart every process with `MY_KEK=<new KEK>` and no `kek_previous`.
-   Media proxy URLs signed with the old KEK stop working; clients receive new URLs the next time they load the posts.
    Keep the backup of the old KEK for as long as you keep database backups taken before step 4: restoring one of them needs it again.
 
 `kek_previous` accepts several comma-separated keys. Listing the same key twice, or listing the same key as `kek`, prevents startup.
@@ -88,6 +88,21 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 - A secret that cannot be re-wrapped is left unchanged and reported with its row ID, and the command exits with 1. Either its KEK is not configured
   (the message names the key ID: add that KEK to `kek_previous` and run it again), or the stored value is damaged or was copied from another row.
   Do not remove a KEK from `kek_previous` while `my kek status` still counts secrets under it.
+
+## Move between the local KEK and a KMS
+
+A key ID starts with the kind of key manager that wrapped it (`local:`, `gcpkms:`, `awskms:`). The server wraps new secrets with the current `key_manager`
+and unwraps each stored secret with the key manager its key ID names, so a move between the local KEK and a KMS is a rotation across kinds.
+This version offers only `key_manager = local`; the steps below apply once a KMS key manager is available.
+
+- With a KMS, `kek` and `kek_previous` only decrypt: they open the secrets still wrapped with the local KEK, and every new secret is wrapped with `kms_key`.
+  `kms_key_previous` lists earlier keys of the same KMS, which only decrypt too.
+- From the local KEK to a KMS: set `key_manager` and `kms_key`, keep the current KEK in `kek` (or move it to `kek_previous`), restart every process, and run `my kek rewrap`.
+  When `my kek status` no longer counts secrets under a `local:` key ID, remove `kek` and `kek_previous`.
+- From a KMS back to the local KEK, do the same the other way round: the KMS stays configured, only to decrypt, until `my kek rewrap` has moved every secret.
+- To move from one cloud's KMS to another's, move to the local KEK first and then to the other KMS; there is no direct move.
+- The server keeps a data-encryption key that the KMS decrypted for `kms_dek_cache_ttl` (default `10m`, at most `kms_dek_cache_entries`, default `1024`),
+  so a secret in use reaches the KMS about once per period and process. `0` in either setting disables the cache.
 
 ## If the KEK leaks
 

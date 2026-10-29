@@ -281,3 +281,18 @@ CREATE TABLE service_closure_heads (
   event_id uuid NOT NULL,
   announcement_event_id uuid NOT NULL
 );
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: secrets of the instance (data-model §4.9, ADR-0121 §2). Owned by internal/app/instance.
+-- Names are defined in internal/domain/instance.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a secret that the server generates once, such as the signing key of the media proxy
+-- URLs, sealed with the Sealer bound to its id. `my kek rewrap` re-wraps sealed_secret.
+CREATE TABLE instance_secrets (
+  id uuid NOT NULL PRIMARY KEY,
+  name text NOT NULL,
+  sealed_secret bytea NOT NULL,
+  created_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX instance_secrets_name ON instance_secrets (name);

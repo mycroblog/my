@@ -4,8 +4,6 @@ package platform
 
 import (
 	"context"
-	"crypto/hkdf"
-	"crypto/sha256"
 	"fmt"
 
 	blobfs "github.com/mycroblog/my/internal/adapter/blob/fs"
@@ -103,24 +101,11 @@ func (a *App) setBlobs(cfg *config.Config) error {
 	return nil
 }
 
-// mediaProxyKeyInfo is the HKDF info that derives the media proxy's URL signing key from a KEK.
-const mediaProxyKeyInfo = "my media proxy url signature v1"
-
-// newMediaProxy builds the media proxy. Its HMAC keys are derived from the key-encryption keys
-// with HKDF-SHA256, so that it needs no secret of its own: the current KEK signs, and the
-// previous ones still verify the URLs signed before a rotation.
+// newMediaProxy builds the media proxy. Its HMAC key is a secret of the instance module, which
+// generates it once and keeps it sealed in the database, so that it stays the same across
+// restarts and rotations of the key-encryption key. The proxy loads it on first use: Serve
+// loads it at the start, and a schema applied after the start only delays it.
 func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards content.LinkCardMediaReader, a *App) (*content.MediaProxy, error) {
-	var keys [][]byte
-	for _, kek := range append([][]byte{cfg.KEK}, cfg.PreviousKEKs...) {
-		if len(kek) == 0 {
-			continue
-		}
-		k, err := hkdf.Key(sha256.New, kek, nil, mediaProxyKeyInfo, sha256.Size)
-		if err != nil {
-			return nil, fmt.Errorf("derive the media proxy key: %w", err)
-		}
-		keys = append(keys, k)
-	}
 	p, err := content.NewMediaProxy(content.ProxyDeps{
 		Repository: repo, HTTP: a.HTTPClient, Accounts: a.Accounts,
 		Policy: a.ModerationPolicy,
@@ -133,7 +118,7 @@ func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards conte
 		// The account module's avatars and headers are what the avatars policy keeps.
 		UnitOfWork: a.UnitOfWork, Blobs: a.Blobs, Clock: a.Clock, ProfileImages: a.Accounts,
 		MaxCacheSize: cfg.RemoteMediaCacheMaxBytes, EmojiMaxBytes: cfg.RemoteCustomEmojiMaxBytes, Processor: a.MediaProcessor,
-		Keys: keys, BaseURL: cfg.MediaBaseURL(), Logger: a.Logger,
+		KeySource: a.Instance.MediaProxyKey, BaseURL: cfg.MediaBaseURL(), Logger: a.Logger,
 		// The federation mode decides which remote files are fetched (ADR-0076).
 		Federation: a.mediaGate(),
 		// The images of link cards are remote files without an owner (ADR-0062 §3).

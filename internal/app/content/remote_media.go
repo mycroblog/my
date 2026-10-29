@@ -16,6 +16,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/blob"
@@ -140,6 +142,10 @@ type ProxyDeps struct {
 	// Keys are the HMAC-SHA256 keys of the proxy URLs' signatures. The first signs; every one
 	// verifies, so that URLs signed before a key rotation keep working while the old key is kept.
 	Keys [][]byte
+	// KeySource, when Keys is empty, returns the one key that signs and verifies. The proxy
+	// calls it on first use, and again after a failure until it succeeds (LoadKeys), so that the
+	// key can live in a database whose schema is applied after the start.
+	KeySource func(ctx context.Context) ([]byte, error)
 	// BaseURL is the origin of the proxy URLs ("https://example.com").
 	BaseURL string
 	// LinkCardMedia reads the images of link cards (ADR-0062 §3), which the proxy serves as the
@@ -180,17 +186,18 @@ type LinkCardMediaReader interface {
 // (remote_media_cache.go).
 type MediaProxy struct {
 	d ProxyDeps
+
+	keyMu sync.Mutex               // serializes the loads from KeySource
+	keys  atomic.Pointer[[][]byte] // nil until loaded
 }
 
-// NewMediaProxy returns a MediaProxy on d. It needs at least one key.
+// NewMediaProxy returns a MediaProxy on d. It needs at least one key or a KeySource.
 func NewMediaProxy(d ProxyDeps) (*MediaProxy, error) {
-	if len(d.Keys) == 0 {
+	if len(d.Keys) == 0 && d.KeySource == nil {
 		return nil, errors.New("content: the media proxy needs a signing key")
 	}
-	for _, k := range d.Keys {
-		if len(k) < sha256.Size {
-			return nil, errors.New("content: a media proxy key must be at least 32 bytes")
-		}
+	if err := checkProxyKeys(d.Keys); err != nil {
+		return nil, err
 	}
 	if d.Logger == nil {
 		d.Logger = slog.Default()
@@ -203,7 +210,49 @@ func NewMediaProxy(d ProxyDeps) (*MediaProxy, error) {
 	}
 	d.BaseURL = strings.TrimSuffix(d.BaseURL, "/")
 	d.Sizes = d.Sizes.WithDefaults()
-	return &MediaProxy{d: d}, nil
+	p := &MediaProxy{d: d}
+	if len(d.Keys) > 0 {
+		p.keys.Store(&d.Keys)
+	}
+	return p, nil
+}
+
+func checkProxyKeys(keys [][]byte) error {
+	for _, k := range keys {
+		if len(k) < sha256.Size {
+			return errors.New("content: a media proxy key must be at least 32 bytes")
+		}
+	}
+	return nil
+}
+
+// LoadKeys loads the signing key from ProxyDeps.KeySource unless it is loaded. The server
+// calls it at the start, so that the first request does not wait for it.
+func (p *MediaProxy) LoadKeys(ctx context.Context) error {
+	_, err := p.signingKeys(ctx)
+	return err
+}
+
+// signingKeys returns the keys, loading them on first use.
+func (p *MediaProxy) signingKeys(ctx context.Context) ([][]byte, error) {
+	if k := p.keys.Load(); k != nil {
+		return *k, nil
+	}
+	p.keyMu.Lock()
+	defer p.keyMu.Unlock()
+	if k := p.keys.Load(); k != nil {
+		return *k, nil
+	}
+	key, err := p.d.KeySource(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("content: load the media proxy key: %w", err)
+	}
+	keys := [][]byte{key}
+	if err := checkProxyKeys(keys); err != nil {
+		return nil, err
+	}
+	p.keys.Store(&keys)
+	return keys, nil
 }
 
 // ProxyVariant names what the media proxy serves of a remote media file.
@@ -223,9 +272,15 @@ const (
 var proxyVariants = map[ProxyVariant]bool{ProxyFull: true, ProxySmall: true}
 
 // URL returns the signed proxy URL of a remote media file's variant.
+// Without a key (KeySource fails), the URL has an empty signature, which the proxy refuses.
 func (p *MediaProxy) URL(mediaID string, variant ProxyVariant) string {
-	return p.d.BaseURL + ProxyPathPrefix + url.PathEscape(mediaID) + "/" + url.PathEscape(string(variant)) +
-		"?sig=" + p.sign(p.d.Keys[0], mediaID, string(variant))
+	sig := ""
+	if keys, err := p.signingKeys(context.Background()); err != nil {
+		p.d.Logger.Error("media proxy URL without a signature", slog.Any("error", err))
+	} else {
+		sig = p.sign(keys[0], mediaID, string(variant))
+	}
+	return p.d.BaseURL + ProxyPathPrefix + url.PathEscape(mediaID) + "/" + url.PathEscape(string(variant)) + "?sig=" + sig
 }
 
 func (p *MediaProxy) sign(key []byte, mediaID, variant string) string {
@@ -235,9 +290,14 @@ func (p *MediaProxy) sign(key []byte, mediaID, variant string) string {
 }
 
 // verify reports whether sig is the signature of mediaID and variant under one of the keys.
-func (p *MediaProxy) verify(mediaID, variant, sig string) bool {
+func (p *MediaProxy) verify(ctx context.Context, mediaID, variant, sig string) bool {
+	keys, err := p.signingKeys(ctx)
+	if err != nil {
+		p.d.Logger.ErrorContext(ctx, "media proxy request not verified", slog.Any("error", err))
+		return false
+	}
 	ok := false
-	for _, k := range p.d.Keys {
+	for _, k := range keys {
 		// Compare under every key, so that the time does not tell which key matched.
 		if hmac.Equal([]byte(p.sign(k, mediaID, variant)), []byte(sig)) {
 			ok = true
@@ -269,7 +329,7 @@ func (p *MediaProxy) Open(ctx context.Context, mediaID, variant, sig string) (*P
 	notFound := func(why string) error {
 		return fmt.Errorf("proxy media %s/%s: %s: %w", mediaID, variant, why, ErrNotFound)
 	}
-	if !p.verify(mediaID, variant, sig) {
+	if !p.verify(ctx, mediaID, variant, sig) {
 		return nil, notFound("bad signature")
 	}
 	if !proxyVariants[ProxyVariant(variant)] || ProxyVariant(variant) == ProxySmall && p.d.Processor == nil {
