@@ -1,6 +1,6 @@
 # ADR-0121: KMS の KeyManager（gcpkms / awskms）: 導出鍵を DB に包んで置き、包みを解いた DEK を短くキャッシュする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-29
 - Deciders: @rosylilly
 - Issue: #1842
@@ -130,7 +130,6 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06（有効・無効�
   - `kernel` の振り分けとキャッシュのデコレータ、インスタンスの秘密の表とメディアプロキシの鍵の移し替え、`rewrap` の対象の列の追加（共通の部分。どちらかの issue に含めるか、別の issue にする）
   - `keymanager/gcpkms`（#1843）、`keymanager/awskms`（#1844）、`KeyManager` のコントラクトテスト（KMS の API はテスト用のサーバーで差し替える）
   - `docs/operations/key-management.md` の「`key_manager` is `local` only」と、HKDF の導出の記述、KMS の権限（Encrypt・Decrypt・DescribeKey だけ）と移行の手順
-  - この ADR が Accepted になったら、[ADR-0019](0019-security-baseline.md) の Status の行に「§6 の KMS のアダプタは ADR-0121 が決める」と添える（本文は書き換えない。ADR-0086 の Status の書き方と同じ）
 
 ## Pros and Cons of the Options（詳細比較・任意）
 
