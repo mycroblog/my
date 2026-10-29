@@ -294,7 +294,7 @@ var schema = []field{
 		choices: []choice{
 			{value: "fs", inV0: true, doc: "Local file system."},
 			{value: "s3", inV0: true, doc: "S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out."},
-			{value: "gcs", doc: "Native Google Cloud Storage API."},
+			{value: "gcs", inV0: true, doc: "Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Blob = v },
 	},
@@ -357,6 +357,13 @@ var schema = []field{
 		requiredWhen: "when `blob_s3_access_key_id` is set",
 		check:        checkNotBlank,
 		set:          func(c *Config, v string) { c.BlobS3SecretAccessKey = v },
+	},
+	{
+		key:          "blob_gcs_bucket",
+		doc:          "Bucket of the `gcs` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. The credentials are Application Default Credentials: the service account of Cloud Run or of the instance, or the key file of `GOOGLE_APPLICATION_CREDENTIALS`; the service account needs `roles/storage.objectUser` on the bucket. Signed URLs are signed with the private key of a key file, or without one with the IAM `signBlob` method as the service account itself, which needs `roles/iam.serviceAccountTokenCreator` on that service account. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).",
+		requiredWhen: "when `blob = gcs`",
+		check:        checkS3Bucket,
+		set:          func(c *Config, v string) { c.BlobGCSBucket = v },
 	},
 	{
 		key:    "media_origin",
@@ -1318,6 +1325,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if vals["blob"] == "s3" && !present["blob_s3_bucket"] {
 		issues = append(issues, Issue{Key: "blob_s3_bucket", Missing: true, Message: "required when blob is s3"})
+	}
+	if vals["blob"] == "gcs" && !present["blob_gcs_bucket"] {
+		issues = append(issues, Issue{Key: "blob_gcs_bucket", Missing: true, Message: "required when blob is gcs"})
 	}
 	if present["blob_s3_access_key_id"] && !present["blob_s3_secret_access_key"] {
 		issues = append(issues, Issue{Key: "blob_s3_secret_access_key", Missing: true, Message: "required when blob_s3_access_key_id is set"})

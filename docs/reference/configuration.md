@@ -80,6 +80,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`blob_s3_path_style`](#blob_s3_path_style) | `MY_BLOB_S3_PATH_STYLE` | `false` | no | no |
 | [`blob_s3_access_key_id`](#blob_s3_access_key_id) | `MY_BLOB_S3_ACCESS_KEY_ID` | none | no | no |
 | [`blob_s3_secret_access_key`](#blob_s3_secret_access_key) | `MY_BLOB_S3_SECRET_ACCESS_KEY` | none | when `blob_s3_access_key_id` is set | yes |
+| [`blob_gcs_bucket`](#blob_gcs_bucket) | `MY_BLOB_GCS_BUCKET` | none | when `blob = gcs` | no |
 | [`media_origin`](#media_origin) | `MY_MEDIA_ORIGIN` | the server's own origin (`https://{host}`) | no | no |
 | [`media_max_image_bytes`](#media_max_image_bytes) | `MY_MEDIA_MAX_IMAGE_BYTES` | `16777216` | no | no |
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
@@ -439,7 +440,7 @@ Blob storage adapter for media.
 | --- | --- | --- |
 | `fs` | yes | Local file system. |
 | `s3` | yes | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
-| `gcs` | not in v0 | Native Google Cloud Storage API. |
+| `gcs` | yes | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out. |
 
 ### `media`
 
@@ -515,6 +516,14 @@ Secret access key of `blob_s3_access_key_id`.
 - Environment variable: `MY_BLOB_S3_SECRET_ACCESS_KEY` or `MY_BLOB_S3_SECRET_ACCESS_KEY_FILE`
 - Default: none
 - Required: when `blob_s3_access_key_id` is set
+
+### `blob_gcs_bucket`
+
+Bucket of the `gcs` blob store. It holds the uploads as received (private) and the processed media, which the server reads from the bucket and serves under `/media/`, so the bucket stays private. The credentials are Application Default Credentials: the service account of Cloud Run or of the instance, or the key file of `GOOGLE_APPLICATION_CREDENTIALS`; the service account needs `roles/storage.objectUser` on the bucket. Signed URLs are signed with the private key of a key file, or without one with the IAM `signBlob` method as the service account itself, which needs `roles/iam.serviceAccountTokenCreator` on that service account. Share it between the web and worker processes, and back it up with the database (docs/operations/backup.md).
+
+- Environment variable: `MY_BLOB_GCS_BUCKET`
+- Default: none
+- Required: when `blob = gcs`
 
 ### `media_origin`
 

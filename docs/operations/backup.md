@@ -8,7 +8,7 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 | What | Where it lives | Back up | Lost without a backup |
 | --- | --- | --- | --- |
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
-| The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
+| The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store or `blob_gcs_bucket` of the `gcs` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
 | The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
 | The configuration | the environment variables, the configuration file (`MY_CONFIG_FILE`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
 
@@ -102,7 +102,7 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 ### Media in a bucket
 
-The `s3` blob store keeps every file as an object of the bucket `blob_s3_bucket`, named by its key: the processed media under `media/`,
+The `s3` and `gcs` blob stores keep every file as an object of the bucket `blob_s3_bucket` or `blob_gcs_bucket`, named by its key: the processed media under `media/`,
 the uploads as received under `uploads/`, and the cached remote files under `remote/`. The bucket stays private: the server reads the
 files and serves them under `/media/`. An object appears only once it is written whole, so a copy taken while the server runs never holds
 half a file. Protect the bucket in three layers, from the cheapest to the safest.
@@ -157,7 +157,8 @@ and the server's own credentials can delete objects. Keep a copy that those cred
   or turn on versioning and a lifecycle rule there as well.
 
 Credentials stay out of the copy: the bucket holds no secret, but the configuration names the key in `blob_s3_access_key_id`
-and `blob_s3_secret_access_key`, which belong with the configuration.
+and `blob_s3_secret_access_key`, which belong with the configuration. The `gcs` blob store keeps no key: it uses the service account
+of the machine or of Cloud Run.
 
 ### The order of the database and the media
 
@@ -224,7 +225,7 @@ Extract the media copy into `blob_fs_dir` before the server starts, owned by the
 
 ### Media in a bucket
 
-Restore the objects into an empty bucket before the server starts, then set `blob_s3_bucket` (and the endpoint, region, and credentials) to it.
+Restore the objects into an empty bucket before the server starts, then set `blob_s3_bucket` (and the endpoint, region, and credentials) or `blob_gcs_bucket` to it.
 The keys must stay the same: the database names each file by its key.
 
 - From a copy in another bucket, copy it back:
@@ -240,10 +241,10 @@ The keys must stay the same: the database names each file by its key.
   rclone copy --s3-version-at "2026-01-01 00:00:00" source:my-media target:my-media-restored
   ```
 
-- From a replica, point `blob_s3_bucket` at the replica, or copy it back to a bucket in the original account.
+- From a replica, point `blob_s3_bucket` or `blob_gcs_bucket` at the replica, or copy it back to a bucket in the original account.
 
 The server's credentials need to read, write, and delete objects of the restored bucket (`s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`,
-and `s3:AbortMultipartUpload` on Amazon S3).
+and `s3:AbortMultipartUpload` on Amazon S3; the role `roles/storage.objectUser` on the bucket on Google Cloud Storage).
 
 ### Starting and checking
 

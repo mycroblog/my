@@ -356,11 +356,12 @@ entries:
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
   - name: adapter-media
-    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go"]
+    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go", "internal/platform/adapters_*gcs.go", "internal/platform/config/adapters_no_gcs.go"]
     docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
     userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md"]
     notes:
       - "blob = s3 (internal/adapter/blob/s3) uses the AWS SDK for Amazon S3 against any S3-compatible endpoint; the bucket stays private and the server serves media/ under /media/. Its unit tests run testkit.BlobStoreContract on an in-memory fake of S3; the contract also runs on a Garage container (pkg/testkit/s3test) only with TEST_S3=container: `scripts/task.sh go:test-blob` (CI job blob-contract in the slow suite)."
+      - "blob = gcs (internal/adapter/blob/gcs) uses the JSON API of Cloud Storage (cloud.google.com/go/storage) on Application Default Credentials, with the library's client metrics disabled; SignedURL signs V4 URLs with the credentials' private key or, without one, IAM signBlob as the service account itself. Its unit tests run testkit.BlobStoreContract on an in-memory fake of the JSON API (fake_test.go) that also answers signBlob and the metadata server; no emulator or container."
   - name: adapter-federation
     paths: ["internal/adapter/httpsig/**", "internal/adapter/jsonld/**", "internal/adapter/htmlsanitizer/**", "internal/adapter/keymanager/**"]
     docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]

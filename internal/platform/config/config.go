@@ -90,6 +90,8 @@ type Config struct {
 	BlobS3PathStyle       bool
 	BlobS3AccessKeyID     string
 	BlobS3SecretAccessKey string
+	// The bucket of the gcs blob store, on Application Default Credentials.
+	BlobGCSBucket string
 	// Limits of image uploads and how long an upload may stay unattached.
 	MediaMaxImageBytes  int64
 	MediaMaxImageSide   int
@@ -340,6 +342,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Bool("blob_s3_path_style", c.BlobS3PathStyle),
 		slog.String("blob_s3_access_key_id", c.BlobS3AccessKeyID),
 		slog.String("blob_s3_secret_access_key", redact(c.BlobS3SecretAccessKey != "")),
+		slog.String("blob_gcs_bucket", c.BlobGCSBucket),
 		slog.String("media_origin", c.MediaOrigin),
 		slog.Int64("media_max_image_bytes", c.MediaMaxImageBytes),
 		slog.Int("media_max_image_side", c.MediaMaxImageSide),

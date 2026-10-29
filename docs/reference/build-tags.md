@@ -13,6 +13,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_sns` | The Amazon SNS / SQS broker (AWS SDK); with `no_sqs`, the AWS SDK for Amazon SQS too | `stream = sns` |
 | `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |
 | `no_s3` | The S3-compatible blob store (AWS SDK for Amazon S3) | `blob = s3` |
+| `no_gcs` | The Google Cloud Storage blob store (Cloud Storage client library) | `blob = gcs` |
 | `no_pubsub` | The Google Cloud Pub/Sub broker; with `no_billing_gcp`, the Pub/Sub client library too | `stream = pubsub` |
 | `no_gcpkms` | The Google Cloud KMS key manager (Cloud KMS client library) | `key_manager = gcpkms`, and Cloud KMS keys in `kms_key` / `kms_key_previous` |
 | `no_awskms` | The AWS KMS key manager (AWS SDK for AWS KMS) | `key_manager = awskms`, and AWS KMS keys in `kms_key` / `kms_key_previous` |
@@ -121,8 +122,8 @@ and fails when `cmd/my` still depends on a package that a tag of the set leaves 
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
-| `no_sqlite,no_valkey,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, the SQS queue, and the Stripe payments, without the Sora voice chat |
+| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
+| `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, the SQS queue, and the Stripe payments, without the Sora voice chat |
 | `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_sqs,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat |
 | `e2e_fakes` | The test build; it also runs the tests that only this build has (named `*E2EFakes*`) |
 
