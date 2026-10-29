@@ -370,7 +370,7 @@ listen = "127.0.0.1:9000"
 				DB: "postgres", DatabaseURL: "postgres://db:5432/my", Queue: "cloudtasks", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				QueueCloudTasksQueue: "projects/my-project/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksURL: "https://social.example.org",
 				QueueCloudTasksServiceAccount: "my-tasks@my-project.iam.gserviceaccount.com", QueueCloudTasksDispatchDeadline: 10 * time.Minute,
-				Stream: "hub",
+				Stream:    "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",

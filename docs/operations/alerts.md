@@ -55,7 +55,8 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
 - **Jobs and requests**: the server writes one log line per HTTP request (`msg` = `http request`) and per job run (`msg` = `job`), with the
   same labels as the metrics. Make log-based metrics from them, for example a counter of `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   for failed jobs, or a distribution of `jsonPayload.duration_seconds` filtered on `jsonPayload."my.surface"="client_api"` for the latency.
-- **Queue backlog**: with `queue = cloudtasks`, the queue depth metric of Cloud Tasks. The job screen cannot list pending jobs of that queue.
+- **Queue backlog**: with `queue = cloudtasks` the jobs are in the database, so the job screen and the log lines of the job runs show the backlog;
+  the queue depth metric of Cloud Tasks counts the signals waiting to be delivered.
 - **Database**: the disk utilization and connection metrics of Cloud SQL, or the usage alerts of your database provider.
 - **Cost**: a Cloud Billing budget with alert thresholds ([Cost and budget](#cost-and-budget)).
 
@@ -115,9 +116,9 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 These tools come back in most of the runbook entries below.
 
 - **The job screen** (Administration → Jobs, `/admin/jobs`, needs `manage_jobs`): jobs by state (queued, running, retrying, failed) and type, the counts,
-  the oldest waiting job, and for each job its last error and the attempts that did not succeed. Pending jobs are listed only for `queue = db`;
-  failed jobs and attempts are listed for every queue.
-- **The `my job` command** on a host that has the server's configuration (`queue = db` only):
+  the oldest waiting job, and for each job its last error and the attempts that did not succeed. Pending jobs are listed only for the queues kept in the database
+  (`queue = db` and `cloudtasks`); failed jobs and attempts are listed for every queue.
+- **The `my job` command** on a host that has the server's configuration (`queue = db` and `cloudtasks`):
   `my job list` lists the failed jobs, newest first; `my job retry <id>...` puts them back in the queue; `my job delete <id>...` drops them.
   Jobs are safe to run again.
 - **The remote servers screen** (Moderation → Remote servers, `/moderation/instances`, needs `manage_domains`): the servers that deliveries failed to reach,
