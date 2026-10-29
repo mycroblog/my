@@ -7,7 +7,7 @@
 // up. `vite preview` has no API, so each
 // test plays the server of a signed-in moderator with page.route; names change with the locale, so the structure
 // is checked by role, by count and by address.
-import type { Page, Route } from "@playwright/test";
+import type { Locator, Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 
 /** The signed-in moderator's account, as GET /accounts/verify_credentials answers, with the moderator's permissions. */
@@ -160,6 +160,16 @@ function hasTabBar(page: Page): boolean {
 /** The count of 3 as the project's locale writes it. */
 const three = /3|٣/;
 
+/**
+ * Asserts that `control` draws the count of 3 on its badge. The digits are generated content of the hidden badge
+ * (`data-count`), so that they are no text of the control, whose name carries the count (WCAG 2.5.3).
+ */
+async function expectDrawnCount(control: Locator) {
+  const drawn = control.locator('[aria-hidden="true"][data-count]');
+  await expect(drawn).toBeVisible();
+  await expect(drawn).toHaveAttribute("data-count", three);
+}
+
 test.describe("the moderation entry", () => {
   test.beforeEach(async ({ page }) => {
     await moderatorServer(page);
@@ -177,13 +187,13 @@ test.describe("the moderation entry", () => {
       await expect(entry).toBeHidden();
       const menu = nav.getByRole("button").last();
       await expect(menu).toHaveAccessibleName(three);
-      await expect(menu.locator('[aria-hidden="true"]', { hasText: three })).toBeVisible();
+      await expectDrawnCount(menu);
       await menu.click();
       const sheet = page.getByRole("dialog");
       const link = sheet.locator('a[href="/moderation"]');
       await expect(sheet.locator('a[href="/admin"]')).toHaveCount(0);
       await expect(link).toHaveAccessibleName(three);
-      await expect(link.locator('[aria-hidden="true"]', { hasText: three })).toBeVisible();
+      await expectDrawnCount(link);
       // The sheet fades and slides in: axe measures contrast once it has settled.
       await expect(page.locator("[data-entering]")).toHaveCount(0);
       await expectNoAxeViolations(makeAxeBuilder);
@@ -191,7 +201,7 @@ test.describe("the moderation entry", () => {
     } else {
       await expect(entry).toBeVisible();
       await expect(entry).toHaveAccessibleName(three);
-      await expect(entry.locator('[aria-hidden="true"]', { hasText: three })).toBeVisible();
+      await expectDrawnCount(entry);
       await expectNoAxeViolations(makeAxeBuilder);
       await entry.click();
     }

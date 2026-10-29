@@ -6,7 +6,16 @@
 // structure and addresses, and the providers, which are the operators' words, are in English in every project.
 import type { Page } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
+import { readCatalog } from "./catalog.ts";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+
+/** The client message `key` in the project's locale. */
+function message(key: string): string {
+  const locale = test.info().project.use.locale ?? "en";
+  const text = readCatalog(locale)[key]?.defaultMessage;
+  if (text === undefined) throw new Error(`no message ${key} in ${locale}`);
+  return text;
+}
 
 type Instance = components["schemas"]["Instance"];
 type CostTotals = components["schemas"]["CostTotals"];
@@ -244,6 +253,10 @@ test("the costs page of a server that publishes its income only", async ({ page,
   await serveCosts(page, "private", "totals");
   await page.goto("/about/costs");
   const main = page.getByRole("main");
+  // In one currency the overview shows the income as a chart; its table shows once the table is chosen.
+  await expect(main.getByRole("img")).toHaveCount(1);
+  await expect(main.getByRole("table")).toHaveCount(0);
+  await main.getByRole("radio", { name: message("chart.view.table"), exact: true }).click();
   await expect(main.getByRole("table")).toHaveCount(1);
   // The income without the balance: the period and the income after fees.
   await expect(main.getByRole("table").getByRole("columnheader")).toHaveCount(2);
