@@ -21,7 +21,7 @@ KMS に置いて IAM で使わせたい。
 - **移行**: `local` から KMS へ、KMS から別の KMS の鍵へ、`my kek status` / `my kek rewrap` で移す方法
 
 料金（2026-10-29 確認）: AWS KMS は鍵 1 つ月 $1（ローテーションごとに月 $1 を足し、2 回目で上限）、対称鍵の要求 1 万回 $0.03、無料枠は全リージョンで月 2 万要求（[AWS KMS pricing](https://aws.amazon.com/kms/pricing/)）。
-Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06、暗号操作 1 万回 $0.03、無料枠は Autokey で作った鍵だけ（[Cloud KMS pricing](https://cloud.google.com/kms/pricing)。時間あたりの単価から換算）。
+Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06（有効・無効・破棄の予定の版を数え、破棄した版は無料）、暗号操作 1 万回 $0.03 で、無料枠は Autokey で作った鍵だけ（[Cloud KMS pricing](https://cloud.google.com/kms/pricing)。月額は時間あたりの単価と料金ページの例から換算）。
 
 今決める理由: M6 のテンプレートが KEK をどこに置くかを決める。メディアプロキシの鍵の置き場所を変えるなら、既存の URL の署名が変わるので v0.1.0 より前に変えたい（[ADR-0087](0087-schema-changes-after-launch.md)）。
 
@@ -64,16 +64,28 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06、暗号操作 1 �
 ### 1. アダプタ
 
 - `internal/adapter/keymanager/gcpkms`（`cloud.google.com/go/kms`）と `internal/adapter/keymanager/awskms`（aws-sdk-go-v2 の `kms`）。認証は ADC と SDK の既定の資格情報の連鎖。
-  どちらの SDK も Apache-2.0（要検証: 依存の推移的なライセンス）。ビルドタグ `no_gcpkms` / `no_awskms`
-- `WrapKey` は KMS の Encrypt で 32 バイトの DEK を包み、`UnwrapKey` は Decrypt で開く。KEK は KMS の外に出ない
-- **AAD**: Cloud KMS は `additionalAuthenticatedData` にそのまま渡す。AWS KMS は暗号化コンテキスト（文字列の map）に `{"my-aad": <aad の base64url>}` として渡す。
-  暗号化コンテキストは CloudTrail のログに平文で残るが、AAD は行の ID と列の名前（`kernel.AAD`）で秘密を含まない
+  どちらの SDK も Apache-2.0 で、新しく入る推移的な依存は `cloud.google.com/go/longrunning`（Apache-2.0）だけ（gRPC・genproto・認証のモジュールは `stream/pubsub` で入っている）。
+  `CGO_ENABLED=0` でビルドでき、`cmd/my` の大きさは `gcpkms` で約 1.2 MiB、`awskms` で約 0.7 MiB 増える（2026-10-29 に `kms` v1.36.1・`service/kms` v1.62.1 を足したビルドで計測）。
+  ビルドタグ `no_gcpkms` / `no_awskms`
+- `WrapKey` は KMS の Encrypt で 32 バイトの DEK を包み、`UnwrapKey` は Decrypt で開く。KEK は KMS の外に出ない。
+  暗号文は封じた値のヘッダーの 2 バイトの長さに収まる（AWS KMS の `CiphertextBlob` は最大 6,144 バイト。2026-10-29 に [Encrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Encrypt.html) で確認）
+- **AAD**: Cloud KMS は `additionalAuthenticatedData` にそのまま渡す（ソフトウェアの鍵で最大 64 KiB）。AWS KMS は暗号化コンテキスト（文字列の map）に `{"my-aad": <aad の base64url>}` として渡す
+  （大きさの上限は API の文書に書かれていないが、`kernel.AAD` の値は行の ID と列の名前で数十バイト）。
+  暗号化コンテキストは CloudTrail のログに平文で残るが、AAD は秘密を含まない
+  （2026-10-29 に [Cloud KMS encrypt](https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys/encrypt)・[Encryption context](https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html) で確認）
 - **鍵 ID**: `gcpkms:<CryptoKey のリソース名>`、`awskms:<鍵の ARN>`。
-  - Cloud KMS は版を含めない。Decrypt は暗号文から版を選ぶので、KMS 側の自動のローテーションで鍵 ID は変わらず、包み直しも要らない（要検証: Decrypt が鍵の名前だけで古い版の暗号文を開けること）
-  - AWS KMS は起動時に `DescribeKey` で別名（alias）を ARN に直してから使う。別名は付け替えられるので鍵 ID にしない
-  - 255 バイトを超える名前は起動時の設定の検査で拒む
-- **エラー**: 暗号文や AAD が合わない（Cloud KMS の `InvalidArgument`、AWS KMS の `InvalidCiphertextException`）は `ErrDecrypt`。
-  鍵 ID が今の鍵でも前の鍵でもないときは `ErrUnknownKey`。権限の不足・鍵の無効化は設定の誤りとしてそのまま返し、上限・一時的な失敗は再試行できるエラーにする
+  - Cloud KMS は版を含めない。Decrypt は鍵の名前で呼ぶとサーバーが版を選び、ローテーションは古い版を無効にしないので、KMS 側の自動のローテーションで鍵 ID は変わらず、包み直しも要らない。
+    古い版を無効化・破棄すると、その版で包んだ値は開けない（2026-10-29 に [Decrypt](https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys/decrypt)・
+    [Rotate a key](https://docs.cloud.google.com/kms/docs/rotate-key)・[Key version states](https://docs.cloud.google.com/kms/docs/key-states) で確認）。運用文書に「古い版を無効にする前に、版を替えた KMS の鍵へ `my kek rewrap` で移す」ことを書く
+  - CryptoKey の名前は最長でも約 221 バイト（プロジェクト ID 30・鍵リングと鍵の ID 各 63・最長のロケーション 23）で、接頭辞 `gcpkms:` を足しても 255 に収まる（[Resource hierarchy](https://docs.cloud.google.com/kms/docs/resource-hierarchy) とリソースの作成の API の規則から計算）。
+    ドメインの付いた古いプロジェクト ID のように 255 バイトを超える名前は、起動時の設定の検査で拒む
+  - AWS KMS は起動時に `DescribeKey` で別名（alias）を ARN に直してから使う。別名は付け替えられるので鍵 ID にしない。対称鍵の Decrypt は暗号文から鍵を知れるが、違う鍵の取り違えを `IncorrectKeyException` で拒ませるため `KeyId` を渡す
+    （2026-10-29 に [Decrypt](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html) で確認）
+- **エラー**: 暗号文や AAD が合わない（AWS KMS の `InvalidCiphertextException`、Cloud KMS では `INVALID_ARGUMENT` の見込み）は `ErrDecrypt`。
+  鍵 ID が今の鍵でも前の鍵でもないときは `ErrUnknownKey`。権限の不足（`PERMISSION_DENIED`・`AccessDeniedException`）・鍵の無効化（Cloud KMS では `FAILED_PRECONDITION` の見込み、AWS KMS の `DisabledException`）は設定の誤りとしてそのまま返し、
+  上限（`RESOURCE_EXHAUSTED`・`ThrottlingException`）・一時的な失敗は再試行できるエラーにする
+- **クォータ**: AWS KMS の対称鍵の暗号操作は us-east-1 でアカウント・リージョンあたり毎秒 100,000 回で、全操作で共有する（2026-10-29 に [Request quotas](https://docs.aws.amazon.com/kms/latest/developerguide/requests-per-second.html) で確認）。
+  Cloud KMS はリージョンごとのトークンの量で数える（ソフトウェアの鍵の利用は毎分 6,000,000 トークン。[Quotas](https://docs.cloud.google.com/kms/quotas)）。§3 のキャッシュのもとでは、どちらにも遠く届かない
 
 ### 2. メディアプロキシの署名鍵を DB に封じて置く（1A）
 
@@ -90,7 +102,7 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06、暗号操作 1 �
 - 安全面: キャッシュが持つのは DEK で、プロセスのメモリを読める攻撃者には、`local` では KEK そのものが、KMS では有効期間内の DEK が見える。KMS の構成でもこれは `local` より悪くならない。
   キャッシュの値はログ・エラーに出さない（`slog.LogValuer` で `[REDACTED]`）
 - 呼び出しの見積り: 配送・取得で使う秘密（ローカルのアクターの秘密鍵、インスタンスのアクター）1 つにつき、プロセスあたり 10 分に 1 回。
-  10 個のアクターが常に配送するサーバーで、プロセス 1 つなら月約 4.3 万回（30 日 × 144 回 × 10）で、AWS KMS の無料枠を超えた分は月 $0.07 ほど。キャッシュがないと、配送・取得の数と同じだけ呼ぶ
+  10 個のアクターが常に配送するサーバーで、プロセス 1 つなら月約 4.3 万回（30 日 × 144 回 × 10）で、AWS KMS では無料枠を超えた分の月 $0.07 ほど、無料枠のない Cloud KMS では月 $0.13 ほど。キャッシュがないと、配送・取得の数と同じだけ呼ぶ
 
 ### 4. 移行（3A）
 
@@ -131,7 +143,7 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06、暗号操作 1 �
 ### 2. `UnwrapKey` の呼び出し
 
 - **2A（推奨）**: 1 か所で全モジュールに効く。悪い: DEK がメモリに残る
-- **2B**: メモリに残らない。悪い: 配送 1 件ごとに KMS の遅延（要検証: 1 回の Decrypt の遅延）と料金が乗り、KMS の障害で連合がすぐ止まる
+- **2B**: メモリに残らない。悪い: 配送 1 件ごとに KMS の遅延と料金が乗り、KMS の障害で連合がすぐ止まる
 - **2C**: 開いた署名鍵をそのまま再利用でき、`x509` の解析も省ける。悪い: 秘密の種類ごとにモジュールがキャッシュを持ち、有効期間と消去の規則がばらつく。秘密鍵そのものがメモリに長く残る
 
 ### 3. 移行
@@ -141,7 +153,5 @@ Cloud KMS はソフトウェアの鍵の版 1 つ月約 $0.06、暗号操作 1 �
 
 ## Open Questions / 要検証
 
-- Cloud KMS の Decrypt が、鍵の名前だけで古い版で包んだ暗号文を開けること（§1 の鍵 ID）
-- Cloud KMS の `additionalAuthenticatedData` と AWS KMS の暗号化コンテキストの大きさの上限が、`kernel.AAD` の値に足りること
-- Cloud Run・Lambda からの 1 回の Decrypt の遅延と、AWS KMS の要求のクォータ（アカウントで共有）
-- `cloud.google.com/go/kms` と aws-sdk-go-v2 の `kms` の推移的な依存のライセンスと、バイナリの大きさの増え方
+- Cloud Run・Lambda からの 1 回の Decrypt の遅延（公式の文書に目安がない。M6 のデプロイで計測し、§3 のキャッシュの既定の有効期間を見直す）
+- Cloud KMS の Decrypt が AAD の不一致と鍵の無効化に返すエラーのコード（KMS の文書に書かれていない。`INVALID_ARGUMENT`・`FAILED_PRECONDITION` は他のサービスの文書と実例による見込みで、実装の PR で実際の KMS に対して確かめる）
