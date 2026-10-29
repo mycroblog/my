@@ -637,7 +637,7 @@ Key manager adapter that encrypts actor private keys.
 | Value | In v0 | Description |
 | --- | --- | --- |
 | `local` | yes | Uses the key-encryption key from `kek`. |
-| `gcpkms` | not in v0 | Google Cloud KMS. |
+| `gcpkms` | yes | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md). |
 | `awskms` | not in v0 | AWS KMS. |
 
 ### `kek`
@@ -658,7 +658,7 @@ Previous key-encryption keys, comma-separated, each in the format of `kek`. They
 
 ### `kms_key`
 
-Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes.
+Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.
 
 - Environment variable: `MY_KMS_KEY`
 - Default: none
@@ -666,7 +666,7 @@ Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the 
 
 ### `kms_key_previous`
 
-Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key` (docs/operations/key-management.md).
+Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key`. With `key_manager = local`, `kms_key` and these keys only decrypt the secrets still encrypted with the KMS, while they move to `kek` (docs/operations/key-management.md).
 
 - Environment variable: `MY_KMS_KEY_PREVIOUS`
 - Default: none
