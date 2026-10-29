@@ -83,6 +83,8 @@ func TestResponses(t *testing.T) {
 		{"NodeInfo index", http.MethodGet, "/.well-known/nodeinfo", nil, 503, "application/json", shortBody},
 		{"NodeInfo", http.MethodGet, "/nodeinfo/2.1", nil, 503, "application/json", shortBody},
 		{"payment webhook", http.MethodPost, "/payments/webhooks/stripe", nil, 503, "application/json", shortBody},
+		{"job signal of the queue", http.MethodPost, "/_internal/jobs", nil, 503, "application/json", shortBody},
+		{"tick of the scheduler", http.MethodPost, "/_internal/tick", nil, 503, "application/json", shortBody},
 		{"HTML GET", http.MethodGet, "/@alice", map[string]string{"Accept": "text/html,application/xhtml+xml,*/*;q=0.8"}, 503, "text/html; charset=utf-8", page},
 		{"sign-in page", http.MethodGet, "/auth/sign_in", nil, 503, "text/html; charset=utf-8", page},
 		{"OAuth authorize", http.MethodGet, "/oauth/authorize?client_id=x", nil, 503, "text/html; charset=utf-8", page},

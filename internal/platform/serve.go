@@ -42,7 +42,8 @@ type ServeOptions struct {
 //
 //   - every role serves HTTP on the listen address (the worker role only the health checks);
 //   - with metrics_exporter = prometheus, every role serves GET /metrics on metrics_listen;
-//   - the worker and all roles run the job runner and the scheduler of periodic jobs;
+//   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
+//     queue = cloudtasks serve the endpoints that run the jobs and tick the periodic ones;
 //   - every role first ensures the built-in roles, giving admin every permission.
 //
 // When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
@@ -133,7 +134,9 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
-	if a.Config.Role != config.RoleWeb {
+	// With a push receiver, the requests of the platform's queue run the jobs and those of its
+	// scheduler tick the periodic ones (ADR-0120 §4).
+	if a.Config.Role != config.RoleWeb && a.pushReceiver == nil {
 		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) { _ = a.runJobs(ctx, stopJobs) })
 		if a.Scheduler != nil {
 			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })

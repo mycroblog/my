@@ -227,9 +227,44 @@ var schema = []field{
 			{value: "db", inV0: true, doc: "Queue table in the database."},
 			{value: "inline", inV0: true, doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
 			{value: "sqs", inV0: true, doc: "Amazon SQS."},
-			{value: "cloudtasks", inV0: true, doc: "Google Cloud Tasks."},
+			{value: "cloudtasks", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
+	},
+	{
+		key:          "queue_cloudtasks_queue",
+		doc:          "Resource name of the Cloud Tasks queue of `queue = cloudtasks`, `projects/{project}/locations/{location}/queues/{queue}`, which the deployment template creates.",
+		requiredWhen: "when `queue = cloudtasks`",
+		check:        checkCloudTasksQueue,
+		set:          func(c *Config, v string) { c.QueueCloudTasksQueue = v },
+	},
+	{
+		key:    "queue_cloudtasks_url",
+		defDoc: "`https://{host}`",
+		doc:    "Absolute `https` URL of the server that Cloud Tasks and Cloud Scheduler call with `queue = cloudtasks`, without a path: the tasks go to `{url}/_internal/jobs`, and the Cloud Scheduler job must call `POST {url}/_internal/tick`. Set it to the URL of the Cloud Run service of the processes that run the jobs (`role = all` or `worker`).",
+		check:  checkServiceURL,
+		set:    func(c *Config, v string) { c.QueueCloudTasksURL = strings.TrimSuffix(v, "/") },
+	},
+	{
+		key:          "queue_cloudtasks_service_account",
+		doc:          "Email of the service account whose OIDC ID token each task of `queue = cloudtasks` carries, and that the Cloud Scheduler job of the tick uses too. The server's own service account needs `roles/iam.serviceAccountUser` on it to create the tasks. `/_internal/jobs` and `/_internal/tick` accept only a Google-signed token of this account with a verified email.",
+		requiredWhen: "when `queue = cloudtasks`",
+		check:        checkBareAddress,
+		set:          func(c *Config, v string) { c.QueueCloudTasksServiceAccount = v },
+	},
+	{
+		key:    "queue_cloudtasks_audience",
+		defDoc: "the URL of the endpoint called",
+		doc:    "Audience of the OIDC ID tokens of `queue = cloudtasks`, which the tasks ask for and the endpoints require. Empty leaves the default of Cloud Tasks and Cloud Scheduler, the URL of the endpoint (`{queue_cloudtasks_url}/_internal/jobs`, `{queue_cloudtasks_url}/_internal/tick`); set the same value as the audience of the Cloud Scheduler job when you set it.",
+		check:  checkNotBlank,
+		set:    func(c *Config, v string) { c.QueueCloudTasksAudience = v },
+	},
+	{
+		key:    "queue_cloudtasks_dispatch_deadline",
+		doc:    "How long Cloud Tasks waits for one delivery of `queue = cloudtasks` to answer, from `15s` to `30m`. It must be longer than the 5-minute lease of a job run; set the request timeout of the Cloud Run service to at least this value.",
+		defDoc: "`10m`",
+		check:  checkDispatchDeadline,
+		set:    func(c *Config, v string) { c.QueueCloudTasksDispatchDeadline, _ = time.ParseDuration(v) },
 	},
 	{
 		key: "blob",
@@ -1356,6 +1391,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}
+	issues = append(issues, cloudTasksChecks(vals, present)...)
 	return issues
 }
 

@@ -361,6 +361,25 @@ listen = "127.0.0.1:9000"
 			},
 		},
 		{
+			name: "queue on Cloud Tasks with the defaults",
+			env: with(minimal(), "MY_DB", "postgres", "MY_DATABASE_URL", "postgres://db:5432/my", "MY_QUEUE", "cloudtasks",
+				"MY_QUEUE_CLOUDTASKS_QUEUE", "projects/my-project/locations/asia-northeast1/queues/my-jobs",
+				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "my-tasks@my-project.iam.gserviceaccount.com"),
+			want: Config{
+				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
+				DB: "postgres", DatabaseURL: "postgres://db:5432/my", Queue: "cloudtasks", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				QueueCloudTasksQueue: "projects/my-project/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksURL: "https://social.example.org",
+				QueueCloudTasksServiceAccount: "my-tasks@my-project.iam.gserviceaccount.com", QueueCloudTasksDispatchDeadline: 10 * time.Minute,
+				Stream: "hub",
+				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
+				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
+				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
+				MetricsExporter: "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
+				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
+				ErrorsExporter: "none", ErrorsEnvironment: "production",
+			},
+		},
+		{
 			name: "stream on PostgreSQL with a direct connection",
 			env: with(minimal(), "MY_DB", "postgres", "MY_DATABASE_URL", "postgres://pooler:6543/my", "MY_STREAM", "postgres",
 				"MY_STREAM_POSTGRES_URL", "postgres://db:5432/my"),
@@ -529,6 +548,29 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{
 				"stream_pubsub_topic (MY_STREAM_PUBSUB_TOPIC): not a Pub/Sub topic name",
 				"stream_pubsub_subscription_prefix (MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX): not the start of a Pub/Sub subscription ID",
+			},
+		},
+		{
+			name: "queue cloudtasks without its settings on SQLite and the memory KV",
+			env:  with(minimal(), "MY_QUEUE", "cloudtasks", "MY_KV", "memory"),
+			want: []string{
+				"queue_cloudtasks_queue (MY_QUEUE_CLOUDTASKS_QUEUE): required when queue is cloudtasks",
+				"queue_cloudtasks_service_account (MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT): required when queue is cloudtasks",
+				"queue (MY_QUEUE): cloudtasks keeps the jobs in the database and requires db = postgres or libsql, not sqlite",
+				"queue (MY_QUEUE): cloudtasks claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
+			},
+		},
+		{
+			name: "malformed queue cloudtasks settings",
+			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "cloudtasks",
+				"MY_QUEUE_CLOUDTASKS_QUEUE", "my-jobs", "MY_QUEUE_CLOUDTASKS_URL", "https://my.example/_internal/jobs",
+				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "Tasks <tasks@my-project.iam.gserviceaccount.com>",
+				"MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE", "5m"),
+			want: []string{
+				"queue_cloudtasks_queue (MY_QUEUE_CLOUDTASKS_QUEUE): must be the resource name of a Cloud Tasks queue",
+				"queue_cloudtasks_url (MY_QUEUE_CLOUDTASKS_URL): must be an absolute https URL without a path",
+				"queue_cloudtasks_service_account (MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT): must be a bare email address",
+				"queue_cloudtasks_dispatch_deadline (MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE): must be longer than the 5m0s lease of a job run",
 			},
 		},
 		{

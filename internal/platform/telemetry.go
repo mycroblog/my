@@ -84,6 +84,8 @@ const (
 	surfacePayments = "payments"
 	// surfaceVoice is the endpoints that the media servers of the voice chat call (ADR-0102 §4).
 	surfaceVoice = "voice"
+	// surfaceQueue is the endpoints that the platform's queue and scheduler call (ADR-0120 §5).
+	surfaceQueue = "queue"
 )
 
 // routeOther is the http.route of a request that no route pattern matched.

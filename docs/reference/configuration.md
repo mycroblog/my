@@ -63,6 +63,11 @@ An instance setting that has never been set reads as its default, which is defin
 | [`db`](#db) | `MY_DB` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
 | [`queue`](#queue) | `MY_QUEUE` | `db` | no | no |
+| [`queue_cloudtasks_queue`](#queue_cloudtasks_queue) | `MY_QUEUE_CLOUDTASKS_QUEUE` | none | when `queue = cloudtasks` | no |
+| [`queue_cloudtasks_url`](#queue_cloudtasks_url) | `MY_QUEUE_CLOUDTASKS_URL` | `https://{host}` | no | no |
+| [`queue_cloudtasks_service_account`](#queue_cloudtasks_service_account) | `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT` | none | when `queue = cloudtasks` | no |
+| [`queue_cloudtasks_audience`](#queue_cloudtasks_audience) | `MY_QUEUE_CLOUDTASKS_AUDIENCE` | the URL of the endpoint called | no | no |
+| [`queue_cloudtasks_dispatch_deadline`](#queue_cloudtasks_dispatch_deadline) | `MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE` | `10m` | no | no |
 | [`blob`](#blob) | `MY_BLOB` | `fs` | no | no |
 | [`media`](#media) | `MY_MEDIA` | `native` | no | no |
 | [`blob_fs_dir`](#blob_fs_dir) | `MY_BLOB_FS_DIR` | `blobs` | no | no |
@@ -353,7 +358,47 @@ Job queue adapter.
 | `db` | yes | Queue table in the database. |
 | `inline` | yes | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
 | `sqs` | yes | Amazon SQS. |
-| `cloudtasks` | yes | Google Cloud Tasks. |
+| `cloudtasks` | yes | The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
+
+### `queue_cloudtasks_queue`
+
+Resource name of the Cloud Tasks queue of `queue = cloudtasks`, `projects/{project}/locations/{location}/queues/{queue}`, which the deployment template creates.
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_QUEUE`
+- Default: none
+- Required: when `queue = cloudtasks`
+
+### `queue_cloudtasks_url`
+
+Absolute `https` URL of the server that Cloud Tasks and Cloud Scheduler call with `queue = cloudtasks`, without a path: the tasks go to `{url}/_internal/jobs`, and the Cloud Scheduler job must call `POST {url}/_internal/tick`. Set it to the URL of the Cloud Run service of the processes that run the jobs (`role = all` or `worker`).
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_URL`
+- Default: `https://{host}`
+- Required: no
+
+### `queue_cloudtasks_service_account`
+
+Email of the service account whose OIDC ID token each task of `queue = cloudtasks` carries, and that the Cloud Scheduler job of the tick uses too. The server's own service account needs `roles/iam.serviceAccountUser` on it to create the tasks. `/_internal/jobs` and `/_internal/tick` accept only a Google-signed token of this account with a verified email.
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT`
+- Default: none
+- Required: when `queue = cloudtasks`
+
+### `queue_cloudtasks_audience`
+
+Audience of the OIDC ID tokens of `queue = cloudtasks`, which the tasks ask for and the endpoints require. Empty leaves the default of Cloud Tasks and Cloud Scheduler, the URL of the endpoint (`{queue_cloudtasks_url}/_internal/jobs`, `{queue_cloudtasks_url}/_internal/tick`); set the same value as the audience of the Cloud Scheduler job when you set it.
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_AUDIENCE`
+- Default: the URL of the endpoint called
+- Required: no
+
+### `queue_cloudtasks_dispatch_deadline`
+
+How long Cloud Tasks waits for one delivery of `queue = cloudtasks` to answer, from `15s` to `30m`. It must be longer than the 5-minute lease of a job run; set the request timeout of the Cloud Run service to at least this value.
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE`
+- Default: `10m`
+- Required: no
 
 ### `blob`
 
