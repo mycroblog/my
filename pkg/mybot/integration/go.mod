@@ -17,6 +17,8 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.3.0 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
+	cloud.google.com/go/kms v1.36.1 // indirect
+	cloud.google.com/go/longrunning v1.3.0 // indirect
 	cloud.google.com/go/pubsub/v2 v2.8.0 // indirect
 	code.superseriousbusiness.org/httpsig v1.5.0 // indirect
 	github.com/agentable/go-intl v0.2.17 // indirect
