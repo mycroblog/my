@@ -98,7 +98,7 @@ listen = "127.0.0.1:9000"
 `},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "example.org", SourceURL: "https://git.example.org/fork/my", WebOrigin: "http://localhost:5173", Role: RoleWeb, Listen: "127.0.0.1:9000", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "file:my.db", Queue: "sqs", QueueSQSQueueURL: "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "postgres", DatabaseURL: "file:my.db", Queue: "sqs", QueueSQSQueueURL: "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs", QueueSQSEventsPath: "/events", QueueSQSEventsBudget: 10 * time.Minute, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -574,6 +574,16 @@ func TestLoadInvalid(t *testing.T) {
 			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "sqs",
 				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs.fifo"),
 			want: []string{"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): must be a standard queue, not a FIFO queue"},
+		},
+		{
+			name: "malformed queue sqs events settings",
+			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "sqs",
+				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs",
+				"MY_QUEUE_SQS_EVENTS_PATH", "events/", "MY_QUEUE_SQS_EVENTS_BUDGET", "5m"),
+			want: []string{
+				"queue_sqs_events_path (MY_QUEUE_SQS_EVENTS_PATH): must be an absolute path other than /",
+				"queue_sqs_events_budget (MY_QUEUE_SQS_EVENTS_BUDGET): must be a Go duration longer than the 5m0s lease of a job run and at most 15m",
+			},
 		},
 		{
 			name: "malformed queue cloudtasks settings",

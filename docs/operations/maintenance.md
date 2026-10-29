@@ -22,7 +22,8 @@ Whatever the `role`, it serves HTTP only: no jobs, no periodic jobs, no stream b
 | `GET /healthz`, `GET /readyz` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
 | The rest of the client API (`/api/*`) and the OAuth endpoints that answer JSON | `503` | `application/problem+json` of type `/api/v1/problems/maintenance`, with `message`, `until`, and `status_page_url` when set |
-| ActivityPub (by path, `Accept`, or `Content-Type`), WebFinger, host-meta, NodeInfo, the payment webhooks | `503` | `{"error":"maintenance"}` |
+| ActivityPub (by path, `Accept`, or `Content-Type`), WebFinger, host-meta, NodeInfo, the payment webhooks, the Cloud Tasks and Cloud Scheduler calls (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
+| A `POST` that the Lambda Web Adapter passes through (`x-amzn-request-context: null`, an SQS event), at any path | `503` | `{"batchItemFailures":[...]}` listing every record, for SQS to deliver them again |
 | Anything else (pages, the web client, its assets, form posts) | `503` | The maintenance page, or the problem when `Accept` asks for JSON |
 
 Every response has `Retry-After` and `Cache-Control: no-store`. `Retry-After` counts the seconds to `maintenance_until` while it is ahead
@@ -80,7 +81,10 @@ A stop longer than a day or two is not a maintenance: close the service instead 
   every job that is due again.
 
 - **SQS with Lambda**: disable the event source mapping, which stops the polling and the invocations, and enable it after the work.
-  Otherwise each failure raises the message's receive count, and a message that reaches the redrive policy's `maxReceiveCount` moves to the dead-letter queue.
+  Otherwise the maintenance mode answers every SQS event that the Lambda Web Adapter passes through with all its records in `batchItemFailures`, so each
+  delivery raises the message's receive count, and a message that reaches the redrive policy's `maxReceiveCount` moves to the dead-letter queue.
+  Disable the EventBridge Scheduler schedule of the tick too (`aws scheduler update-schedule ... --state DISABLED`), or let its messages wait in the queue.
+  The jobs themselves are in the database: a lost signal is recovered by the first tick after the work.
 
   ```sh
   aws lambda update-event-source-mapping --uuid <mapping-uuid> --no-enabled

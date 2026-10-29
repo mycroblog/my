@@ -43,7 +43,7 @@ type ServeOptions struct {
 //   - every role serves HTTP on the listen address (the worker role only the health checks);
 //   - with metrics_exporter = prometheus, every role serves GET /metrics on metrics_listen;
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
-//     queue = cloudtasks serve the endpoints that run the jobs and tick the periodic ones;
+//     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
 //   - every role first ensures the built-in roles, giving admin every permission.
 //
 // When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
