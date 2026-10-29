@@ -47,7 +47,7 @@
 | FR-709〜711 通報の転送・対応・結果の通知 | S / M | `reports.forwarded`, `report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `notifications`（`report_resolved`） |
 | FR-712 モデレーターへの通知 | M | `notifications`（`admin_report`, `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`） |
 | FR-714 アカウントの管理 | M | `session_origins`, `registration_origins`, `user_primary_emails`, `moderation_actions`, `reports` |
-| FR-716〜717 連合への伝播・切れた関係 | M / S | `outbox_events`, `follow_terminations`, `relationship_severances` |
+| FR-716〜717 連合への伝播・切れた関係 | M / S | `jobs`, `follow_terminations`, `relationship_severances` |
 | FR-718 処分したドメインの公開 | S | `domain_moderation_actions`（`public_comment`, `obfuscate`）, `instance_settings`（`domain_actions_visibility`） |
 | FR-719 登録の拒否リスト | S | `signup_blocks`, `signup_block_lifts`, `registration_origins` |
 | FR-720 ロール | S | `user_role_grants`, `user_role_revocations`, `user_roles` |

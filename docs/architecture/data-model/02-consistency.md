@@ -4,7 +4,7 @@
 
 ADR-0003（短く再実行可能なトランザクション、内部で外部 I/O をしない）と ADR-0020 規約 7 に従います。
 
-- 1 つのコマンドは、**1 つのモジュールのリソース / イベント** を書き込みます。加えて、そのイベントを購読する **同期 projector**（自分の投影を更新）と `outbox_events` を、同じトランザクションで書きます。
+- 1 つのコマンドは、**1 つのモジュールのリソース / イベント** を書き込みます。加えて、そのイベントを購読する **同期 projector**（自分の投影を更新）と投入するジョブ（`jobs`、`Outbox.EnqueueTx`）を、同じトランザクションで書きます。
 - projector は購読するイベントの内容だけで投影を更新し、他モジュールのテーブルを読みません。必要な値はイベントに載せます。
 - 同期 projector は起動時に `uow.Projectors` へイベント種別ごとに登録します。コマンドがトランザクション関数の中で `tx.Emit(ctx, event)` を呼ぶと、登録順に同じトランザクションで実行され、projector の失敗はコマンドごとロールバックします。
 - コミットフック（`uow.Projectors.OnCommit`）は、コミットしたトランザクションが `tx.Emit` で発行したイベントを、コミットの後にトランザクションの外で受け取ります。
@@ -32,7 +32,7 @@ ADR-0003（短く再実行可能なトランザクション、内部で外部 I/
 | 処分 | `moderation_actions`（＋`moderation_action_statuses`） | `account_restrictions`, `feed_author_restrictions` | 通知・投稿の削除やセンシティブ化（大量なら非同期） |
 | Inbox 処理 | `received_activities` と対象のリソース / イベント | 対象に応じて | 対象に応じて |
 
-`queue/db` アダプタでは、outbox を経由せず同じトランザクションで `jobs` に挿入してもかまいません。
+表の「outbox」の列は、同じトランザクションで `Outbox.EnqueueTx` が `jobs` に書くジョブです。外部のキューを使うときもジョブは `jobs` に入ります（[ADR-0120](../../adr/0120-external-queue-wake-up-signals.md)）。
 
 利用者登録は、ログイン主体（`identity`）とそれが名乗るアカウント（`account`）が片方だけ存在する状態を作らないよう、例外として 2 つのモジュールに書き込みます。
 `identity` のコマンドが `account` のアプリケーション層の公開 API（`PrepareLocalAccount` / `WriteLocalAccount`）を同じトランザクションの中で呼び、`account` のテーブルは `account` のコードだけが書きます。

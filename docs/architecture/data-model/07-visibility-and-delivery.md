@@ -8,7 +8,7 @@
 | `private` | 作者のリモートフォロワー + メンション先 | 作成時の `deliveries` |
 | `direct` | メンション先 | 作成時の `deliveries` |
 
-1. 投稿のトランザクションで、`outbound_activities`（`Create`）と `outbox_events`（`federation.fanout`）を記録します。
+1. 投稿のトランザクションで、`outbound_activities`（`Create`）と `jobs`（`federation.fanout` ジョブ、`EnqueueTx`）を記録します。
 2. `federation.fanout` ジョブが宛先を一定件数ずつ算出し、`deliveries` に挿入します（`ON CONFLICT DO NOTHING`）。挿入できた行ごとに `federation.deliver` ジョブを投入し、カーソルを進めます（[federation.md §7.2](../federation.md#72-展開fan-out)）。
 3. `federation.deliver` の結果は `delivery_attempts` に記録し、同期 projector が `instance_health` を更新します。
 4. 配送先の算出とオブジェクト IRI への GET は、`canView` で判定します（ADR-0017, ADR-0018、[公開範囲の閲覧判定](../visibility.md)）。

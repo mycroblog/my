@@ -5,30 +5,10 @@
 -- and the conventions of this directory.
 
 -- ---------------------------------------------------------------------------------------------
--- 基盤: job queue and Transactional Outbox (data-model/04-tables/10-infrastructure.md §4.10, ADR-0004).
+-- 基盤: job queue (data-model/04-tables/10-infrastructure.md §4.10, ADR-0004).
 -- Owned by internal/adapter/queue/db. trace_parent is the W3C traceparent of the span that
 -- enqueued the job, which its run links to (ADR-0063 §2); an attribute of the job, not a state.
 -- ---------------------------------------------------------------------------------------------
-
--- Jobs written in a domain transaction, waiting for the relay to enqueue them.
-CREATE TABLE outbox_events (
-  id uuid NOT NULL PRIMARY KEY,
-  job_type text NOT NULL,
-  payload bytea NOT NULL,
-  idempotency_key text,
-  ordering_key text,
-  trace_parent text,
-  run_at timestamptz NOT NULL,
-  created_at timestamptz NOT NULL
-);
-
--- Current value: the lease of the relay that moves outbox_events, one row per outbox. Only the
--- holder relays until lease_until, so that overlapping relays keep the events in order.
-CREATE TABLE outbox_relay_leases (
-  name text NOT NULL PRIMARY KEY,
-  holder text NOT NULL,
-  lease_until timestamptz NOT NULL
-);
 
 -- Pending and running jobs of the database queue. A job is deleted when it finishes and moved
 -- to dead_jobs when it fails for good. A claim sets locked_by and locked_until together.

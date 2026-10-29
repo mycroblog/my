@@ -5,10 +5,8 @@
 package db_test
 
 import (
-	"context"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
@@ -30,7 +28,7 @@ func newDatabase(t *testing.T) string {
 	return pgtest.NewDatabase(t)
 }
 
-func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string, relay bool) testkit.QueueHarness {
+func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string) testkit.QueueHarness {
 	t.Helper()
 	d, err := postgres.Open(t.Context(), dsn, uow.Options{})
 	if err != nil {
@@ -40,45 +38,17 @@ func postgresHarness(t *testing.T, clock *testkit.Clock, dsn string, relay bool)
 	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
 	q := queuedb.NewPostgres(d, opts)
 	h := testkit.QueueHarness{Queue: q, Source: q, DeadJobs: q, UnitOfWork: d, Outbox: q, Inspector: q, Attempts: q}
-	if relay {
-		o := queuedb.NewPostgresOutbox(d, opts)
-		h.Outbox = o
-		h.Relay = func(ctx context.Context) error {
-			_, err := o.Relay(ctx, q, 0)
-			return err
-		}
-		return h
-	}
 	h.Restart = func(t *testing.T) testkit.QueueHarness {
 		d.Close()
-		return postgresHarness(t, clock, dsn, false)
+		return postgresHarness(t, clock, dsn)
 	}
 	return h
 }
 
 func TestPostgresQueueContract(t *testing.T) {
 	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return postgresHarness(t, clock, newDatabase(t), false)
+		return postgresHarness(t, clock, newDatabase(t))
 	})
-}
-
-// TestPostgresOutboxContract runs the contract with jobs enqueued in transactions through
-// outbox_events and relayed into the queue.
-func TestPostgresOutboxContract(t *testing.T) {
-	testkit.QueueContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return postgresHarness(t, clock, newDatabase(t), true)
-	})
-}
-
-func TestPostgresOverlappingRelays(t *testing.T) {
-	clock := testkit.NewClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
-	d, err := postgres.Open(t.Context(), newDatabase(t), uow.Options{})
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(d.Close)
-	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
-	testOverlappingRelays(t, d, queuedb.NewPostgresOutbox(d, opts), queuedb.NewPostgresOutbox(d, opts))
 }
 
 func TestPostgresWakeContract(t *testing.T) {
@@ -98,6 +68,6 @@ func TestPostgresWakeContract(t *testing.T) {
 
 func TestPostgresBacklogContract(t *testing.T) {
 	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
-		return postgresHarness(t, clock, newDatabase(t), false)
+		return postgresHarness(t, clock, newDatabase(t))
 	})
 }

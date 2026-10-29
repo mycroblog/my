@@ -33,14 +33,3 @@ type JobAttempt struct {
 	StartedAt  int64
 	FinishedAt int64
 }
-
-type OutboxEvent struct {
-	ID             string
-	JobType        string
-	Payload        []byte
-	IdempotencyKey sql.NullString
-	OrderingKey    sql.NullString
-	TraceParent    sql.NullString
-	RunAt          int64
-	CreatedAt      int64
-}

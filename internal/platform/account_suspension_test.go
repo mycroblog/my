@@ -52,11 +52,8 @@ func TestAccountSuspensionFederates(t *testing.T) {
 		if err := db.QueryRowContext(t.Context(), `SELECT count(*) FROM outbound_activities WHERE object_type = 'account' AND object_id = ? AND type = 'Update'`, alice).Scan(&activities); err != nil {
 			t.Fatal(err)
 		}
-		// The fan-out is in the transactional outbox until the relay moves it to the queue.
-		if err := db.QueryRowContext(t.Context(), `SELECT count(*) FROM (
-			SELECT payload FROM outbox_events WHERE job_type = 'federation.fanout'
-			UNION ALL SELECT payload FROM jobs WHERE type = 'federation.fanout'
-		) WHERE CAST(payload AS TEXT) LIKE '%"shared_inboxes":true%'`).Scan(&fanOuts); err != nil {
+		if err := db.QueryRowContext(t.Context(), `SELECT count(*) FROM jobs
+			WHERE type = 'federation.fanout' AND CAST(payload AS TEXT) LIKE '%"shared_inboxes":true%'`).Scan(&fanOuts); err != nil {
 			t.Fatal(err)
 		}
 		return activities, fanOuts

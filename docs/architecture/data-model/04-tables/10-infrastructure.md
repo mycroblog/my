@@ -2,8 +2,6 @@
 
 | テーブル | カラム | 一意 | インデックス |
 | --- | --- | --- | --- |
-| `outbox_events` | `id`, `job_type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `run_at`, `created_at` | — | PK 順に読み、キュー投入後に削除 |
-| `outbox_relay_leases`（現在値） | `name`, `holder`, `lease_until` | PK `(name)` | — |
 | `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(ordering_key, run_at)` |
 | `dead_jobs` | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `last_error`, `created_at`, `failed_at` | — | `(failed_at)` |
 | `job_attempts`（イベント） | `job_id`, `attempt`, `job_type`, `outcome`（`enum(retry, dead)`）, `error`（`text`、2,000 バイトまで）, `worker`, `started_at`, `finished_at` | PK `(job_id, attempt, finished_at)` | `(finished_at)` |
@@ -11,12 +9,10 @@
 | `data_upgrade_runs`（イベント、`db/*`） | `step_key`（`string`）, `completed_at` | PK `(step_key)` | — |
 
 - ジョブのペイロードはアダプタ間を渡る「解釈しない文書」なので `document` 型です（ドメインのデータは入れず、ID を渡します）。
-- `outbox_events` は投入先のキューに渡す値（`run_at` を含む）をすべて持ち、リレーがそのまま `JobQueue.Enqueue` に渡します。
-- `outbox_relay_leases` は【現在値】で、outbox のリレーのリース（outbox ごとに 1 行）です。リレーは 1 回ごとに、他の保持者のリースが切れているときだけ自分のリースを取り（upsert）、
-  投入先のキューへの投入をリースの終わりで打ち切り、投入した行の削除と同じトランザクションでリースを終えます。リースが既に切れていれば行を消さず、次のリレーに任せます。
-  これで同時に動くリレーが古い行を新しい行の後に投入することがなく、同じ `ordering_key` のジョブの順序を保ちます。
+- Transactional Outbox（ADR-0004）は `jobs` そのものです。`EnqueueTx` は呼び手のトランザクションで `jobs` に書き、外部のキュー（Cloud Tasks・SQS）を使うときも
+  ジョブは `jobs` に残り、外部のキューは起こす合図だけを運びます（[ADR-0120](../../../adr/0120-external-queue-wake-up-signals.md)）。
 - `trace_parent` はジョブを投入した span の W3C `traceparent` で、ジョブの実行の span はこれへの link を持ちます（[ADR-0063](../../../adr/0063-distributed-tracing.md) §2）。
-  状態でなくジョブの属性で、記録していない span から投入したジョブは NULL です。リレー・dead job への移動・再実行はそのまま引き継ぎます。
+  状態でなくジョブの属性で、記録していない span から投入したジョブは NULL です。dead job への移動・再実行はそのまま引き継ぎます。
 - `jobs` は未完了のジョブだけを持ちます。完了したジョブは削除し、恒久的に失敗したジョブは `dead_jobs` に移します。
   そのため `jobs (idempotency_key)` の一意制約は「未完了のジョブの間での一意」を表します。
 - `dead_jobs` は管理 API から再実行するまで残り、`failed_at` から設定 `dead_job_retention`（既定 30 日）を過ぎた行を 1 時間ごとの消去ジョブ `queue.purge_dead_jobs` が

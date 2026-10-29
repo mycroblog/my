@@ -28,9 +28,6 @@ type QueueHarness struct {
 	// enqueued through Outbox in a UnitOfWork transaction must exist exactly when it commits.
 	UnitOfWork uow.UnitOfWork
 	Outbox     queue.Outbox
-	// Relay, when set, moves the jobs written through Outbox into Queue. The contract calls it
-	// before running jobs.
-	Relay func(ctx context.Context) error
 	// Restart, when set, simulates a process restart: it drops every connection and in-memory
 	// state of the adapter and returns a harness on the same storage. Durable adapters set it.
 	Restart func(t *testing.T) QueueHarness
@@ -171,15 +168,9 @@ func (f *queueFixture) enqueue(jobs ...queue.NewJob) {
 	}
 }
 
-// drain relays the outbox, when the harness has one, and runs every due job with a runner
-// named "w1". It returns the number of jobs claimed.
+// drain runs every due job with a runner named "w1". It returns the number of jobs claimed.
 func (f *queueFixture) drain() int {
 	f.t.Helper()
-	if f.h.Relay != nil {
-		if err := f.h.Relay(f.t.Context()); err != nil {
-			f.t.Fatalf("Relay: %v", err)
-		}
-	}
 	n, err := f.runner("w1").Drain(f.t.Context())
 	if err != nil {
 		f.t.Fatalf("Drain: %v", err)
@@ -686,19 +677,9 @@ func (f *queueFixture) complete(worker string, j queue.Job) {
 	}
 }
 
-func (f *queueFixture) relay() {
-	f.t.Helper()
-	if f.h.Relay != nil {
-		if err := f.h.Relay(f.t.Context()); err != nil {
-			f.t.Fatalf("Relay: %v", err)
-		}
-	}
-}
-
 func queueLeasesOnePerOrderingKey(t *testing.T, newHarness QueueFactory) {
 	f := newQueueFixture(t, newHarness)
 	f.enqueue(keyedProbe("a1", "a"), keyedProbe("a2", "a"), keyedProbe("b1", "b"), probe(`{"N":"plain"}`))
-	f.relay()
 
 	a1 := f.wantClaim("w1", "a1")
 	f.wantClaim("w2", "b1") // a2 waits for a1
@@ -707,7 +688,6 @@ func queueLeasesOnePerOrderingKey(t *testing.T, newHarness QueueFactory) {
 
 	// The leased job holds back its key for jobs enqueued later too.
 	f.enqueue(keyedProbe("a3", "a"))
-	f.relay()
 	f.wantClaim("w4", "")
 
 	f.complete("w1", a1)
@@ -819,7 +799,6 @@ func queueSerializesKeysUnderConcurrency(t *testing.T, newHarness QueueFactory) 
 		batch = append(batch, probe(fmt.Sprintf(`{"N":"plain-%d"}`, seq)))
 	}
 	f.enqueue(batch...)
-	f.relay()
 
 	var wg sync.WaitGroup
 	errs := make(chan error, workers)
@@ -1068,7 +1047,6 @@ func queueConcurrentTransactions(t *testing.T, newHarness QueueFactory) {
 func queueRefusesRepeatedResults(t *testing.T, newHarness QueueFactory) {
 	f := newQueueFixture(t, newHarness)
 	f.enqueue(probe(`{"N":"done"}`), probe(`{"N":"released"}`))
-	f.relay()
 	ctx := t.Context()
 	claim := func() queue.Job {
 		t.Helper()

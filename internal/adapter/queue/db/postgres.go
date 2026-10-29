@@ -27,11 +27,6 @@ func NewPostgres(d *postgres.DB, opts Options) *Queue {
 	return newQueue(d, postgresStore{d}, opts)
 }
 
-// NewPostgresOutbox returns the outbox kept in the PostgreSQL database d.
-func NewPostgresOutbox(d *postgres.DB, opts Options) *Outbox {
-	return newOutbox(d, postgresStore{d}, opts)
-}
-
 type postgresStore struct{ db *postgres.DB }
 
 var _ store = postgresStore{}
@@ -232,76 +227,6 @@ func (s postgresStore) deleteDeadBefore(ctx context.Context, tx uow.Tx, before t
 		return 0, err
 	}
 	return q.DeleteDeadJobsBefore(ctx, postgresqueue.DeleteDeadJobsBeforeParams{FailedBefore: before, BatchLimit: int32Of(limit)})
-}
-
-func (s postgresStore) insertOutbox(ctx context.Context, tx uow.Tx, j queue.Job) error {
-	q, err := s.queries(tx)
-	if err != nil {
-		return err
-	}
-	return q.InsertOutboxEvent(ctx, postgresqueue.InsertOutboxEventParams{
-		ID:             j.ID,
-		JobType:        j.Type,
-		Payload:        j.Payload,
-		IdempotencyKey: optional(j.IdempotencyKey),
-		OrderingKey:    optional(j.OrderingKey),
-		TraceParent:    optional(j.TraceParent),
-		RunAt:          j.RunAt,
-		CreatedAt:      j.CreatedAt,
-	})
-}
-
-func (s postgresStore) listOutbox(ctx context.Context, tx uow.Tx, limit int) ([]queue.Job, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := q.ListOutboxEvents(ctx, int32Of(limit))
-	if err != nil {
-		return nil, err
-	}
-	out := make([]queue.Job, len(rows))
-	for i, r := range rows {
-		out[i] = queue.Job{
-			ID:             r.ID,
-			Type:           r.JobType,
-			Payload:        json.RawMessage(r.Payload),
-			IdempotencyKey: deref(r.IdempotencyKey),
-			OrderingKey:    deref(r.OrderingKey),
-			TraceParent:    deref(r.TraceParent),
-			RunAt:          kernel.Normalize(r.RunAt),
-			CreatedAt:      kernel.Normalize(r.CreatedAt),
-		}
-	}
-	return out, nil
-}
-
-func (s postgresStore) deleteOutbox(ctx context.Context, tx uow.Tx, id string) error {
-	q, err := s.queries(tx)
-	if err != nil {
-		return err
-	}
-	return q.DeleteOutboxEvent(ctx, id)
-}
-
-func (s postgresStore) acquireRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now, until time.Time) (bool, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return false, err
-	}
-	n, err := q.AcquireOutboxRelayLease(ctx, postgresqueue.AcquireOutboxRelayLeaseParams{
-		Name: name, Holder: holder, LeaseUntil: until, Now: now,
-	})
-	return n == 1, err
-}
-
-func (s postgresStore) endRelayLease(ctx context.Context, tx uow.Tx, name, holder string, now time.Time) (bool, error) {
-	q, err := s.queries(tx)
-	if err != nil {
-		return false, err
-	}
-	n, err := q.EndOutboxRelayLease(ctx, postgresqueue.EndOutboxRelayLeaseParams{Name: name, Holder: holder, Now: now})
-	return n == 1, err
 }
 
 func (s postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (queue.Backlog, error) {

@@ -12,39 +12,6 @@ import (
 	"database/sql"
 )
 
-const acquireOutboxRelayLease = `-- name: AcquireOutboxRelayLease :execrows
-INSERT INTO outbox_relay_leases (name, holder, lease_until)
-SELECT CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS INTEGER)
-WHERE NOT EXISTS (
-  SELECT 1 FROM outbox_relay_leases AS l
-  WHERE l.name = ?1 AND l.holder <> ?2 AND l.lease_until > ?4
-)
-ON CONFLICT (name) DO UPDATE SET holder = excluded.holder, lease_until = excluded.lease_until
-`
-
-type AcquireOutboxRelayLeaseParams struct {
-	Name       string
-	Holder     string
-	LeaseUntil int64
-	Now        int64
-}
-
-// AcquireOutboxRelayLease takes or renews the relay lease @name for @holder until
-// @lease_until, unless another holder's lease lasts beyond @now: it affects one row when
-// @holder holds the lease.
-func (q *Queries) AcquireOutboxRelayLease(ctx context.Context, arg AcquireOutboxRelayLeaseParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, acquireOutboxRelayLease,
-		arg.Name,
-		arg.Holder,
-		arg.LeaseUntil,
-		arg.Now,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}
-
 const claimJob = `-- name: ClaimJob :one
 UPDATE jobs
 SET locked_by = ?1, locked_until = ?2, attempt = attempt + 1
@@ -363,36 +330,6 @@ func (q *Queries) DeleteJobAttemptsBefore(ctx context.Context, arg DeleteJobAtte
 	return result.RowsAffected()
 }
 
-const deleteOutboxEvent = `-- name: DeleteOutboxEvent :exec
-DELETE FROM outbox_events WHERE id = ?
-`
-
-func (q *Queries) DeleteOutboxEvent(ctx context.Context, id string) error {
-	_, err := q.db.ExecContext(ctx, deleteOutboxEvent, id)
-	return err
-}
-
-const endOutboxRelayLease = `-- name: EndOutboxRelayLease :execrows
-UPDATE outbox_relay_leases SET lease_until = ?1
-WHERE name = ?2 AND holder = ?3 AND lease_until > ?1
-`
-
-type EndOutboxRelayLeaseParams struct {
-	Now    int64
-	Name   string
-	Holder string
-}
-
-// EndOutboxRelayLease ends the relay lease @name at @now when @holder still holds it: it
-// affects one row then, and none when the lease expired and another relay may have taken it.
-func (q *Queries) EndOutboxRelayLease(ctx context.Context, arg EndOutboxRelayLeaseParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, endOutboxRelayLease, arg.Now, arg.Name, arg.Holder)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}
-
 const getJobLease = `-- name: GetJobLease :one
 SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = ?
 `
@@ -459,7 +396,7 @@ type InsertJobParams struct {
 
 // SPDX-License-Identifier: AGPL-3.0-only
 //
-// Queries of the database job queue and the outbox (internal/adapter/queue/db) for SQLite.
+// Queries of the database job queue (internal/adapter/queue/db) for SQLite.
 // Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2).
 func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) error {
 	_, err := q.db.ExecContext(ctx, insertJob,
@@ -502,36 +439,6 @@ func (q *Queries) InsertJobAttempt(ctx context.Context, arg InsertJobAttemptPara
 		arg.Worker,
 		arg.StartedAt,
 		arg.FinishedAt,
-	)
-	return err
-}
-
-const insertOutboxEvent = `-- name: InsertOutboxEvent :exec
-INSERT INTO outbox_events (id, job_type, payload, idempotency_key, ordering_key, trace_parent, run_at, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`
-
-type InsertOutboxEventParams struct {
-	ID             string
-	JobType        string
-	Payload        []byte
-	IdempotencyKey sql.NullString
-	OrderingKey    sql.NullString
-	TraceParent    sql.NullString
-	RunAt          int64
-	CreatedAt      int64
-}
-
-func (q *Queries) InsertOutboxEvent(ctx context.Context, arg InsertOutboxEventParams) error {
-	_, err := q.db.ExecContext(ctx, insertOutboxEvent,
-		arg.ID,
-		arg.JobType,
-		arg.Payload,
-		arg.IdempotencyKey,
-		arg.OrderingKey,
-		arg.TraceParent,
-		arg.RunAt,
-		arg.CreatedAt,
 	)
 	return err
 }
@@ -683,45 +590,6 @@ func (q *Queries) ListJobAttempts(ctx context.Context, arg ListJobAttemptsParams
 			&i.Worker,
 			&i.StartedAt,
 			&i.FinishedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listOutboxEvents = `-- name: ListOutboxEvents :many
-SELECT id, job_type, payload, idempotency_key, ordering_key, trace_parent, run_at, created_at
-FROM outbox_events
-ORDER BY id
-LIMIT ?
-`
-
-func (q *Queries) ListOutboxEvents(ctx context.Context, limit int64) ([]OutboxEvent, error) {
-	rows, err := q.db.QueryContext(ctx, listOutboxEvents, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []OutboxEvent{}
-	for rows.Next() {
-		var i OutboxEvent
-		if err := rows.Scan(
-			&i.ID,
-			&i.JobType,
-			&i.Payload,
-			&i.IdempotencyKey,
-			&i.OrderingKey,
-			&i.TraceParent,
-			&i.RunAt,
-			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
