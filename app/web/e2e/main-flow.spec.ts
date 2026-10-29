@@ -38,9 +38,7 @@ const test = base.extend<{ secondPage: Page }>({
   },
 });
 
-// Without motion the colors do not transition (motion-safe:), so axe never samples a button in the middle
-// of changing its colors, such as the follow button right after it was pressed.
-test.use({ baseURL: serverURL, reducedMotion: "reduce" });
+test.use({ baseURL: serverURL });
 
 /** The project's locale. */
 function projectLocale(): string {

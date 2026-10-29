@@ -20,8 +20,7 @@ import { ownsServer, runMy } from "./server-cli.ts";
 import { serverURL } from "./server-origin.ts";
 import { readCatalog } from "./catalog.ts";
 
-// Without motion the colors do not transition, so axe never samples a color in the middle of a change.
-test.use({ baseURL: serverURL, reducedMotion: "reduce" });
+test.use({ baseURL: serverURL });
 
 /** How much longer every read of the API takes once the profile is saved. */
 const slowReads = 2000;

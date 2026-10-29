@@ -153,4 +153,28 @@ test.describe("OAuth apps", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
+
+  // The specs run without motion (playwright.config.ts); this one keeps the animated path of an alert dialog: with
+  // motion, the panel fades in over a transition, comes to rest opaque, and fades out before it unmounts.
+  test.describe("with motion", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("the alert dialog fades in to rest and fades out on its action", async ({ page }) => {
+      const actions = await operatorServer(page);
+      await page.goto("/admin/oauth-apps");
+      const table = page.getByRole("main").getByRole("table");
+      await table.getByRole("button", { name: appButtonName("admin.oauth_apps.disable_app") }).click();
+      const dialog = page.getByRole("alertdialog");
+      await expect(dialog).toBeVisible();
+      // The dialog's parent is the panel (React Aria's Modal), which transitions only with motion (motion-safe:).
+      const panel = dialog.locator("xpath=..");
+      await expect(panel).toHaveCSS("transition-duration", "0.2s");
+      await expect(panel).toHaveCSS("opacity", "1");
+      await expect(panel).not.toHaveAttribute("data-entering");
+      await dialog.getByRole("button", { name: message("admin.oauth_apps.disable"), exact: true }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(table.getByRole("button", { name: appButtonName("admin.oauth_apps.enable_app") })).toBeVisible();
+      expect(actions).toEqual([`POST /admin/oauth_clients/${appId}/disable`]);
+    });
+  });
 });

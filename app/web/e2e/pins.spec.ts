@@ -94,9 +94,6 @@ async function signedInServer(page: Page) {
   });
 }
 
-// Without motion the menu and the toast do not fade, so axe never samples them halfway.
-test.use({ reducedMotion: "reduce" });
-
 test.describe("the viewer's profile with a pinned post", () => {
   test.beforeEach(async ({ page }) => {
     await signedInServer(page);

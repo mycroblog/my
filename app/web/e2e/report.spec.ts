@@ -153,10 +153,6 @@ async function serveApi(page: Page): Promise<CreateReportRequest[]> {
   return reports;
 }
 
-// Without motion the dialog does not fade in (motion-safe:), so axe never samples its text half transparent:
-// the first step's heading has the focus as soon as the dialog mounts.
-test.use({ reducedMotion: "reduce" });
-
 /** Checks that the step's heading has the focus, and the page on that step. */
 async function expectStep(page: Page, key: string, makeAxeBuilder: Parameters<typeof expectNoAxeViolations>[0]) {
   await expect(page.getByRole("dialog").getByRole("heading", { name: message(key) })).toBeFocused();

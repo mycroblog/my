@@ -162,10 +162,6 @@ async function signedInServer(page: Page) {
 
 const profile = `/@${bob.acct}`;
 
-// Without motion the colors and the dialog do not transition (motion-safe:), so axe never samples a button
-// or the confirmation in the middle of changing its colors or fading in, which it can under load.
-test.use({ reducedMotion: "reduce" });
-
 /** The client message `key` in the project's locale. */
 function message(key: string): string {
   const locale = test.info().project.use.locale ?? "en";

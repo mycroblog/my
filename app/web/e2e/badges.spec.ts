@@ -98,8 +98,6 @@ async function signedInServer(page: Page) {
   );
 }
 
-test.use({ reducedMotion: "reduce" });
-
 test("a profile's badges are a named list next to the name, and not on the posts", async ({ page, makeAxeBuilder }) => {
   await signedInServer(page);
   await page.goto(`/@${bob.acct}`);
