@@ -9,6 +9,7 @@
 package config
 
 import (
+	"cmp"
 	"fmt"
 	"log/slog"
 	"net/netip"
@@ -61,8 +62,18 @@ type Config struct {
 	DB                 string
 	DatabaseURL        string
 	Queue              string
-	Blob               string
-	Media              string
+
+	// The queue, the URL of the endpoints, the service account and audience of the OIDC tokens,
+	// and the dispatch deadline of queue = cloudtasks. QueueCloudTasksURL has no trailing slash
+	// and defaults to https://{host}; an empty audience is the URL of the endpoint called.
+	QueueCloudTasksQueue            string
+	QueueCloudTasksURL              string
+	QueueCloudTasksServiceAccount   string
+	QueueCloudTasksAudience         string
+	QueueCloudTasksDispatchDeadline time.Duration
+
+	Blob  string
+	Media string
 	// BlobFSDir is the directory of the fs blob store.
 	BlobFSDir string
 	// The bucket, endpoint, region, addressing, and credentials of the s3 blob store; no
@@ -306,6 +317,11 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("db", c.DB),
 		slog.String("database_url", redact(c.DatabaseURL != "")),
 		slog.String("queue", c.Queue),
+		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
+		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
+		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
+		slog.String("queue_cloudtasks_audience", c.QueueCloudTasksAudience),
+		slog.Duration("queue_cloudtasks_dispatch_deadline", c.QueueCloudTasksDispatchDeadline),
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
 		slog.String("blob_fs_dir", c.BlobFSDir),
@@ -663,6 +679,10 @@ func load(src Source, maintenance bool) (*Config, []Setting, error) {
 	}
 	if cfg.WebOrigin == "" {
 		cfg.WebOrigin = "https://" + cfg.Host
+	}
+	if cfg.Queue == "cloudtasks" {
+		cfg.QueueCloudTasksURL = cmp.Or(cfg.QueueCloudTasksURL, "https://"+cfg.Host)
+		cfg.QueueCloudTasksDispatchDeadline = cmp.Or(cfg.QueueCloudTasksDispatchDeadline, DefaultCloudTasksDispatchDeadline)
 	}
 	if cfg.VoiceLiveKitAPIURL == "" {
 		cfg.VoiceLiveKitAPIURL = voiceAPIURL(cfg.VoiceLiveKitURL)

@@ -17,9 +17,8 @@ What does not need a backup:
 - **The key-value store** (`kv`). With `kv = db` it is part of the database. With `kv = memory` or `kv = valkey` it holds caches, rate-limit counters,
   and short-lived state such as a sign-in waiting for its second factor. After a restore with an empty Valkey, the caches fill again,
   the rate limits start over, and a sign-in or a voice call in progress has to start again.
-- **The job queue** (`queue`). With `queue = db` the jobs are part of the database and come back with it. With `queue = sqs` or `queue = cloudtasks`,
-  the jobs waiting in the queue are not in the backup; each job only carries out work that the database already recorded
-  (a delivery to another server, the processing of an upload), so losing them loses at most those deliveries and that processing.
+- **The job queue** (`queue`). With `queue = db` and `queue = cloudtasks` the jobs are part of the database and come back with it.
+  The tasks of Cloud Tasks only carry a signal for a job of the database; after a restore, the server signals the jobs that are due again within a few minutes.
 - **Logs and metrics**, which the server does not read back.
 
 The VAPID key of Web Push is a secret of the configuration. A new key stops push notifications to every existing subscription

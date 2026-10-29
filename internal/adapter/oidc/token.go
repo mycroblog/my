@@ -54,7 +54,7 @@ func (c *Client) VerifyIDToken(ctx context.Context, p appidentity.OIDCProvider, 
 	if err := c.verifySignature(ctx, p.JWKSURI, h, input, sig, now); err != nil {
 		return appidentity.IDToken{}, err
 	}
-	t, err := checkClaims(payload, p.Issuer, check, now)
+	t, err := checkClaims(payload, p.Issuer, check, now, true)
 	if err != nil {
 		return appidentity.IDToken{}, fmt.Errorf("%w: %w", appidentity.ErrInvalidIDToken, err)
 	}
@@ -130,8 +130,9 @@ func matching(keys []jwk, h header) []jwk {
 }
 
 // checkClaims checks the claims of a token whose signature verified (OpenID Connect Core 1.0
-// §3.1.3.7 steps 2, 3, 4, 5, 9, 10, 11, and 13).
-func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, now time.Time) (appidentity.IDToken, error) {
+// §3.1.3.7 steps 2, 3, 4, 5, 9, 10, 11, and 13). Without withNonce, it skips the nonce
+// (step 11): the token of a service account answers no authentication request.
+func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, now time.Time, withNonce bool) (appidentity.IDToken, error) {
 	var all map[string]json.RawMessage
 	if err := json.Unmarshal(payload, &all); err != nil {
 		return appidentity.IDToken{}, fmt.Errorf("payload: %w", err)
@@ -172,7 +173,7 @@ func checkClaims(payload []byte, issuer string, check appidentity.IDTokenCheck, 
 	if iat.After(now.Add(ClockSkew)) {
 		return appidentity.IDToken{}, fmt.Errorf("the token is issued in the future at %s", iat)
 	}
-	if c.Nonce != check.Nonce {
+	if withNonce && c.Nonce != check.Nonce {
 		return appidentity.IDToken{}, errors.New("the nonce does not match")
 	}
 	var authTime time.Time

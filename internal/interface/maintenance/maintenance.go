@@ -47,8 +47,9 @@ var shortJSON = map[string]bool{
 }
 
 // shortJSONPrefixes are the path prefixes of ActivityPub, NodeInfo, and the notifications of
-// other services (the payment webhooks), whose senders retry.
-var shortJSONPrefixes = []string{"/ap/", "/nodeinfo/", "/payments/webhooks/"}
+// other services (the payment webhooks, the platform queues and schedulers that call
+// /_internal/jobs and /_internal/tick), whose senders retry.
+var shortJSONPrefixes = []string{"/ap/", "/nodeinfo/", "/payments/webhooks/", "/_internal/"}
 
 // Options configure a Handler.
 type Options struct {

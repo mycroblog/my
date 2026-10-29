@@ -34,7 +34,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 	// The attempt log is in the database whatever the queue (ADR-0064 §1).
 	dbQueue := queuedb.NewPostgres(d, queueOpts)
 	a.JobAttempts = dbQueue
-	if cfg.Queue == "db" {
+	if queueInDatabase(cfg.Queue) {
 		a.setDBQueue(dbQueue)
 	}
 	if cfg.KV == "db" {

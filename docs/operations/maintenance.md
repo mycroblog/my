@@ -75,6 +75,10 @@ A stop longer than a day or two is not a maintenance: close the service instead 
   gcloud tasks queues resume my-jobs --location=asia-northeast1
   ```
 
+  Pause the Cloud Scheduler job of `/_internal/tick` too (`gcloud scheduler jobs pause` / `resume`), or let its calls fail with `503` meanwhile.
+  The jobs themselves are in the database: a task that used up its attempts loses only its signal, and the first tick after the work signals
+  every job that is due again.
+
 - **SQS with Lambda**: disable the event source mapping, which stops the polling and the invocations, and enable it after the work.
   Otherwise each failure raises the message's receive count, and a message that reaches the redrive policy's `maxReceiveCount` moves to the dead-letter queue.
 

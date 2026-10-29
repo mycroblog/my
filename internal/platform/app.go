@@ -240,6 +240,22 @@ type App struct {
 	FederationSever *federation.Severance
 
 	source queue.Source
+	// wakeFinder finds the jobs of the database queue that need a wake-up signal.
+	wakeFinder queue.WakeFinder
+	// waker sends the wake-up signals of an external queue (queue = cloudtasks, ADR-0120), and
+	// closeWaker releases its client; both are nil for the other queues.
+	waker      queue.Waker
+	closeWaker io.Closer
+	// pushAuth checks the credentials of the requests to internalRoutes; nil builds the one of
+	// the queue.
+	pushAuth queue.PushAuthenticator
+	// pushReceiver runs the jobs of the wake-up signals instead of a pull runner; nil without a
+	// waker. internalRoutes are its endpoints and the trigger's, served by the roles that run jobs.
+	pushReceiver   *queue.PushReceiver
+	internalRoutes []route
+	// trigger runs the periodic jobs on the calls of the platform's scheduler, instead of the
+	// Scheduler's own ticks; nil without a waker.
+	trigger *queue.Trigger
 	// ready reports whether the database is reachable and its schema applied.
 	ready  func(ctx context.Context) error
 	closer func() error
@@ -343,6 +359,11 @@ type AppOptions struct {
 	// key_manager = local for the KMS adapter of kms_key that only unwraps. Tests only, to move
 	// the sealed values between kinds of KeyManager.
 	KeyManager kernel.KeyManager
+	// Waker and PushAuthenticator stand in for the Cloud Tasks client and the check of the OIDC
+	// ID tokens of queue = cloudtasks. Tests only, to signal and call the endpoints without
+	// Google Cloud.
+	Waker             queue.Waker
+	PushAuthenticator queue.PushAuthenticator
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -397,6 +418,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.Sealer = kernel.NewSealer(a.KeyManager)
+	a.waker, a.pushAuth = opts.Waker, opts.PushAuthenticator
 	repos, err := a.openDatabase(ctx, cfg)
 	if err != nil {
 		_ = a.Close() // releases the telemetry set up above
@@ -424,6 +446,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if a.HTTPClient == nil {
 		a.HTTPClient = newHTTPClient(cfg, opts.Version, a.Logger, a.Meter, a.Tracer)
 	}
+	a.setUpPushEndpoints(cfg)
 	// The identity module's sign-in and registration check the CAPTCHA through it (ADR-0042 §3).
 	if a.HumanVerifier, a.HumanCheckWidget, err = newHumanVerifier(cfg, a.HTTPClient, a.Logger); err != nil {
 		return nil, err
@@ -707,6 +730,10 @@ func (a *App) Close() error {
 		_ = c.Close()
 	}
 	a.keyManagerClosers = nil
+	if a.closeWaker != nil {
+		_ = a.closeWaker.Close()
+		a.closeWaker = nil
+	}
 	if a.valkey != nil {
 		a.valkey.Close()
 	}

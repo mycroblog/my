@@ -67,6 +67,18 @@ type repositories struct {
 // queue = db and kv = db it also sets the queue and the key-value store on the database.
 func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositories, error) {
 	queueOpts := queuedb.Options{Clock: a.Clock, IDs: a.IDs, Tracer: a.Tracer}
+	if cfg.Queue == "cloudtasks" {
+		if a.waker == nil {
+			w, closer, err := newCloudTasksWaker(ctx, cfg, a.Clock, a.ErrorReporter)
+			if err != nil {
+				return nil, err
+			}
+			a.waker, a.closeWaker = w, closer
+		}
+		queueOpts.Waker, queueOpts.Projectors, queueOpts.Logger = a.waker, a.Projectors, a.Logger
+	} else {
+		a.waker = nil
+	}
 	switch cfg.DB {
 	case "sqlite":
 		return a.openSQLite(ctx, cfg, queueOpts)
@@ -76,6 +88,10 @@ func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositori
 		return nil, fmt.Errorf("db %q is not implemented yet", cfg.DB)
 	}
 }
+
+// queueInDatabase reports whether the jobs of the queue are in the database: queue = db, and
+// queue = cloudtasks, which only carries wake-up signals for them (ADR-0120).
+func queueInDatabase(queue string) bool { return queue == "db" || queue == "cloudtasks" }
 
 // valkeyServer is the connection to valkey_url that the adapters configured with it share.
 type valkeyServer interface {

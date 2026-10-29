@@ -3,6 +3,7 @@ module github.com/mycroblog/my
 go 1.27.3
 
 require (
+	cloud.google.com/go/cloudtasks v1.21.1
 	cloud.google.com/go/compute/metadata v0.10.0
 	cloud.google.com/go/kms v1.36.1
 	cloud.google.com/go/pubsub/v2 v2.8.0

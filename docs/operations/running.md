@@ -129,7 +129,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 
 | Metric | Kind | Labels |
 | --- | --- | --- |
-| `http.server.request.duration` | Histogram, seconds | `http.request.method`, `http.route` (the route pattern's path; `other` when none matches), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments` / `voice`) |
+| `http.server.request.duration` | Histogram, seconds | `http.request.method`, `http.route` (the route pattern's path; `other` when none matches), `http.response.status_code`, `my.surface` (`client_api` / `admin` / `activitypub` / `oauth` / `media` / `web` / `payments` / `voice` / `queue`) |
 | `http.server.active_requests` | UpDownCounter | `my.surface` |
 | `my.inbox.activities` | Counter | `activity.type` (a known Activity type, or `other`), `my.outcome` (`accepted` / `duplicate` / `rejected` / `ignored` / `error`), `my.inbox.rejection` (only with `rejected`: `signature` for a signature or integrity proof that is missing, invalid or does not verify, or whose key could not be fetched; `suspended` for a suspended domain; `federation_off`; `rate_limited`; `invalid` for an activity without a valid `id`, `type`, `actor` or `object`) |
 | `my.relay.activities` | Counter | `my.outcome` (`admitted` / `over_limit` / `restricted` / `not_receiving`: whether an activity carried by a relay was ingested, and why it was dropped; see [Federation relays](relays.md)) |
@@ -270,13 +270,13 @@ The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's 
 It also shows the count per type and state, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
 
-- Waiting, running and retry-waiting jobs can be listed only for the database queue (`queue = db`) and `queue = inline`. For Cloud Tasks and SQS queues the page says so, and you watch backlog in the platform's metrics. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
+- Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` (the jobs are in the database too) and `queue = inline`. For SQS queues the page says so, and you watch backlog in the platform's metrics. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
 - The attempt history keeps only unsuccessful attempts (retries and the attempt that finally failed). Follow a successful run through the structured `job` log line (which carries `job_id`).
   The history is removed by the hourly cleanup once `job_attempt_retention` (default 30 days; see the [setting](../reference/configuration.md#job_attempt_retention)) has passed since the attempt ended.
   The history holds no payload or handler log, and an error message is cut to its first 2,000 bytes. Job handlers keep email addresses, IP addresses, tokens and post bodies out of error messages.
   For a view limited to email job types, see [Sending email](email.md).
 
-A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db`).
+A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db` and `queue = cloudtasks`).
 `my job` lists, retries and deletes them. The "Failed" state of the jobs page and the admin API can also list and retry them.
 
 ```sh
@@ -289,6 +289,27 @@ my job delete <id> [<id>...] # remove without running
 - An unknown ID is printed and the command exits with code 1; the other IDs are still processed. Exit code 2 means a usage error.
 - A dead job that nobody retries is removed by the hourly cleanup once `dead_job_retention` (default 30 days; see the [setting](../reference/configuration.md#dead_job_retention)) has passed since the failure.
 - Dead jobs of `queue = inline` live in the server process's memory, so `my job` cannot handle them (exit code 1).
+
+### Cloud Tasks
+
+With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:
+
+- For every job it stores, retries, or puts back, the server creates a task in `queue_cloudtasks_queue` once the transaction commits. The task calls
+  `POST {queue_cloudtasks_url}/_internal/jobs` at the time the job is due, with the job's ID as its body and an OIDC ID token of
+  `queue_cloudtasks_service_account`. A job due more than 30 days ahead is signaled at 30 days, and again when that task arrives.
+- The process that receives the task runs the job and answers `204` once its result is recorded, also when the job already ran or is not due.
+  A job that fails is retried by the server at its next attempt time, not by Cloud Tasks. Cloud Tasks retries a task only when the
+  answer is `5xx` (the database could not be reached) or `401` (a token that the server refused), so its `retryConfig` needs no tuning.
+- No process polls the table and no process runs the periodic jobs by itself. Create a Cloud Scheduler job that calls
+  `POST {queue_cloudtasks_url}/_internal/tick` every minute (`* * * * *`) with an OIDC token of the same service account (and the audience of
+  `queue_cloudtasks_audience`, when set). Each tick enqueues the periodic jobs whose period came, once for the whole instance (the periods are claimed in the KV,
+  so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running, which recovers a lost signal.
+- `/_internal/jobs` and `/_internal/tick` are served by the processes with `role = all` or `worker`, and accept only a token signed by Google for
+  `queue_cloudtasks_service_account` with a verified email, whose audience is `queue_cloudtasks_audience` or, by default, the URL called. Any other request is a `401`.
+- A delivery runs one job, for at most the 5-minute lease. Keep `queue_cloudtasks_dispatch_deadline` (default 10 minutes) and the request timeout of
+  the Cloud Run service longer than that.
+- The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.
+  It authenticates with Application Default Credentials.
 
 ## Health checks
 
