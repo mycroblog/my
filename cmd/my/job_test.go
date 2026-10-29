@@ -74,7 +74,7 @@ func TestJobCommands(t *testing.T) {
 	}
 
 	t.Setenv(config.EnvPrefix+"QUEUE", "inline")
-	if code, _, stderr := runCmd(t, jobCmd, "list"); code != 1 || !strings.Contains(stderr, "only queue = db and cloudtasks do") {
+	if code, _, stderr := runCmd(t, jobCmd, "list"); code != 1 || !strings.Contains(stderr, "only queue = db, cloudtasks, and sqs do") {
 		t.Errorf("job list with the inline queue = %d %q", code, stderr)
 	}
 }

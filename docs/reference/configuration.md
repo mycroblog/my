@@ -63,6 +63,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`db`](#db) | `MY_DB` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
 | [`queue`](#queue) | `MY_QUEUE` | `db` | no | no |
+| [`queue_sqs_queue_url`](#queue_sqs_queue_url) | `MY_QUEUE_SQS_QUEUE_URL` | none | when `queue = sqs` | no |
 | [`queue_cloudtasks_queue`](#queue_cloudtasks_queue) | `MY_QUEUE_CLOUDTASKS_QUEUE` | none | when `queue = cloudtasks` | no |
 | [`queue_cloudtasks_url`](#queue_cloudtasks_url) | `MY_QUEUE_CLOUDTASKS_URL` | `https://{host}` | no | no |
 | [`queue_cloudtasks_service_account`](#queue_cloudtasks_service_account) | `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT` | none | when `queue = cloudtasks` | no |
@@ -357,8 +358,16 @@ Job queue adapter.
 | --- | --- | --- |
 | `db` | yes | Queue table in the database. |
 | `inline` | yes | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
-| `sqs` | yes | Amazon SQS. |
+| `sqs` | yes | The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: this build sends the signals but has no receiver for them yet, so the jobs wait in the table (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
 | `cloudtasks` | yes | The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
+
+### `queue_sqs_queue_url`
+
+URL of the SQS standard queue of `queue = sqs`, `https://sqs.{region}.amazonaws.com/{account}/{name}`, which carries the wake-up signals; the client uses the region of the URL. The server's credentials need `sqs:SendMessage` on it.
+
+- Environment variable: `MY_QUEUE_SQS_QUEUE_URL`
+- Default: none
+- Required: when `queue = sqs`
 
 ### `queue_cloudtasks_queue`
 

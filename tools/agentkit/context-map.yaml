@@ -345,6 +345,13 @@ entries:
     notes:
       - "queue = cloudtasks keeps the jobs in the database queue (queue/db with Options.Waker); internal/adapter/queue/cloudtasks creates one unnamed HTTP-target task per signal (body = job ID, scheduleTime = At clamped to MaxDelay, OIDC token) and checks the Google OIDC ID tokens (Authenticator, over oidc.Client.VerifyServiceToken). internal/interface/queuepush serves POST /_internal/jobs (queue.PushReceiver) and POST /_internal/tick (queue.Trigger) on the roles all and worker: 2xx once recorded, 401 for a bad token, 5xx otherwise; no pull runner and no in-process scheduler run."
       - "Tests fake the Cloud Tasks gRPC API in-process and sign tokens with testkit.FakeOIDCProvider; the platform test injects AppOptions.Waker and PushAuthenticator. Nothing reaches Google Cloud. The build tag no_cloudtasks leaves the adapter and cloud.google.com/go/cloudtasks out."
+  - name: queue-sqs
+    paths: ["internal/adapter/queue/sqs/**", "internal/platform/adapters_*sqs.go", "internal/platform/config/adapters_*sqs.go", "internal/platform/queue_sqs_test.go"]
+    docs: ["docs/adr/0120-external-queue-wake-up-signals.md", "docs/adr/0004-job-queue-abstraction.md"]
+    userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/reference/build-tags.md"]
+    notes:
+      - "queue = sqs keeps the jobs in the database queue (queue/db with Options.Waker); internal/adapter/queue/sqs sends one message per signal to a standard queue (body = job ID, DelaySeconds = the seconds until At rounded up, at most 900), SendMessage for one and SendMessageBatch of at most 10 for several, in the region of queue_sqs_queue_url. Nothing polls SQS (ADR-0120 §6): no pull runner and no in-process scheduler run, and the Lambda receiver of the signals is issue #1840."
+      - "Tests fake the two SQS calls behind the adapter's Client interface; the platform test injects AppOptions.Waker. Nothing reaches AWS. The build tag no_sqs leaves the adapter out, and with no_sns also github.com/aws/aws-sdk-go-v2/service/sqs."
   - name: adapter-messaging
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]

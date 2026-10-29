@@ -270,13 +270,13 @@ The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's 
 It also shows the count per type and state, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
 
-- Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` (the jobs are in the database too) and `queue = inline`. For SQS queues the page says so, and you watch backlog in the platform's metrics. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
+- Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` and `queue = sqs` (the jobs are in the database too), and `queue = inline`. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
 - The attempt history keeps only unsuccessful attempts (retries and the attempt that finally failed). Follow a successful run through the structured `job` log line (which carries `job_id`).
   The history is removed by the hourly cleanup once `job_attempt_retention` (default 30 days; see the [setting](../reference/configuration.md#job_attempt_retention)) has passed since the attempt ended.
   The history holds no payload or handler log, and an error message is cut to its first 2,000 bytes. Job handlers keep email addresses, IP addresses, tokens and post bodies out of error messages.
   For a view limited to email job types, see [Sending email](email.md).
 
-A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db` and `queue = cloudtasks`).
+A job whose handler decided it failed for good, and a job that used up its retries, becomes a dead job in the database queue (`queue = db`, `queue = cloudtasks` and `queue = sqs`).
 `my job` lists, retries and deletes them. The "Failed" state of the jobs page and the admin API can also list and retry them.
 
 ```sh
@@ -310,6 +310,18 @@ With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `lib
   the Cloud Run service longer than that.
 - The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.
   It authenticates with Application Default Credentials.
+
+### Amazon SQS
+
+With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
+
+- For every job it stores, retries, or puts back, the server sends a message to `queue_sqs_queue_url` once the transaction commits, with the job's ID as its body
+  and a delay until the job is due. SQS delays a message by at most 15 minutes, so a job due later is signaled at 15 minutes, and again when that message arrives.
+  Several signals at once go in batches of up to 10 messages.
+- Use a standard queue, not a FIFO queue. The server's credentials, from the AWS SDK's default chain (the task or execution role, the environment, the shared files),
+  need `sqs:SendMessage` on it. The client uses the region in the queue URL.
+- No process polls the table or the SQS queue, and no process runs the periodic jobs by itself. This version does not yet include the receiver of the signals,
+  so with `queue = sqs` the jobs wait in the table and do not run.
 
 ## Health checks
 

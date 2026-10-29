@@ -71,6 +71,8 @@ type Config struct {
 	QueueCloudTasksServiceAccount   string
 	QueueCloudTasksAudience         string
 	QueueCloudTasksDispatchDeadline time.Duration
+	// QueueSQSQueueURL is the URL of the SQS standard queue of queue = sqs.
+	QueueSQSQueueURL string
 
 	Blob  string
 	Media string
@@ -322,6 +324,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
 		slog.String("queue_cloudtasks_audience", c.QueueCloudTasksAudience),
 		slog.Duration("queue_cloudtasks_dispatch_deadline", c.QueueCloudTasksDispatchDeadline),
+		slog.String("queue_sqs_queue_url", c.QueueSQSQueueURL),
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
 		slog.String("blob_fs_dir", c.BlobFSDir),

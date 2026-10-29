@@ -17,14 +17,14 @@ import (
 
 // setUpQueue builds the job queue that cfg.Queue selects, the runner of the worker role, and the
 // scheduler of the periodic jobs. The db queue is set with the database, before it, and so is the
-// database queue of cloudtasks with its waker: there a push receiver runs the jobs of the
-// signals instead of a runner (ADR-0120 §2).
+// database queue of cloudtasks and sqs with its waker: there a push receiver runs the jobs of
+// the signals instead of a runner (ADR-0120 §2).
 func (a *App) setUpQueue(cfg *config.Config) error {
 	runnerOpts := queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts, Errors: a.ErrorReporter}
 	switch cfg.Queue {
 	case "db":
 		// Set with the database above.
-	case "cloudtasks":
+	case "cloudtasks", "sqs":
 		// The jobs are in the database queue, whose operations are measured as queue.db.
 		a.Jobs = sysmetrics.Jobs(a.Jobs, a.Meter, "queue.db")
 		src := sysmetrics.Source(a.source, a.Meter, "queue.db")
@@ -75,6 +75,10 @@ func (a *App) setUpPushEndpoints(cfg *config.Config) {
 	}
 	a.Scheduler.UseSharedSlots(a.KV)
 	a.trigger = queue.NewTrigger(a.Scheduler, queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: a.wakeFinder, Waker: a.waker, Clock: a.Clock}))
+	if cfg.Queue != "cloudtasks" {
+		// queue = sqs serves no receiver of its signals: no process of this build runs their jobs.
+		return
+	}
 	if a.pushAuth == nil {
 		a.pushAuth = newCloudTasksAuthenticator(cfg, a.HTTPClient, a.Clock)
 	}
