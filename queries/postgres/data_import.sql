@@ -72,7 +72,7 @@ SELECT EXISTS (
 
 -- LockDataImport locks an import against its deletion until the transaction ends.
 -- name: LockDataImport :one
-SELECT id FROM data_imports WHERE id = sqlc.arg(id)::uuid FOR SHARE;
+SELECT id FROM data_imports WHERE id = sqlc.arg(id)::uuid FOR KEY SHARE;
 
 -- InsertDataImportItemFailure records a failed run of an item as the attempt after its last one
 -- and returns that attempt.

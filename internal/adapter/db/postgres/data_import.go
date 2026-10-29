@@ -72,7 +72,7 @@ func (r *IdentityRepository) LockUnfinishedDataImports(ctx context.Context, tx u
 	return unfinished, wrap(err, "find an unfinished data import")
 }
 
-// lockDataImport locks an import with SELECT ... FOR SHARE, so that DeleteDataImport, which
+// lockDataImport locks an import with SELECT ... FOR KEY SHARE, so that DeleteDataImport, which
 // deletes the import's row first, waits for tx; it fails with ErrNotFound when the import is
 // gone.
 func lockDataImport(ctx context.Context, q *postgresgen.Queries, importID string) error {
