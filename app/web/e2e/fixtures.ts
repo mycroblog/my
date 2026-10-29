@@ -84,10 +84,17 @@ export const localeDir = (locale: string): "ltr" | "rtl" => (rtlLocales.has(loca
  * halfway through, the text and its background are both between their two values and can fail the contrast.
  * The page is checked as it rests, so the scan waits for the end values; animations that never end (a
  * spinner, a skeleton's pulse) are left running.
+ *
+ * A transition can also start a frame after the page looked at rest: a React Aria overlay mounts with
+ * `data-entering` (opacity 0) and drops it on a later frame, which starts its fade-in, and the focus it moves
+ * inside starts the colour transition of the focused button. So the page counts as resting only once no
+ * element is entering or exiting and two frames in a row start nothing.
  */
 async function settleAnimations(page: Page): Promise<void> {
   await page.evaluate(async () => {
-    for (;;) {
+    const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    let restingFrames = 0;
+    while (restingFrames < 2) {
       // getAnimations() brings the styles up to date first, so a transition that a class change starts is listed.
       const running = document
         .getAnimations()
@@ -95,9 +102,14 @@ async function settleAnimations(page: Page): Promise<void> {
           (animation) =>
             animation.playState === "running" && Number.isFinite(animation.effect?.getComputedTiming().endTime),
         );
-      if (running.length === 0) return;
-      // An animation cancelled on the way (its element removed) rejects `finished`; it no longer runs either.
-      await Promise.allSettled(running.map((animation) => animation.finished));
+      if (running.length > 0) {
+        restingFrames = 0;
+        // An animation cancelled on the way (its element removed) rejects `finished`; it no longer runs either.
+        await Promise.allSettled(running.map((animation) => animation.finished));
+        continue;
+      }
+      restingFrames = document.querySelector("[data-entering], [data-exiting]") === null ? restingFrames + 1 : 0;
+      await nextFrame();
     }
   });
 }

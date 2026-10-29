@@ -126,6 +126,11 @@ test.describe("the local timeline", () => {
     await expect(reveal).toHaveAttribute("aria-pressed", "false");
     await reveal.click();
     await expect(warned.getByRole("img")).toBeVisible();
+    // The presses scrolled the feed, and wherever it stopped, a post's links may lie under the sticky top bar,
+    // which axe's target-size counts as an overlap. The scan reads the page from its top, where nothing is under it.
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
