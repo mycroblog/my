@@ -73,7 +73,7 @@ func TestCheckKeyName(t *testing.T) {
 		"kek":                         "resource name",
 		keyA + "/cryptoKeyVersions/1": "without a version",
 		"projects/p/locations/global/keyRings/r/cryptoKeys/" + strings.Repeat("k", 64): "resource name",
-		"projects/p/locations/global/keyRings/r/cryptoKeys/k ":                         "resource name",
+		"projects/p/locations/global/keyRings/r/cryptoKeys/k\t":                        "resource name",
 		tooLong: "at most 248 bytes",
 	} {
 		if err := gcpkms.CheckKeyName(name); err == nil || !strings.Contains(err.Error(), want) {

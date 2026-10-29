@@ -116,7 +116,7 @@ func writeServiceAccount(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := json.Marshal(map[string]string{
+	b, err := json.Marshal(map[string]string{ //nolint:gosec // G101: a throwaway key generated above, of an account that exists nowhere
 		"type": "service_account", "project_id": "my-project", "private_key_id": "test",
 		"private_key":  string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})),
 		"client_email": "my@my-project.iam.gserviceaccount.com", "client_id": "1",
