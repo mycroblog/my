@@ -14,7 +14,7 @@ import (
 var ErrNotFound = errors.New("instance: not found")
 
 // Repository is the persistence port of the instance module's settings, texts, rules, theme, brand images,
-// announcements, and service closure (data-model §4.9). The database adapters implement it and
+// announcements, service closure, and secrets (data-model §4.9). The database adapters implement it and
 // pass testkit.InstanceRepositoryContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data
@@ -56,4 +56,5 @@ type Repository interface {
 	BrandRepository
 	AnnouncementRepository
 	ClosureRepository
+	SecretRepository
 }

@@ -21,6 +21,7 @@ func (d *DB) SealedValueStore() *SealedValueStore { return &SealedValueStore{db:
 
 // The sealed columns, as "table.column".
 const (
+	sealedInstanceSecrets       = "instance_secrets.sealed_secret"
 	sealedAccountPrivateKeys    = "local_account_private_keys.private_key_enc"
 	sealedLoginProviderSecrets  = "login_provider_secrets.sealed_secret"
 	sealedTOTPEnrollmentSecrets = "totp_enrollments.secret_enc"
@@ -29,7 +30,7 @@ const (
 
 // Columns implements rewrap.Store.
 func (s *SealedValueStore) Columns() []string {
-	return []string{sealedAccountPrivateKeys, sealedLoginProviderSecrets, sealedTOTPEnrollmentSecrets, sealedWebhookSecrets}
+	return []string{sealedInstanceSecrets, sealedAccountPrivateKeys, sealedLoginProviderSecrets, sealedTOTPEnrollmentSecrets, sealedWebhookSecrets}
 }
 
 // List implements rewrap.Store.
@@ -53,6 +54,12 @@ func (s *SealedValueStore) List(ctx context.Context, column, after string, limit
 	case sealedTOTPEnrollmentSecrets:
 		var rows []sqlitegen.ListSealedTOTPEnrollmentSecretsRow
 		rows, err = q.ListSealedTOTPEnrollmentSecrets(ctx, sqlitegen.ListSealedTOTPEnrollmentSecretsParams{After: after, PageLimit: int64(limit)})
+		for _, r := range rows {
+			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
+		}
+	case sealedInstanceSecrets:
+		var rows []sqlitegen.ListSealedInstanceSecretsRow
+		rows, err = q.ListSealedInstanceSecrets(ctx, sqlitegen.ListSealedInstanceSecretsParams{After: after, PageLimit: int64(limit)})
 		for _, r := range rows {
 			out = append(out, rewrap.Value{RowID: r.RowID, Sealed: r.Sealed})
 		}
@@ -82,6 +89,8 @@ func (s *SealedValueStore) Replace(ctx context.Context, tx uow.Tx, column, rowID
 		n, err = q.ReplaceSealedLoginProviderSecrets(ctx, sqlitegen.ReplaceSealedLoginProviderSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedTOTPEnrollmentSecrets:
 		n, err = q.ReplaceSealedTOTPEnrollmentSecrets(ctx, sqlitegen.ReplaceSealedTOTPEnrollmentSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
+	case sealedInstanceSecrets:
+		n, err = q.ReplaceSealedInstanceSecrets(ctx, sqlitegen.ReplaceSealedInstanceSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	case sealedWebhookSecrets:
 		n, err = q.ReplaceSealedWebhookSecrets(ctx, sqlitegen.ReplaceSealedWebhookSecretsParams{Sealed: sealed, RowID: rowID, OldSealed: old})
 	default:

@@ -103,6 +103,11 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			a.Logger.WarnContext(ctx, "web client not registered yet", slog.Any("error", err))
 		}
 	}
+	// The media proxy's key is generated on the first start and read on the others; a schema
+	// applied after the start only delays it to the first use.
+	if err := a.MediaProxy.LoadKeys(ctx); err != nil {
+		a.Logger.WarnContext(ctx, "media proxy key not loaded yet", slog.Any("error", err))
+	}
 	metricsSrv, err := a.serveMetrics(ctx, opts.MetricsListener)
 	if err != nil {
 		_ = ln.Close()

@@ -30,6 +30,8 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		ClosureDeliveries: closureDeliveries{a},
 		// The files of the brand images live in the blob store, which setMedia sets up later.
 		Blobs: instanceBlobs{a},
+		// The secrets of the instance, such as the media proxy's key, are sealed like the actor keys.
+		Sealer: a.Sealer,
 	})
 }
 

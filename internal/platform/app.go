@@ -335,6 +335,10 @@ type AppOptions struct {
 	// Clock, when set, tells the time instead of the system clock. Tests only, to give the App a
 	// clock that never goes back, as the wall clock does when the host steps it.
 	Clock kernel.Clock
+	// KeyManager stands in for the KMS adapter of a key_manager other than local, which then wraps
+	// behind the cache of the DEKs, next to the KEKs of kek and kek_previous. Tests only, to move
+	// the sealed values between kinds of KeyManager.
+	KeyManager kernel.KeyManager
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -384,7 +388,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		_ = a.Close()
 		return nil, err
 	}
-	if a.KeyManager, err = newKeyManager(cfg); err != nil {
+	if a.KeyManager, err = newKeyManager(cfg, opts.KeyManager, a.Clock); err != nil {
 		_ = a.Close()
 		return nil, err
 	}
@@ -569,13 +573,33 @@ func hostOnly(host string) string {
 	return host
 }
 
-func newKeyManager(cfg *config.Config) (kernel.KeyManager, error) {
-	switch cfg.KeyManager {
-	case "local":
+// newKeyManager builds the KeyManager of cfg. With key_manager = local, the KEKs of kek and
+// kek_previous wrap and unwrap. With a KMS, kms wraps, behind the cache of the DEKs it unwraps,
+// and the KEKs of kek and kek_previous only unwrap the values that are still wrapped locally,
+// until `my kek rewrap` moves them to the KMS (ADR-0121 §3, §4). kms, when set, stands in for
+// the adapter of cfg.KeyManager (tests only).
+func newKeyManager(cfg *config.Config, kms kernel.KeyManager, clock kernel.Clock) (kernel.KeyManager, error) {
+	if cfg.KeyManager == "local" {
 		return local.New(cfg.KEK, cfg.PreviousKEKs...)
-	default:
+	}
+	if kms == nil {
 		return nil, fmt.Errorf("key_manager %q is not implemented yet", cfg.KeyManager)
 	}
+	current := kernel.NewDEKCache(kms, kernel.DEKCacheOptions{TTL: cfg.DEKCacheTTL, Entries: cfg.DEKCacheEntries, Clock: clock})
+	var keks [][]byte
+	for _, k := range append([][]byte{cfg.KEK}, cfg.PreviousKEKs...) {
+		if len(k) > 0 {
+			keks = append(keks, k)
+		}
+	}
+	if len(keks) == 0 {
+		return current, nil
+	}
+	previous, err := local.New(keks[0], keks[1:]...)
+	if err != nil {
+		return nil, err
+	}
+	return kernel.NewKeyRouter(current, previous)
 }
 
 // Ready reports whether the App can serve requests: the database is reachable, every table

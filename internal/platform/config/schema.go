@@ -472,7 +472,7 @@ var schema = []field{
 	},
 	{
 		key:          "kek",
-		doc:          "Key-encryption key for actor private keys: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
+		doc:          "Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
 		secret:       true,
 		requiredWhen: "when `key_manager = local`",
 		check:        checkKEK,
@@ -482,7 +482,7 @@ var schema = []field{
 	},
 	{
 		key:    "kek_previous",
-		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).",
+		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with `kms_key` when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).",
 		secret: true,
 		check:  checkPreviousKEKs,
 		set: func(c *Config, v string) {
@@ -491,6 +491,37 @@ var schema = []field{
 				c.PreviousKEKs = append(c.PreviousKEKs, b)
 			}
 		},
+	},
+	{
+		key:          "kms_key",
+		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN or alias of an AWS KMS key. At most 248 bytes.",
+		requiredWhen: "when `key_manager` is not `local`",
+		check:        checkKMSKey,
+		set:          func(c *Config, v string) { c.KMSKey = v },
+	},
+	{
+		key:   "kms_key_previous",
+		doc:   "Previous keys of the same KMS, comma-separated, each in the format of `kms_key`. They only decrypt; set the replaced key here while moving to another `kms_key` (docs/operations/key-management.md).",
+		check: checkPreviousKMSKeys,
+		set: func(c *Config, v string) {
+			for k := range strings.SplitSeq(v, ",") {
+				c.PreviousKMSKeys = append(c.PreviousKMSKeys, strings.TrimSpace(k))
+			}
+		},
+	},
+	{
+		key:   "kms_dek_cache_ttl",
+		doc:   "How long the server keeps a data-encryption key that the KMS decrypted, as a Go duration, so that a secret in use reaches the KMS about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.",
+		def:   "10m",
+		check: checkNonNegativeDuration,
+		set:   func(c *Config, v string) { c.DEKCacheTTL, _ = time.ParseDuration(v) },
+	},
+	{
+		key:   "kms_dek_cache_entries",
+		doc:   "Most data-encryption keys that the cache of `kms_dek_cache_ttl` keeps, the least recently used going first. `0` disables the cache.",
+		def:   "1024",
+		check: checkNonNegativeInt,
+		set:   func(c *Config, v string) { c.DEKCacheEntries, _ = strconv.Atoi(v) },
 	},
 	{
 		key: "mail",
@@ -1200,6 +1231,19 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		if !present["kek"] {
 			issues = append(issues, Issue{Key: "kek", Missing: true, Message: "required when key_manager is local"})
 		}
+	} else if vals["key_manager"] != "" && !present["kms_key"] {
+		issues = append(issues, Issue{Key: "kms_key", Missing: true, Message: "required when key_manager is not local"})
+	}
+	if prev, ok := vals["kms_key_previous"]; ok {
+		seen := map[string]bool{vals["kms_key"]: true}
+		for k := range strings.SplitSeq(prev, ",") {
+			k = strings.TrimSpace(k)
+			if seen[k] {
+				issues = append(issues, Issue{Key: "kms_key_previous", Message: "must not repeat a key or contain the current kms_key"})
+				break
+			}
+			seen[k] = true
+		}
 	}
 	if prev, ok := vals["kek_previous"]; ok {
 		seen := map[string]bool{}
@@ -1746,6 +1790,29 @@ func checkHostName(v string) error {
 	for label := range strings.SplitSeq(v, ".") {
 		if !validLabel(label) {
 			return errors.New("must be a host name or an IP address, without scheme or port")
+		}
+	}
+	return nil
+}
+
+// maxKMSKeyLen is the longest kms_key: a key ID is at most 255 bytes, and its kind prefix
+// ("gcpkms:" or "awskms:") takes 7 of them.
+const maxKMSKeyLen = 255 - len("gcpkms:")
+
+func checkKMSKey(v string) error {
+	if strings.TrimSpace(v) != v || v == "" || strings.ContainsAny(v, ", ") {
+		return errors.New("must be a key name without spaces or commas")
+	}
+	if len(v) > maxKMSKeyLen {
+		return fmt.Errorf("must be at most %d bytes, got %d", maxKMSKeyLen, len(v))
+	}
+	return nil
+}
+
+func checkPreviousKMSKeys(v string) error {
+	for i, k := range strings.Split(v, ",") {
+		if err := checkKMSKey(strings.TrimSpace(k)); err != nil {
+			return fmt.Errorf("key #%d %w", i+1, err)
 		}
 	}
 	return nil

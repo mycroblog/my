@@ -457,6 +457,13 @@ type InstanceRuleHead struct {
 	Position   int64
 }
 
+type InstanceSecret struct {
+	ID           string
+	Name         string
+	SealedSecret []byte
+	CreatedAt    int64
+}
+
 type InstanceSetting struct {
 	Key        string
 	RevisionID string

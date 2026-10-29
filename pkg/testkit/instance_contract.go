@@ -14,6 +14,7 @@ import (
 	"time"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
@@ -36,7 +37,8 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // refer to, the property that the synchronous projections equal a rebuild from the
 // revisions, the instance rules (instanceRuleCases), the theme (instanceThemeCases), the brand
 // images (instanceBrandCases), the
-// announcements (instanceAnnouncementCases), and the service closure (instanceClosureCases).
+// announcements (instanceAnnouncementCases), the service closure (instanceClosureCases), and the
+// secrets of the instance (instanceSecretCases).
 func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -60,6 +62,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	cases = append(cases, instanceBrandCases...)
 	cases = append(cases, instanceAnnouncementCases...)
 	cases = append(cases, instanceClosureCases...)
+	cases = append(cases, instanceSecretCases...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newInstanceEnv(t, newHarness)) })
 	}
@@ -70,6 +73,7 @@ type instanceEnv struct {
 	projectors *uow.Projectors
 	blobs      *MemoryBlobStore
 	clock      *Clock
+	sealer     *kernel.Sealer
 	service    *appinstance.Service
 }
 
@@ -80,14 +84,16 @@ func newInstanceEnv(t *testing.T, newHarness InstanceFactory) *instanceEnv {
 	appinstance.RegisterProjectors(projectors, h.Instance)
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
 	blobs := NewMemoryBlobStore(clock)
+	sealer := kernel.NewSealer(NewKeyManager("testkit:instance"))
 	return &instanceEnv{
 		h:          h,
 		projectors: projectors,
 		blobs:      blobs,
 		clock:      clock,
+		sealer:     sealer,
 		service: appinstance.NewService(appinstance.Deps{
 			UnitOfWork: h.UnitOfWork, Repository: h.Instance, Clock: clock, IDs: NewIDGenerator(clock),
-			Blobs: blobs,
+			Blobs: blobs, Sealer: sealer,
 		}),
 	}
 }

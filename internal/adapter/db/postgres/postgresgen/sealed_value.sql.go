@@ -48,6 +48,41 @@ func (q *Queries) ListSealedAccountPrivateKeys(ctx context.Context, arg ListSeal
 	return items, nil
 }
 
+const listSealedInstanceSecrets = `-- name: ListSealedInstanceSecrets :many
+SELECT id AS row_id, sealed_secret AS sealed FROM instance_secrets WHERE id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000') ORDER BY id LIMIT $2
+`
+
+type ListSealedInstanceSecretsParams struct {
+	After     *string
+	PageLimit int32
+}
+
+type ListSealedInstanceSecretsRow struct {
+	RowID  string
+	Sealed []byte
+}
+
+// ListSealedInstanceSecrets returns a page of instance_secrets.sealed_secret ordered by id.
+func (q *Queries) ListSealedInstanceSecrets(ctx context.Context, arg ListSealedInstanceSecretsParams) ([]ListSealedInstanceSecretsRow, error) {
+	rows, err := q.db.Query(ctx, listSealedInstanceSecrets, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSealedInstanceSecretsRow{}
+	for rows.Next() {
+		var i ListSealedInstanceSecretsRow
+		if err := rows.Scan(&i.RowID, &i.Sealed); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSealedLoginProviderSecrets = `-- name: ListSealedLoginProviderSecrets :many
 SELECT id AS row_id, sealed_secret AS sealed FROM login_provider_secrets WHERE id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000') ORDER BY id LIMIT $2
 `
@@ -166,6 +201,25 @@ type ReplaceSealedAccountPrivateKeysParams struct {
 // ReplaceSealedAccountPrivateKeys rewrites local_account_private_keys.private_key_enc of a row that still holds old_sealed.
 func (q *Queries) ReplaceSealedAccountPrivateKeys(ctx context.Context, arg ReplaceSealedAccountPrivateKeysParams) (int64, error) {
 	result, err := q.db.Exec(ctx, replaceSealedAccountPrivateKeys, arg.Sealed, arg.RowID, arg.OldSealed)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const replaceSealedInstanceSecrets = `-- name: ReplaceSealedInstanceSecrets :execrows
+UPDATE instance_secrets SET sealed_secret = $1 WHERE id = $2 AND sealed_secret = $3
+`
+
+type ReplaceSealedInstanceSecretsParams struct {
+	Sealed    []byte
+	RowID     string
+	OldSealed []byte
+}
+
+// ReplaceSealedInstanceSecrets rewrites instance_secrets.sealed_secret of a row that still holds old_sealed.
+func (q *Queries) ReplaceSealedInstanceSecrets(ctx context.Context, arg ReplaceSealedInstanceSecretsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, replaceSealedInstanceSecrets, arg.Sealed, arg.RowID, arg.OldSealed)
 	if err != nil {
 		return 0, err
 	}
