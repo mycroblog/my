@@ -12,6 +12,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/schema"
@@ -21,7 +22,12 @@ import (
 // (see package schema for why executing the file matches an Atlas apply).
 func openSQLite(t *testing.T, path string, apply bool) *sqlite.DB {
 	t.Helper()
-	d, err := sqlite.Open(t.Context(), path, uow.Options{})
+	return openSQLiteWith(t, path, apply, uow.Options{})
+}
+
+func openSQLiteWith(t *testing.T, path string, apply bool, opts uow.Options) *sqlite.DB {
+	t.Helper()
+	d, err := sqlite.Open(t.Context(), path, opts)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -74,6 +80,17 @@ func TestSQLiteOverlappingRelays(t *testing.T) {
 func TestSQLiteBacklogContract(t *testing.T) {
 	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
 		return sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true, true)
+	})
+}
+
+func TestSQLiteWakeContract(t *testing.T) {
+	testkit.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) testkit.QueueWakeHarness {
+		projectors := &uow.Projectors{}
+		d := openSQLiteWith(t, filepath.Join(t.TempDir(), "queue.db"), true, uow.Options{Projectors: projectors})
+		q := queuedb.NewSQLite(d, queuedb.Options{
+			Clock: clock, IDs: testkit.NewIDGenerator(clock), Waker: waker, Projectors: projectors, Logger: discardLogger(),
+		})
+		return testkit.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
 	})
 }
 

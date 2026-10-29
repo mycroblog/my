@@ -103,6 +103,67 @@ func (q *Queries) ClaimJob(ctx context.Context, arg ClaimJobParams) (ClaimJobRow
 	return i, err
 }
 
+const claimJobByID = `-- name: ClaimJobByID :one
+UPDATE jobs
+SET locked_by = ?1, locked_until = ?2, attempt = attempt + 1
+WHERE id = (
+  SELECT j.id FROM jobs AS j
+  WHERE j.id = ?3 AND j.run_at <= ?4 AND (j.locked_until IS NULL OR j.locked_until <= ?4)
+    AND NOT EXISTS (
+      SELECT 1 FROM jobs AS k
+      WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+        AND (k.locked_until > ?4 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+    )
+)
+RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at
+`
+
+type ClaimJobByIDParams struct {
+	Worker      sql.NullString
+	LockedUntil sql.NullInt64
+	ID          string
+	Now         int64
+}
+
+type ClaimJobByIDRow struct {
+	ID             string
+	Type           string
+	Payload        []byte
+	IdempotencyKey sql.NullString
+	OrderingKey    sql.NullString
+	TraceParent    sql.NullString
+	Attempt        int64
+	RunAt          int64
+	LastError      sql.NullString
+	CreatedAt      int64
+}
+
+// ClaimJobByID leases the job @id under the conditions of ClaimJob, for a claim by ID (a
+// wake-up signal, ADR-0120 section 2). The claim reads the job's lease with GetJobLease before
+// and, when this leases nothing, after it, to tell why.
+func (q *Queries) ClaimJobByID(ctx context.Context, arg ClaimJobByIDParams) (ClaimJobByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, claimJobByID,
+		arg.Worker,
+		arg.LockedUntil,
+		arg.ID,
+		arg.Now,
+	)
+	var i ClaimJobByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.Payload,
+		&i.IdempotencyKey,
+		&i.OrderingKey,
+		&i.TraceParent,
+		&i.Attempt,
+		&i.RunAt,
+		&i.LastError,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const countDeadJobs = `-- name: CountDeadJobs :one
 SELECT COUNT(*) FROM dead_jobs
 `
@@ -332,6 +393,23 @@ func (q *Queries) EndOutboxRelayLease(ctx context.Context, arg EndOutboxRelayLea
 	return result.RowsAffected()
 }
 
+const getJobLease = `-- name: GetJobLease :one
+SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = ?
+`
+
+type GetJobLeaseRow struct {
+	OrderingKey sql.NullString
+	RunAt       int64
+	LockedUntil sql.NullInt64
+}
+
+func (q *Queries) GetJobLease(ctx context.Context, id string) (GetJobLeaseRow, error) {
+	row := q.db.QueryRowContext(ctx, getJobLease, id)
+	var i GetJobLeaseRow
+	err := row.Scan(&i.OrderingKey, &i.RunAt, &i.LockedUntil)
+	return i, err
+}
+
 const insertDeadJobFromClaim = `-- name: InsertDeadJobFromClaim :execrows
 INSERT INTO dead_jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, last_error, created_at, failed_at)
 SELECT j.id, j.type, j.payload, j.idempotency_key, j.ordering_key, j.trace_parent, j.attempt, ?1, j.created_at, ?2
@@ -508,6 +586,49 @@ func (q *Queries) ListDeadJobs(ctx context.Context, arg ListDeadJobsParams) ([]D
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDueJobs = `-- name: ListDueJobs :many
+SELECT j.id FROM jobs AS j
+WHERE j.run_at <= ?1 AND (j.locked_until IS NULL OR j.locked_until <= ?2)
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > ?2 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT ?3
+`
+
+type ListDueJobsParams struct {
+	DueBefore  int64
+	Now        sql.NullInt64
+	BatchLimit int64
+}
+
+// ListDueJobs is the condition of ClaimJob bounded by @batch_limit, for the sweep of lost
+// wake-up signals: the jobs due at @due_before that a claim at @now could take.
+func (q *Queries) ListDueJobs(ctx context.Context, arg ListDueJobsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listDueJobs, arg.DueBefore, arg.Now, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -697,6 +818,22 @@ func (q *Queries) ListPendingJobs(ctx context.Context, arg ListPendingJobsParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const nextJobOfKey = `-- name: NextJobOfKey :one
+SELECT id, run_at FROM jobs WHERE ordering_key = ? ORDER BY created_at, id LIMIT 1
+`
+
+type NextJobOfKeyRow struct {
+	ID    string
+	RunAt int64
+}
+
+func (q *Queries) NextJobOfKey(ctx context.Context, orderingKey sql.NullString) (NextJobOfKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, nextJobOfKey, orderingKey)
+	var i NextJobOfKeyRow
+	err := row.Scan(&i.ID, &i.RunAt)
+	return i, err
 }
 
 const releaseJob = `-- name: ReleaseJob :execrows

@@ -36,7 +36,7 @@ func (r *IdentityRepository) LockPendingDataExports(ctx context.Context, tx uow.
 	return pending, wrap(err, "find a pending data export")
 }
 
-// InsertDataExportResult implements identity.ExportRepository: SELECT ... FOR SHARE on the
+// InsertDataExportResult implements identity.ExportRepository: SELECT ... FOR KEY SHARE on the
 // export keeps DeleteDataExport, which deletes the export's row first, from deleting it until tx
 // ends.
 func (r *IdentityRepository) InsertDataExportResult(ctx context.Context, tx uow.Tx, res identity.DataExportResult) (bool, error) {

@@ -770,6 +770,11 @@ func (s *oneJobSource) Bury(_ context.Context, _ string, _ queue.Job, lastErr st
 	return nil
 }
 
+// ClaimJob implements queue.Source; the delivery contract drives a pull runner only.
+func (s *oneJobSource) ClaimJob(context.Context, string, string, time.Time, time.Duration) (queue.ClaimResult, error) {
+	return queue.ClaimResult{}, nil
+}
+
 func fedProbesUnavailableServers(t *testing.T, e *fedEnv) {
 	d := newDeliveryEnv(t, e)
 	ctx := t.Context()

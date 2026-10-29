@@ -344,7 +344,7 @@ func (q *Queries) ListPendingDataImportItems(ctx context.Context, arg ListPendin
 }
 
 const lockDataImport = `-- name: LockDataImport :one
-SELECT id FROM data_imports WHERE id = $1::uuid FOR SHARE
+SELECT id FROM data_imports WHERE id = $1::uuid FOR KEY SHARE
 `
 
 // LockDataImport locks an import against its deletion until the transaction ends.

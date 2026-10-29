@@ -201,6 +201,27 @@ func (q *Queue) Claim(_ context.Context, worker string, now time.Time, lease tim
 	return j, true, nil
 }
 
+// ClaimJob implements queue.Source.
+func (q *Queue) ClaimJob(_ context.Context, id, worker string, now time.Time, lease time.Duration) (queue.ClaimResult, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	e, ok := q.jobs[id]
+	switch {
+	case !ok || e.leased(now):
+		return queue.ClaimResult{Outcome: queue.ClaimUnavailable}, nil
+	case e.job.RunAt.After(now):
+		return queue.ClaimResult{Outcome: queue.ClaimNotDue, Job: queue.Job{ID: id, RunAt: e.job.RunAt}}, nil
+	case q.heldBack(e, now):
+		return queue.ClaimResult{Outcome: queue.ClaimHeldBack}, nil
+	}
+	e.lockedBy = worker
+	e.lockedUntil = now.Add(lease)
+	e.job.Attempt++
+	j := e.job
+	j.Payload = slices.Clone(j.Payload)
+	return queue.ClaimResult{Outcome: queue.Claimed, Job: j}, nil
+}
+
 func (e *entry) leased(now time.Time) bool { return e.lockedBy != "" && e.lockedUntil.After(now) }
 
 // enqueuedBefore reports whether e comes before o in enqueue order, (CreatedAt, ID).

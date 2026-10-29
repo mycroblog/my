@@ -131,7 +131,7 @@
 
 - **構成**: Lambda（Web 用関数 + SQS コンシューマ関数、同一コード）。Lambda Web Adapter で通常の HTTP サーバーとして書ける。
 - **RDB**: Aurora Serverless v2 は 0 ACU まで自動一時停止できるが、ユーザー接続が残っていると停止しない（下記）。Aurora DSQL は PostgreSQL 互換で外部キーも使えるが、
-  トランザクションの行数・サイズ・時間に上限があるため、コントラクトテストで可否を判断する。
+  今の `db = postgres` はそのままでは動かない（スキーマの適用・advisory lock・`SKIP LOCKED`・IAM 認証。下記）。
 - **キュー**: SQS の遅延は最大 15 分。→ 再投入チェーンで長いバックオフを実現。
 
 ### Lambda
@@ -184,15 +184,62 @@
 | 料金・無料枠 | DPU（分散処理単位）+ ストレージ（GB-month）。**月 100,000 DPU と 1 GB ストレージが無料**。アイドル時は DPU 課金なし |
 | 外部キー | **サポート**（`NO ACTION` / `RESTRICT` / `CASCADE` / `SET NULL` / `SET DEFAULT`、遅延可能制約も可）。参照整合性の確認で追加の読み取りが発生する |
 | シーケンス / identity 列 | サポート。`CACHE` の明示が必須で、値は `1` か `65536` 以上のみ。型は `bigint` |
-| 分離レベル | PostgreSQL の Repeatable Read 固定（スナップショット分離） |
+| 分離レベル | PostgreSQL の Repeatable Read 固定（スナップショット分離）。`BEGIN` が受ける分離レベルは `REPEATABLE READ` だけ |
 | 同時実行制御 | 楽観的（OCC）。競合はコミット時に SQLSTATE `40001`（OC000 データ競合 / OC001 スキーマ競合）。`FOR UPDATE` もロックではなくコミット時判定 |
-| トランザクション上限 | 変更行数 3,000 行、変更データ 10 MiB、実行時間 5 分 |
-| DDL | DDL と DML は別トランザクション、1 トランザクションに DDL は 1 文まで。インデックスは `CREATE INDEX ASYNC` |
-| 非対応（抜粋） | 一時テーブル、`TRUNCATE`、PL/pgSQL（SQL 関数は可）、トリガー相当はアプリ側で実装、データベースは 1 クラスタ 1 つ（`postgres`）、照合順序は `C` のみ |
-| その他の上限 | 接続は最長 60 分、テーブル 1,000、スキーマ 10、テーブルあたりインデックス 24、主キー / インデックスのキーサイズ 1 KiB、行サイズ 2 MiB |
+| 行ロックの句 | `FOR UPDATE` と `FOR KEY SHARE` だけ。`FOR SHARE`・`FOR NO KEY UPDATE` は非対応で、`SKIP LOCKED`・`NOWAIT` もサポートする SQL にない |
+| 認証 | IAM の認証トークンをパスワードにする（既定 15 分・最長 1 週間）。張った接続はトークンが切れても使える。生成はローカルの署名（Go は `aws-sdk-go-v2/feature/dsql/auth`） |
+| トランザクション上限 | 変更行数 3,000 行、変更データ 10 MiB、実行時間 5 分、クエリのメモリ 128 MiB |
+| DDL | DDL と DML は別トランザクション、1 トランザクションに DDL は 1 文まで。インデックスは `CREATE INDEX ASYNC` だけ（`ASYNC` のない `CREATE INDEX` は不可。進み具合は `sys.jobs`、待つのは `sys.wait_for_job`）。`ALTER TABLE` に `ALTER COLUMN TYPE`・`SET NOT NULL` はなく、足す `CHECK`・外部キーは `NOT VALID` |
+| 索引に使えない型 | `bytea`・`interval`・`json` / `jsonb`・`timetz`。`uuid` は使える |
+| 非対応（抜粋） | 一時テーブル、`TRUNCATE`、PL/pgSQL（SQL 関数は可）、トリガー、拡張機能（`CREATE EXTENSION`）、advisory lock、`LISTEN` / `NOTIFY`、データベースは 1 クラスタ 1 つ（`postgres`）、照合順序は `C` のみ |
+| その他の上限 | 接続は最長 60 分、接続数 10,000・新しい接続は毎秒 100、テーブル 1,000、スキーマ 10、テーブルあたりインデックス 24、索引のキーの列 8、主キー / インデックスのキーサイズ 1 KiB、行サイズ 2 MiB |
+| 料金の単価 | $8 / 100 万 DPU、ストレージ $0.33 / GB-month（US East）。1 トランザクションあたりの DPU は公開されていない |
 
-- 要検証: `SELECT ... FOR UPDATE SKIP LOCKED` の可否（公式ページで明示を見つけられなかった）。不可なら DSQL 上で DB キュー（`queue/db`）は使えず、AWS では SQS を必須にする。
-- 1 行に更新が集中するカウンタ（`SET n = n + 1`）は OCC の競合を起こしやすい。DSQL では非正規化カウンタを別テーブルに分散するか、定期再集計に寄せる。
+今の `db = postgres` は DSQL では動かない。受けるかどうかと形は [#1850](https://github.com/mycroblog/my/issues/1850) の ADR で決める（調査は [#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)）。
+
+- **スキーマ**: `schema/postgres` の大きさは上限に収まる（テーブル 330、テーブルあたりの索引は最大 7）。照合順序・トリガー・ビュー・シーケンス・外部キーの制約にも触れない。
+  - 収まらないのは `bytea` の索引で、主キー 4 つ（`code_hash`）と索引 6 つ（トークンのハッシュ・passkey の credential ID・鍵の fingerprint）がある。
+  - `schema/postgres.bootstrap.sql` の `CREATE EXTENSION pg_trgm` も通らない（今は `pg_trgm` を使う索引・クエリはない）
+- **Atlas**: Community Edition の PostgreSQL ドライバは `ASYNC` のない `CREATE INDEX` を出し、計画を 1 つのトランザクションで流すので、DSQL には適用できない。
+  - Atlas の DSQL ドライバ（`dsql://`）は Pro 版だけで、ADR-0023 の Community Edition だけを使う決定に合わない
+- **接続**: 新しい接続ごとにトークンを作る仕組み（pgx の `BeforeConnect`）と、60 分より短い `MaxConnLifetime` が要る。
+  - AWS の Aurora DSQL Connector for Go pgx（Apache-2.0）は、この形で既定 55 分にしている（[#1852](https://github.com/mycroblog/my/issues/1852)）。
+  - アダプタは `READ COMMITTED` でトランザクションを始めるので、DSQL では分離レベルを指定しない形が要る
+- **ロック**: `queries/postgres` の advisory lock（8 か所）は DSQL で使えない。
+  - 書き込みの競合で直列にするには、両方のトランザクションが同じ行に書く形（キーの行への upsert など）に置き換える。
+  - advisory lock を外して読み直すだけにすると、スナップショット分離の write skew で直列にならない。
+  - `FOR SHARE`（2 か所）は削除と並ばせるためだけなので、`FOR KEY SHARE` で足りる（[#1851](https://github.com/mycroblog/my/issues/1851)）
+- **DB キュー**: `PickJob` の `FOR UPDATE SKIP LOCKED` は使えない。`FOR UPDATE` はロックしないので、句を外しても pull の worker は同じ先頭の行を取り合い、1 つ以外が `40001` になる。
+  - DSQL では `queue = db` を使わず、`queue = sqs`（ADR-0120 の ID での claim）にする。
+  - `ClaimJob` は 1 行の `UPDATE` なので、同じジョブの claim の競合は OCC で 1 つになる。
+  - 順序キーの advisory lock は上と同じ置き換えが要る（`RequeueDeadJob` が古い `created_at` のジョブを戻すのと、同じキーの claim が並ぶと、write skew になる）
+- **契約テスト**: `pkg/testkit/pgtest` はテストごとに `CREATE DATABASE ... TEMPLATE` で DB を作るので、DSQL（DB は 1 つ、スキーマは 10 まで、索引は非同期）ではそのまま動かない
+- 1 行に更新が集中するカウンタ（`status_counters`・`status_reaction_counts`・`tag_usage` など、`SET n = n + 1`）は OCC の競合を起こしやすい。DSQL では非正規化カウンタを別テーブルに分散するか、定期再集計に寄せる
+- **費用の目安**: 料金ページの TPC-C の例（10 万 DPU ≈ 70 万トランザクション）から 1 トランザクション約 0.14 DPU とすると、次のようになる。
+  - 月 100 万トランザクションで約 14 万 DPU、無料枠を超える分は約 $0.3 / 月
+  - 月 1,000 万トランザクションで約 $10 / 月
+- 要検証（実際のクラスタで。手順は #1846 の報告）:
+  - 上の非対応のものが返すエラー
+  - `COLLATE "C"` の明示と `unnest($1::uuid[])` が通るか
+  - Atlas CE が DSQL のカタログを読めるか
+  - ホットな行での `40001` の率
+  - このサーバーのトランザクションでの実際の DPU（CloudWatch の `AWS/AuroraDSQL` の `TotalDPU` / `ReadDPU` / `WriteDPU` / `ComputeDPU`・`OccConflicts`）
+  - AP の URI をキーにする索引が 1 KiB を超えないか
+
+出典（2026-10-29 確認）:
+[Aurora DSQL supported SQL](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-supported-sql-features.html) /
+[Aurora DSQL supported data types](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-supported-data-types.html) /
+[Aurora DSQL CREATE TABLE](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/create-table-syntax-support.html) /
+[Aurora DSQL CREATE INDEX](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/create-index-syntax-support.html) /
+[Aurora DSQL asynchronous indexes](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-create-index-async.html) /
+[Aurora DSQL ALTER TABLE](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/alter-table-syntax-support.html) /
+[Aurora DSQL concurrency control](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-concurrency-control.html) /
+[Aurora DSQL quotas](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/CHAP_quotas.html) /
+[Aurora DSQL authentication token](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/SECTION_authentication-token.html) /
+[Aurora DSQL Connector for Go pgx](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/SECTION_program-with-go-pgx-connector.html) /
+[Aurora DSQL CloudWatch monitoring](https://docs.aws.amazon.com/aurora-dsql/latest/userguide/cloudwatch-monitoring.html) /
+[Aurora DSQL pricing](https://aws.amazon.com/rds/aurora/dsql/pricing/) /
+[Atlas: Aurora DSQL](https://atlasgo.io/guides/dsql/automatic-migrations)
 
 出典（2026-10-16 確認）:
 [AWS Lambda pricing](https://aws.amazon.com/lambda/pricing/) /
@@ -290,7 +337,7 @@
 - **トピック** は各ブローカーとも 1 インスタンスに 1 つで、デプロイのテンプレートが作る（標準トピック）。プロセスごとのキュー・subscription はサーバーが作り、消す。
   消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sqs_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
 - **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないが、scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
-- **Aurora DSQL**: `LISTEN` / `NOTIFY` を使えるかを公式の文書で確認できない（サポートする SQL の一覧にない）ので、`postgres` は使わない
+- **Aurora DSQL**: `LISTEN` / `NOTIFY` はサポートする SQL の一覧になく、使えない前提にする（要検証。[#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)）ので、`postgres` は使わない
 - 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`db = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
 
 ### コスト（2026-10-19 確認）

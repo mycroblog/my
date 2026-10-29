@@ -168,6 +168,15 @@ func (s *source) Claim(ctx context.Context, worker string, now time.Time, lease 
 	return j, ok, err
 }
 
+// ClaimJob is measured as the operation claim, whatever its outcome: it answers a signal, not a
+// poll.
+func (s *source) ClaimJob(ctx context.Context, id, worker string, now time.Time, lease time.Duration) (queue.ClaimResult, error) {
+	start := time.Now()
+	r, err := s.next.ClaimJob(ctx, id, worker, now, lease)
+	s.ops.done(ctx, "claim", start, err, nil)
+	return r, err
+}
+
 func (s *source) Complete(ctx context.Context, worker string, j queue.Job) error {
 	start := time.Now()
 	err := s.next.Complete(ctx, worker, j)

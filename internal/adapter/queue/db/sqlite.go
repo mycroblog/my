@@ -20,7 +20,7 @@ import (
 // NewSQLite returns the queue kept in the SQLite database d.
 func NewSQLite(d *sqlite.DB, opts Options) *Queue {
 	opts.check()
-	return &Queue{db: d, st: sqliteStore{d}, opts: opts}
+	return newQueue(d, sqliteStore{d}, opts)
 }
 
 // NewSQLiteOutbox returns the outbox kept in the SQLite database d.
@@ -384,4 +384,81 @@ func (s sqliteStore) deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before
 		return 0, err
 	}
 	return q.DeleteJobAttemptsBefore(ctx, sqlitequeue.DeleteJobAttemptsBeforeParams{FinishedBefore: millis(before), BatchLimit: int64(limit)})
+}
+
+func (s sqliteStore) jobLease(ctx context.Context, tx uow.Tx, id string) (lease, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return lease{}, false, err
+	}
+	r, err := q.GetJobLease(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return lease{}, false, nil
+	}
+	if err != nil {
+		return lease{}, false, err
+	}
+	l := lease{orderingKey: r.OrderingKey.String, runAt: fromMillis(r.RunAt)}
+	if r.LockedUntil.Valid {
+		l.lockedUntil = fromMillis(r.LockedUntil.Int64)
+	}
+	return l, true, nil
+}
+
+// claimID leases the job id with ClaimJobByID; BEGIN IMMEDIATE serializes it with the other
+// claims, so the ordering key needs no lock of its own.
+func (s sqliteStore) claimID(ctx context.Context, tx uow.Tx, id, _, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	r, err := q.ClaimJobByID(ctx, sqlitequeue.ClaimJobByIDParams{
+		Worker:      nullString(worker),
+		LockedUntil: sql.NullInt64{Int64: millis(until), Valid: true},
+		ID:          id,
+		Now:         millis(now),
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		return queue.Job{}, false, nil
+	}
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	return queue.Job{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: r.IdempotencyKey.String,
+		TraceParent:    r.TraceParent.String,
+		OrderingKey:    r.OrderingKey.String,
+		Attempt:        int(r.Attempt),
+		RunAt:          fromMillis(r.RunAt),
+		LastError:      r.LastError.String,
+		CreatedAt:      fromMillis(r.CreatedAt),
+	}, true, nil
+}
+
+func (s sqliteStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]string, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	return q.ListDueJobs(ctx, sqlitequeue.ListDueJobsParams{
+		DueBefore: millis(dueBefore), Now: sql.NullInt64{Int64: millis(now), Valid: true}, BatchLimit: int64(limit),
+	})
+}
+
+func (s sqliteStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey string) (queue.Wake, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Wake{}, false, err
+	}
+	r, err := q.NextJobOfKey(ctx, nullString(orderingKey))
+	if errors.Is(err, sql.ErrNoRows) {
+		return queue.Wake{}, false, nil
+	}
+	if err != nil {
+		return queue.Wake{}, false, err
+	}
+	return queue.Wake{JobID: r.ID, At: fromMillis(r.RunAt)}, true, nil
 }

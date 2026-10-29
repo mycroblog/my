@@ -18,7 +18,7 @@ SELECT EXISTS (
 
 -- LockDataExport locks an export against its deletion until the transaction ends.
 -- name: LockDataExport :one
-SELECT id FROM data_exports WHERE id = sqlc.arg(id)::uuid FOR SHARE;
+SELECT id FROM data_exports WHERE id = sqlc.arg(id)::uuid FOR KEY SHARE;
 
 -- InsertDataExportResult records the end of a build; the first result of an export stands.
 -- name: InsertDataExportResult :execrows

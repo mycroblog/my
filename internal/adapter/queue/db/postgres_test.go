@@ -12,6 +12,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/postgres"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/pgtest"
@@ -78,6 +79,21 @@ func TestPostgresOverlappingRelays(t *testing.T) {
 	t.Cleanup(d.Close)
 	opts := queuedb.Options{Clock: clock, IDs: testkit.NewIDGenerator(clock)}
 	testOverlappingRelays(t, d, queuedb.NewPostgresOutbox(d, opts), queuedb.NewPostgresOutbox(d, opts))
+}
+
+func TestPostgresWakeContract(t *testing.T) {
+	testkit.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) testkit.QueueWakeHarness {
+		projectors := &uow.Projectors{}
+		d, err := postgres.Open(t.Context(), newDatabase(t), uow.Options{Projectors: projectors})
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		t.Cleanup(d.Close)
+		q := queuedb.NewPostgres(d, queuedb.Options{
+			Clock: clock, IDs: testkit.NewIDGenerator(clock), Waker: waker, Projectors: projectors, Logger: discardLogger(),
+		})
+		return testkit.QueueWakeHarness{Queue: q, Source: q, DeadJobs: q, Finder: q, UnitOfWork: d, Outbox: q}
+	})
 }
 
 func TestPostgresBacklogContract(t *testing.T) {

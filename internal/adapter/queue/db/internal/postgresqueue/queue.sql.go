@@ -321,6 +321,27 @@ func (q *Queries) EndOutboxRelayLease(ctx context.Context, arg EndOutboxRelayLea
 	return result.RowsAffected(), nil
 }
 
+const getJobLease = `-- name: GetJobLease :one
+
+SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = $1
+`
+
+type GetJobLeaseRow struct {
+	OrderingKey *string
+	RunAt       time.Time
+	LockedUntil pgtype.Timestamptz
+}
+
+// A claim by ID (a wake-up signal, ADR-0120 section 2) reads the job's lease with GetJobLease, then
+// runs LockOrderingKey and ClaimJob as a claim does, and reads the lease again when ClaimJob
+// leases nothing, to tell why.
+func (q *Queries) GetJobLease(ctx context.Context, id string) (GetJobLeaseRow, error) {
+	row := q.db.QueryRow(ctx, getJobLease, id)
+	var i GetJobLeaseRow
+	err := row.Scan(&i.OrderingKey, &i.RunAt, &i.LockedUntil)
+	return i, err
+}
+
 const insertDeadJobFromClaim = `-- name: InsertDeadJobFromClaim :execrows
 INSERT INTO dead_jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, last_error, created_at, failed_at)
 SELECT j.id, j.type, j.payload, j.idempotency_key, j.ordering_key, j.trace_parent, j.attempt, $1, j.created_at, $2
@@ -496,6 +517,46 @@ func (q *Queries) ListDeadJobs(ctx context.Context, arg ListDeadJobsParams) ([]D
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDueJobs = `-- name: ListDueJobs :many
+SELECT j.id FROM jobs AS j
+WHERE j.run_at <= $1 AND (j.locked_until IS NULL OR j.locked_until <= $2)
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > $2 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT $3
+`
+
+type ListDueJobsParams struct {
+	DueBefore  time.Time
+	Now        pgtype.Timestamptz
+	BatchLimit int32
+}
+
+// ListDueJobs is PickJob without the row locks, bounded by @batch_limit, for the sweep of lost
+// wake-up signals: the jobs due at @due_before that a claim at @now could take.
+func (q *Queries) ListDueJobs(ctx context.Context, arg ListDueJobsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listDueJobs, arg.DueBefore, arg.Now, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -682,6 +743,22 @@ SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
 func (q *Queries) LockOrderingKey(ctx context.Context, lockKey string) error {
 	_, err := q.db.Exec(ctx, lockOrderingKey, lockKey)
 	return err
+}
+
+const nextJobOfKey = `-- name: NextJobOfKey :one
+SELECT id, run_at FROM jobs WHERE ordering_key = $1 ORDER BY created_at, id LIMIT 1
+`
+
+type NextJobOfKeyRow struct {
+	ID    string
+	RunAt time.Time
+}
+
+func (q *Queries) NextJobOfKey(ctx context.Context, orderingKey *string) (NextJobOfKeyRow, error) {
+	row := q.db.QueryRow(ctx, nextJobOfKey, orderingKey)
+	var i NextJobOfKeyRow
+	err := row.Scan(&i.ID, &i.RunAt)
+	return i, err
 }
 
 const pickJob = `-- name: PickJob :one
