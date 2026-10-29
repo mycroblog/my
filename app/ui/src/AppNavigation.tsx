@@ -291,8 +291,9 @@ const appNavItem = tv({
     separated: { true: { base: "md:mt-2 md:border-t md:border-border md:pt-3" } },
   },
   // In the top bar, an item for the rail and the sidebar (`shows="rail"`) is the call to action, which the bar shows
-  // outside the list below lg (`AppNav` `topAction`): it joins the row from lg.
-  compoundVariants: [{ placement: "top", shows: "rail", class: { base: "hidden lg:block" } }],
+  // outside the list below lg (`AppNav` `topAction`): it joins the row from lg. `md:hidden` overrides the rail's
+  // `md:block`, so that the call to action is not in the menu between md and lg as well.
+  compoundVariants: [{ placement: "top", shows: "rail", class: { base: "hidden md:hidden lg:block" } }],
 });
 
 /** A count on an item: the number, what it means, and the name of the item while it shows it. */
