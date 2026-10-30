@@ -4,7 +4,7 @@
 // post the server refused.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createTranslate, type I18n } from "../../lib/i18n";
 import { instanceFixture, statusPage } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
@@ -105,7 +105,9 @@ export const DraggingFiles: Story = {
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(new File(["png"], "photo.png", { type: "image/png" }));
     text.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer }));
-    await expect(await dialog.findByText("Drop files to attach them")).toBeVisible();
+    // The sheet may still be fading in (opacity 0 on its first frame), which toBeVisible counts as hidden.
+    const overlay = await dialog.findByText("Drop files to attach them");
+    await waitFor(() => expect(overlay).toBeVisible());
   },
 };
 

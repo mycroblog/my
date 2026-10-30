@@ -999,7 +999,7 @@ describe("the keyboard shortcut, pasting and dropping", () => {
     expect(text).toHaveFocus();
     await user.paste(clipboard([new File(["pdf"], "notes.pdf", { type: "application/pdf" })]));
     expect(
-      await screen.findByText(
+      await findToast(
         "notes.pdf is not a JPEG, PNG, GIF, or WebP image, an MP4 or WebM video, or an MP3, Ogg, or M4A audio file.",
       ),
     ).toBeInTheDocument();
@@ -1007,7 +1007,7 @@ describe("the keyboard shortcut, pasting and dropping", () => {
 
     const photos = [1, 2, 3, 4, 5].map((n) => new File(["png"], `photo-${n}.png`, { type: "image/png" }));
     fireEvent.drop(text, carrying(photos));
-    expect(await screen.findByText("A post can have at most 4 files. The rest were not added.")).toBeInTheDocument();
+    expect(await findToast("A post can have at most 4 files. The rest were not added.")).toBeInTheDocument();
     expect(await within(sheet).findByRole("textbox", { name: "Description of attachment 4" })).toBeInTheDocument();
     expect(within(sheet).queryByRole("textbox", { name: "Description of attachment 5" })).not.toBeInTheDocument();
   });
