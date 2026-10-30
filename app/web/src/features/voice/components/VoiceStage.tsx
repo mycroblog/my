@@ -46,6 +46,7 @@ import { useVoiceCallControls, type VoiceCallControls } from "../hooks/useVoiceC
 import { useVoiceModeration } from "../hooks/useVoiceModeration";
 import { raisedHands, useOpenFor, useShareRoom, useVoiceStage, type VoiceStageEntry } from "../hooks/useVoiceStage";
 import type { VoiceReactionShown } from "../hooks/voiceCall";
+import { RoomName } from "./RoomName";
 import { CallDockControls, JoinDock } from "./VoiceCallDock";
 import { CallConnection } from "./VoiceCallParts";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
@@ -183,7 +184,7 @@ function RoomHead({ room, isHost, renderHeading, controls }: VoiceStageProps & {
           {isHost ? <SettingsButton room={room} /> : <RoomMenu room={room} />}
         </Cluster>
       </Cluster>
-      {renderHeading(<span dir="auto">{room.name}</span>)}
+      {renderHeading(<RoomName name={room.name} icon={room.icon} />)}
       {room.description !== "" && (
         <Text as="p" tone="muted" whitespace="preLine" dir="auto" wrap="anywhere">
           {room.description}

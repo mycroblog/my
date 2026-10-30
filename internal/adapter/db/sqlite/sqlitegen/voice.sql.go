@@ -81,7 +81,7 @@ func (q *Queries) DeleteVoiceRoomParticipants(ctx context.Context, roomID string
 const getVoiceRoom = `-- name: GetVoiceRoom :one
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
@@ -103,6 +103,8 @@ type GetVoiceRoomRow struct {
 	Description        string
 	Visibility         string
 	Speakers           string
+	IconEmojiKey       string
+	IconCustomEmojiID  sql.NullString
 	RevisedByAccountID string
 	RevisedAt          int64
 	EndReason          sql.NullString
@@ -129,6 +131,8 @@ func (q *Queries) GetVoiceRoom(ctx context.Context, id string) (GetVoiceRoomRow,
 		&i.Description,
 		&i.Visibility,
 		&i.Speakers,
+		&i.IconEmojiKey,
+		&i.IconCustomEmojiID,
 		&i.RevisedByAccountID,
 		&i.RevisedAt,
 		&i.EndReason,
@@ -529,8 +533,8 @@ func (q *Queries) InsertVoiceRoomParticipationEnd(ctx context.Context, arg Inser
 }
 
 const insertVoiceRoomRevision = `-- name: InsertVoiceRoomRevision :exec
-INSERT INTO voice_room_revisions (id, room_id, name, description, visibility, speakers, revised_by_account_id, revised_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO voice_room_revisions (id, room_id, name, description, visibility, speakers, icon_emoji_key, icon_custom_emoji_id, revised_by_account_id, revised_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertVoiceRoomRevisionParams struct {
@@ -540,6 +544,8 @@ type InsertVoiceRoomRevisionParams struct {
 	Description        string
 	Visibility         string
 	Speakers           string
+	IconEmojiKey       string
+	IconCustomEmojiID  sql.NullString
 	RevisedByAccountID string
 	RevisedAt          int64
 }
@@ -552,6 +558,8 @@ func (q *Queries) InsertVoiceRoomRevision(ctx context.Context, arg InsertVoiceRo
 		arg.Description,
 		arg.Visibility,
 		arg.Speakers,
+		arg.IconEmojiKey,
+		arg.IconCustomEmojiID,
 		arg.RevisedByAccountID,
 		arg.RevisedAt,
 	)
@@ -668,7 +676,7 @@ func (q *Queries) IsVoiceRoomSpeakGranted(ctx context.Context, arg IsVoiceRoomSp
 const listHostedVoiceRooms = `-- name: ListHostedVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
@@ -699,6 +707,8 @@ type ListHostedVoiceRoomsRow struct {
 	Description        string
 	Visibility         string
 	Speakers           string
+	IconEmojiKey       string
+	IconCustomEmojiID  sql.NullString
 	RevisedByAccountID string
 	RevisedAt          int64
 	EndReason          sql.NullString
@@ -732,6 +742,8 @@ func (q *Queries) ListHostedVoiceRooms(ctx context.Context, arg ListHostedVoiceR
 			&i.Description,
 			&i.Visibility,
 			&i.Speakers,
+			&i.IconEmojiKey,
+			&i.IconCustomEmojiID,
 			&i.RevisedByAccountID,
 			&i.RevisedAt,
 			&i.EndReason,
@@ -755,7 +767,7 @@ func (q *Queries) ListHostedVoiceRooms(ctx context.Context, arg ListHostedVoiceR
 const listOpenVoiceRooms = `-- name: ListOpenVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_room_heads h
 JOIN voice_rooms r ON r.id = h.room_id
@@ -781,6 +793,8 @@ type ListOpenVoiceRoomsRow struct {
 	Description        string
 	Visibility         string
 	Speakers           string
+	IconEmojiKey       string
+	IconCustomEmojiID  sql.NullString
 	RevisedByAccountID string
 	RevisedAt          int64
 	EndReason          sql.NullString
@@ -813,6 +827,8 @@ func (q *Queries) ListOpenVoiceRooms(ctx context.Context, tag string) ([]ListOpe
 			&i.Description,
 			&i.Visibility,
 			&i.Speakers,
+			&i.IconEmojiKey,
+			&i.IconCustomEmojiID,
 			&i.RevisedByAccountID,
 			&i.RevisedAt,
 			&i.EndReason,

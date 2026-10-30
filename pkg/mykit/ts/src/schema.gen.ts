@@ -9637,6 +9637,10 @@ export interface components {
         AnnouncementList: {
             items: components["schemas"]["Announcement"][];
         };
+        /** @description A page of announcements. */
+        AnnouncementPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["Announcement"][];
+        };
         /** @description An appeal of an action on the user's own account. */
         AppealModerationActionRequest: {
             /** @description Why the moderators should reconsider the action, as plain text. */
@@ -13795,6 +13799,7 @@ export interface components {
             id: components["schemas"]["Id"];
             /** @description The name of the room, 1 to 100 characters. */
             name: string;
+            icon?: components["schemas"]["VoiceRoomIcon"];
             /** @description The description of the room, up to 500 characters; empty for none. */
             description: string;
             /** @description The hashtags of the room, without the `#`, as the host typed them. */
@@ -13843,6 +13848,7 @@ export interface components {
             id: components["schemas"]["Id"];
             /** @description The name of the room. */
             name: string;
+            icon?: components["schemas"]["VoiceRoomIcon"];
             /**
              * @description Whether the account hosts the room or speaks in it.
              * @enum {string}
@@ -13875,6 +13881,20 @@ export interface components {
         /** @description A page of the voice chat rooms that the user hosted, newest first. */
         VoiceRoomHistoryPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["VoiceRoomHistoryEntry"][];
+        };
+        /**
+         * @description The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
+         *     of this server with its image. A room whose custom emoji is later disabled or deleted shows
+         *     no icon.
+         */
+        VoiceRoomIcon: {
+            /**
+             * @description The emoji as the settings of a room take it: the Unicode emoji, or the shortcode of a
+             *     custom emoji of this server, without colons.
+             */
+            name: string;
+            /** @description The custom emoji with its image; omitted for a Unicode emoji. */
+            emoji?: components["schemas"]["CustomEmoji"];
         };
         /**
          * @description A session of the user in a voice chat room: the room, the new session, and its grant. The
@@ -13915,6 +13935,12 @@ export interface components {
         VoiceRoomSettings: {
             /** @description 1 to 100 characters on one line. */
             name: string;
+            /**
+             * @description The emoji shown before the name: one Unicode emoji, or the shortcode of an enabled custom
+             *     emoji of this server, with or without colons. Omitted or empty for none. Any other value,
+             *     such as a custom emoji of another server, is refused with `422`.
+             */
+            icon?: string;
             /** @description Up to 500 characters; line breaks are kept. */
             description?: string;
             /** @description Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post. */
@@ -13946,6 +13972,8 @@ export interface components {
             state: "open" | "ended";
             /** @description The name of the room. */
             name?: string;
+            /** @description The icon of the room; present only with `name`, and omitted when the room has none. */
+            icon?: components["schemas"]["VoiceRoomIcon"];
             /** @description The description of the room, empty for none. */
             description?: string;
             host?: components["schemas"]["Account"];
@@ -13954,6 +13982,8 @@ export interface components {
         VoiceRoomUpdate: {
             /** @description 1 to 100 characters on one line. */
             name?: string;
+            /** @description The emoji shown before the name, as in `VoiceRoomSettings`; empty removes it. */
+            icon?: string;
             /** @description Up to 500 characters; empty for none. */
             description?: string;
             /** @description Up to 5 hashtags, which replace the room's; empty for none. */
@@ -14162,10 +14192,6 @@ export interface components {
         /** @description The data of a `webhook.test` message. */
         WebhookTest: {
             endpoint_id: components["schemas"]["Id"];
-        };
-        /** @description A page of announcements. */
-        AnnouncementPage: components["schemas"]["PageInfo"] & {
-            items: components["schemas"]["Announcement"][];
         };
     };
     responses: {

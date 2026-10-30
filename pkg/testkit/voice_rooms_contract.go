@@ -66,6 +66,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"NotifiesFollowersWhoSee", roomsNotifications, ""},
 		{"WritesTheStartPost", roomsStartPost, ""},
 		{"SummarizesForVisitors", roomsSummary, ""},
+		{"SetsTheIcon", roomsIcon, ""},
 		{"ShowsTheProfileEntryAndHistory", roomsProfileAndHistory, ""},
 		{"ReportsAndEndsAsAModerator", roomsModeration, ""},
 		{"PurgesTheRecordsAfterTheRetention", roomsPurge, ""},
@@ -385,8 +386,11 @@ type roomsEnv struct {
 	hub       *stream.Hub
 	retention *roomsRetention
 	audits    *roomsAudits
-	svc       *appvoice.Service
-	newSvc    func(cfg appvoice.Config) *appvoice.Service
+	// emojis checks the emoji of the services that newSvc makes from now on; nil allows the
+	// Unicode emoji only.
+	emojis appvoice.Emojis
+	svc    *appvoice.Service
+	newSvc func(cfg appvoice.Config) *appvoice.Service
 	// kv and repo are the store and the repository of the service, with hooks that commit a
 	// change between the steps of a command.
 	kv   *hookKV
@@ -416,6 +420,7 @@ func newRoomsEnv(t *testing.T, newHarness VoiceFactory, cfg appvoice.Config) *ro
 			Repository: repo, UnitOfWork: h.UnitOfWork, Outbox: outbox, Clock: clock, IDs: e.ids,
 			Heartbeats: appvoice.NewHeartbeats(kv, repo), Members: e.members, Relations: e.members, Config: cfg,
 			Streams: e.hub, Notifier: e.notices, Posts: e.posts, Host: contractHost, Retention: e.retention,
+			Emojis: e.emojis,
 		}
 		if cfg.Transport != "" {
 			d.Transport = e.transport

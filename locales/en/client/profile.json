@@ -71,6 +71,10 @@
     "defaultMessage": "Follow request sent to {name}.",
     "description": "Announced to screen readers when a follow request was sent. {name} is the account's display name."
   },
+  "profile.done.subscribed": {
+    "defaultMessage": "You will be notified of the new posts of {name}.",
+    "description": "Announced to screen readers when turning on the notifications of an account's new posts succeeded. {name} is the account's display name."
+  },
   "profile.done.unblocked": {
     "defaultMessage": "You unblocked {name}.",
     "description": "Announced to screen readers when unblocking succeeded. {name} is the account's display name."
@@ -82,6 +86,10 @@
   "profile.done.unmuted": {
     "defaultMessage": "You unmuted {name}.",
     "description": "Announced to screen readers when unmuting succeeded. {name} is the account's display name."
+  },
+  "profile.done.unsubscribed": {
+    "defaultMessage": "You will no longer be notified of the new posts of {name}.",
+    "description": "Announced to screen readers when turning off the notifications of an account's new posts succeeded. {name} is the account's display name."
   },
   "profile.edit": {
     "defaultMessage": "Edit profile",
@@ -222,6 +230,14 @@
   "profile.sign_in_to_follow": {
     "defaultMessage": "Sign in to follow",
     "description": "Link on a profile when nobody is signed in: it opens the sign-in page and comes back."
+  },
+  "profile.subscribe": {
+    "defaultMessage": "Notify me of new posts",
+    "description": "Name and tooltip of the bell toggle button on a profile: while it is on, each new post of the account is a notification. The name stays the same on and off."
+  },
+  "profile.subscribe.follow_first": {
+    "defaultMessage": "Follow this account to be notified of its new posts.",
+    "description": "Shown under the turned-off bell button on the profile of an account of another server that the user does not follow: the user must follow it before its new posts can be notified."
   },
   "profile.tab.no_boosts": {
     "defaultMessage": "Without boosts",

@@ -2,7 +2,7 @@
 // The lists of open rooms (ADR-0100 §8): the list page's body with the button that starts a room, the panel of the
 // third column on wide screens, and the section at the top of a hashtag's page. Each room is a card in the look of its
 // stage: the "Live" pill with how many people are in it and how long it has been open ("Joined" for the room of the
-// user's call), its name (a link to its page), the stacked avatars of its speakers (the host first) beside the host,
+// user's call), its name after its emoji icon (a link to its page), the stacked avatars of its speakers (the host first) beside the host,
 // and on the pages its description and hashtags (links to their pages). Every list shows nothing while the server has
 // voice chat off.
 import {
@@ -27,6 +27,7 @@ import { hashtagPath, type VoiceAccount, type VoiceRoom, voiceRoomPath } from ".
 import { useJoinedVoiceRoomId } from "../hooks/useVoiceCallControls";
 import { useCanStartVoiceRoom, useTagVoiceRooms, useVoiceRail, useVoiceRooms } from "../hooks/useVoiceRooms";
 import { useOpenFor } from "../hooks/useVoiceStage";
+import { RoomIcon } from "./RoomName";
 import { VoiceRoomFormDialog } from "./VoiceRoomFormDialog";
 import { VoiceRoomsSkeleton } from "./VoiceSkeletons";
 
@@ -65,6 +66,7 @@ function VoiceRoomItem({ room, headingLevel, surface = "card" }: VoiceRoomItemPr
   return (
     <VoiceRoomCard
       name={room.name}
+      icon={room.icon && <RoomIcon icon={room.icon} />}
       href={voiceRoomPath(room.id)}
       headingLevel={headingLevel}
       surface={surface}

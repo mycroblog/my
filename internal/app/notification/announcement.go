@@ -13,7 +13,6 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
-	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
@@ -44,9 +43,9 @@ type AnnouncementRecipients interface {
 
 // Announcements reads an announcement: *appinstance.Service implements it.
 type Announcements interface {
-	// Announcement returns the announcement in any state; ErrNotFound (of the instance module)
-	// for an unknown one.
-	Announcement(ctx context.Context, id string) (instance.Announcement, error)
+	// AnnouncementNotice returns the announcement in any state; ErrNotFound (of the instance
+	// module) for an unknown one.
+	AnnouncementNotice(ctx context.Context, id string) (appinstance.AnnouncementNotice, error)
 }
 
 // AnnouncementDeps are the ports of the announcement notifications.
@@ -103,17 +102,17 @@ func RegisterAnnouncementJobs(reg *queue.JobHandlerRegistry, d AnnouncementDeps)
 // published, within its window, and past ShowsFrom; it waits for ShowsFrom when the job runs
 // early, and does nothing for a draft, a withdrawn announcement, or an ended one.
 func notifyAnnouncement(ctx context.Context, d AnnouncementDeps, id string) queue.Result {
-	a, err := d.Announcements.Announcement(ctx, id)
+	a, err := d.Announcements.AnnouncementNotice(ctx, id)
 	switch {
 	case errors.Is(err, appinstance.ErrNotFound):
 		return queue.Done()
 	case err != nil:
 		return queue.Retry(0, err)
-	case a.State != instance.AnnouncementPublished:
+	case !a.Published:
 		return queue.Done()
 	}
 	now := kernel.Normalize(d.Clock.Now())
-	if from := a.ShowsFrom(); now.Before(from) {
+	if from := a.ShowsFrom; now.Before(from) {
 		return queue.Retry(from.Sub(now), nil)
 	}
 	if !a.ShowsAt(now) {
@@ -126,8 +125,8 @@ func notifyAnnouncement(ctx context.Context, d AnnouncementDeps, id string) queu
 }
 
 // fanOutAnnouncement notifies the local users of a, announcementBatch of them per transaction.
-func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a instance.Announcement, now time.Time) error {
-	title := a.Revision.Title
+func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a appinstance.AnnouncementNotice, now time.Time) error {
+	title := a.Title
 	after := ""
 	for {
 		ids, next, err := d.Recipients.LocalUserAccountIDs(ctx, after, announcementBatch)

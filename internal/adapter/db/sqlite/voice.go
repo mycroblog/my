@@ -50,7 +50,8 @@ func (r *VoiceRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev app
 	s := rev.Settings
 	if err := q.InsertVoiceRoomRevision(ctx, sqlitegen.InsertVoiceRoomRevisionParams{
 		ID: rev.ID, RoomID: rev.RoomID, Name: s.Name, Description: s.Description, Visibility: string(s.Visibility),
-		Speakers: string(s.Speakers), RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: toMillis(rev.RevisedAt),
+		Speakers: string(s.Speakers), IconEmojiKey: s.Icon.Key(), IconCustomEmojiID: toNullString(s.Icon.CustomEmojiID),
+		RevisedByAccountID: rev.RevisedByAccountID, RevisedAt: toMillis(rev.RevisedAt),
 	}); err != nil {
 		return wrap(err, "insert voice room revision")
 	}
@@ -253,6 +254,7 @@ func voiceRoomRecord(row sqlitegen.GetVoiceRoomRow) appvoice.RoomRecord {
 			ID: row.RevisionID, RoomID: row.ID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
+				Icon: voice.IconOf(row.IconEmojiKey, row.IconCustomEmojiID.String),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: fromMillis(row.RevisedAt),
 		},

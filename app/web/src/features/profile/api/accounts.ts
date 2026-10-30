@@ -117,8 +117,12 @@ export function followListQueryOptions(api: Api, id: string, list: FollowList) {
   });
 }
 
-/** What the viewer can do to their relationship with an account. */
-export type RelationshipAction = "follow" | "unfollow" | "block" | "unblock" | "mute" | "unmute";
+/**
+ * What the viewer can do to their relationship with an account. `subscribe` and `unsubscribe` turn on and off the
+ * notifications of the account's new posts (ADR-0123), which the account is not told of.
+ */
+export type RelationshipAction =
+  "follow" | "unfollow" | "block" | "unblock" | "mute" | "unmute" | "subscribe" | "unsubscribe";
 
 /** Changes the viewer's relationship with the account `id`; returns the relationship after the change. */
 export async function changeRelationship(api: Api, id: string, action: RelationshipAction): Promise<Relationship> {
@@ -137,6 +141,10 @@ export async function changeRelationship(api: Api, id: string, action: Relations
         return api.fetch.POST("/accounts/{id}/mute", init);
       case "unmute":
         return api.fetch.POST("/accounts/{id}/unmute", init);
+      case "subscribe":
+        return api.fetch.POST("/accounts/{id}/subscribe", init);
+      case "unsubscribe":
+        return api.fetch.POST("/accounts/{id}/unsubscribe", init);
     }
   })();
   if (data === undefined) throw new ApiError(error);
@@ -160,7 +168,8 @@ function changesFollows(change: RelationshipChange): boolean {
  * when their page opens (S7).
  * A change of a follow changes the follow counts on both profiles and the viewer's own account, every follow
  * list (any may list either account), and, for the viewer's own follows, the home timeline; a change of a block
- * or a mute changes every list of posts, which leave out the accounts the viewer blocks or mutes. The lists of
+ * or a mute changes every list of posts, which leave out the accounts the viewer blocks or mutes. A subscription to
+ * the account's new posts changes only the relationship itself, which the caller stores. The lists of
  * the blocked and muted accounts in the settings are left to the caller (storeRelationship).
  */
 export function refreshRelationship(
@@ -169,6 +178,7 @@ export function refreshRelationship(
   accountId: string,
   viewerId: string,
 ): Promise<void> {
+  if (change === "subscribe" || change === "unsubscribe") return Promise.resolve();
   const follows = changesFollows(change);
   const posts = change !== "accept";
   return queryClient.invalidateQueries({

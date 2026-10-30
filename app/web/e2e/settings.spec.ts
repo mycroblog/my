@@ -172,13 +172,13 @@ async function signedInServer(
     ],
   };
   // The notification settings (ADR-0109 §2): the ordinary rows, the moderator rows of the viewer's permissions, and
-  // the instance's notices, at their defaults.
-  const row = (group: string, section: string, types: string[], inApp: Cell, email: Cell) => ({
+  // the instance's notices, at their defaults. A row without `email` (the new posts) has no email channel.
+  const row = (group: string, section: string, types: string[], inApp: Cell, email?: Cell) => ({
     group,
     section,
     types,
     in_app: inApp,
-    email,
+    ...(email !== undefined && { email }),
   });
   const on: Cell = { enabled: true, fixed: false };
   const off: Cell = { enabled: false, fixed: false };
@@ -190,6 +190,7 @@ async function signedInServer(
     row("poll_closed", "ordinary", ["poll_closed"], on, off),
     row("account_moved", "ordinary", ["account_moved"], on, off),
     row("voice", "ordinary", ["voice_room_started", "voice_room_invited"], on, off),
+    row("status", "ordinary", ["status"], on),
     ...(permissions.includes("manage_reports") ? [row("admin_report", "moderator", ["admin_report"], on, on)] : []),
     ...(permissions.includes("manage_accounts")
       ? [
@@ -1031,6 +1032,9 @@ test.describe("notification settings", () => {
     await expect(fixedCell).toBeChecked();
     await expect(fixedCell).toBeDisabled();
     await expect(notificationCell(page, "admin_report", "email")).toBeChecked();
+    // The new posts are never sent by email: their row has no email cell.
+    await expect(notificationCell(page, "status", "in_app")).toBeChecked();
+    await expect(notificationCell(page, "status", "email")).toHaveCount(0);
 
     const boosts = notificationCell(page, "boost", "in_app");
     await boosts.focus();

@@ -5,7 +5,7 @@
 -- and 13).
 
 -- name: ListVoiceRoomRevisions :many
-SELECT id, room_id, name, description, visibility, speakers, revised_by_account_id, revised_at
+SELECT id, room_id, name, description, visibility, speakers, icon_emoji_key, icon_custom_emoji_id, revised_by_account_id, revised_at
 FROM voice_room_revisions WHERE room_id = ? ORDER BY id;
 
 -- ListVoiceRoomParticipations returns the participations of a room with their ends (NULL

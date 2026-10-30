@@ -12419,6 +12419,11 @@ type VoiceRoom struct {
 	// Host An account, as clients show it (FR-006).
 	Host Account `json:"host"`
 
+	// Icon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
+	// of this server with its image. A room whose custom emoji is later disabled or deleted shows
+	// no icon.
+	Icon *VoiceRoomIcon `json:"icon,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -12448,6 +12453,11 @@ type VoiceRoom struct {
 // VoiceRoomEntry The open voice chat room where an account is the host or a speaker, on its profile. Only a
 // user who sees the room gets it; a listener's profile shows no room.
 type VoiceRoomEntry struct {
+	// Icon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
+	// of this server with its image. A room whose custom emoji is later disabled or deleted shows
+	// no icon.
+	Icon *VoiceRoomIcon `json:"icon,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -12493,6 +12503,18 @@ type VoiceRoomHistoryPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// VoiceRoomIcon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
+// of this server with its image. A room whose custom emoji is later disabled or deleted shows
+// no icon.
+type VoiceRoomIcon struct {
+	// Emoji The custom emoji with its image; omitted for a Unicode emoji.
+	Emoji *CustomEmoji `json:"emoji,omitempty"`
+
+	// Name The emoji as the settings of a room take it: the Unicode emoji, or the shortcode of a
+	// custom emoji of this server, without colons.
+	Name string `json:"name"`
 }
 
 // VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
@@ -12594,6 +12616,11 @@ type VoiceRoomSettings struct {
 	// Hashtags Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post.
 	Hashtags *[]string `json:"hashtags,omitempty"`
 
+	// Icon The emoji shown before the name: one Unicode emoji, or the shortcode of an enabled custom
+	// emoji of this server, with or without colons. Omitted or empty for none. Any other value,
+	// such as a custom emoji of another server, is refused with `422`.
+	Icon *string `json:"icon,omitempty"`
+
 	// Name 1 to 100 characters on one line.
 	Name string `json:"name"`
 
@@ -12632,6 +12659,9 @@ type VoiceRoomSummary struct {
 	// Host An account, as clients show it (FR-006).
 	Host *Account `json:"host,omitempty"`
 
+	// Icon The icon of the room; present only with `name`, and omitted when the room has none.
+	Icon *VoiceRoomIcon `json:"icon,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -12654,6 +12684,9 @@ type VoiceRoomUpdate struct {
 
 	// Hashtags Up to 5 hashtags, which replace the room's; empty for none.
 	Hashtags *[]string `json:"hashtags,omitempty"`
+
+	// Icon The emoji shown before the name, as in `VoiceRoomSettings`; empty removes it.
+	Icon *string `json:"icon,omitempty"`
 
 	// Name 1 to 100 characters on one line.
 	Name *string `json:"name,omitempty"`

@@ -267,6 +267,44 @@ type Settings struct {
 	Hashtags   []Hashtag
 	Visibility Visibility
 	Speakers   Speakers
+	// Icon is the emoji shown before the name, the zero Icon for none.
+	Icon Icon
+}
+
+// MaxIconLength bounds the bytes of the Unicode emoji of an icon, as icon_emoji_key does.
+const MaxIconLength = 100
+
+// Icon is the emoji icon of a room, in the shape of the emoji of a reaction (ADR-0052 §1): a
+// Unicode emoji, fully qualified, or the ID of a custom emoji of this instance. At most one is
+// set; the zero Icon is no icon. The application layer checks that the emoji is one a local
+// account may use.
+type Icon struct {
+	Unicode       string
+	CustomEmojiID string
+}
+
+// IsZero reports the absence of an icon.
+func (i Icon) IsZero() bool { return i.Unicode == "" && i.CustomEmojiID == "" }
+
+// Key returns what icon_emoji_key stores: the Unicode emoji, the ID of the custom emoji, or ""
+// for no icon.
+func (i Icon) Key() string {
+	if i.CustomEmojiID != "" {
+		return i.CustomEmojiID
+	}
+	return i.Unicode
+}
+
+// IconOf returns the icon that icon_emoji_key and icon_custom_emoji_id store.
+func IconOf(key, customEmojiID string) Icon {
+	if customEmojiID != "" {
+		return Icon{CustomEmojiID: customEmojiID}
+	}
+	return Icon{Unicode: key}
+}
+
+func (i Icon) valid() bool {
+	return (i.Unicode == "" || i.CustomEmojiID == "") && utf8.ValidString(i.Unicode) && len(i.Unicode) <= MaxIconLength
 }
 
 // SettingsField names the setting that Validate rejected.
@@ -279,6 +317,7 @@ const (
 	FieldHashtags    SettingsField = "hashtags"
 	FieldVisibility  SettingsField = "visibility"
 	FieldSpeakers    SettingsField = "speakers"
+	FieldIcon        SettingsField = "icon"
 )
 
 // SettingsError reports the invalid setting.
@@ -295,7 +334,8 @@ type GraphemeCounter func(s string) int
 // characters; a description of at most MaxDescriptionLength characters without control
 // characters other than line breaks; at most MaxHashtags hashtags, each with a name and a
 // normalized name of 1 to MaxHashtagLength characters without # or white space, unique by the
-// normalized name; and a known visibility and speakers setting. It returns a *SettingsError.
+// normalized name; a known visibility and speakers setting; and at most one emoji of an icon.
+// It returns a *SettingsError.
 func (s Settings) Validate(graphemes GraphemeCounter) error {
 	invalid := func(f SettingsField) error { return &SettingsError{Field: f} }
 	switch {
@@ -310,6 +350,8 @@ func (s Settings) Validate(graphemes GraphemeCounter) error {
 		return invalid(FieldVisibility)
 	case !s.Speakers.Valid():
 		return invalid(FieldSpeakers)
+	case !s.Icon.valid():
+		return invalid(FieldIcon)
 	}
 	return nil
 }

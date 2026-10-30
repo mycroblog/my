@@ -1,19 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The dialog of a room's settings (ADR-0100 §3, §9): starting a room from the list page, or the host changing its
-// settings from the room's page. Closing it drops the draft, so the scrim does not close it (web-client/README.md
+// settings from the room's page. The icon before the room's name (FR-923) is chosen with the post form's emoji picker
+// (ADR-0091) and can be removed. Closing it drops the draft, so the scrim does not close it (web-client/README.md
 // Y11). The fields mount with the dialog's content, so every opening starts from the room as it is.
 import {
   Button,
   Checkbox,
+  Cluster,
   Dialog,
   DialogActions,
+  EmojiIcon,
+  Fieldset,
   InlineError,
   Radio,
   RadioGroup,
   Stack,
+  Text,
   TextArea,
   TextField,
 } from "@my/ui";
+import { useRef } from "react";
+import { EmojiChoiceButton } from "../../emoji";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   type VoiceRoom,
@@ -23,7 +30,8 @@ import {
   type VoiceRoomVisibility,
   voiceRoomVisibilities,
 } from "../api/voice";
-import { type VoiceRoomFieldError, useVoiceRoomForm } from "../hooks/useVoiceRoomForm";
+import { iconOf, type VoiceRoomFieldError, useVoiceRoomForm } from "../hooks/useVoiceRoomForm";
+import { RoomIcon } from "./RoomName";
 
 /** The label of each visibility. */
 export const visibilityLabels: Readonly<Record<VoiceRoomVisibility, ClientMessageKey>> = {
@@ -71,6 +79,8 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
   const t = useT();
   const form = useVoiceRoomForm({ ...(room !== undefined && { room }), onDone: close });
   const { draft, change } = form;
+  // Removing the icon unmounts its button: focus goes back to the button that chooses one.
+  const iconGroupRef = useRef<HTMLFieldSetElement>(null);
   const formatRemaining = (remaining: number) =>
     remaining < 0
       ? t("client:voice.form.characters_over", { count: -remaining })
@@ -90,6 +100,32 @@ function VoiceRoomFields({ room, close }: { room?: VoiceRoom; close: () => void 
         autoFocus
         {...fieldError(form.fieldError, "name")}
       />
+      <Fieldset ref={iconGroupRef} legend={t("client:voice.form.icon")}>
+        <Text as="p" tone="muted" size="sm">
+          {t("client:voice.form.icon.description")}
+        </Text>
+        <Cluster gap="2" align="center">
+          <EmojiChoiceButton
+            onSelect={(choice) => {
+              change({ icon: iconOf(choice) });
+            }}
+          >
+            {draft.icon === undefined ? <EmojiIcon /> : <RoomIcon icon={draft.icon} />}
+            {t(draft.icon === undefined ? "client:voice.form.icon.choose" : "client:voice.form.icon.change")}
+          </EmojiChoiceButton>
+          {draft.icon !== undefined && (
+            <Button
+              variant="subtle"
+              onPress={() => {
+                change({ icon: undefined });
+                iconGroupRef.current?.querySelector("button")?.focus();
+              }}
+            >
+              {t("client:voice.form.icon.remove")}
+            </Button>
+          )}
+        </Cluster>
+      </Fieldset>
       <TextArea
         label={t("client:voice.form.description")}
         name="description"

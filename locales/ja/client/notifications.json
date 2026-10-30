@@ -47,6 +47,10 @@
     "defaultMessage": "メンション",
     "description": "Tab on the notifications page that shows only posts that mention the user."
   },
+  "notifications.filter.posts": {
+    "defaultMessage": "新しい投稿",
+    "description": "Tab on the notifications page that shows only the new posts of the accounts whose new posts the user chose to be notified of."
+  },
   "notifications.group.boost": {
     "defaultMessage": "{name}さんほか{count, plural, other {#人}}があなたの投稿をブーストしました",
     "description": "Notification sentence for several boosts of one of the user's posts, grouped in one row. {name} is the display name of the newest account that boosted it; {count} is the number of the other accounts that did (1 or more)."

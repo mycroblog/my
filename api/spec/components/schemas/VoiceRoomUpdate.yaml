@@ -5,6 +5,9 @@ properties:
   name:
     description: 1 to 100 characters on one line.
     type: string
+  icon:
+    description: The emoji shown before the name, as in `VoiceRoomSettings`; empty removes it.
+    type: string
   description:
     description: Up to 500 characters; empty for none.
     type: string

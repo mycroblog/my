@@ -1244,6 +1244,8 @@ components:
       $ref: ./components/schemas/Announcement.yaml
     AnnouncementList:
       $ref: ./components/schemas/AnnouncementList.yaml
+    AnnouncementPage:
+      $ref: ./components/schemas/AnnouncementPage.yaml
     AppealModerationActionRequest:
       $ref: ./components/schemas/AppealModerationActionRequest.yaml
     AutoDeletePolicy:
@@ -1864,6 +1866,8 @@ components:
       $ref: ./components/schemas/VoiceRoomHistoryEntry.yaml
     VoiceRoomHistoryPage:
       $ref: ./components/schemas/VoiceRoomHistoryPage.yaml
+    VoiceRoomIcon:
+      $ref: ./components/schemas/VoiceRoomIcon.yaml
     VoiceRoomJoin:
       $ref: ./components/schemas/VoiceRoomJoin.yaml
     VoiceRoomPage:

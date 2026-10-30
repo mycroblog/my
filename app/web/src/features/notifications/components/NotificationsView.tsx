@@ -28,6 +28,7 @@ const filterLabels: Readonly<Record<NotificationFilter, ClientMessageKey>> = {
   follows: "client:notifications.filter.follows",
   boosts: "client:notifications.filter.boosts",
   favourites: "client:notifications.filter.favourites",
+  posts: "client:notifications.filter.posts",
 };
 
 /** The kind whose icon each filter shows beside its name: the icon of the mark on the rows it keeps (P3). */
@@ -37,6 +38,7 @@ const filterKinds: Readonly<Record<NotificationFilter, NotificationKind>> = {
   follows: "follow",
   boosts: "boost",
   favourites: "favourite",
+  posts: "status",
 };
 
 function isFilter(key: unknown): key is NotificationFilter {

@@ -24,7 +24,7 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 	if err := s.enabled(); err != nil {
 		return Joined{}, err
 	}
-	settings, err := in.settings()
+	settings, err := s.settings(ctx, in)
 	if err != nil {
 		return Joined{}, err
 	}
@@ -282,7 +282,7 @@ func (s *Service) Update(ctx context.Context, accountID, roomID string, p Settin
 	if err != nil {
 		return RoomView{}, err
 	}
-	settings, err := p.apply(v.Revision.Settings)
+	settings, err := s.patched(ctx, v.Revision.Settings, p)
 	if err != nil {
 		return RoomView{}, err
 	}

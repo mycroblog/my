@@ -195,6 +195,18 @@ func (s *Interactions) ReactionEmoji(ctx context.Context, name string) (string, 
 	return ":" + tag.Shortcode + ":", nil
 }
 
+// LocalEmoji returns the emoji that a local account gives a voice chat room as its icon
+// (FR-923), under the rules of the emoji it reacts with (ADR-0052 §2): a Unicode emoji,
+// normalized, or the ID of an enabled custom emoji of this instance whose image can be shown.
+// Anything else fails with content.ErrInvalidReaction.
+func (s *Interactions) LocalEmoji(ctx context.Context, name string) (unicode, customEmojiID string, err error) {
+	e, _, err := s.localReactionEmoji(ctx, name)
+	if err != nil {
+		return "", "", err
+	}
+	return e.Unicode, e.CustomEmojiID, nil
+}
+
 // localReactionEmoji returns the emoji that a local account reacts with (ADR-0052 §2), with the
 // Emoji tag of a custom emoji: a Unicode emoji, normalized, or an enabled custom emoji of this
 // instance whose image can be shown.

@@ -18,6 +18,7 @@ const kinds: readonly NotificationKind[] = [
   "boost",
   "follow",
   "mention",
+  "status",
   "reaction",
   "quote",
   "poll",

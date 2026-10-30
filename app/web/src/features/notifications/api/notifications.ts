@@ -17,7 +17,7 @@ export type ModerationAction = components["schemas"]["ModerationAction"];
 export type SupporterEndReason = components["schemas"]["SupporterEndReason"];
 
 /** The filters of the notifications page, in the order of its tabs; `all` sends no `types`. */
-export const notificationFilters = ["all", "mentions", "follows", "boosts", "favourites"] as const;
+export const notificationFilters = ["all", "mentions", "follows", "boosts", "favourites", "posts"] as const;
 
 export type NotificationFilter = (typeof notificationFilters)[number];
 
@@ -27,6 +27,8 @@ const filterTypes: Readonly<Record<Exclude<NotificationFilter, "all">, readonly 
   follows: ["follow", "follow_request", "follow_accepted"],
   boosts: ["boost"],
   favourites: ["favourite"],
+  // The new posts of the accounts that the user subscribes to (ADR-0123).
+  posts: ["status"],
 };
 
 /** The `init` of GET /notifications for a filter (without the cursor). */

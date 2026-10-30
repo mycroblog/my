@@ -8,6 +8,7 @@ import { useT } from "../../../lib/i18n";
 import { voiceRoomPath } from "../api/voice";
 import { useJoinedVoiceRoomId } from "../hooks/useVoiceCallControls";
 import { useProfileVoiceRoom } from "../hooks/useVoiceHistory";
+import { RoomIcon } from "./RoomName";
 
 export type ProfileVoiceRoomProps = {
   accountId: string;
@@ -27,6 +28,7 @@ export function ProfileVoiceRoom({ accountId, name }: ProfileVoiceRoomProps) {
       <Stack as="ul" aria-label={t("client:voice.rail.title")}>
         <VoiceRoomCard
           name={room.name}
+          icon={room.icon && <RoomIcon icon={room.icon} />}
           href={voiceRoomPath(room.id)}
           headingLevel={2}
           liveLabel={t("client:voice.room.live")}

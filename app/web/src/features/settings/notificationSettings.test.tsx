@@ -186,6 +186,7 @@ describe("the table", () => {
       "Ended polls",
       "Accounts you follow moving",
       "Voice chats",
+      "New posts",
     ]);
     expect(rowHeaders("From this server")).toEqual([
       "Notices from the moderators",
@@ -213,6 +214,17 @@ describe("the table", () => {
       expect(api.patches).toEqual([{ changes: [{ group: "announcement", channel: "in_app", enabled: false }] }]);
     });
     expect(within(row).getByText("Off in the app, so it does not arrive any other way.")).toBeInTheDocument();
+  });
+
+  test("shows no email cell in the New posts row, which is never sent by email", async () => {
+    await openSettings();
+
+    expect(screen.getByRole("checkbox", { name: "New posts: In the app" })).toBeChecked();
+    expect(screen.queryByRole("checkbox", { name: "New posts: Email" })).not.toBeInTheDocument();
+    // The row keeps the column's place, so that its cells line up with the other rows.
+    const row = screen.getByRole("row", { name: /^New posts/ });
+    expect(within(row).getAllByRole("cell")).toHaveLength(columnHeaders("From other people").length - 1);
+    expect(within(row).getAllByRole("checkbox")).toHaveLength(1);
   });
 
   test("lists the moderator rows the server offers a moderator", async () => {
@@ -347,9 +359,13 @@ describe("the table", () => {
     await waitFor(() => {
       expect(api.patches).toHaveLength(2);
     });
-    // Mentions was on already; every other row of the section changes in the same request.
+    // Mentions was on already; every other row of the section with an email cell (not New posts) changes in the
+    // same request.
     expect(api.patches[1]?.changes.map((change) => change.group)).toEqual(
-      ordinaryNotificationRows.map((row) => row.group).filter((group) => group !== "mention"),
+      ordinaryNotificationRows
+        .filter((row) => row.email !== undefined)
+        .map((row) => row.group)
+        .filter((group) => group !== "mention"),
     );
     expect(api.patches[1]?.changes.every((change) => change.channel === "email" && change.enabled)).toBe(true);
     expect(all).toBeChecked();

@@ -28,7 +28,7 @@
     "description": "Web Push notification to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.announcement": {
-    "defaultMessage": "{instance}からのお知らせ: {title}",
+    "defaultMessage": "{instance}からのお知らせ：{title}",
     "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.appeal_decided": {

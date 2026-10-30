@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
 	"github.com/mycroblog/my/internal/interface/clientapi"
@@ -30,6 +31,9 @@ type fakeVoiceRooms struct {
 	// cursors of the history.
 	summary      *appvoice.Summary
 	historyAfter []string
+	// icon is the icon of the room; customEmoji is the custom emoji that can be shown as one.
+	icon        voice.Icon
+	customEmoji *appcontent.CustomEmojiView
 }
 
 func (f *fakeVoiceRooms) room() appvoice.RoomView {
@@ -39,7 +43,7 @@ func (f *fakeVoiceRooms) room() appvoice.RoomView {
 			Head: appvoice.Head{RoomID: voiceRoomID, HostAccountID: aliceAccountID, State: voice.StateOpen, ParticipantsCount: 1},
 			Revision: appvoice.Revision{Settings: voice.Settings{
 				Name: "Talk", Description: "About", Hashtags: []voice.Hashtag{{Name: "Go", NameNormalized: "go"}},
-				Visibility: voice.VisibilityLocal, Speakers: voice.SpeakersManual,
+				Visibility: voice.VisibilityLocal, Speakers: voice.SpeakersManual, Icon: f.icon,
 			}},
 		},
 		Participants: []appvoice.Participant{{AccountID: aliceAccountID, RoomID: voiceRoomID, ParticipationID: voiceRoomID, Role: voice.RoleSpeaker}},

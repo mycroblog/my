@@ -19,7 +19,9 @@ CREATE TABLE voice_rooms (
 
 -- Event (revision): the settings of a room; the settings it opened with are the first, and the
 -- newest row is current. The name is 1 to 100 grapheme clusters (internal/domain/voice); the
--- erasure of the account that wrote a revision empties its name and description.
+-- erasure of the account that wrote a revision empties its name and description. The icon has
+-- the shape of the emoji of a reaction (04-content.sql reactions): icon_emoji_key is the Unicode
+-- emoji, fully qualified, or the custom_emojis.id of icon_custom_emoji_id, '' for no icon.
 CREATE TABLE voice_room_revisions (
   id TEXT NOT NULL PRIMARY KEY,
   room_id TEXT NOT NULL,
@@ -27,8 +29,11 @@ CREATE TABLE voice_room_revisions (
   description TEXT NOT NULL CHECK (length(description) <= 500),
   visibility TEXT NOT NULL CHECK (visibility IN ('local', 'followers', 'mutuals', 'invited')),
   speakers TEXT NOT NULL CHECK (speakers IN ('everyone', 'followers', 'mutuals', 'manual')),
+  icon_emoji_key TEXT NOT NULL DEFAULT '' CHECK (length(icon_emoji_key) <= 100),
+  icon_custom_emoji_id TEXT,
   revised_by_account_id TEXT NOT NULL,
-  revised_at INTEGER NOT NULL
+  revised_at INTEGER NOT NULL,
+  CHECK (icon_custom_emoji_id IS NULL OR icon_custom_emoji_id = icon_emoji_key)
 ) STRICT;
 CREATE INDEX voice_room_revisions_room_id_id ON voice_room_revisions (room_id, id DESC);
 -- The revisions that an account wrote, whose names and descriptions its erasure empties.

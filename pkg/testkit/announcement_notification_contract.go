@@ -44,14 +44,14 @@ func (s *stubShownAnnouncements) put(a instance.Announcement) {
 	s.all[a.ID] = a
 }
 
-func (s *stubShownAnnouncements) Announcement(_ context.Context, id string) (instance.Announcement, error) {
+func (s *stubShownAnnouncements) AnnouncementNotice(_ context.Context, id string) (appinstance.AnnouncementNotice, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	a, ok := s.all[id]
 	if !ok {
-		return instance.Announcement{}, fmt.Errorf("announcement %s: %w", id, appinstance.ErrNotFound)
+		return appinstance.AnnouncementNotice{}, fmt.Errorf("announcement %s: %w", id, appinstance.ErrNotFound)
 	}
-	return a, nil
+	return appinstance.NoticeOf(a), nil
 }
 
 func (s *stubShownAnnouncements) ShownAnnouncementIDs(context.Context) ([]string, error) {

@@ -31,7 +31,7 @@ func TestAnnouncementLabelTitle(t *testing.T) {
 }
 
 func TestValidateAnnouncementTitle(t *testing.T) {
-	runes := func(s string) int { return utf8.RuneCountInString(s) }
+	runes := utf8.RuneCountInString
 	for title, want := range map[string]bool{
 		"Maintenance":                 false,
 		"":                            true,

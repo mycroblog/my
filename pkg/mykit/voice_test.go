@@ -37,7 +37,7 @@ func TestVoiceOperations(t *testing.T) {
 	api, _ := newTestAPI(t, srv, Config{TokenSource: StaticToken("at")})
 	ctx := context.Background()
 
-	name, tag, cursor, id, who, session := "Late night", "go", "c1", "r1", "a1", "s1"
+	name, tag, cursor, id, who, session, icon := "Late night", "go", "c1", "r1", "a1", "s1", "blob"
 	end := true
 	cases := []struct {
 		name string
@@ -48,8 +48,8 @@ func TestVoiceOperations(t *testing.T) {
 			return status(api.ListVoiceRoomsWithResponse(ctx, &ListVoiceRoomsParams{Tag: &tag, Cursor: &cursor}))
 		}, received{"GET", "/api/v1/voice/rooms?tag=go&cursor=c1", ""}},
 		{"open", func() (int, error) {
-			return status(api.OpenVoiceRoomWithResponse(ctx, OpenVoiceRoomJSONRequestBody{Name: name}))
-		}, received{"POST", "/api/v1/voice/rooms", `{"name":"Late night"}`}},
+			return status(api.OpenVoiceRoomWithResponse(ctx, OpenVoiceRoomJSONRequestBody{Name: name, Icon: &icon}))
+		}, received{"POST", "/api/v1/voice/rooms", `{"icon":"blob","name":"Late night"}`}},
 		{"get", func() (int, error) { return status(api.GetVoiceRoomWithResponse(ctx, id)) },
 			received{"GET", "/api/v1/voice/rooms/r1", ""}},
 		{"update", func() (int, error) {
