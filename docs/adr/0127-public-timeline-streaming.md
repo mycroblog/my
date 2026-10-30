@@ -1,6 +1,6 @@
 # ADR-0127: ローカル・連合のタイムラインにも新着を届け、自動の差し込みを既定にする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 - Deciders: @rosylilly
 - Issue: #1906
@@ -36,9 +36,7 @@
 
 ## Decision（決定）
 
-> Proposed の間は推奨案。
-
-**推奨案は選択肢 1。** 加えて `timeline_auto_insert` の既定を真にする。
+**選択肢 1 を採用する。** 加えて `timeline_auto_insert` の既定を真にする。
 
 ### 1. エンドポイント
 
