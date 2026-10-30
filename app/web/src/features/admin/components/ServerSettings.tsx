@@ -667,12 +667,6 @@ function PoliciesForm() {
           label={t("client:admin.settings.landing.counts")}
           description={t("client:admin.settings.landing.counts.description")}
         />
-        <PolicyCheckbox
-          form={form}
-          setting="public_operators"
-          label={t("client:admin.settings.landing.operators")}
-          description={t("client:admin.settings.landing.operators.description")}
-        />
       </Section>
       {/* The accounts that the suggestions to follow show first, in this order (FR-308). */}
       <Section surface="card" title={t("client:admin.settings.featured.title")}>

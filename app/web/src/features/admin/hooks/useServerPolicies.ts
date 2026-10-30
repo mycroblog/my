@@ -44,7 +44,6 @@ const policyKeys = [
   "domain_actions_rationale_visibility",
   // The publication of the costs, the income and the supporter list is set next to those screens (usePublicationSettings).
   "public_counts",
-  "public_operators",
   "featured_accounts",
   "search_indexing",
   "indexable_default",

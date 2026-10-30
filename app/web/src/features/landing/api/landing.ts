@@ -10,7 +10,7 @@ export type Instance = components["schemas"]["Instance"];
 /** A post of the sample of the local timeline. */
 export type RecentPost = components["schemas"]["Status"];
 
-/** The counts and the operators of the instance, as GET /instance/overview returns them. */
+/** The counts of the instance, as GET /instance/overview returns them. */
 export type InstanceOverview = components["schemas"]["InstanceOverview"];
 
 /** How many recent posts the landing page shows. */
@@ -21,7 +21,7 @@ export function instanceQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/instance");
 }
 
-/** How many members, how many public posts lately, since when, and who runs it; each part only while the server shows it. */
+/** How many members, how many public posts lately, and since when; only while the server shows them. */
 export function overviewQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/instance/overview");
 }

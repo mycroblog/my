@@ -235,7 +235,6 @@ export const instanceSettings: Readonly<Record<string, string>> = {
   income_visibility: "totals",
   supporter_list_visibility: "public",
   public_counts: "true",
-  public_operators: "true",
 };
 
 /** The instance rules, added with `my instance rule add`, in order. */

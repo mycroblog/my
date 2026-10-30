@@ -46,7 +46,6 @@ func RoleRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"RefusesInvalidRoles", roleRefusesInvalid},
 		{"RefusesRoleChangesBeyondTheActor", roleRefusesChangesBeyondActor},
 		{"ShowsBadgesByChoice", roleBadgesAreShownByChoice},
-		{"NamesPublicStaff", roleBadgesNamePublicStaff},
 		{"ChangesBadges", roleBadgeChanges},
 		{"ReplacesRolesAndMovesTheBadge", roleReplacesAndMovesTheBadge},
 	}

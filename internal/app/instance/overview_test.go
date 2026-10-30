@@ -22,10 +22,8 @@ func (c *fakeClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 type fakeOverviewSources struct {
 	members        int
 	daily          []int
-	operators      []string
 	err            error
 	countReads     int
-	operatorReads  int
 	dailyTo        time.Time
 	dailyDays      int
 	startedAtValue time.Time
@@ -45,16 +43,11 @@ func (f *fakeOverviewSources) DailyPublicPosts(_ context.Context, to time.Time, 
 	return f.daily, nil
 }
 
-func (f *fakeOverviewSources) OperatorAccountIDs(context.Context) ([]string, error) {
-	f.operatorReads++
-	return f.operators, nil
-}
-
 func TestOverviewKeepsWhatItReadForTheTTL(t *testing.T) {
 	ctx := t.Context()
 	clock := &fakeClock{now: time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC)}
 	started := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
-	src := &fakeOverviewSources{members: 3, daily: []int{1, 0, 0, 2, 0, 0, 5}, operators: []string{"a"}, startedAtValue: started}
+	src := &fakeOverviewSources{members: 3, daily: []int{1, 0, 0, 2, 0, 0, 5}, startedAtValue: started}
 	o := instance.NewOverview(src, clock)
 
 	got, err := o.Counts(ctx)
@@ -77,17 +70,6 @@ func TestOverviewKeepsWhatItReadForTheTTL(t *testing.T) {
 		t.Errorf("Counts after the TTL = %+v after %d reads, want 4 members counted now", again, src.countReads)
 	}
 
-	if ids, err := o.OperatorAccountIDs(ctx); err != nil || !reflect.DeepEqual(ids, []string{"a"}) {
-		t.Errorf("OperatorAccountIDs = %v, %v", ids, err)
-	}
-	src.operators = []string{"b"}
-	if ids, _ := o.OperatorAccountIDs(ctx); !reflect.DeepEqual(ids, []string{"a"}) || src.operatorReads != 1 {
-		t.Errorf("OperatorAccountIDs within the TTL = %v after %d reads", ids, src.operatorReads)
-	}
-	clock.Advance(instance.OverviewTTL)
-	if ids, _ := o.OperatorAccountIDs(ctx); !reflect.DeepEqual(ids, []string{"b"}) {
-		t.Errorf("OperatorAccountIDs after the TTL = %v, want [b]", ids)
-	}
 }
 
 func TestOverviewReadsAgainAfterAFailure(t *testing.T) {

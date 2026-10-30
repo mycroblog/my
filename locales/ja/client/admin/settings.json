@@ -843,14 +843,6 @@
     "defaultMessage": "利用者の数、この 7 日の日ごとの公開の投稿の数、サーバーが動き始めた時期。数えるのは公開の投稿だけで、数は数分ごとに更新します。",
     "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
   },
-  "admin.settings.landing.operators": {
-    "defaultMessage": "運営している人を見せる",
-    "description": "Checkbox of whether the landing page lists the people who run the server."
-  },
-  "admin.settings.landing.operators.description": {
-    "defaultMessage": "スタッフのロール（管理者・モデレーター、またはモデレーションかサーバーの権限を持つロール）のバッジをプロフィールに出している、このサーバーのアカウントと、そのバッジ。バッジを出していないスタッフは載せません。",
-    "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
-  },
   "admin.settings.featured.title": {
     "defaultMessage": "おすすめのアカウント",
     "description": "Heading of the section of the server settings about the accounts suggested to follow."

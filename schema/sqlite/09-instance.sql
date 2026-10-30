@@ -24,7 +24,7 @@ CREATE TABLE instance_setting_revisions (
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in',
-    'public_counts', 'public_operators', 'featured_accounts'
+    'public_counts', 'featured_accounts'
   )),
   value TEXT NOT NULL,
   revised_by_user_id TEXT,

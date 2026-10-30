@@ -313,23 +313,20 @@ describe("the server's policies", () => {
     expect(within(apps).getByRole("checkbox", { name: "Client ID Metadata Documents" })).toBeChecked();
   });
 
-  test("hides the counts or the operators on the landing page, both shown by default", async () => {
+  test("hides the counts on the landing page, shown by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });
     const landing = await screen.findByRole("region", { name: "Landing page" });
     const counts = within(landing).getByRole("checkbox", { name: "Show the numbers of the server" });
-    const operators = within(landing).getByRole("checkbox", { name: "Show who runs the server" });
     expect(counts).toBeChecked();
-    expect(operators).toBeChecked();
-    expect(operators).toHaveAccessibleDescription(/never listed/u);
 
-    await user.click(operators);
+    await user.click(counts);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
 
     expect(
       await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
     ).toBeInTheDocument();
-    expect(settings.patches).toEqual([{ values: { public_operators: "false" } }]);
+    expect(settings.patches).toEqual([{ values: { public_counts: "false" } }]);
   });
 
   test("features accounts in the suggestions, in their own section", async () => {

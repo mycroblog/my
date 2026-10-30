@@ -234,7 +234,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **設定**: `GET /admin/settings` の値で、登録モード（`RadioGroup`、各モードの説明付き）、既定の言語（`Select`。カタログのある言語と保存されている言語。新しい利用者の UI の言語の初期値）、ローカルと連合のタイムライン（`Checkbox`）、
     すべての画像に代替テキストを必須にするか（`require_media_description`、`Checkbox`）、Authorized Fetch（`Checkbox`）、リモートのメディアの複製（`RadioGroup`）と持つ期間（`Select`。1 時間〜365 日と保存されている値）、処分したドメインの一覧と公開コメントを見られる人（`RadioGroup`、誰にも・ログインした利用者・誰にでも）、
     （運営の費用・収入・サポーターの一覧の公開範囲は、それを出す費用の画面とサポーターの画面に置く）、
-    「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）と運営している人を出すか（`public_operators`、`Checkbox`、既定は出す。説明に、スタッフのロールのバッジをプロフィールに出している人だけが載ることを書く）を出す。
+    「トップページ」の区画にランディングページ（[screens/landing.md](screens/landing.md)）に数を出すか（`public_counts`、`Checkbox`、既定は出す）を出す。
     1 つのフォームで、「設定を保存する」は変えた設定だけを `PATCH /admin/settings` でまとめて送る（サーバーはすべてか何も変えない）。成功したら応答で設定のキャッシュを置き換え、`GET /instance`（登録モードとタイムライン）・`GET /instance/cost_totals`・`GET /finance/cost_totals`・`GET /instance/income_totals`・`GET /finance/income_totals`・`GET /instance/supporters`・`GET /instance/overview`・監査ログを取り直してから
     結果を `FormActionBar` に出す。フォームが画面より長いので、このバーは画面の下に固定する（`sticky`）。変えた設定がなければ何も送らずにその旨を出し、失敗も `FormActionBar`（`role="alert"`）に出して選択を残す（E2）。
 - **ルール**（`/admin/rules`、`manage_rules`、FR-705）: 「ルールを追加する」と「有効なルール」の区画（`h2` の `section`）。
