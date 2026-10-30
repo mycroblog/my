@@ -160,6 +160,8 @@ test.describe("without JavaScript", () => {
     await emailField(page).fill(`${username}@example.com`);
     await passwordField(page, "new-password").fill("e2e-password-new-user");
     await page.locator("textarea").fill("E2E");
+    // The server publishes its documents, so the form asks to agree to them.
+    await page.locator('input[name="agreement"]').check();
     await submitButton(page).click();
 
     await expect(page).toHaveURL(/\/auth\/sign_in$/);

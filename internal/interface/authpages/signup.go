@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -25,6 +26,8 @@ const (
 	fieldPassword = "password"
 	fieldInvite   = "invite_code"
 	fieldReason   = "reason"
+	// fieldAgreement is the checkbox that agrees to the published documents.
+	fieldAgreement = "agreement"
 )
 
 // signUpForm is the registration form: what the applicant typed (never the password), the
@@ -38,6 +41,10 @@ type signUpForm struct {
 	AskReason  bool
 
 	Username, Email, InviteCode, Reason string
+
+	// NeedAgreement asks the checkbox that agrees to the published documents (the terms of
+	// service, the privacy policy), which an instance without them does not; Agreed is its value.
+	NeedAgreement, Agreed bool
 
 	UsernameHint, PasswordHint, ReasonHint, InviteHint string
 	// Errors maps a field name to its error message.
@@ -130,6 +137,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 	f.Email = strings.TrimSpace(form.Get(fieldEmail))
 	f.InviteCode = strings.TrimSpace(form.Get(fieldInvite))
 	f.Reason = form.Get(fieldReason)
+	f.readAgreement(form, h.documentLinks(r, p.L))
 	password := form.Get(fieldPassword)
 	if !h.validCSRF(r) {
 		p.Error = p.L.ServerAuthFormExpired()
@@ -174,6 +182,13 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, next, http.StatusSeeOther)
+}
+
+// readAgreement reads the checkbox of the documents, which the form asks only while the instance
+// has published one of them: an account is never created without agreeing to what it shows.
+func (f *signUpForm) readAgreement(form url.Values, documents []documentLink) {
+	f.NeedAgreement = len(documents) > 0
+	f.Agreed = form.Get(fieldAgreement) == "yes"
 }
 
 // check sets the error of every field that the identity module would reject.

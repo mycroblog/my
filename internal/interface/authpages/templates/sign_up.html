@@ -39,16 +39,19 @@
 {{with .Errors.reason}}<p id="sign-up-reason-error" class="field-error">{{.}}</p>{{end}}
 <textarea id="sign-up-reason" name="reason" rows="4" maxlength="{{.ReasonMax}}" dir="auto" aria-describedby="sign-up-reason-hint{{if .Errors.reason}} sign-up-reason-error{{end}}"{{if .Errors.reason}} aria-invalid="true"{{end}}>{{.Reason}}</textarea>
 </div>{{end}}
-{{template "human_check" $}}{{with $.Documents}}<div class="agreement">
+{{template "human_check" $}}{{with $.Documents}}<div class="field agreement">
 <p id="sign-up-agreement">{{$.L.ServerAuthSignUpAgreement}}</p>
 <ul class="links">
 {{range .}}<li><a href="{{.Path}}" target="_blank" rel="noopener noreferrer">{{.Title}}<span class="visually-hidden"> {{$.L.ServerAuthLinkNewTab}}</span></a></li>
 {{end}}</ul>
+{{with $.SignUp.Errors.agreement}}<p id="sign-up-agreement-error" class="field-error">{{.}}</p>{{end}}
+<label class="check"><input id="sign-up-agreement-check" name="agreement" type="checkbox" value="yes" required{{if $.SignUp.Agreed}} checked{{end}} aria-describedby="sign-up-agreement{{if $.SignUp.Errors.agreement}} sign-up-agreement-error{{end}}"{{if $.SignUp.Errors.agreement}} aria-invalid="true"{{end}}><span>{{$.L.ServerAuthSignUpAgreementLabel}}</span></label>
 </div>{{end}}
-<div class="actions">
-<button class="button" type="submit"{{if $.Documents}} aria-describedby="sign-up-agreement"{{end}}>{{$.L.ServerAuthSignUpSubmit}}</button>
+<div class="actions actions-block">
+<button class="button" type="submit">{{$.L.ServerAuthSignUpSubmit}}</button>
 </div>
 </form>
-{{template "external_logins" $}}<p class="links"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
+{{template "external_logins" $}}<hr class="rule">
+<p class="links links-center"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
 {{end}}{{end}}
 {{end}}

@@ -132,9 +132,11 @@ whole username, or for the people who follow it.
   pages `/about/terms`, `/about/privacy`, and `/about/commerce` show them. Raw HTML, images, and links other than `http`,
   `https`, and `mailto` are removed. The pages need no sign-in (they are web client pages, so they need JavaScript).
   `/about/commerce` is the URL to give to the payment provider.
-- A document you write is linked from the registration screen (the consent text and links before the create button), the footer
-  of every screen the server renders, and the web client (the third column, the menu, the settings, and the sign-in screen).
+- A document you write is linked from the registration screen, the footer of every screen the server renders, and the web client (the third column, the menu, the settings, and the sign-in screen).
   A document that is not written is not linked, and its API answers 404.
+- While the terms of service or the privacy policy is written, the registration screen lists them before the create button
+  with a required checkbox, "I have read and agree to the documents above". The server refuses a registration without it,
+  also one through a login provider. Without either document, the screen asks for no agreement.
 
 ### Name and domain
 

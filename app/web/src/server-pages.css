@@ -155,6 +155,33 @@
     @apply flex flex-col gap-2 text-sm;
   }
 
+  /* The actions of the sign-in and registration forms: one above the other, each as wide as the form. */
+  .actions-block {
+    @apply sm:flex-col sm:flex-nowrap;
+  }
+
+  .actions-block .button {
+    @apply w-full;
+  }
+
+  /* The rule above the links that lead away from a form (sign in, create an account), which stand centered under it. */
+  .rule {
+    @apply border-0 border-t border-border;
+  }
+
+  .links-center {
+    @apply items-center text-center;
+  }
+
+  /* A checkbox and its label on one line: the box keeps its own size, not the full width of a text field. */
+  .check {
+    @apply flex items-start gap-2 font-semibold text-fg;
+  }
+
+  .check input {
+    @apply mt-0.5 size-5 min-h-0 shrink-0 p-0 accent-accent-fill pointer-coarse:min-h-0;
+  }
+
   /* Text that only assistive technology reads, such as "(opens in a new tab)" after a link (web-client/README.md Y12). */
   .visually-hidden {
     @apply sr-only;

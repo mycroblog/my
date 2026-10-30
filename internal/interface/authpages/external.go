@@ -321,6 +321,7 @@ func (h *Handler) externalSignUp(w http.ResponseWriter, r *http.Request) {
 	f.Email = strings.TrimSpace(form.Get(fieldEmail))
 	f.InviteCode = strings.TrimSpace(form.Get(fieldInvite))
 	f.Reason = form.Get(fieldReason)
+	f.readAgreement(form, h.documentLinks(r, p.L))
 	if f.Closed {
 		h.renderExternalSignUp(w, r, http.StatusForbidden, v, &p)
 		return
@@ -388,5 +389,8 @@ func (f *signUpForm) checkFields(l *i18n.Localizer) {
 	}
 	if f.AskReason && identity.ValidateRegistrationReason(strings.TrimSpace(f.Reason)) != nil {
 		f.Errors[fieldReason] = l.ServerAuthSignUpReasonInvalid(float64(f.ReasonMax))
+	}
+	if f.NeedAgreement && !f.Agreed {
+		f.Errors[fieldAgreement] = l.ServerAuthSignUpAgreementRequired()
 	}
 }
