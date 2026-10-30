@@ -125,12 +125,12 @@ export function useAttachments(store: DraftStore, attachments: readonly Attachme
     add(files) {
       const accepted = files.filter((file) => {
         if (mediaKind(file.type) !== null) return true;
-        notice.inPlace(t("client:compose.media.unsupported", { name: file.name }), "assertive");
+        notice.toast({ tone: "danger", message: t("client:compose.media.unsupported", { name: file.name }) });
         return false;
       });
       const room = maxAttachments - store.getSnapshot().draft.attachments.length;
       if (accepted.length > room)
-        notice.inPlace(t("client:compose.media.too_many", { max: maxAttachments }), "assertive");
+        notice.toast({ tone: "danger", message: t("client:compose.media.too_many", { max: maxAttachments }) });
       for (const file of accepted.slice(0, Math.max(0, room))) start(file);
     },
     remove(key) {
