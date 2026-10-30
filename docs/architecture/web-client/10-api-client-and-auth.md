@@ -55,7 +55,7 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
   - `mykit` が知らないイベントを「未知のイベント」（`type: "unknown"`）として渡すので、`useEventStream` はそれを捨てる。
   - サーバーは何も再送しないので、2 本目以降のストリームが開いたら、ホームの最初のページを読み直して新着を数え、未読数を読み直し、通知の一覧を古いことにする（再取得はしない）。
     ローカル・連合のストリームでは、そのタイムラインの最初のページを読み直して新着を数える。
-  - `update` は、まず Query のキャッシュの別の項目（`features/timeline/api/newStatuses.ts`）に待たせる。表示中のタイムライン（ホーム・リスト・ローカル・連合。どれも `NewPostsFeed`）がそれをどう出すかは、利用者の設定 `timeline_auto_insert`（`GET /preferences`、既定は偽。設定の「表示・投稿・タイムライン」の `Switch` で選び、変えたとたんに保存する）で決まる（Y7、[ADR-0077](../../adr/0077-timeline-auto-insert.md)）。
+  - `update` は、まず Query のキャッシュの別の項目（`features/timeline/api/newStatuses.ts`）に待たせる。表示中のタイムライン（ホーム・リスト・ローカル・連合。どれも `NewPostsFeed`）がそれをどう出すかは、利用者の設定 `timeline_auto_insert`（`GET /preferences`、既定は真（[ADR-0127](../../adr/0127-public-timeline-streaming.md) の 6）。設定の「表示・投稿・タイムライン」の `Switch` で選び、変えたとたんに保存する）で決まる（Y7、[ADR-0077](../../adr/0077-timeline-auto-insert.md)）。
     - 偽のとき: ホームの `NewItemsButton` が、読み込み済みの投稿にないものの数を出し、押されたら最初のページの先頭に差し込んで見出しにフォーカスを移す。
     - 真のとき: 待たせた投稿をすぐ最初のページの先頭に差し込む。先頭にいる（フィードの先頭の目印が `IntersectionObserver` で見えている）ときはそのまま見せる。
       先頭から離れているときは、差し込む前に画面の上端にかかる投稿の位置を測り、`useLayoutEffect` で差の分だけスクロールを足して、その投稿を同じ場所に保つ（安定版の Safari が `overflow-anchor` に対応しないので、フィードは `overflow-anchor: none` にして自分で補う）。

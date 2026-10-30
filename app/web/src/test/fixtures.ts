@@ -146,7 +146,7 @@ export const preferencesFixture: Schemas["Preferences"] = {
   default_quote_policy: "public",
   default_post_language: "en",
   require_media_description: false,
-  timeline_auto_insert: false,
+  timeline_auto_insert: true,
   timeline_languages: [],
 };
 

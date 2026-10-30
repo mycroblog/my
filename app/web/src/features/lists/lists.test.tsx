@@ -13,7 +13,7 @@ import {
   timelineStatusFixture,
 } from "../../test/fixtures";
 import { apiBase, problem, resumableSession } from "../../test/msw/http";
-import { streamingServer } from "../../test/msw/streaming";
+import { newPostsHeld, streamingServer } from "../../test/msw/streaming";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { friendsList, listFixture } from "./test/handlers";
@@ -149,7 +149,8 @@ describe("the lists page", () => {
 describe("a list's timeline", () => {
   test("shows the members' posts under the list's name, and the stream's new entries behind the button", async () => {
     const streams = streamingServer();
-    server.use(resumableSession(), streams.handler);
+    // The user turned the automatic insertion off, so the new entries wait behind the button.
+    server.use(resumableSession(), streams.handler, newPostsHeld());
     const { user } = await renderApp({ path: `/lists/${friendsList.id}` });
     expect(await screen.findByRole("heading", { level: 1, name: "Friends" })).toBeInTheDocument();
     expect(screen.getByText("1 member")).toBeInTheDocument();

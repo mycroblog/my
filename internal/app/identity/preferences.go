@@ -331,7 +331,8 @@ func CanonicalLocale(tag string) (string, error) {
 }
 
 // defaultPreferences returns the preferences of a new user: the registration's locale or else
-// the instance default, no time zone chosen (UTC), and public posts in an undetermined language.
+// the instance default, no time zone chosen (UTC), public posts in an undetermined language, and
+// new timeline posts inserted without asking.
 func (s *Service) defaultPreferences(ctx context.Context, userID, locale string, now time.Time) (identity.Preferences, error) {
 	if locale == "" && s.d.DefaultLocale != nil {
 		var err error
@@ -353,6 +354,7 @@ func (s *Service) defaultPreferences(ctx context.Context, userID, locale string,
 		DefaultVisibility:   identity.DefaultPostVisibility,
 		DefaultQuotePolicy:  identity.DefaultPostQuotePolicy,
 		DefaultPostLanguage: identity.UndeterminedLanguage,
+		TimelineAutoInsert:  identity.DefaultTimelineAutoInsert,
 		UpdatedAt:           now,
 	}, nil
 }

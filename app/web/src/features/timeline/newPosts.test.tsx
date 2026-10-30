@@ -4,10 +4,10 @@
 // layout's event stream, MSW as the server's GET /streaming, and the "N new posts" button.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Status } from "./api/timelines";
 import { apiBase, oauthPaths, problem, resumableSession, tokenResponse } from "../../test/msw/http";
-import { eventStreamResponse, streamingServer, type TestEventStream } from "../../test/msw/streaming";
+import { eventStreamResponse, newPostsHeld, streamingServer, type TestEventStream } from "../../test/msw/streaming";
 import { preferencesFixture, statusPage, timelineStatusFixture, viewerFixture } from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -34,6 +34,11 @@ async function openHome() {
 }
 
 describe("new posts in the home timeline", () => {
+  // The user turned the automatic insertion off, so new posts wait behind the button.
+  beforeEach(() => {
+    server.use(newPostsHeld());
+  });
+
   test("wait behind the button, are not inserted on their own, and show at the top when it is pressed", async () => {
     const streams = streamingServer();
     server.use(resumableSession(), streams.handler);
@@ -119,6 +124,11 @@ describe("new posts in the home timeline", () => {
 });
 
 describe("the event stream", () => {
+  // New posts wait behind the button, which counts what the stream delivered.
+  beforeEach(() => {
+    server.use(newPostsHeld());
+  });
+
   test("reconnects after the server ends it, and counts what the home timeline got meanwhile", async () => {
     let home = [timelineStatusFixture];
     const streams = streamingServer();
@@ -211,7 +221,9 @@ describe("the event stream", () => {
       http.get(`${apiBase}/timelines/home`, () => HttpResponse.json(statusPage([timelineStatusFixture]))),
       http.get(`${apiBase}/accounts/verify_credentials`, () => HttpResponse.json(viewerFixture)),
       http.get(`${apiBase}/notifications/marker`, () => HttpResponse.json({ unread_count: 0 })),
-      http.get(`${apiBase}/preferences`, () => HttpResponse.json(preferencesFixture)),
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: false }),
+      ),
       http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [] })),
       http.get(`${apiBase}/streaming`, ({ request }) => {
         const token = request.headers.get("Authorization");

@@ -2,6 +2,7 @@
 // GET /streaming (operationId streamEvents, lib/sse) and GET /streaming/timelines/{timeline} (streamTimeline): the
 // default handlers and the event streams of the tests that send events (web-client/10-api-client-and-auth.md §10).
 import { http, HttpResponse } from "msw";
+import { preferencesFixture } from "../fixtures";
 import { apiBase, authorized, unauthenticated } from "./http";
 
 /** One open GET /streaming response of a test. */
@@ -76,6 +77,16 @@ export function streamingServer(path = "/streaming") {
  * still streaming when a test ends (its request aborted by the unmount) has let a later test's request
  * reach the real network. A test that sends events opens its streams with `streamingServer()`.
  */
+/**
+ * GET /preferences of a user who turned the automatic insertion of new posts off (ADR-0077), for the tests of the
+ * "N new posts" button: new posts wait behind it instead of going into the feed.
+ */
+export function newPostsHeld() {
+  return http.get(`${apiBase}/preferences`, () =>
+    HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: false }),
+  );
+}
+
 export const handlers = [
   http.get(`${apiBase}/streaming`, ({ request }) => {
     if (!authorized(request)) return unauthenticated(request);

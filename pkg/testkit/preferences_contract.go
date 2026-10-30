@@ -72,6 +72,7 @@ func defaultPreferencesOf(userID, locale string, at time.Time) appidentity.UserP
 			DefaultVisibility:   identity.VisibilityPublic,
 			DefaultQuotePolicy:  identity.QuotePolicyPublic,
 			DefaultPostLanguage: "und",
+			TimelineAutoInsert:  true,
 			UpdatedAt:           at,
 		},
 		TimelineLanguages: []string{},
@@ -190,9 +191,10 @@ func preferencesSet(t *testing.T, e *accountEnv) {
 			t.Errorf("DefaultVisibility = %s, want %s", got.DefaultVisibility, v)
 		}
 	}
-	// Choosing UTC is a choice: the time zone stays chosen.
+	// Choosing UTC is a choice: the time zone stays chosen. The replacement left the automatic
+	// insertion of new posts false, and false is stored rather than the default.
 	back := defaultPreferencesOf(reg.User.ID, "en", e.clock.Now())
-	back.TimeZoneChosen = true
+	back.TimeZoneChosen, back.TimelineAutoInsert = true, false
 	checkPreferences(t, e.preferences(t, reg.User.ID), back)
 }
 
@@ -336,6 +338,20 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 		t.Fatalf("UpdatePreferences(locale) = %v", err)
 	}
 	want.Locale, want.RequireMediaDescription, want.UpdatedAt = "ja", true, e.clock.Now()
+	checkPreferences(t, got, want)
+	checkPreferences(t, e.preferences(t, reg.User.ID), want)
+
+	// A user who turns the automatic insertion of new posts off keeps it off through later changes.
+	no := false
+	e.clock.Advance(time.Minute)
+	if _, err = e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{TimelineAutoInsert: &no}); err != nil {
+		t.Fatalf("UpdatePreferences(timeline auto insert) = %v", err)
+	}
+	e.clock.Advance(time.Minute)
+	if got, err = e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{DefaultVisibility: &public}); err != nil {
+		t.Fatalf("UpdatePreferences(visibility) = %v", err)
+	}
+	want.TimelineAutoInsert, want.DefaultVisibility, want.UpdatedAt = false, public, e.clock.Now()
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 

@@ -35,7 +35,7 @@ export const Normal: Story = {
     await settled(context);
     const autoInsert = canvas.getByRole("switch", { name: "Show new posts automatically" });
     await userEvent.click(autoInsert);
-    await expect(autoInsert).toBeChecked();
+    await expect(autoInsert).not.toBeChecked();
     await expect(await canvas.findByText("Saved", { selector: "[data-autosave] span" })).toBeInTheDocument();
   },
 };
