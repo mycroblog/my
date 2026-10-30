@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -35,6 +36,65 @@ func (f *fakeVoiceRooms) ProfileRoom(context.Context, string, string) (appvoice.
 
 func (f *fakeVoiceRooms) Visible(context.Context, string, string) (appvoice.RoomView, error) {
 	return f.room(), f.err
+}
+
+func (f *fakeVoiceRooms) Icons(_ context.Context, icons []voice.Icon) (map[voice.Icon]appvoice.IconView, error) {
+	out := map[voice.Icon]appvoice.IconView{}
+	for _, i := range icons {
+		switch {
+		case i.Unicode != "":
+			out[i] = appvoice.IconView{Unicode: i.Unicode}
+		case f.customEmoji != nil && f.customEmoji.ID == i.CustomEmojiID:
+			out[i] = appvoice.IconView{Custom: f.customEmoji}
+		}
+	}
+	return out, nil
+}
+
+// TestVoiceRoomIcon checks the icon of a room (FR-923) on the room and the summary: a Unicode emoji by itself, a custom emoji with its image, none for a custom emoji
+// that can no longer be shown, and the icon of the settings passed to opening and changing a
+// room, with the empty icon of a change that removes it.
+func TestVoiceRoomIcon(t *testing.T) {
+	const blob = "0190a6f2-0000-7000-8000-0000000000e1"
+	f := &fakeVoiceRooms{icon: voice.Icon{Unicode: "\U0001F3B5"}}
+	e := newVoiceEnv(t, f)
+	room := func() clientapi.VoiceRoom {
+		t.Helper()
+		res := e.send(t, http.MethodGet, "/voice/rooms/"+voiceRoomID, "read-voice", "")
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("get = %d", res.StatusCode)
+		}
+		return decode[clientapi.VoiceRoom](t, res)
+	}
+	if r := room(); r.Icon == nil || r.Icon.Name != "\U0001F3B5" || r.Icon.Emoji != nil {
+		t.Errorf("icon = %+v, want the Unicode emoji", r.Icon)
+	}
+	f.icon = voice.Icon{CustomEmojiID: blob}
+	if r := room(); r.Icon != nil {
+		t.Errorf("icon of an emoji that cannot be shown = %+v, want none", r.Icon)
+	}
+	f.customEmoji = &appcontent.CustomEmojiView{ID: blob, Shortcode: "blob", URL: "https://example.com/blob.png", StaticURL: "https://example.com/blob.png"}
+	if r := room(); r.Icon == nil || r.Icon.Name != "blob" || r.Icon.Emoji == nil || r.Icon.Emoji.Url != "https://example.com/blob.png" {
+		t.Errorf("icon = %+v, want the custom emoji with its image", r.Icon)
+	}
+	f.summary = &appvoice.Summary{RoomID: voiceRoomID, Shown: true, Name: "Talk", Icon: voice.Icon{CustomEmojiID: blob}}
+	res := e.send(t, http.MethodGet, "/voice/rooms/"+voiceRoomID+"/summary", "", "")
+	if s := decode[clientapi.VoiceRoomSummary](t, res); s.Icon == nil || s.Icon.Name != "blob" {
+		t.Errorf("summary icon = %+v, want the custom emoji", s.Icon)
+	}
+
+	if res := e.send(t, http.MethodPost, "/voice/rooms", "voice", `{"name":"Talk","icon":":blob:"}`); res.StatusCode != http.StatusCreated ||
+		len(f.opened) != 1 || f.opened[0].Icon != ":blob:" {
+		t.Fatalf("open with an icon = %d, %+v", res.StatusCode, f.opened)
+	}
+	if res := e.sendJSON(t, http.MethodPatch, "/voice/rooms/"+voiceRoomID, "voice", `{"icon":""}`); res.StatusCode != http.StatusOK ||
+		len(f.patches) != 1 || f.patches[0].Icon == nil || *f.patches[0].Icon != "" {
+		t.Fatalf("remove the icon = %d, %+v", res.StatusCode, f.patches)
+	}
+	f.err = &voice.SettingsError{Field: voice.FieldIcon}
+	if res := e.send(t, http.MethodPost, "/voice/rooms", "voice", `{"name":"Talk","icon":"blob@remote.example"}`); res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("open with a remote emoji = %d, want 422", res.StatusCode)
+	}
 }
 
 // TestVoiceRoomSummary checks the summary of a room without a token (ADR-0100 §9): the state

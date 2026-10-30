@@ -328,6 +328,8 @@ export { AdminNavBack, AdminShell, type AdminNavBackProps, type AdminShellProps 
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar";
 // An open voice chat room in a list (ADR-0100 §8).
 export { VoiceRoomCard, type VoiceRoomCardProps, type VoiceRoomCardTag } from "./VoiceRoomCard";
+// The emoji before a room's name (FR-923).
+export { VoiceRoomIcon, type VoiceRoomIconEmoji, type VoiceRoomIconProps } from "./VoiceRoomIcon";
 // The stage of a voice chat room and the controls of its call.
 export { LivePill, type LivePillProps } from "./LivePill";
 export {

@@ -1315,6 +1315,8 @@ type VoiceRoomRevision struct {
 	Description        string
 	Visibility         string
 	Speakers           string
+	IconEmojiKey       string
+	IconCustomEmojiID  *string
 	RevisedByAccountID string
 	RevisedAt          time.Time
 }

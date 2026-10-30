@@ -83,6 +83,26 @@
     "defaultMessage": "{max} 文字までの 1 行の名前を入れてください。",
     "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
   },
+  "voice.form.icon": {
+    "defaultMessage": "アイコン",
+    "description": "Legend of the group of a voice chat room's emoji icon in its settings dialog."
+  },
+  "voice.form.icon.description": {
+    "defaultMessage": "ルーム名の前に出す絵文字です。なくてもかまいません。",
+    "description": "Hint under the legend of a voice chat room's icon: one Unicode emoji or custom emoji of this server, shown before the name."
+  },
+  "voice.form.icon.choose": {
+    "defaultMessage": "絵文字を選ぶ",
+    "description": "Button that opens the emoji picker to choose a voice chat room's icon, while the room has none."
+  },
+  "voice.form.icon.change": {
+    "defaultMessage": "変える",
+    "description": "Button after the chosen emoji that opens the emoji picker to choose another icon for a voice chat room."
+  },
+  "voice.form.icon.remove": {
+    "defaultMessage": "アイコンを外す",
+    "description": "Button that removes a voice chat room's icon, so that the name shows alone."
+  },
   "voice.form.description": {
     "defaultMessage": "説明",
     "description": "Label of the field of a voice chat room's description."

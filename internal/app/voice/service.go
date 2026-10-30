@@ -91,6 +91,14 @@ type Emojis interface {
 	// normalized, or the :shortcode: of an enabled custom emoji of this instance. Any other
 	// fails with an error that wraps content.ErrInvalidReaction.
 	ReactionEmoji(ctx context.Context, name string) (string, error)
+	// LocalEmoji returns the emoji of the icon of a room (FR-923), which a local account may use
+	// as it reacts: a Unicode emoji, normalized, or the ID of an enabled custom emoji of this
+	// instance whose image can be shown. Any other fails with an error that wraps
+	// content.ErrInvalidReaction.
+	LocalEmoji(ctx context.Context, name string) (unicode, customEmojiID string, err error)
+	// CustomEmojis returns the custom emoji with an ID in ids that can be shown, keyed by ID
+	// (content.MediaService.CustomEmojis): a disabled or deleted emoji is left out.
+	CustomEmojis(ctx context.Context, ids []string) (map[string]content.CustomEmojiView, error)
 }
 
 // Config is how the operator runs the voice chat (ADR-0101 §1).
@@ -127,7 +135,8 @@ type Deps struct {
 	// Streams carries the signals of the room streams (ADR-0101 §3) to every process; nil
 	// sends none.
 	Streams stream.Publisher
-	// Emojis checks the emoji of the reactions; nil allows the Unicode emoji only.
+	// Emojis checks the emoji of the reactions and the icons of the rooms; nil allows the
+	// Unicode emoji only.
 	Emojis Emojis
 	// Notifier creates the notifications of the rooms (ADR-0100 §8); nil notifies nobody.
 	Notifier Notifier
@@ -199,6 +208,9 @@ type SettingsInput struct {
 	Hashtags    []string
 	Visibility  voice.Visibility
 	Speakers    voice.Speakers
+	// Icon is the emoji of the icon (FR-923): a Unicode emoji, or the shortcode of a custom
+	// emoji of this instance with or without its colons; "" for none.
+	Icon string
 	// Post is the start post of Open, nil for none (ADR-0100 §9).
 	Post *StartPost
 }
@@ -210,10 +222,106 @@ type SettingsPatch struct {
 	Hashtags    *[]string
 	Visibility  *voice.Visibility
 	Speakers    *voice.Speakers
+	// Icon replaces the icon as SettingsInput.Icon gives it; "" removes it.
+	Icon *string
 }
 
-// settings returns the settings of in, the defaults for the empty visibility and speakers,
-// validated.
+// settings returns the settings of in, with the icon that in names, the defaults for the empty
+// visibility and speakers, validated.
+func (s *Service) settings(ctx context.Context, in SettingsInput) (voice.Settings, error) {
+	settings, err := in.settings()
+	if err != nil {
+		return voice.Settings{}, err
+	}
+	if settings.Icon, err = s.icon(ctx, in.Icon); err != nil {
+		return voice.Settings{}, err
+	}
+	return settings, nil
+}
+
+// patched returns cur changed by p, with the icon that p names, validated.
+func (s *Service) patched(ctx context.Context, cur voice.Settings, p SettingsPatch) (voice.Settings, error) {
+	settings, err := p.apply(cur)
+	if err != nil {
+		return voice.Settings{}, err
+	}
+	settings.Icon = cur.Icon
+	if p.Icon != nil {
+		if settings.Icon, err = s.icon(ctx, *p.Icon); err != nil {
+			return voice.Settings{}, err
+		}
+	}
+	return settings, nil
+}
+
+// icon returns the icon that name gives (SettingsInput.Icon), the zero Icon for ""; an emoji
+// that a local account may not use fails with a *voice.SettingsError of FieldIcon.
+func (s *Service) icon(ctx context.Context, name string) (voice.Icon, error) {
+	if name == "" {
+		return voice.Icon{}, nil
+	}
+	invalid := &voice.SettingsError{Field: voice.FieldIcon}
+	var icon voice.Icon
+	if s.d.Emojis != nil {
+		u, id, err := s.d.Emojis.LocalEmoji(ctx, name)
+		if errors.Is(err, content.ErrInvalidReaction) {
+			return voice.Icon{}, invalid
+		}
+		if err != nil {
+			return voice.Icon{}, err
+		}
+		icon = voice.Icon{Unicode: u, CustomEmojiID: id}
+	} else {
+		u, ok := content.NormalizeUnicodeEmoji(name)
+		if !ok {
+			return voice.Icon{}, invalid
+		}
+		icon = voice.Icon{Unicode: u}
+	}
+	if icon.IsZero() || len(icon.Unicode) > voice.MaxIconLength {
+		return voice.Icon{}, invalid
+	}
+	return icon, nil
+}
+
+// IconView is the icon of a room as clients show it: a Unicode emoji, or a custom emoji of this
+// instance with its image (Custom).
+type IconView struct {
+	Unicode string
+	Custom  *content.CustomEmojiView
+}
+
+// Icons returns the icons of rooms that can be shown now, keyed by the icon: every Unicode
+// emoji, and the custom emoji that are still enabled with an image. A room whose custom emoji
+// was disabled or deleted shows no icon, as a reaction's emoji is read (ADR-0052).
+func (s *Service) Icons(ctx context.Context, icons []voice.Icon) (map[voice.Icon]IconView, error) {
+	out := make(map[voice.Icon]IconView, len(icons))
+	var ids []string
+	for _, i := range icons {
+		switch {
+		case i.CustomEmojiID != "":
+			ids = append(ids, i.CustomEmojiID)
+		case i.Unicode != "":
+			out[i] = IconView{Unicode: i.Unicode}
+		}
+	}
+	if len(ids) == 0 || s.d.Emojis == nil {
+		return out, nil
+	}
+	emojis, err := s.d.Emojis.CustomEmojis(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		if e, ok := emojis[id]; ok {
+			out[voice.Icon{CustomEmojiID: id}] = IconView{Custom: &e}
+		}
+	}
+	return out, nil
+}
+
+// settings returns the settings of in without the icon, the defaults for the empty visibility
+// and speakers, validated.
 func (in SettingsInput) settings() (voice.Settings, error) {
 	s := voice.Settings{
 		Name: in.Name, Description: normalizeLines(in.Description), Visibility: in.Visibility, Speakers: in.Speakers,
@@ -235,7 +343,7 @@ func (in SettingsInput) settings() (voice.Settings, error) {
 	return s, nil
 }
 
-// apply returns cur changed by p, validated.
+// apply returns cur changed by p without the icon, validated.
 func (p SettingsPatch) apply(cur voice.Settings) (voice.Settings, error) {
 	in := SettingsInput{Name: cur.Name, Description: cur.Description, Visibility: cur.Visibility, Speakers: cur.Speakers}
 	for _, t := range cur.Hashtags {

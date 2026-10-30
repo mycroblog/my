@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/voice/p2p"
 	"github.com/mycroblog/my/internal/adapter/voice/turncloudflare"
 	"github.com/mycroblog/my/internal/app/account"
+	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/queue"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -124,7 +125,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
 		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
-		Streams: a.Streams, Emojis: a.Interactions, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,
+		Streams: a.Streams, Emojis: voiceEmojis{a}, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,
 		Retention: voiceRetention{a}, Config: c, Logger: a.Logger,
 	})
 	a.VoiceRooms.RegisterCommitHooks(a.Projectors)
@@ -161,6 +162,22 @@ func (a *App) voiceTURN(cfg *config.Config) (p2p.TURN, error) {
 		})
 	}
 	return nil, fmt.Errorf("voice_turn = %s: unknown TURN source", cfg.VoiceTURN)
+}
+
+// voiceEmojis reads the emoji of the reactions and the icons of the rooms from the content
+// module (ADR-0100 §10, FR-923).
+type voiceEmojis struct{ a *App }
+
+func (e voiceEmojis) ReactionEmoji(ctx context.Context, name string) (string, error) {
+	return e.a.Interactions.ReactionEmoji(ctx, name)
+}
+
+func (e voiceEmojis) LocalEmoji(ctx context.Context, name string) (string, string, error) {
+	return e.a.Interactions.LocalEmoji(ctx, name)
+}
+
+func (e voiceEmojis) CustomEmojis(ctx context.Context, ids []string) (map[string]content.CustomEmojiView, error) {
+	return e.a.Media.CustomEmojis(ctx, ids)
 }
 
 // voiceMembers reads the accounts for the rooms from the account, moderation, identity, and

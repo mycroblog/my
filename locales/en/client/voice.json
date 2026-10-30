@@ -83,6 +83,26 @@
     "defaultMessage": "Enter a name of up to {max} characters on one line.",
     "description": "Error of the field of a voice chat room's name. {max} is the most characters it takes."
   },
+  "voice.form.icon": {
+    "defaultMessage": "Icon",
+    "description": "Legend of the group of a voice chat room's emoji icon in its settings dialog."
+  },
+  "voice.form.icon.description": {
+    "defaultMessage": "An emoji shown before the room's name. Optional.",
+    "description": "Hint under the legend of a voice chat room's icon: one Unicode emoji or custom emoji of this server, shown before the name."
+  },
+  "voice.form.icon.choose": {
+    "defaultMessage": "Choose an emoji",
+    "description": "Button that opens the emoji picker to choose a voice chat room's icon, while the room has none."
+  },
+  "voice.form.icon.change": {
+    "defaultMessage": "Change",
+    "description": "Button after the chosen emoji that opens the emoji picker to choose another icon for a voice chat room."
+  },
+  "voice.form.icon.remove": {
+    "defaultMessage": "Remove icon",
+    "description": "Button that removes a voice chat room's icon, so that the name shows alone."
+  },
   "voice.form.description": {
     "defaultMessage": "Description",
     "description": "Label of the field of a voice chat room's description."

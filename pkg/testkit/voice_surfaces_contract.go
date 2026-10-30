@@ -5,7 +5,9 @@ package testkit
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -309,5 +311,104 @@ func roomsProfileAndHistory(t *testing.T, e *roomsEnv) {
 	e.clock.Advance(3 * time.Minute)
 	if entry(viewer, speaker) {
 		t.Error("the profile entry shows a room whose host is gone past the grace")
+	}
+}
+
+// roomsEmojis is the content module's reading of the emoji for the icons (FR-923): the local
+// custom emoji by shortcode, and whether each can be shown (enabled, with an image).
+type roomsEmojis struct {
+	mu    sync.Mutex
+	local map[string]string
+	shown map[string]bool
+}
+
+func (e *roomsEmojis) ReactionEmoji(context.Context, string) (string, error) {
+	return "", appcontent.ErrInvalidReaction
+}
+
+func (e *roomsEmojis) LocalEmoji(_ context.Context, name string) (string, string, error) {
+	if u, ok := appcontent.NormalizeUnicodeEmoji(name); ok {
+		return u, "", nil
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	id, ok := e.local[appcontent.TrimShortcode(name)]
+	if !ok || strings.Contains(name, "@") || !e.shown[id] {
+		return "", "", fmt.Errorf("emoji %q: %w", name, appcontent.ErrInvalidReaction)
+	}
+	return "", id, nil
+}
+
+func (e *roomsEmojis) CustomEmojis(_ context.Context, ids []string) (map[string]appcontent.CustomEmojiView, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	out := map[string]appcontent.CustomEmojiView{}
+	for code, id := range e.local {
+		if slices.Contains(ids, id) && e.shown[id] {
+			out[id] = appcontent.CustomEmojiView{ID: id, Shortcode: code, URL: "https://" + contractHost + "/emoji/" + code + ".png"}
+		}
+	}
+	return out, nil
+}
+
+// roomsIcon checks the icon of a room (FR-923): a Unicode emoji, normalized, or a local custom
+// emoji that can be shown, set when the room opens and changed or removed with its settings,
+// kept by a change of the other settings, a 422 field for any other emoji, and no icon shown
+// once its custom emoji can no longer be shown.
+func roomsIcon(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	blob, hidden := e.ids.NewID(), e.ids.NewID()
+	emojis := &roomsEmojis{local: map[string]string{"blob": blob, "hidden": hidden}, shown: map[string]bool{blob: true}}
+	e.emojis = emojis
+	svc := e.newSvc(appvoice.Config{Transport: voice.TransportP2P})
+	host := e.account(true)
+	const note = "\U0001F3B5"
+	j, err := svc.Open(ctx, host, appvoice.SettingsInput{Name: "Icon", Icon: note})
+	if err != nil {
+		t.Fatalf("Open with a Unicode icon: %v", err)
+	}
+	room := j.Room.ID
+	if got := e.room(t, room).Revision.Settings.Icon; got != (voice.Icon{Unicode: note}) {
+		t.Errorf("icon = %+v, want %q", got, note)
+	}
+	update := func(p appvoice.SettingsPatch) voice.Icon {
+		t.Helper()
+		if _, err := svc.Update(ctx, host, room, p); err != nil {
+			t.Fatalf("Update(%+v): %v", p, err)
+		}
+		return e.room(t, room).Revision.Settings.Icon
+	}
+	icon := func(s string) *string { return &s }
+	if got := update(appvoice.SettingsPatch{Icon: icon("blob")}); got != (voice.Icon{CustomEmojiID: blob}) {
+		t.Errorf("icon after :blob: = %+v, want the custom emoji", got)
+	}
+	name := "Renamed"
+	if got := update(appvoice.SettingsPatch{Name: &name}); got != (voice.Icon{CustomEmojiID: blob}) {
+		t.Errorf("icon after a change of the name = %+v, want it kept", got)
+	}
+	shown, err := svc.Icons(ctx, []voice.Icon{{CustomEmojiID: blob}, {Unicode: note}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := shown[voice.Icon{CustomEmojiID: blob}]; v.Custom == nil || v.Custom.Shortcode != "blob" || shown[voice.Icon{Unicode: note}].Unicode != note {
+		t.Errorf("Icons = %+v, want the custom emoji and the Unicode emoji", shown)
+	}
+	emojis.mu.Lock()
+	emojis.shown[blob] = false
+	emojis.mu.Unlock()
+	if shown, err := svc.Icons(ctx, []voice.Icon{{CustomEmojiID: blob}}); err != nil || len(shown) != 0 {
+		t.Errorf("Icons of a disabled emoji = %+v, %v; want none", shown, err)
+	}
+	if got := update(appvoice.SettingsPatch{Icon: icon("")}); !got.IsZero() {
+		t.Errorf("icon after removing it = %+v, want none", got)
+	}
+	var se *voice.SettingsError
+	for _, bad := range []string{":hidden:", "blob@remote.example", ":unknown:", "abc"} {
+		if _, err := svc.Open(ctx, e.account(true), appvoice.SettingsInput{Name: "Bad", Icon: bad}); !errors.As(err, &se) || se.Field != voice.FieldIcon {
+			t.Errorf("Open with the icon %q: %v, want the icon invalid", bad, err)
+		}
+		if _, err := svc.Update(ctx, host, room, appvoice.SettingsPatch{Icon: &bad}); !errors.As(err, &se) || se.Field != voice.FieldIcon {
+			t.Errorf("Update with the icon %q: %v, want the icon invalid", bad, err)
+		}
 	}
 }

@@ -18,10 +18,13 @@ export type ReactionPickerControl = Omit<EmojiPickerContent, "remember"> & {
   select: (selection: EmojiPickerSelection, close: () => void, react: (choice: ReactionChoice) => void) => void;
 };
 
-/** The emoji of the picker of reactions. */
-export function useReactionPicker(): ReactionPickerControl {
+/**
+ * The emoji of the picker of reactions, or of another choice of one emoji that a reaction could take (the icon of a
+ * voice chat room, FR-923), whose grid `gridLabel` names.
+ */
+export function useReactionPicker(gridLabel?: string): ReactionPickerControl {
   const t = useT();
-  const { remember, ...content } = useEmojiPickerContent(t("client:reaction.picker.grid"));
+  const { remember, ...content } = useEmojiPickerContent(gridLabel ?? t("client:reaction.picker.grid"));
   return {
     ...content,
     select: (selection, close, react) => {

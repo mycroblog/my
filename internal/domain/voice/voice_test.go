@@ -225,6 +225,12 @@ func TestSettingsValidate(t *testing.T) {
 		}), runes, FieldHashtags},
 		{"an unknown visibility", with(func(s *Settings) { s.Visibility = "public" }), runes, FieldVisibility},
 		{"an unknown speakers setting", with(func(s *Settings) { s.Speakers = "" }), runes, FieldSpeakers},
+		{"a Unicode icon", with(func(s *Settings) { s.Icon = Icon{Unicode: "\U0001F3B5"} }), runes, ""},
+		{"a custom emoji icon", with(func(s *Settings) { s.Icon = Icon{CustomEmojiID: "0190a6f2-0000-7000-8000-000000000001"} }), runes, ""},
+		{"an icon of both kinds", with(func(s *Settings) {
+			s.Icon = Icon{Unicode: "\U0001F3B5", CustomEmojiID: "0190a6f2-0000-7000-8000-000000000001"}
+		}), runes, FieldIcon},
+		{"an icon too long", with(func(s *Settings) { s.Icon = Icon{Unicode: strings.Repeat("a", MaxIconLength+1)} }), runes, FieldIcon},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -285,5 +291,31 @@ func TestValues(t *testing.T) {
 	}
 	if !HandRaised.Raised() {
 		t.Error("raised does not raise the hand")
+	}
+}
+
+func TestIcon(t *testing.T) {
+	t.Parallel()
+	const id = "0190a6f2-0000-7000-8000-000000000001"
+	cases := []struct {
+		name     string
+		key, cid string
+		want     Icon
+	}{
+		{"no icon", "", "", Icon{}},
+		{"a Unicode emoji", "\U0001F3B5", "", Icon{Unicode: "\U0001F3B5"}},
+		{"a custom emoji", id, id, Icon{CustomEmojiID: id}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := IconOf(tc.key, tc.cid)
+			if got != tc.want {
+				t.Fatalf("IconOf = %+v, want %+v", got, tc.want)
+			}
+			if got.Key() != tc.key || got.IsZero() != (tc.key == "") {
+				t.Errorf("Key = %q, IsZero = %v for %+v", got.Key(), got.IsZero(), got)
+			}
+		})
 	}
 }

@@ -10,6 +10,8 @@ properties:
   name:
     description: The name of the room.
     type: string
+  icon:
+    $ref: ./VoiceRoomIcon.yaml
   role:
     description: Whether the account hosts the room or speaks in it.
     type: string

@@ -22,6 +22,7 @@ type VoiceSurfaces interface {
 	History(ctx context.Context, accountID, beforeID string, limit int) ([]appvoice.RoomRecord, bool, error)
 	ProfileRoom(ctx context.Context, viewerID, accountID string) (appvoice.RoomView, bool, error)
 	Visible(ctx context.Context, accountID, roomID string) (appvoice.RoomView, error)
+	Icons(ctx context.Context, icons []voice.Icon) (map[voice.Icon]appvoice.IconView, error)
 }
 
 // GetVoiceRoomSummary serves GET /api/v1/voice/rooms/{id}/summary, which needs no sign-in.
@@ -42,6 +43,15 @@ func (s *Server) GetVoiceRoomSummary(ctx context.Context, req GetVoiceRoomSummar
 		out.Name = &sum.Name
 		if !sum.Ended {
 			out.Description = &sum.Description
+		}
+		if !sum.Icon.IsZero() {
+			icons, err := s.o.Voice.Icons(ctx, []voice.Icon{sum.Icon})
+			if err != nil {
+				return nil, err
+			}
+			if v, ok := icons[sum.Icon]; ok {
+				out.Icon = newVoiceRoomIcon(v)
+			}
 		}
 	}
 	if sum.HostAccountID != "" {
@@ -105,7 +115,14 @@ func (s *Server) voiceRoomEntry(ctx context.Context, v *Viewer, accountID string
 	if room.Head.HostAccountID == accountID {
 		role = VoiceRoomEntryRoleHost
 	}
-	return &VoiceRoomEntry{Id: room.ID, Name: room.Revision.Settings.Name, Role: role, ParticipantsCount: len(room.Participants)}, nil
+	icons, err := s.voiceRoomIcons(ctx, []appvoice.RoomView{room})
+	if err != nil {
+		return nil, err
+	}
+	return &VoiceRoomEntry{
+		Id: room.ID, Name: room.Revision.Settings.Name, Icon: icons[room.Revision.Settings.Icon], Role: role,
+		ParticipantsCount: len(room.Participants),
+	}, nil
 }
 
 // notifiedVoiceRoom returns the room of a voice notification while it is open and the viewer
