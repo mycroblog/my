@@ -63,6 +63,10 @@
     "defaultMessage": "この添付の説明を書いてください。このサーバーでは、すべての添付に説明が必要です。",
     "description": "Error of the alternative text field of an attached image, video, or audio file that has no description while the server requires one for every image."
   },
+  "compose.media.drop": {
+    "defaultMessage": "ここにドロップして添付",
+    "description": "Shown over the new-post form while the user drags files over it: dropping them attaches them to the post."
+  },
   "compose.media.failed": {
     "defaultMessage": "ファイルを添付できませんでした：{reason}",
     "description": "State of an attached file whose upload failed. {reason} is the error message."
