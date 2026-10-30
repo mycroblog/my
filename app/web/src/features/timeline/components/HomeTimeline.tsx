@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Box, NewItemsButton, Stack } from "@my/ui";
+import { Box, Stack } from "@my/ui";
 import { useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useIntl } from "react-intl";
 import { useApi, useSessionStatus, useSessionUnreachable } from "../../../lib/auth/SessionProvider";
 import { SignInPrompt } from "../../session";
@@ -9,7 +9,7 @@ import { useT } from "../../../lib/i18n";
 import { useIsOffline } from "../../../lib/network";
 import { keepHomeTimelineSaved } from "../api/savedHome";
 import { timelineQueryOptions } from "../api/timelines";
-import { useHomeNewPosts } from "../hooks/useHomeNewPosts";
+import { NewPostsFeed } from "./NewPostsFeed";
 import { TimelineFeed } from "./TimelineFeed";
 
 export type HomeTimelineProps = {
@@ -49,30 +49,19 @@ export function HomeTimeline({ "aria-labelledby": labelledBy, saved = false }: H
 }
 
 /**
- * The feed with the "N new posts" button over its top (web-client/README.md Y7, ADR-0077). By default the stream's new entries
- * wait until the reader presses it; with the reader's auto-insert setting they are inserted at once, the post being read
- * stays in place, and the button counts what came in since the reader left the top. Its region has no height, so neither
- * its appearance nor its count moves the posts being read; the button floats over the feed's top while the reader scrolls
- * and, at the top, space is kept under it only while it shows. Only the button takes pointer input, so the empty region
- * never blocks the post under it. Pressing it moves focus to the page heading, above the inserted posts, since the button
- * goes away (WCAG 2.4.3). While it is shown, the newest posts are kept on this browser for reading offline (FR-604).
+ * The feed with the "N new posts" button over its top (NewPostsFeed). While it is shown, the newest posts are kept on
+ * this browser for reading offline (FR-604).
  */
 function SignedInHomeTimeline({ "aria-labelledby": labelledBy }: HomeTimelineProps) {
-  const t = useT();
   const queryClient = useQueryClient();
   const api = useApi();
   const offline = useIsOffline();
-  const feedRef = useRef<HTMLDivElement>(null);
-  const { count, buttonAtTop, press, feed } = useHomeNewPosts(feedRef, labelledBy);
   // Synchronizes the browser's storage with the query cache, two stores outside React (web-client/README.md R8).
   useEffect(() => keepHomeTimelineSaved(queryClient, api), [queryClient, api]);
   return (
     <Stack>
       {offline && <OfflineNotice />}
-      <NewItemsButton count={count} label={t("client:timeline.new_posts", { count })} onPress={press} sticky />
-      <Box {...(buttonAtTop && { paddingTop: "2" as const })}>
-        <TimelineFeed timeline={{ kind: "home" }} aria-labelledby={labelledBy} feedRef={feedRef} {...feed} />
-      </Box>
+      <NewPostsFeed timeline={{ kind: "home" }} aria-labelledby={labelledBy} />
     </Stack>
   );
 }

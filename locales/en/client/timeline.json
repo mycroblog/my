@@ -31,6 +31,14 @@
     "defaultMessage": "Your home timeline is empty",
     "description": "Heading shown instead of posts when the home timeline has none."
   },
+  "timeline.empty.list.description": {
+    "defaultMessage": "Posts and boosts by the people in this list show up here.",
+    "description": "Text under the heading of the timeline of a list whose members have not posted yet."
+  },
+  "timeline.empty.list.heading": {
+    "defaultMessage": "No posts yet",
+    "description": "Heading shown instead of posts when a list with members has none in its timeline."
+  },
   "timeline.empty.local.description": {
     "defaultMessage": "Public posts of the people on this server appear here.",
     "description": "Text under the heading of the empty local timeline."
