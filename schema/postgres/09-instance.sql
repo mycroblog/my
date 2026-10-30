@@ -92,6 +92,7 @@ CREATE TABLE instance_theme_tokens (
    'font-mono', 'font-serif', 'text-xs', 'text-xs--line-height', 'text-sm', 'text-sm--line-height',
    'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
    'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',
+   'text-4xl', 'text-4xl--line-height', 'text-5xl', 'text-5xl--line-height',
    'spacing', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-2xl', 'elevation-card',
    'elevation-sm', 'elevation-md', 'elevation-lg', 'elevation-soft-raised', 'elevation-soft-inset', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
    'transition-duration-fast', 'transition-duration-normal', 'transition-duration-slow',
