@@ -473,6 +473,8 @@ test.describe("sign-up page", () => {
     await username.fill("not a username!");
     await emailField(page).fill("someone@example.com");
     await passwordField(page, "new-password").fill("e2e-password-new-user");
+    // The required agreement would stop the browser from sending the form at all.
+    await page.locator('input[name="agreement"]').check();
     await submitButton(page).click();
 
     await expect(page.getByRole("alert")).toBeVisible();
