@@ -63,6 +63,10 @@
     "defaultMessage": "Add a description of this attachment. This server requires one for every attachment.",
     "description": "Error of the alternative text field of an attached image, video, or audio file that has no description while the server requires one for every image."
   },
+  "compose.media.drop": {
+    "defaultMessage": "Drop files to attach them",
+    "description": "Shown over the new-post form while the user drags files over it: dropping them attaches them to the post."
+  },
   "compose.media.failed": {
     "defaultMessage": "Could not attach the file: {reason}",
     "description": "State of an attached file whose upload failed. {reason} is the error message."
