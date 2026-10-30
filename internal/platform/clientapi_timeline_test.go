@@ -47,6 +47,12 @@ type timelineUser struct {
 
 func (e *timelineAPI) user(t *testing.T, name string) timelineUser {
 	t.Helper()
+	return e.userWithScope(t, name, "read")
+}
+
+// userWithScope is user with an access token of scope.
+func (e *timelineAPI) userWithScope(t *testing.T, name, scope string) timelineUser {
+	t.Helper()
 	ctx := t.Context()
 	reg, err := e.app.Identity.CreateAdmin(ctx, identity.CreateAdminInput{
 		Username: name, Email: name + "@example.com", Password: "correct horse battery staple",
@@ -57,7 +63,7 @@ func (e *timelineAPI) user(t *testing.T, name string) timelineUser {
 	verifier := strings.Repeat("v", 43)
 	redirect := webOrigin + platform.WebClientCallbackPath
 	a, err := e.app.Identity.ValidateAuthorization(ctx, identity.AuthorizationRequest{
-		ResponseType: "code", ClientID: identity.DefaultWebClientID, RedirectURI: redirect, Scope: "read",
+		ResponseType: "code", ClientID: identity.DefaultWebClientID, RedirectURI: redirect, Scope: scope,
 		CodeChallenge: domain.S256Challenge(verifier), CodeChallengeMethod: domain.CodeChallengeMethodS256,
 	})
 	if err != nil {

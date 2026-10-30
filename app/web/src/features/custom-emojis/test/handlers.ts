@@ -51,7 +51,12 @@ export const handlers = [
   // operationIds listOwnCustomEmojis, updateOwnCustomEmoji, deleteOwnCustomEmoji.
   http.get(`${apiBase}/custom_emojis/mine`, ({ request }) =>
     withViewer(request, () =>
-      HttpResponse.json({ items: [], used: 0, pending: 0 } satisfies Schemas["OwnCustomEmojiPage"]),
+      HttpResponse.json({
+        items: [],
+        used: 0,
+        pending: 0,
+        resets_at: "2026-11-01T00:00:00Z",
+      } satisfies Schemas["OwnCustomEmojiPage"]),
     ),
   ),
   http.patch(`${apiBase}/custom_emojis/mine/:id`, async ({ request, params }) => {

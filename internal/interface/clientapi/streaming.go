@@ -68,7 +68,8 @@ func (s *Server) registerStreaming(r Router) {
 }
 
 // serveStreaming serves GET /api/v1/streaming: a Server-Sent Events stream of the viewer's new
-// home timeline entries (event update, data a Status), notifications (event notification,
+// home timeline entries (event update, data a Status, and event list_update for each list of the
+// viewer whose timeline lists the entry, data its ID and the Status), notifications (event notification,
 // data a Notification), and announcements (event announcement, data an Announcement, and event
 // announcement_removed, data its ID). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
@@ -234,8 +235,16 @@ func (st *streamState) announcement(ctx context.Context, id string) error {
 	return st.event("announcement", newAnnouncement(a))
 }
 
+// listUpdate is the data of a list_update event: a new entry of the timeline of a list of the
+// viewer, one event per list.
+type listUpdate struct {
+	ListID string `json:"list_id"`
+	Status Status `json:"status"`
+}
+
 // homeEntry sends the entry id when the viewer's home timeline lists it and the stream has not
-// sent it recently: a cross-process broker may deliver its signal twice.
+// sent it recently: a cross-process broker may deliver its signal twice. It sends it as update,
+// and as list_update for each list of the viewer whose timeline lists it.
 func (st *streamState) homeEntry(ctx context.Context, id string) error {
 	if st.s.o.HomeEntries == nil || st.sentEntries.has(id) {
 		return nil
@@ -249,9 +258,20 @@ func (st *streamState) homeEntry(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	var lists []string
+	if st.s.o.EntryLists != nil && len(statuses) > 0 {
+		if lists, err = st.s.o.EntryLists.EntryLists(ctx, viewer, entry); err != nil {
+			return err
+		}
+	}
 	for _, status := range statuses {
 		if err := st.event("update", status); err != nil {
 			return err
+		}
+		for _, listID := range lists {
+			if err := st.event("list_update", listUpdate{ListID: listID, Status: status}); err != nil {
+				return err
+			}
 		}
 	}
 	st.sentEntries.add(id)

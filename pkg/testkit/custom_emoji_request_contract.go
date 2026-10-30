@@ -22,8 +22,9 @@ import (
 // approval makes the emoji with the requester as its creator and a copy of the image owned by
 // the instance actor; a pending request to create reserves its shortcode; the creators change
 // and delete only their own emoji while they may create emoji, and a new image is a request;
-// a request for a new image lapses with its emoji; and the limit counts the creator's emoji and
-// pending requests to create one, while the default limits nobody.
+// a request for a new image lapses with its emoji; and the limit counts the approved and pending
+// requests to create an emoji that the creator submitted in the UTC calendar month, while the
+// default limits nobody.
 
 const (
 	requestInstance = "0192f0c1-0000-7000-8000-0000000ad121"
@@ -438,16 +439,17 @@ func requestLapsesWithItsEmoji(t *testing.T, e *emojiEnv) {
 func requestAppliesTheLimit(t *testing.T, e *emojiEnv) {
 	r := newRequestEnv(t, e)
 	ctx := t.Context()
-	// By default nobody is limited: neither the emoji nor the pending requests count.
+	november := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	// By default nobody is limited: the requests are counted but limit nothing.
 	for _, code := range []string{"blob_a", "blob_b", "blob_c"} {
 		r.mustSubmit(t, requesterA, requesterAUser, code)
 	}
-	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 3, Pending: 3}) {
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 3, Pending: 3, ResetsAt: november}) {
 		t.Errorf("Usage without a limit = %+v, %v", u, err)
 	}
-	r.approved(t, "blob_d")
+	d := r.approved(t, "blob_d")
 	r.quota.limit, r.quota.limited = 5, true
-	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 4, Pending: 3, Limit: 5, Limited: true}) {
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 4, Pending: 3, Limit: 5, Limited: true, ResetsAt: november}) {
 		t.Errorf("Usage = %+v, %v", u, err)
 	}
 	last := r.mustSubmit(t, requesterA, requesterAUser, "blob_e")
@@ -456,17 +458,61 @@ func requestAppliesTheLimit(t *testing.T, e *emojiEnv) {
 	}
 	// Another user has their own count.
 	r.mustSubmit(t, requesterB, requesterBUser, "blob_g")
-	// A rejection frees a place.
+	// A rejection and a withdrawal free a place.
 	if _, err := r.service.RejectRequest(ctx, last.Request.ID, "", emojiAdminUser); err != nil {
 		t.Fatal(err)
 	}
-	r.mustSubmit(t, requesterA, requesterAUser, "blob_f")
+	f := r.mustSubmit(t, requesterA, requesterAUser, "blob_f")
+	if _, err := r.service.WithdrawRequest(ctx, f.Request.ID, requesterAUser); err != nil {
+		t.Fatal(err)
+	}
+	r.mustSubmit(t, requesterA, requesterAUser, "blob_h")
+	// Deleting an approved emoji frees nothing this month.
+	if err := r.service.DeleteOwn(ctx, d.Emoji.ID, requesterAUser); err != nil {
+		t.Fatal(err)
+	}
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u.Used != 5 || u.Pending != 4 {
+		t.Errorf("Usage after a deletion = %+v, %v; want 5 used, 4 pending", u, err)
+	}
+	if _, err := r.submit(t, requesterA, requesterAUser, "blob_i"); emojiReason(err) != content.EmojiLimitReached {
+		t.Errorf("a request after a deletion = %v, want limit_reached", err)
+	}
 	// A lower limit keeps the emoji and refuses new requests only.
+	a, err := r.service.ListRequests(ctx, appcontent.CustomEmojiRequestQuery{RequesterUserID: requesterAUser, State: content.RequestPending}, 10)
+	if err != nil || len(a) != 4 {
+		t.Fatalf("pending requests of A = %d, %v; want 4", len(a), err)
+	}
+	if _, err := r.service.ApproveRequest(ctx, a[0].Request.ID, emojiAdminUser); err != nil {
+		t.Fatal(err)
+	}
 	r.quota.limit = 1
-	if _, err := r.submit(t, requesterA, requesterAUser, "blob_h"); emojiReason(err) != content.EmojiLimitReached {
+	if _, err := r.submit(t, requesterA, requesterAUser, "blob_i"); emojiReason(err) != content.EmojiLimitReached {
 		t.Errorf("a request past a lowered limit = %v, want limit_reached", err)
 	}
 	if own, err := r.service.ListOwn(ctx, requesterAUser, "", 10); err != nil || len(own) != 1 {
 		t.Errorf("ListOwn after the lower limit = %d, %v; want the emoji kept", len(own), err)
+	}
+	// The count resets at 00:00 UTC on the first day of the next month. A request submitted in
+	// October and approved in November counts in October, not in November.
+	r.clock.Set(november.Add(-time.Second))
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u.Used != 5 || u.ResetsAt != november {
+		t.Errorf("Usage at the end of October = %+v, %v; want 5 used", u, err)
+	}
+	r.clock.Set(november)
+	if _, err := r.service.ApproveRequest(ctx, a[1].Request.ID, emojiAdminUser); err != nil {
+		t.Fatal(err)
+	}
+	december := time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Limit: 1, Limited: true, ResetsAt: december}) {
+		t.Errorf("Usage in November = %+v, %v; want nothing used", u, err)
+	}
+	r.quota.limit = 2
+	r.mustSubmit(t, requesterA, requesterAUser, "blob_i")
+	r.approved(t, "blob_j")
+	if _, err := r.submit(t, requesterA, requesterAUser, "blob_k"); emojiReason(err) != content.EmojiLimitReached {
+		t.Errorf("a request past the limit in November = %v, want limit_reached", err)
+	}
+	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 2, Pending: 1, Limit: 2, Limited: true, ResetsAt: december}) {
+		t.Errorf("Usage in November = %+v, %v", u, err)
 	}
 }

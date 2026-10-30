@@ -134,6 +134,8 @@ linters:
             - github.com/mycroblog/my/internal/domain/timeline
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
+            # Counting the grapheme clusters of a list's name (ADR-0122 §1): pure-Go Unicode data, not an external resource.
+            - github.com/rivo/uniseg
         domain-notification:
           list-mode: strict
           files:

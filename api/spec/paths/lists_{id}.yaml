@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getList
+  summary: Get a list
+  description: A list of the user. Another user's list is a 404, as if it did not exist.
+  tags: [lists]
+  security:
+    - oauth2: ["read:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/List.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateList
+  summary: Rename a list
+  description: |
+    Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+  tags: [lists]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ListRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/List.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteList
+  summary: Delete a list
+  description: |
+    Deletes the list and its members; the members' accounts and follows do not change.
+    Another user's list is a 404.
+  tags: [lists]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+  responses:
+    "204":
+      description: The list is deleted.
+    default:
+      $ref: ../components/responses/Problem.yaml

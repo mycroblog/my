@@ -4,6 +4,7 @@ import {
   Checkbox,
   Dialog,
   DialogActions,
+  FileDropZone,
   FormActionBar,
   Hint,
   InlineError,
@@ -11,7 +12,7 @@ import {
   Stack,
   Text,
 } from "@my/ui";
-import type { SubmitEvent } from "react";
+import type { ClipboardEvent, KeyboardEvent, SubmitEvent } from "react";
 import { useLocale, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
@@ -78,96 +79,122 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
     event.preventDefault();
     form.submit();
   };
+  // Ctrl+Enter (Cmd+Enter on macOS) in a text field of the form sends it as the submit button does: the same submit
+  // event, so a draft that cannot be sent says why in the send bar. The completion's list passes the keys on
+  // (TextAreaAutocomplete), so it sends while the list is open too; the Enter that commits an IME conversion does not.
+  const onKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    // oxlint-disable-next-line typescript/no-deprecated -- Safari's committing Enter is told apart only by keyCode 229 (ADR-0092 §3).
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+    const { target } = event;
+    const isTextField =
+      target instanceof HTMLTextAreaElement || (target instanceof HTMLInputElement && target.type === "text");
+    if (!isTextField) return;
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
+  };
+  // Pasted files without text are attached as if picked with the button; a clipboard that also holds text (a cell of a
+  // spreadsheet holds both) pastes only the text, as the browser does.
+  const onPaste = (event: ClipboardEvent<HTMLElement>) => {
+    const files = Array.from(event.clipboardData.files);
+    if (files.length === 0 || Array.from(event.clipboardData.types).includes("text/plain")) return;
+    event.preventDefault();
+    if (form.takesFiles) attachments.add(files);
+  };
   return (
     <Stack gap="4" container>
-      <Stack as="form" aria-labelledby={labelledBy} onSubmit={onSubmit} gap="3">
-        {form.replyTo.status !== "none" && <ReplyContext replyTo={form.replyTo} onCancel={form.cancelReply} />}
-        {form.quoteOf.status !== "none" && (
-          <ReplyContext kind="quote" replyTo={form.quoteOf} onCancel={form.cancelQuote} />
-        )}
-        {draft.hasWarning && (
-          <CompletionTextField
-            completes="emoji"
-            label={t("client:compose.warning.label")}
-            description={t("client:compose.warning.description")}
-            value={draft.spoilerText}
-            onChange={(spoilerText) => {
-              form.edit({ spoilerText });
-            }}
-            highlights={textHighlights(draft.spoilerText, { tokens: "shortcodes", shortcodes })}
-          />
-        )}
-        <CompletionTextArea
-          completes="all"
-          id={composeTextId}
-          label={t("client:compose.text.label")}
-          value={draft.text}
-          onChange={(text) => {
-            form.edit({ text });
-          }}
-          rows={4}
-          characterLimit={form.textLimit}
-          formatRemaining={formatRemaining}
-          highlights={textHighlights(draft.text, { tokens: "all", shortcodes, limit: form.textLimit })}
-          autoFocus={autoFocus}
-          endAction={
-            <EmojiPickerButton
-              fieldId={composeTextId}
-              value={draft.text}
-              onChange={(text) => {
-                form.edit({ text });
+      <FileDropZone label={t("client:compose.media.drop")} onDropFiles={attachments.add} isDisabled={!form.takesFiles}>
+        <Stack as="form" aria-labelledby={labelledBy} onSubmit={onSubmit} onKeyDown={onKeyDown} gap="3">
+          {form.replyTo.status !== "none" && <ReplyContext replyTo={form.replyTo} onCancel={form.cancelReply} />}
+          {form.quoteOf.status !== "none" && (
+            <ReplyContext kind="quote" replyTo={form.quoteOf} onCancel={form.cancelQuote} />
+          )}
+          {draft.hasWarning && (
+            <CompletionTextField
+              completes="emoji"
+              label={t("client:compose.warning.label")}
+              description={t("client:compose.warning.description")}
+              value={draft.spoilerText}
+              onChange={(spoilerText) => {
+                form.edit({ spoilerText });
               }}
+              onPaste={onPaste}
+              highlights={textHighlights(draft.spoilerText, { tokens: "shortcodes", shortcodes })}
             />
-          }
-        />
-        <AttachmentList
-          items={attachments.items}
-          onDescribe={attachments.describe}
-          onRemove={attachments.remove}
-          requireDescriptions={form.requireDescriptions}
-          isDescriptionRequired={form.isDescriptionRequired}
-        />
-        {form.poll.draft !== null && <PollEditor poll={form.poll} draft={form.poll.draft} />}
-        {attachments.items.length > 0 && <Hint>{t("client:compose.media.hint", { max: maxAttachments })}</Hint>}
-        {attachments.items.length > 0 && (
-          <Checkbox
-            isSelected={draft.sensitive}
-            onChange={(sensitive) => {
-              form.edit({ sensitive });
+          )}
+          <CompletionTextArea
+            completes="all"
+            id={composeTextId}
+            label={t("client:compose.text.label")}
+            value={draft.text}
+            onChange={(text) => {
+              form.edit({ text });
             }}
-          >
-            {t("client:compose.sensitive")}
-          </Checkbox>
-        )}
-        {form.unreachedMentions.length > 0 && (
-          <Text as="p" size="sm" tone="warning">
-            {t("client:compose.mention.unreached", {
-              count: form.unreachedMentions.length,
-              accounts: new Intl.ListFormat(locale, { type: "conjunction" }).format(
-                form.unreachedMentions.map((acct) => `@${acct}`),
-              ),
-            })}
-          </Text>
-        )}
-        {form.staysLocal && (
-          <Text as="p" size="sm" tone="warning">
-            {t("client:compose.federation.stays_local")}
-          </Text>
-        )}
-        {form.error !== null && <InlineError size="inherit">{form.error}</InlineError>}
-        <ComposeTools form={form} />
-        {/* The send bar: the button is never disabled by the input (G23); pressed while the draft cannot be sent, it
+            onPaste={onPaste}
+            rows={4}
+            characterLimit={form.textLimit}
+            formatRemaining={formatRemaining}
+            highlights={textHighlights(draft.text, { tokens: "all", shortcodes, limit: form.textLimit })}
+            autoFocus={autoFocus}
+            endAction={
+              <EmojiPickerButton
+                fieldId={composeTextId}
+                value={draft.text}
+                onChange={(text) => {
+                  form.edit({ text });
+                }}
+              />
+            }
+          />
+          <AttachmentList
+            items={attachments.items}
+            onDescribe={attachments.describe}
+            onRemove={attachments.remove}
+            requireDescriptions={form.requireDescriptions}
+            isDescriptionRequired={form.isDescriptionRequired}
+          />
+          {form.poll.draft !== null && <PollEditor poll={form.poll} draft={form.poll.draft} />}
+          {attachments.items.length > 0 && <Hint>{t("client:compose.media.hint", { max: maxAttachments })}</Hint>}
+          {attachments.items.length > 0 && (
+            <Checkbox
+              isSelected={draft.sensitive}
+              onChange={(sensitive) => {
+                form.edit({ sensitive });
+              }}
+            >
+              {t("client:compose.sensitive")}
+            </Checkbox>
+          )}
+          {form.unreachedMentions.length > 0 && (
+            <Text as="p" size="sm" tone="warning">
+              {t("client:compose.mention.unreached", {
+                count: form.unreachedMentions.length,
+                accounts: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+                  form.unreachedMentions.map((acct) => `@${acct}`),
+                ),
+              })}
+            </Text>
+          )}
+          {form.staysLocal && (
+            <Text as="p" size="sm" tone="warning">
+              {t("client:compose.federation.stays_local")}
+            </Text>
+          )}
+          {form.error !== null && <InlineError size="inherit">{form.error}</InlineError>}
+          <ComposeTools form={form} />
+          {/* The send bar: the button is never disabled by the input (G23); pressed while the draft cannot be sent, it
             says why beside it, until the reason is gone. */}
-        <FormActionBar
-          {...(form.blocked !== null && {
-            result: { tone: "danger" as const, message: t(blockerMessages[form.blocked]) },
-          })}
-        >
-          <Button type="submit" variant="primary">
-            {t(form.replyTo.status === "none" ? "client:compose.submit" : "client:compose.submit.reply")}
-          </Button>
-        </FormActionBar>
-      </Stack>
+          <FormActionBar
+            {...(form.blocked !== null && {
+              result: { tone: "danger" as const, message: t(blockerMessages[form.blocked]) },
+            })}
+          >
+            <Button type="submit" variant="primary" aria-keyshortcuts="Control+Enter Meta+Enter">
+              {t(form.replyTo.status === "none" ? "client:compose.submit" : "client:compose.submit.reply")}
+            </Button>
+          </FormActionBar>
+        </Stack>
+      </FileDropZone>
       <Outbox
         items={form.outbox}
         onRetry={form.retry}

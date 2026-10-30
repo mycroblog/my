@@ -30,7 +30,8 @@ var errEntryExists = errors.New("timeline: the feed entry already exists")
 //   - feed_direct_recipients holds the current mentions of each direct post;
 //   - feed_tag_entries holds the current tags of each post, and tag_usage counts those of the
 //     posts that CountsTagUsage (ADR-0092 §1);
-//   - feed_follow_edges holds each active follow with its show_boosts preference;
+//   - feed_follow_edges holds each active follow with its show_boosts preference, and the end of
+//     a follow takes its followee out of every list of the follower (list_members);
 //   - feed_exclusions holds both directions of each block in force and each mute;
 //   - feed_domain_mutes holds each domain mute;
 //   - feed_author_restrictions holds profile_view for each deleted account, local or remote,
@@ -118,6 +119,11 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		ev := e.(appgraph.FollowTerminated)
 		if !ev.WasActive() {
 			return nil
+		}
+		// The followee leaves every list of the follower with the follow, whatever ended it, and
+		// a new follow does not bring it back (ADR-0122 §2).
+		if err := repo.DeleteListMembersOfFollow(ctx, tx, ev.Follow.FollowerAccountID, ev.Follow.FolloweeAccountID); err != nil {
+			return err
 		}
 		return repo.DeleteFollowEdge(ctx, tx, ev.Follow.FollowerAccountID, ev.Follow.FolloweeAccountID)
 	})
@@ -269,7 +275,9 @@ func GraphSource(repo appgraph.Repository) Source {
 
 // RebuildProjections empties the projections of Projection and derives them again, in one
 // transaction, by applying this module's projectors to the events that sources replay
-// (data-model §9). The restrictions are left alone: RebuildRestrictions derives them.
+// (data-model §9). The restrictions are left alone: RebuildRestrictions derives them. The lists
+// are not projections and stay, but a member whose follow the rebuilt feed_follow_edges no longer
+// holds leaves them, as the end of the follow would have taken it out.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {
 	projectors := &uow.Projectors{}
 	RegisterProjectors(projectors, repo)
@@ -282,7 +290,7 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, 
 				return err
 			}
 		}
-		return nil
+		return repo.DeleteListMembersWithoutFollow(ctx, tx)
 	})
 	if err != nil {
 		return fmt.Errorf("rebuild the feed projections: %w", err)

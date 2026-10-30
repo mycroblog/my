@@ -140,7 +140,8 @@ for status, err := range mykit.All(ctx, fetch) {
 ## Streaming
 
 `API.Stream` (Go) and `runStream` (TypeScript) read the Server-Sent Events of `GET /streaming`: new posts of the home
-timeline, notifications, and announcements, as typed events. The stream needs the scopes `read:statuses` and
+timeline (and, for each of the user's lists that shows one, a list update), notifications, and announcements, as typed
+events. The stream needs the scopes `read:statuses` and
 `read:notifications`.
 
 - It connects again whenever the stream ends or fails, with an exponential backoff, or after `Retry-After` for a 429

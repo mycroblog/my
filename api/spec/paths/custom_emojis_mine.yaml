@@ -4,8 +4,9 @@ get:
   summary: List the custom emoji that the user made
   description: |
     The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-    used of their limit: their emoji and their pending requests to create one, and the limit,
-    which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+    used of their monthly limit: the approved and pending requests to create an emoji that they
+    submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+    limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
   tags: [custom-emojis]
   security:
     - oauth2: ["read:custom_emojis"]

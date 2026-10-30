@@ -6164,7 +6164,7 @@ type AdminSupporterPlan struct {
 	CreatedAt             time.Time `json:"created_at"`
 	Description           string    `json:"description"`
 
-	// EmojiLimit How many custom emoji the members may create when the role lets them.
+	// EmojiLimit How many custom emoji the members may create each month (UTC) when the role lets them.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6208,7 +6208,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// Description Up to 1,000 characters of plain text.
 	Description *string `json:"description,omitempty"`
 
-	// EmojiLimit 0 to 10,000.
+	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
@@ -7758,8 +7758,8 @@ type CustomEmojiProblem struct {
 	// `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 	// for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 	// fetched (its server did not return it, or the instance rejects the media of its domain).
-	// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-	// their limit. `request_pending`: the emoji already has a pending request for a new image.
+	// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+	// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 	// `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 	Reason *CustomEmojiProblemReason `json:"reason,omitempty"`
 
@@ -7788,8 +7788,8 @@ type CustomEmojiProblem struct {
 // `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 // for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 // fetched (its server did not return it, or the instance rejects the media of its domain).
-// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-// their limit. `request_pending`: the emoji already has a pending request for a new image.
+// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 // `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 type CustomEmojiProblemReason string
 
@@ -9328,6 +9328,36 @@ type LinkedIdentityList struct {
 	Providers []LinkableLoginProvider `json:"providers"`
 }
 
+// List A list of accounts that the user follows, which only the user sees. Its timeline shows the
+// posts and boosts of its members.
+type List struct {
+	// CreatedAt When the user created the list.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// MembersCount How many accounts are in the list.
+	MembersCount int `json:"members_count"`
+
+	// Name The name of the list, 1 to 50 characters.
+	Name string `json:"name"`
+}
+
+// ListCollection The user's lists, oldest first.
+type ListCollection struct {
+	Items []List `json:"items"`
+}
+
+// ListRequest The name of a list.
+type ListRequest struct {
+	// Name 1 to 50 characters (grapheme clusters) on one line, without control characters. White
+	// space around it is removed.
+	Name string `json:"name"`
+}
+
 // LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
 // has one of the values, such as `hd` for the domain of a Google Workspace organization.
 type LoginProviderClaimCondition struct {
@@ -10241,14 +10271,15 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their limit
-// (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-// one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-// they may have, absent for no limit.
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
+// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// calendar month and that are approved or pending (deleting an emoji does not lower it),
+// `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+// submit in a month, absent for no limit, and `resets_at` is when the count resets.
 type OwnCustomEmojiPage struct {
 	Items []OwnCustomEmoji `json:"items"`
 
-	// Limit How many the user may have; absent for no limit.
+	// Limit How many requests to create an emoji the user may submit in a month; absent for no limit.
 	Limit *int `json:"limit,omitempty"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -10257,7 +10288,10 @@ type OwnCustomEmojiPage struct {
 	// Pending The part of `used` that the user's pending requests to create an emoji take.
 	Pending int `json:"pending"`
 
-	// Used The user's local emoji and pending requests to create one.
+	// ResetsAt When the count resets, the first day of the next month at 00:00 UTC.
+	ResetsAt time.Time `json:"resets_at"`
+
+	// Used The approved and pending requests to create an emoji that the user submitted this month.
 	Used int `json:"used"`
 }
 
@@ -10773,6 +10807,12 @@ type PreviewDomainBlockImportRequest struct {
 //     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
+//   - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
+//     Delete one first.
+//   - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
+//     allowed. Remove one first.
+//   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
+//     follow request was accepted) can be added to a list.
 //   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
 //     account's actor, or to the user itself.
 //   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -12941,6 +12981,16 @@ type InviteId = Id
 // Limit defines model for Limit.
 type Limit = int
 
+// ListAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ListAccountId = Id
+
+// ListId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ListId = Id
+
 // LoginProviderId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -13594,6 +13644,15 @@ type ListOwnInvitesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListListAccountsParams defines parameters for ListListAccounts.
+type ListListAccountsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListOwnModerationActionsParams defines parameters for ListOwnModerationActions.
 type ListOwnModerationActionsParams struct {
 	// Active Keep only the actions in effect now, neither lifted nor expired.
@@ -13687,6 +13746,15 @@ type SearchTagsParams struct {
 
 // GetHomeTimelineParams defines parameters for GetHomeTimeline.
 type GetHomeTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetListTimelineParams defines parameters for GetListTimeline.
+type GetListTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -13954,6 +14022,12 @@ type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
 
 // BeginExternalConfirmationJSONRequestBody defines body for BeginExternalConfirmation for application/json ContentType.
 type BeginExternalConfirmationJSONRequestBody = ExternalConfirmationRequest
+
+// CreateListJSONRequestBody defines body for CreateList for application/json ContentType.
+type CreateListJSONRequestBody = ListRequest
+
+// UpdateListJSONRequestBody defines body for UpdateList for application/json ContentType.
+type UpdateListJSONRequestBody = ListRequest
 
 // UploadMediaMultipartRequestBody defines body for UploadMedia for multipart/form-data ContentType.
 type UploadMediaMultipartRequestBody = MediaUpload
@@ -15989,6 +16063,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 	ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAccountLists List the user's lists that have an account
+	//
+	// The user's lists that the account is in, oldest first.
+	//
+	// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
+	ListAccountLists(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MuteAccountWithBody Mute an account
 	//
@@ -18593,8 +18674,9 @@ type ClientInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -18614,8 +18696,9 @@ type ClientInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -18651,8 +18734,9 @@ type ClientInterface interface {
 	// ListOwnCustomEmojis List the custom emoji that the user made
 	//
 	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-	// used of their limit: their emoji and their pending requests to create one, and the limit,
-	// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// used of their monthly limit: the approved and pending requests to create an emoji that they
+	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 	ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19175,6 +19259,97 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
 	UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListLists List the user's lists
+	//
+	// Every list of the user (at most 50), oldest first. Nobody else sees them.
+	//
+	// Corresponds with GET /lists (the `ListLists` operationId).
+	ListLists(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateListWithBody Create a list
+	//
+	// Creates an empty list with the name. A name that is not one (blank, too long, or with
+	// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+	// `/api/v1/problems/too-many-lists`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /lists (the `CreateList` operationId).
+	CreateListWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateList Create a list
+	//
+	// Creates an empty list with the name. A name that is not one (blank, too long, or with
+	// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+	// `/api/v1/problems/too-many-lists`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /lists (the `CreateList` operationId).
+	CreateList(ctx context.Context, body CreateListJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteList Delete a list
+	//
+	// Deletes the list and its members; the members' accounts and follows do not change.
+	// Another user's list is a 404.
+	//
+	// Corresponds with DELETE /lists/{id} (the `DeleteList` operationId).
+	DeleteList(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetList Get a list
+	//
+	// A list of the user. Another user's list is a 404, as if it did not exist.
+	//
+	// Corresponds with GET /lists/{id} (the `GetList` operationId).
+	GetList(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateListWithBody Rename a list
+	//
+	// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+	UpdateListWithBody(ctx context.Context, id ListId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateList Rename a list
+	//
+	// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+	UpdateList(ctx context.Context, id ListId, body UpdateListJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListListAccounts List the members of a list
+	//
+	// The accounts in the list, in the order of their IDs. Members that are deactivated or
+	// deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+	// Another user's list is a 404.
+	//
+	// Corresponds with GET /lists/{id}/accounts (the `ListListAccounts` operationId).
+	ListListAccounts(ctx context.Context, id ListId, params *ListListAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveListAccount Remove an account from a list
+	//
+	// Takes the account out of the list. An account that is not in it changes nothing.
+	// Another user's list is a 404.
+	//
+	// Corresponds with DELETE /lists/{id}/accounts/{account_id} (the `RemoveListAccount` operationId).
+	RemoveListAccount(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddListAccount Add an account to a list
+	//
+	// Adds an account that the user follows to the list. Adding a member again changes
+	// nothing. An account that the user does not follow, or whose follow request is still
+	// pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+	// more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+	// account, for any reason, it leaves every list of the user, and following it again does not
+	// bring it back. The account is not told. Another user's list is a 404.
+	//
+	// Corresponds with POST /lists/{id}/accounts/{account_id} (the `AddListAccount` operationId).
+	AddListAccount(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadMediaWithBody Upload a media file
 	//
@@ -20243,6 +20418,15 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /timelines/home (the `GetHomeTimeline` operationId).
 	GetHomeTimeline(ctx context.Context, params *GetHomeTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetListTimeline Get the timeline of a list
+	//
+	// The posts and boosts of the list's members, newest first, as the home timeline shows them
+	// (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+	// showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+	//
+	// Corresponds with GET /timelines/list/{id} (the `GetListTimeline` operationId).
+	GetListTimeline(ctx context.Context, id ListId, params *GetListTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLocalTimeline Get the local timeline
 	//
@@ -21516,6 +21700,23 @@ func (c *Client) ListAccountFollowers(ctx context.Context, id AccountId, params 
 // Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 func (c *Client) ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAccountFollowingRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAccountLists List the user's lists that have an account
+//
+// The user's lists that the account is in, oldest first.
+//
+// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
+func (c *Client) ListAccountLists(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAccountListsRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -26299,8 +26500,9 @@ func (c *Client) ListCustomEmojiRequests(ctx context.Context, params *ListCustom
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -26330,8 +26532,9 @@ func (c *Client) CreateCustomEmojiRequestWithBody(ctx context.Context, contentTy
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -26397,8 +26600,9 @@ func (c *Client) ListCustomEmojis(ctx context.Context, reqEditors ...RequestEdit
 // ListOwnCustomEmojis List the custom emoji that the user made
 //
 // The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-// used of their limit: their emoji and their pending requests to create one, and the limit,
-// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// used of their monthly limit: the approved and pending requests to create an emoji that they
+// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 func (c *Client) ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27312,6 +27516,197 @@ func (c *Client) BeginExternalConfirmation(ctx context.Context, body BeginExtern
 // Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
 func (c *Client) UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUnlinkIdentityRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListLists List the user's lists
+//
+// Every list of the user (at most 50), oldest first. Nobody else sees them.
+//
+// Corresponds with GET /lists (the `ListLists` operationId).
+func (c *Client) ListLists(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListListsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateListWithBody Create a list
+//
+// Creates an empty list with the name. A name that is not one (blank, too long, or with
+// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+// `/api/v1/problems/too-many-lists`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /lists (the `CreateList` operationId).
+func (c *Client) CreateListWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateListRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateList Create a list
+//
+// Creates an empty list with the name. A name that is not one (blank, too long, or with
+// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+// `/api/v1/problems/too-many-lists`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /lists (the `CreateList` operationId).
+func (c *Client) CreateList(ctx context.Context, body CreateListJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateListRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteList Delete a list
+//
+// Deletes the list and its members; the members' accounts and follows do not change.
+// Another user's list is a 404.
+//
+// Corresponds with DELETE /lists/{id} (the `DeleteList` operationId).
+func (c *Client) DeleteList(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteListRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetList Get a list
+//
+// A list of the user. Another user's list is a 404, as if it did not exist.
+//
+// Corresponds with GET /lists/{id} (the `GetList` operationId).
+func (c *Client) GetList(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetListRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateListWithBody Rename a list
+//
+// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+func (c *Client) UpdateListWithBody(ctx context.Context, id ListId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateListRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateList Rename a list
+//
+// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+func (c *Client) UpdateList(ctx context.Context, id ListId, body UpdateListJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateListRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListListAccounts List the members of a list
+//
+// The accounts in the list, in the order of their IDs. Members that are deactivated or
+// deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+// Another user's list is a 404.
+//
+// Corresponds with GET /lists/{id}/accounts (the `ListListAccounts` operationId).
+func (c *Client) ListListAccounts(ctx context.Context, id ListId, params *ListListAccountsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListListAccountsRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveListAccount Remove an account from a list
+//
+// Takes the account out of the list. An account that is not in it changes nothing.
+// Another user's list is a 404.
+//
+// Corresponds with DELETE /lists/{id}/accounts/{account_id} (the `RemoveListAccount` operationId).
+func (c *Client) RemoveListAccount(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveListAccountRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddListAccount Add an account to a list
+//
+// Adds an account that the user follows to the list. Adding a member again changes
+// nothing. An account that the user does not follow, or whose follow request is still
+// pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+// more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+// account, for any reason, it leaves every list of the user, and following it again does not
+// bring it back. The account is not told. Another user's list is a 404.
+//
+// Corresponds with POST /lists/{id}/accounts/{account_id} (the `AddListAccount` operationId).
+func (c *Client) AddListAccount(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddListAccountRequest(c.Server, id, accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -29330,6 +29725,25 @@ func (c *Client) GetHomeTimeline(ctx context.Context, params *GetHomeTimelinePar
 	return c.Client.Do(req)
 }
 
+// GetListTimeline Get the timeline of a list
+//
+// The posts and boosts of the list's members, newest first, as the home timeline shows them
+// (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+// showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+//
+// Corresponds with GET /timelines/list/{id} (the `GetListTimeline` operationId).
+func (c *Client) GetListTimeline(ctx context.Context, id ListId, params *GetListTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetListTimelineRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetLocalTimeline Get the local timeline
 //
 // The public posts of the instance's accounts, newest first, and their local posts for a
@@ -31218,6 +31632,40 @@ func NewListAccountFollowingRequest(server string, id AccountId, params *ListAcc
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
 		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAccountListsRequest constructs an http.Request for the ListAccountLists method
+func NewListAccountListsRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/lists", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -40375,6 +40823,343 @@ func NewUnlinkIdentityRequest(server string, id Id) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListListsRequest constructs an http.Request for the ListLists method
+func NewListListsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateListRequest calls the generic CreateList builder with application/json body
+func NewCreateListRequest(server string, body CreateListJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateListRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateListRequestWithBody constructs an http.Request for the CreateList method, with any body, and a specified content type
+func NewCreateListRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteListRequest constructs an http.Request for the DeleteList method
+func NewDeleteListRequest(server string, id ListId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetListRequest constructs an http.Request for the GetList method
+func NewGetListRequest(server string, id ListId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateListRequest calls the generic UpdateList builder with application/json body
+func NewUpdateListRequest(server string, id ListId, body UpdateListJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateListRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateListRequestWithBody constructs an http.Request for the UpdateList method, with any body, and a specified content type
+func NewUpdateListRequestWithBody(server string, id ListId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListListAccountsRequest constructs an http.Request for the ListListAccounts method
+func NewListListAccountsRequest(server string, id ListId, params *ListListAccountsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s/accounts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRemoveListAccountRequest constructs an http.Request for the RemoveListAccount method
+func NewRemoveListAccountRequest(server string, id ListId, accountId ListAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s/accounts/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddListAccountRequest constructs an http.Request for the AddListAccount method
+func NewAddListAccountRequest(server string, id ListId, accountId ListAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/lists/%s/accounts/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUploadMediaRequestWithBody constructs an http.Request for the UploadMedia method, with any body, and a specified content type
 func NewUploadMediaRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
@@ -43222,6 +44007,79 @@ func NewGetHomeTimelineRequest(server string, params *GetHomeTimelineParams) (*h
 	return req, nil
 }
 
+// NewGetListTimelineRequest constructs an http.Request for the GetListTimeline method
+func NewGetListTimelineRequest(server string, id ListId, params *GetListTimelineParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/timelines/list/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetLocalTimelineRequest constructs an http.Request for the GetLocalTimeline method
 func NewGetLocalTimelineRequest(server string, params *GetLocalTimelineParams) (*http.Request, error) {
 	var err error
@@ -45400,6 +46258,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 	ListAccountFollowingWithResponse(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*ListAccountFollowingResponse, error)
+
+	// ListAccountListsWithResponse List the user's lists that have an account
+	//
+	// The user's lists that the account is in, oldest first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
+	ListAccountListsWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*ListAccountListsResponse, error)
 
 	// MuteAccountWithBodyWithResponse Mute an account
 	//
@@ -48246,8 +49113,9 @@ type ClientWithResponsesInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -48267,8 +49135,9 @@ type ClientWithResponsesInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -48308,8 +49177,9 @@ type ClientWithResponsesInterface interface {
 	// ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 	//
 	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-	// used of their limit: their emoji and their pending requests to create one, and the limit,
-	// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// used of their monthly limit: the approved and pending requests to create an emoji that they
+	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -48884,6 +49754,109 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
 	UnlinkIdentityWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*UnlinkIdentityResponse, error)
+
+	// ListListsWithResponse List the user's lists
+	//
+	// Every list of the user (at most 50), oldest first. Nobody else sees them.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /lists (the `ListLists` operationId).
+	ListListsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListListsResponse, error)
+
+	// CreateListWithBodyWithResponse Create a list
+	//
+	// Creates an empty list with the name. A name that is not one (blank, too long, or with
+	// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+	// `/api/v1/problems/too-many-lists`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /lists (the `CreateList` operationId).
+	CreateListWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateListResponse, error)
+
+	// CreateListWithResponse Create a list
+	//
+	// Creates an empty list with the name. A name that is not one (blank, too long, or with
+	// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+	// `/api/v1/problems/too-many-lists`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /lists (the `CreateList` operationId).
+	CreateListWithResponse(ctx context.Context, body CreateListJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateListResponse, error)
+
+	// DeleteListWithResponse Delete a list
+	//
+	// Deletes the list and its members; the members' accounts and follows do not change.
+	// Another user's list is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /lists/{id} (the `DeleteList` operationId).
+	DeleteListWithResponse(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*DeleteListResponse, error)
+
+	// GetListWithResponse Get a list
+	//
+	// A list of the user. Another user's list is a 404, as if it did not exist.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /lists/{id} (the `GetList` operationId).
+	GetListWithResponse(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*GetListResponse, error)
+
+	// UpdateListWithBodyWithResponse Rename a list
+	//
+	// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+	UpdateListWithBodyWithResponse(ctx context.Context, id ListId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateListResponse, error)
+
+	// UpdateListWithResponse Rename a list
+	//
+	// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+	UpdateListWithResponse(ctx context.Context, id ListId, body UpdateListJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateListResponse, error)
+
+	// ListListAccountsWithResponse List the members of a list
+	//
+	// The accounts in the list, in the order of their IDs. Members that are deactivated or
+	// deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+	// Another user's list is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /lists/{id}/accounts (the `ListListAccounts` operationId).
+	ListListAccountsWithResponse(ctx context.Context, id ListId, params *ListListAccountsParams, reqEditors ...RequestEditorFn) (*ListListAccountsResponse, error)
+
+	// RemoveListAccountWithResponse Remove an account from a list
+	//
+	// Takes the account out of the list. An account that is not in it changes nothing.
+	// Another user's list is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /lists/{id}/accounts/{account_id} (the `RemoveListAccount` operationId).
+	RemoveListAccountWithResponse(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*RemoveListAccountResponse, error)
+
+	// AddListAccountWithResponse Add an account to a list
+	//
+	// Adds an account that the user follows to the list. Adding a member again changes
+	// nothing. An account that the user does not follow, or whose follow request is still
+	// pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+	// more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+	// account, for any reason, it leaves every list of the user, and following it again does not
+	// bring it back. The account is not told. Another user's list is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /lists/{id}/accounts/{account_id} (the `AddListAccount` operationId).
+	AddListAccountWithResponse(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*AddListAccountResponse, error)
 
 	// UploadMediaWithBodyWithResponse Upload a media file
 	//
@@ -50046,6 +51019,17 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /timelines/home (the `GetHomeTimeline` operationId).
 	GetHomeTimelineWithResponse(ctx context.Context, params *GetHomeTimelineParams, reqEditors ...RequestEditorFn) (*GetHomeTimelineResponse, error)
+
+	// GetListTimelineWithResponse Get the timeline of a list
+	//
+	// The posts and boosts of the list's members, newest first, as the home timeline shows them
+	// (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+	// showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /timelines/list/{id} (the `GetListTimeline` operationId).
+	GetListTimelineWithResponse(ctx context.Context, id ListId, params *GetListTimelineParams, reqEditors ...RequestEditorFn) (*GetListTimelineResponse, error)
 
 	// GetLocalTimelineWithResponse Get the local timeline
 	//
@@ -51893,6 +52877,71 @@ func (r ListAccountFollowingResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAccountFollowingResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAccountListsResponse200Headers the declared response headers of an HTTP 200 response for ListAccountLists
+type ListAccountListsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAccountListsResponseDefaultHeaders the declared response headers of an HTTP default response for ListAccountLists
+type ListAccountListsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAccountListsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ListCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAccountListsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAccountListsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAccountListsResponse) GetJSON200() *ListCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAccountListsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAccountListsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAccountListsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAccountListsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAccountListsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -65386,6 +66435,484 @@ func (r UnlinkIdentityResponse) ContentType() string {
 	return ""
 }
 
+// ListListsResponse200Headers the declared response headers of an HTTP 200 response for ListLists
+type ListListsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListListsResponseDefaultHeaders the declared response headers of an HTTP default response for ListLists
+type ListListsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListListsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ListCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListListsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListListsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListListsResponse) GetJSON200() *ListCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListListsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListListsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListListsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListListsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListListsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateListResponse200Headers the declared response headers of an HTTP 200 response for CreateList
+type CreateListResponse200Headers struct {
+	CacheControl *string
+}
+
+// CreateListResponseDefaultHeaders the declared response headers of an HTTP default response for CreateList
+type CreateListResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *List
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CreateListResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateListResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CreateListResponse) GetJSON200() *List {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateListResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateListResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateListResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteListResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteList
+type DeleteListResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteListResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteListResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteListResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteListResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetListResponse200Headers the declared response headers of an HTTP 200 response for GetList
+type GetListResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetListResponseDefaultHeaders the declared response headers of an HTTP default response for GetList
+type GetListResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *List
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetListResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetListResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetListResponse) GetJSON200() *List {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetListResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetListResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetListResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateListResponse200Headers the declared response headers of an HTTP 200 response for UpdateList
+type UpdateListResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateListResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateList
+type UpdateListResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *List
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateListResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateListResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateListResponse) GetJSON200() *List {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateListResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateListResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateListResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListListAccountsResponse200Headers the declared response headers of an HTTP 200 response for ListListAccounts
+type ListListAccountsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListListAccountsResponseDefaultHeaders the declared response headers of an HTTP default response for ListListAccounts
+type ListListAccountsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListListAccountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListListAccountsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListListAccountsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListListAccountsResponse) GetJSON200() *AccountPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListListAccountsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListListAccountsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListListAccountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListListAccountsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListListAccountsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RemoveListAccountResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveListAccount
+type RemoveListAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveListAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveListAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveListAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveListAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveListAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveListAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveListAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AddListAccountResponseDefaultHeaders the declared response headers of an HTTP default response for AddListAccount
+type AddListAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AddListAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AddListAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AddListAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AddListAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddListAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddListAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddListAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // UploadMediaResponse202Headers the declared response headers of an HTTP 202 response for UploadMedia
 type UploadMediaResponse202Headers struct {
 	CacheControl *string
@@ -69910,6 +71437,71 @@ func (r GetHomeTimelineResponse) ContentType() string {
 	return ""
 }
 
+// GetListTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetListTimeline
+type GetListTimelineResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetListTimelineResponseDefaultHeaders the declared response headers of an HTTP default response for GetListTimeline
+type GetListTimelineResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetListTimelineResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetListTimelineResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetListTimelineResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetListTimelineResponse) GetJSON200() *StatusPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetListTimelineResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetListTimelineResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetListTimelineResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetListTimelineResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetListTimelineResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetLocalTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetLocalTimeline
 type GetLocalTimelineResponse200Headers struct {
 	CacheControl *string
@@ -72807,6 +74399,21 @@ func (c *ClientWithResponses) ListAccountFollowingWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseListAccountFollowingResponse(rsp)
+}
+
+// ListAccountListsWithResponse List the user's lists that have an account
+//
+// The user's lists that the account is in, oldest first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
+func (c *ClientWithResponses) ListAccountListsWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*ListAccountListsResponse, error) {
+	rsp, err := c.ListAccountLists(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAccountListsResponse(rsp)
 }
 
 // MuteAccountWithBodyWithResponse Mute an account
@@ -76956,8 +78563,9 @@ func (c *ClientWithResponses) ListCustomEmojiRequestsWithResponse(ctx context.Co
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -76983,8 +78591,9 @@ func (c *ClientWithResponses) CreateCustomEmojiRequestWithBodyWithResponse(ctx c
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -77042,8 +78651,9 @@ func (c *ClientWithResponses) ListCustomEmojisWithResponse(ctx context.Context, 
 // ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 //
 // The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-// used of their limit: their emoji and their pending requests to create one, and the limit,
-// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// used of their monthly limit: the approved and pending requests to create an emoji that they
+// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -77857,6 +79467,169 @@ func (c *ClientWithResponses) UnlinkIdentityWithResponse(ctx context.Context, id
 		return nil, err
 	}
 	return ParseUnlinkIdentityResponse(rsp)
+}
+
+// ListListsWithResponse List the user's lists
+//
+// Every list of the user (at most 50), oldest first. Nobody else sees them.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /lists (the `ListLists` operationId).
+func (c *ClientWithResponses) ListListsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListListsResponse, error) {
+	rsp, err := c.ListLists(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListListsResponse(rsp)
+}
+
+// CreateListWithBodyWithResponse Create a list
+//
+// Creates an empty list with the name. A name that is not one (blank, too long, or with
+// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+// `/api/v1/problems/too-many-lists`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /lists (the `CreateList` operationId).
+func (c *ClientWithResponses) CreateListWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateListResponse, error) {
+	rsp, err := c.CreateListWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateListResponse(rsp)
+}
+
+// CreateListWithResponse Create a list
+//
+// Creates an empty list with the name. A name that is not one (blank, too long, or with
+// control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+// `/api/v1/problems/too-many-lists`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /lists (the `CreateList` operationId).
+func (c *ClientWithResponses) CreateListWithResponse(ctx context.Context, body CreateListJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateListResponse, error) {
+	rsp, err := c.CreateList(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateListResponse(rsp)
+}
+
+// DeleteListWithResponse Delete a list
+//
+// Deletes the list and its members; the members' accounts and follows do not change.
+// Another user's list is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /lists/{id} (the `DeleteList` operationId).
+func (c *ClientWithResponses) DeleteListWithResponse(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*DeleteListResponse, error) {
+	rsp, err := c.DeleteList(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteListResponse(rsp)
+}
+
+// GetListWithResponse Get a list
+//
+// A list of the user. Another user's list is a 404, as if it did not exist.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /lists/{id} (the `GetList` operationId).
+func (c *ClientWithResponses) GetListWithResponse(ctx context.Context, id ListId, reqEditors ...RequestEditorFn) (*GetListResponse, error) {
+	rsp, err := c.GetList(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetListResponse(rsp)
+}
+
+// UpdateListWithBodyWithResponse Rename a list
+//
+// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+func (c *ClientWithResponses) UpdateListWithBodyWithResponse(ctx context.Context, id ListId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateListResponse, error) {
+	rsp, err := c.UpdateListWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateListResponse(rsp)
+}
+
+// UpdateListWithResponse Rename a list
+//
+// Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /lists/{id} (the `UpdateList` operationId).
+func (c *ClientWithResponses) UpdateListWithResponse(ctx context.Context, id ListId, body UpdateListJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateListResponse, error) {
+	rsp, err := c.UpdateList(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateListResponse(rsp)
+}
+
+// ListListAccountsWithResponse List the members of a list
+//
+// The accounts in the list, in the order of their IDs. Members that are deactivated or
+// deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+// Another user's list is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /lists/{id}/accounts (the `ListListAccounts` operationId).
+func (c *ClientWithResponses) ListListAccountsWithResponse(ctx context.Context, id ListId, params *ListListAccountsParams, reqEditors ...RequestEditorFn) (*ListListAccountsResponse, error) {
+	rsp, err := c.ListListAccounts(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListListAccountsResponse(rsp)
+}
+
+// RemoveListAccountWithResponse Remove an account from a list
+//
+// Takes the account out of the list. An account that is not in it changes nothing.
+// Another user's list is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /lists/{id}/accounts/{account_id} (the `RemoveListAccount` operationId).
+func (c *ClientWithResponses) RemoveListAccountWithResponse(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*RemoveListAccountResponse, error) {
+	rsp, err := c.RemoveListAccount(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveListAccountResponse(rsp)
+}
+
+// AddListAccountWithResponse Add an account to a list
+//
+// Adds an account that the user follows to the list. Adding a member again changes
+// nothing. An account that the user does not follow, or whose follow request is still
+// pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+// more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+// account, for any reason, it leaves every list of the user, and following it again does not
+// bring it back. The account is not told. Another user's list is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /lists/{id}/accounts/{account_id} (the `AddListAccount` operationId).
+func (c *ClientWithResponses) AddListAccountWithResponse(ctx context.Context, id ListId, accountId ListAccountId, reqEditors ...RequestEditorFn) (*AddListAccountResponse, error) {
+	rsp, err := c.AddListAccount(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddListAccountResponse(rsp)
 }
 
 // UploadMediaWithBodyWithResponse Upload a media file
@@ -79583,6 +81356,23 @@ func (c *ClientWithResponses) GetHomeTimelineWithResponse(ctx context.Context, p
 		return nil, err
 	}
 	return ParseGetHomeTimelineResponse(rsp)
+}
+
+// GetListTimelineWithResponse Get the timeline of a list
+//
+// The posts and boosts of the list's members, newest first, as the home timeline shows them
+// (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+// showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /timelines/list/{id} (the `GetListTimeline` operationId).
+func (c *ClientWithResponses) GetListTimelineWithResponse(ctx context.Context, id ListId, params *GetListTimelineParams, reqEditors ...RequestEditorFn) (*GetListTimelineResponse, error) {
+	rsp, err := c.GetListTimeline(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetListTimelineResponse(rsp)
 }
 
 // GetLocalTimelineWithResponse Get the local timeline
@@ -81936,6 +83726,83 @@ func ParseListAccountFollowingResponse(rsp *http.Response) (*ListAccountFollowin
 		response.Headers200 = &headers
 	case true:
 		var headers ListAccountFollowingResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAccountListsResponse parses an HTTP response from a ListAccountListsWithResponse call
+func ParseListAccountListsResponse(rsp *http.Response) (*ListAccountListsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAccountListsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAccountListsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAccountListsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -98223,6 +100090,580 @@ func ParseUnlinkIdentityResponse(rsp *http.Response) (*UnlinkIdentityResponse, e
 	return response, nil
 }
 
+// ParseListListsResponse parses an HTTP response from a ListListsWithResponse call
+func ParseListListsResponse(rsp *http.Response) (*ListListsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListListsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListListsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListListsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateListResponse parses an HTTP response from a CreateListWithResponse call
+func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest List
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CreateListResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers CreateListResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteListResponse parses an HTTP response from a DeleteListWithResponse call
+func ParseDeleteListResponse(rsp *http.Response) (*DeleteListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteListResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetListResponse parses an HTTP response from a GetListWithResponse call
+func ParseGetListResponse(rsp *http.Response) (*GetListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest List
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetListResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetListResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateListResponse parses an HTTP response from a UpdateListWithResponse call
+func ParseUpdateListResponse(rsp *http.Response) (*UpdateListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest List
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateListResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateListResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListListAccountsResponse parses an HTTP response from a ListListAccountsWithResponse call
+func ParseListListAccountsResponse(rsp *http.Response) (*ListListAccountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListListAccountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListListAccountsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListListAccountsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRemoveListAccountResponse parses an HTTP response from a RemoveListAccountWithResponse call
+func ParseRemoveListAccountResponse(rsp *http.Response) (*RemoveListAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveListAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RemoveListAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAddListAccountResponse parses an HTTP response from a AddListAccountWithResponse call
+func ParseAddListAccountResponse(rsp *http.Response) (*AddListAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddListAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers AddListAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseUploadMediaResponse parses an HTTP response from a UploadMediaWithResponse call
 func ParseUploadMediaResponse(rsp *http.Response) (*UploadMediaResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -103562,6 +106003,83 @@ func ParseGetHomeTimelineResponse(rsp *http.Response) (*GetHomeTimelineResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers GetHomeTimelineResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetListTimelineResponse parses an HTTP response from a GetListTimelineWithResponse call
+func ParseGetListTimelineResponse(rsp *http.Response) (*GetListTimelineResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetListTimelineResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetListTimelineResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetListTimelineResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

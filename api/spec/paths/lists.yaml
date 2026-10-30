@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listLists
+  summary: List the user's lists
+  description: Every list of the user (at most 50), oldest first. Nobody else sees them.
+  tags: [lists]
+  security:
+    - oauth2: ["read:follows"]
+  responses:
+    "200":
+      $ref: ../components/responses/ListCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createList
+  summary: Create a list
+  description: |
+    Creates an empty list with the name. A name that is not one (blank, too long, or with
+    control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+    `/api/v1/problems/too-many-lists`.
+  tags: [lists]
+  security:
+    - oauth2: ["write:follows"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ListRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/List.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

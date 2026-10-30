@@ -59,7 +59,15 @@ const button = tv({
   defaultVariants: { variant: "secondary", size: "md" },
 });
 
-export type ButtonProps = RACButtonProps & VariantProps<typeof button>;
+export type ButtonProps = RACButtonProps &
+  VariantProps<typeof button> & {
+    /**
+     * The keys that do what pressing the button does (`aria-keyshortcuts`), e.g. `Control+Enter Meta+Enter` on the
+     * submit button of a form that Ctrl / Cmd + Enter sends. The button only announces them; the keys are handled where
+     * they are pressed.
+     */
+    "aria-keyshortcuts"?: string;
+  };
 
 /**
  * A button (React Aria Button): pressed with a pointer, Enter or Space. Its accessible name is its
@@ -72,7 +80,7 @@ export type ButtonProps = RACButtonProps & VariantProps<typeof button>;
  * above drop its error and move the button from under the pointer before it is released, which loses the press and
  * the submission.
  */
-export function Button({ variant, size, className, ...props }: ButtonProps) {
+export function Button({ variant, size, className, "aria-keyshortcuts": keyShortcuts, ...props }: ButtonProps) {
   const submitProps: Partial<RACButtonProps> =
     props.type === "submit" && props.preventFocusOnPress === undefined
       ? {
@@ -92,6 +100,12 @@ export function Button({ variant, size, className, ...props }: ButtonProps) {
     <RACButton
       {...props}
       {...submitProps}
+      // React Aria passes no aria-keyshortcuts to the DOM, so the button element is rendered here to carry it.
+      {...(keyShortcuts !== undefined && {
+        render: (domProps) => (
+          <button {...domProps} type={domProps.type ?? "button"} aria-keyshortcuts={keyShortcuts} />
+        ),
+      })}
       className={composeRenderProps(className, (className) => button({ variant, size, className }))}
     />
   );

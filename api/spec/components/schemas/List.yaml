@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A list of accounts that the user follows, which only the user sees. Its timeline shows the
+  posts and boosts of its members.
+type: object
+required: [id, name, members_count, created_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  name:
+    description: The name of the list, 1 to 50 characters.
+    type: string
+  members_count:
+    description: How many accounts are in the list.
+    type: integer
+    minimum: 0
+  created_at:
+    description: When the user created the list.
+    type: string
+    format: date-time

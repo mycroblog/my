@@ -1633,7 +1633,7 @@ func (l *Localizer) ServerErrorsInvalidCustomEmoji() string {
 
 // ServerErrorsInvalidCustomEmojiDetail formats "server:errors.invalid_custom_emoji_detail". Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule.
 //
-//	en: {reason, select, invalid_shortcode {A shortcode is 2 to 30 letters (A to Z), digits, and underscores.} shortcode_taken {A custom emoji of this server already has this shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server.} limit_reached {You already have as many custom emoji and pending requests as your limit.} request_pending {This custom emoji already has a pending request for a new image.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
+//	en: {reason, select, invalid_shortcode {A shortcode is 2 to 30 letters (A to Z), digits, and underscores.} shortcode_taken {A custom emoji of this server already has this shortcode.} invalid_alias {An alias is 2 to 30 letters (A to Z), digits, and underscores, and an emoji has at most 10.} invalid_category {A category is at most 64 characters.} media_not_found {The image was not found among your uploads.} media_not_ready {The image is still being processed. Try again in a moment.} unsupported_format {The image must be a PNG, a GIF, or a WebP.} too_large {The image is larger than the limit of this server.} too_big {The image must be at most 1,024 pixels on each side.} remote_emoji {This can be done only with the custom emoji of this server.} local_emoji {This can be done only with the custom emoji of other servers.} fetch_failed {The image of the custom emoji could not be fetched from its server.} limit_reached {You have already requested as many custom emoji this month as your monthly limit. The count resets on the first day of each month (UTC).} request_pending {This custom emoji already has a pending request for a new image.} invalid_reason {A reason is at most 500 characters.} other {The custom emoji breaks a rule.}}
 func (l *Localizer) ServerErrorsInvalidCustomEmojiDetail(reason string) string {
 	return l.format("server:errors.invalid_custom_emoji_detail", map[string]any{"reason": reason})
 }
@@ -1685,6 +1685,27 @@ func (l *Localizer) ServerErrorsInvitesRegistrationClosed() string {
 //	en: You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.
 func (l *Localizer) ServerErrorsInvitesTooMany() string {
 	return l.format("server:errors.invites.too_many", nil)
+}
+
+// ServerErrorsListMembersNotFollowed formats "server:errors.list_members.not_followed". API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending.
+//
+//	en: Only accounts you follow can be added to a list.
+func (l *Localizer) ServerErrorsListMembersNotFollowed() string {
+	return l.format("server:errors.list_members.not_followed", nil)
+}
+
+// ServerErrorsListMembersTooMany formats "server:errors.list_members.too_many". API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list.
+//
+//	en: This list already has the most members allowed. Remove one first.
+func (l *Localizer) ServerErrorsListMembersTooMany() string {
+	return l.format("server:errors.list_members.too_many", nil)
+}
+
+// ServerErrorsListsTooMany formats "server:errors.lists.too_many". API error title for HTTP 422 when the user creates another list beyond the limit of lists.
+//
+//	en: You already have the most lists allowed. Delete one first.
+func (l *Localizer) ServerErrorsListsTooMany() string {
+	return l.format("server:errors.lists.too_many", nil)
 }
 
 // ServerErrorsLoginProviderLinked formats "server:errors.login_provider.linked". Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account.

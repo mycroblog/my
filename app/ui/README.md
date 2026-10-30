@@ -380,7 +380,7 @@ string through props or children.
 
 | Component | Wraps | Variants and extras |
 | --- | --- | --- |
-| `Button` | `Button` | `variant`: `primary` / `secondary` (default) / `ghost` / `danger`; `size`: `sm` / `md` (default); `isPending`. With `type="submit"`, a pointer press moves the focus to it when the press ends, not when it starts (web-client G23) |
+| `Button` | `Button` | `variant`: `primary` / `secondary` (default) / `ghost` / `danger`; `size`: `sm` / `md` (default); `isPending`. With `type="submit"`, a pointer press moves the focus to it when the press ends, not when it starts (web-client G23). `aria-keyshortcuts` announces the keys that do the same (`Control+Enter Meta+Enter`); the keys are handled where they are pressed |
 | `Link` | `Link` | `variant`: `inline` (default, underlined in running text) / `standalone` |
 | `TextField` | `TextField` + `Input` | `label`, `description`, `errorMessage`, `placeholder`; `grow` takes the room left in a row; `highlights` (below) |
 | `TextArea` | `TextField` + `TextArea` | as `TextField`, plus `rows` and the character count below |
@@ -393,6 +393,7 @@ string through props or children.
 | `ReasonField` | `TextArea` | The reason for an operator's action: three rows and a required character count (`characterLimit`, `formatRemaining`) |
 | `DurationSelect` | `Select` | `durations` in seconds with `formatDuration`; `indefiniteLabel` adds "no end", last; the value is seconds or `null` for no end |
 | `Form` | `Form` | The layout props of `Stack` (`gap`, `align`, `justify`, and the box props: `container`, `width`, …); `validationErrors` from the server show on the named fields. A plain `<form>` without them can be `<Stack as="form">` |
+| `FileDropZone` | (the browser's drag and drop events) | Wraps an area (a form) that takes dropped files: `onDropFiles`, `label`, `isDisabled`. Only a drag that carries files counts; text and links stay with the fields inside. While files are over it, a dashed outline and `label` cover it (shape and words, not color alone), `aria-hidden` since a button that picks the same files stays (WCAG 2.5.7). Disabled, it refuses the files (`dropEffect="none"`) and shows nothing |
 
 - Each component has one `tailwind-variants` recipe; its variant props are typed from the recipe (`VariantProps`).
   `className` (a string or RAC's function of the render props) is merged into the root with `tailwind-merge`, so a later class wins.
