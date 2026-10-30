@@ -15,18 +15,33 @@ import {
   PollIcon,
   QuoteIcon,
   StarIcon,
+  SubscribeIcon,
   VoiceIcon,
 } from "./Icons";
 
-/** The kinds of notification that have a mark of their own; the rest are `notice`. */
+/**
+ * The kinds of notification that have a mark of their own; the rest are `notice`. `status` is a new post of an account
+ * that the user subscribes to, with the ringing bell of the profile's subscribe button.
+ */
 export type NotificationKind =
-  "favourite" | "boost" | "follow" | "mention" | "reaction" | "quote" | "poll" | "voice" | "staff" | "notice";
+  | "favourite"
+  | "boost"
+  | "follow"
+  | "mention"
+  | "status"
+  | "reaction"
+  | "quote"
+  | "poll"
+  | "voice"
+  | "staff"
+  | "notice";
 
 const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   favourite: () => <StarIcon filled />,
   boost: () => <BoostIcon filled />,
   follow: () => <FollowRequestIcon />,
   mention: () => <DirectVisibilityIcon />,
+  status: () => <SubscribeIcon />,
   reaction: () => <EmojiIcon />,
   quote: () => <QuoteIcon />,
   poll: () => <PollIcon filled />,
@@ -51,6 +66,7 @@ const kindMark = tv({
       boost: { mark: "bg-success text-success-fg" },
       follow: { mark: "bg-accent-fill text-accent-fill-fg" },
       mention: { mark: "bg-accent-fill text-accent-fill-fg" },
+      status: { mark: "bg-soft text-accent" },
       reaction: { mark: "bg-warning text-warning-fg" },
       quote: { mark: "bg-soft text-accent" },
       poll: { mark: "bg-soft text-accent" },

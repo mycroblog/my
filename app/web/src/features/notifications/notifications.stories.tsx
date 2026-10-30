@@ -95,6 +95,11 @@ const social: Notification[] = [
       outcome: "followed",
     },
   }),
+  // A new post of an account whose new posts the viewer chose to be notified of (its profile's bell).
+  notification(16, "status", {
+    account: haruka,
+    status: post(92, haruka, { content: "<p>The first persimmons of the year are on the market today.</p>" }),
+  }),
 ];
 
 const at = "2026-10-28T09:00:00Z";
@@ -276,6 +281,9 @@ export const ToTheStaff: Story = answering(...notifications(toStaff, 0));
 
 /** Only the mentions. */
 export const MentionsOnly: Story = { parameters: { screen: { path: "/notifications?filter=mentions" } } };
+
+/** Only the new posts of the accounts the viewer subscribes to. */
+export const NewPostsOnly: Story = { parameters: { screen: { path: "/notifications?filter=posts" } } };
 
 /** Nothing yet. */
 export const Empty: Story = answering(...notifications([], 0));
