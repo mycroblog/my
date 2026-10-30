@@ -2,8 +2,9 @@
 
 How operators create the database, upgrade it to a new release, and, on development and test instances only, erase it.
 
-The schema lives in `schema/<dialect>/` (one file per module) and is applied with Atlas Community Edition, not with a `my` command.
-The server binary does not embed Atlas: Atlas and the schema ship in a separate image (the `schema` target of the `Dockerfile`).
+The schema lives in `schema/<dialect>/` (one file per module) and is applied with Atlas Community Edition.
+The server binary holds the schema of its release and applies it with `my schema apply` ([below](#with-my-schema-apply));
+the deployment files below still apply it with the Atlas CLI of a separate image (the `schema` target of the `Dockerfile`).
 `my serve` never applies the schema. Started on a database without it, the server answers `503` on `/readyz` (see [Start the server](running.md#start-the-server)).
 
 Data that a schema change has to carry over (a column split in two, a value moved to a new table) is rewritten by the server image's
@@ -13,6 +14,27 @@ own `my db upgrade`, which runs once per release after the schema is applied. Th
 
 `atlas schema apply` runs only the statements that bring the database to the desired schema: on an empty database it creates everything,
 on an up-to-date one it does nothing. It is safe to run any number of times, and every upgrade runs it again.
+
+### With `my schema apply`
+
+`my schema apply` reads the same configuration as the server (`db` and `database_url`, from `-config <file>` or the
+environment) and brings the database to the schema of the binary's release:
+
+```sh
+my schema apply -dry-run   # print the SQL statements it would run, and change nothing
+my schema apply            # run them
+```
+
+- It prints the SQL statements it runs, and runs them in one transaction: when one fails, none of them stays.
+  A database that already matches the schema is left unchanged (`ok: the database matches the schema; nothing to apply`).
+- A plan that drops a table or a column is refused, and nothing runs, unless `-allow-destructive` is given. Pass it only
+  when the release notes call for it, after a backup. Rebuilding a SQLite table to change it does not count as a drop.
+- On PostgreSQL it first runs the bootstrap SQL (`CREATE EXTENSION IF NOT EXISTS pg_trgm`), so the role of `database_url`
+  needs the privilege to create that extension, or the extension must exist already. It builds the schema it compares
+  with in a temporary schema of the same database and drops it at the end, also on failure; the role needs the privilege
+  to create a schema there. Where it has none, set `database_dev_url` to another database where it has
+  ([`database_dev_url`](../reference/configuration.md#database_dev_url)). Runs against one database wait for each other, so two at once both succeed.
+- It supports `db = sqlite` and `db = postgres`, and exits with `1` when it applied nothing because of an error or a refused drop.
 
 ### Docker Compose
 

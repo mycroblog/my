@@ -337,6 +337,15 @@ entries:
     userdocs: ["docs/operations/database.md#upgrading", "docs/operations/releasing.md", "docs/operations/backup.md#sqlite"]
     notes:
       - "A data upgrade step keeps its key once released, is idempotent, and works in small transactions without external I/O; after its contract it stays registered with Run nil."
+  - name: schema-apply
+    paths: ["cmd/my/schema*.go", "internal/adapter/db/schemaapply/**", "internal/adapter/db/*/schema_apply*.go"]
+    docs: ["docs/adr/0126-embedded-schema-apply.md", "docs/adr/0023-declarative-schema-management.md"]
+    userdocs: ["docs/operations/database.md#with-my-schema-apply", "docs/reference/build-tags.md"]
+    checks: [go, schema]
+    notes:
+      - "my schema apply diffs the embedded schema (built in an in-memory SQLite database, or in a per-run temporary PostgreSQL schema renamed to the target's) with the target through the Atlas library and applies the plan in one transaction; the Atlas dialect drivers stay in internal/adapter/db/{sqlite,postgres}, out of domain and app."
+      - "A drop counts by the type of schema.Change (schemaapply.Drops), never by the SQL of the plan: SQLite's table rebuild contains DROP TABLE."
+      - "The ariga.io/atlas version of go.mod must equal ATLAS_VERSION of scripts/install-atlas.sh (TestAtlasLibraryMatchesTheCLI); bump both together."
   - name: projections
     paths: ["internal/app/projection/**", "internal/platform/projections.go", "cmd/my/projection.go"]
     docs: ["docs/architecture/data-model/09-projection-rebuild.md"]

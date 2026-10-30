@@ -102,6 +102,18 @@ func Close() {
 // a caller that opens a pool on the URL registers its Close after this call.
 func NewDatabase(t testing.TB) string {
 	t.Helper()
+	return newDatabase(t, true)
+}
+
+// NewEmptyDatabase is NewDatabase without the bootstrap SQL and the schema: a new database
+// with no table and no extension, for the tests of applying the schema.
+func NewEmptyDatabase(t testing.TB) string {
+	t.Helper()
+	return newDatabase(t, false)
+}
+
+func newDatabase(t testing.TB, withSchema bool) string {
+	t.Helper()
 	server.once.Do(setUp)
 	if server.err != nil {
 		t.Fatalf("pgtest: %v", server.err)
@@ -117,10 +129,14 @@ func NewDatabase(t testing.TB) string {
 	defer func() { _ = admin.Close(context.WithoutCancel(ctx)) }()
 
 	name := randomName("test_")
+	create := "CREATE DATABASE " + name
+	if withSchema {
+		create += " TEMPLATE " + server.template
+	}
 	// The backend of a connection that just left the template may still be exiting, and
 	// PostgreSQL refuses to copy a database that has a session (55006 object_in_use).
 	for attempt := 0; ; attempt++ {
-		_, err = admin.Exec(ctx, "CREATE DATABASE "+name+" TEMPLATE "+server.template)
+		_, err = admin.Exec(ctx, create)
 		var pgErr *pgconn.PgError
 		if err == nil || attempt == 50 || !errors.As(err, &pgErr) || pgErr.Code != "55006" {
 			break

@@ -61,7 +61,10 @@ type Config struct {
 	TrustedProxyHeader string
 	DB                 string
 	DatabaseURL        string
-	Queue              string
+	// DatabaseDevURL is the dev database of `my schema apply` on PostgreSQL; empty uses a
+	// temporary schema of the database of DatabaseURL.
+	DatabaseDevURL string
+	Queue          string
 
 	// The queue, the URL of the endpoints, the service account and audience of the OIDC tokens,
 	// and the dispatch deadline of queue = cloudtasks. QueueCloudTasksURL has no trailing slash
@@ -324,6 +327,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("trusted_proxy_header", c.TrustedProxyHeader),
 		slog.String("db", c.DB),
 		slog.String("database_url", redact(c.DatabaseURL != "")),
+		slog.String("database_dev_url", redact(c.DatabaseDevURL != "")),
 		slog.String("queue", c.Queue),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),

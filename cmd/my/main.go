@@ -75,6 +75,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runProjection(fs.Args()[1:], stdout, stderr)
 	case "registration":
 		return runRegistration(fs.Args()[1:], stdout, stderr)
+	case "schema":
+		return runSchema(fs.Args()[1:], stdout, stderr)
 	case "serve":
 		return runServe(fs.Args()[1:], stderr)
 	case "":
@@ -127,6 +129,7 @@ Commands:
             (my projection list|rebuild|verify)
   registration
             Review sign-ups (my registration list|approve|reject)
+  schema    Apply this release's schema to the database (my schema apply)
   serve     Run the server (role web, worker, or all)
   version   Print the version
 `)

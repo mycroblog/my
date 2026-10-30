@@ -7,8 +7,8 @@ The adapters that need nothing beyond the standard library and the packages the 
 
 | Tag | Leaves out | Settings it rejects |
 | --- | --- | --- |
-| `no_sqlite` | The SQLite database (`modernc.org/sqlite`) and the queue and key-value store kept in it | `db = sqlite` |
-| `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, and the `LISTEN` / `NOTIFY` broker | `db = postgres`, `stream = postgres` |
+| `no_sqlite` | The SQLite database (`modernc.org/sqlite`), the queue and key-value store kept in it, and `my schema apply` for SQLite (Atlas's SQLite driver) | `db = sqlite` |
+| `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, the `LISTEN` / `NOTIFY` broker, and `my schema apply` for PostgreSQL (Atlas's PostgreSQL driver) | `db = postgres`, `stream = postgres` |
 | `no_valkey` | The Valkey client (`valkey-go`): the key-value store and the broker on `valkey_url` | `kv = valkey`, `stream = valkey` |
 | `no_sns` | The Amazon SNS / SQS broker (AWS SDK); with `no_sqs`, the AWS SDK for Amazon SQS too | `stream = sns` |
 | `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |

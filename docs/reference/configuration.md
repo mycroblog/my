@@ -62,6 +62,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
 | [`db`](#db) | `MY_DB` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
+| [`database_dev_url`](#database_dev_url) | `MY_DATABASE_DEV_URL` | a temporary schema in the database of `database_url` | no | yes |
 | [`queue`](#queue) | `MY_QUEUE` | `db` | no | no |
 | [`queue_sqs_queue_url`](#queue_sqs_queue_url) | `MY_QUEUE_SQS_QUEUE_URL` | none | when `queue = sqs` | no |
 | [`queue_sqs_events_path`](#queue_sqs_events_path) | `MY_QUEUE_SQS_EVENTS_PATH` | `/events` | no | no |
@@ -348,6 +349,14 @@ Connection string passed to the `db` adapter, in that adapter's format.
 - Environment variable: `MY_DATABASE_URL` or `MY_DATABASE_URL_FILE`
 - Default: none
 - Required: yes
+
+### `database_dev_url`
+
+Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege, and the bootstrap SQL (the `pg_trgm` extension) runs in this database too. The server itself never uses it.
+
+- Environment variable: `MY_DATABASE_DEV_URL` or `MY_DATABASE_DEV_URL_FILE`
+- Default: a temporary schema in the database of `database_url`
+- Required: no
 
 ### `queue`
 

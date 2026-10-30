@@ -220,6 +220,13 @@ var schema = []field{
 		set:      func(c *Config, v string) { c.DatabaseURL = v },
 	},
 	{
+		key:    "database_dev_url",
+		defDoc: "a temporary schema in the database of `database_url`",
+		doc:    "Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege, and the bootstrap SQL (the `pg_trgm` extension) runs in this database too. The server itself never uses it.",
+		secret: true,
+		set:    func(c *Config, v string) { c.DatabaseDevURL = v },
+	},
+	{
 		key: "queue",
 		doc: "Job queue adapter.",
 		def: "db",

@@ -47,8 +47,8 @@ excluded_packages() {
       ;;
   esac
   case "$1" in
-    no_sqlite) echo "$m/db/sqlite modernc.org/sqlite" ;;
-    no_postgres) echo "$m/db/postgres $m/stream/postgres github.com/jackc/pgx/v5" ;;
+    no_sqlite) echo "$m/db/sqlite modernc.org/sqlite ariga.io/atlas/sql/sqlite" ;;
+    no_postgres) echo "$m/db/postgres $m/stream/postgres github.com/jackc/pgx/v5 ariga.io/atlas/sql/postgres" ;;
     no_valkey) echo "$m/valkey $m/kv/valkey $m/stream/valkey github.com/valkey-io/valkey-go" ;;
     no_sns) echo "$m/stream/sns github.com/aws/aws-sdk-go-v2/service/sns" ;;
     no_ses) echo "$m/mail/ses github.com/aws/aws-sdk-go-v2/service/sesv2" ;;
