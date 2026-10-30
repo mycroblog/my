@@ -36,6 +36,7 @@ import {
   instanceTexts,
   interactions,
   invites,
+  lists,
   moderationActions,
   personas,
   posts,
@@ -352,6 +353,31 @@ class Seeder {
     }
   }
 
+  /** The people's lists and their members; a list is found again by its owner's lists and its name. */
+  async makeLists(): Promise<void> {
+    for (const list of lists) {
+      const api = await this.api(list.owner);
+      const existing = body((await api.GET("/lists")).data).items.find((l) => l.name === list.name);
+      const made =
+        existing ??
+        body(
+          (
+            await api.POST("/lists", {
+              body: { name: list.name },
+              headers: { "Idempotency-Key": idempotencyKey(list.key) },
+            })
+          ).data,
+        );
+      for (const username of list.members) {
+        const member = await this.account(username);
+        // Adding a member again changes nothing.
+        await api.POST("/lists/{id}/accounts/{account_id}", {
+          params: { path: { id: made.id, account_id: member.id } },
+        });
+      }
+    }
+  }
+
   /** The person's posts that carry an image with `description`, found again on a second run. */
   async findByImage(username: string, description: string): Promise<Status | undefined> {
     const api = await this.api(username);
@@ -625,6 +651,7 @@ export async function seed(o: SeedOptions): Promise<void> {
   await s.setUpProfiles();
   await s.setUpRoles();
   await s.follow();
+  await s.makeLists();
   await s.writePosts();
   await s.interact();
   await s.report();
@@ -663,6 +690,7 @@ export async function census(o: SeedOptions): Promise<Record<string, number>> {
     out[`${p.username}.following`] = me.following_count ?? 0;
     out[`${p.username}.reports`] = body((await api.GET("/reports")).data).items.length;
     out[`${p.username}.invites`] = body((await api.GET("/invites")).data).items.length;
+    out[`${p.username}.lists`] = body((await api.GET("/lists")).data).items.length;
   }
   const api = await s.api(admin);
   out["audit_log"] = await count(async (cursor) =>
