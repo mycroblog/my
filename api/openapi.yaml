@@ -14711,6 +14711,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+    AnnouncementPage:
+      description: A page of announcements.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Announcement'
     AppealModerationActionRequest:
       description: An appeal of an action on the user's own account.
       type: object
@@ -22157,15 +22169,3 @@ components:
       properties:
         endpoint_id:
           $ref: '#/components/schemas/Id'
-    AnnouncementPage:
-      description: A page of announcements.
-      allOf:
-        - $ref: '#/components/schemas/PageInfo'
-        - type: object
-          required:
-            - items
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/Announcement'

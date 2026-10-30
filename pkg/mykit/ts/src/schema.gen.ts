@@ -9637,6 +9637,10 @@ export interface components {
         AnnouncementList: {
             items: components["schemas"]["Announcement"][];
         };
+        /** @description A page of announcements. */
+        AnnouncementPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["Announcement"][];
+        };
         /** @description An appeal of an action on the user's own account. */
         AppealModerationActionRequest: {
             /** @description Why the moderators should reconsider the action, as plain text. */
@@ -14188,10 +14192,6 @@ export interface components {
         /** @description The data of a `webhook.test` message. */
         WebhookTest: {
             endpoint_id: components["schemas"]["Id"];
-        };
-        /** @description A page of announcements. */
-        AnnouncementPage: components["schemas"]["PageInfo"] & {
-            items: components["schemas"]["Announcement"][];
         };
     };
     responses: {
