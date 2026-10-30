@@ -354,3 +354,118 @@ WHERE tag_id = sqlc.arg(tag_id)::uuid;
 -- ListTagUsageOf returns the usage of the tags among ids that have a row.
 -- name: ListTagUsageOf :many
 SELECT tag_id, statuses_count, last_used_at FROM tag_usage WHERE tag_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY tag_id;
+
+-- Lists (data-model 4.6, ADR-0122) -----------------------------------------------------------------
+
+-- name: InsertList :exec
+INSERT INTO lists (id, owner_account_id, created_at) VALUES ($1, $2, $3);
+
+-- name: UpsertListName :exec
+INSERT INTO list_names (list_id, name) VALUES ($1, $2)
+ON CONFLICT (list_id) DO UPDATE SET name = excluded.name;
+
+-- name: GetList :one
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
+FROM lists l JOIN list_names n ON n.list_id = l.id
+WHERE l.id = $1;
+
+-- name: ListListsOfOwner :many
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
+FROM lists l JOIN list_names n ON n.list_id = l.id
+WHERE l.owner_account_id = $1
+ORDER BY l.id;
+
+-- name: CountListsOfOwner :one
+SELECT count(*) FROM lists WHERE owner_account_id = $1;
+
+-- name: DeleteListMembersOfList :exec
+DELETE FROM list_members WHERE list_id = $1;
+
+-- name: DeleteListName :exec
+DELETE FROM list_names WHERE list_id = $1;
+
+-- name: DeleteList :exec
+DELETE FROM lists WHERE id = $1;
+
+-- name: InsertListMember :execrows
+INSERT INTO list_members (list_id, member_account_id, owner_account_id, added_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (list_id, member_account_id) DO NOTHING;
+
+-- name: DeleteListMember :exec
+DELETE FROM list_members WHERE list_id = $1 AND member_account_id = $2;
+
+-- name: CountListMembers :one
+SELECT count(*) FROM list_members WHERE list_id = $1;
+
+-- ListListMembers returns the members of a list after the member ID after (NULL starts at the
+-- first), in the order of their IDs.
+-- name: ListListMembers :many
+SELECT member_account_id FROM list_members
+WHERE list_id = sqlc.arg(list_id) AND (sqlc.narg(after)::uuid IS NULL OR member_account_id > sqlc.narg(after)::uuid)
+ORDER BY member_account_id
+LIMIT sqlc.arg(page_limit);
+
+-- name: FeedFollowEdgeExists :one
+SELECT EXISTS (SELECT 1 FROM feed_follow_edges WHERE follower_account_id = $1 AND followee_account_id = $2);
+
+-- name: ListListIDsWithMember :many
+SELECT list_id FROM list_members WHERE owner_account_id = $1 AND member_account_id = $2 ORDER BY list_id;
+
+-- DeleteListMembersOfFollow takes the followee of an ended follow out of every list of the
+-- follower.
+-- name: DeleteListMembersOfFollow :exec
+DELETE FROM list_members WHERE owner_account_id = $1 AND member_account_id = $2;
+
+-- DeleteListMembersWithoutFollow takes out of the lists every member whose owner no longer
+-- actively follows it, after a rebuild of feed_follow_edges.
+-- name: DeleteListMembersWithoutFollow :exec
+DELETE FROM list_members WHERE NOT EXISTS (
+  SELECT 1 FROM feed_follow_edges f
+  WHERE f.follower_account_id = list_members.owner_account_id AND f.followee_account_id = list_members.member_account_id);
+
+-- name: ListAllListMembers :many
+SELECT list_id, member_account_id, owner_account_id, added_at FROM list_members ORDER BY list_id, member_account_id;
+
+-- ListListEntries is the timeline of a list: ListHomeEntries with the authors (posters and
+-- boosters) limited to the members of the list, which never include the viewer.
+-- name: ListListEntries :many
+SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+FROM feed_entries e
+WHERE e.author_account_id IN (
+    SELECT m.member_account_id FROM list_members m
+    JOIN feed_follow_edges f ON f.follower_account_id = m.owner_account_id AND f.followee_account_id = m.member_account_id
+    WHERE m.list_id = sqlc.arg(list_id) AND m.owner_account_id = sqlc.arg(viewer))
+  AND e.author_account_id <> sqlc.arg(viewer)
+  AND (sqlc.narg(before)::uuid IS NULL OR e.id < sqlc.narg(before)::uuid)
+  AND e.id >= COALESCE(sqlc.narg(window_floor)::uuid, '00000000-0000-0000-0000-000000000000')
+  AND (e.kind = 'post' OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = sqlc.arg(viewer) AND f.followee_account_id = e.author_account_id AND f.show_boosts))
+  AND (e.visibility <> 'direct' OR EXISTS (
+    SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = sqlc.arg(viewer) AND d.entry_id = e.id))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_exclusions x
+    WHERE x.viewer_account_id = sqlc.arg(viewer)
+      AND x.target_account_id IN (e.author_account_id, e.original_author_account_id)
+      AND (x.expires_at IS NULL OR x.expires_at > sqlc.arg(now)::timestamptz))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_author_restrictions r
+    WHERE r.account_id IN (e.author_account_id, e.original_author_account_id) AND r.restriction = 'profile_view'
+      AND (r.effective_until IS NULL OR r.effective_until > sqlc.arg(now)::timestamptz))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_domain_restrictions dr
+    WHERE dr.restriction = 'profile_view'
+      AND (dr.effective_until IS NULL OR dr.effective_until > sqlc.arg(now)::timestamptz)
+      AND (dr.domain IN (e.author_domain, e.original_author_domain)
+        OR right(e.author_domain, length(dr.domain) + 1) = '.' || dr.domain
+        OR right(e.original_author_domain, length(dr.domain) + 1) = '.' || dr.domain))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_domain_mutes dm
+    WHERE dm.viewer_account_id = sqlc.arg(viewer) AND e.kind = 'boost'
+      AND (dm.domain = e.original_author_domain OR right(e.original_author_domain, length(dm.domain) + 1) = '.' || dm.domain))
+  AND (sqlc.arg(all_languages)::boolean OR e.language = 'und' OR e.language = ANY(sqlc.arg(languages)::text[]))
+ORDER BY e.id DESC
+LIMIT sqlc.arg(page_limit);

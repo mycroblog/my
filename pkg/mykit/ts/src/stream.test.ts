@@ -76,6 +76,7 @@ describe("runStream", () => {
         sse([
           ": connected\n\n",
           'event: update\ndata: {"id":"s1"}\n\n',
+          'event: list_update\ndata: {"list_id":"l1","status":{"id":"s1"}}\n\n',
           'event: notification\ndata: {"id":"n1","type":"follow"}\n\n',
           ": heartbeat\n\n",
           'event: announcement\ndata: {"id":"a1"}\n\n',
@@ -92,13 +93,18 @@ describe("runStream", () => {
     expect(r.opens).toEqual([false, true]);
     expect(r.events.map((e) => e.type)).toEqual([
       "update",
+      "list_update",
       "notification",
       "announcement",
       "announcement_removed",
       "unknown",
     ]);
-    const [update, notification, announcement, removed, unknown] = r.events;
+    const [update, listUpdate, notification, announcement, removed, unknown] = r.events;
     if (update?.type === "update") expect(update.status.id).toBe("s1");
+    if (listUpdate?.type === "list_update") {
+      expect(listUpdate.listId).toBe("l1");
+      expect(listUpdate.status.id).toBe("s1");
+    }
     if (notification?.type === "notification") expect(notification.notification.id).toBe("n1");
     if (announcement?.type === "announcement") expect(announcement.announcement.id).toBe("a1");
     expect(removed).toEqual({ type: "announcement_removed", id: "a2" });
@@ -225,6 +231,8 @@ describe("runStream", () => {
 describe("parseStreamEvent", () => {
   test("throws for a known event without an id, and passes an unknown one on unparsed", () => {
     expect(() => parseStreamEvent({ event: "announcement_removed", data: "{}" })).toThrow();
+    expect(() => parseStreamEvent({ event: "list_update", data: '{"list_id":"l1"}' })).toThrow();
+    expect(() => parseStreamEvent({ event: "list_update", data: '{"id":"s1"}' })).toThrow();
     expect(parseStreamEvent({ event: "message", data: "x" })).toEqual({ type: "unknown", event: "message", data: "x" });
   });
 });

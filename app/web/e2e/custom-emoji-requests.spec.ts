@@ -133,7 +133,7 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][]) {
     if (key === "GET /custom_emojis") return json(route, { items: [] });
     if (key === "GET /custom_emojis/mine") {
       const pending = requests.filter((r) => r.state === "pending").length;
-      return json(route, { items: [], used: pending, pending, limit: 5 });
+      return json(route, { items: [], used: pending, pending, limit: 5, resets_at: "2026-11-01T00:00:00Z" });
     }
     if (key === "GET /custom_emoji_requests") return json(route, { items: requests });
     // The image is processed at once.

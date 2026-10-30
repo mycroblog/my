@@ -10,8 +10,8 @@ description: |
   `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
   for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
   fetched (its server did not return it, or the instance rejects the media of its domain).
-  `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-  their limit. `request_pending`: the emoji already has a pending request for a new image.
+  `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+  this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
   `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 type: string
 enum:

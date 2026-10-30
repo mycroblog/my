@@ -38,6 +38,9 @@ function formatted(key: string, values: Record<string, string | number>): string
   return createIntl({ locale, messages: { [key]: message(key) } }).formatMessage({ id: key }, values);
 }
 
+/** A 1 × 1 PNG, base64: an image the browser can decode, for the pasted and dropped files. */
+const onePixelPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
 /** An account of another server that the instance resolves (WebFinger) when asked to, and that does not follow Alice. */
 const carol = {
   id: "0192f0c4-7a8e-7000-8000-000000000003",
@@ -457,6 +460,70 @@ test.describe("the new-post form", () => {
       language: "en",
       poll: { options: ["Tea", "Coffee"], expires_in: 86400 },
     });
+  });
+
+  test("posts with Ctrl / Cmd + Enter in the text, and says why an empty draft is not sent", async ({
+    page,
+    hasTouch,
+  }) => {
+    const posted = await serveApi(page);
+    await page.goto("/");
+    const form = await openForm(page, hasTouch);
+    const text = form.getByRole("textbox", { name: message("compose.text.label") });
+    await expect(form.getByRole("button", { name: message("compose.submit") })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Control+Enter Meta+Enter",
+    );
+
+    await text.press("ControlOrMeta+Enter");
+    await expect(form.getByText(message("compose.blocked.empty"))).toBeVisible();
+    await expect(text).toBeFocused();
+    expect(posted).toEqual([]);
+
+    await text.fill("Sent from the keyboard");
+    // The first post fails (serveApi), the second goes through.
+    await text.press("ControlOrMeta+Enter");
+    await expect(form.getByText(message("compose.failed", { reason: "Service Unavailable" }))).toBeVisible();
+    await text.press("ControlOrMeta+Enter");
+    await expect(
+      page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted")),
+    ).toBeVisible();
+    expect(posted.map((p) => p.body["text"])).toEqual(["Sent from the keyboard", "Sent from the keyboard"]);
+  });
+
+  test("attaches an image pasted into the text and one dropped on the form, showing the drop target while it is dragged", async ({
+    page,
+    hasTouch,
+  }) => {
+    await serveApi(page);
+    await page.goto("/");
+    const form = await openForm(page, hasTouch);
+    const text = form.getByRole("textbox", { name: message("compose.text.label") });
+
+    // A clipboard with only an image (a screenshot): it is attached, and no text is pasted.
+    await text.evaluate((element, base64) => {
+      const data = new DataTransfer();
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      data.items.add(new File([bytes], "screenshot.png", { type: "image/png" }));
+      element.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+    }, onePixelPng);
+    const attached = form.getByRole("list", { name: message("compose.media.list") });
+    await expect(attached.getByRole("listitem")).toHaveCount(1);
+    await expect(text).toHaveValue("");
+
+    const dataTransfer = await page.evaluateHandle((base64) => {
+      const data = new DataTransfer();
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      data.items.add(new File([bytes], "photo.png", { type: "image/png" }));
+      return data;
+    }, onePixelPng);
+    await text.dispatchEvent("dragenter", { dataTransfer });
+    await expect(page.getByText(message("compose.media.drop"))).toBeVisible();
+    await text.dispatchEvent("dragover", { dataTransfer });
+    await text.dispatchEvent("drop", { dataTransfer });
+    await expect(page.getByText(message("compose.media.drop"))).toBeHidden();
+    await expect(attached.getByRole("listitem")).toHaveCount(2);
+    await expect(text).toHaveValue("");
   });
 
   test("warns that a local post does not reach a mentioned account of another server that does not follow the viewer", async ({

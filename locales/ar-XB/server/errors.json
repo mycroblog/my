@@ -132,7 +132,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invalid_custom_emoji_detail": {
-    "defaultMessage": "‮{reason,select,fetch_failed{⊥ɥǝ ıɯɐƃǝ oɟ ʇɥǝ ɔnsʇoɯ ǝɯoɾı ɔonʅp uoʇ qǝ ɟǝʇɔɥǝp ɟɹoɯ ıʇs sǝɹʌǝɹ.} invalid_alias{∀u ɐʅıɐs ıs 2 ʇo 30 ʅǝʇʇǝɹs (∀ ʇo Z), pıƃıʇs, ɐup nupǝɹsɔoɹǝs, ɐup ɐu ǝɯoɾı ɥɐs ɐʇ ɯosʇ 10.} invalid_category{∀ ɔɐʇǝƃoɹʎ ıs ɐʇ ɯosʇ 64 ɔɥɐɹɐɔʇǝɹs.} invalid_reason{∀ ɹǝɐsou ıs ɐʇ ɯosʇ 500 ɔɥɐɹɐɔʇǝɹs.} invalid_shortcode{∀ sɥoɹʇɔopǝ ıs 2 ʇo 30 ʅǝʇʇǝɹs (∀ ʇo Z), pıƃıʇs, ɐup nupǝɹsɔoɹǝs.} limit_reached{⅄on ɐʅɹǝɐpʎ ɥɐʌǝ ɐs ɯɐuʎ ɔnsʇoɯ ǝɯoɾı ɐup dǝupıuƃ ɹǝbnǝsʇs ɐs ʎonɹ ʅıɯıʇ.} local_emoji{⊥ɥıs ɔɐu qǝ pouǝ ouʅʎ ʍıʇɥ ʇɥǝ ɔnsʇoɯ ǝɯoɾı oɟ oʇɥǝɹ sǝɹʌǝɹs.} media_not_found{⊥ɥǝ ıɯɐƃǝ ʍɐs uoʇ ɟonup ɐɯouƃ ʎonɹ ndʅoɐps.} media_not_ready{⊥ɥǝ ıɯɐƃǝ ıs sʇıʅʅ qǝıuƃ dɹoɔǝssǝp. ⊥ɹʎ ɐƃɐıu ıu ɐ ɯoɯǝuʇ.} other{⊥ɥǝ ɔnsʇoɯ ǝɯoɾı qɹǝɐʞs ɐ ɹnʅǝ.} remote_emoji{⊥ɥıs ɔɐu qǝ pouǝ ouʅʎ ʍıʇɥ ʇɥǝ ɔnsʇoɯ ǝɯoɾı oɟ ʇɥıs sǝɹʌǝɹ.} request_pending{⊥ɥıs ɔnsʇoɯ ǝɯoɾı ɐʅɹǝɐpʎ ɥɐs ɐ dǝupıuƃ ɹǝbnǝsʇ ɟoɹ ɐ uǝʍ ıɯɐƃǝ.} shortcode_taken{∀ ɔnsʇoɯ ǝɯoɾı oɟ ʇɥıs sǝɹʌǝɹ ɐʅɹǝɐpʎ ɥɐs ʇɥıs sɥoɹʇɔopǝ.} too_big{⊥ɥǝ ıɯɐƃǝ ɯnsʇ qǝ ɐʇ ɯosʇ 1,024 dıxǝʅs ou ǝɐɔɥ sıpǝ.} too_large{⊥ɥǝ ıɯɐƃǝ ıs ʅɐɹƃǝɹ ʇɥɐu ʇɥǝ ʅıɯıʇ oɟ ʇɥıs sǝɹʌǝɹ.} unsupported_format{⊥ɥǝ ıɯɐƃǝ ɯnsʇ qǝ ɐ ԀN⅁, ɐ ⅁IℲ, oɹ ɐ MǝqԀ.}}‬",
+    "defaultMessage": "‮{reason,select,fetch_failed{⊥ɥǝ ıɯɐƃǝ oɟ ʇɥǝ ɔnsʇoɯ ǝɯoɾı ɔonʅp uoʇ qǝ ɟǝʇɔɥǝp ɟɹoɯ ıʇs sǝɹʌǝɹ.} invalid_alias{∀u ɐʅıɐs ıs 2 ʇo 30 ʅǝʇʇǝɹs (∀ ʇo Z), pıƃıʇs, ɐup nupǝɹsɔoɹǝs, ɐup ɐu ǝɯoɾı ɥɐs ɐʇ ɯosʇ 10.} invalid_category{∀ ɔɐʇǝƃoɹʎ ıs ɐʇ ɯosʇ 64 ɔɥɐɹɐɔʇǝɹs.} invalid_reason{∀ ɹǝɐsou ıs ɐʇ ɯosʇ 500 ɔɥɐɹɐɔʇǝɹs.} invalid_shortcode{∀ sɥoɹʇɔopǝ ıs 2 ʇo 30 ʅǝʇʇǝɹs (∀ ʇo Z), pıƃıʇs, ɐup nupǝɹsɔoɹǝs.} limit_reached{⅄on ɥɐʌǝ ɐʅɹǝɐpʎ ɹǝbnǝsʇǝp ɐs ɯɐuʎ ɔnsʇoɯ ǝɯoɾı ʇɥıs ɯouʇɥ ɐs ʎonɹ ɯouʇɥʅʎ ʅıɯıʇ. ⊥ɥǝ ɔonuʇ ɹǝsǝʇs ou ʇɥǝ ɟıɹsʇ pɐʎ oɟ ǝɐɔɥ ɯouʇɥ (∩⊥Ↄ).} local_emoji{⊥ɥıs ɔɐu qǝ pouǝ ouʅʎ ʍıʇɥ ʇɥǝ ɔnsʇoɯ ǝɯoɾı oɟ oʇɥǝɹ sǝɹʌǝɹs.} media_not_found{⊥ɥǝ ıɯɐƃǝ ʍɐs uoʇ ɟonup ɐɯouƃ ʎonɹ ndʅoɐps.} media_not_ready{⊥ɥǝ ıɯɐƃǝ ıs sʇıʅʅ qǝıuƃ dɹoɔǝssǝp. ⊥ɹʎ ɐƃɐıu ıu ɐ ɯoɯǝuʇ.} other{⊥ɥǝ ɔnsʇoɯ ǝɯoɾı qɹǝɐʞs ɐ ɹnʅǝ.} remote_emoji{⊥ɥıs ɔɐu qǝ pouǝ ouʅʎ ʍıʇɥ ʇɥǝ ɔnsʇoɯ ǝɯoɾı oɟ ʇɥıs sǝɹʌǝɹ.} request_pending{⊥ɥıs ɔnsʇoɯ ǝɯoɾı ɐʅɹǝɐpʎ ɥɐs ɐ dǝupıuƃ ɹǝbnǝsʇ ɟoɹ ɐ uǝʍ ıɯɐƃǝ.} shortcode_taken{∀ ɔnsʇoɯ ǝɯoɾı oɟ ʇɥıs sǝɹʌǝɹ ɐʅɹǝɐpʎ ɥɐs ʇɥıs sɥoɹʇɔopǝ.} too_big{⊥ɥǝ ıɯɐƃǝ ɯnsʇ qǝ ɐʇ ɯosʇ 1,024 dıxǝʅs ou ǝɐɔɥ sıpǝ.} too_large{⊥ɥǝ ıɯɐƃǝ ıs ʅɐɹƃǝɹ ʇɥɐu ʇɥǝ ʅıɯıʇ oɟ ʇɥıs sǝɹʌǝɹ.} unsupported_format{⊥ɥǝ ıɯɐƃǝ ɯnsʇ qǝ ɐ ԀN⅁, ɐ ⅁IℲ, oɹ ɐ MǝqԀ.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invalid_parameter": {
@@ -161,6 +161,18 @@
   },
   "errors.invites.too_many": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ nsɐqʅǝ ıuʌıʇǝs ɐs ɐʅʅoʍǝp. ᴚǝʌoʞǝ ouǝ, oɹ ʍɐıʇ nuʇıʅ ouǝ ǝxdıɹǝs oɹ ıs nsǝp nd.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.list_members.not_followed": {
+    "defaultMessage": "‮Ouʅʎ ɐɔɔonuʇs ʎon ɟoʅʅoʍ ɔɐu qǝ ɐppǝp ʇo ɐ ʅısʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.list_members.too_many": {
+    "defaultMessage": "‮⊥ɥıs ʅısʇ ɐʅɹǝɐpʎ ɥɐs ʇɥǝ ɯosʇ ɯǝɯqǝɹs ɐʅʅoʍǝp. ᴚǝɯoʌǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.lists.too_many": {
+    "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɥɐʌǝ ʇɥǝ ɯosʇ ʅısʇs ɐʅʅoʍǝp. ᗡǝʅǝʇǝ ouǝ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.login_provider.linked": {

@@ -4,7 +4,7 @@
     "description": "Title of the settings page of the custom emoji that the user requests and made."
   },
   "custom_emojis.description": {
-    "defaultMessage": "あなたのロールでは、このサーバーにカスタム絵文字を足せます。申請は管理者が審査し、承認されるまで絵文字はどこにも出ません。ロールが許す間は、作った絵文字を変更・削除できます。",
+    "defaultMessage": "あなたのロールでは、このサーバーにカスタム絵文字を足せます。申請は管理者が審査し、承認されるまで絵文字はどこにも出ません。ロールが許す間は、作った絵文字を変更・削除できます。上限は毎月出した申請の数で数えるので、絵文字を削除しても枠は戻りません。",
     "description": "Explanation at the top of the user's custom emoji page (ADR-0070)."
   },
   "custom_emojis.new.title": {
@@ -12,16 +12,20 @@
     "description": "Heading of the region of the form that requests a new custom emoji."
   },
   "custom_emojis.usage.label": {
-    "defaultMessage": "使っているカスタム絵文字",
-    "description": "Label of the meter of how many custom emoji the user has against their limit."
+    "defaultMessage": "今月の作成",
+    "description": "Label of the meter of how many custom emoji the user requested this month (UTC) against their monthly limit."
   },
   "custom_emojis.usage.value": {
     "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個（上限{pending, plural, =0 {} other {。うち審査中 # 個}}）} other {{used, number} / {limit, number} 個{pending, plural, =0 {} other {（うち審査中 # 個）}}}}",
-    "description": "The value of the meter of the user's custom emoji. {used} counts the user's emoji and pending requests to create one; {pending} is how many of them are pending requests; {limit} is how many they may have; {full} is true when they reached it."
+    "description": "The value of the meter of the requests to create a custom emoji that the user submitted this month (UTC). {used} counts the approved and pending ones; {pending} is how many of them are pending; {limit} is how many they may submit in a month; {full} is true when they reached it."
   },
   "custom_emojis.usage.unlimited": {
-    "defaultMessage": "{used, plural, other {カスタム絵文字を # 個使っています}}{pending, plural, =0 {} other {（うち審査中 # 個）}}。上限はありません。",
-    "description": "How many custom emoji the user has when their roles set no limit. {used} counts the user's emoji and pending requests to create one; {pending} is how many of them are pending requests."
+    "defaultMessage": "{used, plural, other {今月はカスタム絵文字を # 個申請しました}}{pending, plural, =0 {} other {（うち審査中 # 個）}}。上限はありません。",
+    "description": "How many custom emoji the user requested this month (UTC) when their roles set no limit. {used} counts the approved and pending requests to create one; {pending} is how many of them are pending."
+  },
+  "custom_emojis.usage.resets": {
+    "defaultMessage": "{date} にリセットされます",
+    "description": "When the count of the monthly custom emoji limit resets, under its meter. {date} is the formatted date and time in the viewer's time zone, for example 'November 1, 2026 at 9:00 AM'."
   },
   "custom_emojis.image": {
     "defaultMessage": "画像",

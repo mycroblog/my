@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of their custom emoji through the whole app (web-client/README.md T4, ADR-0070 §1–§4): a user whose roles
-// have create_custom_emojis finds it in the settings, sees what they used of their limit, requests an emoji with an
+// The user's page of their custom emoji through the whole app (web-client/README.md T4, ADR-0070 §1–§3, ADR-0124): a user
+// whose roles have create_custom_emojis finds it in the settings, sees what they used of their monthly limit and when it
+// resets, requests an emoji with an
 // image, is told why a request is refused, withdraws a pending request, changes and deletes an emoji they made, and
 // requests a new image of it; a user without the permission is told why; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
@@ -36,13 +37,14 @@ function fileInput(region: HTMLElement): HTMLInputElement {
   return input;
 }
 
-/** GET /custom_emojis/mine answering `items`, `used`, `pending`, and `limit` (absent for none). */
+/** GET /custom_emojis/mine answering `items`, `used`, `pending`, and `limit` (absent for none), resetting in November. */
 function mineHandler(items: Schemas["OwnCustomEmoji"][], used: number, limit?: number, pending = 0) {
   return http.get(`${apiBase}/custom_emojis/mine`, () =>
     HttpResponse.json({
       items,
       used,
       pending,
+      resets_at: "2026-11-01T00:00:00Z",
       ...(limit === undefined ? {} : { limit }),
     } satisfies Schemas["OwnCustomEmojiPage"]),
   );
@@ -76,19 +78,25 @@ describe("the user's custom emoji page", () => {
     );
   });
 
-  test("says what the user used of their limit, or that there is none", async () => {
+  test("says what the user used of their monthly limit and when it resets, or that there is none", async () => {
     server.use(
       operatorHandler(["create_custom_emojis"]),
       mineHandler([ownCustomEmojiFixture("e1", "blobcat")], 2, 5, 1),
     );
     const { unmount } = await renderApp({ path: "/settings/custom-emojis" });
-    const meter = await screen.findByRole("meter", { name: "Custom emoji used" });
+    const meter = await screen.findByRole("meter", { name: "Created this month" });
     expect(meter).toHaveAttribute("aria-valuetext", "2 of 5, 1 of them pending");
+    const resetsAt = new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short" }).format(
+      new Date("2026-11-01T00:00:00Z"),
+    );
+    expect(screen.getByText(`Resets on ${resetsAt}`)).toBeInTheDocument();
     unmount();
 
     server.use(mineHandler([], 0));
     await renderApp({ path: "/settings/custom-emojis" });
-    expect(await screen.findByText("You have 0 custom emoji. Your roles set no limit.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You requested 0 custom emoji this month. Your roles set no limit."),
+    ).toBeInTheDocument();
   });
 
   test("requests an emoji with an uploaded image", async () => {
@@ -127,7 +135,7 @@ describe("the user's custom emoji page", () => {
             type: "/api/v1/problems/invalid-custom-emoji",
             title: "The custom emoji cannot be saved.",
             status: 422,
-            detail: "You already have as many custom emoji and pending requests as your limit.",
+            detail: "You have already requested as many custom emoji this month as your monthly limit.",
             reason: "limit_reached",
           },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
@@ -141,7 +149,7 @@ describe("the user's custom emoji page", () => {
     await user.click(within(form).getByRole("button", { name: "Request" }));
 
     expect(await within(form).findByRole("alert")).toHaveTextContent(
-      "Could not send the request: You already have as many custom emoji and pending requests as your limit.",
+      "Could not send the request: You have already requested as many custom emoji this month as your monthly limit.",
     );
     expect(within(form).getByRole("textbox", { name: "Shortcode" })).toHaveValue("blobcat");
   });
@@ -223,8 +231,10 @@ describe("the user's custom emoji page", () => {
             deleted === ""
               ? [ownCustomEmojiFixture("e1", "blobcat"), ownCustomEmojiFixture("e2", "blobfox")]
               : [ownCustomEmojiFixture("e2", "blobfox")],
-          used: deleted === "" ? 2 : 1,
+          // Deleting an emoji frees nothing of the month's limit.
+          used: 2,
           pending: 0,
+          resets_at: "2026-11-01T00:00:00Z",
         }),
       ),
       http.delete(`${apiBase}/custom_emojis/mine/:id`, ({ params }) => {
@@ -242,7 +252,9 @@ describe("the user's custom emoji page", () => {
     });
     expect(deleted).toBe("e1");
     expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
-    expect(await screen.findByText("You have 1 custom emoji. Your roles set no limit.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You requested 2 custom emoji this month. Your roles set no limit."),
+    ).toBeInTheDocument();
   });
 
   test("requests a new image of an emoji the user made", async () => {

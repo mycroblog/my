@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAccountLists
+  summary: List the user's lists that have an account
+  description: The user's lists that the account is in, oldest first.
+  tags: [lists]
+  security:
+    - oauth2: ["read:follows"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/ListCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

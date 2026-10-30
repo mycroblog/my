@@ -13,22 +13,34 @@ import (
 )
 
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
-SELECT CAST((SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = ?1 AND e.domain = '') AS INTEGER) AS made,
-  CAST((SELECT COUNT(*) FROM custom_emoji_pending_requests p
-    WHERE p.requester_user_id = ?1 AND p.reserved_shortcode IS NOT NULL) AS INTEGER) AS pending
+SELECT CAST(COALESCE(SUM(CASE WHEN o.outcome = 'approved' THEN 1 ELSE 0 END), 0) AS INTEGER) AS approved,
+  CAST(COALESCE(SUM(CASE WHEN o.request_id IS NULL THEN 1 ELSE 0 END), 0) AS INTEGER) AS pending
+FROM custom_emoji_requests r
+LEFT JOIN custom_emoji_request_outcomes o ON o.request_id = r.id
+WHERE r.requester_user_id = ?1 AND r.kind = 'create'
+  AND r.created_at >= ?2 AND r.created_at < ?3
+  AND (o.request_id IS NULL OR o.outcome = 'approved')
 `
 
-type CountCustomEmojiUsageRow struct {
-	Made    int64
-	Pending int64
+type CountCustomEmojiUsageParams struct {
+	UserID string
+	Since  int64
+	Until  int64
 }
 
-// CountCustomEmojiUsage counts what the limit of a creator counts (ADR-0070 section 4): the local emoji
-// that the user made and their pending requests to create one, apart.
-func (q *Queries) CountCustomEmojiUsage(ctx context.Context, userID sql.NullString) (CountCustomEmojiUsageRow, error) {
-	row := q.db.QueryRowContext(ctx, countCustomEmojiUsage, userID)
+type CountCustomEmojiUsageRow struct {
+	Approved int64
+	Pending  int64
+}
+
+// CountCustomEmojiUsage counts what the monthly limit of a creator counts (ADR-0124 section 1): the
+// requests to create an emoji that the user submitted in [@since, @until), approved and pending
+// apart. Rejected, withdrawn, and lapsed requests do not count; deleting an approved emoji does
+// not change the count.
+func (q *Queries) CountCustomEmojiUsage(ctx context.Context, arg CountCustomEmojiUsageParams) (CountCustomEmojiUsageRow, error) {
+	row := q.db.QueryRowContext(ctx, countCustomEmojiUsage, arg.UserID, arg.Since, arg.Until)
 	var i CountCustomEmojiUsageRow
-	err := row.Scan(&i.Made, &i.Pending)
+	err := row.Scan(&i.Approved, &i.Pending)
 	return i, err
 }
 

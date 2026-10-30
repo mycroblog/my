@@ -29,8 +29,8 @@ const (
 	maxEventBytes = 4 << 20
 )
 
-// StreamEvent is an event of GET /streaming: one of *UpdateEvent, *NotificationEvent, *AnnouncementEvent,
-// *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
+// StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
+// *AnnouncementEvent, *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
 	EventName() string
@@ -38,6 +38,13 @@ type StreamEvent interface {
 
 // UpdateEvent is a new post or boost in the home timeline, as it would appear there.
 type UpdateEvent struct{ Status Status }
+
+// ListUpdateEvent is a new post or boost in the timeline of the user's list ListID, as it would appear there. It
+// follows the UpdateEvent of the same post or boost, once for each list whose timeline shows it.
+type ListUpdateEvent struct {
+	ListID string
+	Status Status
+}
 
 // NotificationEvent is a new notification.
 type NotificationEvent struct{ Notification Notification }
@@ -57,6 +64,9 @@ type UnknownEvent struct {
 
 // EventName is "update".
 func (*UpdateEvent) EventName() string { return "update" }
+
+// EventName is "list_update".
+func (*ListUpdateEvent) EventName() string { return "list_update" }
 
 // EventName is "notification".
 func (*NotificationEvent) EventName() string { return "notification" }
@@ -297,6 +307,18 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 	case "update":
 		e := &UpdateEvent{}
 		typed, target = e, &e.Status
+	case "list_update":
+		var data struct {
+			ListID string `json:"list_id"`
+			Status Status `json:"status"`
+		}
+		if err := json.Unmarshal([]byte(ev.data), &data); err != nil {
+			return nil, fmt.Errorf("mykit: the data of a stream event %q: %w", ev.name, err)
+		}
+		if data.ListID == "" || data.Status.Id == "" {
+			return nil, fmt.Errorf("mykit: the data of a stream event %q has no list_id or status", ev.name)
+		}
+		return &ListUpdateEvent{ListID: data.ListID, Status: data.Status}, nil
 	case "notification":
 		e := &NotificationEvent{}
 		typed, target = e, &e.Notification

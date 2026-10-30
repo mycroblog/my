@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getListTimeline
+  summary: Get the timeline of a list
+  description: |
+    The posts and boosts of the list's members, newest first, as the home timeline shows them
+    (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+    showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+  tags: [timelines]
+  security:
+    - oauth2: ["read:statuses"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/StatusPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

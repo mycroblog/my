@@ -312,12 +312,12 @@
     "description": "Description of the yearly discount field."
   },
   "admin.supporters.plan.emoji_limit": {
-    "defaultMessage": "絵文字の作成数の上限",
-    "description": "Label of the custom emoji limit of a plan, and its term in the list."
+    "defaultMessage": "絵文字の作成数の上限（毎月）",
+    "description": "Label of the monthly custom emoji limit of a plan, and its term in the list."
   },
   "admin.supporters.plan.emoji_limit.description": {
-    "defaultMessage": "ロールが絵文字の作成を許すとき、加入者が作れる数です。",
-    "description": "Description of the custom emoji limit field."
+    "defaultMessage": "ロールが絵文字の作成を許すとき、加入者が 1 か月（UTC）に作れる数です。",
+    "description": "Description of the monthly custom emoji limit field."
   },
   "admin.supporters.plan.rank": {
     "defaultMessage": "順位",

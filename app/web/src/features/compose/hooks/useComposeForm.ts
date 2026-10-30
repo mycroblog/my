@@ -88,6 +88,11 @@ export type ReadyComposeForm = {
   attachments: Attachments;
   /** Whether files can be attached: not to a post with a poll (FR-112), and up to the limit. */
   canAttach: boolean;
+  /**
+   * Whether pasted and dropped files go to the attachments: not to a post with a poll (FR-112). Past the limit they
+   * still go to `attachments.add`, which refuses them and says why, as it does for picked files.
+   */
+  takesFiles: boolean;
   poll: PollForm;
   /** Whether the post must describe its images before it is sent without asking (the preference). */
   requireDescriptions: boolean;
@@ -382,6 +387,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     quotePolicy,
     attachments,
     canAttach: attachments.canAdd && draft.poll === null,
+    takesFiles: draft.poll === null,
     poll,
     requireDescriptions,
     isDescriptionRequired,

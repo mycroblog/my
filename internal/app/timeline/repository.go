@@ -203,7 +203,7 @@ type Facts struct {
 }
 
 // Repository is the persistence port of the timeline module (data-model §4.6). It reads and
-// writes only the feed_* tables. The database adapters implement it and pass
+// writes only the feed_* tables, tag_usage, and the tables of lists. The database adapters implement it and pass
 // testkit.TimelineContract.
 //
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
@@ -255,6 +255,45 @@ type Repository interface {
 	// rebuild.
 	DeleteRestrictions(ctx context.Context, tx uow.Tx) error
 
+	// Lists (ADR-0122), written by the owner's commands and the projector of
+	// graph.follow_terminated.
+
+	// InsertList stores a new list with its name.
+	InsertList(ctx context.Context, tx uow.Tx, l List) error
+	// RenameList replaces the name of the list id.
+	RenameList(ctx context.Context, tx uow.Tx, id, name string) error
+	// DeleteList deletes the list id with its name and members.
+	DeleteList(ctx context.Context, tx uow.Tx, id string) error
+	// FindList returns the list id inside tx.
+	FindList(ctx context.Context, tx uow.Tx, id string) (List, error)
+	// CountLists returns how many lists ownerAccountID has.
+	CountLists(ctx context.Context, tx uow.Tx, ownerAccountID string) (int, error)
+	// Following reports whether feed_follow_edges holds the active follow of followee by follower.
+	Following(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) (bool, error)
+	// InsertListMember stores m and reports false, writing nothing, when the list has the member.
+	InsertListMember(ctx context.Context, tx uow.Tx, m ListMember) (bool, error)
+	// DeleteListMember takes an account out of a list.
+	DeleteListMember(ctx context.Context, tx uow.Tx, listID, memberAccountID string) error
+	// CountListMembers returns how many members the list listID has.
+	CountListMembers(ctx context.Context, tx uow.Tx, listID string) (int, error)
+	// DeleteListMembersOfFollow takes memberAccountID out of every list of ownerAccountID.
+	DeleteListMembersOfFollow(ctx context.Context, tx uow.Tx, ownerAccountID, memberAccountID string) error
+	// DeleteListMembersWithoutFollow takes out of every list each member that its owner does not
+	// actively follow (feed_follow_edges), for a rebuild.
+	DeleteListMembersWithoutFollow(ctx context.Context, tx uow.Tx) error
+	// List returns the list id.
+	List(ctx context.Context, id string) (List, error)
+	// ListsOf returns the lists of ownerAccountID, ordered by ID.
+	ListsOf(ctx context.Context, ownerAccountID string) ([]List, error)
+	// ListMembers returns the account IDs of up to limit members of a list after the member after
+	// ("" starts at the first), ordered by ID.
+	ListMembers(ctx context.Context, listID, after string, limit int) ([]string, error)
+	// ListIDsWithMember returns the IDs of the lists of ownerAccountID that have memberAccountID,
+	// ordered by ID.
+	ListIDsWithMember(ctx context.Context, ownerAccountID, memberAccountID string) ([]string, error)
+	// AllListMembers returns every list member, ordered by list and member, for verifying them.
+	AllListMembers(ctx context.Context) ([]ListMember, error)
+
 	// Timelines (data-model §6), newest first, at most Limit entries each.
 
 	ListHome(ctx context.Context, q HomeQuery) ([]Entry, error)
@@ -262,6 +301,8 @@ type Repository interface {
 	ListPublic(ctx context.Context, q PublicQuery) ([]Entry, error)
 	ListTag(ctx context.Context, q TagQuery) ([]Entry, error)
 	ListProfile(ctx context.Context, q ProfileQuery) ([]Entry, error)
+	// ListListEntries is the timeline of a list (ADR-0122 §4).
+	ListListEntries(ctx context.Context, q ListTimelineQuery) ([]Entry, error)
 	// Facts returns what holds between a viewer and the accounts, domains, and entries of q.
 	Facts(ctx context.Context, q FactsQuery) (Facts, error)
 	// TagUsageOf returns the usage of the tags among tagIDs that have one, ordered by tag ID.

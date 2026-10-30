@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listListAccounts
+  summary: List the members of a list
+  description: |
+    The accounts in the list, in the order of their IDs. Members that are deactivated or
+    deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+    Another user's list is a 404.
+  tags: [lists]
+  security:
+    - oauth2: ["read:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AccountPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

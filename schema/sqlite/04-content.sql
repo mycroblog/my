@@ -546,7 +546,7 @@ CREATE TABLE custom_emojis (
 ) STRICT;
 CREATE UNIQUE INDEX custom_emojis_shortcode_domain ON custom_emojis (shortcode, domain);
 CREATE UNIQUE INDEX custom_emojis_uri ON custom_emojis (uri);
--- The creators' own emoji (/custom_emojis/mine) and their count against the limit (ADR-0070 §4).
+-- The creators' own emoji (/custom_emojis/mine).
 CREATE INDEX custom_emojis_created_by_user_id_id ON custom_emojis (created_by_user_id, id);
 
 -- Event (revision): the image of a custom emoji. The newest row is the current image.
