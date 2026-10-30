@@ -16,19 +16,19 @@
     "description": "Description of a number token field (line height)."
   },
   "admin.theme.color.dark": {
-    "defaultMessage": "{token}（ダーク）",
-    "description": "Label of the field of a color token's value in the dark theme. {token} is the token name (not translated)."
+    "defaultMessage": "ダーク",
+    "description": "Visible label of the field of a color token's value in the dark theme, after the token name that only assistive technology reads (\"color-accent Dark\")."
   },
   "admin.theme.color.default": {
-    "defaultMessage": "{format} で指定。既定値：{value}",
-    "description": "Description of a color field. {format} is #rrggbb or #rrggbbaa, {value} the default color (not translated)."
+    "defaultMessage": "既定値：{value}",
+    "description": "Description of a color field. {value} is the default color (not translated)."
   },
   "admin.theme.color.light": {
-    "defaultMessage": "{token}（ライト）",
-    "description": "Label of the field of a color token's value in the light theme. {token} is the token name, e.g. color-accent (not translated)."
+    "defaultMessage": "ライト",
+    "description": "Visible label of the field of a color token's value in the light theme, after the token name that only assistive technology reads (\"color-accent Light\")."
   },
   "admin.theme.colors.description": {
-    "defaultMessage": "色はライトとダークのテーマごとに #rrggbb で指定します。文字と操作部品は、その背景とのコントラスト（WCAG 2.2 AA）を保つ必要があるので、1 つの色を変えると別の色も変える必要があることがあります。",
+    "defaultMessage": "色はライトとダークのテーマごとに #rrggbb で指定します。既定値に透明度のある色は #rrggbbaa で指定します。文字と操作部品は、その背景とのコントラスト（WCAG 2.2 AA）を保つ必要があるので、1 つの色を変えると別の色も変える必要があることがあります。",
     "description": "Description of the colors section of the theme screen."
   },
   "admin.theme.colors.title": {
