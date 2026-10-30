@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The theme screen below its heading (manage_settings, ADR-0059): the color tokens in each theme, the contrast of
-// their pairs as they are typed, the other tokens (type, spacing, radius, elevation, motion), the custom CSS with
-// what the server does not check, and a preview of the overrides. An empty input keeps the default, which its
-// description names. The reasons the server refuses a theme stay above the button (role="alert", web-client/README.md
-// E2); what a save did stays on the page in a StatusMessage.
+// The theme screen below its heading (manage_settings, ADR-0059): the color tokens, one row each with its light and
+// dark value side by side, the contrast of their pairs as they are typed, the other tokens (type, spacing, radius,
+// elevation, motion), the custom CSS with what the server does not check, and a preview of the overrides. An empty
+// input keeps the default, which its description names. The reasons the server refuses a theme stay above the button
+// (role="alert", web-client/README.md E2); what a save did stays on the page in a StatusMessage.
 import { Button, Grid, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField, ThemePreview } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type ColorField, useThemeSettings, type ValueField } from "../hooks/useThemeSettings";
@@ -94,29 +94,27 @@ function ColorInputs({ field }: { field: ColorField }) {
   const t = useT();
   const format = field.alpha ? "#rrggbbaa" : "#rrggbb";
   return (
-    <Stack as="li" gap="2">
+    <Grid as="li" container columns={3} at="md" gap="2">
       <Text as="code" size="sm" weight="semibold" mono dir="ltr">
         {field.token}
       </Text>
-      <Grid at="md" gap="2">
-        <TextField
-          label={t("client:admin.theme.color.light", { token: field.token })}
-          description={t("client:admin.theme.color.default", { value: field.defaults.light, format })}
-          value={field.light.value}
-          onChange={field.light.onChange}
-          placeholder={field.defaults.light}
-          autoComplete="off"
-        />
-        <TextField
-          label={t("client:admin.theme.color.dark", { token: field.token })}
-          description={t("client:admin.theme.color.default", { value: field.defaults.dark, format })}
-          value={field.dark.value}
-          onChange={field.dark.onChange}
-          placeholder={field.defaults.dark}
-          autoComplete="off"
-        />
-      </Grid>
-    </Stack>
+      <TextField
+        label={t("client:admin.theme.color.light", { token: field.token })}
+        description={t("client:admin.theme.color.default", { value: field.defaults.light, format })}
+        value={field.light.value}
+        onChange={field.light.onChange}
+        placeholder={field.defaults.light}
+        autoComplete="off"
+      />
+      <TextField
+        label={t("client:admin.theme.color.dark", { token: field.token })}
+        description={t("client:admin.theme.color.default", { value: field.defaults.dark, format })}
+        value={field.dark.value}
+        onChange={field.dark.onChange}
+        placeholder={field.defaults.dark}
+        autoComplete="off"
+      />
+    </Grid>
   );
 }
 
