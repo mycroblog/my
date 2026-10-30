@@ -18,7 +18,11 @@ export function useViewChange(main: RefObject<HTMLElement | null>): void {
   const onViewChange = useEffectEvent((moveFocus: boolean) => {
     const heading = main.current?.querySelector("h1") ?? null;
     const page = heading?.textContent.trim() ?? "";
-    document.title = page === "" ? instanceName : t("client:shell.document_title", { page, instance: instanceName });
+    // A page whose heading is the server's name (the landing page) is named once, not "My Demo – My Demo".
+    document.title =
+      page === "" || page === instanceName
+        ? instanceName
+        : t("client:shell.document_title", { page, instance: instanceName });
     if (moveFocus && heading !== null) {
       // Focusable by script only; PageHeading already sets it, other headings get it here.
       if (!heading.hasAttribute("tabindex")) heading.tabIndex = -1;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The landing page through the whole app (web-client/README.md T4; screens/landing.md): what the root address shows
 // people who are not signed in, and that it sends signed-in users to their home timeline.
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Instance, InstanceOverview } from "./api/landing";
@@ -40,7 +40,7 @@ describe("the landing page", () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  test("shows the server's calling card: its name, domain, summary, counts and who runs it, with signing in at the top", async () => {
+  test("shows the server's masthead: its name, domain, summary, counts and who runs it, with signing in at the top", async () => {
     serveInstance({ short_description: "A small server for gardeners." });
     const { router } = await renderApp({ path: "/" });
 
@@ -56,6 +56,15 @@ describe("the landing page", () => {
     expect(screen.queryByText(/What you can do/u)).not.toBeInTheDocument();
   });
 
+  test("names the document after the server once, as its heading is the server's name", async () => {
+    await renderApp({ path: "/" });
+
+    await screen.findByRole("heading", { level: 1, name: "my example" });
+    await waitFor(() => {
+      expect(document.title).toBe("my example");
+    });
+  });
+
   test("leads through three sections under a progress line that links to each", async () => {
     serveInstance({
       description: "We grow vegetables.\n\nEveryone is welcome.",
@@ -67,9 +76,9 @@ describe("the landing page", () => {
 
     const progress = screen.getByRole("navigation", { name: "Parts of this page" });
     expect(within(progress).getAllByRole("link").map(visibleText)).toEqual([
-      "1What kind of place is this?",
-      "2What do we agree to?",
-      "3How do I join?",
+      "01What kind of place is this?",
+      "02What do we agree to?",
+      "03How do I join?",
     ]);
     await user.click(within(progress).getByRole("link", { name: "What do we agree to?" }));
     const promise = screen.getByRole("region", { name: "What do we agree to?" });
@@ -148,7 +157,7 @@ describe("the landing page", () => {
   test("joins through the steps of the approval mode, past the rules, to the server's registration page", async () => {
     serveInstance({ registrations: { mode: "approval" } });
     const { user, leftTo } = await renderApp({ path: "/" });
-    // The calling card's primary action moves down to the section on how to join, not to the form.
+    // The masthead's primary action moves down to the section on how to join, not to the form.
     const join = await screen.findByRole("link", { name: "Join" });
     expect(join).toHaveAttribute("href", "#landing-join");
     await user.click(join);
@@ -257,7 +266,7 @@ describe("the landing page", () => {
     );
   });
 
-  test("shows the server's thumbnail as the calling card's banner", async () => {
+  test("shows the server's thumbnail in the masthead", async () => {
     serveInstance({
       thumbnail: { url: "https://my.example/media/beach/r/large.webp", width: 1600, height: 900, alt: "A beach" },
     });

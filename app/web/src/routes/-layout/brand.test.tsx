@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's own logo and icon in the app (ADR-0116): the logo, which includes the server's name, takes the place of
 // the wordmark and the name at the start of the navigation, an image named by the server's name, with its dark variant
-// for dark grounds; the icon takes the place of the built-in mark on the landing page's calling card. Without them the
+// for dark grounds; the icon takes the place of the built-in mark on the landing page's masthead. Without them the
 // built-in wordmark and the name show. Through the whole app (web-client/README.md T4), signed out.
 import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -58,7 +58,7 @@ describe("the server's own logo and icon", () => {
     expect(imageSources(navigation).filter((src) => !src.includes("/brand/"))).toEqual([]);
     expect(within(navigation).queryByText("my example")).not.toBeInTheDocument();
 
-    // The calling card's mark is the icon.
+    // The masthead's mark is the icon.
     expect(imageSources(screen.getByRole("main"))).toContain(
       "https://my.example/brand/0199f0e0-0000-7000-8000-00000000b001/icon.svg",
     );

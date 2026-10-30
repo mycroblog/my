@@ -3,10 +3,22 @@
 // (web-client/16-look-states-and-wording.md G5). Features build their regions from it and never write their own
 // `section` with an `h2` (restrict/pattern in app/.oxlintrc.json), so every region has the same heading, space and surface.
 import { type ReactNode, type Ref, type RefObject, useId } from "react";
+import { tv } from "tailwind-variants";
 import { Card } from "./Card";
 import { Heading } from "./Heading";
 import { Stack } from "./Stack";
 import { Hint } from "./Text";
+
+/** A chapter of an editorial page: a rule above, its number and serif title, and its content at the page's width. */
+const chapter = tv({
+  slots: {
+    // The first chapter sits right under the progress line, which already rules it off.
+    base: "@container flex flex-col gap-8 border-t border-border pt-10 first:border-t-0 first:pt-0 @3xl:pt-16 @3xl:first:pt-0",
+    head: "flex flex-col gap-2",
+    number: "text-sm font-semibold text-accent tabular-nums",
+    body: "flex flex-col gap-8",
+  },
+});
 
 export type SectionProps = {
   /** The title: the `h2` that names the section. Required, so that no region goes untitled. */
@@ -16,9 +28,13 @@ export type SectionProps = {
   /**
    * The surface: `plain` (the default) lays the region on the page; `card` on a raised card (a region of a detail page
    * or a pane); `band` with a rule under it and the inner space of a row (a notice at the top of a list); `rows` leaves
-   * the content full-width for rows that bring their own padding, and gives the heading the rows' padding (G2).
+   * the content full-width for rows that bring their own padding, and gives the heading the rows' padding (G2);
+   * `chapter` is a chapter of an editorial page (the landing page): a rule above, `number` and a serif title, and the
+   * content at the page's width.
    */
-  surface?: "plain" | "card" | "band" | "rows";
+  surface?: "plain" | "card" | "band" | "rows" | "chapter";
+  /** The chapter's number, shown above its title (`surface="chapter"` only); decorative, as its order says it. */
+  number?: number;
   /** The heading's `id`, for a control in the region that refers to it (`aria-describedby`); generated when unset. */
   headingId?: string;
   /** With a ref, the heading takes focus from script (`tabindex="-1"`) when the region changes under it. */
@@ -45,13 +61,20 @@ export function Section({
   ref,
   focusable = false,
   busy,
+  number,
   children,
 }: SectionProps) {
   const generatedId = useId();
   const descriptionId = useId();
   const id = headingId ?? generatedId;
   const heading = (
-    <Heading level={2} ref={headingRef} id={id} focusable={headingRef !== undefined}>
+    <Heading
+      level={2}
+      ref={headingRef}
+      id={id}
+      focusable={headingRef !== undefined}
+      {...(surface === "chapter" && { size: "chapter" as const })}
+    >
       {title}
     </Heading>
   );
@@ -64,6 +87,23 @@ export function Section({
     "aria-busy": busy,
   };
   switch (surface) {
+    case "chapter": {
+      const slots = chapter();
+      return (
+        <section className={slots.base()} {...attributes}>
+          <div className={slots.head()}>
+            {number !== undefined && (
+              <span aria-hidden="true" className={slots.number()}>
+                {String(number).padStart(2, "0")}
+              </span>
+            )}
+            {heading}
+            {note}
+          </div>
+          <div className={slots.body()}>{children}</div>
+        </section>
+      );
+    }
     case "card":
       return (
         <Card as="section" padding="6" {...attributes}>

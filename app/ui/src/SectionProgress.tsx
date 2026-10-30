@@ -12,31 +12,24 @@ import { goToSection, useCurrentSection } from "./currentSection";
 
 const sectionProgress = tv({
   slots: {
-    base: "@container flex min-w-0 flex-col gap-8",
+    base: "@container flex min-w-0 flex-col gap-10",
     // Under the top bar, opaque over the sections that scroll under it. Its own stacking context, above the sections'
     // (`sections`) and below the top bar's (z-10), so that nothing of it draws over the bar or its menu.
-    nav: "sticky top-under-top-bar z-1 border-b border-border bg-surface py-1 short:static @md:py-2",
-    list: "flex items-start",
+    nav: "sticky top-under-top-bar z-1 bg-surface py-2 short:static",
+    list: "flex items-start gap-4 @md:gap-6",
     // The sections in a stacking context of their own, so that what they lift (a link card's button) stays under the line.
     sections:
-      "isolate flex min-w-0 flex-col gap-8 [&_h2]:scroll-mt-under-section-progress [&_h3]:scroll-mt-under-section-progress",
-    item: [
-      "relative flex min-w-0 flex-1 flex-col items-center",
-      // The line from the step before to this one, behind the numbers (through their middle: the number is centred
-      // in its 44 px link on a narrow page, at the top of the link from @md); in the accent once the reader has reached it.
-      "not-first:before:absolute not-first:before:top-5 @md:not-first:before:top-4 not-first:before:-inset-s-1/2 not-first:before:h-0.5 not-first:before:w-full not-first:before:bg-border",
-      "data-reached:not-first:before:bg-accent forced-colors:data-reached:not-first:before:bg-[Highlight]",
+      "isolate flex min-w-0 flex-col gap-16 @3xl:gap-24 [&_h2]:scroll-mt-under-section-progress [&_h3]:scroll-mt-under-section-progress",
+    item: "flex min-w-0 flex-1",
+    link: [
+      "group relative flex min-h-11 w-full min-w-11 flex-col items-start justify-center gap-1 rounded-md pt-3 pb-1 text-start text-sm text-fg-muted outline-none hover:text-fg focus-visible:focus-ring aria-[current=location]:text-fg",
+      // The line of this part, above its number: in the accent once the reader has reached it.
+      "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:rounded-full before:bg-border",
+      "data-reached:before:bg-accent forced-colors:data-reached:before:bg-[Highlight]",
       "motion-safe:before:transition-colors motion-safe:before:duration-normal motion-safe:before:ease-standard",
     ],
-    link: "group relative z-1 flex min-h-11 max-w-full min-w-11 flex-col items-center justify-center gap-1 rounded-md px-1 text-center text-sm text-fg-muted outline-none hover:text-fg focus-visible:focus-ring aria-[current=location]:font-bold aria-[current=location]:text-fg",
-    number: [
-      "flex size-8 items-center justify-center rounded-full border-2 border-border bg-surface font-bold tabular-nums",
-      // A part before the one being read: passed, in the accent; the one being read is filled.
-      "group-data-passed:border-accent group-data-passed:text-accent",
-      "group-aria-[current=location]:bg-accent group-aria-[current=location]:text-accent-fg",
-      "forced-colors:group-aria-[current=location]:border-[Highlight] forced-colors:group-aria-[current=location]:bg-[Highlight] forced-colors:group-aria-[current=location]:text-[HighlightText]",
-      "motion-safe:transition-colors motion-safe:duration-normal motion-safe:ease-standard",
-    ],
+    // The number only shows the order, which the list already gives.
+    number: "font-semibold tabular-nums group-data-reached:text-accent group-aria-[current=location]:text-accent",
     // On a narrow page only the numbers show, so that the line stays one short row on a phone; the title names the link.
     title: "max-w-full wrap-anywhere text-pretty @max-md:sr-only",
   },
@@ -78,10 +71,11 @@ export function SectionProgress({ label, parts, children }: SectionProgressProps
           {parts.map((part, index) => {
             const reached = currentIndex >= index;
             return (
-              <li key={part.id} data-reached={reached || undefined} className={slots.item()}>
+              <li key={part.id} className={slots.item()}>
                 <a
                   href={`#${part.id}`}
                   aria-current={part.id === currentId ? "location" : undefined}
+                  data-reached={reached || undefined}
                   data-passed={currentIndex > index || undefined}
                   className={slots.link()}
                   onClick={(event) => {
@@ -90,7 +84,7 @@ export function SectionProgress({ label, parts, children }: SectionProgressProps
                 >
                   {/* The number only shows the order, which the list already gives. */}
                   <span aria-hidden="true" className={slots.number()}>
-                    {index + 1}
+                    {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className={slots.title()}>{part.title}</span>
                 </a>

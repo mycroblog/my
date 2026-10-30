@@ -136,8 +136,8 @@ changes the choice and the attribute together; both use the localStorage key `my
   writes the fonts and `emoji.css`, never edit them by hand; the fonts are under the SIL Open Font License 1.1 (`src/fonts/emoji/OFL.txt`).
 - `font-serif` is `Georgia, "Noto Serif JP", serif`, for brand moments only: display headlines, page titles, `EmptyState` headings and avatar
   initials. Body text and controls stay `font-sans`.
-- Sizes are `text-xs` (0.75rem), `text-sm` (0.875rem), `text-base` (1rem), `text-lg` (1.125rem), `text-xl` (1.25rem), `text-2xl` (1.5rem)
-  and `text-3xl` (1.875rem). Line heights are taller than Tailwind's defaults (1.7 for `text-base`) for CJK and Arabic, and `body`
+- Sizes are `text-xs` (0.75rem), `text-sm` (0.875rem), `text-base` (1rem), `text-lg` (1.125rem), `text-xl` (1.25rem), `text-2xl` (1.5rem),
+  `text-3xl` (1.875rem), and the display sizes `text-4xl` (2.25rem) and `text-5xl` (3rem). Line heights are taller than Tailwind's defaults (1.7 for `text-base`) for CJK and Arabic, and `body`
   uses the `text-base` line height.
 
 ### Type roles
@@ -153,8 +153,11 @@ Text takes its size from its role, never from the screen it is on
 | Body | `text-base` | Post bodies, profile text, form values, menu items |
 | Secondary | `text-sm text-fg-muted` | Handles, times, counts, descriptions and hints of fields |
 | Label | `text-xs` | Badges, the labels of the bottom tab bar and the side rail |
+| Display | `font-serif text-4xl` (`text-5xl` from `@3xl`) | The `h1` of a `Masthead` (`PageHeading display`): the landing page only |
+| Lede | `text-xl` (`text-2xl` from `@3xl`) | The summary under the title of a `Masthead` |
+| Chapter title | `font-serif text-3xl` (`text-4xl` from `@3xl`) | The `h2` of `Section surface="chapter"` |
 
-`text-xl` and `text-3xl` have no role and are not used by screens. Names (`font-semibold`) are the only other weight;
+Screens never set `text-xl` or the larger sizes themselves: `Masthead`, `PageHeading display` and `Section surface="chapter"` do. Names (`font-semibold`) are the only other weight;
 emphasis inside running text comes from the content, not from the UI.
 
 ### Names in rows
@@ -168,8 +171,8 @@ The utility is not named `text-*` because `tailwind-merge` would read that as a 
 
 ## Spacing, radius, shadow
 
-- Spacing is Tailwind's 0.25rem step (`p-1` = 0.25rem, `gap-4` = 1rem). Padding and gaps are limited to `0.5`, `1`, `1.5`, `2`, `3`, `4`, `6`, `8`
-  and `10`; margins and sizes hold geometry (a description aligned with a switch's label) rather than a role and may use other steps.
+- Spacing is Tailwind's 0.25rem step (`p-1` = 0.25rem, `gap-4` = 1rem). Padding and gaps are limited to `0.5`, `1`, `1.5`, `2`, `3`, `4`, `6`, `8`,
+  `10`, `16` and `24` (the last two for an editorial page only); margins and sizes hold geometry (a description aligned with a switch's label) rather than a role and may use other steps.
   Each role has one value:
 
   | Role | Value |
@@ -183,6 +186,7 @@ The utility is not named `text-*` because `tailwind-merge` would read that as a 
   | Fields of a form; blocks inside a page | `gap-4` |
   | Sections of a page | `gap-6` (`gap-8` from `@3xl`) |
   | Around an `EmptyState` or a page-level spinner | `py-10` |
+  | An editorial page (the landing page): around a `Masthead`, between the chapters of `SectionProgress` | `py-16`, `gap-16` (`24` from `@3xl`) |
 
 - Radius: `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-2xl`, `rounded-avatar` and `rounded-full`. The brand design's radii
   are drawn on these steps, never as arbitrary values:
@@ -494,7 +498,7 @@ announces only changes made after it is in the page. A failure is not a status; 
 | --- | --- |
 | `Picture`, `AutoplayContext` | An image in the rendition that fits (`srcset` / `sizes` from `ImageSources`). An animation's moving rendition is a `<source>` for `prefers-reduced-motion: no-preference` only, and with `AutoplayContext` off it moves only while pointed at or touched, or while the post or profile header it is in plays (`AnimationsPlayContext`; ADR-0054 §3). `Avatar` (`sources`) and `MediaGrid` (`MediaItem.sources`) use it. `PostCard` and `ProfileHeader` are animation scopes (`useAnimationScope`): their animations, custom emoji included, play while hovered or with keyboard focus inside, and from a tap on them (not on a control inside them, a drag or a long press) until another tap or until they leave the screen. |
 | `DescriptionList`, `DescriptionItem` | The facts of a record: a `<dl>` that is its own size container, with up to `columns` (1–4) columns as it widens; values wrap anywhere. |
-| `Section` | A titled region of a screen below its `h1`: a `<section>` named by its `h2` (`title`, required), in the look of a region title. `description` adds a note under the title that describes the region; `surface` is `plain` (default), `card` (a region of a detail page or a pane, on a `Card`), `band` (a notice at the top of a list, with a rule under it) or `rows` (full-width rows that bring their own padding; the heading takes the same padding); `busy` sets `aria-busy`. With `headingRef` the heading takes focus from script; with `ref` and `focusable` the section does. `headingId` keeps an `id` that a control in the region refers to. Features never write their own `section` with an `h2`, nor give an `h2` a `size`. |
+| `Section` | A titled region of a screen below its `h1`: a `<section>` named by its `h2` (`title`, required), in the look of a region title. `description` adds a note under the title that describes the region; `surface` is `plain` (default), `card` (a region of a detail page or a pane, on a `Card`), `band` (a notice at the top of a list, with a rule under it), `rows` (full-width rows that bring their own padding; the heading takes the same padding) or `chapter` (a chapter of an editorial page: a rule above, the decorative `number` and a serif title, the content at the page's width); `busy` sets `aria-busy`. With `headingRef` the heading takes focus from script; with `ref` and `focusable` the section does. `headingId` keeps an `id` that a control in the region refers to. Features never write their own `section` with an `h2`, nor give an `h2` a `size`. |
 | `Table`, `TableHead`, `TableColumnHeader`, `TableBody`, `TableRow`, `TableRowHeader`, `TableCell` | A table to read: the native `table`, which needs no dependency beyond ADR-0031's list (a table to select or sort in would wrap React Aria's `Table`). It sits in a focusable `group` named like the table that scrolls sideways by itself when the columns do not fit the width, so the page never does. `caption` names it and is visually hidden; without it, `aria-labelledby` names it by a visible heading. `density`: `regular` (body size, a rule under every row) / `compact` (`text-sm`, fixed columns, rules between rows; `TableColumnHeader`'s `width`: `narrow` `w-16` / `wide` `w-2/5`). `TableCell` takes `numeric`, `wrap="anywhere"` and `align="matchParent"`; `TableRowHeader` the last two. |
 | `Segmented`, `SegmentedItem` | A pill switcher for two to four views of the same content (`value` / `onChange` by segment `id`): a React Aria single-selection `ToggleButtonGroup`, so a radiogroup that the arrow keys move through; pressed is `pressed` / `pressed-fg`, and `Highlight` / `HighlightText` in forced-colors mode. |
 | `Tag` | A short word that qualifies the value beside it ("Estimated", `outlined`: `rounded-full border border-border px-2 text-sm text-fg-muted`) or labels an account (`variant="pill"`, `as="li"` in a `ul`). |
@@ -503,8 +507,9 @@ announces only changes made after it is in the page. A failure is not a status; 
 | `SeverityMark` | Where one choice stands on a scale from the lightest to the heaviest (the kinds of a moderation action), inside its label: `max` small steps filled up to `level` (decorative, the tone rising from muted to warning to danger), `label` ("Severity 3 of 10") in words for assistive technology, and with `irreversibleLabel` a danger `StatusBadge` ("Cannot be undone"). |
 | `TriageLayout` | The page of one item of a queue (a report): `summary`, `decision` (the regions with the one primary decision) and `evidence` (the regions to read before deciding). In a wide container (`@3xl`) the summary and the evidence fill the first column and the decision stands at the top of a second column beside them; narrower, the decision follows the summary, before the evidence. The document order is summary, decision, evidence at every width. The decision does not stick as the page scrolls. |
 | `VisibilityMark`, `VisibilityIcon` | A post's visibility (ADR-0017): one Phosphor shape per level (`public` globe, `local` buildings, `unlisted` open lock, `private` closed lock, `direct` at sign) and the level's `label`, in muted `text-xs`. `PostCard` shows it under the time from its required `visibility` (`{ level, label }`, or `null` for a row that is not a post) and ends the article's name with it; `VisibilityIcon` alone draws the icon of a control's current level. |
-| `ProfileHeader`, `ProfileHeaderImage`, `ProfileFields` / `ProfileField` | The heading of a profile: header image (or band), overlapping avatar, actions slot, name, handle, badges, tag pills, text, metadata fields, joined line and counts; `ProfileHeaderImage size="preview"` is the 3:1 image of the profile form. The landing page's calling card of the server is the same header: `mark` puts the server's mark on a rounded tile in the avatar's place, the handle is the domain, and `handle` and `joined` may be left out. |
-| `SectionProgress` | A page of a few numbered sections read in order, under a progress line: a numbered link to each section's heading (`parts`: its `id` and `title`), the one being read `aria-current="location"` and the ones before it drawn as reached. Choosing one scrolls there and focuses the heading, as `InfoPage`'s contents do. A static page, not a wizard. |
+| `ProfileHeader`, `ProfileHeaderImage`, `ProfileFields` / `ProfileField` | The heading of a profile: header image (or band), overlapping avatar, actions slot, name, handle, badges, tag pills, text, metadata fields, joined line and counts; `ProfileHeaderImage size="preview"` is the 3:1 image of the profile form. |
+| `Masthead` | The top of an editorial page (the landing page) on generous space: a kicker (`mark` and `kicker`, a `p`), the title (`heading`, a `PageHeading display`), the `lede`, the `facts` on one line separated by middle dots (a `ul`), the `actions`, and an `image` under them. No surface of its own: type and space make the hierarchy. |
+| `SectionProgress` | A page of a few numbered sections read in order, under a progress line: a link to each section's heading (`parts`: its `id` and `title`) with its number (`01`) under a bar, the one being read `aria-current="location"` and the bars up to it in the accent. Choosing one scrolls there and focuses the heading, as `InfoPage`'s contents do. A static page, not a wizard. |
 | `Steps` | What happens, in order, after an action: a numbered list joined by a line (`steps`: `title` and `detail`), then the `action` that starts it. |
 | `Poll`, `PollResults`, `PollChoices`, `PollSummary`, `PollHint` | A poll (FR-112): `Poll` is the named section; `PollResults` the list of shares with a decorative bar (`aria-hidden`; the percentage and the "your vote" word carry the meaning); `PollChoices` the radio or checkbox form with the vote button; `PollSummary` the total and deadline line; `PollHint` a note. Titles take `dir="auto"`, `lang` and custom emoji. |
 
@@ -545,12 +550,12 @@ arbitrary value. A look that no prop gives is a new prop or component in the kit
 | --- | --- | --- |
 | `Stack` | `flex flex-col` | `gap`; `align` (`stretch` default / `start` / `center` / `end` / `baseline`); `justify` (`start` / `center` / `end` / `between`); `divided` (`divide-y divide-border`: rows of a list, no gap, G3); `marker` (`disc` / `decimal` with `ps-6`, `discInside`); `rowAt` (`sm` / `md`: a row with centered items from that container width) |
 | `Cluster` | `flex flex-wrap` | `gap` (both axes); `rowGap` (between wrapped lines, when it differs from `gap`); `align`; `justify`; `wrap={false}` for one line; `inline` (`inline-flex`, in the line of the text around it) |
-| `Grid` | `grid grid-cols-1`, then `columns` (`2` default / `3`) from the container width `at` (`sm` default / `md`) | `columns`; `at`; `gap` (both axes); `rowGap` |
+| `Grid` | `grid grid-cols-1`, then `columns` (`2` default / `3`) from the container width `at` (`sm` default / `md` / `2xl`) | `columns`; `at`; `gap` (both axes); `rowGap` |
 | `Box` | A block with no layout of its own | Only the box props below. It stays beside `Card`: a `Box` is a layout primitive (a padded row, a size container, a capped width, an optional frame) with no surface, whereas a `Card` is the one raised surface of the brand (`bg-surface-raised`, `border`, `rounded-xl`, `shadow-card`) |
 | `Card` | A raised surface: `bg-surface-raised rounded-xl shadow-soft-raised` (a border in forced-colors mode), a `div` (or `as`: `section`, `article`, `aside`, `li`) | `padding` (`0` for rows with their own padding / `3` / `4` side panel / `6` page panel, default / `8` settings pane) |
 | `SectionHeader` | The heading (children) and `actions` (in a `flex flex-wrap gap-2` row): stacked with `items-start gap-2`, on one line with `justify-between` from `@md` | `actions` (nothing, `null` or `false` leaves the heading alone) |
 | `DialogActions` | `flex flex-wrap justify-end gap-2`: the buttons at the end of a dialog, cancel first | — |
-| `Heading` | `h1`–`h6` by `level` | `level`; `size` (`page` `text-2xl font-bold` / `section` `text-lg font-bold` / `subsection` `font-bold` / `label` `text-sm font-bold` / `medium` `font-bold`; by default level 1 is `page`, 2 `section`, the others `subsection`); `tone` (`fg` / `muted`); `wrap` (`anywhere` / `truncate` / `pretty`); `mono`; `shrink` (`min-w-0`); `focusable` (`tabIndex={-1}` and `outline-none`, for a heading focus moves to from script); `spark` (`✳` / `✧`: a decorative mango mark after the text, `aria-hidden`; `PageHeading` has it too, and sets the text in the serif `page-title`) |
+| `Heading` | `h1`–`h6` by `level` | `level`; `size` (`page` `text-2xl font-bold` / `section` `text-lg font-bold` / `subsection` `font-bold` / `label` `text-sm font-bold` / `medium` `font-bold` / `chapter` serif `text-3xl`, which `Section surface="chapter"` sets; by default level 1 is `page`, 2 `section`, the others `subsection`); `tone` (`fg` / `muted`); `wrap` (`anywhere` / `truncate` / `pretty`); `mono`; `shrink` (`min-w-0`); `focusable` (`tabIndex={-1}` and `outline-none`, for a heading focus moves to from script); `spark` (`✳` / `✧`: a decorative mango mark after the text, `aria-hidden`; `PageHeading` has it too, and sets the text in the serif `page-title`) |
 | `Text` | A `span` (or `as`: `p`, `div`, `li`, `dt`, `dd`, `code`, `time`, `strong`, `small`, `label`, `legend`) | `size` (`xs` / `sm` / `base` / `lg`), `tone` (`fg` / `muted` / `danger` / `warning` / `success` / `accent`), `weight` (`normal` / `medium` / `semibold`), each inherited when unset; `wrap` (`anywhere` / `truncate` / `pretty`); `whitespace` (`preWrap` / `preLine`); `numeric` (`tabular-nums`); `mono`; `block`; `align` (`start` / `center` / `matchParent`); `lineClamp` (`2` / `3`); `selectAll`; `shrink`; `eyebrow` (small upper-case `text-accent` label above a heading) |
 | `Hint` | Secondary text (G6), a `p` (or `as` `span` / `div`): `text-sm text-fg-muted` | `size="inherit"` drops `text-sm`; the other props of `Text` but `tone` |
 | `InlineError` | An error in place, a `p` (or `as` `span` / `div`): `text-sm text-danger` | `size="inherit"` drops `text-sm`; `alert` (`role="alert"`, only for the result of the user's own action, G16); the other props of `Text` but `tone` |
@@ -708,7 +713,7 @@ against viewport breakpoints.
 | `AppNavMenuList`, `AppNavMenuLink`, `AppNavMenuSection` | The sheet's list and its rows; a block under them, with a line above (`separator` `"3"` / `"4"`) or without | as `AppNavItem` but `shows`; `separator` |
 | `AppNavAccount` | The sidebar's signed-in account: avatar, display name and handle | `href`, `avatar`, `name`, `handle`, `description` |
 | `ServerNameLink` | The server's name as the link to `/`, in a `dir="auto"` paragraph | `name`, `description`, `current`, `size` (`lg` at the head of a column) |
-| `PageHeading` | The page's `h1`, focusable by script | `id`, `visuallyHidden` (`sr-only`) |
+| `PageHeading` | The page's `h1`, focusable by script | `id`, `visuallyHidden` (`sr-only`), `display` (the display size, in a `Masthead`) |
 | `BackLinkHeading` | A heading with the way back under it (a page of the settings) | `backHref`, `backLabel`, the heading as children |
 | `RouteLoading` | A large spinner in the page's column | `label` |
 | `StandalonePage` | A `main` without the shell, centered, prose width (the layout's own error) | `children` |

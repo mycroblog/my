@@ -140,7 +140,7 @@ const tokenOnlyRoots = /^(?:rounded(?:-[a-z]+)?|shadow|duration|ease)$/;
  * scale with --spacing but hold geometry (aligning text with a control's label), not a spacing role.
  */
 const spacingRoots = /^(?:p[xytrblse]?|p[bi][se]|gap(?:-[xy])?)$/;
-const spacingSteps = new Set(["0", "0.5", "1", "1.5", "2", "3", "4", "6", "8", "10"]);
+const spacingSteps = new Set(["0", "0.5", "1", "1.5", "2", "3", "4", "6", "8", "10", "16", "24"]);
 /** Utilities that animate; web-client/README.md D6 allows them only under motion-safe:. */
 const motionRoots = new Set(["transition", "animate"]);
 /**

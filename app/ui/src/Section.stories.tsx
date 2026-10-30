@@ -51,6 +51,9 @@ export const Card: Story = { args: { surface: "card" } };
 /** `surface="band"`: a notice at the top of a list, with a rule under it. */
 export const Band: Story = { args: { surface: "band", title: "Announcements" } };
 
+/** A chapter of an editorial page (the landing page): its number and serif title, the content at the measure of running text. */
+export const Chapter: Story = { args: { surface: "chapter", number: 2, title: "What do we agree to?" } };
+
 /** `surface="rows"`: full-width rows that bring their own padding; the heading takes the same padding. */
 export const Rows: Story = {
   args: {

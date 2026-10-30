@@ -20,7 +20,7 @@ const grid = tv({
   base: "grid grid-cols-1",
   variants: {
     columns: { 2: "", 3: "" },
-    at: { sm: "", md: "" },
+    at: { sm: "", md: "", "2xl": "" },
     gap: columnGaps,
     rowGap: rowGaps,
   },
@@ -29,6 +29,8 @@ const grid = tv({
     { columns: 3, at: "sm", class: "@sm:grid-cols-3" },
     { columns: 2, at: "md", class: "@md:grid-cols-2" },
     { columns: 3, at: "md", class: "@md:grid-cols-3" },
+    { columns: 2, at: "2xl", class: "@2xl:grid-cols-2" },
+    { columns: 3, at: "2xl", class: "@2xl:grid-cols-3" },
   ],
   defaultVariants: { columns: 2, at: "sm" },
 });
@@ -37,7 +39,7 @@ type GridOwnProps = BoxProps & {
   /** The columns in a wide container. */
   columns?: 2 | 3;
   /** The container width from which the columns appear (an ancestor needs `container`). */
-  at?: "sm" | "md";
+  at?: "sm" | "md" | "2xl";
   /** The gap between columns and (unless `rowGap` says otherwise) between rows, in a spacing step. */
   gap?: Space;
   /** The gap between rows, when it differs from `gap`. */

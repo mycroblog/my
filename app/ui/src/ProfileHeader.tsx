@@ -19,7 +19,6 @@ const profileHeader = tv({
     top: "flex flex-wrap items-start justify-between gap-3 px-4",
     actions: "pt-3",
     avatar: "-mt-10 ring-4 ring-surface",
-    mark: "-mt-10 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface-raised p-2 shadow-card ring-4 ring-surface",
     body: "mt-3 flex flex-col gap-3 px-4",
     identity: "min-w-0 wrap-anywhere",
     handle: "text-fg-muted",
@@ -45,11 +44,6 @@ export type ProfileHeaderProps = {
   avatarSeed?: string | undefined;
   /** The account's name, for the avatar's fallback letter. */
   name: string;
-  /**
-   * Something else in the avatar's place, on a rounded tile of the avatar's size: the mark of a server on its landing
-   * page. It is decorative too, as the heading names the page.
-   */
-  mark?: ReactNode;
   /** The relationship buttons, at the end of the avatar's row. */
   actions?: ReactNode;
   /** The page heading around the name (the route's level-one heading). */
@@ -80,7 +74,6 @@ export function ProfileHeader({
   avatar,
   avatarSeed,
   name,
-  mark,
   actions,
   heading,
   handle,
@@ -98,13 +91,7 @@ export function ProfileHeader({
       <AnimationsPlayContext value={scope.playing}>
         <ProfileHeaderImage sources={image} size="banner" />
         <div className={styles.top()}>
-          {mark === undefined ? (
-            <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
-          ) : (
-            <span aria-hidden="true" className={styles.mark()}>
-              {mark}
-            </span>
-          )}
+          <Avatar sources={avatar} name={name} seed={avatarSeed} decorative size="xl" className={styles.avatar()} />
           {actions !== undefined && <div className={styles.actions()}>{actions}</div>}
         </div>
         <div className={styles.body()}>

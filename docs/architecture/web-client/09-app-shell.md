@@ -209,7 +209,7 @@
   セッションを再開できるかを loader で確かめてから決める。サーバーに届かず再開できないとき（オフラインで開いたとき）も、このブラウザに残した投稿を読めるように `/home` へ移す。
   外枠の中（ナビゲーション付き）に出す。画面の要件（区画の順・作業・操作の結果）は [screens/landing.md](screens/landing.md) にある。
   中身は `GET /instance`（名前・要約・説明・ルール・サムネイル・登録の方式・ソースコード）と `GET /instance/overview`（利用者の数・7 日の公開の投稿の数・動き始めた日・運営者。管理者が隠した部分は応答にない）から出す。
-  名刺は `ProfileHeader`（`mark` にサーバーの印）、区画は `SectionProgress` の中の 3 つの `Section`、登録の手順は `Steps` で組む。
+  上はマストヘッド（`Masthead`。名前は `PageHeading` の `display`）、区画は `SectionProgress` の中の 3 つの `Section`（`surface="chapter"`）、登録の手順は `Steps` で組む。
   最近の投稿は、サーバーがローカルのタイムラインを提供しているときだけ、その最新の 3 件（`GET /timelines/local?limit=3`。タイムラインの無限の query とは別の query）を、操作のボタンのない投稿の feed（Y6）にする。
   読み込み中と失敗はその区画の中に出す。`GET /instance` が失敗しても、ページは外枠のランタイム設定の名前とサインインのボタンで開く。`GET /instance/overview` が失敗したときは、数と運営者を出さない。
   サーバーはこのアドレスに、インスタンスを紹介するリンクプレビュー（`og:type` は `website`。[リンクプレビュー](../../operations/link-previews.md)）付きの外枠を返す。
@@ -274,7 +274,7 @@
 - **Tauri のアプリ**（`lib/platform.ts` の `isTauriApp()`、ADR-0072 §14）: Web クライアントが Tauri 2 のアプリ（ADR-0008）の WebView の中で動くかは、Tauri がページのスクリプトより前に置く `window.isTauri` が `true` かだけで決める（`@tauri-apps/api` の `isTauri()` が読むのと同じ値。依存は足さない）。ほかの手段（User-Agent、ビルドの旗）で見分けない。
   アプリでは、加入・プランの変更・解約・解約の取り消し・顧客ポータルの画面（`/settings/supporter`）、設定のメニューのその項目、`/about` のプランの区画と加入へのリンクを出さない。`/settings/supporter` を直接開いても、プランも加入も読まずに、この画面はアプリでは使えないことだけを出す。
   購入への導線も、Web で加入できることの案内も出さない。特典（プロフィールのバッジ、`/settings/custom-emojis`、`/finance`）と、サポーターの一覧とそのリンク、掲載の選択はアプリでも出す。新しく購入につながる画面やリンクを足すときは、この関数で出し分ける。
-- **フォーカスとタイトル**（`routes/-layout/useViewChange.ts`、Y5）: ルーターが画面を描画するたびに、`main` の `h1` の文字列から `document.title` を `client:shell.document_title`（画面名とサーバー名）で作る。サーバーの名前が変わったときも作り直す（フォーカスは動かさない）。
+- **フォーカスとタイトル**（`routes/-layout/useViewChange.ts`、Y5）: ルーターが画面を描画するたびに、`main` の `h1` の文字列から `document.title` を `client:shell.document_title`（画面名とサーバー名）で作る。`h1` がサーバーの名前そのもの（ランディングページ）なら、名前を重ねずサーバーの名前だけにする。サーバーの名前が変わったときも作り直す（フォーカスは動かさない）。
   パスが変わったときだけ、その `h1` にフォーカスを移す。最初の画面と、検索条件やハッシュだけの変化（タブ・絞り込み）ではフォーカスを動かさない。画面の見出しは `PageHeading`（`tabindex="-1"` の `h1`）で書く。
   ナビゲーションの項目の画面で、見出しが場所を言うだけのもの（ホーム・ローカル・連合・通知・検索・ブックマーク・設定・会計・モデレーション・サーバー管理）は、
   どこにいるかをナビゲーションの現在の項目（`aria-current="page"`）が見せているので、`h1` を見た目から消す。ルートの `staticData.hideHeading` を真にすると、`PageHeading` が `sr-only`（Tailwind の視覚的に隠すクラス）を付け、

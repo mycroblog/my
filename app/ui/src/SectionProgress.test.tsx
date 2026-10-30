@@ -36,7 +36,7 @@ describe("SectionProgress", () => {
     const nav = screen.getByRole("navigation", { name: "Parts of this page" });
     const links = within(nav).getAllByRole("link");
     expect(links.map((link) => link.getAttribute("href"))).toEqual(["#a", "#b", "#c"]);
-    expect(links.map((link) => link.textContent)).toEqual(["1Alpha", "2Beta", "3Gamma"]);
+    expect(links.map((link) => link.textContent)).toEqual(["01Alpha", "02Beta", "03Gamma"]);
 
     const beta = within(nav).getByRole("link", { name: "Beta" });
     await user.click(beta);

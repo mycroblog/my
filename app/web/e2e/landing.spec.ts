@@ -124,18 +124,15 @@ test.describe("the landing page", () => {
     await expect(page.getByRole("main").getByRole("article")).toHaveCount(2);
   });
 
-  test("shows the server's calling card, then three sections under a progress line, then the footer", async ({
-    page,
-  }) => {
+  test("shows the server's masthead, then three sections under a progress line, then the footer", async ({ page }) => {
     await expect(page).toHaveURL(/\/$/);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toHaveText("my example");
     await expect(main.locator('a[href$="/auth/sign_up"]')).toBeVisible();
     await expect(main).toMatchAriaSnapshot(`
       - main:
-        - button
-        - heading "my example" [level=1]
         - paragraph: my.example
+        - heading "my example" [level=1]
         - paragraph: A small server for gardeners and everyone who likes to grow things.
         - list:
           - listitem
@@ -143,6 +140,7 @@ test.describe("the landing page", () => {
           - listitem:
             - link
         - link
+        - button
         - link
         - navigation:
           - list:
@@ -176,6 +174,7 @@ test.describe("the landing page", () => {
               - paragraph: Mark sensitive media
         - region:
           - heading [level=2]
+          - heading [level=3]
           - list:
             - listitem
             - listitem
@@ -186,9 +185,9 @@ test.describe("the landing page", () => {
     `);
   });
 
-  test("moves from the calling card to the steps of joining, past the rules", async ({ page }) => {
+  test("moves from the masthead to the steps of joining, past the rules", async ({ page }) => {
     const main = page.getByRole("main");
-    // The calling card's link comes first; the sticky progress line of the sections links the steps of joining too.
+    // The masthead's link comes first; the sticky progress line of the sections links the steps of joining too.
     await main.locator('a[href="#landing-join"]').first().click();
     await expect(main.locator("#landing-join")).toBeFocused();
     await expect(main.locator("#landing-join")).toBeInViewport();

@@ -115,6 +115,10 @@
     "defaultMessage": "リンクを開いてアカウントを作成",
     "description": "Second step of joining a server where only people with an invite may sign up."
   },
+  "landing.here.title": {
+    "defaultMessage": "このサーバーのアカウントで",
+    "description": "Heading of the steps for joining this server with an account of its own, beside the steps for following from another server, on the landing page."
+  },
   "landing.elsewhere.title": {
     "defaultMessage": "ほかのサーバーのアカウントで",
     "description": "Heading of the steps for following people of this server from an account on another server, on the landing page."

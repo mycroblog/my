@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The landing page (docs/architecture/web-client/screens/landing.md): the server's calling card, then three sections
+// The landing page (docs/architecture/web-client/screens/landing.md): the server's masthead, then three chapters
 // under a progress line (what kind of place this is, what people agree to, how to join). The footer with the links to
 // the information page, the documents and the software the server runs is the shell's (routes/-layout/SiteFooter.tsx).
 import {
   AccountItem,
-  Box,
+  BannerImage,
   BrandIcon,
   Button,
   ButtonLink,
-  Cluster,
   Feed,
+  Grid,
   Heading,
   Hint,
   Link,
+  Masthead,
   PostSkeleton,
-  ProfileHeader,
   RegionError,
   RoleBadgeList,
   Section,
@@ -38,11 +38,11 @@ import type { RecentPost } from "../api/landing";
 import { type Landing as LandingData, type RecentPosts, useLanding } from "../hooks/useLanding";
 
 export type LandingProps = {
-  /** The page's heading (`PageHeading`) with the server's name, which the calling card carries. */
+  /** The page's heading (`PageHeading` at the display size) with the server's name, which the masthead carries. */
   heading: ReactNode;
 };
 
-/** The ids of the headings that the progress line and the calling card link to. */
+/** The ids of the headings that the progress line and the masthead link to. */
 const ids = {
   place: "landing-place",
   operators: "landing-operators",
@@ -82,8 +82,8 @@ export function Landing({ heading }: LandingProps) {
   const promiseRef = useRef<HTMLHeadingElement>(null);
   const joinRef = useRef<HTMLHeadingElement>(null);
   return (
-    <Stack gap="8">
-      <CallingCard heading={heading} landing={landing} />
+    <Stack>
+      <LandingMasthead heading={heading} landing={landing} />
       <SectionProgress
         label={t("client:landing.progress.label")}
         parts={[
@@ -92,14 +92,32 @@ export function Landing({ heading }: LandingProps) {
           { id: ids.join, title: t("client:landing.join.title") },
         ]}
       >
-        {/* The headings take focus from the links of the calling card and of the progress line. */}
-        <Section title={t("client:landing.place.title")} headingId={ids.place} headingRef={placeRef}>
+        {/* The headings take focus from the links of the masthead and of the progress line. */}
+        <Section
+          surface="chapter"
+          number={1}
+          title={t("client:landing.place.title")}
+          headingId={ids.place}
+          headingRef={placeRef}
+        >
           <Place landing={landing} />
         </Section>
-        <Section title={t("client:landing.promise.title")} headingId={ids.promise} headingRef={promiseRef}>
+        <Section
+          surface="chapter"
+          number={2}
+          title={t("client:landing.promise.title")}
+          headingId={ids.promise}
+          headingRef={promiseRef}
+        >
           <Rules rules={landing.rules} />
         </Section>
-        <Section title={t("client:landing.join.title")} headingId={ids.join} headingRef={joinRef}>
+        <Section
+          surface="chapter"
+          number={3}
+          title={t("client:landing.join.title")}
+          headingId={ids.join}
+          headingRef={joinRef}
+        >
           <Join landing={landing} />
         </Section>
       </SectionProgress>
@@ -108,11 +126,11 @@ export function Landing({ heading }: LandingProps) {
 }
 
 /**
- * The calling card, in the look of a profile: the server's image, its mark, name, domain, summary and counts, with
- * signing in at the top end. Joining moves down to the section on how to join, past the rules; while the server takes no
- * new accounts (or has not said yet), signing in is the primary action.
+ * The masthead: the server's mark and domain, its name at the display size, its summary as the lede, its counts on one
+ * line, and the actions. Joining leads to the section on how to join, past the rules; while the server takes no new
+ * accounts (or has not said yet), signing in is the primary action.
  */
-function CallingCard({ heading, landing }: { heading: ReactNode; landing: LandingData }) {
+function LandingMasthead({ heading, landing }: { heading: ReactNode; landing: LandingData }) {
   const t = useT();
   // After signing in, the root address opens the home timeline.
   const { signIn, isPending } = useSignIn("/");
@@ -121,73 +139,62 @@ function CallingCard({ heading, landing }: { heading: ReactNode; landing: Landin
   const { counts, operators } = landing;
   const [firstOperator] = operators;
   return (
-    <Stack gap="4">
-      <ProfileHeader
-        {...(landing.thumbnail !== undefined && {
-          image: { still: [{ url: landing.thumbnail.url, width: landing.thumbnail.width }] },
-        })}
-        // The server's mark: its own icon, or the built-in wordmark.
-        mark={icon === undefined ? <Wordmark name="my" decorative size="sm" /> : <BrandIcon src={icon} />}
-        name={landing.name}
-        heading={heading}
-        {...(landing.domain !== undefined && { handle: landing.domain })}
-        actions={
-          <Button variant={open ? "secondary" : "primary"} onPress={signIn} isPending={isPending}>
-            {t("client:landing.sign_in")}
-          </Button>
-        }
-        {...(landing.summary !== "" && {
-          // The administrator's text, in a language the app does not know: lang="" rather than the app's (Y10).
-          note: (
-            <Text as="p" dir="auto" lang="" size="lg">
-              {landing.summary}
-            </Text>
-          ),
-        })}
-        counts={[
-          ...(counts === undefined
-            ? []
-            : [
-                {
-                  key: "members",
-                  content: <Text weight="semibold">{t("client:landing.members", { count: counts.members })}</Text>,
-                },
-                {
-                  key: "since",
-                  content: <Text tone="muted">{t("client:landing.since", { date: counts.since.date })}</Text>,
-                },
-              ]),
-          ...(firstOperator === undefined
-            ? []
-            : [
-                {
-                  key: "operators",
-                  content: (
-                    <Link href={`#${ids.operators}`} variant="standalone">
-                      {t("client:landing.run_by", { name: isolate(firstOperator.name), others: operators.length - 1 })}
-                    </Link>
-                  ),
-                },
-              ]),
-        ]}
-      />
-      <Box paddingX="4">
-        <Cluster gap="4" align="center">
-          {open ? (
+    <Masthead
+      heading={heading}
+      // The server's mark: its own icon, or the built-in wordmark.
+      mark={icon === undefined ? <Wordmark name="my" decorative size="sm" /> : <BrandIcon src={icon} size="md" />}
+      {...(landing.domain !== undefined && { kicker: <span dir="ltr">{landing.domain}</span> })}
+      {...(landing.summary !== "" && {
+        // The administrator's text, in a language the app does not know: lang="" rather than the app's (Y10).
+        lede: (
+          <p dir="auto" lang="">
+            {landing.summary}
+          </p>
+        ),
+      })}
+      facts={[
+        ...(counts === undefined
+          ? []
+          : [
+              { key: "members", content: t("client:landing.members", { count: counts.members }) },
+              { key: "since", content: t("client:landing.since", { date: counts.since.date }) },
+            ]),
+        ...(firstOperator === undefined
+          ? []
+          : [
+              {
+                key: "operators",
+                content: (
+                  <Link href={`#${ids.operators}`} variant="standalone">
+                    {t("client:landing.run_by", { name: isolate(firstOperator.name), others: operators.length - 1 })}
+                  </Link>
+                ),
+              },
+            ]),
+      ]}
+      actions={
+        <>
+          {open && (
             <ButtonLink href={`#${ids.join}`} variant="primary" size="lg">
               {t("client:landing.join")}
             </ButtonLink>
-          ) : (
-            landing.registrationMode === "closed" && (
-              <Hint size="inherit">{t("client:landing.registrations.closed")}</Hint>
-            )
+          )}
+          <Button variant={open ? "secondary" : "primary"} size="lg" onPress={signIn} isPending={isPending}>
+            {t("client:landing.sign_in")}
+          </Button>
+          {landing.registrationMode === "closed" && (
+            <Hint size="inherit">{t("client:landing.registrations.closed")}</Hint>
           )}
           <Link href={`#${ids.elsewhere}`} variant="standalone">
             {t("client:landing.elsewhere.link")}
           </Link>
-        </Cluster>
-      </Box>
-    </Stack>
+        </>
+      }
+      {...(landing.thumbnail !== undefined && {
+        // Decorative: the name and the summary say what the picture shows.
+        image: <BannerImage src={landing.thumbnail.url} alt="" />,
+      })}
+    />
   );
 }
 
@@ -370,12 +377,14 @@ function joinSteps(mode: "open" | "approval" | "invite", sendsEmail: boolean) {
 }
 
 /**
- * ③ How to join: the steps of the server's registration mode with its action at the end, then how to follow people
- * here from an account on another server, which needs no account here.
+ * ③ How to join: the steps of the server's registration mode with its action at the end, and beside them on a wide
+ * page (below them on a narrow one) how to follow people here from an account on another server, which needs no
+ * account here.
  */
 function Join({ landing }: { landing: LandingData }) {
   const t = useT();
   const elsewhereId = ids.elsewhere;
+  const hereId = useId();
   const example = landing.operators[0]?.fullHandle;
   const elsewhere: Step[] = [
     {
@@ -403,19 +412,28 @@ function Join({ landing }: { landing: LandingData }) {
     },
   ];
   return (
-    <>
-      {takesAccounts(landing) ? (
-        <Steps
-          steps={joinSteps(landing.registrationMode, landing.sendsEmail).map((key) => ({ key, title: t(key) }))}
-          action={
-            // The registration page is the server's own; the link loads it in place of the app (lib/paths.ts).
-            <ButtonLink href={landing.signUpHref} variant="primary">
-              {t(signUpLabels[landing.registrationMode])}
-            </ButtonLink>
-          }
-        />
-      ) : (
-        landing.registrationMode === "closed" && <Hint size="inherit">{t("client:landing.registrations.closed")}</Hint>
+    // Joining here and following from another server stand side by side on a wide page.
+    <Grid columns={2} at="2xl" gap="8">
+      {landing.registrationMode !== undefined && (
+        <Stack gap="3">
+          <Heading level={3} id={hereId}>
+            {t("client:landing.here.title")}
+          </Heading>
+          {takesAccounts(landing) ? (
+            <Steps
+              steps={joinSteps(landing.registrationMode, landing.sendsEmail).map((key) => ({ key, title: t(key) }))}
+              labelledBy={hereId}
+              action={
+                // The registration page is the server's own; the link loads it in place of the app (lib/paths.ts).
+                <ButtonLink href={landing.signUpHref} variant="primary">
+                  {t(signUpLabels[landing.registrationMode])}
+                </ButtonLink>
+              }
+            />
+          ) : (
+            <Hint size="inherit">{t("client:landing.registrations.closed")}</Hint>
+          )}
+        </Stack>
       )}
       <Stack gap="3">
         <Heading level={3} id={elsewhereId} focusable>
@@ -423,6 +441,6 @@ function Join({ landing }: { landing: LandingData }) {
         </Heading>
         <Steps steps={elsewhere} labelledBy={elsewhereId} />
       </Stack>
-    </>
+    </Grid>
   );
 }
