@@ -44,8 +44,8 @@ export function PageHeading({ children, id, visuallyHidden, spark }: PageHeading
 
 /**
  * The back button of a page that is not an item of the navigation (`staticData.back`): back in the history, or, when
- * the page was opened first (a shared address), to the home timeline, or the landing page while signed out (as
- * HomeLink). Null on the other pages.
+ * the page was opened first (a shared address), to its `staticData.backTo` or the home timeline, or the landing page
+ * while signed out (as HomeLink). Null on the other pages.
  */
 function useBack(): NonNullable<ViewProps["back"]> | null {
   const t = useT();
@@ -54,13 +54,14 @@ function useBack(): NonNullable<ViewProps["back"]> | null {
   const status = useSessionStatus();
   const unreachable = useSessionUnreachable();
   const back = useMatch({ strict: false, select: (match) => match.staticData.back === true });
+  const backTo = useMatch({ strict: false, select: (match) => match.staticData.backTo });
   if (!back) return null;
   const signedOut = status === "signed-out" && !unreachable;
   return {
     label: t("client:shell.back"),
     onPress: () => {
       if (canGoBack) router.history.back();
-      else void router.navigate({ to: signedOut ? "/" : "/home" });
+      else void router.navigate({ to: signedOut ? "/" : (backTo ?? "/home") });
     },
   };
 }

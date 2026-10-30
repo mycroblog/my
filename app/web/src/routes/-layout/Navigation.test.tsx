@@ -218,7 +218,7 @@ describe("the timelines' items", () => {
       within(within(navigation()).getByRole("list"))
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
+    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings", "/lists"]);
   });
 
   test("offer the timelines kept for signed-in users", async () => {
@@ -267,7 +267,7 @@ describe("the user's arrangement", () => {
       within(list)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/search", "/notifications", "/home", "/profile", "/public", "/bookmarks", "/settings"]);
+    ).toEqual(["/search", "/notifications", "/home", "/profile", "/public", "/bookmarks", "/settings", "/lists"]);
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
@@ -275,7 +275,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Bookmarks", "Settings", "Lists", "my example", "More about this server"]);
   });
 
   test("keeps the place of a timeline the server does not offer among the first five", async () => {
@@ -296,7 +296,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Lists", "my example", "More about this server"]);
   });
 
   test("follows a change made in another tab", async () => {
@@ -328,7 +328,7 @@ describe("the tab bar's Menu", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Lists", "my example", "More about this server"]);
     expect(within(sheet).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
 
@@ -439,7 +439,17 @@ describe("the sidebar's server and viewer", () => {
       within(list)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/local", "/public", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
+    ).toEqual([
+      "/home",
+      "/local",
+      "/public",
+      "/notifications",
+      "/search",
+      "/profile",
+      "/bookmarks",
+      "/settings",
+      "/lists",
+    ]);
   });
 
   test("shows no account while signed out, and the server's name leads to the landing page", async () => {

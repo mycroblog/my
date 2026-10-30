@@ -6,7 +6,8 @@
 // a bell toggle button (WAI-ARIA APG, button pattern, `aria-pressed`) that turns on and off the notifications of the
 // account's new posts (ADR-0123) at once; on the profile of an account of another server that the viewer does not
 // follow, it is shown turned off and cannot be pressed, with the line that says to follow first, and
-// a menu button (WAI-ARIA APG, menu button pattern) with mute, block and report (features/report). Undoing
+// a menu button (WAI-ARIA APG, menu button pattern) with "Add to list" for an account the viewer follows
+// (features/lists), mute, block and report (features/report). Undoing
 // a follow or a request, blocking and unblocking ask first in an alert dialog (WAI-ARIA APG, alert dialog
 // pattern). A follow request to an account of another server says which server it waits for, and no new follow of
 // such an account is offered while the instance does not follow other servers (ADR-0076). A list of
@@ -32,6 +33,7 @@ import {
 } from "@my/ui";
 import { useId, useState } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
+import { AddToListDialog } from "../../lists";
 import { ReportDialog } from "../../report";
 import type { Account, RelationshipAction } from "../api/accounts";
 import { isolate } from "../hooks/useProfile";
@@ -109,6 +111,9 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
   // The kind stays while the dialog closes, so that it shows what it asked until it is gone.
   const [dialog, setDialog] = useState<{ isOpen: boolean; kind: Confirmable }>({ isOpen: false, kind: "unfollow" });
   const [isReporting, setIsReporting] = useState(false);
+  const [isAddingToList, setIsAddingToList] = useState(false);
+  // Only an account the viewer follows, accepted, can be put in a list (ADR-0122 §2).
+  const offersLists = state.follow === "following";
   const confirm = (kind: Confirmable) => {
     setDialog({ isOpen: true, kind });
   };
@@ -175,10 +180,12 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
                 if (key === "mute") change(relationship.muting ? "unmute" : "mute");
                 if (key === "block") confirm(relationship.blocking ? "unblock" : "block");
                 if (key === "report") setIsReporting(true);
+                if (key === "lists") setIsAddingToList(true);
               }}
             >
               {/* The items keep their ids when their action flips: React Aria's collections cannot change an
                   item's id while the menu is still mounted while it closes. */}
+              {offersLists && <MenuItem id="lists">{t("client:lists.add_to_list.open")}</MenuItem>}
               <MenuItem id="mute">
                 {relationship.muting ? t("client:profile.menu.unmute") : t("client:profile.menu.mute")}
               </MenuItem>
@@ -190,6 +197,9 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
           </MenuTrigger>
         )}
         {showMenu && <ReportDialog account={account} isOpen={isReporting} onOpenChange={setIsReporting} />}
+        {showMenu && offersLists && (
+          <AddToListDialog account={account} isOpen={isAddingToList} onOpenChange={setIsAddingToList} />
+        )}
         <ConfirmDialog
           isOpen={dialog.isOpen}
           kind={dialog.kind}

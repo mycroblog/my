@@ -81,3 +81,11 @@ export const accountMovePath = "/settings/move";
 
 /** The page that exports the user's follows, blocks, mutes, and bookmarks as CSV files (FR-008). */
 export const importExportPath = "/settings/import-export";
+
+/** The page of the user's lists, which the navigation, a list's timeline and the profile's "Add to list" lead to (ADR-0122). */
+export const listsPath = "/lists";
+
+/** The timeline of the user's list `id` (ADR-0122 §4). */
+export function listPath(id: string): string {
+  return `/lists/${encodeURIComponent(id)}`;
+}

@@ -44,6 +44,8 @@ export type Timeline =
   | { kind: "bookmarks" }
   /** The posts that quote the viewer's post `id` (GET /statuses/{id}/quotes, FR-114), newest first. */
   | { kind: "quotes"; id: string }
+  /** The posts of the members of the viewer's list `id` (GET /timelines/list/{id}, ADR-0122 §4), newest first. */
+  | { kind: "list"; id: string }
   /** The posts of the account `id` on its profile. */
   | { kind: "account"; id: string; filter: AccountTimelineFilter };
 
@@ -70,6 +72,8 @@ function timelineQueryKey(timeline: Timeline) {
       return ["get", "/timelines/public", "pages"] as const;
     case "tag":
       return ["get", "/timelines/tag/{hashtag}", { params: { path: { hashtag: timeline.tag } } }, "pages"] as const;
+    case "list":
+      return ["get", "/timelines/list/{id}", { params: { path: { id: timeline.id } } }, "pages"] as const;
     case "bookmarks":
       return ["get", "/bookmarks", "pages"] as const;
     case "quotes":
@@ -105,6 +109,8 @@ async function fetchTimelinePage(
           params: { path: { hashtag: timeline.tag }, query },
           signal,
         });
+      case "list":
+        return api.fetch.GET("/timelines/list/{id}", { params: { path: { id: timeline.id }, query }, signal });
       case "bookmarks":
         return api.fetch.GET("/bookmarks", { params: { query }, signal });
       case "quotes":

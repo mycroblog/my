@@ -82,6 +82,11 @@ declare module "@tanstack/react-router" {
      * in the history, or, on a page opened directly, to the home timeline (the landing page while signed out).
      */
     back?: boolean;
+    /**
+     * Where the back button goes on a page opened directly, in place of the home timeline: the page of the section the
+     * page belongs to (a list's timeline goes to the lists).
+     */
+    backTo?: string;
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**

@@ -1,8 +1,7 @@
 ---
 start: "/lists"
 persona: "yuki"
-paths: ["app/web/src/features/lists/**", "app/web/src/features/timeline/**", "app/web/src/routes/lists/$id.tsx"]
-unavailable: {"リストの新着を表示して、いちばん新しい投稿を読む": "The demo scenario has no seeded list with members and streaming posts yet.", "リストのタイムラインの投稿にお気に入りを付ける": "The demo scenario has no seeded list with members yet.", "メンバーのいないリストを開き、メンバーの管理へ移る": "The demo scenario has no seeded empty list yet."}
+paths: ["app/web/src/features/lists/**", "app/web/src/features/timeline/**", "app/web/src/routes/lists_.$id.tsx"]
 ---
 
 ## リストのタイムライン（`/lists/$id`）

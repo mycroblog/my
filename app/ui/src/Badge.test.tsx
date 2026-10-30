@@ -30,4 +30,14 @@ describe("Badge", () => {
     expect(screen.getByText("9,999+")).toBeInTheDocument();
     expect(screen.getByText("1,234")).toBeInTheDocument();
   });
+
+  it("draws the count over its limit, uncapped", () => {
+    render(
+      <I18nProvider locale="en-US">
+        <Badge count={120} limit={1000} label="120 of 1,000 members" />
+      </I18nProvider>,
+    );
+    expect(screen.getByText("120 / 1,000")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("120 of 1,000 members")).toBeInTheDocument();
+  });
 });

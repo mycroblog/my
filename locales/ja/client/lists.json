@@ -1,0 +1,294 @@
+{
+  "lists.title": {
+    "defaultMessage": "リスト",
+    "description": "Heading and document title of the page of the user's lists, and its item in the main navigation."
+  },
+  "lists.list.title": {
+    "defaultMessage": "自分のリスト",
+    "description": "Heading of the region of the user's lists on the lists page."
+  },
+  "lists.count": {
+    "defaultMessage": "{count, plural, other {リスト # 件}}（上限 {max}）",
+    "description": "Read for the count beside the heading of the user's lists, drawn as '3 / 50'. {count} is the number of lists, {max} the most a user may have."
+  },
+  "lists.empty": {
+    "defaultMessage": "まだリストはありません",
+    "description": "Heading of the empty list of the user's lists."
+  },
+  "lists.empty.description": {
+    "defaultMessage": "フォロー中の人をリストに入れると、その人たちの投稿をホームとは別に読めます。リストは自分にだけ見えます。",
+    "description": "Text of the empty list of the user's lists, above the button that creates one."
+  },
+  "lists.limit": {
+    "defaultMessage": "リストは {max} 個までです。使わないリストを削除すると作れます。",
+    "description": "Shown in place of the button that creates a list, and in the add-to-list dialog, when the user has the most lists. {max} is that number."
+  },
+  "lists.create": {
+    "defaultMessage": "リストを作る",
+    "description": "Button that opens the form that creates a list, and the title of that form."
+  },
+  "lists.create.submit": {
+    "defaultMessage": "作る",
+    "description": "Button that sends the form that creates a list."
+  },
+  "lists.created": {
+    "defaultMessage": "{name} を作りました。",
+    "description": "Shown above the user's lists after creating one. {name} is the new list's name."
+  },
+  "lists.name": {
+    "defaultMessage": "名前",
+    "description": "Label of the field with a list's name."
+  },
+  "lists.name.description": {
+    "defaultMessage": "リストは自分にだけ見え、入れた人には知らされません。",
+    "description": "Description under the field with a list's name."
+  },
+  "lists.name.required": {
+    "defaultMessage": "名前を入力してください。",
+    "description": "Error of the empty name field of a list."
+  },
+  "lists.name.too_long": {
+    "defaultMessage": "名前は {max} 文字までです。",
+    "description": "Error of a list's name that is too long. {max} is the most characters."
+  },
+  "lists.name.invalid": {
+    "defaultMessage": "名前は 1 行で入力してください。",
+    "description": "Error of a list's name with line breaks or other control characters."
+  },
+  "lists.save_failed": {
+    "defaultMessage": "リストを保存できませんでした。{reason}",
+    "description": "Error in the form that creates or renames a list. {reason} says why."
+  },
+  "lists.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the form that creates or renames a list without saving."
+  },
+  "lists.member_count": {
+    "defaultMessage": "{count, plural, other {メンバー # 人}}",
+    "description": "The number of members of a list, in its row on the lists page and on the list's page."
+  },
+  "lists.list_action": {
+    "defaultMessage": "{action}：{name}",
+    "description": "Accessible name of a button in a row of the user's lists. {action} is the button's visible text (for example 'Rename'), {name} the list's name."
+  },
+  "lists.rename": {
+    "defaultMessage": "名前を変更",
+    "description": "Button in a row of the user's lists that opens the form that renames the list."
+  },
+  "lists.rename.title": {
+    "defaultMessage": "{name} の名前を変更",
+    "description": "Title of the form that renames a list. {name} is the list's name."
+  },
+  "lists.rename.submit": {
+    "defaultMessage": "保存",
+    "description": "Button that saves a list's new name."
+  },
+  "lists.renamed": {
+    "defaultMessage": "リストの名前を {name} に変えました。",
+    "description": "Read after a list is renamed. {name} is its new name."
+  },
+  "lists.delete": {
+    "defaultMessage": "削除",
+    "description": "Button in a row of the user's lists that deletes the list after asking, and the button of that dialog that does it."
+  },
+  "lists.delete.title": {
+    "defaultMessage": "{name} を削除しますか？",
+    "description": "Title of the dialog that asks before a list is deleted. {name} is the list's name."
+  },
+  "lists.delete.description": {
+    "defaultMessage": "リストと、誰を入れたかが消えます。リストの中の人のフォローはそのままです。",
+    "description": "Text of the dialog that asks before a list is deleted."
+  },
+  "lists.delete.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the dialog that asks before a list is deleted, keeping the list."
+  },
+  "lists.deleted": {
+    "defaultMessage": "{name} を削除しました。",
+    "description": "Read after a list is deleted. {name} is the list's name."
+  },
+  "lists.delete_failed": {
+    "defaultMessage": "{name} を削除できませんでした。{reason}",
+    "description": "Toast when a list could not be deleted. {name} is the list's name, {reason} says why."
+  },
+  "lists.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the members of a list, or the user's lists in the add-to-list dialog, again after they failed."
+  },
+  "lists.manage": {
+    "defaultMessage": "リストを管理",
+    "description": "Link from a list's page to the page of the user's lists."
+  },
+  "lists.members.manage": {
+    "defaultMessage": "メンバーを管理",
+    "description": "Button in a row of the user's lists that shows or hides the list's members, and the button of the empty state of a list's page without members."
+  },
+  "lists.members.title": {
+    "defaultMessage": "{name} のメンバー",
+    "description": "Heading of the region of a list's members. {name} is the list's name."
+  },
+  "lists.members.count": {
+    "defaultMessage": "{count, plural, other {メンバー # 人}}（上限 {max}）",
+    "description": "Read for the count beside the heading of a list's members, drawn as '12 / 1,000'. {count} is the number of members, {max} the most a list may have."
+  },
+  "lists.members.search": {
+    "defaultMessage": "フォロー中の人を検索",
+    "description": "Label of the field that searches the accounts the user follows, to add one to a list."
+  },
+  "lists.members.search.description": {
+    "defaultMessage": "名前かハンドルで探します。リストに入れられるのは、フォローが承認された人だけです。",
+    "description": "Description under the field that searches the accounts the user follows."
+  },
+  "lists.members.searching": {
+    "defaultMessage": "検索中",
+    "description": "Accessible name of the spinner while the accounts the user follows are searched."
+  },
+  "lists.members.search_failed": {
+    "defaultMessage": "検索できませんでした。{reason}",
+    "description": "Shown when the search of the accounts the user follows failed. {reason} says why."
+  },
+  "lists.members.no_match": {
+    "defaultMessage": "一致するフォロー中の人はいません。ここで探せるのは、フォローしていて承認された人だけです。",
+    "description": "Shown when the search of the accounts the user follows found none."
+  },
+  "lists.members.results": {
+    "defaultMessage": "フォロー中の人",
+    "description": "Accessible name of the results of the search of the accounts the user follows."
+  },
+  "lists.members.add": {
+    "defaultMessage": "追加",
+    "description": "Button of a search result that adds the account to the list."
+  },
+  "lists.members.add_of": {
+    "defaultMessage": "{name} を追加",
+    "description": "Accessible name of the button that adds an account to a list. {name} is the account's display name."
+  },
+  "lists.members.added_mark": {
+    "defaultMessage": "追加済み",
+    "description": "Mark of a search result that is already in the list, in place of the button that adds it."
+  },
+  "lists.members.added": {
+    "defaultMessage": "{name} を {list} に追加しました。",
+    "description": "Read after an account is added to a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.add_failed": {
+    "defaultMessage": "追加できませんでした。{reason}",
+    "description": "Shown beside a search result that could not be added to the list. {reason} says why."
+  },
+  "lists.members.not_followed": {
+    "defaultMessage": "リストに入れられるのは、フォローが承認された人だけです。",
+    "description": "Shown when an account that the user does not follow could not be added to a list."
+  },
+  "lists.members.limit": {
+    "defaultMessage": "1 つのリストのメンバーは {max} 人までです。",
+    "description": "Shown when a list has the most members, so that no one more can be added. {max} is that number."
+  },
+  "lists.members.loading": {
+    "defaultMessage": "メンバーを読み込み中",
+    "description": "Accessible name of the spinner while a list's members load."
+  },
+  "lists.members.failed": {
+    "defaultMessage": "メンバーを読み込めませんでした",
+    "description": "Heading of the error when a list's members could not load."
+  },
+  "lists.members.empty": {
+    "defaultMessage": "このリストにはまだ誰もいません。上の欄でフォロー中の人を探してください。",
+    "description": "Shown in place of the members of a list without members."
+  },
+  "lists.members.list": {
+    "defaultMessage": "メンバー",
+    "description": "Accessible name of the list of a list's members."
+  },
+  "lists.members.remove": {
+    "defaultMessage": "外す",
+    "description": "Button of a member that takes the account out of the list."
+  },
+  "lists.members.remove_of": {
+    "defaultMessage": "{name} を外す",
+    "description": "Accessible name of the button that takes an account out of a list. {name} is the account's display name."
+  },
+  "lists.members.removed": {
+    "defaultMessage": "{name} を {list} から外しました。",
+    "description": "Read after an account is taken out of a list. {name} is the account's display name, {list} the list's name."
+  },
+  "lists.members.remove_failed": {
+    "defaultMessage": "メンバーを外せませんでした。{reason}",
+    "description": "Shown above a list's members when one could not be removed. {reason} says why."
+  },
+  "lists.members.more": {
+    "defaultMessage": "さらに表示",
+    "description": "Button that loads more members of a list."
+  },
+  "lists.members.more_failed": {
+    "defaultMessage": "続きのメンバーを読み込めませんでした。{reason}",
+    "description": "Shown under a list's members when the next ones could not load. {reason} says why."
+  },
+  "lists.timeline.empty.heading": {
+    "defaultMessage": "このリストにはまだ誰もいません",
+    "description": "Heading shown on a list's page in place of the posts while the list has no members."
+  },
+  "lists.timeline.empty.description": {
+    "defaultMessage": "フォロー中の人を足すと、その人の投稿がここに並びます。",
+    "description": "Text under the heading shown on the page of a list without members."
+  },
+  "lists.not_found.title": {
+    "defaultMessage": "リストが見つかりません",
+    "description": "Heading of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.body": {
+    "defaultMessage": "このリストはないか、あなたのリストではありません。",
+    "description": "Text of the page of a list that does not exist or is not the user's."
+  },
+  "lists.not_found.link": {
+    "defaultMessage": "自分のリストへ",
+    "description": "Link from the page of a list that was not found to the page of the user's lists."
+  },
+  "lists.add_to_list.open": {
+    "defaultMessage": "リストに追加",
+    "description": "Item of the menu of a followed account's profile that opens the dialog that puts the account in the user's lists."
+  },
+  "lists.add_to_list.title": {
+    "defaultMessage": "{name} をリストに追加",
+    "description": "Title of the dialog that puts an account in the user's lists. {name} is the account's display name."
+  },
+  "lists.add_to_list.close": {
+    "defaultMessage": "閉じる",
+    "description": "Accessible name of the button that closes the add-to-list dialog."
+  },
+  "lists.add_to_list.lists": {
+    "defaultMessage": "自分のリスト",
+    "description": "Accessible name of the checkboxes of the user's lists in the add-to-list dialog."
+  },
+  "lists.add_to_list.manage": {
+    "defaultMessage": "リストを管理",
+    "description": "Link from the add-to-list dialog to the page of the user's lists."
+  },
+  "lists.add_to_list.loading": {
+    "defaultMessage": "リストを読み込み中",
+    "description": "Accessible name of the spinner while the add-to-list dialog loads the user's lists."
+  },
+  "lists.add_to_list.load_failed": {
+    "defaultMessage": "リストを読み込めませんでした",
+    "description": "Heading of the error when the add-to-list dialog could not load the user's lists."
+  },
+  "lists.add_to_list.none": {
+    "defaultMessage": "まだリストがありません。リストの画面で作ってから、ここで人を入れられます。",
+    "description": "Text of the add-to-list dialog while the user has no lists."
+  },
+  "lists.add_to_list.saving": {
+    "defaultMessage": "保存中…",
+    "description": "Shown under a list's checkbox in the add-to-list dialog while its change is saved."
+  },
+  "lists.add_to_list.added": {
+    "defaultMessage": "{list} に追加しました",
+    "description": "Read after the account of the add-to-list dialog is put in a list. {list} is the list's name."
+  },
+  "lists.add_to_list.removed": {
+    "defaultMessage": "{list} から外しました",
+    "description": "Read after the account of the add-to-list dialog is taken out of a list. {list} is the list's name."
+  },
+  "lists.add_to_list.failed": {
+    "defaultMessage": "リストを変えられませんでした。{reason}",
+    "description": "Shown under a list's checkbox in the add-to-list dialog when the change failed. {reason} says why."
+  }
+}

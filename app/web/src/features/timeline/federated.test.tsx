@@ -166,7 +166,17 @@ describe("the navigation's timelines", () => {
       within(within(navigation()).getByRole("list"))
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/local", "/public", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
+    ).toEqual([
+      "/home",
+      "/local",
+      "/public",
+      "/notifications",
+      "/search",
+      "/profile",
+      "/bookmarks",
+      "/settings",
+      "/lists",
+    ]);
 
     await user.click(federated);
 
