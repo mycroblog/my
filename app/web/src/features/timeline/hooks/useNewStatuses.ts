@@ -18,7 +18,7 @@ export type NewStatusesState = {
 };
 
 /**
- * The waiting entries of the home timeline or of a list, which the route has loaded. The count is computed from the
+ * The waiting entries of a streamed timeline (newStatuses.ts), which the route has loaded. The count is computed from the
  * waiting entries and the loaded timeline on every render (R6), so entries that a refetch of the timeline has loaded
  * meanwhile are not counted again.
  */

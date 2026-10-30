@@ -13,6 +13,7 @@ export { forgetSavedHomeTimeline, restoreSavedHomeTimeline } from "./api/savedHo
 export { type AccountTimelineFilter, accountTimelineFilters, timelineQueryOptions } from "./api/timelines";
 export { HomeTimeline } from "./components/HomeTimeline";
 export { ListTimeline } from "./components/ListTimeline";
+export { PublicTimeline } from "./components/PublicTimeline";
 export { TimelineFeed } from "./components/TimelineFeed";
 export { TimelineSkeleton } from "./components/TimelineSkeleton";
 export { remoteFetchRereadDelay, useRemoteFetch } from "./hooks/useRemoteFetch";

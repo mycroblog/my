@@ -70,7 +70,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | S7 | ルートは薄くする。パラメータと検索条件を取り出し、loader で、キャッシュにないか無効化されていれば取得して待ち（`queryClient.query({ ...options, staleTime: Infinity })`。無限スクロールは `queryClient.infiniteQuery`。無効化の印を見ない `staleTime: "static"` と、非推奨の `ensureQueryData` は使わない）、それから機能の部品を表示する。ルーターは `defaultStaleReloadMode: "blocking"` で、前に訪れたルートでも loader の終わりを待って描画する（ADR-0045） | `@tanstack/eslint-plugin-router` の `flat/recommended`（`@tanstack/router/create-route-property-order` など）、`restrict/syntax`（`staleTime: "static"`・`ensureQueryData`）、レビュー |
 | S8 | 楽観的更新は、まず保留中の mutation の `variables` を表示する方式にする。複数の画面に反映が要るときだけ、キャッシュを書き換えて失敗時に戻す | レビュー |
 | S9 | API の型は OpenAPI からの生成物だけを使う。同じ型を手で書かない | 生成物の差分検査（ADR-0029） |
-| S10 | SSE の購読は `lib/sse` の 1 つの Effect だけが行い、受け取った内容を Query のキャッシュに書き込む | レビュー |
+| S10 | アプリのストリーム（`GET /streaming` と、ローカル・連合のタイムラインの `GET /streaming/timelines/{timeline}`）の購読は `lib/sse` の `useEventStream` の Effect だけが行い、受け取った内容を Query のキャッシュに書き込む | レビュー |
 | S11 | ブラウザの保存（localStorage・sessionStorage）は `lib/storage` で宣言したキーだけを通して読み書きする。新しく残すものは、そこにキーを宣言してから使う（下の「ブラウザの保存」） | `lib/storage` とテストの外で `restrict/storage`（`localStorage`・`sessionStorage` の参照） |
 
 ### ブラウザの保存

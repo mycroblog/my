@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { useId } from "react";
-import { TimelineFeed, TimelineSkeleton, timelineQueryOptions } from "../features/timeline";
+import { joinWaitingStatuses, PublicTimeline, TimelineSkeleton, timelineQueryOptions } from "../features/timeline";
 import { SignInPrompt } from "../features/session";
 import { ApiError } from "../lib/errors";
 import { useT } from "../lib/i18n";
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/local")({
     // Cached pages that no write has marked stale are shown at once (and refetched in the background once
     // old); marked or missing ones are fetched and waited for (web-client/README.md S7).
     await queryClient.infiniteQuery({ ...timelineQueryOptions(api, { kind: "local" }), staleTime: Infinity });
+    // New posts that waited behind the button when the reader left the timeline are on it when it opens again.
+    joinWaitingStatuses(queryClient, api, { kind: "local" });
   },
   component: LocalPage,
   pendingComponent: LocalPending,
@@ -32,7 +34,7 @@ function LocalPage() {
   return (
     <>
       <PageHeading id={headingId}>{t("client:local.title")}</PageHeading>
-      <TimelineFeed timeline={{ kind: "local" }} aria-labelledby={headingId} />
+      <PublicTimeline timeline={{ kind: "local" }} aria-labelledby={headingId} />
     </>
   );
 }

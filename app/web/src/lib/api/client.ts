@@ -35,7 +35,7 @@ import type { Maintenance } from "../maintenance";
 import { isBrowserOffline, reportNetworkFailure, reportResponse } from "../network";
 
 /** What the app's stream gives runStream: everything but the connection, which the Api holds. */
-type EventStreamOptions = Pick<StreamOptions, "signal" | "onOpen" | "onEvent" | "onError">;
+type EventStreamOptions = Pick<StreamOptions, "signal" | "timeline" | "onOpen" | "onEvent" | "onError">;
 
 export type Api = {
   /** The openapi-fetch client of @mycroblog/mykit, for loaders and mutations. */
@@ -43,8 +43,9 @@ export type Api = {
   /** The openapi-react-query client, for `queryOptions` and `useMutation`. */
   query: OpenapiQueryClient<paths>;
   /**
-   * Keeps GET /streaming open until `signal` aborts, reconnecting after every end or failure (mykit's runStream).
-   * It rejects only when the server refuses the stream for good (a 4xx other than 408 and 429).
+   * Keeps GET /streaming (or, with `timeline`, GET /streaming/timelines/{timeline}) open until `signal` aborts,
+   * reconnecting after every end or failure (mykit's runStream). It rejects only when the server refuses the stream for
+   * good (a 4xx other than 408 and 429).
    */
   stream: (options: EventStreamOptions) => Promise<void>;
 };

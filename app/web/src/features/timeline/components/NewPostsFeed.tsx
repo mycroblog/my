@@ -7,7 +7,7 @@ import { useNewPosts } from "../hooks/useNewPosts";
 import { TimelineFeed } from "./TimelineFeed";
 
 export type NewPostsFeedProps = {
-  /** The streamed timeline: the home timeline or one of the user's lists. */
+  /** The streamed timeline: the home timeline, one of the user's lists, the local or the federated timeline. */
   timeline: StreamedTimeline;
   /** The ID of the page heading that names the timeline; pressing the button moves focus there. */
   "aria-labelledby": string;
@@ -15,7 +15,8 @@ export type NewPostsFeedProps = {
 
 /**
  * The feed of a streamed timeline with the "N new posts" button over its top (web-client/README.md Y7, ADR-0077): the
- * home timeline's and every list's (ADR-0122 §4), which follow the same setting. By default the stream's new entries
+ * home timeline's, every list's (ADR-0122 §4), and the local and the federated timelines' (ADR-0127 §5), which follow the
+ * same setting. By default the stream's new entries
  * wait until the reader presses it; with the reader's auto-insert setting they are inserted at once, the post being
  * read stays in place, and the button counts what came in since the reader left the top. Its region has no height, so
  * neither its appearance nor its count moves the posts being read; the button floats over the feed's top while the
