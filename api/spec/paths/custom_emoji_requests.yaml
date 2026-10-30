@@ -32,8 +32,9 @@ post:
     §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
     request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
     A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-    pending request reserves, a `create` request once the user's emoji and pending `create`
-    requests are as many as their limit (`limit_reached`), and a second pending `image`
+    pending request reserves, a `create` request once the approved and pending `create`
+    requests that the user submitted this month (UTC) are as many as their monthly limit
+    (`limit_reached`), and a second pending `image`
     request for an emoji (`request_pending`) are a 422
     `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
     without `shortcode` and an `image` request without `emoji_id` are a 422 naming the

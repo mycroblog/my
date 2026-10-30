@@ -312,12 +312,12 @@
     "description": "Description of the yearly discount field."
   },
   "admin.supporters.plan.emoji_limit": {
-    "defaultMessage": "Custom emoji limit",
-    "description": "Label of the custom emoji limit of a plan, and its term in the list."
+    "defaultMessage": "Custom emoji limit (monthly)",
+    "description": "Label of the monthly custom emoji limit of a plan, and its term in the list."
   },
   "admin.supporters.plan.emoji_limit.description": {
-    "defaultMessage": "How many custom emoji the subscribers may create when the role lets them.",
-    "description": "Description of the custom emoji limit field."
+    "defaultMessage": "How many custom emoji the subscribers may create each month (UTC) when the role lets them.",
+    "description": "Description of the monthly custom emoji limit field."
   },
   "admin.supporters.plan.rank": {
     "defaultMessage": "Rank",

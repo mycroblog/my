@@ -6158,7 +6158,7 @@ type AdminSupporterPlan struct {
 	CreatedAt             time.Time `json:"created_at"`
 	Description           string    `json:"description"`
 
-	// EmojiLimit How many custom emoji the members may create when the role lets them.
+	// EmojiLimit How many custom emoji the members may create each month (UTC) when the role lets them.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6202,7 +6202,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// Description Up to 1,000 characters of plain text.
 	Description *string `json:"description,omitempty"`
 
-	// EmojiLimit 0 to 10,000.
+	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
@@ -7752,8 +7752,8 @@ type CustomEmojiProblem struct {
 	// `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 	// for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 	// fetched (its server did not return it, or the instance rejects the media of its domain).
-	// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-	// their limit. `request_pending`: the emoji already has a pending request for a new image.
+	// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+	// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 	// `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 	Reason *CustomEmojiProblemReason `json:"reason,omitempty"`
 
@@ -7782,8 +7782,8 @@ type CustomEmojiProblem struct {
 // `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 // for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 // fetched (its server did not return it, or the instance rejects the media of its domain).
-// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-// their limit. `request_pending`: the emoji already has a pending request for a new image.
+// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 // `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 type CustomEmojiProblemReason string
 
@@ -10251,14 +10251,15 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their limit
-// (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-// one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-// they may have, absent for no limit.
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
+// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// calendar month and that are approved or pending (deleting an emoji does not lower it),
+// `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+// submit in a month, absent for no limit, and `resets_at` is when the count resets.
 type OwnCustomEmojiPage struct {
 	Items []OwnCustomEmoji `json:"items"`
 
-	// Limit How many the user may have; absent for no limit.
+	// Limit How many requests to create an emoji the user may submit in a month; absent for no limit.
 	Limit *int `json:"limit,omitempty"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -10267,7 +10268,10 @@ type OwnCustomEmojiPage struct {
 	// Pending The part of `used` that the user's pending requests to create an emoji take.
 	Pending int `json:"pending"`
 
-	// Used The user's local emoji and pending requests to create one.
+	// ResetsAt When the count resets, the first day of the next month at 00:00 UTC.
+	ResetsAt time.Time `json:"resets_at"`
+
+	// Used The approved and pending requests to create an emoji that the user submitted this month.
 	Used int `json:"used"`
 }
 
@@ -18618,8 +18622,9 @@ type ClientInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -18639,8 +18644,9 @@ type ClientInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -18676,8 +18682,9 @@ type ClientInterface interface {
 	// ListOwnCustomEmojis List the custom emoji that the user made
 	//
 	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-	// used of their limit: their emoji and their pending requests to create one, and the limit,
-	// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// used of their monthly limit: the approved and pending requests to create an emoji that they
+	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 	ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26392,8 +26399,9 @@ func (c *Client) ListCustomEmojiRequests(ctx context.Context, params *ListCustom
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -26423,8 +26431,9 @@ func (c *Client) CreateCustomEmojiRequestWithBody(ctx context.Context, contentTy
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -26490,8 +26499,9 @@ func (c *Client) ListCustomEmojis(ctx context.Context, reqEditors ...RequestEdit
 // ListOwnCustomEmojis List the custom emoji that the user made
 //
 // The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-// used of their limit: their emoji and their pending requests to create one, and the limit,
-// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// used of their monthly limit: the approved and pending requests to create an emoji that they
+// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 func (c *Client) ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -48825,8 +48835,9 @@ type ClientWithResponsesInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -48846,8 +48857,9 @@ type ClientWithResponsesInterface interface {
 	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-	// pending request reserves, a `create` request once the user's emoji and pending `create`
-	// requests are as many as their limit (`limit_reached`), and a second pending `image`
+	// pending request reserves, a `create` request once the approved and pending `create`
+	// requests that the user submitted this month (UTC) are as many as their monthly limit
+	// (`limit_reached`), and a second pending `image`
 	// request for an emoji (`request_pending`) are a 422
 	// `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 	// without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -48887,8 +48899,9 @@ type ClientWithResponsesInterface interface {
 	// ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 	//
 	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-	// used of their limit: their emoji and their pending requests to create one, and the limit,
-	// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// used of their monthly limit: the approved and pending requests to create an emoji that they
+	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -78030,8 +78043,9 @@ func (c *ClientWithResponses) ListCustomEmojiRequestsWithResponse(ctx context.Co
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -78057,8 +78071,9 @@ func (c *ClientWithResponses) CreateCustomEmojiRequestWithBodyWithResponse(ctx c
 // §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-// pending request reserves, a `create` request once the user's emoji and pending `create`
-// requests are as many as their limit (`limit_reached`), and a second pending `image`
+// pending request reserves, a `create` request once the approved and pending `create`
+// requests that the user submitted this month (UTC) are as many as their monthly limit
+// (`limit_reached`), and a second pending `image`
 // request for an emoji (`request_pending`) are a 422
 // `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
 // without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -78116,8 +78131,9 @@ func (c *ClientWithResponses) ListCustomEmojisWithResponse(ctx context.Context, 
 // ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 //
 // The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-// used of their limit: their emoji and their pending requests to create one, and the limit,
-// which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// used of their monthly limit: the approved and pending requests to create an emoji that they
+// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Returns a wrapper object for the known response body format(s).
 //

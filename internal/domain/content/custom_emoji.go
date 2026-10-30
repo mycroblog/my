@@ -56,8 +56,8 @@ const (
 	// EmojiFetchFailed reports the image of a remote emoji that could not be fetched: its
 	// server did not return it, or its domain's media are rejected.
 	EmojiFetchFailed CustomEmojiReason = "fetch_failed"
-	// EmojiLimitReached refuses a request to create an emoji from a user who has as many emoji
-	// and pending requests to create one as their limit (ADR-0070 §4).
+	// EmojiLimitReached refuses a request to create an emoji from a user who has submitted as
+	// many approved and pending requests to create one this month as their limit (ADR-0124).
 	EmojiLimitReached CustomEmojiReason = "limit_reached"
 	// EmojiRequestPending refuses a request to replace the image of an emoji that has a
 	// pending one (ADR-0070 §3).

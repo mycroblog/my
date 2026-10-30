@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's page of their custom emoji (`/settings/custom-emojis`, ADR-0070 §1–§4, create_custom_emojis), below its
-// heading: three regions. "Your custom emoji" shows how many emoji the user has against their limit in a meter, and
+// heading: three regions. "Your custom emoji" shows how many emoji the user requested this month against their monthly
+// limit in a meter, with when the count resets in the viewer's time zone (ADR-0124), and
 // lists the emoji the user made: their settings change in a dialog, a new image is requested by choosing another file,
 // and deleting one asks first in an alert dialog (it cannot be undone). "Your requests" lists the requests in every
 // state, newest first, with the reason of a rejection and withdrawing a pending one. "Request a custom emoji" holds
@@ -28,6 +29,7 @@ import {
   TextField,
 } from "@my/ui";
 import { type SubmitEvent, useId, useRef, useState } from "react";
+import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import {
@@ -81,24 +83,35 @@ export function OwnCustomEmojis() {
 }
 
 /**
- * How many emoji the user has (with their pending requests to create one) against their limit: a meter whose pending
- * part is a lighter segment, in the danger tone once the limit is reached; without a limit, a line that says so.
+ * How many emoji the user requested this month (approved and pending requests to create one) against their monthly
+ * limit: a meter whose pending part is a lighter segment, in the danger tone once the limit is reached, and when the
+ * count resets, in the viewer's time zone; without a limit, a line that says so.
  */
 function Usage() {
   const t = useT();
-  const { used, pending, limit } = useOwnCustomEmojis();
+  const intl = useIntl();
+  const { used, pending, limit, resetsAt } = useOwnCustomEmojis();
   if (limit === undefined) return <Hint>{t("client:custom_emojis.usage.unlimited", { used, pending })}</Hint>;
   const full = used >= limit;
   return (
-    <ProgressMeter
-      kind="meter"
-      label={t("client:custom_emojis.usage.label")}
-      value={Math.min(used, limit)}
-      maxValue={Math.max(limit, 1)}
-      pending={pending}
-      valueText={t("client:custom_emojis.usage.value", { used, pending, limit, full: full ? "true" : "false" })}
-      tone={full ? "danger" : "normal"}
-    />
+    <Stack gap="2">
+      <ProgressMeter
+        kind="meter"
+        label={t("client:custom_emojis.usage.label")}
+        value={Math.min(used, limit)}
+        maxValue={Math.max(limit, 1)}
+        pending={pending}
+        valueText={t("client:custom_emojis.usage.value", { used, pending, limit, full: full ? "true" : "false" })}
+        tone={full ? "danger" : "normal"}
+      />
+      {resetsAt && (
+        <Hint>
+          {t("client:custom_emojis.usage.resets", {
+            date: intl.formatDate(resetsAt, { dateStyle: "long", timeStyle: "short" }),
+          })}
+        </Hint>
+      )}
+    </Stack>
   );
 }
 
