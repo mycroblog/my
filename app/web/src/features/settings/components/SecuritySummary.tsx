@@ -2,6 +2,7 @@
 // The security of the account in one glance on the settings page (web-client/screens/settings.md §3; ADR-0110 P1, P3):
 // a row per way of signing in or confirming, each a link to its page with the state as a badge in the link's name.
 import {
+  Box,
   CheckIcon,
   CloseIcon,
   IconLabel,
@@ -90,7 +91,8 @@ export function SecuritySummary() {
 
 function Row({ href, icon, label, badge }: { href: string; icon: ReactNode; label: string; badge: Badge | undefined }) {
   return (
-    <li>
+    // A row of a list keeps its own inner space (web-client/16-look-states-and-wording.md G2).
+    <Box as="li" paddingX="4" paddingY="3">
       <Link href={href} variant="standalone" gap={2}>
         <IconLabel icon={icon}>{label}</IconLabel>
         {badge !== undefined && (
@@ -100,6 +102,6 @@ function Row({ href, icon, label, badge }: { href: string; icon: ReactNode; labe
           </>
         )}
       </Link>
-    </li>
+    </Box>
   );
 }
