@@ -524,6 +524,13 @@ type LinkCardMedium struct {
 	Description string
 }
 
+type ListMember struct {
+	ListID          string
+	MemberAccountID string
+	OwnerAccountID  string
+	AddedAt         time.Time
+}
+
 type LocalAccount struct {
 	AccountID          string
 	UserID             string

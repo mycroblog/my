@@ -47,8 +47,8 @@ type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 // allows), blocks and mutes (with expiry) everywhere, domain mutes (off the timelines other than
 // home, with the boosts of their posts off home), the language filter, keyset paging,
 // deletions of statuses and of accounts (local and remote), the tag_usage projection and the prefix
-// search of hashtags over it (ADR-0092 §1), and the property that incrementally updated projections equal a rebuild from the
-// events the content and graph modules replay.
+// search of hashtags over it (ADR-0092 §1), the property that incrementally updated projections equal a rebuild from the
+// events the content and graph modules replay, and the lists with their timelines (ADR-0122, timeline_lists_contract.go).
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {
@@ -73,6 +73,11 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"CountsTagUsage", timelineTagUsage},
 		{"SearchesTagsByPrefix", timelineTagSearch},
 		{"IncrementalProjectionEqualsRebuild", timelineProjectionEqualsRebuild},
+		{"ListCommands", timelineListCommands},
+		{"ListMembersAreActiveFollows", timelineListMembers},
+		{"ListLimits", timelineListLimits},
+		{"ListTimeline", timelineListTimeline},
+		{"RebuildKeepsListsOfFollows", timelineListRebuild},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newTimelineEnv(t, newHarness)) })
@@ -114,7 +119,7 @@ func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
 		Accounts: e.actors, Relationships: e.graph, Clock: clock, IDs: ids, Host: contractHost,
 	})
 	apptimeline.RegisterModerationProjectors(projectors, h.Timeline, e.actors)
-	e.svc = apptimeline.NewService(apptimeline.Deps{Repository: h.Timeline, Clock: clock})
+	e.svc = apptimeline.NewService(apptimeline.Deps{UnitOfWork: h.UnitOfWork, Repository: h.Timeline, Clock: clock, IDs: ids})
 	return e
 }
 

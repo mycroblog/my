@@ -71,6 +71,7 @@
   `content.ReplayEvents` は削除されていない投稿ごとに現在版つきの `content.status_created` を、有効なブーストごとに `content.boosted` を、
   `graph.ReplayEvents` は有効なフォローごとに `graph.followed`（承認待ちなら `graph.follow_requested`）を、有効なブロックごとに `graph.blocked` を、ミュートごとに `graph.muted` を、ドメインのミュートごとに `graph.domain_muted` を、
   再構築のトランザクションの中で発行します。`timeline.RebuildProjections` は `feed_*`（制限の 2 表を除く）と `tag_usage` を空にして、これらに自分の projector を適用します。
+  リスト（§4.6）は投影ではないので残し、同じトランザクションの最後に、再構築した `feed_follow_edges` に行のない `list_members` の行を消します（フォローの終了で外れたはずのメンバー）。
 - 制限の 2 表は `timeline.RebuildRestrictions` が作ります。`moderation.ReplayEvents` は解除されていない処分のあるアカウントごとに `moderation.account_restrictions_changed` を、
   ドメインごとに `moderation.domain_restrictions_changed` を、その時点で効いている制限を載せて発行し、`account.ReplayDeletions` はアカウントを削除したライフサイクルのイベントごとに
   `account.lifecycle_event_recorded` を発行します。`timeline` の projector は処分と解除のたびにしか行を置き換えないので、期限の来た行が次の処分か解除まで残ります。

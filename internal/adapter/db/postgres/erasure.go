@@ -316,6 +316,18 @@ func (r *TimelineRepository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accoun
 		func(ctx context.Context, a string, n int32) (int64, error) {
 			return q.EraseFeedDomainMutesOf(ctx, postgresgen.EraseFeedDomainMutesOfParams{AccountID: a, Lim: n})
 		},
+		func(ctx context.Context, a string, n int32) (int64, error) {
+			return q.EraseListMembersAsOwner(ctx, postgresgen.EraseListMembersAsOwnerParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int32) (int64, error) {
+			return q.EraseListMembersAsMember(ctx, postgresgen.EraseListMembersAsMemberParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int32) (int64, error) {
+			return q.EraseListNamesOf(ctx, postgresgen.EraseListNamesOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int32) (int64, error) {
+			return q.EraseListsOf(ctx, postgresgen.EraseListsOfParams{AccountID: a, Lim: n})
+		},
 	} {
 		n, err := step(ctx, accountID, lim)
 		if err != nil {

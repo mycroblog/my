@@ -163,6 +163,18 @@
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ nsɐqʅǝ ıuʌıʇǝs ɐs ɐʅʅoʍǝp. ᴚǝʌoʞǝ ouǝ, oɹ ʍɐıʇ nuʇıʅ ouǝ ǝxdıɹǝs oɹ ıs nsǝp nd.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.list_members.not_followed": {
+    "defaultMessage": "‮Ouʅʎ ɐɔɔonuʇs ʎon ɟoʅʅoʍ ɔɐu qǝ ɐppǝp ʇo ɐ ʅısʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.list_members.too_many": {
+    "defaultMessage": "‮⊥ɥıs ʅısʇ ɐʅɹǝɐpʎ ɥɐs ʇɥǝ ɯosʇ ɯǝɯqǝɹs ɐʅʅoʍǝp. ᴚǝɯoʌǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.lists.too_many": {
+    "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɥɐʌǝ ʇɥǝ ɯosʇ ʅısʇs ɐʅʅoʍǝp. ᗡǝʅǝʇǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.login_provider.linked": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐʅɹǝɐpʎ ʅıuʞǝp ɐu ɐɔɔonuʇ ɐʇ ʇɥɐʇ sıƃu-ıu sǝɹʌıɔǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -163,6 +163,18 @@
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧş ḿȧȧƞẏ ŭŭşȧȧƀŀḗḗ īƞṽīŧḗḗş ȧȧş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗṽǿǿķḗḗ ǿǿƞḗḗ, ǿǿř ẇȧȧīŧ ŭŭƞŧīŀ ǿǿƞḗḗ ḗḗẋƥīřḗḗş ǿǿř īş ŭŭşḗḗḓ ŭŭƥ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.list_members.not_followed": {
+    "defaultMessage": "[Ǿƞŀẏ ȧȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ƈȧȧƞ ƀḗḗ ȧȧḓḓḗḗḓ ŧǿǿ ȧȧ ŀīşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.list_members.too_many": {
+    "defaultMessage": "[Ŧħīş ŀīşŧ ȧȧŀřḗḗȧȧḓẏ ħȧȧş ŧħḗḗ ḿǿǿşŧ ḿḗḗḿƀḗḗřş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗḿǿǿṽḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.lists.too_many": {
+    "defaultMessage": "[Ẏǿǿŭŭ ȧȧŀřḗḗȧȧḓẏ ħȧȧṽḗḗ ŧħḗḗ ḿǿǿşŧ ŀīşŧş ȧȧŀŀǿǿẇḗḗḓ. Ḓḗḗŀḗḗŧḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.login_provider.linked": {
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧŀřḗḗȧȧḓẏ ŀīƞķḗḗḓ ȧȧƞ ȧȧƈƈǿǿŭŭƞŧ ȧȧŧ ŧħȧȧŧ şīɠƞ-īƞ şḗḗřṽīƈḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."

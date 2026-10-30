@@ -1687,6 +1687,27 @@ func (l *Localizer) ServerErrorsInvitesTooMany() string {
 	return l.format("server:errors.invites.too_many", nil)
 }
 
+// ServerErrorsListMembersNotFollowed formats "server:errors.list_members.not_followed". API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending.
+//
+//	en: Only accounts you follow can be added to a list.
+func (l *Localizer) ServerErrorsListMembersNotFollowed() string {
+	return l.format("server:errors.list_members.not_followed", nil)
+}
+
+// ServerErrorsListMembersTooMany formats "server:errors.list_members.too_many". API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list.
+//
+//	en: This list already has the most members allowed. Remove one first.
+func (l *Localizer) ServerErrorsListMembersTooMany() string {
+	return l.format("server:errors.list_members.too_many", nil)
+}
+
+// ServerErrorsListsTooMany formats "server:errors.lists.too_many". API error title for HTTP 422 when the user creates another list beyond the limit of lists.
+//
+//	en: You already have the most lists allowed. Delete one first.
+func (l *Localizer) ServerErrorsListsTooMany() string {
+	return l.format("server:errors.lists.too_many", nil)
+}
+
 // ServerErrorsLoginProviderLinked formats "server:errors.login_provider.linked". Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account.
 //
 //	en: You have already linked an account at that sign-in service.

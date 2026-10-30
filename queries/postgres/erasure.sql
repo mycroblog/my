@@ -437,6 +437,29 @@ DELETE FROM feed_domain_mutes WHERE feed_domain_mutes.viewer_account_id = sqlc.a
   SELECT m.domain FROM feed_domain_mutes m WHERE m.viewer_account_id = sqlc.arg(account_id)
   ORDER BY m.domain LIMIT sqlc.arg(lim));
 
+-- The lists of an account and its membership in the lists of others (data-model 4.6). A list's
+-- name goes before the list, and the steps pick the same first lists by ID.
+
+-- name: EraseListMembersAsOwner :execrows
+DELETE FROM list_members WHERE list_members.owner_account_id = sqlc.arg(account_id) AND list_members.list_id IN (
+  SELECT m.list_id FROM list_members m WHERE m.owner_account_id = sqlc.arg(account_id)
+  ORDER BY m.list_id LIMIT sqlc.arg(lim));
+
+-- name: EraseListMembersAsMember :execrows
+DELETE FROM list_members WHERE list_members.member_account_id = sqlc.arg(account_id) AND list_members.list_id IN (
+  SELECT m.list_id FROM list_members m WHERE m.member_account_id = sqlc.arg(account_id)
+  ORDER BY m.list_id LIMIT sqlc.arg(lim));
+
+-- name: EraseListNamesOf :execrows
+DELETE FROM list_names WHERE list_names.list_id IN (
+  SELECT l.id FROM lists l WHERE l.owner_account_id = sqlc.arg(account_id)
+  ORDER BY l.id LIMIT sqlc.arg(lim));
+
+-- name: EraseListsOf :execrows
+DELETE FROM lists WHERE lists.owner_account_id = sqlc.arg(account_id) AND lists.id IN (
+  SELECT l.id FROM lists l WHERE l.owner_account_id = sqlc.arg(account_id)
+  ORDER BY l.id LIMIT sqlc.arg(lim));
+
 -- notification ------------------------------------------------------------------------------------
 
 -- name: EraseNotificationDismissalsOfStatuses :exec
