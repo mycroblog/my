@@ -25,6 +25,7 @@
 // While the server has voice chat on (ADR-0100 §2), Voice chat, the list of the open rooms, comes right after the
 // user's items the same way, and Announcements, the list of the server's announcements (ADR-0125 §4), after it, with
 // the number of the unread ones that show now as a badge ("Announcements, 2 unread").
+// Lists (`/lists`, the user's lists and a list's timeline under it) comes after Announcements.
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
 // their number as a badge the same way ("Moderation, 3 pending"), and so does the tab bar's Menu button, which
 // leads there ("Menu, 3 pending in moderation"): the count is in the names and drawn as digits, never shown by
@@ -63,6 +64,7 @@ import {
   Avatar,
   FinanceIcon,
   Link,
+  ListsIcon,
   ModerationIcon,
   PlusIcon,
   SignInIcon,
@@ -110,6 +112,7 @@ export const navigationSections = [
   "/settings",
   "/voice",
   "/announcements",
+  "/lists",
   "/finance",
   "/moderation",
   "/admin",
@@ -183,6 +186,19 @@ const announcementsItem: NavigationItem = {
   section: "/announcements",
   label: "client:announcements.title",
   icon: <AnnouncementIcon />,
+  shows: "rail",
+};
+
+/**
+ * The user's lists (ADR-0122), after voice chat in the rail and in the menu's sheet, never in the tab bar: a list is no
+ * place switched to many times a day. A list's timeline (`/lists/{id}`) is in its section.
+ */
+const listsItem: NavigationItem = {
+  id: "lists",
+  href: "/lists",
+  section: "/lists",
+  label: "client:lists.title",
+  icon: <ListsIcon />,
   shows: "rail",
 };
 
@@ -341,6 +357,7 @@ export function Navigation() {
       ...userItems,
       ...(voiceAvailable ? [voiceItem] : []),
       announcementsItem,
+      listsItem,
       ...(financeEntry.available ? [financeItem] : []),
       ...staffItems,
     ];

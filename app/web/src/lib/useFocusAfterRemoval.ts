@@ -6,13 +6,15 @@ import { type RefObject, useEffect, useRef } from "react";
 /**
  * Keeps focus when a row of a list goes away with the button that had focus: once the list has rendered
  * without the row, focus moves to the first button of the row that took its place, else of the row before
- * it, else to the page's heading (an empty list has no rows left).
+ * it, else to `fallback` when given (the field that adds to the list), else to the page's heading (an empty list has
+ * no rows left).
  *
  * Returns `removed(id)`, to call when the row of `id` is taken off the list. Rows carry `data-row-id`.
  */
 export function useFocusAfterRemoval(
   list: RefObject<HTMLElement | null>,
   ids: readonly string[],
+  fallback?: () => HTMLElement | null | undefined,
 ): (id: string) => void {
   /** The row being removed and where it was. */
   const pendingRef = useRef<{ id: string; index: number } | null>(null);
@@ -24,7 +26,8 @@ export function useFocusAfterRemoval(
     pendingRef.current = null;
     const rows = list.current?.querySelectorAll<HTMLElement>("[data-row-id]") ?? [];
     const row = rows[Math.min(removal.index, rows.length - 1)];
-    const target = row?.querySelector<HTMLElement>("button") ?? document.querySelector<HTMLElement>("main h1");
+    const target =
+      row?.querySelector<HTMLElement>("button") ?? fallback?.() ?? document.querySelector<HTMLElement>("main h1");
     target?.focus();
   });
 

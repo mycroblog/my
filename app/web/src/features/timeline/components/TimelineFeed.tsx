@@ -139,6 +139,14 @@ function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: Timel
           description={t("client:timeline.empty.tag.description", { tag: timeline.tag })}
         />
       );
+    case "list":
+      // A list with members whose posts have not come yet; a list without members says so before the feed (features/lists).
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.list.heading")}
+          description={t("client:timeline.empty.list.description")}
+        />
+      );
     case "bookmarks":
       return (
         <EmptyState

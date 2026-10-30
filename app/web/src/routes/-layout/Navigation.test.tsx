@@ -232,7 +232,16 @@ describe("the timelines' items", () => {
       within(within(navigation()).getByRole("list"))
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings", "/announcements"]);
+    ).toEqual([
+      "/home",
+      "/notifications",
+      "/search",
+      "/profile",
+      "/bookmarks",
+      "/settings",
+      "/announcements",
+      "/lists",
+    ]);
   });
 
   test("offer the timelines kept for signed-in users", async () => {
@@ -290,6 +299,7 @@ describe("the user's arrangement", () => {
       "/bookmarks",
       "/settings",
       "/announcements",
+      "/lists",
     ]);
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
@@ -298,7 +308,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
+    ).toEqual(["Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
   });
 
   test("keeps the place of a timeline the server does not offer among the first five", async () => {
@@ -319,7 +329,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
   });
 
   test("follows a change made in another tab", async () => {
@@ -351,7 +361,7 @@ describe("the tab bar's Menu", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
     expect(within(sheet).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
 
@@ -472,6 +482,7 @@ describe("the sidebar's server and viewer", () => {
       "/bookmarks",
       "/settings",
       "/announcements",
+      "/lists",
     ]);
   });
 

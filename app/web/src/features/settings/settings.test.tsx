@@ -451,6 +451,7 @@ describe("navigation", () => {
       "/settings",
       "/bookmarks",
       "/announcements",
+      "/lists",
     ]);
     expect(prefs.changes).toEqual([]);
 

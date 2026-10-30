@@ -60,6 +60,8 @@ export type ListSectionProps<T> = {
   countLabel: string;
   /** More items than `items` exist (the list loads in pages): the count is drawn as a lower bound ("40+"). */
   hasMore?: boolean;
+  /** The most items the list may hold: the count is drawn over it ("3 / 50"); `countLabel` then says both. */
+  limit?: number;
   /** The button that loads the next page, while `hasMore`. */
   more?: { label: string; onPress: () => void; isPending: boolean };
   /** Adding to the list. */
@@ -82,6 +84,7 @@ export function ListSection<T>({
   renderItem,
   countLabel,
   hasMore = false,
+  limit,
   more,
   add,
   empty,
@@ -143,7 +146,14 @@ export function ListSection<T>({
             <Heading level={2} id={headingId}>
               {title}
             </Heading>
-            <Badge tone="neutral" count={items.length} atLeast={hasMore} max={999} label={countLabel} />
+            <Badge
+              tone="neutral"
+              count={items.length}
+              atLeast={hasMore}
+              max={999}
+              {...(limit === undefined ? {} : { limit })}
+              label={countLabel}
+            />
           </Cluster>
         </SectionHeader>
         {description !== undefined && <Hint id={descriptionId}>{description}</Hint>}

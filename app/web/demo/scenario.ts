@@ -461,6 +461,18 @@ export const follows: readonly Follow[] = [
   { follower: "sam", followee: "ren" },
 ];
 
+/** A list of accounts that its owner follows (ADR-0122), which only the owner sees; found again by its name. */
+export type List = { key: string; owner: string; name: string; members: string[] };
+
+/**
+ * Yuki's lists: one of people she follows whose posts fill its timeline, and one without members yet. Hana, whom she
+ * follows too, is in neither, so that putting her in a list is a task of its own (screens/lists.md).
+ */
+export const lists: readonly List[] = [
+  { key: "yuki-close-friends", owner: "yuki", name: "仲良し", members: ["sam", "layla"] },
+  { key: "yuki-book-club", owner: "yuki", name: "読書会", members: [] },
+];
+
 export const interactions: readonly Interaction[] = [
   { kind: "favourite", by: "sam", post: "yuki-mountain" },
   { kind: "favourite", by: "hana", post: "yuki-mountain" },

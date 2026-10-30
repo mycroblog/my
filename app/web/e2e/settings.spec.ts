@@ -840,6 +840,7 @@ test.describe("navigation", () => {
         "/bookmarks",
         "/settings",
         "/announcements",
+        "/lists",
       ]);
 
     // Space on a checkbox hides Profile.
@@ -857,6 +858,7 @@ test.describe("navigation", () => {
         "/bookmarks",
         "/settings",
         "/announcements",
+        "/lists",
       ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
@@ -874,6 +876,7 @@ test.describe("navigation", () => {
         "/bookmarks",
         "/settings",
         "/announcements",
+        "/lists",
       ]);
     await expect(section.getByRole("checkbox", { name: name("profile"), exact: true })).not.toBeChecked();
   });

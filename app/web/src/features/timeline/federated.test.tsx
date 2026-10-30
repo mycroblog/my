@@ -176,6 +176,7 @@ describe("the navigation's timelines", () => {
       "/bookmarks",
       "/settings",
       "/announcements",
+      "/lists",
     ]);
 
     await user.click(federated);

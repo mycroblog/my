@@ -6,7 +6,7 @@ import { FirstRun } from "../features/onboarding";
 import {
   forgetSavedHomeTimeline,
   HomeTimeline,
-  joinWaitingHomeStatuses,
+  joinWaitingStatuses,
   restoreSavedHomeTimeline,
   TimelineSkeleton,
   timelineQueryOptions,
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/home")({
       if (!(error instanceof NetworkError) || !restoreSavedHomeTimeline(queryClient, api)) throw error;
     }
     // Opening the timeline from another page: the news that waited for the reader are on it from the first render.
-    joinWaitingHomeStatuses(queryClient, api);
+    joinWaitingStatuses(queryClient, api, { kind: "home" });
     return { saved: false };
   },
   component: HomePage,

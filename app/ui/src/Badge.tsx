@@ -26,6 +26,8 @@ export type BadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
     max?: number;
     /** The count is a lower bound (a list not loaded to its end): the number is followed by a plus sign. */
     atLeast?: boolean;
+    /** The most there may be (a list with a limit): the count is drawn over it ("3 / 50"), and `max` does not apply. */
+    limit?: number;
   } & (
     | {
         /**
@@ -56,13 +58,15 @@ export function Badge({
   decorative = false,
   max = 99,
   atLeast = false,
+  limit,
   tone,
   className,
   ...props
 }: BadgeProps) {
   const { locale } = useLocale();
   const format = new Intl.NumberFormat(locale);
-  const shown = count > max ? `${format.format(max)}+` : `${format.format(count)}${atLeast ? "+" : ""}`;
+  let shown = count > max ? `${format.format(max)}+` : `${format.format(count)}${atLeast ? "+" : ""}`;
+  if (limit !== undefined) shown = `${format.format(count)} / ${format.format(limit)}`;
   if (decorative) {
     return (
       <span

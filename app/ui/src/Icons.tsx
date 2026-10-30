@@ -24,6 +24,7 @@ import {
   PiForkKnife,
   PiHandWaving,
   PiHeadset,
+  PiUserList,
   PiHeart,
   PiLightbulb,
   PiPawPrint,
@@ -241,6 +242,8 @@ export const iconTable = {
   FinanceIcon: { off: glyph(PiCoins, "PiCoins") },
   // Voice chat (ADR-0100): a headset, which has no direction.
   VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
+  // The user's lists of the accounts they follow (ADR-0122): a person beside lines.
+  ListsIcon: { off: glyph(PiUserList, "PiUserList") },
   // The grouped menus of the settings and of the admin and moderation mode (ADR-0110 §5): one icon per page.
   BadgeIcon: { off: glyph(PiSealCheck, "PiSealCheck") },
   SupporterIcon: { off: glyph(PiHandHeart, "PiHandHeart") },
@@ -629,6 +632,11 @@ export function FinanceIcon() {
 /** A headset, for the voice chat rooms. */
 export function VoiceIcon() {
   return renderIcon(iconTable.VoiceIcon);
+}
+
+/** A person beside lines, for the user's lists of the accounts they follow. */
+export function ListsIcon() {
+  return renderIcon(iconTable.ListsIcon);
 }
 
 /** A seal with a check, for the badges shown on the user's profile. */
