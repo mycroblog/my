@@ -124,6 +124,8 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 		sse(false,
 			": connected\n\n",
 			"event: update\ndata: {\"id\":\"s1\"}\n\n",
+			"event: list_update\ndata: {\"list_id\":\"l1\",\"status\":{\"id\":\"s1\"}}\n\n",
+			"event: list_update\ndata: {\"list_id\":\"l1\"}\n\n",
 			"event: notification\ndata: {\"id\":\"n1\",\"type\":\"follow\"}\n\n",
 			": heartbeat\n\n",
 			"event: announcement\ndata: {\"id\":\"a1\"}\n\n",
@@ -144,12 +146,16 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if !slices.Equal(rec.opens, []bool{false, true}) {
 		t.Errorf("opens = %v, want [false true]", rec.opens)
 	}
-	if len(rec.events) != 5 {
-		t.Fatalf("events = %#v, want 5", rec.events)
+	if len(rec.events) != 6 {
+		t.Fatalf("events = %#v, want 6", rec.events)
 	}
 	if e, ok := rec.events[0].(*UpdateEvent); !ok || e.Status.Id != "s1" {
 		t.Errorf("events[0] = %#v, want the update of s1", rec.events[0])
 	}
+	if e, ok := rec.events[1].(*ListUpdateEvent); !ok || e.ListID != "l1" || e.Status.Id != "s1" || e.EventName() != "list_update" {
+		t.Errorf("events[1] = %#v, want the list update of s1 in l1", rec.events[1])
+	}
+	rec.events = slices.Delete(rec.events, 1, 2)
 	if e, ok := rec.events[1].(*NotificationEvent); !ok || e.Notification.Id != "n1" {
 		t.Errorf("events[1] = %#v, want the notification n1", rec.events[1])
 	}
@@ -162,9 +168,10 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if e, ok := rec.events[4].(*UnknownEvent); !ok || e.Name != "poll" || e.Data != "{\"id\":\"p1\"}\nmore" || e.EventName() != "poll" {
 		t.Errorf("events[4] = %#v, want the unknown event poll", rec.events[4])
 	}
-	// The update whose data is no Status is skipped and reported, and the stream goes on.
-	if len(rec.errs) != 1 || !strings.Contains(rec.errs[0].Error(), `"update"`) {
-		t.Errorf("errs = %v, want the unreadable update", rec.errs)
+	// The list update without a status and the update whose data is no Status are skipped and reported, and
+	// the stream goes on.
+	if len(rec.errs) != 2 || !strings.Contains(rec.errs[0].Error(), `"list_update"`) || !strings.Contains(rec.errs[1].Error(), `"update"`) {
+		t.Errorf("errs = %v, want the unreadable list update and update", rec.errs)
 	}
 	// A stream that ended normally waits about a second before connecting again.
 	if len(*waits) != 1 || (*waits)[0] < 500*time.Millisecond || (*waits)[0] > time.Second {
