@@ -400,7 +400,7 @@
     "description": "When a mute ends, under the muted account. {date} is a formatted date and time."
   },
   "settings.navigation.description": {
-    "defaultMessage": "ナビゲーションに出す項目とその順番を選びます。電話では、表示する項目の{count, plural, other {最初の # つ}}がタブバーに、残りがメニューに入ります。設定は常に表示します。このブラウザーに保存します。",
+    "defaultMessage": "ナビゲーションに出す項目とその順番を選びます。モバイルでは、表示する項目の{count, plural, other {最初の # つ}}がタブバーに、残りがメニューに入ります。設定は常に表示します。このブラウザーに保存します。",
     "description": "Help text of the navigation section. {count} is how many shown items the bottom tab bar of phones holds (5); the name of the Settings item is shell.nav.settings."
   },
   "settings.navigation.hidden": {
@@ -408,11 +408,11 @@
     "description": "Help text under an item of the navigation section whose checkbox is off: it is not in the navigation."
   },
   "settings.navigation.in_menu": {
-    "defaultMessage": "電話ではメニューに表示",
+    "defaultMessage": "モバイルではメニューに表示",
     "description": "Help text under an item of the navigation section: the item is shown in the menu (the sheet opened by the Menu button) on phones, and in the side rail on larger screens."
   },
   "settings.navigation.in_tab_bar": {
-    "defaultMessage": "電話ではタブバーに表示",
+    "defaultMessage": "モバイルではタブバーに表示",
     "description": "Help text under an item of the navigation section: the item is shown in the bottom tab bar on phones."
   },
   "settings.navigation.move_down": {
@@ -428,7 +428,7 @@
     "description": "Announced to screen readers after an item of the navigation moved. {name} is the item's label, {position} its new place counted from 1, {count} the number of items."
   },
   "settings.navigation.preview": {
-    "defaultMessage": "電話のタブバー",
+    "defaultMessage": "モバイルのタブバー",
     "description": "Caption under the preview of the bottom tab bar of phones in the navigation section: the icons and labels of the items it holds, then Menu (shell.nav.menu)."
   },
   "settings.navigation.reset": {

@@ -18,6 +18,11 @@
   ],
   "ja": [
     {
+      "use": "モバイル",
+      "avoid": ["電話"],
+      "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    },
+    {
       "use": "ログイン",
       "avoid": ["サインイン"],
       "note": "Starting a session."
