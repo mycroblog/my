@@ -422,6 +422,42 @@ func (s *Service) ShownAnnouncements(ctx context.Context, userID string) ([]Read
 	return s.forReader(ctx, userID, all)
 }
 
+// AnnouncementNotice is what the announcement notifications read of an announcement (ADR-0125
+// §2): its title, and when it shows.
+type AnnouncementNotice struct {
+	ID    string
+	Title string
+	// Published reports whether it is published (neither a draft nor withdrawn).
+	Published bool
+	// ShowsFrom is when it starts to show once published (instance.Announcement.ShowsFrom).
+	ShowsFrom time.Time
+	// EndsAt is the end of its window; the zero time for none.
+	EndsAt time.Time
+}
+
+// ShowsAt reports whether the users see the announcement at t.
+func (n AnnouncementNotice) ShowsAt(t time.Time) bool {
+	return n.Published && !t.Before(n.ShowsFrom) && (n.EndsAt.IsZero() || t.Before(n.EndsAt))
+}
+
+// AnnouncementNotice returns the announcement id as its notifications read it; it fails with
+// an error wrapping ErrNotFound for an unknown one.
+func (s *Service) AnnouncementNotice(ctx context.Context, id string) (AnnouncementNotice, error) {
+	a, err := s.d.Repository.FindAnnouncement(ctx, id)
+	if err != nil {
+		return AnnouncementNotice{}, err
+	}
+	return NoticeOf(a), nil
+}
+
+// NoticeOf returns what the announcement notifications read of a.
+func NoticeOf(a instance.Announcement) AnnouncementNotice {
+	return AnnouncementNotice{
+		ID: a.ID, Title: a.Revision.Title, Published: a.State == instance.AnnouncementPublished,
+		ShowsFrom: a.ShowsFrom(), EndsAt: a.Revision.EndsAt,
+	}
+}
+
 // ShownAnnouncementIDs returns the IDs of the announcements that the users see now, whose
 // notifications stay listed: the notification module hides those of the withdrawn and the
 // ended announcements when it reads them (ADR-0125 §2).
