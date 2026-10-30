@@ -5,9 +5,12 @@
 # (upgrade-check, schema, upgrade, then the server), on SQLite or PostgreSQL. The script sets the images and the
 # dialect, generates the private CA and the remote server's files, and runs this file in two phases:
 #
-#   previous   the previous release's schema image applies its schema (`run --no-deps schema`), and its server starts
-#              (`up --no-deps my`); a release may lack `my db upgrade`, so the one-off my db services do not run
-#   candidate  `up my` with the candidate's images runs upgrade-check, schema, and upgrade, then starts the server
+#   previous   the previous release applies its schema, and its server starts (`up --no-deps my`): its own
+#              `my schema apply` (`run --no-deps schema`), or, for a release that shipped a separate schema image with
+#              Atlas, that image (`run --no-deps previous-schema`); a release may lack `my db upgrade`, so the one-off
+#              my db services do not run
+#   candidate  `up my` with the candidate's image runs upgrade-check, schema (`my schema apply`), and upgrade, then
+#              starts the server
 #
 # scripts/restore-drill.sh runs the same stack with this tree's images alone: it backs up a filled instance, removes
 # every container and volume, and restores the backup into new ones (docs/operations/backup.md, "Recovery drill").
@@ -48,7 +51,8 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-my.sh:ro
-      # The previous release's schema/postgres.bootstrap.sql, as its operator would have run it.
+      # The previous release's schema/postgres.bootstrap.sql, as the operator of a release with a schema image ran it;
+      # `my schema apply` runs it again by itself.
       - ${UPGRADE_TEST_BOOTSTRAP:?set by scripts/upgrade-test.sh}:/bootstrap/postgres.bootstrap.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "my", "-h", "127.0.0.1"]
@@ -73,17 +77,26 @@ services:
     restart: "no"
 
   schema:
-    image: ${MY_SCHEMA_IMAGE:?set by scripts/upgrade-test.sh}
+    <<: *app
     depends_on:
       <<: *app-deps
       upgrade-check:
         condition: service_completed_successfully
+    command: [schema, apply]
+    restart: "no"
+
+  # A previous release's schema image (Atlas Community Edition and that release's schema/), for the previous phase of
+  # a release before `my schema apply`; never started by `up`.
+  previous-schema:
+    profiles: [previous-schema]
+    image: ${MY_PREVIOUS_SCHEMA_IMAGE:-unused}
+    depends_on: *app-deps
     command:
       - schema
       - apply
-      - --url=${SCHEMA_URL:?set by scripts/upgrade-test.sh}
+      - --url=${SCHEMA_URL:-}
       - --to=file:///schema/${MY_DB}
-      - --dev-url=${SCHEMA_DEV_URL:?set by scripts/upgrade-test.sh}
+      - --dev-url=${SCHEMA_DEV_URL:-}
       - --auto-approve
     volumes:
       - data:/data

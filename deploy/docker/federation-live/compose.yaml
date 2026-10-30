@@ -74,14 +74,13 @@ services:
           - relay.test
 
   db:
-    # One PostgreSQL for this server (`my`, with the Atlas dev database `my_dev`), Mastodon (`mastodon`),
+    # One PostgreSQL for this server (`my`), Mastodon (`mastodon`),
     # Misskey (`misskey`), and Akkoma (`akkoma`).
     image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-my.sh:ro
-      - ../../../schema/postgres.bootstrap.sql:/bootstrap/postgres.bootstrap.sql:ro
     ports:
       # The scenarios read what this server recorded (received activities) from here.
       - "127.0.0.1:${FEDERATION_LIVE_DB_PORT:-15432}:5432"
@@ -105,18 +104,18 @@ services:
 
   # --- this server ------------------------------------------------------------------------------
 
+  # my schema apply of the server image, before the server starts.
   my-schema:
-    build:
+    build: &my-build
       context: ../../..
-      target: schema
-    image: my-schema:${MY_VERSION:-federation-live}
-    command:
-      - schema
-      - apply
-      - --url=postgres://my:my@db:5432/my?sslmode=disable&search_path=public
-      - --to=file:///schema/postgres
-      - --dev-url=postgres://my:my@db:5432/my_dev?sslmode=disable&search_path=public
-      - --auto-approve
+      target: app
+      args:
+        VERSION: ${MY_VERSION:-federation-live}
+    image: my:${MY_VERSION:-federation-live}
+    command: [schema, apply]
+    environment:
+      MY_DB: postgres
+      MY_DATABASE_URL: postgres://my:my@db:5432/my?sslmode=disable
     depends_on:
       db:
         condition: service_healthy
@@ -125,11 +124,7 @@ services:
       - fed
 
   my:
-    build:
-      context: ../../..
-      target: app
-      args:
-        VERSION: ${MY_VERSION:-federation-live}
+    build: *my-build
     image: my:${MY_VERSION:-federation-live}
     depends_on:
       my-schema:

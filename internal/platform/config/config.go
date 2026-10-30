@@ -61,7 +61,10 @@ type Config struct {
 	TrustedProxyHeader string
 	DB                 string
 	DatabaseURL        string
-	Queue              string
+	// DatabaseDevURL is the dev database of `my schema apply` on PostgreSQL; empty uses a
+	// temporary schema of the database of DatabaseURL.
+	DatabaseDevURL string
+	Queue          string
 
 	// The queue, the URL of the endpoints, the service account and audience of the OIDC tokens,
 	// and the dispatch deadline of queue = cloudtasks. QueueCloudTasksURL has no trailing slash
@@ -324,6 +327,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("trusted_proxy_header", c.TrustedProxyHeader),
 		slog.String("db", c.DB),
 		slog.String("database_url", redact(c.DatabaseURL != "")),
+		slog.String("database_dev_url", redact(c.DatabaseDevURL != "")),
 		slog.String("queue", c.Queue),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
@@ -545,13 +549,18 @@ type Source struct {
 // Load resolves, validates, and returns the configuration together with the
 // resolved settings. On failure the error is a *ValidationError listing every
 // issue, and the settings are still returned for display.
-func Load(src Source) (*Config, []Setting, error) { return load(src, false) }
+func Load(src Source) (*Config, []Setting, error) { return load(src, nil) }
 
 // LoadMaintenance is Load for the maintenance mode (ADR-0084 §2): it reads and validates only the
 // settings marked for it (the listen address, the host and origins, the proxies, status_page_url,
 // and the maintenance_* settings), so that a configuration whose adapter settings are wrong or
 // unreachable still starts. The settings it does not read are absent from the returned list.
-func LoadMaintenance(src Source) (*Config, []Setting, error) { return load(src, true) }
+func LoadMaintenance(src Source) (*Config, []Setting, error) { return load(src, maintenanceKeys) }
+
+// LoadSchemaApply is Load for `my schema apply`: it reads and validates only db, database_url,
+// and database_dev_url, so that the one-off job that applies the schema needs nothing but the
+// database's settings. The settings it does not read are absent from the returned list.
+func LoadSchemaApply(src Source) (*Config, []Setting, error) { return load(src, schemaApplyKeys) }
 
 // MaintenanceRequested reads only the maintenance setting, from the environment or the TOML
 // file, for my serve to choose between the normal start and the maintenance mode before loading
@@ -642,8 +651,8 @@ func open(src Source) (Source, map[string]any, []Issue) {
 	return src, file, issues
 }
 
-// load reads every setting, or with maintenance only those the maintenance mode reads.
-func load(src Source, maintenance bool) (*Config, []Setting, error) {
+// load reads every setting, or, when only is not nil, only the settings it holds.
+func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	src, file, issues := open(src)
 	cfg := &Config{}
 	settings := make([]Setting, 0, len(schema))
@@ -651,7 +660,7 @@ func load(src Source, maintenance bool) (*Config, []Setting, error) {
 	present := map[string]bool{}
 	for i := range schema {
 		f := &schema[i]
-		if maintenance && !maintenanceKeys[f.key] {
+		if only != nil && !only[f.key] {
 			continue
 		}
 		v, origin, srcIssues := resolve(f, src, file)
@@ -683,7 +692,7 @@ func load(src Source, maintenance bool) (*Config, []Setting, error) {
 		valid[f.key] = v
 		f.set(cfg, v)
 	}
-	if !maintenance {
+	if only == nil {
 		issues = append(issues, crossChecks(valid, present)...)
 	}
 	if cfg.AccountDomain == "" {

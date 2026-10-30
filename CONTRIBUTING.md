@@ -137,8 +137,8 @@ step.
 
 ## Schema changes
 
-The desired-state schema files of each dialect are the source of truth, applied with [Atlas](https://atlasgo.io/)
-Community Edition. Nobody writes migration SQL.
+The desired-state schema files of each dialect are the source of truth. `my schema apply` applies them with the
+[Atlas](https://atlasgo.io/) Go library (Community Edition), and the Atlas CLI checks changes to them. Nobody writes migration SQL.
 
 - The desired state is one file per module, `schema/<dialect>/<NN>-<module>.sql` ([schema/README.md](schema/README.md)).
   Edit the file of the module that owns the table, in both `schema/sqlite/` and `schema/postgres/`, in the same pull
@@ -146,26 +146,26 @@ Community Edition. Nobody writes migration SQL.
   [§1.2](docs/architecture/data-model/01-conventions.md#12-論理型) maps the logical types to each dialect's types.
 - What Atlas Community Edition cannot handle (extensions, sequences, views, triggers) stays out of the desired state.
   PostgreSQL extensions go into `schema/postgres.bootstrap.sql`, an idempotent bootstrap script.
-- `scripts/install-atlas.sh` installs Atlas into `bin/atlas` with a pinned version and checksum
-  (`scripts/task.sh db:atlas`; the `db:*` tasks run it for you). Nothing uses the features that need `atlas login`.
+- `scripts/install-atlas.sh` installs the Atlas CLI into `bin/atlas` with a pinned version and checksum, the version of the
+  library in `go.mod` (`scripts/task.sh db:atlas`; the `db:*` tasks run it for you). Nothing uses the features that need `atlas login`.
 
 ```sh
-scripts/task.sh db:apply                      # SQLite: apply the desired state to my.db (the dev database is in memory)
-scripts/task.sh db:diff                       # only print the SQL that would be applied
+scripts/task.sh db:apply                      # SQLite: apply the desired state to my.db with my schema apply
+scripts/task.sh db:diff                       # only print the SQL that would be applied (my schema apply -dry-run)
 scripts/task.sh db:reset                      # delete everything in the database, then apply (data is lost)
-scripts/task.sh db:check                      # db:reset, then check that no difference is left (as CI does)
+scripts/task.sh db:check                      # db:reset, then check with Atlas that no difference is left (as CI does)
 scripts/task.sh db:check-all                  # db:check on SQLite and on the PostgreSQL container of db:up
 
-scripts/task.sh db:up DB_DIALECT=postgres     # start a PostgreSQL container (database `my`, dev databases `my_dev` and `my_lint`)
+scripts/task.sh db:up DB_DIALECT=postgres     # start a PostgreSQL container (database `my`, Atlas's dev databases `my_dev` and `my_lint`)
 scripts/task.sh db:apply DB_DIALECT=postgres  # likewise db:diff / db:reset / db:check
 scripts/task.sh db:down                       # delete the container and its data
 ```
 
-- `DB_URL` (the target database) and `DB_DEV_URL` (the empty database Atlas normalizes differences with) change the
-  connections. A PostgreSQL URL is a schema-scoped URL with `search_path=public`.
-- To apply to a PostgreSQL outside the container, also say how to run the bootstrap script with `PG_BOOTSTRAP`
-  (for example `PG_BOOTSTRAP='psql -v ON_ERROR_STOP=1 -q "postgres://..."'`), and run the bootstrap script on the dev
-  database first.
+- `DB_URL` (the target database, an Atlas URL; `my schema apply` takes it as `database_url`, without `sqlite://`) and
+  `DB_DEV_URL` (the empty database Atlas normalizes differences with in `db:check`) change the connections.
+  A PostgreSQL URL is a schema-scoped URL with `search_path=public`.
+- `my schema apply` runs the bootstrap script itself, so a PostgreSQL outside the container needs nothing more for
+  `db:apply`; `db:check` and `db:lint` also need the bootstrap script on Atlas's dev databases.
 - If a change fails to apply as a difference, recreate a development database with `scripts/task.sh db:reset`. From
   `v0.1.0` on, a pull request's schema change must upgrade the previous `main` without losing data:
   `scripts/task.sh db:lint DB_DIALECT=sqlite|postgres` finds destructive changes, and

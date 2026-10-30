@@ -5,7 +5,7 @@
 # one succeeded, so a failure leaves the server stopped (docs/operations/database.md, "Upgrading"):
 #
 #   upgrade-check  my db upgrade -check: stops before the schema would drop data that is not carried over yet
-#   schema         atlas schema apply of schema/sqlite (Atlas Community Edition, in an image without my)
+#   schema         my schema apply: brings the database to this release's schema, which the server image holds
 #   upgrade        my db upgrade: runs the data upgrade steps of this release
 #
 # The same order initializes an empty volume and upgrades an existing one to a new MY_VERSION.
@@ -16,7 +16,7 @@
 
 name: my
 
-# The server image and its settings, shared by the server and the one-off my db services.
+# The server image and its settings, shared by the server and the one-off services.
 x-app: &app
   build:
     context: ../..
@@ -56,22 +56,11 @@ services:
     restart: "no"
 
   schema:
-    build:
-      context: ../..
-      target: schema
-    image: my-schema:${MY_VERSION:-dev}
+    <<: *app
     depends_on:
       upgrade-check:
         condition: service_completed_successfully
-    command:
-      - schema
-      - apply
-      - --url=sqlite:///data/my.db
-      - --to=file:///schema/sqlite
-      - --dev-url=sqlite://dev?mode=memory
-      - --auto-approve
-    volumes:
-      - data:/data
+    command: [schema, apply]
     restart: "no"
 
   upgrade:

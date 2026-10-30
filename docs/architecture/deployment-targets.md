@@ -200,7 +200,7 @@
 - **スキーマ**: `schema/postgres` の大きさは上限に収まる（テーブル 330、テーブルあたりの索引は最大 7）。照合順序・トリガー・ビュー・シーケンス・外部キーの制約にも触れない。
   - 収まらないのは `bytea` の索引で、主キー 4 つ（`code_hash`）と索引 6 つ（トークンのハッシュ・passkey の credential ID・鍵の fingerprint）がある。
   - `schema/postgres.bootstrap.sql` の `CREATE EXTENSION pg_trgm` も通らない（今は `pg_trgm` を使う索引・クエリはない）
-- **Atlas**: Community Edition の PostgreSQL ドライバは `ASYNC` のない `CREATE INDEX` を出し、計画を 1 つのトランザクションで流すので、DSQL には適用できない。
+- **Atlas**: `my schema apply` が使う Atlas（Community Edition）の PostgreSQL ドライバは `ASYNC` のない `CREATE INDEX` を出し、`my schema apply` は計画を 1 つのトランザクションで流すので、DSQL には適用できない。
   - Atlas の DSQL ドライバ（`dsql://`）は Pro 版だけで、ADR-0023 の Community Edition だけを使う決定に合わない
 - **接続**: 新しい接続ごとにトークンを作る仕組み（pgx の `BeforeConnect`）と、60 分より短い `MaxConnLifetime` が要る。
   - AWS の Aurora DSQL Connector for Go pgx（Apache-2.0）は、この形で既定 55 分にしている（[#1852](https://github.com/mycroblog/my/issues/1852)）。

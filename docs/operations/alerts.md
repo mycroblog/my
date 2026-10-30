@@ -376,7 +376,7 @@ Fix:
 
 - Database down or unreachable: restore it, or fail over. While you work, the maintenance mode shows users a clear page.
 - Database out of storage: raise the plan or free space ([MyDatabaseStorageLarge](#mydatabasestoragelarge)).
-- Schema not applied: apply it with the schema image of the same version, then the processes become ready by themselves.
+- Schema not applied: run `my schema apply` of the same version, then the processes become ready by themselves.
 - Data lost or corrupted: restore from your backup, and keep the KEK that the backup's keys were sealed with ([KEK management](key-management.md)).
 
 ### MyProcessRestarting

@@ -2,8 +2,9 @@
 
 How operators create the database, upgrade it to a new release, and, on development and test instances only, erase it.
 
-The schema lives in `schema/<dialect>/` (one file per module) and is applied with Atlas Community Edition, not with a `my` command.
-The server binary does not embed Atlas: Atlas and the schema ship in a separate image (the `schema` target of the `Dockerfile`).
+The schema lives in `schema/<dialect>/` (one file per module). The server binary holds the schema of its release, and
+`my schema apply` applies it: every deployment runs it as a one-off job before the server, with the server image and the server's
+database settings, so the server image is the only image an instance needs.
 `my serve` never applies the schema. Started on a database without it, the server answers `503` on `/readyz` (see [Start the server](running.md#start-the-server)).
 
 Data that a schema change has to carry over (a column split in two, a value moved to a new table) is rewritten by the server image's
@@ -11,19 +12,44 @@ own `my db upgrade`, which runs once per release after the schema is applied. Th
 
 ## Initializing (applying the schema)
 
-`atlas schema apply` runs only the statements that bring the database to the desired schema: on an empty database it creates everything,
+`my schema apply` runs only the statements that bring the database to the schema of its release: on an empty database it creates everything,
 on an up-to-date one it does nothing. It is safe to run any number of times, and every upgrade runs it again.
+
+### With `my schema apply`
+
+`my schema apply` reads the database settings of the server's configuration (`db`, `database_url`, and `database_dev_url`,
+from `-config <file>` or the environment; it needs no other setting) and brings the database to the schema of the binary's release:
+
+```sh
+my schema apply -dry-run   # print the SQL statements it would run, and change nothing
+my schema apply            # run them
+```
+
+- It prints the SQL statements it runs, and runs them in one transaction: when one fails, none of them stays.
+  A database that already matches the schema is left unchanged (`ok: the database matches the schema; nothing to apply`).
+- A plan that drops a table or a column is refused, and nothing runs, unless `-allow-destructive` is given. Pass it only
+  when the release notes call for it, after a backup. Rebuilding a SQLite table to change it does not count as a drop.
+- On PostgreSQL it first runs the bootstrap SQL (`CREATE EXTENSION IF NOT EXISTS pg_trgm`), so the role of `database_url`
+  needs the privilege to create that extension, or the extension must exist already. The owner of the database has it, since
+  PostgreSQL trusts `pg_trgm`. It builds the schema it compares
+  with in a temporary schema of the same database and drops it at the end, also on failure; the role needs the privilege
+  to create a schema there. Where it has none, set `database_dev_url` to another database where it has
+  ([`database_dev_url`](../reference/configuration.md#database_dev_url)). Runs against one database wait for each other, so two at once both succeed.
+- It supports `db = sqlite` and `db = postgres`, and exits with `1` when it applied nothing because of an error or a refused drop.
+
+From `v0.1.0` on, an upgrade between supported releases never contains a difference that loses data; releases before `v0.1.0` may drop columns
+and tables, and need `-allow-destructive`. Read the SQL with `-dry-run` before every upgrade (see [Upgrading](#upgrading)).
 
 ### Docker Compose
 
-In [`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml), three one-off services run in this order, each only after the previous one succeeded,
-and the server (`my`) starts last:
+In [`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml), three one-off services of the server image run in this order, each only
+after the previous one succeeded, and the server (`my`) starts last:
 
-| Service | Image | Runs |
-| --- | --- | --- |
-| `upgrade-check` | the server image | `my db upgrade -check` (passes on an empty database) |
-| `schema` | the schema image | `atlas schema apply` of `schema/sqlite/` to `/data/my.db` |
-| `upgrade` | the server image | `my db upgrade` |
+| Service | Runs |
+| --- | --- |
+| `upgrade-check` | `my db upgrade -check` (passes on an empty database) |
+| `schema` | `my schema apply` on `/data/my.db` |
+| `upgrade` | `my db upgrade` |
 
 ```sh
 cd deploy/docker
@@ -36,59 +62,39 @@ docker compose exec -T my my admin create -username alice -email alice@example.c
 - Creating administrators is covered in [Administrators and roles](admin-cli.md).
 - `scripts/task.sh docker:smoke` (`scripts/docker-smoke.sh`) runs this setup on an empty volume and again on the same volume, as an upgrade does.
 
-### Using the schema image directly
+### Other platforms
 
-Without Compose, run the same image as a one-off job (a Kubernetes Job or init container, a Cloud Run job, and so on).
-The image's entrypoint is `atlas`, and the schema is in the directories `/schema/sqlite` and `/schema/postgres`
-(given a directory in `--to`, Atlas reads its files in name order).
+Without Compose, run `my schema apply` of the server image as a one-off job (a Kubernetes Job or init container, a Cloud Run job, and so on),
+with the same database settings as the server:
 
 ```sh
-docker build -t my-schema --target schema .
-
 # SQLite: mount the volume that holds the database file at /data
-docker run --rm -v my_data:/data my-schema schema apply \
-  --url sqlite:///data/my.db --to file:///schema/sqlite \
-  --dev-url 'sqlite://dev?mode=memory' --auto-approve
+docker run --rm -v my_data:/data -e MY_DB=sqlite -e MY_DATABASE_URL=/data/my.db my schema apply
+
+# PostgreSQL
+docker run --rm -e MY_DB=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
-
-PostgreSQL needs two more things:
-
-- Before applying, run the preparation SQL `schema/postgres.bootstrap.sql` (it creates extensions and is idempotent) on the target database,
-  with `psql` or similar. The schema image does not contain `psql`.
-- An empty development database for computing the difference (`--dev-url`). Make it a database other than the target, and run the same preparation SQL on it.
-
-```sh
-psql -v ON_ERROR_STOP=1 "postgres://my:...@db.example/my" < schema/postgres.bootstrap.sql
-psql -v ON_ERROR_STOP=1 "postgres://my:...@db.example/my_dev" < schema/postgres.bootstrap.sql
-docker run --rm my-schema schema apply \
-  --url 'postgres://my:...@db.example/my?search_path=public' --to file:///schema/postgres \
-  --dev-url 'postgres://my:...@db.example/my_dev?search_path=public' --auto-approve
-```
-
-`--auto-approve` applies the computed difference without asking. From `v0.1.0` on, an upgrade between supported releases never contains
-a difference that loses data; releases before `v0.1.0` may drop columns and tables.
-To see the SQL first, pass `--dry-run` in place of `--auto-approve`; an upgrade should always do this (see [Upgrading](#upgrading)).
 
 ### From the repository (development)
 
-`scripts/task.sh db:apply` runs the same apply with the pinned Atlas (`bin/atlas`); `DB_DIALECT=sqlite|postgres`, `DB_URL`, and `DB_DEV_URL` choose the target.
-`scripts/task.sh db:diff` only prints the SQL it would run.
+`scripts/task.sh db:apply` runs `my schema apply` of the working tree; `DB_DIALECT=sqlite|postgres` and `DB_URL` choose the target.
+`scripts/task.sh db:diff` only prints the SQL it would run (`-dry-run`).
 
 ## Upgrading
 
-An upgrade to a new release always runs these steps in this order, with the **new** release's images:
+An upgrade to a new release always runs these steps in this order, with the **new** release's server image:
 
 1. **Back up** the database (and, with the filesystem blob store, the media). See [Backing up](#backing-up).
-2. **`my db upgrade -check`** (server image). It changes nothing. It exits with `1` when the new schema would drop data that the database has not
+2. **`my db upgrade -check`**. It changes nothing. It exits with `1` when the new schema would drop data that the database has not
    carried over yet, and names the release to upgrade through first; then stop and follow [Skipping releases](#skipping-releases).
    An empty database passes.
-3. **`atlas schema apply`** (schema image), as in [Initializing](#initializing-applying-the-schema). Check the SQL with `--dry-run` first.
-4. **`my db upgrade`** (server image). It runs each data upgrade step of the release that the database has not recorded yet, rebuilds the
+3. **`my schema apply`**, as in [Initializing](#initializing-applying-the-schema). Check the SQL with `-dry-run` first.
+4. **`my db upgrade`**. It runs each data upgrade step of the release that the database has not recorded yet, rebuilds the
    projections those steps name, and records each step. Run again, it does nothing. If a step fails it exits with `1`; the steps that completed
    stay recorded, and running it again resumes from the failed one.
 5. **Start the new server.** It answers `503` on `/readyz` and logs the missing steps until every data upgrade step of its release is recorded.
 
-`my serve` never runs `my db upgrade -check` or `my db upgrade`; they are one-off jobs. Run only one of them against a database at a time.
+`my serve` never runs `my db upgrade -check`, `my schema apply`, or `my db upgrade`; they are one-off jobs. Run only one of them against a database at a time.
 
 Most releases have no data upgrade step: `my db upgrade -check` prints `ok: the database can be upgraded to this release` and
 `my db upgrade` prints `ok: no data upgrade step to run`. Run both anyway, so the procedure does not depend on reading every release note.
@@ -101,12 +107,13 @@ but it cannot take part in the data upgrade steps. Switch to the [maintenance mo
 `my serve` opens no database connection, so the backup is consistent and nothing writes while the steps run.
 Keep the maintenance window within a few hours ([how long](maintenance.md#how-long)).
 
-### Checking the SQL with `--dry-run`
+### Checking the SQL with `-dry-run`
 
-Before step 3 applies anything, run the same `atlas schema apply` with `--dry-run` in place of `--auto-approve` and read what it would run.
+Before step 3 applies anything, run `my schema apply -dry-run` and read what it would run.
 Additions (`CREATE TABLE`, `ADD COLUMN`, `CREATE INDEX`) are what most releases contain. A projection table may also be rebuilt,
 which `my db upgrade` then refills from its events. A `DROP` of anything else, or a type change, should be listed in the release notes'
-**Breaking changes** section; if it is not, stop and report it before applying.
+**Breaking changes** section; if it is not, stop and report it before applying. `my schema apply` refuses a plan that drops a table
+or a column unless `-allow-destructive` is given.
 
 ### Docker Compose
 
@@ -121,14 +128,13 @@ MY_MAINTENANCE=true docker compose up -d --no-deps --force-recreate my
 # 2. Back up the volume (database and media) while the maintenance mode holds no connection.
 docker run --rm -v my_data:/data -v "$PWD":/backup busybox tar czf /backup/my-data-$(date +%Y%m%d%H%M).tar.gz -C /data .
 
-# 3. Check out the new release and build its images (or set MY_VERSION in .env to the new version).
+# 3. Check out the new release and build its image (or set MY_VERSION in .env to the new version).
 git fetch --tags && git checkout v0.2.0
 docker compose build
 
 # 4. Check the SQL that the schema service will run.
 docker compose run --rm --no-deps upgrade-check
-docker compose run --rm --no-deps schema schema apply --url=sqlite:///data/my.db \
-  --to=file:///schema/sqlite --dev-url='sqlite://dev?mode=memory' --dry-run
+docker compose run --rm --no-deps schema schema apply -dry-run
 
 # 5. Upgrade: upgrade-check, schema, upgrade, then my starts again without the maintenance mode.
 docker compose up -d
@@ -161,14 +167,9 @@ spec:
           args: [db, upgrade, -check]
           envFrom: [{ secretRef: { name: my-config } }]   # the Deployment's settings
         - name: schema
-          image: registry.example/my-schema:v0.2.0
-          args:
-            - schema
-            - apply
-            - --url=postgres://my:...@db.example/my?search_path=public
-            - --to=file:///schema/postgres
-            - --dev-url=postgres://my:...@db.example/my_dev?search_path=public
-            - --auto-approve
+          image: registry.example/my:v0.2.0
+          args: [schema, apply]
+          envFrom: [{ secretRef: { name: my-config } }]
       containers:
         - name: upgrade
           image: registry.example/my:v0.2.0
@@ -178,7 +179,7 @@ spec:
 
 ```sh
 kubectl set env deployment/my MY_MAINTENANCE=true && kubectl rollout status deployment/my
-# back up, and check the SQL with a one-off Pod of the schema image and --dry-run
+# back up, and check the SQL with a one-off Pod of the new image: my schema apply -dry-run
 kubectl apply -f my-upgrade-v0-2-0.yaml
 kubectl wait --for=condition=complete --timeout=30m job/my-upgrade-v0-2-0
 kubectl set image deployment/my my=registry.example/my:v0.2.0
@@ -192,7 +193,7 @@ With SQLite on a volume, mount the same volume in the Job and stop the Deploymen
 ### Cloud Run
 
 Cloud Run jobs run one container each, so create one job per step and execute them in order with `--wait`, which fails when the job fails.
-Give the server-image jobs the same environment variables and secrets as the service.
+Give the jobs the same environment variables and secrets as the service.
 
 ```sh
 gcloud run services update my --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
@@ -200,8 +201,8 @@ gcloud run services update my --region=asia-northeast1 --update-env-vars=MY_MAIN
 
 gcloud run jobs deploy my-upgrade-check --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
   --args=db,upgrade,-check --set-env-vars=... --set-secrets=...
-gcloud run jobs deploy my-schema --region=asia-northeast1 --image=registry.example/my-schema:v0.2.0 \
-  --args=schema,apply,--url=...,--to=file:///schema/postgres,--dev-url=...,--auto-approve
+gcloud run jobs deploy my-schema --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
+  --args=schema,apply --set-env-vars=... --set-secrets=...
 gcloud run jobs deploy my-upgrade --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
   --args=db,upgrade --set-env-vars=... --set-secrets=...
 
@@ -211,7 +212,7 @@ gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run deploy my --region=asia-northeast1 --image=registry.example/my:v0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
-To check the SQL first, deploy the schema job with `--dry-run` in place of `--auto-approve`, execute it, and read its logs before redeploying it for the apply.
+To check the SQL first, deploy the schema job with `--args=schema,apply,-dry-run`, execute it, and read its logs before redeploying it for the apply.
 
 ### Backing up
 
@@ -238,7 +239,7 @@ There are no reverse migrations. To go back, restore the backup taken before the
 2. Restore the backup: with Compose, extract the archive into the emptied volume
    (`docker run --rm -v my_data:/data -v "$PWD":/backup busybox sh -c 'rm -rf /data/* && tar xzf /backup/<archive> -C /data'`);
    with PostgreSQL, `pg_restore --clean --if-exists --dbname=<url> <dump>`.
-3. Start the previous release's images (with Compose, check out the previous tag or set `MY_VERSION` back, then `docker compose up -d`).
+3. Start the previous release's image (with Compose, check out the previous tag or set `MY_VERSION` back, then `docker compose up -d`).
 
 Whatever the new release wrote after the upgrade is lost, so roll back soon after the upgrade, before the instance federates much.
 
@@ -277,19 +278,14 @@ Every row is lost and cannot be recovered. The account keys wrapped with the key
 same host name gets a different key and is a different Actor to other servers, and its remote follow relationships do not come back.
 A public instance that cannot apply a schema change [rolls back](#rolling-back) from its backup instead.
 
-Erasing never happens without confirmation:
-
-- `atlas schema clean` prints what it will drop (`DROP TABLE ...`), asks "Are you sure?", and erases only when you choose `Apply`.
-- Without a terminal (`docker compose run -T`, CI, a job) it cannot ask, exits with `1`, and erases nothing.
-- Only the explicit `--auto-approve` flag erases without asking. In procedures and scripts, check the target URL before adding it.
+There is no `my` command that erases a database: remove it with the tools of the database, then apply the schema again.
 
 ### Docker Compose
 
 ```sh
 cd deploy/docker
 docker compose stop my                  # stop the server
-docker compose run --rm --no-deps schema schema clean --url sqlite:///data/my.db
-#   it prints what it will drop; Apply erases, Abort cancels
+docker run --rm -v my_data:/data busybox rm -f /data/my.db /data/my.db-wal /data/my.db-shm
 docker compose up -d                    # the one-off services apply the schema to the empty database, then my starts
 ```
 
@@ -297,15 +293,17 @@ docker compose up -d                    # the one-off services apply the schema 
   `docker compose up -d`. Without `-v` the volume is kept.
 - To keep a copy first, stop the server and copy `my.db` (with its `-wal` and `-shm` files) from the volume.
 
-### PostgreSQL, or the schema image directly
+### PostgreSQL
+
+Drop the database and create it again, empty, with the same owner (or with the managed database's console), then run `my schema apply`:
 
 ```sh
-docker run --rm -it my-schema schema clean --url 'postgres://my:...@db.example/my?search_path=public'
+# stop every server and job that uses the database first
+dropdb --maintenance-db="postgres://postgres:...@db.example/postgres" my
+createdb --maintenance-db="postgres://postgres:...@db.example/postgres" --owner=my my
+my schema apply
 ```
-
-`clean` empties the schema in `search_path` (`public`). It may drop the extensions too, so start again from the preparation SQL in
-[Initializing](#initializing-applying-the-schema).
 
 ### From the repository (development)
 
-`scripts/task.sh db:reset` runs `atlas schema clean --auto-approve` and then `scripts/task.sh db:apply`. It erases without asking: use it on development databases only.
+`scripts/task.sh db:reset` empties `DB_URL` without asking and then runs `scripts/task.sh db:apply`: use it on development databases only.

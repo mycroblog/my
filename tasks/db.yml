@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The database schema (ADR-0023; the schema context of scripts/changed-contexts.sh): Atlas Community Edition,
-# pinned and checksum-verified by scripts/install-atlas.sh, and the dev PostgreSQL container.
+# The database schema (ADR-0023, ADR-0126; the schema context of scripts/changed-contexts.sh): db:apply, db:diff and
+# db:reset apply it with `my schema apply` of the working tree, as deployments do; db:check verifies the result, and
+# db:lint and db:lint-test check changes, with Atlas Community Edition, pinned and checksum-verified by
+# scripts/install-atlas.sh; db:up runs the dev PostgreSQL container.
 # Pick the dialect with DB_DIALECT and point DB_URL / DB_DEV_URL elsewhere to override the defaults.
 version: "3"
 
@@ -11,24 +13,27 @@ vars:
   PG_CONTAINER: '{{.PG_CONTAINER | default "my-postgres"}}'
   PG_IMAGE: '{{.PG_IMAGE | default "postgres:18-alpine"}}'
   PG_PORT: '{{.PG_PORT | default "5432"}}'
-  # PostgreSQL URLs are schema-scoped: Atlas manages only the `public` schema.
+  # The target database, as an Atlas URL. PostgreSQL URLs are schema-scoped: Atlas manages only the `public` schema.
   DB_URL: >-
     {{if .DB_URL}}{{.DB_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my?sslmode=disable&search_path=public{{else}}sqlite://my.db{{end}}
+  # Atlas's dev database, for db:check's `atlas schema diff`.
   DB_DEV_URL: >-
     {{if .DB_DEV_URL}}{{.DB_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_dev?sslmode=disable&search_path=public{{else}}sqlite://dev?mode=memory{{end}}
+  # `my schema apply` of the working tree on DB_URL as its `database_url` (a file path for SQLite). It builds the
+  # desired schema in memory (SQLite) or in a temporary schema of the target database (PostgreSQL), which also gets
+  # the bootstrap SQL from it.
+  MY: bin/my-schema-apply
+  MY_ENV: >-
+    MY_CONFIG= MY_DB={{shellQuote .DB_DIALECT}} MY_DATABASE_URL={{shellQuote (trimPrefix "sqlite://" .DB_URL)}}
   # db:lint's dev database, apart from DB_DEV_URL so that db:lint and db:check can run at once.
   DB_LINT_DEV_URL: >-
     {{if .DB_LINT_DEV_URL}}{{.DB_LINT_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_lint?sslmode=disable&search_path=public{{else}}sqlite://lint?mode=memory{{end}}
-  # Runs schema/postgres.bootstrap.sql (from stdin) against the target database before each apply.
-  # For a database outside the db:up container: PG_BOOTSTRAP='psql -v ON_ERROR_STOP=1 -q "postgres://..."'
-  PG_BOOTSTRAP: >-
-    {{.PG_BOOTSTRAP | default (printf "docker exec -i -e PGOPTIONS=--client-min-messages=warning %s psql -v ON_ERROR_STOP=1 -q -U my -d my" .PG_CONTAINER)}}
   # The dialect's schema: one file per module, which Atlas executes in name order (ADR-0082).
   DB_SCHEMA: schema/{{.DB_DIALECT}}
 
 tasks:
   check:
-    desc: Reset DB_URL, apply schema/<DB_DIALECT>/, and fail if any diff remains
+    desc: Reset DB_URL, apply schema/<DB_DIALECT>/ with my schema apply, and fail if Atlas finds any diff left
     deps: [reset]
     cmds:
       - |
@@ -57,7 +62,7 @@ tasks:
       - scripts/install-atlas.sh {{.ATLAS}}
 
   up:
-    desc: Start the dev PostgreSQL container (databases `my`, `my_dev`, and `my_lint`, all bootstrapped)
+    desc: Start the dev PostgreSQL container (database `my`, and `my_dev` and `my_lint` for Atlas, bootstrapped)
     silent: true
     cmds:
       - >-
@@ -70,8 +75,9 @@ tasks:
           docker exec {{.PG_CONTAINER}} psql -q -U my -d my -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 ||
             docker exec {{.PG_CONTAINER}} createdb -U my $db || exit 1
         done
+      # my schema apply runs the bootstrap SQL on `my` itself; Atlas's dev databases need it before Atlas runs.
       - |
-        for db in my my_dev my_lint; do
+        for db in my_dev my_lint; do
           docker exec -i -e PGOPTIONS=--client-min-messages=warning {{.PG_CONTAINER}} psql -v ON_ERROR_STOP=1 -q -U my -d $db < schema/postgres.bootstrap.sql || exit 1
         done
       - echo "PostgreSQL is up in container {{.PG_CONTAINER}} on localhost:{{.PG_PORT}}"
@@ -81,32 +87,31 @@ tasks:
     cmds:
       - docker rm -f {{.PG_CONTAINER}}
 
-  bootstrap:
-    desc: Run the dialect's bootstrap SQL against DB_URL (PostgreSQL only; no-op for SQLite)
+  my:
+    desc: Build the working tree's my into bin/my-schema-apply for db:apply and db:diff (without the web client)
+    internal: true
+    run: once
+    cmds:
+      - go build -o {{.MY}} ./cmd/my
+
+  apply:
+    desc: Apply schema/<DB_DIALECT>/ to DB_URL with my schema apply (DB_DIALECT=sqlite|postgres; ALLOW_DESTRUCTIVE=true)
     preconditions: &dialect
       - sh: case '{{.DB_DIALECT}}' in sqlite|postgres) true;; *) false;; esac
         msg: DB_DIALECT must be sqlite or postgres, got "{{.DB_DIALECT}}"
     cmds:
-      - cmd: "{{.PG_BOOTSTRAP}} < schema/postgres.bootstrap.sql"
-        if: '[ "{{.DB_DIALECT}}" = postgres ]'
-
-  apply:
-    desc: Apply schema/<DB_DIALECT>/ to DB_URL (DB_DIALECT=sqlite|postgres)
-    preconditions: *dialect
-    cmds:
-      - task: atlas
-      - task: bootstrap
-      - "{{.ATLAS}} schema apply --url '{{.DB_URL}}' --to 'file://{{.DB_SCHEMA}}' --dev-url '{{.DB_DEV_URL}}' --auto-approve"
+      - task: my
+      - '{{.MY_ENV}} {{.MY}} schema apply{{if eq (.ALLOW_DESTRUCTIVE | default "") "true"}} -allow-destructive{{end}}'
 
   diff:
-    desc: Print the SQL that would bring DB_URL to schema/<DB_DIALECT>/
-    deps: [atlas]
+    desc: Print the SQL that would bring DB_URL to schema/<DB_DIALECT>/ (my schema apply -dry-run)
+    deps: [my]
     preconditions: *dialect
     cmds:
-      - "{{.ATLAS}} schema diff --from '{{.DB_URL}}' --to 'file://{{.DB_SCHEMA}}' --dev-url '{{.DB_DEV_URL}}'"
+      - "{{.MY_ENV}} {{.MY}} schema apply -dry-run"
 
   reset:
-    desc: Drop everything in DB_URL, then apply the schema (destroys data)
+    desc: Drop everything in DB_URL with atlas schema clean, then db:apply (destroys data)
     deps: [atlas]
     preconditions: *dialect
     cmds:

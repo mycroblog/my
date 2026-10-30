@@ -3,13 +3,15 @@
 # The upgrade test of the release gate (docs/operations/releasing.md, "The upgrade test"): for each dialect, make a
 # database with the images of the previous release PREVIOUS (a tag), fill it through that release's server (two local
 # accounts, posts, a local follow, and a follow request to an account of remote.test, which the server fetches), then
-# upgrade it with the images of the working tree in the order that deploy/docker/compose.yaml runs (my db upgrade
-# -check, schema apply, my db upgrade, then the server) and check readiness, `my projection verify`, and that the data
+# upgrade it with the server image of the working tree in the order that deploy/docker/compose.yaml runs (my db upgrade
+# -check, my schema apply, my db upgrade, then the server) and check readiness, `my projection verify`, and that the data
 # reads back. The stack is deploy/docker/upgrade-test/compose.yaml.
 #
-# The previous release's images are built from its tag (git archive), or taken from MY_PREVIOUS_IMAGE and
-# MY_PREVIOUS_SCHEMA_IMAGE when both are set (a registry's images of that release). Prints the logs on failure and
-# always removes the stack and its volumes.
+# The previous release applies its schema with its own `my schema apply`, or, when it shipped a separate schema image
+# with Atlas (the `schema` target of its Dockerfile), with that image. Its images are built from its tag (git archive),
+# or taken from MY_PREVIOUS_IMAGE (the server) and MY_PREVIOUS_SCHEMA_IMAGE (the schema image, for such a release
+# only) when MY_PREVIOUS_IMAGE is set (a registry's images of that release). Prints the logs on failure and always
+# removes the stack and its volumes.
 #
 #   scripts/upgrade-test.sh v0.1.3                    # SQLite and PostgreSQL
 #   scripts/upgrade-test.sh v0.1.3 postgres
@@ -70,24 +72,28 @@ trap cleanup EXIT
 # --- Images --------------------------------------------------------------------------------------
 previous_image="${MY_PREVIOUS_IMAGE:-}"
 previous_schema_image="${MY_PREVIOUS_SCHEMA_IMAGE:-}"
-if [[ -n "$previous_image" && -n "$previous_schema_image" ]]; then
+if [[ -n "$previous_image" ]]; then
 	echo "upgrade-test: pulling the images of $previous" >&2
 	docker pull -q "$previous_image" >/dev/null
-	docker pull -q "$previous_schema_image" >/dev/null
+	if [[ -n "$previous_schema_image" ]]; then
+		docker pull -q "$previous_schema_image" >/dev/null
+	fi
 else
 	echo "upgrade-test: building the images of $previous from its tag" >&2
 	previous_image="my-upgrade-test:previous"
-	previous_schema_image="my-upgrade-test-schema:previous"
+	previous_schema_image=""
 	git -C "$root" archive --format=tar "$previous" |
 		docker build -q --build-arg "VERSION=$previous" --target app -t "$previous_image" - >/dev/null
-	git -C "$root" archive --format=tar "$previous" |
-		docker build -q --target schema -t "$previous_schema_image" - >/dev/null
+	if git -C "$root" show "$previous:Dockerfile" | grep -qE '^FROM .* AS schema$'; then
+		previous_schema_image="my-upgrade-test-schema:previous"
+		git -C "$root" archive --format=tar "$previous" |
+			docker build -q --target schema -t "$previous_schema_image" - >/dev/null
+	fi
 fi
-echo "upgrade-test: building the images of $candidate" >&2
+export MY_PREVIOUS_SCHEMA_IMAGE="$previous_schema_image"
+echo "upgrade-test: building the image of $candidate" >&2
 candidate_image="my-upgrade-test:candidate"
-candidate_schema_image="my-upgrade-test-schema:candidate"
 docker build -q --build-arg "VERSION=$candidate" --target app -t "$candidate_image" "$root" >/dev/null
-docker build -q --target schema -t "$candidate_schema_image" "$root" >/dev/null
 
 # --- The private CA, remote.test, and the previous release's PostgreSQL preparation ---------------
 remote_test_files "$work"
@@ -134,6 +140,7 @@ run() {
 	export MY_DB="$dialect"
 	if [[ "$dialect" == sqlite ]]; then
 		export MY_DATABASE_URL=/data/my.db
+		# SCHEMA_URL and SCHEMA_DEV_URL: the Atlas URLs of the previous-schema service, for a release with a schema image.
 		export SCHEMA_URL=sqlite:///data/my.db
 		export SCHEMA_DEV_URL='sqlite://dev?mode=memory'
 	else
@@ -142,10 +149,15 @@ run() {
 		export SCHEMA_DEV_URL='postgres://my:my@db:5432/my_dev?sslmode=disable&search_path=public'
 	fi
 
-	# The previous release: apply its schema, start its server, and fill the database through it.
-	export MY_IMAGE="$previous_image" MY_SCHEMA_IMAGE="$previous_schema_image"
+	# The previous release: apply its schema (with its schema image if it has one), start its server, and fill the
+	# database through it.
+	export MY_IMAGE="$previous_image"
 	"${compose[@]}" up -d --wait db remote
-	"${compose[@]}" run --rm --no-deps schema >/dev/null
+	if [[ -n "$previous_schema_image" ]]; then
+		"${compose[@]}" run --rm --no-deps previous-schema >/dev/null
+	else
+		"${compose[@]}" run --rm --no-deps schema >/dev/null
+	fi
 	"${compose[@]}" up -d --no-deps my
 	wait_ready
 
@@ -170,9 +182,9 @@ run() {
 	out="$(api POST "/accounts/$carol/follow" "$alice_token")"
 	expect "alice follows carol" "$out" '.following == true or .requested == true'
 
-	# The candidate: stop the previous server, then upgrade-check, schema, upgrade, and the new server, in order.
+	# The candidate: stop the previous server, then upgrade-check, my schema apply, upgrade, and the new server, in order.
 	"${compose[@]}" stop my >/dev/null
-	export MY_IMAGE="$candidate_image" MY_SCHEMA_IMAGE="$candidate_schema_image"
+	export MY_IMAGE="$candidate_image"
 	"${compose[@]}" up -d my
 	wait_ready
 	local svc id state
@@ -184,6 +196,8 @@ run() {
 	done
 	out="$("${compose[@]}" logs --no-color upgrade-check)"
 	[[ "$out" == *"ok: "* ]] || fail "upgrade-check did not report ok: $out"
+	out="$("${compose[@]}" logs --no-color schema)"
+	[[ "$out" == *"ok: "* ]] || fail "my schema apply did not report ok: $out"
 	out="$("${compose[@]}" logs --no-color upgrade)"
 	[[ "$out" == *"ok: "*"data upgrade step"* ]] || fail "upgrade did not report ok: $out"
 	out="$("${compose[@]}" exec -T my my version)"

@@ -1,8 +1,9 @@
 # Desired-state schema
 
-The database schema of each dialect (ADR-0023): Atlas Community Edition diffs it against the target database and applies
-the difference (`scripts/task.sh db:apply DB_DIALECT=sqlite|postgres`; for PostgreSQL, against the `public` schema of the
-target database). Never write migration SQL by hand.
+The database schema of each dialect (ADR-0023, ADR-0126). `my schema apply` embeds it, diffs it against the target database
+with the Atlas Go library (Community Edition), and applies the difference (`scripts/task.sh db:apply DB_DIALECT=sqlite|postgres`;
+for PostgreSQL, against the `public` schema of the target database). The Atlas CLI checks changes to it (`db:lint`) and that
+nothing is left to apply (`db:check`). Never write migration SQL by hand.
 
 ## Layout
 
@@ -16,7 +17,8 @@ target database). Never write migration SQL by hand.
   another module's queries.
 - Edit the same file in every dialect together: both directories have the same files, and each file declares the same
   tables in the same order (`schema_test.go`).
-- `postgres.bootstrap.sql` runs before the schema on every PostgreSQL database (`scripts/task.sh db:up`, `db:bootstrap`).
+- `postgres.bootstrap.sql` runs before the schema on every PostgreSQL database: `my schema apply` runs it on the target,
+  and `scripts/task.sh db:up` on Atlas's dev databases.
 
 ## Conventions
 

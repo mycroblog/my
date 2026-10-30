@@ -22,7 +22,7 @@ default locale, who can see the timelines, the instance name, description, terms
 ## Prerequisites
 
 - The configuration is given as described in the [configuration reference](../reference/configuration.md) (`my config check`).
-- The schema is applied to the database (apply `schema/<dialect>/` with Atlas).
+- The schema is applied to the database (`my schema apply`; see [Database](database.md)).
 
 ## Keys
 

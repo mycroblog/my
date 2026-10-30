@@ -3,8 +3,7 @@
 #
 # Container images for cmd/my (ADR-0010): multi-arch (linux/amd64, linux/arm64), static, non-root, distroless.
 #
-#   docker build -t my .                       # the server (default target "app")
-#   docker build -t my-schema --target schema . # Atlas Community Edition + schema/ (ADR-0023)
+#   docker build -t my .    # the server (default target "app"), which also applies the schema (my schema apply, ADR-0126)
 #
 # Base images are pinned by tag and multi-arch index digest. The Go, Node.js, and Bun tags must match .tool-versions.
 
@@ -68,23 +67,6 @@ RUN --mount=type=bind,target=. \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
-
-# Atlas Community Edition for the target platform, at the version and checksum pinned in scripts/install-atlas.sh.
-FROM ${GO_IMAGE} AS atlas
-RUN --mount=type=bind,source=scripts/install-atlas.sh,target=/install-atlas.sh \
-    /install-atlas.sh /out/atlas
-
-# One-shot schema apply: `atlas schema apply` with the directory schema/<dialect> under /schema (ADR-0023).
-FROM ${RUNTIME_IMAGE} AS schema
-COPY --from=atlas /out/atlas /usr/local/bin/atlas
-COPY schema/*.sql /schema/
-COPY schema/sqlite /schema/sqlite/
-COPY schema/postgres /schema/postgres/
-# Owned by the non-root user so that a named volume mounted here starts out writable.
-COPY --from=build --chown=nonroot:nonroot /out/data /data
-WORKDIR /data
-ENTRYPOINT ["/usr/local/bin/atlas"]
-CMD ["version"]
 
 FROM ${RUNTIME_IMAGE} AS app
 COPY --from=build /out/my /usr/local/bin/my

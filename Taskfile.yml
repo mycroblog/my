@@ -13,8 +13,9 @@ version: "3"
 output: prefixed
 
 vars:
-  # Licenses compatible with AGPL-3.0-only (ADR-0011). Anything else, including unknown, fails.
-  GO_ALLOWED_LICENSES: 0BSD,AGPL-3.0,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,MPL-2.0,Unlicense,Zlib
+  # Licenses compatible with AGPL-3.0-only (ADR-0011). Anything else, including unknown, fails. Unicode-DFS-2016 is
+  # the permissive license of the Unicode data tables in go-textseg, which the Atlas library's HCL parser uses.
+  GO_ALLOWED_LICENSES: 0BSD,AGPL-3.0,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,MPL-2.0,Unicode-DFS-2016,Unlicense,Zlib
   # npm dependencies of tools/i18n and of the client workspace app/ must satisfy the same allowlist, plus the
   # permissive BlueOak-1.0.0 and MIT-0 (no attribution clause), which jsdom's dependencies use.
   NPM_ALLOWED_LICENSES: "{{.GO_ALLOWED_LICENSES}},BlueOak-1.0.0,MIT-0"
