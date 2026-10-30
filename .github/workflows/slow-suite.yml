@@ -88,11 +88,11 @@ jobs:
             run: scripts/task.sh docker:build-arm64
 
   upgrade:
-    # A database made and filled by the previous release's images, upgraded with this commit's images in the order of
-    # deploy/docker/compose.yaml (my db upgrade -check, schema apply, my db upgrade), on SQLite and PostgreSQL
+    # A database made and filled by the previous release's images, upgraded with this commit's server image in the order
+    # of deploy/docker/compose.yaml (my db upgrade -check, my schema apply, my db upgrade), on SQLite and PostgreSQL
     # (scripts/upgrade-test.sh). The previous release's images are built from its tag; once releases publish their
-    # images, MY_PREVIOUS_IMAGE and MY_PREVIOUS_SCHEMA_IMAGE take them from the registry instead. Without a previous
-    # minor version (the first one, v0.1.0) the test is skipped and the job passes.
+    # images, MY_PREVIOUS_IMAGE (and MY_PREVIOUS_SCHEMA_IMAGE for a release with a schema image) take them from the
+    # registry instead. Without a previous minor version (the first one, v0.1.0) the test is skipped and the job passes.
     runs-on: ubuntu-latest
     steps:
       # Every tag, to pick the previous release and build its images; the images take their version from `git describe`.

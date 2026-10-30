@@ -47,9 +47,8 @@ tasks:
   # The smoke test covers linux/amd64. The Go server cross-builds with CGO_ENABLED=0, so only a change to the Dockerfile
   # or the deployments makes the arm64 images differ (ADR-0010): CI builds them in the slow suite alone (ADR-0079).
   build-arm64:
-    desc: Build both images (schema, app) for linux/arm64 (needs an arm64 host or QEMU)
+    desc: Build the server image for linux/arm64 (needs an arm64 host or QEMU)
     cmds:
-      - docker build --platform linux/arm64 --target schema .
       - docker build --platform linux/arm64 --target app .
 
   smoke:
@@ -61,7 +60,7 @@ tasks:
 
   # Not part of `check`: it builds the images of two releases and takes minutes (CI job upgrade, in the slow suite).
   upgrade-test:
-    desc: Upgrade databases made by the release PREVIOUS (a tag) with this tree's images and check the data (DIALECTS, default both)
+    desc: Upgrade databases made by the release PREVIOUS (a tag) with this tree's server image and check the data (DIALECTS, default both)
     requires:
       vars: [PREVIOUS]
     cmds:

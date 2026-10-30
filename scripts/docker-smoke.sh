@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Smoke test of deploy/docker/compose.yaml: build the images, start the stack on an empty volume (my db upgrade -check,
-# schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
+# Smoke test of deploy/docker/compose.yaml: build the server image, start the stack on an empty volume (my db upgrade -check,
+# my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
 # NodeInfo, and the embedded web client, and sign in as the web client does over plain HTTP on localhost
 # (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
 # one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
@@ -56,6 +56,7 @@ wait_ready() {
 }
 
 # The one-off services run in this order, each after the previous one exited with 0, and then the server starts.
+# check_order WANT also checks that my schema apply printed WANT: statements applied on an empty volume, none after.
 order=(upgrade-check schema upgrade my)
 check_order() {
 	local prev_end="" svc id state started
@@ -75,6 +76,8 @@ check_order() {
 	local out
 	out="$("${compose[@]}" logs --no-color upgrade-check)"
 	[[ "$out" == *"ok: the database can be upgraded to this release"* ]] || fail "upgrade-check did not report ok: $out"
+	out="$("${compose[@]}" logs --no-color schema)"
+	[[ "$out" == *"$1"* ]] || fail "schema did not report \"$1\": $out"
 	out="$("${compose[@]}" logs --no-color upgrade)"
 	[[ "$out" == *"ok: "*"data upgrade step"* ]] || fail "upgrade did not report ok: $out"
 }
@@ -88,7 +91,7 @@ fi
 
 "${compose[@]}" up -d --build
 wait_ready
-check_order
+check_order "statement(s) applied"
 
 "${compose[@]}" exec -T my my version
 printf 'smoke-test-password\n' | "${compose[@]}" exec -T my my admin create -username alice -email alice@example.com
@@ -139,7 +142,7 @@ echo "$me" | jq -e '.username == "alice"' >/dev/null || fail "unexpected verify_
 echo "docker-smoke: starting again on the same volume" >&2
 "${compose[@]}" up -d --force-recreate
 wait_ready
-check_order
+check_order "ok: the database matches the schema; nothing to apply"
 curl -fsS "$base/.well-known/webfinger?resource=acct:alice@$MY_HOST" | jq -e --arg subject "acct:alice@$MY_HOST" '.subject == $subject' >/dev/null ||
 	fail "the account is gone after the second start"
 curl -fsS "$base/nodeinfo/2.1" | jq -e '.usage.users.total == 1' >/dev/null || fail "unexpected NodeInfo after the second start"
