@@ -103,6 +103,7 @@ describe("the list of the open rooms", () => {
         description: "",
         hashtags: [],
         participants_count: 1,
+        icon: { name: "\u{1F4DA}" },
       }),
     ]);
     const { user } = await renderApp({ path: "/home" });
@@ -111,7 +112,9 @@ describe("the list of the open rooms", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Voice chat" })).toBeInTheDocument();
     const list = screen.getByRole("list", { name: "Open rooms" });
     const rooms = within(list).getAllByRole("heading", { level: 2 });
-    expect(rooms.map((heading) => heading.textContent)).toEqual(["Friday night radio", "Quiet study"]);
+    // A room's icon comes before its name and only decorates: the heading and its link are named by the name.
+    expect(rooms.map((heading) => heading.textContent)).toEqual(["Friday night radio", "\u{1F4DA}Quiet study"]);
+    expect(within(list).getByRole("heading", { level: 2, name: "Quiet study" })).toBeInTheDocument();
     expect(within(list).getByRole("link", { name: "Friday night radio" })).toHaveAttribute("href", `/voice/${roomId}`);
     expect(within(list).getAllByRole("link", { name: /Bob/u })[0]).toHaveAttribute("href", "/@bob");
     expect(within(list).getByText("Talking about the week's music.")).toHaveAttribute("dir", "auto");
@@ -313,7 +316,8 @@ describe("the page of a room", () => {
       http.patch(`${apiBase}/voice/rooms/:id`, async ({ request }) => {
         const update = (await request.json()) as Schemas["VoiceRoomUpdate"];
         updates.push(update);
-        const room = ownRoomFixture({ ...update });
+        const { icon, ...rest } = update;
+        const room = ownRoomFixture({ ...rest, ...(icon !== undefined && icon !== "" && { icon: { name: icon } }) });
         voiceOn([room]);
         return withViewer(request, () => HttpResponse.json(room));
       }),
@@ -331,6 +335,74 @@ describe("the page of a room", () => {
     });
     expect(updates).toEqual([{ speakers: "everyone" }]);
   });
+
+  test("shows the room's icon before its name, and lets the host choose a custom emoji as the icon and remove it", async () => {
+    const blobcat = {
+      shortcode: "blobcat",
+      url: "https://media.example/emoji/blobcat.png",
+      static_url: "https://media.example/emoji/blobcat.png",
+    };
+    server.use(
+      signedInHandler,
+      http.get(`${apiBase}/custom_emojis`, () =>
+        HttpResponse.json({ items: [{ ...blobcat, aliases: [] }] } satisfies Schemas["PickerCustomEmojiList"]),
+      ),
+    );
+    let current = ownRoomFixture({ icon: { name: "\u{1F3B5}" } });
+    voiceOn([current]);
+    const updates: Schemas["VoiceRoomUpdate"][] = [];
+    server.use(
+      http.patch(`${apiBase}/voice/rooms/:id`, async ({ request }) => {
+        const update = (await request.json()) as Schemas["VoiceRoomUpdate"];
+        updates.push(update);
+        const { icon, ...rest } = update;
+        const { icon: _previous, ...room } = { ...current, ...rest };
+        current =
+          icon === "blobcat" ? { ...room, icon: { name: "blobcat", emoji: blobcat } } : icon === "" ? room : current;
+        voiceOn([current]);
+        return withViewer(request, () => HttpResponse.json(current));
+      }),
+    );
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    // The icon decorates the heading, which the name alone still names.
+    const heading = await screen.findByRole("heading", { level: 1, name: "Friday night radio" });
+    expect(heading).toHaveTextContent("\u{1F3B5}Friday night radio");
+
+    await user.click(await screen.findByRole("button", { name: "Room settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "Room settings" });
+    expect(within(dialog).getByRole("group", { name: "Icon" })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Change" }));
+    const picker = await screen.findByRole("dialog", { name: "Emoji" });
+    await within(picker).findByRole("searchbox", { name: "Search emoji" });
+    await user.click(await within(picker).findByRole("gridcell", { name: ":blobcat:" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(updates).toEqual([{ icon: "blobcat" }]);
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("heading", { level: 1, name: "Friday night radio" })).getByRole("img", {
+          hidden: true,
+          name: ":blobcat:",
+        }),
+      ).toHaveAttribute("src", blobcat.static_url);
+    });
+
+    await user.click(screen.getByRole("button", { name: "Room settings" }));
+    const again = await screen.findByRole("dialog", { name: "Room settings" });
+    await user.click(within(again).getByRole("button", { name: "Remove icon" }));
+    expect(within(again).getByRole("button", { name: "Choose an emoji" })).toHaveFocus();
+    await user.click(within(again).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(updates).toEqual([{ icon: "blobcat" }, { icon: "" }]);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1, name: "Friday night radio" })).toHaveTextContent(
+        /^Friday night radio$/u,
+      );
+    });
+  }, 30_000);
 
   test("on wide screens, the third column says who sees the room and who speaks, with the host's button to the settings", async () => {
     stubWideScreen();

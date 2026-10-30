@@ -2,7 +2,7 @@
 start: "/voice"
 persona: "yuki"
 paths: ["app/web/src/features/voice/**", "app/ui/src/VoiceRoomCard.tsx", "app/ui/src/LivePill.tsx"]
-unavailable: {"ナビゲーションから来て、開いているルームの 1 つに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "名前を付けてルームを開く（ルームを開ける利用者）": "opening a room joins its host to the call, which needs a microphone in the agent's browser", "通話の途中に、参加中のルームを一覧で見つけて、その画面に戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
+unavailable: {"ナビゲーションから来て、開いているルームの 1 つに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "名前を付けてルームを開く（ルームを開ける利用者）": "opening a room joins its host to the call, which needs a microphone in the agent's browser", "名前とアイコンの絵文字を付けてルームを開く（ルームを開ける利用者）": "opening a room joins its host to the call, which needs a microphone in the agent's browser", "通話の途中に、参加中のルームを一覧で見つけて、その画面に戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
 ---
 
 ## 通話のルームの一覧（`/voice`）
@@ -23,10 +23,12 @@ unavailable: {"ナビゲーションから来て、開いているルームの 1
 | --- | --- |
 | ナビゲーションから来て、開いているルームの 1 つに参加する | 3 |
 | 名前を付けてルームを開く（ルームを開ける利用者） | 3 |
+| 名前とアイコンの絵文字を付けてルームを開く（ルームを開ける利用者） | 5 |
 | 通話の途中に、参加中のルームを一覧で見つけて、その画面に戻る | 2 |
 
 手順は、ナビゲーションの「通話」を開く 1 つ、ルームの名前（カードの見出しのリンク）を押す 1 つ、ルームの画面の「参加する」を押す 1 つ。
 ルームを開くのは、「ルームを開く」・名前の入力・ダイアログの「ルームを開く」（送信）の 3 つ。
+アイコンを付けるときは、その間に「絵文字を選ぶ」と、ピッカーの絵文字（よく使うもの・カスタム絵文字・検索で見つけたもの）を押す 2 つが加わる。
 
 ### 3. 情報の優先順位とまとまり
 
@@ -36,7 +38,9 @@ unavailable: {"ナビゲーションから来て、開いているルームの 1
 2. 開いているルームのカードの一覧（「開いているルーム」という名前の `ul`）。カードの見出し（`h2`）はルームの名前で、ルームの画面へのリンクにする。
    カードには、上から次を出す。
    - ライブのピル、利用者が通話中のルームなら「参加中」のバッジ（`StatusBadge`）、人数と開いてからの時間。
-   - ルームの名前。
+   - ルームの名前。アイコンの絵文字（FR-923。Unicode 絵文字か、このサーバーのカスタム絵文字）があれば、名前の左に同じ高さで出す。
+     アイコンは飾りで支援技術には読ませず（`aria-hidden`）、見出しとリンクの名前はルームの名前だけにする。
+     カスタム絵文字が無効・削除になったルームは、アイコンなしで出す。
    - 話者のアバターの重なりとホストの名前・「ホスト」。
    - 説明と、ハッシュタグ（それぞれハッシュタグの画面へのリンク。ステージと同じく押せる）。
 3. ルームがないときは、通話のアイコンを添えた空の状態（`EmptyState`）。続きがあれば「ほかのルームを表示」。
@@ -45,6 +49,8 @@ unavailable: {"ナビゲーションから来て、開いているルームの 1
 
 - 主な操作は、ルームの画面に移ること（カードの見出しのリンク）。参加は、ルームの画面で行う。
 - ルームを開くダイアログは、まとめて保存（送信のボタン）。開くとホストとして通話に入り、ルームの画面に移る。
+- ダイアログの名前の次に「アイコン」の欄（`fieldset`）を置く。「絵文字を選ぶ」が投稿フォームと同じ絵文字ピッカー（ADR-0091。カスタム絵文字を含む）をポップオーバーで開き、
+  選ぶとボタンが選んだ絵文字と「変える」になり、その隣に「アイコンを外す」が出る。外すとフォーカスは「絵文字を選ぶ」に戻る。アイコンは任意。
 
 ### 5. 操作ごとの結果の出し方
 

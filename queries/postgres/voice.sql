@@ -6,8 +6,8 @@
 INSERT INTO voice_rooms (id, opened_by_account_id, opened_at, transport) VALUES ($1, $2, $3, $4);
 
 -- name: InsertVoiceRoomRevision :exec
-INSERT INTO voice_room_revisions (id, room_id, name, description, visibility, speakers, revised_by_account_id, revised_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+INSERT INTO voice_room_revisions (id, room_id, name, description, visibility, speakers, icon_emoji_key, icon_custom_emoji_id, revised_by_account_id, revised_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
 -- name: InsertVoiceRoomRevisionHashtag :exec
 INSERT INTO voice_room_revision_hashtags (revision_id, position, name, name_normalized) VALUES ($1, $2, $3, $4);
@@ -70,7 +70,7 @@ SELECT participation_id, reason, ended_at FROM voice_room_participation_ends WHE
 -- name: GetVoiceRoom :one
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id
@@ -83,7 +83,7 @@ WHERE r.id = $1;
 -- name: ListOpenVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_room_heads h
 JOIN voice_rooms r ON r.id = h.room_id
@@ -101,7 +101,7 @@ ORDER BY h.participants_count DESC, h.room_id;
 -- name: ListHostedVoiceRooms :many
 SELECT r.id, r.opened_by_account_id, r.opened_at, r.transport,
   h.revision_id, h.host_account_id, h.state, h.participants_count,
-  v.name, v.description, v.visibility, v.speakers, v.revised_by_account_id, v.revised_at,
+  v.name, v.description, v.visibility, v.speakers, v.icon_emoji_key, v.icon_custom_emoji_id, v.revised_by_account_id, v.revised_at,
   e.reason AS end_reason, e.ended_by_account_id, e.ended_at, e.note AS end_note
 FROM voice_rooms r
 JOIN voice_room_heads h ON h.room_id = r.id

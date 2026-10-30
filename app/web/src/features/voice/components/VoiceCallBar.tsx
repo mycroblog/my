@@ -23,6 +23,7 @@ import {
   MicrophoneControl,
   PlaybackButton,
 } from "./VoiceCallParts";
+import { RoomName } from "./RoomName";
 
 export type VoiceCallBarProps = {
   /** Whether the page has the bottom tab bar below md (the app's frame), not the admin frame. */
@@ -59,7 +60,7 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
           avatars={[]}
           title={
             <Link href={voiceRoomPath(ended.room.id)} variant="standalone">
-              <span dir="auto">{ended.room.name}</span>
+              <RoomName name={ended.room.name} icon={ended.room.icon} />
             </Link>
           }
           notice={
@@ -85,7 +86,7 @@ export function VoiceCallBar({ clearsTabBar = true }: VoiceCallBarProps) {
         avatars={speakerAvatars(controls)}
         title={
           <Link href={voiceRoomPath(controls.room.id)} variant="standalone">
-            <span dir="auto">{controls.room.name}</span>
+            <RoomName name={controls.room.name} icon={controls.room.icon} />
           </Link>
         }
         status={

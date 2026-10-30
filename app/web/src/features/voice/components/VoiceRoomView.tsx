@@ -10,6 +10,7 @@ import { useT } from "../../../lib/i18n";
 import { signInPath } from "../../../lib/paths";
 import { voiceRoomPath } from "../api/voice";
 import { useVoiceRoomPage } from "../hooks/useVoiceRoomPage";
+import { RoomName } from "./RoomName";
 import { AccountLink } from "./VoiceRoomAside";
 import { VoiceStageSkeleton } from "./VoiceSkeletons";
 import { VoiceStage } from "./VoiceStage";
@@ -80,7 +81,11 @@ export function VoiceRoomView({ id, renderHeading }: VoiceRoomViewProps) {
       return (
         <>
           {renderHeading(
-            summary.name === undefined ? t("client:voice.room.title") : <span dir="auto">{summary.name}</span>,
+            summary.name === undefined ? (
+              t("client:voice.room.title")
+            ) : (
+              <RoomName name={summary.name} icon={summary.icon} />
+            ),
           )}
           <Stack gap="4">
             {summary.host !== undefined && <AccountLink account={summary.host} />}

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
+  of this server with its image. A room whose custom emoji is later disabled or deleted shows
+  no icon.
+type: object
+required: [name]
+properties:
+  name:
+    description: |
+      The emoji as the settings of a room take it: the Unicode emoji, or the shortcode of a
+      custom emoji of this server, without colons.
+    type: string
+  emoji:
+    description: The custom emoji with its image; omitted for a Unicode emoji.
+    $ref: ./CustomEmoji.yaml

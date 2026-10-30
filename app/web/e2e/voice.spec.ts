@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
-// from the navigation (the rail from md, the menu's sheet below it), the dialog that starts a room, a room's page with
-// its stage (the speakers and the listeners) and the notice before joining, the call after joining (its dock clear of
-// the tab bar, a raised hand, and the mini-player that it keeps on other pages), all
-// axe-clean and without horizontal scroll; and the room's page of a visitor who is not signed in. `vite preview` has
-// no API, so the spec answers the token refresh and the client API with `page.route`, as a server with voice chat on
-// would (a call between two browsers needs a server with voice chat on, which e2e/server.ts does not configure).
+// from the navigation (the rail from md, the menu's sheet below it), each with its emoji icon before its name, the
+// dialog that starts a room (with the field of its icon), a room's page with its stage (the speakers and the
+// listeners) and the notice before joining, the call after joining (its dock clear of the tab bar, a raised hand, and
+// the mini-player that it keeps on other pages), all axe-clean and without horizontal scroll; and the room's page of a
+// visitor who is not signed in. `vite preview` has no API, so the spec answers the token refresh and the client API
+// with `page.route`, as a server with voice chat on would (a call between two browsers needs a server with voice chat
+// on, which e2e/server.ts does not configure).
 // Names come from the project's catalog, so the spec finds the same elements in every locale.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
@@ -91,6 +92,8 @@ const roomId = "0192f0c4-7a8e-7000-8000-0000000000f1";
 const room: Schemas["VoiceRoom"] = {
   id: roomId,
   name: "Friday night radio with a name long enough to wrap on a phone",
+  // The icon decorates the name wherever it shows (the cards, the stage, the mini-player), which the name still names.
+  icon: { name: "\u{1F4FB}" },
   description: "Talking about the week's music.\nRequests welcome.",
   hashtags: ["music", "radio"],
   visibility: "local",
@@ -234,6 +237,7 @@ test.describe("the voice chat pages", () => {
   test("lists the open rooms, axe-clean and without horizontal scroll", async ({ page, makeAxeBuilder }) => {
     const list = page.getByRole("list", { name: message("voice.list.label") });
     await expect(list.getByRole("heading", { level: 2, name: room.name })).toBeVisible();
+    await expect(list.getByRole("heading", { level: 2, name: room.name })).toContainText(`\u{1F4FB}${room.name}`);
     await expect(list.getByText(message("voice.room.live"), { exact: true }).first()).toBeVisible();
     await expect(list.getByText(message("voice.role.host"), { exact: true }).first()).toBeVisible();
     await expect(list.getByText(room.hashtags.map((tag) => `#${tag}`)[0] ?? "")).toBeVisible();
@@ -249,6 +253,11 @@ test.describe("the voice chat pages", () => {
     const dialog = page.getByRole("dialog", { name: message("voice.form.new_title") });
     await expect(dialog.getByRole("textbox", { name: message("voice.form.name") })).toBeFocused();
     await expect(dialog.getByRole("checkbox", { name: message("voice.form.post") })).toBeChecked();
+    await expect(
+      dialog
+        .getByRole("group", { name: message("voice.form.icon") })
+        .getByRole("button", { name: message("voice.form.icon.choose") }),
+    ).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
