@@ -7978,7 +7978,7 @@ export interface components {
         /** @description An announcement with its Markdown text and its state. */
         AdminAnnouncement: {
             id: components["schemas"]["Id"];
-            /** @description The heading, in plain text; empty only for an announcement written before announcements had titles. */
+            /** @description The heading, in plain text; empty for an announcement without one. */
             title: string;
             /** @description The text, in Markdown. */
             text: string;
@@ -9602,7 +9602,7 @@ export interface components {
             id: components["schemas"]["Id"];
             /**
              * @description The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
-             *     Empty only for an announcement written before announcements had titles.
+             *     Empty for an announcement without one.
              */
             title: string;
             /**

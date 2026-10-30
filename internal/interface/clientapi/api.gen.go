@@ -4632,7 +4632,7 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
-	// Title The heading, in plain text; empty only for an announcement written before announcements had titles.
+	// Title The heading, in plain text; empty for an announcement without one.
 	Title string `json:"title"`
 
 	// UpdatedAt When its text or window last changed.
@@ -6633,7 +6633,7 @@ type Announcement struct {
 	Read bool `json:"read"`
 
 	// Title The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
-	// Empty only for an announcement written before announcements had titles.
+	// Empty for an announcement without one.
 	Title string `json:"title"`
 
 	// UpdatedAt When its text or window last changed.

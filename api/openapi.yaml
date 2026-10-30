@@ -11848,7 +11848,7 @@ components:
         id:
           $ref: '#/components/schemas/Id'
         title:
-          description: The heading, in plain text; empty only for an announcement written before announcements had titles.
+          description: The heading, in plain text; empty for an announcement without one.
           type: string
         text:
           description: The text, in Markdown.
@@ -14674,7 +14674,7 @@ components:
         title:
           description: |
             The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
-            Empty only for an announcement written before announcements had titles.
+            Empty for an announcement without one.
           type: string
         content:
           description: |
