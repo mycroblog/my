@@ -272,7 +272,7 @@ func timelineListTimeline(t *testing.T, e *timelineEnv) {
 	own := e.public(t, alice)
 	bobBoostsEve := e.boost(t, bob, eves)
 	e.boost(t, eve, carols) // eve is no member
-	e.boost(t, carol, own) // found in the page below
+	e.boost(t, carol, own)  // found in the page below
 	want = append(want, toAlice.ID, carols.ID, daves.ID, bobBoostsEve.ID)
 	page, err := e.svc.ListTimeline(ctx, viewerOf(alice), l.ID, apptimeline.Query{Limit: apptimeline.MaxLimit})
 	if err != nil {
