@@ -145,6 +145,7 @@ export {
   type SaveState,
 } from "./SaveIndicator";
 export { ChangeNotice, type ChangeNoticeProps } from "./ChangeNotice";
+export { ActionResult, type ActionResultValue } from "./ActionResult";
 export { FormActionBar, type FormActionBarProps, type FormActionResult } from "./FormActionBar";
 export { VisuallyHidden, type VisuallyHiddenProps } from "./VisuallyHidden";
 
@@ -188,6 +189,7 @@ export {
   LanguageIcon,
   LeaveIcon,
   ListenIcon,
+  ListsIcon,
   LocalIcon,
   MenuIcon,
   MicrophoneIcon,
