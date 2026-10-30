@@ -158,8 +158,8 @@ An instance has a domain and a name, separately.
 The contact for the operators (`contact_account`, `contact_email`) and the image that represents the instance (`thumbnail`
 and the text `thumbnail_alt`) appear in the places below. Whatever is unset does not appear.
 
-- "About this server" of the web client (`/about`). The thumbnail also appears on the first screen (`/`) for people who are not
-  signed in.
+- "About this server" of the web client (`/about`). The thumbnail and the contact account also appear on the first screen (`/`)
+  for people who are not signed in.
 - `contact` (`account` and `email`) and `thumbnail` (`url`, `width`, `height`, `alt`) in `GET /api/v1/instance`.
 - `metadata` in NodeInfo: `maintainer` by the Misskey convention (`name` is the display name of the contact account, or its
   username when it has none; `email` is `contact_email`), `staffAccounts` by the Pleroma and Akkoma convention (the actor ID of

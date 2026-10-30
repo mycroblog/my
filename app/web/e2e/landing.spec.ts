@@ -51,7 +51,7 @@ function status(n: number, content: string): Status {
   };
 }
 
-/** The counts of a small server and the administrator who runs it. */
+/** The counts of a small server. */
 const overview: InstanceOverview = {
   counts: {
     members: 120,
@@ -59,17 +59,6 @@ const overview: InstanceOverview = {
     started_at: "2026-03-14T00:00:00Z",
     counted_at: "2026-10-28T00:00:00Z",
   },
-  operators: [
-    {
-      ...account,
-      id: "0192f0c4-7a8e-7000-8000-000000000007",
-      username: "olive",
-      acct: "olive",
-      display_name: "Olive",
-      url: "https://my.example/@olive",
-      badges: [{ role_id: "0192f0c4-7a8e-7000-8000-0000000000b1", label: "Admin", color: "red" }],
-    },
-  ],
 };
 
 /** Plays the instance, its overview and its local timeline for a visitor without a session. */
@@ -137,8 +126,6 @@ test.describe("the landing page", () => {
         - list:
           - listitem
           - listitem
-          - listitem:
-            - link
         - link
         - button
         - link
@@ -154,10 +141,6 @@ test.describe("the landing page", () => {
           - heading [level=2]
           - paragraph: We grow vegetables, herbs and flowers.
           - paragraph: Everyone is welcome, whatever the size of their garden.
-          - heading [level=3]
-          - list:
-            - listitem:
-              - link
           - heading [level=3]
           - feed:
             - article

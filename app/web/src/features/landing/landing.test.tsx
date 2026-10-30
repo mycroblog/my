@@ -10,10 +10,10 @@ import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { newTabName, visibleText } from "../../test/links";
-import { overviewFixture } from "./test/handlers";
+import { instanceWithContact, overviewFixture } from "./test/handlers";
 
 function serveInstance(overrides: Partial<Instance>) {
-  server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, ...overrides })));
+  server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceWithContact, ...overrides })));
 }
 
 function serveOverview(overview: InstanceOverview) {
@@ -38,6 +38,7 @@ describe("the landing page", () => {
   beforeEach(() => {
     // The progress line marks the section in view; jsdom has no layout, so nothing is marked.
     Element.prototype.scrollIntoView = vi.fn();
+    serveInstance({});
   });
 
   test("shows the server's masthead: its name, domain, summary, counts and who runs it, with signing in at the top", async () => {
@@ -50,7 +51,7 @@ describe("the landing page", () => {
     expect(screen.getByText("my.example")).toBeInTheDocument();
     expect(await screen.findByText("120 members")).toBeInTheDocument();
     expect(screen.getByText("Since March 2026")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Run by ⁨Olive⁩" })).toHaveAttribute("href", "#landing-operators");
+    expect(screen.getByRole("link", { name: "Contact: ⁨Olive⁩" })).toHaveAttribute("href", "#landing-contact");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     // The software is named only in the footer.
     expect(screen.queryByText(/What you can do/u)).not.toBeInTheDocument();
@@ -95,7 +96,7 @@ describe("the landing page", () => {
     ).toEqual(["We grow vegetables.", "Everyone is welcome."]);
   });
 
-  test("lists who runs the server with their badges, and what people post with the numbers of the week", async () => {
+  test("shows the account to contact with its badges, and what people post with the numbers of the week", async () => {
     const limits: (string | null)[] = [];
     server.use(
       http.get(`${apiBase}/timelines/local`, ({ request }) => {
@@ -106,13 +107,12 @@ describe("the landing page", () => {
     await renderApp({ path: "/" });
     const place = await screen.findByRole("region", { name: "What kind of place is this?" });
 
-    const operators = await within(place).findByRole("list", { name: "Who runs it" });
-    const [olive] = within(operators).getAllByRole("listitem");
-    if (olive === undefined) throw new Error("no operator");
-    expect(within(olive).getByRole("link", { name: "Olive @olive" })).toHaveAttribute("href", "/@olive");
-    expect(within(within(olive).getByRole("list", { name: "Badges" })).getByText("Admin")).toBeInTheDocument();
+    await within(place).findByRole("heading", { level: 3, name: "Contact" });
+    expect(within(place).getByRole("link", { name: "Olive @olive" })).toHaveAttribute("href", "/@olive");
+    expect(within(within(place).getByRole("list", { name: "Badges" })).getByText("Admin")).toBeInTheDocument();
 
-    expect(within(place).getByText("Public posts in the last 7 days")).toBeInTheDocument();
+    // The contact comes with the instance; the counts with the overview, which may answer later.
+    expect(await within(place).findByText("Public posts in the last 7 days")).toBeInTheDocument();
     expect(within(place).getByText("35")).toBeInTheDocument();
     const feed = await within(place).findByRole("feed", { name: "What people post" });
     const articles = within(feed).getAllByRole("article");
@@ -123,7 +123,7 @@ describe("the landing page", () => {
     expect(within(place).getByRole("link", { name: "See the local timeline" })).toHaveAttribute("href", "/local");
   });
 
-  test("shows a quiet server's description and operators without an empty feed or numbers", async () => {
+  test("shows a quiet server's description and contact without an empty feed or numbers", async () => {
     serveInstance({ description: "Just started." });
     serveOverview({
       ...overviewFixture,
@@ -137,20 +137,25 @@ describe("the landing page", () => {
     server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([]))));
     await renderApp({ path: "/" });
     const place = await screen.findByRole("region", { name: "What kind of place is this?" });
-    await within(place).findByRole("list", { name: "Who runs it" });
+    await within(place).findByRole("heading", { level: 3, name: "Contact" });
     expect(within(place).getByText("Just started.")).toBeInTheDocument();
-    expect(within(place).queryByRole("heading", { name: "What people post" })).not.toBeInTheDocument();
+    // The posts and the counts answer after the instance; once both have, nothing of them shows.
+    await waitFor(() => {
+      expect(within(place).queryByRole("heading", { name: "What people post" })).not.toBeInTheDocument();
+    });
     expect(within(place).queryByRole("feed")).not.toBeInTheDocument();
   });
 
-  test("leaves out the counts and the operators that the server hides", async () => {
+  test("leaves out the counts that the server hides, and the contact that it has none of", async () => {
     serveOverview({});
+    // No contact_account: the instance answers without a contact.
+    server.use(http.get(`${apiBase}/instance`, () => HttpResponse.json(instanceFixture)));
     await renderApp({ path: "/" });
     await screen.findByRole("heading", { level: 1, name: "my example" });
     await screen.findByRole("feed", { name: "What people post" });
     expect(screen.queryByText(/members/u)).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Run by/u })).not.toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Who runs it" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Contact:/u })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Contact" })).not.toBeInTheDocument();
     expect(screen.queryByText("Public posts in the last 7 days")).not.toBeInTheDocument();
   });
 

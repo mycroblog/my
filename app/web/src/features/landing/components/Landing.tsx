@@ -45,7 +45,7 @@ export type LandingProps = {
 /** The ids of the headings that the progress line and the masthead link to. */
 const ids = {
   place: "landing-place",
-  operators: "landing-operators",
+  contact: "landing-contact",
   promise: "landing-promise",
   join: "landing-join",
   elsewhere: "landing-elsewhere",
@@ -136,8 +136,7 @@ function LandingMasthead({ heading, landing }: { heading: ReactNode; landing: La
   const { signIn, isPending } = useSignIn("/");
   const { icon } = useBrand();
   const open = takesAccounts(landing);
-  const { counts, operators } = landing;
-  const [firstOperator] = operators;
+  const { counts, contact } = landing;
   return (
     <Masthead
       heading={heading}
@@ -159,14 +158,14 @@ function LandingMasthead({ heading, landing }: { heading: ReactNode; landing: La
               { key: "members", content: t("client:landing.members", { count: counts.members }) },
               { key: "since", content: t("client:landing.since", { date: counts.since.date }) },
             ]),
-        ...(firstOperator === undefined
+        ...(contact === undefined
           ? []
           : [
               {
-                key: "operators",
+                key: "contact",
                 content: (
-                  <Link href={`#${ids.operators}`} variant="standalone">
-                    {t("client:landing.run_by", { name: isolate(firstOperator.name), others: operators.length - 1 })}
+                  <Link href={`#${ids.contact}`} variant="standalone">
+                    {t("client:landing.contact.fact", { name: isolate(contact.name) })}
                   </Link>
                 ),
               },
@@ -198,7 +197,7 @@ function LandingMasthead({ heading, landing }: { heading: ReactNode; landing: La
   );
 }
 
-/** ① What kind of place this is: the description, who runs it, and what people post. */
+/** ① What kind of place this is: the description, whom to contact, and what people post. */
 function Place({ landing }: { landing: LandingData }) {
   return (
     <>
@@ -208,34 +207,29 @@ function Place({ landing }: { landing: LandingData }) {
           {paragraph}
         </Text>
       ))}
-      {landing.operators.length > 0 && <Operators operators={landing.operators} />}
+      {landing.contact !== undefined && <ContactAccount contact={landing.contact} />}
       <Activity landing={landing} />
     </>
   );
 }
 
-function Operators({ operators }: { operators: LandingData["operators"] }) {
+/** The account people contact about the server. */
+function ContactAccount({ contact }: { contact: NonNullable<LandingData["contact"]> }) {
   const t = useT();
   return (
     <Stack gap="3">
-      <Heading level={3} id={ids.operators} focusable>
-        {t("client:landing.operators.title")}
+      <Heading level={3} id={ids.contact} focusable>
+        {t("client:landing.contact.title")}
       </Heading>
-      <Stack as="ul" gap="3" aria-labelledby={ids.operators}>
-        {operators.map((operator) => (
-          <li key={operator.id}>
-            <AccountItem
-              name={operator.name}
-              handle={operator.handle}
-              avatar={operator.avatar}
-              avatarSeed={operator.id}
-              href={operator.href}
-              trailingPlacement="below"
-              trailing={<RoleBadgeList label={t("client:profile.badges")} badges={operator.badges} />}
-            />
-          </li>
-        ))}
-      </Stack>
+      <AccountItem
+        name={contact.name}
+        handle={contact.handle}
+        avatar={contact.avatar}
+        avatarSeed={contact.id}
+        href={contact.href}
+        trailingPlacement="below"
+        trailing={<RoleBadgeList label={t("client:profile.badges")} badges={contact.badges} />}
+      />
     </Stack>
   );
 }
@@ -385,7 +379,7 @@ function Join({ landing }: { landing: LandingData }) {
   const t = useT();
   const elsewhereId = ids.elsewhere;
   const hereId = useId();
-  const example = landing.operators[0]?.fullHandle;
+  const example = landing.contact?.fullHandle;
   const elsewhere: Step[] = [
     {
       key: "find",
