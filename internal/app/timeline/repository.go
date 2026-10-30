@@ -152,11 +152,15 @@ type LocalQuery struct {
 	Window
 	// IncludeLocal also lists the posts of visibility local (for logged-in viewers).
 	IncludeLocal bool
+	// Floor bounds the read window: only entries with an ID at or above it; "" for no bound.
+	Floor string
 }
 
 // PublicQuery selects a page of the federated timeline.
 type PublicQuery struct {
 	Window
+	// Floor bounds the read window: only entries with an ID at or above it; "" for no bound.
+	Floor string
 }
 
 // TagQuery selects a page of the timeline of a hashtag.

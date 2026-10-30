@@ -17,13 +17,14 @@
 | `api/openapi.yaml` | 生成物。`scripts/task.sh api:generate` が `api/spec/` を Redocly CLI の `bundle` でまとめた OpenAPI 3.1 の 1 ファイル。生成器・照合ヘルパー・第三者が読む。手で編集しない |
 | `api/redocly.yaml` | `api/spec/` の lint 設定（Redocly CLI）。推奨ルールと、使える 3.1 の部分集合・命名規約を強制する独自ルール |
 | `api/api.go` | バンドルの `openapi.yaml` を埋め込む Go パッケージ（`api.Spec`）。テストの照合ヘルパーが読む |
-| `internal/interface/clientapi/oapi-codegen.yaml` | oapi-codegen の設定（strict server、`net/http`。`streamEvents`・`streamVoiceRoom`・`reportClientError` は生成から除く） |
+| `internal/interface/clientapi/oapi-codegen.yaml` | oapi-codegen の設定（strict server、`net/http`。`streamEvents`・`streamTimeline`・`streamVoiceRoom`・`reportClientError` は生成から除く） |
 | `internal/interface/clientapi/api.gen.go` | 生成物。手で編集しない |
 | `internal/interface/clientapi/security.gen.go` | 生成物。spec の `security` から作る操作ごとの認証・スコープの表（`internal/securitygen`）。手で編集しない |
 | `internal/interface/clientapi/auth.go`, `ratelimit.go` | 認証・認可・レート制限（§4.2） |
 | `internal/interface/clientapi/*.go` | 生成された `StrictServerInterface` の実装。アプリケーション層のユースケースを呼ぶ |
 | `internal/interface/clientapi/openapi.go` | 手書きの `GET /openapi.yaml`。バンドルした spec（`api.Spec`）をそのまま返す（§2.6） |
 | `internal/interface/clientapi/streaming.go` | 手書きの `GET /streaming`（SSE、§5） |
+| `internal/interface/clientapi/timeline_stream.go` | 手書きの `GET /streaming/timelines/{timeline}`（ローカル・連合のタイムラインの SSE、§5.1） |
 | `internal/interface/clientapi/client_errors.go` | 手書きの `POST /client_errors`（Web クライアントのエラーの報告。ADR-0103 §6）。読めない本文にも 400・422 を返さず常に 204 にするため、strict server を使わない |
 | `internal/interface/clientapi/apitest` | ハンドラの応答を spec と照合するテストヘルパー |
 | `pkg/mykit/api.gen.go`, `pkg/mykit/ts/src/schema.gen.ts` | 生成物。API クライアントライブラリ `pkg/mykit` の Go のクライアントと型（oapi-codegen）と、`@mycroblog/mykit` の TS の型（openapi-typescript）。コミットする。Web クライアントは `@mycroblog/mykit` の型を使う（[ADR-0093](../adr/0093-api-client-library-mykit.md) §3） |
@@ -319,3 +320,19 @@ strict server は SSE を返せないので、`oapi-codegen.yaml` の `exclude-o
   読みきれずにバッファ（64 件）が溢れた購読と、知らせを取りこぼしたかもしれない購読（`Relay` の listener が `Broken` になった）はブローカーが閉じます。サーバーの読み取りタイムアウトは接続ごとに外し、
   シャットダウンの開始時にブローカー（`Hub` か `Relay`）を閉じてすべての購読を閉じるので、グレースフルシャットダウンはストリームを待ちません。
 - テストは、実際の HTTP サーバーでストリームを読み、状態と見出しを `apitest.Spec.ValidateResponse` で、各イベントの `data` を `ValidateSchema` で spec と照合します。
+
+### 5.1 ローカル・連合のタイムラインのストリーム
+
+`GET /api/v1/streaming/timelines/{timeline}`（`streamTimeline`、`timeline` は `local` か `federated`）は、ローカル・連合のタイムラインの新着を送る SSE です（ADR-0127）。
+`GET /streaming` と同じく生成から除き、`timeline_stream.go` に手で書いて `guard`（スコープ `read:statuses`）を通します。接続・ハートビート・後始末・503 は `GET /streaming` と同じ `Server.runStream` と `Server.subscribeRefused` で扱います。
+
+- ログインした利用者だけが開けます（spec の `security` に匿名を入れないので、未ログインは `guard` が 401 にします）。`local_timeline_access` / `federated_timeline_access` が `off` なら 404 で、
+  開いているストリームも次のハートビートで閉じます。`local` / `federated` 以外の `timeline` も 404 です。
+- イベントは `update`（`data` は `Status`）だけで、何も再送しません。つなぎ直したら、クライアントはそのタイムラインの最初のページを読み直します。
+- 投稿の作成（ローカルの投稿と、受信箱のジョブが保存したリモートの投稿の `content.status_created`）で、`timeline.RegisterCommitHooks` がホームの新着とは別に
+  `stream.KindPublicEntry` の知らせを 1 つ出します。知らせは投稿の ID と、載りうるタイムライン（ローカル: ローカルのアカウントの `public` と `local`、連合: すべての `public`）だけを持ち、
+  ブーストと `unlisted` 以下は出しません。`Hub` は `SubscribeTimeline` の購読のうち、知らせが名指すタイムラインのものにだけ配ります。
+- ハンドラは知らせごとに `PublicEntries.LocalEntry` / `PublicEntry`（`timeline.Service`）で、REST の `Local` / `Public` と同じ SQL と `CanView` の判定を、その投稿の ID から上だけ読み直して決め、
+  閲覧者のタイムラインの言語（FR-208）も同じものを使います。公開範囲・ブロック・ミュート・ドメインの処分とミュートは、ここで REST とまったく同じになります。
+- このストリームの購読はアカウントの接続数の上限（`GET /streaming` と合わせて 8）に数え、超えると 429（`/api/v1/problems/too-many-streams`）です。
+  重複は `GET /streaming` と同じく最近送った ID（512 件）で捨てます。接続数のメトリクス `my.stream.connections` の `my.stream.kind` は `timeline` です。

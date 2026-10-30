@@ -62,6 +62,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"ExcludesMutedDomains", timelineDomainMutes},
 		{"LocalTimeline", timelineLocal},
 		{"PublicTimeline", timelinePublic},
+		{"PublicTimelineEntriesForStreams", timelinePublicEntries},
 		{"HashtagTimeline", timelineHashtag},
 		{"ProfileTimeline", timelineProfile},
 		{"ProfileLeavesOutRepliesAndBoosts", timelineProfileFilters},

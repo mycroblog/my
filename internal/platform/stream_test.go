@@ -145,9 +145,11 @@ func checkStreamsAcrossProcesses(t *testing.T, web, worker *platform.App) {
 			t.Fatalf("no %s event within 10 seconds", name)
 		}
 	}
-	// The subscription opens once the web process listens on the Bus.
+	// The stream of the federated timeline (ADR-0127) shares the Bus.
+	federated := openTimelineStream(streamCtx, t, e, srv, alice, "/streaming/timelines/federated")
+	// The subscriptions open once the web process listens on the Bus.
 	deadline := time.Now().Add(15 * time.Second)
-	for web.Streams.Len() == 0 {
+	for web.Streams.Len() < 2 {
 		if time.Now().After(deadline) {
 			t.Fatal("the stream did not subscribe")
 		}
@@ -167,6 +169,9 @@ func checkStreamsAcrossProcesses(t *testing.T, web, worker *platform.App) {
 	next("update", "Status", &st)
 	if st.Id != p || st.Account.Id != bob.accountID {
 		t.Errorf("update = %s by %s, want bob's post %s", st.Id, st.Account.Id, p)
+	}
+	if got := nextUpdate(t, e, "the federated timeline", federated, 10*time.Second); got != p {
+		t.Errorf("federated update = %s, want bob's post %s", got, p)
 	}
 
 	// carol's Follow arrives at the web process's inbox, and the worker processes it.

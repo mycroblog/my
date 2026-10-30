@@ -336,7 +336,7 @@ func (r *TimelineRepository) ListLocal(ctx context.Context, lq apptimeline.Local
 		return nil, err
 	}
 	rows, err := r.db.reader().ListLocalEntries(ctx, sqlitegen.ListLocalEntriesParams{
-		IncludeLocal: boolToInt(lq.IncludeLocal), Before: lq.Before, Now: toMillis(lq.Now), Viewer: lq.ViewerAccountID,
+		IncludeLocal: boolToInt(lq.IncludeLocal), Before: lq.Before, WindowFloor: lq.Floor, Now: toMillis(lq.Now), Viewer: lq.ViewerAccountID,
 		AllLanguages: all, Languages: langs, PageLimit: int64(lq.Limit),
 	})
 	return entriesFrom(rows, err, "list local entries")
@@ -349,7 +349,7 @@ func (r *TimelineRepository) ListPublic(ctx context.Context, pq apptimeline.Publ
 		return nil, err
 	}
 	rows, err := r.db.reader().ListPublicEntries(ctx, sqlitegen.ListPublicEntriesParams{
-		Before: pq.Before, Now: toMillis(pq.Now), Viewer: pq.ViewerAccountID,
+		Before: pq.Before, WindowFloor: pq.Floor, Now: toMillis(pq.Now), Viewer: pq.ViewerAccountID,
 		AllLanguages: all, Languages: langs, PageLimit: int64(pq.Limit),
 	})
 	return entriesFrom(rows, err, "list public entries")

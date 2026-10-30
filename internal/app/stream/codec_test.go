@@ -13,6 +13,9 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001"},
 		{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"},
+		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true, OnFederated: true},
+		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true},
+		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnFederated: true},
 		{Kind: KindVoiceRoom, RoomID: "r1"},
 		{Kind: KindVoiceSignal, RoomID: "r1", MessageID: "m1", To: "s1"},
 		{Kind: KindVoiceMic, RoomID: "r1", ParticipantID: "a1", On: true},
@@ -39,6 +42,10 @@ func TestSignalRoundTrips(t *testing.T) {
 	}
 	b, _ = encodeSignal("p1", Event{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"})
 	if want := `{"v":1,"o":"p1","k":"announcement","n":"0199f0a8-0000-7000-8000-000000000003"}`; string(b) != want {
+		t.Errorf("payload = %s, want %s", b, want)
+	}
+	b, _ = encodeSignal("p1", Event{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true, OnFederated: true})
+	if want := `{"v":1,"o":"p1","k":"public_entry","e":"0199f0a8-0000-7000-8000-000000000004","tl":["local","federated"]}`; string(b) != want {
 		t.Errorf("payload = %s, want %s", b, want)
 	}
 	for e, want := range map[Event]string{
@@ -68,6 +75,9 @@ func TestSignalDecodeRejects(t *testing.T) {
 		`{"v":1,"o":"p1","k":"notifications","e":"0199f0a8-0000-7000-8000-000000000001"}`:               errMalformedSignal,
 		`{"v":1,"o":"p1","k":"reaction","e":"0199f0a8-0000-7000-8000-000000000001"}`:                    errMalformedSignal,
 		`{"v":1,"o":"p1","k":"announcement","a":"0199f0a8-0000-7000-8000-000000000002"}`:                errMalformedSignal,
+		`{"v":1,"o":"p1","k":"public_entry","tl":["local"]}`:                                            errMalformedSignal,
+		`{"v":1,"o":"p1","k":"public_entry","e":"0199f0a8-0000-7000-8000-000000000004"}`:                errMalformedSignal,
+		`{"v":1,"o":"p1","k":"public_entry","e":"0199f0a8-0000-7000-8000-000000000004","tl":["home"]}`:  errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_room"}`:                                                             errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_signal","r":"r1"}`:                                                  errMalformedSignal,
 		`{"v":1,"o":"p1","k":"voice_signal","r":"r1","m":"m1"}`:                                         errMalformedSignal,

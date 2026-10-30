@@ -151,6 +151,11 @@ type Options struct {
 	EntryLists         EntryLists
 	StreamHeartbeat    time.Duration
 	StreamWriteTimeout time.Duration
+	// TimelineStreams opens the subscriptions of the streams of the local and federated
+	// timelines, and PublicEntries tells them whether those timelines list a new entry; nil for
+	// either answers them with 503.
+	TimelineStreams stream.TimelineSubscriber
+	PublicEntries   PublicEntries
 	// Permissions reads the permissions of the viewer's roles, which the admin operations need
 	// (admin.go); nil grants none. InstanceHealth reads and clears the health of remote servers,
 	// and DeadJobs lists and requeues the dead jobs, for the admin operations; Queue reads the
@@ -403,6 +408,7 @@ func (s *Server) Register(r Router) {
 		ErrorHandlerFunc: s.requestError,
 	})
 	s.registerStreaming(r)
+	s.registerTimelineStream(r)
 	s.registerVoiceStream(r)
 	s.registerClientErrors(r)
 	s.registerOpenAPI(r)

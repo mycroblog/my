@@ -1276,23 +1276,25 @@ FROM feed_entries e
 WHERE e.is_local AND e.kind = 'post' AND e.visibility IN ('public', 'local')
   AND ($1::boolean OR e.visibility = 'public')
   AND ($2::uuid IS NULL OR e.id < $2::uuid)
+  AND e.id >= COALESCE($3::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = e.author_account_id
       AND r.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (r.effective_until IS NULL OR r.effective_until > $3::timestamptz))
+      AND (r.effective_until IS NULL OR r.effective_until > $4::timestamptz))
   AND NOT EXISTS (
     SELECT 1 FROM feed_exclusions x
-    WHERE x.viewer_account_id = $4::uuid AND x.target_account_id = e.author_account_id
-      AND (x.expires_at IS NULL OR x.expires_at > $3::timestamptz))
-  AND ($5::boolean OR e.language = 'und' OR e.language = ANY($6::text[]))
+    WHERE x.viewer_account_id = $5::uuid AND x.target_account_id = e.author_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > $4::timestamptz))
+  AND ($6::boolean OR e.language = 'und' OR e.language = ANY($7::text[]))
 ORDER BY e.id DESC
-LIMIT $7
+LIMIT $8
 `
 
 type ListLocalEntriesParams struct {
 	IncludeLocal bool
 	Before       *string
+	WindowFloor  *string
 	Now          time.Time
 	Viewer       *string
 	AllLanguages bool
@@ -1302,11 +1304,13 @@ type ListLocalEntriesParams struct {
 
 // ListLocalEntries is the local timeline (FR-202): the public and local posts of local accounts
 // (public only when include_local is 0, for visitors that are not logged in), except those of
-// authors kept from discovery and those the viewer (NULL for none) blocks, is blocked by, or mutes.
+// authors kept from discovery and those the viewer (NULL for none) blocks, is blocked by, or mutes,
+// from window_floor (NULL for no bound) up.
 func (q *Queries) ListLocalEntries(ctx context.Context, arg ListLocalEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listLocalEntries,
 		arg.IncludeLocal,
 		arg.Before,
+		arg.WindowFloor,
 		arg.Now,
 		arg.Viewer,
 		arg.AllLanguages,
@@ -1460,31 +1464,33 @@ SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.origin
 FROM feed_entries e
 WHERE e.kind = 'post' AND e.visibility = 'public'
   AND ($1::uuid IS NULL OR e.id < $1::uuid)
+  AND e.id >= COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = e.author_account_id
       AND r.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (r.effective_until IS NULL OR r.effective_until > $2::timestamptz))
+      AND (r.effective_until IS NULL OR r.effective_until > $3::timestamptz))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
     WHERE dr.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (dr.effective_until IS NULL OR dr.effective_until > $2::timestamptz)
+      AND (dr.effective_until IS NULL OR dr.effective_until > $3::timestamptz)
       AND (dr.domain = e.author_domain OR right(e.author_domain, length(dr.domain) + 1) = '.' || dr.domain))
   AND NOT EXISTS (
     SELECT 1 FROM feed_exclusions x
-    WHERE x.viewer_account_id = $3::uuid AND x.target_account_id = e.author_account_id
-      AND (x.expires_at IS NULL OR x.expires_at > $2::timestamptz))
+    WHERE x.viewer_account_id = $4::uuid AND x.target_account_id = e.author_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > $3::timestamptz))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_mutes dm
-    WHERE dm.viewer_account_id = $3::uuid
+    WHERE dm.viewer_account_id = $4::uuid
       AND (dm.domain = e.author_domain OR right(e.author_domain, length(dm.domain) + 1) = '.' || dm.domain))
-  AND ($4::boolean OR e.language = 'und' OR e.language = ANY($5::text[]))
+  AND ($5::boolean OR e.language = 'und' OR e.language = ANY($6::text[]))
 ORDER BY e.id DESC
-LIMIT $6
+LIMIT $7
 `
 
 type ListPublicEntriesParams struct {
 	Before       *string
+	WindowFloor  *string
 	Now          time.Time
 	Viewer       *string
 	AllLanguages bool
@@ -1494,10 +1500,12 @@ type ListPublicEntriesParams struct {
 
 // ListPublicEntries is the federated timeline (FR-202): the public posts of local and remote
 // accounts, except those of authors and domains kept from discovery and those the viewer (NULL for
-// none) blocks, is blocked by, or mutes.
+// none) blocks, is blocked by, or mutes,
+// from window_floor (NULL for no bound) up.
 func (q *Queries) ListPublicEntries(ctx context.Context, arg ListPublicEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listPublicEntries,
 		arg.Before,
+		arg.WindowFloor,
 		arg.Now,
 		arg.Viewer,
 		arg.AllLanguages,

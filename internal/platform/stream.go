@@ -28,6 +28,7 @@ type Streams interface {
 	stream.Publisher
 	stream.Subscriber
 	stream.RoomSubscriber
+	stream.TimelineSubscriber
 	// Len returns the number of open subscriptions of this process.
 	Len() int
 }

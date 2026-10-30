@@ -162,6 +162,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/statuses/{id}/reactions":                                 {Operation: "listStatusReactions", Anonymous: true, Scopes: []string{"read:statuses"}},
 	"GET /api/v1/statuses/{id}/source":                                    {Operation: "getStatusSource", Scopes: []string{"read:statuses"}},
 	"GET /api/v1/streaming":                                               {Operation: "streamEvents", Scopes: []string{"read:notifications", "read:statuses"}},
+	"GET /api/v1/streaming/timelines/{timeline}":                          {Operation: "streamTimeline", Scopes: []string{"read:statuses"}},
 	"GET /api/v1/subscriptions":                                           {Operation: "listSubscriptions", Scopes: []string{"read:follows"}},
 	"GET /api/v1/supporter/subscription":                                  {Operation: "getOwnSupporterSubscription", Scopes: []string{"read:supporters"}},
 	"GET /api/v1/tags/search":                                             {Operation: "searchTags", Scopes: []string{"read:statuses"}},

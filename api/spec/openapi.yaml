@@ -359,6 +359,8 @@ paths:
     $ref: ./paths/announcements_history.yaml
   /streaming:
     $ref: ./paths/streaming.yaml
+  /streaming/timelines/{timeline}:
+    $ref: ./paths/streaming_timelines_{timeline}.yaml
   /finance/cost_totals:
     $ref: ./paths/finance_cost_totals.yaml
   /finance/income_totals:

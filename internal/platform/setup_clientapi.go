@@ -46,7 +46,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,
 		Statuses: a.Content, StatusReader: a.Statuses, Interactions: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
 		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages, Lists: a.Timeline,
-		Streams: a.Streams, HomeEntries: a.Timeline, EntryLists: a.Timeline,
+		Streams: a.Streams, HomeEntries: a.Timeline, EntryLists: a.Timeline, TimelineStreams: a.Streams, PublicEntries: a.Timeline,
 		Permissions: a.Identity, InstanceHealth: a.InstanceHealth, DeadJobs: a.DeadJobs,
 		Queue:      clientapi.QueueDashboard{Adapter: cfg.Queue, Inspector: a.JobInspector, Attempts: a.JobAttempts, Clock: a.Clock},
 		Moderation: a.Moderation, UserAccounts: a.Accounts, FiledReports: a.Moderation, Severances: a.Moderation, Moves: a.Accounts,
