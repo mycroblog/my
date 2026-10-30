@@ -14,6 +14,6 @@ import (
 func (a *App) setUpTimeline(repo timeline.Repository, statuses appcontent.Repository) {
 	timeline.RegisterProjectors(a.Projectors, repo)
 	timeline.RegisterModerationProjectors(a.Projectors, repo, a.Accounts)
-	a.Timeline = timeline.NewService(timeline.Deps{Repository: repo, Clock: a.Clock})
+	a.Timeline = timeline.NewService(timeline.Deps{UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs})
 	a.TagSearch = timeline.NewTagSearch(statuses, repo)
 }

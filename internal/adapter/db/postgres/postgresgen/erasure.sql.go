@@ -661,6 +661,85 @@ func (q *Queries) EraseKeys(ctx context.Context, accountID string) error {
 	return err
 }
 
+const eraseListMembersAsMember = `-- name: EraseListMembersAsMember :execrows
+DELETE FROM list_members WHERE list_members.member_account_id = $1 AND list_members.list_id IN (
+  SELECT m.list_id FROM list_members m WHERE m.member_account_id = $1
+  ORDER BY m.list_id LIMIT $2)
+`
+
+type EraseListMembersAsMemberParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) EraseListMembersAsMember(ctx context.Context, arg EraseListMembersAsMemberParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseListMembersAsMember, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const eraseListMembersAsOwner = `-- name: EraseListMembersAsOwner :execrows
+
+DELETE FROM list_members WHERE list_members.owner_account_id = $1 AND list_members.list_id IN (
+  SELECT m.list_id FROM list_members m WHERE m.owner_account_id = $1
+  ORDER BY m.list_id LIMIT $2)
+`
+
+type EraseListMembersAsOwnerParams struct {
+	AccountID string
+	Lim       int32
+}
+
+// The lists of an account and its membership in the lists of others (data-model 4.6). A list's
+// name goes before the list, and the steps pick the same first lists by ID.
+func (q *Queries) EraseListMembersAsOwner(ctx context.Context, arg EraseListMembersAsOwnerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseListMembersAsOwner, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const eraseListNamesOf = `-- name: EraseListNamesOf :execrows
+DELETE FROM list_names WHERE list_names.list_id IN (
+  SELECT l.id FROM lists l WHERE l.owner_account_id = $1
+  ORDER BY l.id LIMIT $2)
+`
+
+type EraseListNamesOfParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) EraseListNamesOf(ctx context.Context, arg EraseListNamesOfParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseListNamesOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const eraseListsOf = `-- name: EraseListsOf :execrows
+DELETE FROM lists WHERE lists.owner_account_id = $1 AND lists.id IN (
+  SELECT l.id FROM lists l WHERE l.owner_account_id = $1
+  ORDER BY l.id LIMIT $2)
+`
+
+type EraseListsOfParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) EraseListsOf(ctx context.Context, arg EraseListsOfParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseListsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const eraseLocalStatusesOfStatuses = `-- name: EraseLocalStatusesOfStatuses :exec
 
 DELETE FROM local_statuses WHERE status_id = ANY($1::uuid[])
