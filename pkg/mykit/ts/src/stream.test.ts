@@ -124,6 +124,22 @@ describe("runStream", () => {
     }
   });
 
+  test("reads the stream of the local or the federated timeline", async () => {
+    for (const timeline of ["local", "federated"] as const) {
+      const f = connections(
+        () => sse([": connected\n\n", 'event: update\ndata: {"id":"s1"}\n\n']),
+        () => sse([": connected\n\n"], { hold: true }),
+      );
+      const r = await run({ fetch: f.fetch, sleep: fakeSleep().sleep, tokenSource: staticToken("a0"), timeline }, 1);
+      expect(r.opens).toEqual([false, true]);
+      expect(r.events.map((e) => e.type)).toEqual(["update"]);
+      for (const { request } of f.requests) {
+        expect(request.url).toBe(`${server}/api/v1/streaming/timelines/${timeline}`);
+        expect(request.headers.get("Authorization")).toBe("Bearer a0");
+      }
+    }
+  });
+
   test("drops a stream whose heartbeats stop and connects again", async () => {
     const f = connections(() => sse([": connected\n\n"], { hold: true }));
     const r = await run({ fetch: f.fetch, sleep: fakeSleep().sleep, heartbeatTimeout: 50 }, 1);
