@@ -274,8 +274,8 @@ entries:
     paths: ["internal/domain/timeline/**", "internal/app/timeline/**"]
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
   - name: lists
-    paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_contract.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml"]
-    docs: ["docs/adr/0122-lists.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト"]
+    paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_contract.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml", "app/web/src/features/lists/**", "app/web/src/routes/lists.tsx", "app/web/src/routes/lists_.$id.tsx", "app/web/e2e/lists.spec.ts"]
+    docs: ["docs/adr/0122-lists.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト", "docs/architecture/web-client/screens/lists.md", "docs/architecture/web-client/screens/list-timeline.md"]
     notes:
       - "Only the owner reads a list: every other account gets ErrNotFound (a 404), never a 403."
       - "A member is an active follow (feed_follow_edges); the projector of graph.follow_terminated removes it in the same update that deletes the follow edge, and RebuildProjections removes the members whose follow is gone."

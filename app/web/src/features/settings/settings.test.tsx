@@ -442,7 +442,7 @@ describe("navigation", () => {
       within(within(nav).getByRole("list"))
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/public", "/notifications", "/profile", "/search", "/settings", "/bookmarks"]);
+    ).toEqual(["/home", "/public", "/notifications", "/profile", "/search", "/settings", "/bookmarks", "/lists"]);
     expect(prefs.changes).toEqual([]);
 
     // Restoring the default forgets the arrangement.

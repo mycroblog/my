@@ -23,7 +23,7 @@
 // member category, such as view_finance) shows neither. A viewer with view_finance has Finances, after the user's
 // items and before the staff's areas, in the rail, the sidebar and the menu's sheet, never in the tab bar.
 // While the server has voice chat on (ADR-0100 §2), Voice chat, the list of the open rooms, comes right after the
-// user's items the same way.
+// user's items the same way, and Lists (`/lists`, the user's lists and a list's timeline under it) after it.
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
 // their number as a badge the same way ("Moderation, 3 pending"), and so does the tab bar's Menu button, which
 // leads there ("Menu, 3 pending in moderation"): the count is in the names and drawn as digits, never shown by
@@ -61,6 +61,7 @@ import {
   Avatar,
   FinanceIcon,
   Link,
+  ListsIcon,
   ModerationIcon,
   PlusIcon,
   SignInIcon,
@@ -106,6 +107,7 @@ export const navigationSections = [
   "/bookmarks",
   "/settings",
   "/voice",
+  "/lists",
   "/finance",
   "/moderation",
   "/admin",
@@ -166,6 +168,19 @@ const voiceItem: NavigationItem = {
   section: "/voice",
   label: "client:voice.title",
   icon: <VoiceIcon />,
+  shows: "rail",
+};
+
+/**
+ * The user's lists (ADR-0122), after voice chat in the rail and in the menu's sheet, never in the tab bar: a list is no
+ * place switched to many times a day. A list's timeline (`/lists/{id}`) is in its section.
+ */
+const listsItem: NavigationItem = {
+  id: "lists",
+  href: "/lists",
+  section: "/lists",
+  label: "client:lists.title",
+  icon: <ListsIcon />,
   shows: "rail",
 };
 
@@ -322,6 +337,7 @@ export function Navigation() {
     items = [
       ...userItems,
       ...(voiceAvailable ? [voiceItem] : []),
+      listsItem,
       ...(financeEntry.available ? [financeItem] : []),
       ...staffItems,
     ];

@@ -52,7 +52,7 @@ describe("the navigation's staff entries", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Lists", "my example", "More about this server"]);
     expect(requests).toEqual([]);
   });
 
@@ -78,7 +78,7 @@ describe("the navigation's staff entries", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/profile", "/bookmarks", "/settings", "/moderation", "/", "/about"]);
+    ).toEqual(["/profile", "/bookmarks", "/settings", "/lists", "/moderation", "/", "/about"]);
     await user.click(within(sheet).getByRole("link", { name: "Moderation, 3 pending" }));
 
     const heading = await screen.findByRole("heading", { level: 1, name: "Moderation" });
