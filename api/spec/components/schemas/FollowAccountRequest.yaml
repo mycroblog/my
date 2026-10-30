@@ -6,5 +6,8 @@ properties:
     description: Show the account's boosts in the home timeline. New follows show them.
     type: boolean
   notify:
-    description: Notify the viewer of the account's new posts. New follows do not.
+    description: |
+      Subscribe to the account's new posts (true) or stop (false), as `subscribeAccount` and
+      `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
+      server, the subscription starts when that server accepts the follow.
     type: boolean

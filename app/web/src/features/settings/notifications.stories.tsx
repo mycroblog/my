@@ -82,7 +82,7 @@ export const Empty: Story = answering(
     [...ordinaryNotificationRows, ...instanceNotificationRows].map((row) => ({
       ...row,
       in_app: row.in_app.fixed ? row.in_app : { ...row.in_app, enabled: false },
-      email: row.email.fixed ? row.email : { ...row.email, enabled: false },
+      ...(row.email === undefined ? {} : { email: row.email.fixed ? row.email : { ...row.email, enabled: false } }),
     })),
   ),
 );

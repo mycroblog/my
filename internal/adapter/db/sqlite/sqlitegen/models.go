@@ -393,7 +393,6 @@ type FollowEdge struct {
 type FollowPreference struct {
 	FollowID   string
 	ShowBoosts int64
-	Notify     int64
 }
 
 type ImportedCostRevision struct {
@@ -845,6 +844,12 @@ type PollVote struct {
 	Position  int64
 	Uri       sql.NullString
 	VotedAt   int64
+}
+
+type PostSubscription struct {
+	AccountID       string
+	TargetAccountID string
+	CreatedAt       int64
 }
 
 type PushSubscription struct {

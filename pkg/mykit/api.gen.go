@@ -2667,6 +2667,7 @@ const (
 	NotificationGroupQuote                   NotificationGroup = "quote"
 	NotificationGroupReaction                NotificationGroup = "reaction"
 	NotificationGroupServiceClosure          NotificationGroup = "service_closure"
+	NotificationGroupStatus                  NotificationGroup = "status"
 	NotificationGroupSupporter               NotificationGroup = "supporter"
 	NotificationGroupVoice                   NotificationGroup = "voice"
 )
@@ -2713,6 +2714,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupReaction:
 		return true
 	case NotificationGroupServiceClosure:
+		return true
+	case NotificationGroupStatus:
 		return true
 	case NotificationGroupSupporter:
 		return true
@@ -2788,6 +2791,7 @@ const (
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
 	NotificationTypeServiceClosure             NotificationType = "service_closure"
+	NotificationTypeStatus                     NotificationType = "status"
 	NotificationTypeSupporterPaymentFailed     NotificationType = "supporter_payment_failed"
 	NotificationTypeSupporterPlanRetired       NotificationType = "supporter_plan_retired"
 	NotificationTypeSupporterServiceClosure    NotificationType = "supporter_service_closure"
@@ -2846,6 +2850,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeReportResolved:
 		return true
 	case NotificationTypeServiceClosure:
+		return true
+	case NotificationTypeStatus:
 		return true
 	case NotificationTypeSupporterPaymentFailed:
 		return true
@@ -8514,7 +8520,9 @@ type FinanceVisibility string
 
 // FollowAccountRequest The viewer's preferences of the follow; a preference left out keeps its value.
 type FollowAccountRequest struct {
-	// Notify Notify the viewer of the account's new posts. New follows do not.
+	// Notify Subscribe to the account's new posts (true) or stop (false), as `subscribeAccount` and
+	// `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
+	// server, the subscription starts when that server accepts the follow.
 	Notify *bool `json:"notify,omitempty"`
 
 	// ShowBoosts Show the account's boosts in the home timeline. New follows show them.
@@ -9917,6 +9925,10 @@ type Notification struct {
 	// `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
 	// resolved one that happened again, at most 10 times an hour for the whole server, with the
 	// rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+	// The type `status` tells of a new post (`status`) of an account that the user subscribes to
+	// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+	// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+	// nor when the user gets a `mention` of the same post.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -9947,8 +9959,8 @@ type NotificationErrorGroupChange string
 // NotificationGroup A row of the notification settings: one or more notification types that the user turns on
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 // `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -10000,17 +10012,18 @@ type NotificationSettingCell struct {
 // reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
 // emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-// offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
-// each subscription (`putPushSubscription`).
+// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
+// is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+// subscription (`putPushSubscription`).
 type NotificationSettingRow struct {
 	// Email One channel of one row of the notification settings.
-	Email NotificationSettingCell `json:"email"`
+	Email *NotificationSettingCell `json:"email,omitempty"`
 
 	// Group A row of the notification settings: one or more notification types that the user turns on
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-	// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -10056,8 +10069,8 @@ type NotificationSettingsUpdate struct {
 		// Group A row of the notification settings: one or more notification types that the user turns on
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-		// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -10125,6 +10138,10 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
 // resolved one that happened again, at most 10 times an hour for the whole server, with the
 // rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+// The type `status` tells of a new post (`status`) of an account that the user subscribes to
+// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+// nor when the user gets a `mention` of the same post.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -11038,7 +11055,9 @@ type Relationship struct {
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications bool `json:"muting_notifications"`
 
-	// Notify Whether the viewer's follow notifies them of the account's new posts.
+	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
+	// without a follow. A subscription asked for with a follow request to an account on another
+	// server is false until that server accepts the follow.
 	Notify bool `json:"notify"`
 
 	// Requested Whether the viewer's follow request awaits the account's approval.
@@ -13739,6 +13758,15 @@ type ListStatusReactionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListSubscriptionsParams defines parameters for ListSubscriptions.
+type ListSubscriptionsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // SearchTagsParams defines parameters for SearchTags.
 type SearchTagsParams struct {
 	// Q The start of a hashtag: 1 to 100 characters after a leading `#`, which is ignored.
@@ -16122,6 +16150,19 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SubscribeAccount Be notified of an account's new posts
+	//
+	// Subscribes the viewer to the account's new posts: each new post that the viewer may see
+	// becomes a `status` notification, in the app and by Web Push, never by email. The account
+	// is not told. An account on this server can be subscribed to with or without a follow; an
+	// account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+	// the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+	// to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+	// account on another server ends the subscription; a block ends it either way.
+	//
+	// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
+	SubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UnblockAccount Unblock an account
 	//
 	// The follows that the block ended stay ended. Without a block it changes nothing.
@@ -16142,6 +16183,14 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 	UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	//
+	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+	// request that awaits the account's server. Without a subscription it changes nothing.
+	//
+	// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
+	UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAccountAction Get a moderation action on an account
 	//
@@ -20252,6 +20301,14 @@ type ClientInterface interface {
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListSubscriptions List the accounts whose new posts notify the viewer
+	//
+	// The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+	// the viewer may not see, deactivated, and deleted accounts are left out.
+	//
+	// Corresponds with GET /subscriptions (the `ListSubscriptions` operationId).
+	ListSubscriptions(ctx context.Context, params *ListSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// StartSupporterCheckoutWithBody Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
@@ -21789,6 +21846,29 @@ func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAcc
 	return c.Client.Do(req)
 }
 
+// SubscribeAccount Be notified of an account's new posts
+//
+// Subscribes the viewer to the account's new posts: each new post that the viewer may see
+// becomes a `status` notification, in the app and by Web Push, never by email. The account
+// is not told. An account on this server can be subscribed to with or without a follow; an
+// account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+// the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+// to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+// account on another server ends the subscription; a block ends it either way.
+//
+// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
+func (c *Client) SubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubscribeAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // UnblockAccount Unblock an account
 //
 // The follows that the block ended stay ended. Without a block it changes nothing.
@@ -21830,6 +21910,24 @@ func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors .
 // Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUnmuteAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnsubscribeAccount Stop being notified of an account's new posts
+//
+// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+// request that awaits the account's server. Without a subscription it changes nothing.
+//
+// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
+func (c *Client) UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnsubscribeAccountRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -29379,6 +29477,24 @@ func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ..
 	return c.Client.Do(req)
 }
 
+// ListSubscriptions List the accounts whose new posts notify the viewer
+//
+// The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+// the viewer may not see, deactivated, and deleted accounts are left out.
+//
+// Corresponds with GET /subscriptions (the `ListSubscriptions` operationId).
+func (c *Client) ListSubscriptions(ctx context.Context, params *ListSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSubscriptionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // StartSupporterCheckoutWithBody Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
@@ -31783,6 +31899,40 @@ func NewListAccountStatusesRequest(server string, id Id, params *ListAccountStat
 	return req, nil
 }
 
+// NewSubscribeAccountRequest constructs an http.Request for the SubscribeAccount method
+func NewSubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/subscribe", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUnblockAccountRequest constructs an http.Request for the UnblockAccount method
 func NewUnblockAccountRequest(server string, id AccountId) (*http.Request, error) {
 	var err error
@@ -31868,6 +32018,40 @@ func NewUnmuteAccountRequest(server string, id AccountId) (*http.Request, error)
 	}
 
 	operationPath := fmt.Sprintf("/accounts/%s/unmute", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnsubscribeAccountRequest constructs an http.Request for the UnsubscribeAccount method
+func NewUnsubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/unsubscribe", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -43420,6 +43604,72 @@ func NewGetStatusSourceRequest(server string, id StatusId) (*http.Request, error
 	return req, nil
 }
 
+// NewListSubscriptionsRequest constructs an http.Request for the ListSubscriptions method
+func NewListSubscriptionsRequest(server string, params *ListSubscriptionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/subscriptions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewStartSupporterCheckoutRequest calls the generic StartSupporterCheckout builder with application/json body
 func NewStartSupporterCheckoutRequest(server string, body StartSupporterCheckoutJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -46101,6 +46351,21 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatusesWithResponse(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*ListAccountStatusesResponse, error)
 
+	// SubscribeAccountWithResponse Be notified of an account's new posts
+	//
+	// Subscribes the viewer to the account's new posts: each new post that the viewer may see
+	// becomes a `status` notification, in the app and by Web Push, never by email. The account
+	// is not told. An account on this server can be subscribed to with or without a follow; an
+	// account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+	// the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+	// to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+	// account on another server ends the subscription; a block ends it either way.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
+	SubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*SubscribeAccountResponse, error)
+
 	// UnblockAccountWithResponse Unblock an account
 	//
 	// The follows that the block ended stay ended. Without a block it changes nothing.
@@ -46127,6 +46392,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 	UnmuteAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnmuteAccountResponse, error)
+
+	// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
+	//
+	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+	// request that awaits the account's server. Without a subscription it changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
+	UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error)
 
 	// GetAccountActionWithResponse Get a moderation action on an account
 	//
@@ -50609,6 +50884,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSourceWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*GetStatusSourceResponse, error)
 
+	// ListSubscriptionsWithResponse List the accounts whose new posts notify the viewer
+	//
+	// The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+	// the viewer may not see, deactivated, and deleted accounts are left out.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /subscriptions (the `ListSubscriptions` operationId).
+	ListSubscriptionsWithResponse(ctx context.Context, params *ListSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListSubscriptionsResponse, error)
+
 	// StartSupporterCheckoutWithBodyWithResponse Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
@@ -52891,6 +53176,71 @@ func (r ListAccountStatusesResponse) ContentType() string {
 	return ""
 }
 
+// SubscribeAccountResponse200Headers the declared response headers of an HTTP 200 response for SubscribeAccount
+type SubscribeAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// SubscribeAccountResponseDefaultHeaders the declared response headers of an HTTP default response for SubscribeAccount
+type SubscribeAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SubscribeAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SubscribeAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SubscribeAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SubscribeAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SubscribeAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SubscribeAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SubscribeAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SubscribeAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SubscribeAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // UnblockAccountResponse200Headers the declared response headers of an HTTP 200 response for UnblockAccount
 type UnblockAccountResponse200Headers struct {
 	CacheControl *string
@@ -53080,6 +53430,71 @@ func (r UnmuteAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UnmuteAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnsubscribeAccountResponse200Headers the declared response headers of an HTTP 200 response for UnsubscribeAccount
+type UnsubscribeAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnsubscribeAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnsubscribeAccount
+type UnsubscribeAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnsubscribeAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnsubscribeAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnsubscribeAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnsubscribeAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnsubscribeAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnsubscribeAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnsubscribeAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnsubscribeAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnsubscribeAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -70340,6 +70755,71 @@ func (r GetStatusSourceResponse) ContentType() string {
 	return ""
 }
 
+// ListSubscriptionsResponse200Headers the declared response headers of an HTTP 200 response for ListSubscriptions
+type ListSubscriptionsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListSubscriptionsResponseDefaultHeaders the declared response headers of an HTTP default response for ListSubscriptions
+type ListSubscriptionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListSubscriptionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListSubscriptionsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListSubscriptionsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListSubscriptionsResponse) GetJSON200() *AccountPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListSubscriptionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListSubscriptionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSubscriptionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSubscriptionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSubscriptionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // StartSupporterCheckoutResponse200Headers the declared response headers of an HTTP 200 response for StartSupporterCheckout
 type StartSupporterCheckoutResponse200Headers struct {
 	CacheControl *string
@@ -74043,6 +74523,27 @@ func (c *ClientWithResponses) ListAccountStatusesWithResponse(ctx context.Contex
 	return ParseListAccountStatusesResponse(rsp)
 }
 
+// SubscribeAccountWithResponse Be notified of an account's new posts
+//
+// Subscribes the viewer to the account's new posts: each new post that the viewer may see
+// becomes a `status` notification, in the app and by Web Push, never by email. The account
+// is not told. An account on this server can be subscribed to with or without a follow; an
+// account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+// the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+// to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+// account on another server ends the subscription; a block ends it either way.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
+func (c *ClientWithResponses) SubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*SubscribeAccountResponse, error) {
+	rsp, err := c.SubscribeAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSubscribeAccountResponse(rsp)
+}
+
 // UnblockAccountWithResponse Unblock an account
 //
 // The follows that the block ended stay ended. Without a block it changes nothing.
@@ -74086,6 +74587,22 @@ func (c *ClientWithResponses) UnmuteAccountWithResponse(ctx context.Context, id 
 		return nil, err
 	}
 	return ParseUnmuteAccountResponse(rsp)
+}
+
+// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
+//
+// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+// request that awaits the account's server. Without a subscription it changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
+func (c *ClientWithResponses) UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error) {
+	rsp, err := c.UnsubscribeAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnsubscribeAccountResponse(rsp)
 }
 
 // GetAccountActionWithResponse Get a moderation action on an account
@@ -80627,6 +81144,22 @@ func (c *ClientWithResponses) GetStatusSourceWithResponse(ctx context.Context, i
 	return ParseGetStatusSourceResponse(rsp)
 }
 
+// ListSubscriptionsWithResponse List the accounts whose new posts notify the viewer
+//
+// The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+// the viewer may not see, deactivated, and deleted accounts are left out.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /subscriptions (the `ListSubscriptions` operationId).
+func (c *ClientWithResponses) ListSubscriptionsWithResponse(ctx context.Context, params *ListSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListSubscriptionsResponse, error) {
+	rsp, err := c.ListSubscriptions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSubscriptionsResponse(rsp)
+}
+
 // StartSupporterCheckoutWithBodyWithResponse Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
@@ -83568,6 +84101,83 @@ func ParseListAccountStatusesResponse(rsp *http.Response) (*ListAccountStatusesR
 	return response, nil
 }
 
+// ParseSubscribeAccountResponse parses an HTTP response from a SubscribeAccountWithResponse call
+func ParseSubscribeAccountResponse(rsp *http.Response) (*SubscribeAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SubscribeAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SubscribeAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SubscribeAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseUnblockAccountResponse parses an HTTP response from a UnblockAccountWithResponse call
 func ParseUnblockAccountResponse(rsp *http.Response) (*UnblockAccountResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -83765,6 +84375,83 @@ func ParseUnmuteAccountResponse(rsp *http.Response) (*UnmuteAccountResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers UnmuteAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnsubscribeAccountResponse parses an HTTP response from a UnsubscribeAccountWithResponse call
+func ParseUnsubscribeAccountResponse(rsp *http.Response) (*UnsubscribeAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnsubscribeAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnsubscribeAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnsubscribeAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -104502,6 +105189,83 @@ func ParseGetStatusSourceResponse(rsp *http.Response) (*GetStatusSourceResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers GetStatusSourceResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListSubscriptionsResponse parses an HTTP response from a ListSubscriptionsWithResponse call
+func ParseListSubscriptionsResponse(rsp *http.Response) (*ListSubscriptionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSubscriptionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListSubscriptionsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListSubscriptionsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

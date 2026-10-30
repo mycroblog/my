@@ -379,7 +379,18 @@ func (r *NotificationRepository) EraseNotificationsOf(ctx context.Context, tx uo
 	if err != nil {
 		return 0, wrap(err, "erase notification domain exclusions")
 	}
-	return max(most, viewer, target, domains), nil
+	if err := runSteps(ctx, accountID, "erase post subscriptions", q.ErasePostSubscriptionsOf, q.ErasePostSubscriptionRequestsOf); err != nil {
+		return 0, err
+	}
+	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, postgresgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
+	if err != nil {
+		return 0, wrap(err, "erase post subscriptions")
+	}
+	requesters, err := q.ErasePostSubscriptionRequestsAsTarget(ctx, postgresgen.ErasePostSubscriptionRequestsAsTargetParams{AccountID: accountID, Lim: lim})
+	if err != nil {
+		return 0, wrap(err, "erase post subscription requests")
+	}
+	return max(most, viewer, target, domains, subscribers, requesters), nil
 }
 
 // EraseStatusNotifications implements notification.ErasureRepository.

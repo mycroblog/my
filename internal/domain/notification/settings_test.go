@@ -35,6 +35,10 @@ func TestGroupDefaults(t *testing.T) {
 	for _, g := range Groups {
 		inApp, email := none.Enabled(g.Group, ChannelInApp), none.Enabled(g.Group, ChannelEmail)
 		switch {
+		case g.Email.Absent:
+			if g.Section != SectionOrdinary || !inApp || email || g.InApp.Fixed || g.Unsubscribable() || g.DelayedEmail() {
+				t.Errorf("%s: in app %v, email %v, %+v; want on, and no email", g.Group, inApp, email, g)
+			}
 		case g.Section == SectionOrdinary:
 			if !inApp || email || g.InApp.Fixed || g.Email.Fixed || !g.DelayedEmail() {
 				t.Errorf("%s: in app %v, email %v, %+v; want on, off, both chosen, emailed after the delay", g.Group, inApp, email, g)
@@ -82,6 +86,8 @@ func TestSettingValidate(t *testing.T) {
 		{Setting{Group: GroupSupporter, Channel: ChannelEmail}, ErrFixedSetting},
 		{Setting{Group: "unknown", Channel: ChannelEmail}, ErrInvalidSetting},
 		{Setting{Group: GroupMention, Channel: "sound"}, ErrInvalidSetting},
+		{Setting{Group: GroupStatus, Channel: ChannelInApp}, nil},
+		{Setting{Group: GroupStatus, Channel: ChannelEmail}, ErrInvalidSetting},
 	} {
 		if err := tc.s.Validate(); !errors.Is(err, tc.want) {
 			t.Errorf("Validate(%+v) = %v, want %v", tc.s, err, tc.want)

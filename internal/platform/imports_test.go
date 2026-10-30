@@ -46,7 +46,10 @@ func TestCSVExportAndImport(t *testing.T) {
 
 	// Alice follows bob without his boosts and carol, blocks dave, mutes erin, and bookmarks bob's post.
 	e.follow(t, alice, bob)
-	if _, err := e.app.Graph.UpdatePreferences(ctx, alice.accountID, bob.accountID, graph.PreferencesInput{ShowBoosts: false, Notify: true}); err != nil {
+	if _, err := e.app.Graph.UpdatePreferences(ctx, alice.accountID, bob.accountID, graph.PreferencesInput{ShowBoosts: false}); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.app.Subscriptions.Subscribe(ctx, alice.accountID, bob.accountID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := e.app.Graph.Follow(ctx, alice.accountID, carol.ID); err != nil {

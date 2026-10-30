@@ -191,6 +191,10 @@
     "defaultMessage": "Your request for a new image of {emoji} was rejected",
     "description": "Notification sentence: an administrator rejected the user's request for a new image of their custom emoji. {emoji} is its :shortcode:."
   },
+  "notifications.type.status": {
+    "defaultMessage": "{name} posted",
+    "description": "Notification sentence. {name} is the display name of an account that the user subscribes to, which made the new post that the notification shows."
+  },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "A payment for your supporter plan failed",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."

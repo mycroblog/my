@@ -491,6 +491,18 @@
     "defaultMessage": "‮ᴚǝɐʅ-ʇıɯǝ ndpɐʇǝs ɐɹǝ nuɐʌɐıʅɐqʅǝ ɹıƃɥʇ uoʍ. ⊥ɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.subscription_blocked": {
+    "defaultMessage": "‮⅄on ɔɐuuoʇ qǝ uoʇıɟıǝp oɟ ʇɥǝ uǝʍ dosʇs oɟ ʇɥıs ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.subscription_limit": {
+    "defaultMessage": "‮⅄on ɐɹǝ uoʇıɟıǝp oɟ ʇɥǝ uǝʍ dosʇs oɟ ʇoo ɯɐuʎ ɐɔɔonuʇs. ⊥nɹu soɯǝ oɟ ʇɥǝɯ oɟɟ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.subscription_requires_follow": {
+    "defaultMessage": "‮Ⅎoʅʅoʍ ʇɥıs ɐɔɔonuʇ ʇo qǝ uoʇıɟıǝp oɟ ıʇs uǝʍ dosʇs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.ineligible": {
     "defaultMessage": "‮⅄on ɔɐuuoʇ snqsɔɹıqǝ ʇo ʇɥǝ snddoɹʇǝɹ dʅɐus.‬",
     "description": "Generated from en by tools/i18n; do not edit."

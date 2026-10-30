@@ -10,6 +10,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
@@ -55,6 +56,9 @@ type ProjectorDeps struct {
 	// Email enqueues the emails of the new notifications whose recipients get them by email;
 	// nil emails none.
 	Email *EmailScheduler
+	// PostJobs enqueues JobNotifyPostSubscribers for the new posts of the accounts with
+	// subscribers (ADR-0123 §2); nil notifies no subscriber.
+	PostJobs queue.Outbox
 }
 
 // RegisterProjectors registers the synchronous projectors that create notifications from the
@@ -123,9 +127,13 @@ type ProjectorDeps struct {
 // deleted status gets no notifications later, so one without them needs no row. Notifications
 // are events and stay until the erasure job deletes them.
 //
+// The subscription projectors (registerSubscriptionProjectors) keep the subscriptions to new
+// posts in step with the follows and blocks, and enqueue the status notifications of a new post.
+//
 // Register them after the graph, content, and moderation projectors.
 func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	p := &projector{d: d}
+	registerSubscriptionProjectors(r, d)
 	r.Register(appgraph.EventFollowed, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Followed)
 		f := ev.Follow

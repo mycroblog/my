@@ -226,6 +226,29 @@ func (s *Service) Follows(ctx context.Context, tx uow.Tx, followerID, followeeID
 	return e.State == graph.StateActive, nil
 }
 
+// FollowRequested reports, inside tx, whether followerID's follow of followeeID awaits approval.
+// The notification module reads it to keep a subscription asked for with a follow of a remote
+// account until the follow is accepted.
+func (s *Service) FollowRequested(ctx context.Context, tx uow.Tx, followerID, followeeID string) (bool, error) {
+	e, err := s.d.Repository.Edge(ctx, tx, followerID, followeeID)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return e.State == graph.StatePending, nil
+}
+
+// BlockedEitherWay reports, inside tx, whether either account blocks the other.
+func (s *Service) BlockedEitherWay(ctx context.Context, tx uow.Tx, a, b string) (bool, error) {
+	err := s.checkNotBlocked(ctx, tx, a, b)
+	if errors.Is(err, ErrBlocked) {
+		return true, nil
+	}
+	return false, err
+}
+
 // HidesNotifications reports, inside tx, whether recipientID is not to be notified of what
 // sourceID does: either account blocks the other, or recipientID mutes sourceID with
 // HideNotifications and the mute has not expired. The notification module's projectors call it

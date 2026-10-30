@@ -3,8 +3,8 @@ description: |
   A row of the notification settings: one or more notification types that the user turns on
   and off together. The ordinary notifications are one row per type (`mention`, `follow`,
   `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-  `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-  `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+  `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+  `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
   `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
   `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
   notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -23,6 +23,7 @@ enum:
   - poll_closed
   - account_moved
   - voice
+  - status
   - admin_report
   - admin_sign_up
   - admin_appeal

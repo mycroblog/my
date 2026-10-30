@@ -24,7 +24,7 @@
 | FR-116 絵文字リアクション | M | `reactions`, `status_reaction_counts`, `custom_emojis`, `notifications`（`reaction`） |
 | FR-117 リンクのカード | S | `link_cards`, `link_card_media`, `status_link_cards`, `instance_settings`（`link_cards_enabled`） |
 | FR-201〜204 タイムライン | M | `feed_entries`, `feed_direct_recipients`, `feed_tag_entries`, `feed_follow_edges`, `feed_exclusions`, `feed_author_restrictions`, `feed_domain_restrictions` |
-| FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers` |
+| FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers`, `post_subscriptions`, `post_subscription_requests` |
 | FR-206 Web Push | S | `push_subscriptions`, `push_subscription_alerts` |
 | FR-210 通知の設定 | S | `notification_settings`、`user_tokens.unsubscribe_category` |
 | FR-211 リスト | S | `lists`, `list_names`, `list_members`, `feed_follow_edges`, `feed_entries` |

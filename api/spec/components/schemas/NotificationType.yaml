@@ -55,6 +55,10 @@ description: |
   `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
   resolved one that happened again, at most 10 times an hour for the whole server, with the
   rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+  The type `status` tells of a new post (`status`) of an account that the user subscribes to
+  (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+  someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+  nor when the user gets a `mention` of the same post.
 type: string
 enum:
   - follow
@@ -87,3 +91,4 @@ enum:
   - voice_room_started
   - voice_room_invited
   - admin_error_group
+  - status

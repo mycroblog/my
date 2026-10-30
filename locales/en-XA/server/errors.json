@@ -491,6 +491,18 @@
     "defaultMessage": "[Řḗḗȧȧŀ-ŧīḿḗḗ ŭŭƥḓȧȧŧḗḗş ȧȧřḗḗ ŭŭƞȧȧṽȧȧīŀȧȧƀŀḗḗ řīɠħŧ ƞǿǿẇ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.subscription_blocked": {
+    "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ƀḗḗ ƞǿǿŧīƒīḗḗḓ ǿǿƒ ŧħḗḗ ƞḗḗẇ ƥǿǿşŧş ǿǿƒ ŧħīş ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.subscription_limit": {
+    "defaultMessage": "[Ẏǿǿŭŭ ȧȧřḗḗ ƞǿǿŧīƒīḗḗḓ ǿǿƒ ŧħḗḗ ƞḗḗẇ ƥǿǿşŧş ǿǿƒ ŧǿǿǿǿ ḿȧȧƞẏ ȧȧƈƈǿǿŭŭƞŧş. Ŧŭŭřƞ şǿǿḿḗḗ ǿǿƒ ŧħḗḗḿ ǿǿƒƒ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.subscription_requires_follow": {
+    "defaultMessage": "[Ƒǿǿŀŀǿǿẇ ŧħīş ȧȧƈƈǿǿŭŭƞŧ ŧǿǿ ƀḗḗ ƞǿǿŧīƒīḗḗḓ ǿǿƒ īŧş ƞḗḗẇ ƥǿǿşŧş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.ineligible": {
     "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ şŭŭƀşƈřīƀḗḗ ŧǿǿ ŧħḗḗ şŭŭƥƥǿǿřŧḗḗř ƥŀȧȧƞş.]",
     "description": "Generated from en by tools/i18n; do not edit."

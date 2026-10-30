@@ -7,10 +7,11 @@ description: |
   reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
   emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
   the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-  offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
-  each subscription (`putPushSubscription`).
+  offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
+  is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+  subscription (`putPushSubscription`).
 type: object
-required: [group, section, types, in_app, email]
+required: [group, section, types, in_app]
 properties:
   group:
     $ref: ./NotificationGroup.yaml

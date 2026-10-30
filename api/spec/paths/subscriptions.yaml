@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listSubscriptions
+  summary: List the accounts whose new posts notify the viewer
+  description: |
+    The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+    the viewer may not see, deactivated, and deleted accounts are left out.
+  tags: [accounts]
+  security:
+    - oauth2: ["read:follows"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AccountPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

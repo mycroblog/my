@@ -54,6 +54,9 @@ const (
 	GroupAccountMoved   Group = "account_moved"
 	// GroupVoice is voice_room_started and voice_room_invited.
 	GroupVoice Group = "voice"
+	// GroupStatus is the new posts of the accounts that the user subscribes to (ADR-0123 §3); it
+	// has no email channel.
+	GroupStatus Group = "status"
 
 	GroupAdminReport             Group = "admin_report"
 	GroupAdminSignUp             Group = "admin_sign_up"
@@ -95,11 +98,13 @@ const (
 // read it (ADR-0109 §4): for the groups whose email is DelayedEmail.
 const EmailDelay = 15 * time.Minute
 
-// Rule is how a channel of a group is set: Default is its value until the user chooses, and a
-// Fixed channel is always on and cannot be chosen.
+// Rule is how a channel of a group is set: Default is its value until the user chooses, a
+// Fixed channel is always on and cannot be chosen, and an Absent channel is never offered: it is
+// always off and cannot be chosen.
 type Rule struct {
 	Default bool
 	Fixed   bool
+	Absent  bool
 }
 
 // GroupSpec is a row of the settings: its group, its section, its notification types, and the
@@ -121,16 +126,17 @@ func (g GroupSpec) Rule(c Channel) Rule {
 }
 
 // DelayedEmail reports whether the notifications of g are emailed by the job that waits
-// EmailDelay for them to stay unread: the ordinary notifications and the moderation notices.
+// EmailDelay for them to stay unread: the ordinary notifications with an email channel and the
+// moderation notices.
 // The moderator notifications are emailed at once, and the service closure and supporter
 // notifications by their own transactional emails.
 func (g GroupSpec) DelayedEmail() bool {
-	return g.Section == SectionOrdinary || g.Group == GroupModeration
+	return !g.Email.Absent && (g.Section == SectionOrdinary || g.Group == GroupModeration)
 }
 
 // Unsubscribable reports whether the emails of g carry an unsubscribe link, which turns off the
 // email of g: the groups whose email the user chooses.
-func (g GroupSpec) Unsubscribable() bool { return !g.Email.Fixed }
+func (g GroupSpec) Unsubscribable() bool { return !g.Email.Fixed && !g.Email.Absent }
 
 // Permission returns the permission that the recipient of the group's notifications needs, for
 // a moderator group.
@@ -168,6 +174,7 @@ var Groups = []GroupSpec{
 	ordinary(GroupBoost), ordinary(GroupFavourite), ordinary(GroupReaction), ordinary(GroupQuote),
 	ordinary(GroupPollClosed), ordinary(GroupAccountMoved),
 	ordinary(GroupVoice, TypeVoiceRoomStarted, TypeVoiceRoomInvited),
+	{Group: GroupStatus, Section: SectionOrdinary, Types: []Type{TypeStatus}, InApp: ordinaryRules[0], Email: Rule{Absent: true}},
 	moderator(TypeAdminReport), moderator(TypeAdminSignUp), moderator(TypeAdminAppeal), moderator(TypeAdminWebhookDisabled),
 	moderator(TypeAdminCustomEmojiRequest), moderator(TypeAdminAccountMoved), moderator(TypeAdminServiceClosureDue),
 	moderator(TypeAdminErrorGroup),
@@ -229,6 +236,9 @@ func (s Setting) Validate() error {
 	if !ok || !s.Channel.Valid() {
 		return ErrInvalidSetting
 	}
+	if g.Rule(s.Channel).Absent {
+		return ErrInvalidSetting
+	}
 	if g.Rule(s.Channel).Fixed {
 		return ErrFixedSetting
 	}
@@ -253,15 +263,18 @@ func NewChoices(ss []Setting) Choices {
 	return c
 }
 
-// Enabled reports whether channel ch of group g is on: always for a fixed channel, the user's
-// choice when there is one, and the group's default otherwise. An unknown group is on in the
-// app and off by email.
+// Enabled reports whether channel ch of group g is on: always for a fixed channel, never for an
+// absent one, the user's choice when there is one, and the group's default otherwise. An unknown
+// group is on in the app and off by email.
 func (c Choices) Enabled(g Group, ch Channel) bool {
 	spec, ok := FindGroup(g)
 	if !ok {
 		return ch == ChannelInApp
 	}
 	rule := spec.Rule(ch)
+	if rule.Absent {
+		return false
+	}
 	if rule.Fixed {
 		return true
 	}

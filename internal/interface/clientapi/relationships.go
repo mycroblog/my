@@ -52,9 +52,10 @@ const ProblemTypeBlocking = "/api/v1/problems/blocking"
 // maxMuteSeconds is the longest mute duration of the spec (MuteAccountRequest.duration).
 const maxMuteSeconds = 365 * 24 * 60 * 60
 
-// newRelationship presents a relationship as the Relationship schema. It leaves out
-// BlockedBy: an account that blocks the viewer is not found at all.
-func newRelationship(r appgraph.Relationship) Relationship {
+// newRelationship presents a relationship as the Relationship schema, with notify, whether the
+// account subscribes to the target's new posts. It leaves out BlockedBy: an account that blocks
+// the viewer is not found at all.
+func newRelationship(r appgraph.Relationship, notify bool) Relationship {
 	return Relationship{
 		Id:                  r.TargetAccountID,
 		Following:           r.Following == graph.StateActive,
@@ -62,16 +63,16 @@ func newRelationship(r appgraph.Relationship) Relationship {
 		FollowedBy:          r.FollowedBy == graph.StateActive,
 		RequestedBy:         r.FollowedBy == graph.StatePending,
 		ShowBoosts:          r.ShowBoosts,
-		Notify:              r.Notify,
+		Notify:              notify,
 		Blocking:            r.Blocking,
 		Muting:              r.Muting,
 		MutingNotifications: r.MutingNotifications,
 	}
 }
 
-func relationshipResponse(r appgraph.Relationship) RelationshipJSONResponse {
+func relationshipResponse(r appgraph.Relationship, notify bool) RelationshipJSONResponse {
 	cache := cacheNoStore
-	return RelationshipJSONResponse{Body: newRelationship(r), Headers: RelationshipResponseHeaders{CacheControl: &cache}}
+	return RelationshipJSONResponse{Body: newRelationship(r, notify), Headers: RelationshipResponseHeaders{CacheControl: &cache}}
 }
 
 // graphProblem returns the problem that a graph use case's error means, and false for an
@@ -126,9 +127,20 @@ func (s *Server) relateGuarded(ctx context.Context, targetID string, guard func(
 		if p, ok := s.graphProblem(ctx, err); ok {
 			return nil, &p, nil
 		}
+		if p, ok := s.subscriptionProblem(ctx, err); ok {
+			return nil, &p, nil
+		}
+		if errors.Is(err, errSubscriptionsOff) {
+			p := s.notFoundResponse(ctx)
+			return nil, &p, nil
+		}
 		return nil, nil, err
 	}
-	res := relationshipResponse(r)
+	notify, err := s.subscribed(ctx, v.AccountID, r.TargetAccountID)
+	if err != nil {
+		return nil, nil, err
+	}
+	res := relationshipResponse(r, notify)
 	return &res, nil, nil
 }
 
@@ -160,7 +172,11 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, newRelationship(r))
+		notify, err := s.subscribed(ctx, v.AccountID, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, newRelationship(r, notify))
 	}
 	cache := cacheNoStore
 	return GetRelationships200JSONResponse{Body: out, Headers: GetRelationships200ResponseHeaders{CacheControl: &cache}}, nil
@@ -171,9 +187,20 @@ func (s *Server) FollowAccount(ctx context.Context, req FollowAccountRequestObje
 	res, p, err := s.relateGuarded(ctx, req.Id, s.followable, func(v Viewer) (appgraph.Relationship, error) {
 		var opts appgraph.FollowOptions
 		if req.Body != nil {
-			opts = appgraph.FollowOptions{ShowBoosts: req.Body.ShowBoosts, Notify: req.Body.Notify}
+			opts = appgraph.FollowOptions{ShowBoosts: req.Body.ShowBoosts}
 		}
-		return s.o.Graph.FollowWith(ctx, v.AccountID, req.Id, opts)
+		r, err := s.o.Graph.FollowWith(ctx, v.AccountID, req.Id, opts)
+		if err != nil || req.Body == nil || req.Body.Notify == nil || s.o.Subscriptions == nil {
+			return r, err
+		}
+		// The notify of a follow is the subscription to the account's new posts (ADR-0123 §1):
+		// for a remote account whose follow awaits its server, it starts with the acceptance.
+		if *req.Body.Notify {
+			err = s.o.Subscriptions.SubscribeWithFollow(ctx, v.AccountID, req.Id)
+		} else {
+			err = s.o.Subscriptions.Unsubscribe(ctx, v.AccountID, req.Id)
+		}
+		return r, err
 	})
 	switch {
 	case err != nil:

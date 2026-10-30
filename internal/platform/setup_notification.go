@@ -4,8 +4,11 @@ package platform
 
 import (
 	"context"
+	"errors"
 
+	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -31,9 +34,18 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	if err != nil {
 		return err
 	}
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue; its jobs are enqueued after the commit.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
 	deps := notification.ProjectorDeps{
 		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, IDs: a.IDs, Push: pusher,
+		PostJobs: outbox,
 	}
+	a.Subscriptions = notification.NewSubscriptions(notification.SubscriptionDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Clock: a.Clock,
+	})
 	if sendsEmail(cfg) {
 		deps.Email = &notification.EmailScheduler{Outbox: a.mailOutbox(), Clock: a.Clock}
 		notification.RegisterEmailJobs(a.Handlers, notification.EmailDeps{
@@ -43,9 +55,34 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 		})
 	}
 	notification.RegisterProjectors(a.Projectors, deps)
+	notification.RegisterPostNotificationJobs(a.Handlers, notification.PostNotificationDeps{
+		UnitOfWork: a.UnitOfWork, Posts: subscribedPosts{a}, Projectors: deps,
+	})
 	a.voiceNotifier = notification.NewVoiceNotifier(deps)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
 	a.setUpClosureNotifications(repo, moderators, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)
 	return nil
 }
+
+// subscribedPosts implements notification.Posts on the content module.
+type subscribedPosts struct{ a *App }
+
+// StatusVisible implements notification.Posts through the content module's visibility policy.
+func (p subscribedPosts) StatusVisible(ctx context.Context, accountID, statusID string) (bool, error) {
+	return pushAudience(p).StatusVisible(ctx, accountID, statusID)
+}
+
+// AuthorOf implements notification.Posts.
+func (p subscribedPosts) AuthorOf(ctx context.Context, uri string) (string, error) {
+	st, err := p.a.Content.FindStatusByURI(ctx, uri)
+	switch {
+	case errors.Is(err, content.ErrNotFound):
+		return "", nil
+	case err != nil:
+		return "", err
+	}
+	return st.AuthorAccountID, nil
+}
+
+var _ notification.Posts = subscribedPosts{}

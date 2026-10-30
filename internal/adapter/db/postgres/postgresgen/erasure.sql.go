@@ -984,6 +984,62 @@ func (q *Queries) ErasePollVotesBy(ctx context.Context, arg ErasePollVotesByPara
 	return result.RowsAffected(), nil
 }
 
+const erasePostSubscriptionRequestsAsTarget = `-- name: ErasePostSubscriptionRequestsAsTarget :execrows
+DELETE FROM post_subscription_requests WHERE post_subscription_requests.target_account_id = $1 AND post_subscription_requests.account_id IN (
+  SELECT x.account_id FROM post_subscription_requests x WHERE x.target_account_id = $1
+  ORDER BY x.account_id LIMIT $2)
+`
+
+type ErasePostSubscriptionRequestsAsTargetParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) ErasePostSubscriptionRequestsAsTarget(ctx context.Context, arg ErasePostSubscriptionRequestsAsTargetParams) (int64, error) {
+	result, err := q.db.Exec(ctx, erasePostSubscriptionRequestsAsTarget, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const erasePostSubscriptionRequestsOf = `-- name: ErasePostSubscriptionRequestsOf :exec
+DELETE FROM post_subscription_requests WHERE account_id = $1
+`
+
+func (q *Queries) ErasePostSubscriptionRequestsOf(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, erasePostSubscriptionRequestsOf, accountID)
+	return err
+}
+
+const erasePostSubscriptionsAsTarget = `-- name: ErasePostSubscriptionsAsTarget :execrows
+DELETE FROM post_subscriptions WHERE post_subscriptions.target_account_id = $1 AND post_subscriptions.account_id IN (
+  SELECT x.account_id FROM post_subscriptions x WHERE x.target_account_id = $1
+  ORDER BY x.account_id LIMIT $2)
+`
+
+type ErasePostSubscriptionsAsTargetParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) ErasePostSubscriptionsAsTarget(ctx context.Context, arg ErasePostSubscriptionsAsTargetParams) (int64, error) {
+	result, err := q.db.Exec(ctx, erasePostSubscriptionsAsTarget, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const erasePostSubscriptionsOf = `-- name: ErasePostSubscriptionsOf :exec
+DELETE FROM post_subscriptions WHERE account_id = $1
+`
+
+func (q *Queries) ErasePostSubscriptionsOf(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, erasePostSubscriptionsOf, accountID)
+	return err
+}
+
 const erasePrivateKeys = `-- name: ErasePrivateKeys :exec
 DELETE FROM local_account_private_keys WHERE account_key_id IN (
   SELECT k.id FROM account_keys k WHERE k.account_id = $1)

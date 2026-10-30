@@ -318,7 +318,7 @@ func movesMigrate(t *testing.T, e *moveEnv) {
 	target := e.remote(t, moveTarget)
 
 	old := e.follow(t, follower, source)
-	if _, err := e.graph.UpdatePreferences(ctx, follower, source, appgraph.PreferencesInput{ShowBoosts: false, Notify: true}); err != nil {
+	if _, err := e.graph.UpdatePreferences(ctx, follower, source, appgraph.PreferencesInput{ShowBoosts: false}); err != nil {
 		t.Fatal(err)
 	}
 	kept := e.follow(t, blocker, source)
@@ -343,8 +343,8 @@ func movesMigrate(t *testing.T, e *moveEnv) {
 	// The follower follows the target, pending its server's Accept, with the preferences of
 	// its follow of the source, which ended.
 	r := e.relationship(t, follower, target)
-	if r.Following != graph.StatePending || r.ShowBoosts || !r.Notify {
-		t.Errorf("follower → target = %+v, want a pending follow with show_boosts off and notify on", r)
+	if r.Following != graph.StatePending || r.ShowBoosts {
+		t.Errorf("follower → target = %+v, want a pending follow with show_boosts off", r)
 	}
 	if r := e.relationship(t, follower, source); r.Following != graph.StateNone {
 		t.Errorf("follower → source = %q, want none", r.Following)

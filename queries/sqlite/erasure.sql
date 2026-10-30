@@ -507,3 +507,19 @@ DELETE FROM notification_exclusions WHERE notification_exclusions.target_account
 DELETE FROM notification_domain_exclusions WHERE notification_domain_exclusions.viewer_account_id = sqlc.arg(account_id) AND notification_domain_exclusions.domain IN (
   SELECT x.domain FROM notification_domain_exclusions x WHERE x.viewer_account_id = sqlc.arg(account_id)
   ORDER BY x.domain LIMIT sqlc.arg(lim));
+
+-- name: ErasePostSubscriptionsOf :exec
+DELETE FROM post_subscriptions WHERE account_id = sqlc.arg(account_id);
+
+-- name: ErasePostSubscriptionRequestsOf :exec
+DELETE FROM post_subscription_requests WHERE account_id = sqlc.arg(account_id);
+
+-- name: ErasePostSubscriptionsAsTarget :execrows
+DELETE FROM post_subscriptions WHERE post_subscriptions.target_account_id = sqlc.arg(account_id) AND post_subscriptions.account_id IN (
+  SELECT x.account_id FROM post_subscriptions x WHERE x.target_account_id = sqlc.arg(account_id)
+  ORDER BY x.account_id LIMIT sqlc.arg(lim));
+
+-- name: ErasePostSubscriptionRequestsAsTarget :execrows
+DELETE FROM post_subscription_requests WHERE post_subscription_requests.target_account_id = sqlc.arg(account_id) AND post_subscription_requests.account_id IN (
+  SELECT x.account_id FROM post_subscription_requests x WHERE x.target_account_id = sqlc.arg(account_id)
+  ORDER BY x.account_id LIMIT sqlc.arg(lim));

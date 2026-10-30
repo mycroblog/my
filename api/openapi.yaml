@@ -2626,6 +2626,69 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+  /accounts/{id}/subscribe:
+    post:
+      operationId: subscribeAccount
+      summary: Be notified of an account's new posts
+      description: |
+        Subscribes the viewer to the account's new posts: each new post that the viewer may see
+        becomes a `status` notification, in the app and by Web Push, never by email. The account
+        is not told. An account on this server can be subscribed to with or without a follow; an
+        account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+        the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+        to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+        account on another server ends the subscription; a block ends it either way.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+  /accounts/{id}/unsubscribe:
+    post:
+      operationId: unsubscribeAccount
+      summary: Stop being notified of an account's new posts
+      description: |
+        Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+        request that awaits the account's server. Without a subscription it changes nothing.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: List the accounts whose new posts notify the viewer
+      description: |
+        The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+        the viewer may not see, deactivated, and deleted accounts are left out.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - read:follows
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/AccountPage'
+        default:
+          $ref: '#/components/responses/Problem'
   /blocks:
     get:
       operationId: listBlocks
@@ -16681,7 +16744,10 @@ components:
           description: Show the account's boosts in the home timeline. New follows show them.
           type: boolean
         notify:
-          description: Notify the viewer of the account's new posts. New follows do not.
+          description: |
+            Subscribe to the account's new posts (true) or stop (false), as `subscribeAccount` and
+            `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
+            server, the subscription starts when that server accepts the follow.
           type: boolean
     Id:
       description: The ID of a resource, a UUIDv7 in its canonical string form.
@@ -18228,8 +18294,8 @@ components:
         A row of the notification settings: one or more notification types that the user turns on
         and off together. The ordinary notifications are one row per type (`mention`, `follow`,
         `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-        `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-        `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+        `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+        `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
         `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -18248,6 +18314,7 @@ components:
         - poll_closed
         - account_moved
         - voice
+        - status
         - admin_report
         - admin_sign_up
         - admin_appeal
@@ -18317,15 +18384,15 @@ components:
         reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
         emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
         the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-        offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
-        each subscription (`putPushSubscription`).
+        offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
+        is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+        subscription (`putPushSubscription`).
       type: object
       required:
         - group
         - section
         - types
         - in_app
-        - email
       properties:
         group:
           $ref: '#/components/schemas/NotificationGroup'
@@ -18448,6 +18515,10 @@ components:
         `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
         resolved one that happened again, at most 10 times an hour for the whole server, with the
         rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+        The type `status` tells of a new post (`status`) of an account that the user subscribes to
+        (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+        someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+        nor when the user gets a `mention` of the same post.
       type: string
       enum:
         - follow
@@ -18480,6 +18551,7 @@ components:
         - voice_room_started
         - voice_room_invited
         - admin_error_group
+        - status
     OAuthApp:
       description: |
         An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -19549,7 +19621,7 @@ components:
         alerts:
           description: The notification types to push, each at most once; empty pushes none.
           type: array
-          maxItems: 30
+          maxItems: 31
           items:
             $ref: '#/components/schemas/NotificationType'
     QrCode:
@@ -19718,7 +19790,10 @@ components:
           description: Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
           type: boolean
         notify:
-          description: Whether the viewer's follow notifies them of the account's new posts.
+          description: |
+            Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
+            without a follow. A subscription asked for with a follow request to an account on another
+            server is false until that server accepts the follow.
           type: boolean
         blocking:
           description: Whether the viewer blocks the account.

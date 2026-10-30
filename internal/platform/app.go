@@ -158,6 +158,8 @@ type App struct {
 	Notifications *notification.Service
 	// voiceNotifier creates the notifications of the voice chat rooms (ADR-0100 §8).
 	voiceNotifier *notification.VoiceNotifier
+	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0123).
+	Subscriptions *notification.Subscriptions
 	// Push registers the Web Push subscriptions and sends the notifications to them (FR-206).
 	Push *notification.PushService
 	// Streams is the broker of the streaming endpoint that cfg.Stream selects: a stream.Hub,

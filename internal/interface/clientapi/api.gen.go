@@ -2669,6 +2669,7 @@ const (
 	NotificationGroupQuote                   NotificationGroup = "quote"
 	NotificationGroupReaction                NotificationGroup = "reaction"
 	NotificationGroupServiceClosure          NotificationGroup = "service_closure"
+	NotificationGroupStatus                  NotificationGroup = "status"
 	NotificationGroupSupporter               NotificationGroup = "supporter"
 	NotificationGroupVoice                   NotificationGroup = "voice"
 )
@@ -2715,6 +2716,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupReaction:
 		return true
 	case NotificationGroupServiceClosure:
+		return true
+	case NotificationGroupStatus:
 		return true
 	case NotificationGroupSupporter:
 		return true
@@ -2790,6 +2793,7 @@ const (
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
 	NotificationTypeServiceClosure             NotificationType = "service_closure"
+	NotificationTypeStatus                     NotificationType = "status"
 	NotificationTypeSupporterPaymentFailed     NotificationType = "supporter_payment_failed"
 	NotificationTypeSupporterPlanRetired       NotificationType = "supporter_plan_retired"
 	NotificationTypeSupporterServiceClosure    NotificationType = "supporter_service_closure"
@@ -2848,6 +2852,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeReportResolved:
 		return true
 	case NotificationTypeServiceClosure:
+		return true
+	case NotificationTypeStatus:
 		return true
 	case NotificationTypeSupporterPaymentFailed:
 		return true
@@ -8513,7 +8519,9 @@ type FinanceVisibility string
 
 // FollowAccountRequest The viewer's preferences of the follow; a preference left out keeps its value.
 type FollowAccountRequest struct {
-	// Notify Notify the viewer of the account's new posts. New follows do not.
+	// Notify Subscribe to the account's new posts (true) or stop (false), as `subscribeAccount` and
+	// `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
+	// server, the subscription starts when that server accepts the follow.
 	Notify *bool `json:"notify,omitempty"`
 
 	// ShowBoosts Show the account's boosts in the home timeline. New follows show them.
@@ -9915,6 +9923,10 @@ type Notification struct {
 	// `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
 	// resolved one that happened again, at most 10 times an hour for the whole server, with the
 	// rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+	// The type `status` tells of a new post (`status`) of an account that the user subscribes to
+	// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+	// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+	// nor when the user gets a `mention` of the same post.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -9945,8 +9957,8 @@ type NotificationErrorGroupChange string
 // NotificationGroup A row of the notification settings: one or more notification types that the user turns on
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 // `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -9998,17 +10010,18 @@ type NotificationSettingCell struct {
 // reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
 // emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-// offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
-// each subscription (`putPushSubscription`).
+// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
+// is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+// subscription (`putPushSubscription`).
 type NotificationSettingRow struct {
 	// Email One channel of one row of the notification settings.
-	Email NotificationSettingCell `json:"email"`
+	Email *NotificationSettingCell `json:"email,omitempty"`
 
 	// Group A row of the notification settings: one or more notification types that the user turns on
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-	// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -10054,8 +10067,8 @@ type NotificationSettingsUpdate struct {
 		// Group A row of the notification settings: one or more notification types that the user turns on
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-		// `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -10123,6 +10136,10 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
 // resolved one that happened again, at most 10 times an hour for the whole server, with the
 // rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+// The type `status` tells of a new post (`status`) of an account that the user subscribes to
+// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+// nor when the user gets a `mention` of the same post.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -11035,7 +11052,9 @@ type Relationship struct {
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications bool `json:"muting_notifications"`
 
-	// Notify Whether the viewer's follow notifies them of the account's new posts.
+	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
+	// without a follow. A subscription asked for with a follow request to an account on another
+	// server is false until that server accepts the follow.
 	Notify bool `json:"notify"`
 
 	// Requested Whether the viewer's follow request awaits the account's approval.
@@ -13731,6 +13750,15 @@ type ListStatusReactionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListSubscriptionsParams defines parameters for ListSubscriptions.
+type ListSubscriptionsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // SearchTagsParams defines parameters for SearchTags.
 type SearchTagsParams struct {
 	// Q The start of a hashtag: 1 to 100 characters after a leading `#`, which is ignored.
@@ -14211,6 +14239,9 @@ type ServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
+	// SubscribeAccount Be notified of an account's new posts
+	// (POST /accounts/{id}/subscribe)
+	SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// UnblockAccount Unblock an account
 	// (POST /accounts/{id}/unblock)
 	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14220,6 +14251,9 @@ type ServerInterface interface {
 	// UnmuteAccount Unmute an account
 	// (POST /accounts/{id}/unmute)
 	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (POST /accounts/{id}/unsubscribe)
+	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId)
@@ -15018,6 +15052,9 @@ type ServerInterface interface {
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	// (GET /statuses/{id}/source)
 	GetStatusSource(w http.ResponseWriter, r *http.Request, id StatusId)
+	// ListSubscriptions List the accounts whose new posts notify the viewer
+	// (GET /subscriptions)
+	ListSubscriptions(w http.ResponseWriter, r *http.Request, params ListSubscriptionsParams)
 	// StartSupporterCheckout Start a subscription to a supporter plan
 	// (POST /supporter/checkout)
 	StartSupporterCheckout(w http.ResponseWriter, r *http.Request)
@@ -15859,6 +15896,32 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// SubscribeAccount operation middleware
+func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubscribeAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UnblockAccount operation middleware
 func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -15928,6 +15991,32 @@ func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnmuteAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnsubscribeAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnsubscribeAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -23528,6 +23617,52 @@ func (siw *ServerInterfaceWrapper) GetStatusSource(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListSubscriptions operation middleware
+func (siw *ServerInterfaceWrapper) ListSubscriptions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSubscriptionsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSubscriptions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // StartSupporterCheckout operation middleware
 func (siw *ServerInterfaceWrapper) StartSupporterCheckout(w http.ResponseWriter, r *http.Request) {
 
@@ -25133,6 +25268,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unblock", wrapper.UnblockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unfollow", wrapper.UnfollowAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unmute", wrapper.UnmuteAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unsubscribe", wrapper.UnsubscribeAccount)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/subscriptions", wrapper.ListSubscriptions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/blocks", wrapper.ListBlocks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/follow_requests", wrapper.ListFollowRequests)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/authorize", wrapper.AcceptFollowRequest)
@@ -27210,6 +27348,61 @@ func (response ListAccountStatusesdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type SubscribeAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type SubscribeAccountResponseObject interface {
+	VisitSubscribeAccountResponse(w http.ResponseWriter) error
+}
+
+type SubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response SubscribeAccount200JSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UnblockAccountRequestObject struct {
 	Id AccountId `json:"id"`
 }
@@ -27352,6 +27545,61 @@ type UnmuteAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnsubscribeAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnsubscribeAccountResponseObject interface {
+	VisitUnsubscribeAccountResponse(w http.ResponseWriter) error
+}
+
+type UnsubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnsubscribeAccount200JSONResponse) VisitUnsubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitUnsubscribeAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43265,6 +43513,61 @@ func (response GetStatusSourcedefaultApplicationProblemPlusJSONResponse) VisitGe
 	return err
 }
 
+type ListSubscriptionsRequestObject struct {
+	Params ListSubscriptionsParams
+}
+
+type ListSubscriptionsResponseObject interface {
+	VisitListSubscriptionsResponse(w http.ResponseWriter) error
+}
+
+type ListSubscriptions200JSONResponse struct{ AccountPageJSONResponse }
+
+func (response ListSubscriptions200JSONResponse) VisitListSubscriptionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSubscriptionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListSubscriptionsdefaultApplicationProblemPlusJSONResponse) VisitListSubscriptionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type StartSupporterCheckoutRequestObject struct {
 	Body *StartSupporterCheckoutJSONRequestBody
 }
@@ -46151,6 +46454,9 @@ type StrictServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
+	// SubscribeAccount Be notified of an account's new posts
+	// (POST /accounts/{id}/subscribe)
+	SubscribeAccount(ctx context.Context, request SubscribeAccountRequestObject) (SubscribeAccountResponseObject, error)
 	// UnblockAccount Unblock an account
 	// (POST /accounts/{id}/unblock)
 	UnblockAccount(ctx context.Context, request UnblockAccountRequestObject) (UnblockAccountResponseObject, error)
@@ -46160,6 +46466,9 @@ type StrictServerInterface interface {
 	// UnmuteAccount Unmute an account
 	// (POST /accounts/{id}/unmute)
 	UnmuteAccount(ctx context.Context, request UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (POST /accounts/{id}/unsubscribe)
+	UnsubscribeAccount(ctx context.Context, request UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(ctx context.Context, request GetAccountActionRequestObject) (GetAccountActionResponseObject, error)
@@ -46958,6 +47267,9 @@ type StrictServerInterface interface {
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	// (GET /statuses/{id}/source)
 	GetStatusSource(ctx context.Context, request GetStatusSourceRequestObject) (GetStatusSourceResponseObject, error)
+	// ListSubscriptions List the accounts whose new posts notify the viewer
+	// (GET /subscriptions)
+	ListSubscriptions(ctx context.Context, request ListSubscriptionsRequestObject) (ListSubscriptionsResponseObject, error)
 	// StartSupporterCheckout Start a subscription to a supporter plan
 	// (POST /supporter/checkout)
 	StartSupporterCheckout(ctx context.Context, request StartSupporterCheckoutRequestObject) (StartSupporterCheckoutResponseObject, error)
@@ -47841,6 +48153,32 @@ func (sh *strictHandler) ListAccountStatuses(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// SubscribeAccount operation middleware
+func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request SubscribeAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubscribeAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubscribeAccountResponseObject); ok {
+		if err := validResponse.VisitSubscribeAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // UnblockAccount operation middleware
 func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request UnblockAccountRequestObject
@@ -47912,6 +48250,32 @@ func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnmuteAccountResponseObject); ok {
 		if err := validResponse.VisitUnmuteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnsubscribeAccount operation middleware
+func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnsubscribeAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnsubscribeAccount(ctx, request.(UnsubscribeAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnsubscribeAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnsubscribeAccountResponseObject); ok {
+		if err := validResponse.VisitUnsubscribeAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -55258,6 +55622,32 @@ func (sh *strictHandler) GetStatusSource(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetStatusSourceResponseObject); ok {
 		if err := validResponse.VisitGetStatusSourceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSubscriptions operation middleware
+func (sh *strictHandler) ListSubscriptions(w http.ResponseWriter, r *http.Request, params ListSubscriptionsParams) {
+	var request ListSubscriptionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSubscriptions(ctx, request.(ListSubscriptionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSubscriptions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSubscriptionsResponseObject); ok {
+		if err := validResponse.VisitListSubscriptionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

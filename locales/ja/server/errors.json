@@ -227,6 +227,18 @@
     "defaultMessage": "スタッフのロールは課金のプランのロールより上に置きます。",
     "description": "API error title for HTTP 409 when a change would put a role with a moderation or server permission at or below the role of a supporter plan (ADR-0072 §5)."
   },
+  "errors.subscription_blocked": {
+    "defaultMessage": "このアカウントの新しい投稿は通知できません。",
+    "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of an account that they block or that blocks them."
+  },
+  "errors.subscription_limit": {
+    "defaultMessage": "新しい投稿を通知するアカウントが多すぎます。先にいくつかを止めてください。",
+    "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of more accounts than the server allows (1,000)."
+  },
+  "errors.subscription_requires_follow": {
+    "defaultMessage": "フォローすると新しい投稿を通知できます。",
+    "description": "Detail of the HTTP 422 API error when the user subscribes to the new posts of an account on another server that they do not follow; subscribing to such an account needs a follow."
+  },
   "errors.supporters.unavailable": {
     "defaultMessage": "このサーバーでは課金の機能を使えません。",
     "description": "API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2)."

@@ -87,7 +87,7 @@ func (r *GraphRepository) UpsertPreferences(ctx context.Context, tx uow.Tx, p gr
 		return err
 	}
 	return wrap(q.UpsertFollowPreferences(ctx, sqlitegen.UpsertFollowPreferencesParams{
-		FollowID: p.FollowID, ShowBoosts: boolToInt(p.ShowBoosts), Notify: boolToInt(p.Notify),
+		FollowID: p.FollowID, ShowBoosts: boolToInt(p.ShowBoosts),
 	}), "upsert follow preferences")
 }
 
@@ -134,7 +134,7 @@ func (r *GraphRepository) FindFollow(ctx context.Context, id string) (graph.Foll
 }
 
 func preferencesFrom(row sqlitegen.FollowPreference) graph.Preferences {
-	return graph.Preferences{FollowID: row.FollowID, ShowBoosts: row.ShowBoosts != 0, Notify: row.Notify != 0}
+	return graph.Preferences{FollowID: row.FollowID, ShowBoosts: row.ShowBoosts != 0}
 }
 
 // Preferences implements graph.Repository.
