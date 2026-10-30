@@ -188,8 +188,8 @@ CREATE TABLE user_preferences (
   default_quote_policy text NOT NULL DEFAULT 'public' CHECK (default_quote_policy IN ('public', 'followers', 'nobody')),
   default_post_language text NOT NULL,
   require_media_description boolean NOT NULL,
-  -- Whether the web client inserts new timeline posts without asking (ADR-0077).
-  timeline_auto_insert boolean NOT NULL DEFAULT false,
+  -- Whether the web client inserts new timeline posts without asking (ADR-0077); on by default (ADR-0127 §6).
+  timeline_auto_insert boolean NOT NULL DEFAULT true,
   updated_at timestamptz NOT NULL
 );
 

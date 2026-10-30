@@ -12467,7 +12467,7 @@ export interface components {
             readonly email_suppression?: components["schemas"]["EmailSuppression"];
             /**
              * @description Whether the web client inserts new timeline posts without asking, instead of offering them
-             *     behind a "show new posts" button (ADR-0077). Off for a new user; the same on every device.
+             *     behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
              */
             timeline_auto_insert: boolean;
             /** @description The languages that timelines show, sorted; empty shows every language. */

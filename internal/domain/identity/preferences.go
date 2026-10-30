@@ -29,7 +29,8 @@ type Preferences struct {
 	DefaultPostLanguage string
 	// RequireMediaDescription makes clients ask for a description before attaching media.
 	RequireMediaDescription bool
-	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077). Off for a new user.
+	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077);
+	// DefaultTimelineAutoInsert for a new user (ADR-0127 §6).
 	TimelineAutoInsert bool
 	UpdatedAt          time.Time
 }
@@ -37,13 +38,15 @@ type Preferences struct {
 // Defaults of a new user's preferences (data-model §4.1). The locale comes from the registration
 // or the instance default.
 const (
-	DefaultTimeZone          = "UTC"
-	DefaultPostVisibility    = VisibilityPublic
-	DefaultPostQuotePolicy   = QuotePolicyPublic
-	UndeterminedLanguage     = "und" // BCP 47 "undetermined" (data-model §1.2, lang)
-	MaxLanguageTagLength     = 64    // longer tags are rejected before parsing
-	MaxTimeZoneLength        = 64
-	MaxTimelineLanguageCount = 64
+	DefaultTimeZone        = "UTC"
+	DefaultPostVisibility  = VisibilityPublic
+	DefaultPostQuotePolicy = QuotePolicyPublic
+	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0127 §6).
+	DefaultTimelineAutoInsert = true
+	UndeterminedLanguage      = "und" // BCP 47 "undetermined" (data-model §1.2, lang)
+	MaxLanguageTagLength      = 64    // longer tags are rejected before parsing
+	MaxTimeZoneLength         = 64
+	MaxTimelineLanguageCount  = 64
 )
 
 // Visibility is the audience of a post (ADR-0017). Preferences use it for the default of new posts.

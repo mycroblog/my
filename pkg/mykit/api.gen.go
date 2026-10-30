@@ -10721,7 +10721,7 @@ type Preferences struct {
 	TimeZoneChosen bool `json:"time_zone_chosen"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking, instead of offering them
-	// behind a "show new posts" button (ADR-0077). Off for a new user; the same on every device.
+	// behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
 	TimelineAutoInsert bool `json:"timeline_auto_insert"`
 
 	// TimelineLanguages The languages that timelines show, sorted; empty shows every language.

@@ -232,10 +232,17 @@ describe("preferences", () => {
     expect(within(sheet).getByRole("button", { name: "Japanese Language" })).toBeInTheDocument();
   });
 
-  test("the automatic insertion of new posts is off by default and switched on", async () => {
-    const prefs = preferencesServer({ timeline_auto_insert: false });
+  test("the automatic insertion of new posts is on by default and switched off and on again", async () => {
+    const prefs = preferencesServer();
     const { user } = await renderApp({ path: "/settings/preferences" });
     const auto = await screen.findByRole("switch", { name: "Show new posts automatically" });
+    expect(auto).toBeChecked();
+
+    await user.click(auto);
+
+    await waitFor(() => {
+      expect(prefs.current.timeline_auto_insert).toBe(false);
+    });
     expect(auto).not.toBeChecked();
 
     await user.click(auto);
