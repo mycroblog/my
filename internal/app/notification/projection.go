@@ -9,8 +9,8 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/app/queue"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
