@@ -39,6 +39,7 @@ const notificationGroupLabels: Readonly<Record<NotificationGroup, ClientMessageK
   poll_closed: "client:settings.notifications.group.poll_closed",
   account_moved: "client:settings.notifications.group.account_moved",
   voice: "client:settings.notifications.group.voice",
+  status: "client:settings.notifications.group.status",
   admin_report: "client:settings.notifications.group.admin_report",
   admin_sign_up: "client:settings.notifications.group.admin_sign_up",
   admin_appeal: "client:settings.notifications.group.admin_appeal",
@@ -197,10 +198,10 @@ export function useNotificationSettings(): NotificationSettingsView {
 
   const serverValue = (row: NotificationSettingRow, channel: "in_app" | "email"): boolean => {
     const change = pending.findLast((c) => c.group === row.group && c.channel === channel);
-    return change?.enabled ?? row[channel].enabled;
+    return change?.enabled ?? row[channel]?.enabled ?? false;
   };
   const serverCell = (row: NotificationSettingRow, channel: "in_app" | "email", inApp: boolean): NotificationCell => {
-    const cell = row[channel];
+    const cell = row[channel] ?? { enabled: false, fixed: false };
     return {
       selected: cell.fixed || serverValue(row, channel),
       disabled: cell.fixed || (channel !== "in_app" && !inApp),
@@ -213,7 +214,9 @@ export function useNotificationSettings(): NotificationSettingsView {
 
   const rowNote = (row: NotificationSettingRow, inApp: boolean): string | undefined => {
     if (!inApp) return t("client:settings.notifications.row.in_app_off");
-    const fixed = (["in_app", "email"] as const).filter((channel) => channels.includes(channel) && row[channel].fixed);
+    const fixed = (["in_app", "email"] as const).filter(
+      (channel) => channels.includes(channel) && row[channel]?.fixed === true,
+    );
     if (fixed.length === 0) return undefined;
     return t("client:settings.notifications.row.always_on", {
       channels: intl.formatList(
@@ -236,7 +239,8 @@ export function useNotificationSettings(): NotificationSettingsView {
         saveState: push.typesSaveState(row.types),
       };
     }
-    if (sendsEmail) cells.email = serverCell(row, "email", inApp);
+    // A row without an email channel (status) shows no email cell.
+    if (sendsEmail && row.email !== undefined) cells.email = serverCell(row, "email", inApp);
     if (sound.enabled) {
       cells.sound = {
         selected: row.types.every((type) => sound.types.includes(type)),

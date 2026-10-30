@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: subscribeAccount
+  summary: Be notified of an account's new posts
+  description: |
+    Subscribes the viewer to the account's new posts: each new post that the viewer may see
+    becomes a `status` notification, in the app and by Web Push, never by email. The account
+    is not told. An account on this server can be subscribed to with or without a follow; an
+    account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+    the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+    to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+    account on another server ends the subscription; a block ends it either way.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

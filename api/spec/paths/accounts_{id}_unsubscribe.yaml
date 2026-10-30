@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: unsubscribeAccount
+  summary: Stop being notified of an account's new posts
+  description: |
+    Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+    request that awaits the account's server. Without a subscription it changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -23,7 +23,7 @@ CREATE TABLE notifications (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -148,7 +148,7 @@ CREATE TABLE push_subscription_alerts (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;
@@ -165,7 +165,7 @@ CREATE TABLE notification_settings (
     'account_moved', 'voice',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
     'admin_account_moved', 'admin_service_closure_due', 'admin_error_group',
-    'moderation'
+    'moderation', 'status'
   )),
   channel TEXT NOT NULL CHECK (channel IN ('in_app', 'email')),
   enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
@@ -173,6 +173,33 @@ CREATE TABLE notification_settings (
   PRIMARY KEY (account_id, notification_group, channel),
   CHECK (notification_group <> 'moderation' OR channel = 'email')
 ) STRICT;
+
+-- Current value: a local account's subscription to the new posts of another account (ADR-0123
+-- §1): each new post of the target that the subscriber may see notifies the subscriber
+-- (status). A local target needs no follow; a remote one only while the subscriber's follow of it
+-- is active. The target is never told. At most 1,000 per subscriber.
+CREATE TABLE post_subscriptions (
+  account_id TEXT NOT NULL,
+  target_account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, target_account_id),
+  CHECK (account_id <> target_account_id)
+) STRICT;
+-- The list of a subscriber's subscriptions, newest first.
+CREATE INDEX post_subscriptions_account_created_at_target ON post_subscriptions (account_id, created_at, target_account_id);
+-- The fan-out of a new post to the subscribers of its author, in order of the subscriber.
+CREATE INDEX post_subscriptions_target_account ON post_subscriptions (target_account_id, account_id);
+
+-- Current value: a subscription asked for with a follow of a remote account that awaits its
+-- server's Accept (ADR-0123 §1). The acceptance turns it into a post_subscriptions row; the end
+-- or the rejection of the follow deletes it.
+CREATE TABLE post_subscription_requests (
+  account_id TEXT NOT NULL,
+  target_account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, target_account_id)
+) STRICT;
+CREATE INDEX post_subscription_requests_target_account ON post_subscription_requests (target_account_id, account_id);
 
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.

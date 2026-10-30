@@ -276,6 +276,13 @@ entries:
   - name: module-notification
     paths: ["internal/domain/notification/**", "internal/app/notification/**"]
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
+  - name: post-subscriptions
+    paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_contract.go", "internal/platform/post_subscriptions_test.go"]
+    docs: ["docs/adr/0123-post-notifications.md#decision決定", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
+    notes:
+      - "A local account is subscribed to with or without a follow, a remote one only while graph.Follows is true; a notify with a pending follow of a remote account is a post_subscription_requests row that graph.follow_accepted turns into the subscription."
+      - "graph.follow_terminated of a remote followee and graph.blocked (both ways) delete the subscriptions; the follow_preferences of the graph module keep no notify."
+      - "content.status_created of a local post or of a delivered Create enqueues notification.notify_post_subscribers (keyed by the post) when the author has subscribers; the job notifies 100 subscribers per transaction through the same exclusions as the other notifications, and never by email."
   - name: module-federation
     paths: ["internal/domain/federation/**", "internal/app/federation/**"]
     docs: ["docs/architecture/data-model/04-tables/08-federation.md#48-federation", "docs/architecture/federation.md#1-構成"]

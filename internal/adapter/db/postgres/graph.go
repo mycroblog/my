@@ -87,7 +87,7 @@ func (r *GraphRepository) UpsertPreferences(ctx context.Context, tx uow.Tx, p gr
 		return err
 	}
 	return wrap(q.UpsertFollowPreferences(ctx, postgresgen.UpsertFollowPreferencesParams{
-		FollowID: p.FollowID, ShowBoosts: p.ShowBoosts, Notify: p.Notify,
+		FollowID: p.FollowID, ShowBoosts: p.ShowBoosts,
 	}), "upsert follow preferences")
 }
 
@@ -134,7 +134,7 @@ func (r *GraphRepository) FindFollow(ctx context.Context, id string) (graph.Foll
 }
 
 func preferencesFrom(row postgresgen.FollowPreference) graph.Preferences {
-	return graph.Preferences{FollowID: row.FollowID, ShowBoosts: row.ShowBoosts, Notify: row.Notify}
+	return graph.Preferences{FollowID: row.FollowID, ShowBoosts: row.ShowBoosts}
 }
 
 // Preferences implements graph.Repository.

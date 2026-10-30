@@ -447,6 +447,10 @@
     "defaultMessage": "Not offered by this server",
     "description": "Help text under the local or federated timeline item of the navigation section when this server has turned that timeline off, so it does not show whatever is chosen."
   },
+  "settings.notifications.group.status": {
+    "defaultMessage": "New posts",
+    "description": "Row of the notification settings table: a new post of an account whose new posts the user chose to be notified of."
+  },
   "settings.preferences.autosave": {
     "defaultMessage": "Changes are saved as soon as you make them.",
     "description": "Text at the top of the preferences page."

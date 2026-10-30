@@ -201,7 +201,7 @@ func followUnlocked(t *testing.T, e *followEnv) {
 	ctx := t.Context()
 	alice, bob := e.user(t, "alice", false), e.user(t, "bob", false)
 	rel := e.follow(t, alice, bob)
-	if rel.Following != graph.StateActive || rel.FollowedBy != graph.StateNone || !rel.ShowBoosts || rel.Notify {
+	if rel.Following != graph.StateActive || rel.FollowedBy != graph.StateNone || !rel.ShowBoosts {
 		t.Errorf("Follow = %+v, want an active follow with the default preferences", rel)
 	}
 	checkRelationship(t, e, bob, alice, graph.StateNone, graph.StateActive)
@@ -412,19 +412,19 @@ func followPreferences(t *testing.T, e *followEnv) {
 		t.Errorf("UpdatePreferences without a follow = %v, want ErrNotFound", err)
 	}
 	e.follow(t, alice, bob)
-	rel, err := e.graph.UpdatePreferences(ctx, alice, bob, appgraph.PreferencesInput{ShowBoosts: false, Notify: true})
-	if err != nil || rel.ShowBoosts || !rel.Notify {
-		t.Fatalf("UpdatePreferences = %+v, %v; want boosts hidden and notifications on", rel, err)
+	rel, err := e.graph.UpdatePreferences(ctx, alice, bob, appgraph.PreferencesInput{ShowBoosts: false})
+	if err != nil || rel.ShowBoosts {
+		t.Fatalf("UpdatePreferences = %+v, %v; want boosts hidden", rel, err)
 	}
 	e.follow(t, alice, bob)
-	if rel, _ := e.graph.Relationship(ctx, alice, bob); rel.ShowBoosts || !rel.Notify {
+	if rel, _ := e.graph.Relationship(ctx, alice, bob); rel.ShowBoosts {
 		t.Errorf("Relationship after following again = %+v, want the preferences kept", rel)
 	}
 	if _, err := e.graph.Unfollow(ctx, alice, bob); err != nil {
 		t.Fatalf("Unfollow = %v", err)
 	}
 	rel = e.follow(t, alice, bob)
-	if !rel.ShowBoosts || rel.Notify {
+	if !rel.ShowBoosts {
 		t.Errorf("new follow = %+v, want the default preferences", rel)
 	}
 }
@@ -658,7 +658,7 @@ func followWithPreferences(t *testing.T, e *followEnv) {
 	e.events.take()
 
 	fail = true
-	if _, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{ShowBoosts: &no, Notify: &yes}); !errors.Is(err, injected) {
+	if _, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{ShowBoosts: &no}); !errors.Is(err, injected) {
 		t.Fatalf("FollowWith with a failing projector = %v, want the injected failure", err)
 	}
 	fail = false
@@ -669,8 +669,8 @@ func followWithPreferences(t *testing.T, e *followEnv) {
 	e.events.take()
 
 	for _, followee := range []string{bob, carol} {
-		rel, err := e.graph.FollowWith(ctx, alice, followee, appgraph.FollowOptions{ShowBoosts: &no, Notify: &yes})
-		if err != nil || rel.ShowBoosts || !rel.Notify {
+		rel, err := e.graph.FollowWith(ctx, alice, followee, appgraph.FollowOptions{ShowBoosts: &no})
+		if err != nil || rel.ShowBoosts {
 			t.Errorf("FollowWith(%s) = %+v, %v; want the requested preferences", followee, rel, err)
 		}
 		events := e.events.take()
@@ -684,15 +684,15 @@ func followWithPreferences(t *testing.T, e *followEnv) {
 		case appgraph.FollowRequested:
 			prefs = ev.Preferences
 		}
-		if prefs.ShowBoosts || !prefs.Notify {
+		if prefs.ShowBoosts {
 			t.Errorf("FollowWith(%s) event = %+v, want the requested preferences", followee, events[0])
 		}
 	}
 
 	// Following again changes only the named preferences; without any, nothing.
 	rel, err := e.graph.FollowWith(ctx, alice, bob, appgraph.FollowOptions{ShowBoosts: &yes})
-	if err != nil || !rel.ShowBoosts || !rel.Notify || rel.Following != graph.StateActive {
-		t.Errorf("FollowWith(show boosts) again = %+v, %v; want boosts shown and notify kept", rel, err)
+	if err != nil || !rel.ShowBoosts || rel.Following != graph.StateActive {
+		t.Errorf("FollowWith(show boosts) again = %+v, %v; want boosts shown", rel, err)
 	}
 	if events := e.events.take(); len(events) != 1 || events[0].EventType() != appgraph.EventFollowPreferencesChanged {
 		t.Errorf("events of following again = %+v, want one FollowPreferencesChanged", events)
@@ -738,10 +738,10 @@ func followEmitsEvents(t *testing.T, e *followEnv) {
 		t.Errorf("FollowAccepted = %+v", accepted)
 	}
 	changed := step(appgraph.EventFollowPreferencesChanged, func() error {
-		_, err := e.graph.UpdatePreferences(ctx, alice, bob, appgraph.PreferencesInput{Notify: true})
+		_, err := e.graph.UpdatePreferences(ctx, alice, bob, appgraph.PreferencesInput{ShowBoosts: false})
 		return err
 	}).(appgraph.FollowPreferencesChanged)
-	if changed.State != graph.StateActive || !changed.Preferences.Notify || changed.Preferences.FollowID != requested.Follow.ID {
+	if changed.State != graph.StateActive || changed.Preferences.ShowBoosts || changed.Preferences.FollowID != requested.Follow.ID {
 		t.Errorf("FollowPreferencesChanged = %+v", changed)
 	}
 	terminated := step(appgraph.EventFollowTerminated, func() error { _, err := e.graph.Unfollow(ctx, alice, bob); return err }).(appgraph.FollowTerminated)

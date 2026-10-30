@@ -395,7 +395,6 @@ type FollowEdge struct {
 type FollowPreference struct {
 	FollowID   string
 	ShowBoosts bool
-	Notify     bool
 }
 
 type ImportedCostRevision struct {
@@ -840,6 +839,12 @@ type PollVote struct {
 	Position  int32
 	Uri       *string
 	VotedAt   time.Time
+}
+
+type PostSubscription struct {
+	AccountID       string
+	TargetAccountID string
+	CreatedAt       time.Time
 }
 
 type PushSubscription struct {

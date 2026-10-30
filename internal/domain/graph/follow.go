@@ -176,13 +176,13 @@ type Preferences struct {
 	FollowID string
 	// ShowBoosts shows the followee's boosts in the follower's home timeline.
 	ShowBoosts bool
-	// Notify notifies the follower of the followee's new posts.
-	Notify bool
 }
 
-// DefaultPreferences are the preferences of a new follow: boosts shown, no post notifications.
+// DefaultPreferences are the preferences of a new follow: boosts shown. The notifications of the
+// followee's new posts are a subscription of the notification module, not a preference of the
+// follow.
 func DefaultPreferences(followID string) Preferences {
-	return Preferences{FollowID: followID, ShowBoosts: true, Notify: false}
+	return Preferences{FollowID: followID, ShowBoosts: true}
 }
 
 // Counters are the numbers of active followers and followees of an account (follow_counters).

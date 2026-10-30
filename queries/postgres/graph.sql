@@ -13,8 +13,8 @@ INSERT INTO follow_rejections (follow_id, rejected_by, activity_uri, rejected_at
 INSERT INTO follow_terminations (follow_id, reason, terminated_at) VALUES ($1, $2, $3);
 
 -- name: UpsertFollowPreferences :exec
-INSERT INTO follow_preferences (follow_id, show_boosts, notify) VALUES ($1, $2, $3)
-ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts, notify = excluded.notify;
+INSERT INTO follow_preferences (follow_id, show_boosts) VALUES ($1, $2)
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts;
 
 -- name: GetFollow :one
 SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows WHERE id = $1;
@@ -23,7 +23,7 @@ SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM foll
 SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows WHERE uri = $1;
 
 -- name: GetFollowPreferences :one
-SELECT follow_id, show_boosts, notify FROM follow_preferences WHERE follow_id = $1;
+SELECT follow_id, show_boosts FROM follow_preferences WHERE follow_id = $1;
 
 -- name: GetFollowEdge :one
 SELECT follower_account_id, followee_account_id, follow_id, state, since

@@ -188,6 +188,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   voice_room_started: "voice",
   voice_room_invited: "voice",
   admin_error_group: "staff",
+  status: "mention",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -221,6 +222,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
+  status: "client:notifications.type.status",
 };
 
 /** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */

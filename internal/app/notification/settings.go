@@ -23,6 +23,9 @@ type Cell struct {
 	Enabled bool
 	// Fixed reports a channel that is always on, which the user cannot choose.
 	Fixed bool
+	// Absent reports a channel that the row does not have (the email of status): always off,
+	// and not shown.
+	Absent bool
 }
 
 // GroupSettings is one row of a user's settings: the group and its channels.
@@ -144,7 +147,7 @@ func settingsRows(groups []notification.GroupSpec, c notification.Choices) []Gro
 		out[i] = GroupSettings{
 			Spec:  g,
 			InApp: Cell{Enabled: c.Enabled(g.Group, notification.ChannelInApp), Fixed: g.InApp.Fixed},
-			Email: Cell{Enabled: c.Enabled(g.Group, notification.ChannelEmail), Fixed: g.Email.Fixed},
+			Email: Cell{Enabled: c.Enabled(g.Group, notification.ChannelEmail), Fixed: g.Email.Fixed, Absent: g.Email.Absent},
 		}
 	}
 	return out

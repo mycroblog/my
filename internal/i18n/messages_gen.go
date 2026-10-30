@@ -2250,6 +2250,27 @@ func (l *Localizer) ServerErrorsStreamingUnavailable() string {
 	return l.format("server:errors.streaming.unavailable", nil)
 }
 
+// ServerErrorsSubscriptionBlocked formats "server:errors.subscription_blocked". Detail of the HTTP 422 API error when the user subscribes to the new posts of an account that they block or that blocks them.
+//
+//	en: You cannot be notified of the new posts of this account.
+func (l *Localizer) ServerErrorsSubscriptionBlocked() string {
+	return l.format("server:errors.subscription_blocked", nil)
+}
+
+// ServerErrorsSubscriptionLimit formats "server:errors.subscription_limit". Detail of the HTTP 422 API error when the user subscribes to the new posts of more accounts than the server allows (1,000).
+//
+//	en: You are notified of the new posts of too many accounts. Turn some of them off first.
+func (l *Localizer) ServerErrorsSubscriptionLimit() string {
+	return l.format("server:errors.subscription_limit", nil)
+}
+
+// ServerErrorsSubscriptionRequiresFollow formats "server:errors.subscription_requires_follow". Detail of the HTTP 422 API error when the user subscribes to the new posts of an account on another server that they do not follow; subscribing to such an account needs a follow.
+//
+//	en: Follow this account to be notified of its new posts.
+func (l *Localizer) ServerErrorsSubscriptionRequiresFollow() string {
+	return l.format("server:errors.subscription_requires_follow", nil)
+}
+
 // ServerErrorsSupportersIneligible formats "server:errors.supporters.ineligible". API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why.
 //
 //	en: You cannot subscribe to the supporter plans.
@@ -4038,6 +4059,13 @@ func (l *Localizer) ServerPushServiceClosureRescheduled(instance string) string 
 //	en: {instance} will not close: the closure was withdrawn
 func (l *Localizer) ServerPushServiceClosureWithdrawn(instance string) string {
 	return l.format("server:push.service_closure_withdrawn", map[string]any{"instance": instance})
+}
+
+// ServerPushStatus formats "server:push.status". Web Push notification. {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post.
+//
+//	en: {name} posted
+func (l *Localizer) ServerPushStatus(name string) string {
+	return l.format("server:push.status", map[string]any{"name": name})
 }
 
 // ServerPushSupporterPaymentFailed formats "server:push.supporter_payment_failed". Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none.

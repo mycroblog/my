@@ -13,10 +13,12 @@ import (
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/account"
 	domgraph "github.com/mycroblog/my/internal/domain/graph"
 	domidentity "github.com/mycroblog/my/internal/domain/identity"
+	domnotification "github.com/mycroblog/my/internal/domain/notification"
 )
 
 // setUpImports builds the CSV exports and imports of the users' follows, blocks, mutes,
@@ -79,7 +81,11 @@ func (t importTargets) List(ctx context.Context, accountID string, kind domident
 				if err != nil {
 					return nil, err
 				}
-				if err := add(e.FolloweeAccountID, domidentity.ExportRow{ShowBoosts: rel.ShowBoosts, Notify: rel.Notify}); err != nil {
+				notify, err := t.a.Subscriptions.Subscribed(ctx, accountID, e.FolloweeAccountID)
+				if err != nil {
+					return nil, err
+				}
+				if err := add(e.FolloweeAccountID, domidentity.ExportRow{ShowBoosts: rel.ShowBoosts, Notify: notify}); err != nil {
 					return nil, err
 				}
 			}
@@ -194,11 +200,21 @@ func (t importTargets) Add(ctx context.Context, accountID string, kind domidenti
 		if _, err := t.a.Graph.Follow(ctx, accountID, target); err != nil {
 			return itemError(err)
 		}
-		_, err := t.a.Graph.UpdatePreferences(ctx, accountID, target, graph.PreferencesInput{ShowBoosts: item.ShowBoosts, Notify: item.Notify})
+		_, err := t.a.Graph.UpdatePreferences(ctx, accountID, target, graph.PreferencesInput{ShowBoosts: item.ShowBoosts})
 		if errors.Is(err, graph.ErrNotFound) {
 			return nil // the follow ended in the meantime
 		}
-		return itemError(err)
+		if err != nil || !item.Notify {
+			return itemError(err)
+		}
+		// Notify on new posts is the subscription (ADR-0123 §1); for a remote account it starts
+		// when its server accepts the follow. A subscription that cannot be made leaves the
+		// follow as it is.
+		err = t.a.Subscriptions.SubscribeWithFollow(ctx, accountID, target)
+		if errors.Is(err, notification.ErrNotSubscribable) || errors.Is(err, domnotification.ErrSubscriptionLimit) {
+			return nil
+		}
+		return err
 	case domidentity.ImportBlocks:
 		_, err := t.a.Graph.Block(ctx, accountID, target)
 		return itemError(err)

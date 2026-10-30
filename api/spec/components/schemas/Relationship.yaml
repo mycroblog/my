@@ -23,7 +23,10 @@ properties:
     description: Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
     type: boolean
   notify:
-    description: Whether the viewer's follow notifies them of the account's new posts.
+    description: |
+      Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
+      without a follow. A subscription asked for with a follow request to an account on another
+      server is false until that server accepts the follow.
     type: boolean
   blocking:
     description: Whether the viewer blocks the account.

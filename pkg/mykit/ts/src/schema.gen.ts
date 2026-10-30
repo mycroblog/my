@@ -1819,6 +1819,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/subscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Be notified of an account's new posts
+         * @description Subscribes the viewer to the account's new posts: each new post that the viewer may see
+         *     becomes a `status` notification, in the app and by Web Push, never by email. The account
+         *     is not told. An account on this server can be subscribed to with or without a follow; an
+         *     account on another server only while the viewer follows it (otherwise a 422). Subscribing to
+         *     the viewer's own account, to an account that the viewer blocks or that blocks the viewer, and
+         *     to more than 1,000 accounts is a 422. Subscribing again changes nothing. Unfollowing an
+         *     account on another server ends the subscription; a block ends it either way.
+         */
+        post: operations["subscribeAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop being notified of an account's new posts
+         * @description Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+         *     request that awaits the account's server. Without a subscription it changes nothing.
+         */
+        post: operations["unsubscribeAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the accounts whose new posts notify the viewer
+         * @description The viewer's subscriptions to new posts (`subscribeAccount`), newest first. Accounts that
+         *     the viewer may not see, deactivated, and deleted accounts are left out.
+         */
+        get: operations["listSubscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/blocks": {
         parameters: {
             query?: never;
@@ -10587,7 +10655,11 @@ export interface components {
         FollowAccountRequest: {
             /** @description Show the account's boosts in the home timeline. New follows show them. */
             show_boosts?: boolean;
-            /** @description Notify the viewer of the account's new posts. New follows do not. */
+            /**
+             * @description Subscribe to the account's new posts (true) or stop (false), as `subscribeAccount` and
+             *     `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
+             *     server, the subscription starts when that server accepts the follow.
+             */
             notify?: boolean;
         };
         /**
@@ -11530,8 +11602,8 @@ export interface components {
          * @description A row of the notification settings: one or more notification types that the user turns on
          *     and off together. The ordinary notifications are one row per type (`mention`, `follow`,
          *     `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
-         *     `poll_closed`, `account_moved`), except `voice`, which is `voice_room_started` and
-         *     `voice_room_invited`. The moderator notifications are one row per type (`admin_report`,
+         *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
+         *     `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
          *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -11539,7 +11611,7 @@ export interface components {
          *     `service_closure`, and `supporter` (the `supporter_*` types).
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter";
         /** @description How far the authenticated user has read the notifications. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -11576,8 +11648,9 @@ export interface components {
          *     reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
          *     emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
          *     the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-         *     offer the email column only when `Instance.sends_email` is true. Web Push stays the choice of
-         *     each subscription (`putPushSubscription`).
+         *     offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
+         *     is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+         *     subscription (`putPushSubscription`).
          */
         NotificationSettingRow: {
             group: components["schemas"]["NotificationGroup"];
@@ -11591,7 +11664,7 @@ export interface components {
             /** @description The notification types of the row. */
             types: components["schemas"]["NotificationType"][];
             in_app: components["schemas"]["NotificationSettingCell"];
-            email: components["schemas"]["NotificationSettingCell"];
+            email?: components["schemas"]["NotificationSettingCell"];
         };
         /**
          * @description The authenticated user's notification settings: the rows the user gets, in the order to
@@ -11674,9 +11747,13 @@ export interface components {
          *     `admin_error_group` tells the holders of `manage_errors` of a new error group or of a
          *     resolved one that happened again, at most 10 times an hour for the whole server, with the
          *     rest of the hour folded into one; its `error_group` says which, and it has no `account`.
+         *     The type `status` tells of a new post (`status`) of an account that the user subscribes to
+         *     (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
+         *     someone else's post, a boost, an edit, or a post that the server fetched rather than received,
+         *     nor when the user gets a `mention` of the same post.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status";
         /**
          * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -12501,7 +12578,11 @@ export interface components {
             requested_by: boolean;
             /** @description Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow). */
             show_boosts: boolean;
-            /** @description Whether the viewer's follow notifies them of the account's new posts. */
+            /**
+             * @description Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
+             *     without a follow. A subscription asked for with a follow request to an account on another
+             *     server is false until that server accepts the follow.
+             */
             notify: boolean;
             /** @description Whether the viewer blocks the account. */
             blocking: boolean;
@@ -16325,6 +16406,56 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    subscribeAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unsubscribeAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listSubscriptions: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AccountPage"];
             default: components["responses"]["Problem"];
         };
     };

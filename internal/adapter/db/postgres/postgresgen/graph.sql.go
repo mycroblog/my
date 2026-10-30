@@ -208,13 +208,13 @@ func (q *Queries) GetFollowEdge(ctx context.Context, arg GetFollowEdgeParams) (F
 }
 
 const getFollowPreferences = `-- name: GetFollowPreferences :one
-SELECT follow_id, show_boosts, notify FROM follow_preferences WHERE follow_id = $1
+SELECT follow_id, show_boosts FROM follow_preferences WHERE follow_id = $1
 `
 
 func (q *Queries) GetFollowPreferences(ctx context.Context, followID string) (FollowPreference, error) {
 	row := q.db.QueryRow(ctx, getFollowPreferences, followID)
 	var i FollowPreference
-	err := row.Scan(&i.FollowID, &i.ShowBoosts, &i.Notify)
+	err := row.Scan(&i.FollowID, &i.ShowBoosts)
 	return i, err
 }
 
@@ -648,17 +648,16 @@ func (q *Queries) UpsertFollowCounters(ctx context.Context, arg UpsertFollowCoun
 }
 
 const upsertFollowPreferences = `-- name: UpsertFollowPreferences :exec
-INSERT INTO follow_preferences (follow_id, show_boosts, notify) VALUES ($1, $2, $3)
-ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts, notify = excluded.notify
+INSERT INTO follow_preferences (follow_id, show_boosts) VALUES ($1, $2)
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts
 `
 
 type UpsertFollowPreferencesParams struct {
 	FollowID   string
 	ShowBoosts bool
-	Notify     bool
 }
 
 func (q *Queries) UpsertFollowPreferences(ctx context.Context, arg UpsertFollowPreferencesParams) error {
-	_, err := q.db.Exec(ctx, upsertFollowPreferences, arg.FollowID, arg.ShowBoosts, arg.Notify)
+	_, err := q.db.Exec(ctx, upsertFollowPreferences, arg.FollowID, arg.ShowBoosts)
 	return err
 }

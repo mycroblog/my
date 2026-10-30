@@ -80,10 +80,9 @@ type Relationship struct {
 	Following graph.State
 	// FollowedBy is the state of the target's follow of the account.
 	FollowedBy graph.State
-	// Preferences are those of the account's follow of the target, or the defaults when the
-	// account does not follow the target.
+	// ShowBoosts is the preference of the account's follow of the target, or the default when
+	// the account does not follow the target.
 	ShowBoosts bool
-	Notify     bool
 	// Blocking reports that the account blocks the target; BlockedBy that the target blocks
 	// the account.
 	Blocking  bool
@@ -116,18 +115,14 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) (Re
 // default for a new follow.
 type FollowOptions struct {
 	ShowBoosts *bool
-	Notify     *bool
 }
 
-func (o FollowOptions) set() bool { return o.ShowBoosts != nil || o.Notify != nil }
+func (o FollowOptions) set() bool { return o.ShowBoosts != nil }
 
 // apply returns p with the preferences that o sets.
 func (o FollowOptions) apply(p graph.Preferences) graph.Preferences {
 	if o.ShowBoosts != nil {
 		p.ShowBoosts = *o.ShowBoosts
-	}
-	if o.Notify != nil {
-		p.Notify = *o.Notify
 	}
 	return p
 }
@@ -353,7 +348,6 @@ func (s *Service) liveFollow(ctx context.Context, tx uow.Tx, followerID, followe
 // PreferencesInput is the follower's settings of a follow.
 type PreferencesInput struct {
 	ShowBoosts bool
-	Notify     bool
 }
 
 // UpdatePreferences changes the preferences of followerID's pending or active follow of
@@ -364,7 +358,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, followerID, followeeID 
 		if err != nil {
 			return err
 		}
-		return s.changePreferencesIn(ctx, tx, edge, FollowOptions{ShowBoosts: &in.ShowBoosts, Notify: &in.Notify})
+		return s.changePreferencesIn(ctx, tx, edge, FollowOptions{ShowBoosts: &in.ShowBoosts})
 	})
 	if err != nil {
 		return Relationship{}, err
@@ -398,8 +392,7 @@ func (s *Service) changePreferencesIn(ctx context.Context, tx uow.Tx, edge graph
 func (s *Service) Relationship(ctx context.Context, accountID, targetID string) (Relationship, error) {
 	repo := s.d.Repository
 	out := Relationship{AccountID: accountID, TargetAccountID: targetID, Following: graph.StateNone, FollowedBy: graph.StateNone}
-	defaults := graph.DefaultPreferences("")
-	out.ShowBoosts, out.Notify = defaults.ShowBoosts, defaults.Notify
+	out.ShowBoosts = graph.DefaultPreferences("").ShowBoosts
 
 	outgoing, err := repo.FindEdge(ctx, accountID, targetID)
 	switch {
@@ -410,7 +403,7 @@ func (s *Service) Relationship(ctx context.Context, accountID, targetID string) 
 			return Relationship{}, err
 		}
 		if err == nil {
-			out.ShowBoosts, out.Notify = p.ShowBoosts, p.Notify
+			out.ShowBoosts = p.ShowBoosts
 		}
 	case !errors.Is(err, ErrNotFound):
 		return Relationship{}, err

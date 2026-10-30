@@ -115,6 +115,10 @@
     "defaultMessage": "‮{instance} ʍıʅʅ uoʇ ɔʅosǝ: ʇɥǝ ɔʅosnɹǝ ʍɐs ʍıʇɥpɹɐʍu‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.status": {
+    "defaultMessage": "‮{name} dosʇǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.supporter_payment_failed": {
     "defaultMessage": "‮∀ dɐʎɯǝuʇ ɟoɹ ʎonɹ snddoɹʇǝɹ dʅɐu ou {instance} ɟɐıʅǝp‬",
     "description": "Generated from en by tools/i18n; do not edit."

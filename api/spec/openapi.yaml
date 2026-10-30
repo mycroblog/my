@@ -255,6 +255,12 @@ paths:
     $ref: ./paths/accounts_{id}_unfollow.yaml
   /accounts/{id}/unmute:
     $ref: ./paths/accounts_{id}_unmute.yaml
+  /accounts/{id}/subscribe:
+    $ref: ./paths/accounts_{id}_subscribe.yaml
+  /accounts/{id}/unsubscribe:
+    $ref: ./paths/accounts_{id}_unsubscribe.yaml
+  /subscriptions:
+    $ref: ./paths/subscriptions.yaml
   /blocks:
     $ref: ./paths/blocks.yaml
   /follow_requests:

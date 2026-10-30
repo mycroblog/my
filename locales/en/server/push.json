@@ -87,6 +87,10 @@
     "defaultMessage": "A report you filed on {instance} has been resolved",
     "description": "Web Push notification: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.status": {
+    "defaultMessage": "{name} posted",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of an account that the user subscribes to, which made a new post."
+  },
   "push.supporter_payment_failed": {
     "defaultMessage": "A payment for your supporter plan on {instance} failed",
     "description": "Web Push notification: a payment for the user's supporter plan failed. It never says where to pay (the app shows no way to pay). {instance} is the server's display name, or its domain name when it has none."

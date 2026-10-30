@@ -24,6 +24,8 @@ var ErrNotFound = errors.New("notification: not found")
 // Methods that take a uow.Tx run inside that transaction; the others read committed data outside
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
 type Repository interface {
+	SubscriptionRepository
+
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.
 	InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error)

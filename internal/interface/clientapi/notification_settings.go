@@ -31,7 +31,9 @@ func newNotificationSettings(rows []appnotification.GroupSettings) NotificationS
 		out.Rows[i] = NotificationSettingRow{
 			Group: NotificationGroup(r.Spec.Group), Section: NotificationSettingRowSection(r.Spec.Section), Types: types,
 			InApp: NotificationSettingCell{Enabled: r.InApp.Enabled, Fixed: r.InApp.Fixed},
-			Email: NotificationSettingCell{Enabled: r.Email.Enabled, Fixed: r.Email.Fixed},
+		}
+		if !r.Email.Absent {
+			out.Rows[i].Email = &NotificationSettingCell{Enabled: r.Email.Enabled, Fixed: r.Email.Fixed}
 		}
 	}
 	return out

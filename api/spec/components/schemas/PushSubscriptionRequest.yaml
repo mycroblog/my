@@ -12,6 +12,6 @@ properties:
   alerts:
     description: The notification types to push, each at most once; empty pushes none.
     type: array
-    maxItems: 30
+    maxItems: 31
     items:
       $ref: ./NotificationType.yaml

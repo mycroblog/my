@@ -55,8 +55,7 @@ CREATE INDEX follow_edges_follower_state_follow_id ON follow_edges (follower_acc
 -- Current value: the follower's settings of a follow.
 CREATE TABLE follow_preferences (
   follow_id TEXT NOT NULL PRIMARY KEY,
-  show_boosts INTEGER NOT NULL CHECK (show_boosts IN (0, 1)),
-  notify INTEGER NOT NULL CHECK (notify IN (0, 1))
+  show_boosts INTEGER NOT NULL CHECK (show_boosts IN (0, 1))
 ) STRICT;
 
 -- Projection: the numbers of active follows into and out of an account. No row means zero.

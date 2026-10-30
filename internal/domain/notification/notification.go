@@ -24,7 +24,8 @@ type Type string
 // voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
 // admin_service_closure_due, and admin_error_group go to the staff whose roles grant the permission they need
-// (ModeratorPermission).
+// (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
+// (ADR-0123).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -95,6 +96,9 @@ const (
 	// the group. At most ErrorGroupHourlyCap of them are made in an hour; the rest of the hour
 	// fold into one with ErrorGroupChange others and the hour in ErrorGroupHour.
 	TypeAdminErrorGroup Type = "admin_error_group"
+	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0123):
+	// SourceAccountID is the author and StatusID the post.
+	TypeStatus Type = "status"
 )
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
@@ -195,7 +199,7 @@ var Types = []Type{
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup,
+	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus,
 }
 
 // Valid reports whether t is a known notification type.
@@ -208,7 +212,7 @@ func (t Type) Valid() bool {
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup:
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus:
 		return true
 	}
 	return false
@@ -326,6 +330,9 @@ func (n Notification) Validate() error {
 	if err := n.validateErrorGroup(); err != nil {
 		return err
 	}
+	if n.Type == TypeStatus && (n.StatusID == "" || n.SourceAccountID == "") {
+		return errors.New("notification: a status names its post and its author")
+	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
 		n.Type == TypeAdminAccountMoved && n.SourceAccountID != "",
@@ -395,6 +402,9 @@ func AdminServiceClosureDueKey(announcementID string) string {
 // FollowKey is the dedupe key of a follow, follow_request, or follow_accepted notification:
 // one per follow and type. Following again after unfollowing is a new follow and notifies again.
 func FollowKey(t Type, followID string) string { return string(t) + ":" + followID }
+
+// StatusKey is the dedupe key of a status notification: one per post and recipient.
+func StatusKey(statusID string) string { return string(TypeStatus) + ":" + statusID }
 
 // MentionKey is the dedupe key of a mention notification: one per status, so that an edit
 // notifies only the accounts it newly mentions.

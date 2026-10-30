@@ -526,6 +526,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushFollowAccepted(name), "/@"+source.Acct
 	case notification.TypeMention:
 		p.Title, p.Path = l.ServerPushMention(name), statusPath(source.Acct, n.StatusID)
+	case notification.TypeStatus:
+		p.Title, p.Path = l.ServerPushStatus(name), statusPath(source.Acct, n.StatusID)
 	case notification.TypeBoost:
 		p.Title, p.Path = l.ServerPushBoost(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeFavourite:

@@ -10,7 +10,7 @@
 | `follow_terminations` | イベント | `follow_id`（PK）, `reason`（`enum(unfollowed, removed_by_followee, blocked, account_deleted, moderation, moved)`）, `terminated_at` | 承認前の取り下げ（`Undo Follow`）も `unfollowed`。`moved` はフォローしていた相手の移転で、移転先へのフォローに置き換えたもの（ADR-0089） |
 | `follow_resends` | イベント | `uri`（PK。もう一度届いた `Follow` の `id`）, `follow_id`, `received_at` | 承認済みのフォローに、別の `id` の `Follow` がもう一度届いたこと。`follows` の行は増やさない |
 | `follow_edges` | 投影 | `follower_account_id`, `followee_account_id`, `follow_id`, `state`（`enum(pending, active)`）, `since`（`pending` は申請、`active` は承認の日時） | PK `(follower_account_id, followee_account_id)`。インデックス `(followee_account_id, state, follow_id)`（フォロワー・フォローリクエストの一覧・配送先の展開）、`(follower_account_id, state, follow_id)`（フォロー中の一覧）。一覧は `follow_id` のキーセットで新しい順に引く。拒否・終了で行を消す |
-| `follow_preferences` | 現在値 | `follow_id`（PK）, `show_boosts`, `notify`（`bool`） | フォローの作成時に既定値（`show_boosts = true`, `notify = false`）で作る |
+| `follow_preferences` | 現在値 | `follow_id`（PK）, `show_boosts` | フォローの作成時に既定値（`show_boosts = true`）で作る。新しい投稿の通知はフォローの設定ではなく、`notification` の購読（§4.7）です |
 | `follow_counters` | 投影 | `account_id`（PK）, `followers_count`, `following_count`（`bigint`、0 以上） | `active` のフォローだけを数える。両方 0 になったら行を消す（行が無い = 0） |
 
 - 鍵アカウントへのフォロー（FR-302）は `follows` を作り、承認待ちの間は `follow_edges.state = pending` です。
@@ -67,7 +67,7 @@
   PostgreSQL は READ COMMITTED なので、トランザクションスコープのアドバイザリロックを取ります。SQLite は書き込みトランザクションが `BEGIN IMMEDIATE` で直列なので何もしません。
   これが無いと、同時に走ったフォローとブロックが互いを見落とし、ブロック中のフォローが残ります。同じ承認待ちのフォローへの承認と拒否（または取り下げ）が両方記録され、`follow_counters` がずれます。
   - 承認・拒否・終了の projector は、コマンドが読んだ `state` の `follow_edges` の行だけを更新・削除し、行が無ければ再実行させます（再実行は変わった状態を読み直す）。組のロックを取らない経路（アカウントの消去）でも、結果は 1 つだけになり、カウンタは一度だけ動きます。システムが即座に拒否したフォロー（`rejected_by = system`）は行を持たないので対象外です。
-- API からのフォローは、指定された設定（`show_boosts`・`notify`）を同じトランザクションで記録します（`graph.FollowWith`）。新しいフォローは指定された設定で始まり、既にあるフォローは指定された設定だけを変えます。途中で失敗したら何も残しません。
+- API からのフォローは、指定された設定（`show_boosts`）を同じトランザクションで記録します（`graph.FollowWith`）。API の `notify` は `notification` の購読で、フォローの後に別のトランザクションで読み書きします（§4.7）。新しいフォローは指定された設定で始まり、既にあるフォローは指定された設定だけを変えます。途中で失敗したら何も残しません。
 - ローカルのアカウントは、ローカルのアカウントもリモートのアカウントもブロックできます（存在すれば有効でなくてもよい）。リモートのアカウントへのブロックは `federation` が `Block` / `Undo Block` として配送します。
 - リモートのアカウントがローカルのアカウントをブロックしたことは、受信した `Block` から `graph.ReceiveBlock` が記録します（`blocks.uri` は `Block` の `id`）。同じ `uri` の `Block` の再受信と、ブロックが有効な組への `Block` は何もしません。`Undo Block` は `graph.RetractRemoteBlock` が、`uri`（`id` の無い `Block` は 2 人の組）で引いて取り消します。
 - ミュートは本人だけに効き、履歴にも意味がないので現在値です（ADR-0020 規約 5）。ミュートし直すと設定・期限・`created_at` を置き換えます。

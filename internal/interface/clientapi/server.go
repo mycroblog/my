@@ -110,6 +110,9 @@ type Options struct {
 	Media MediaFiles
 	// Graph reads and changes follows, blocks, and mutes.
 	Graph Graph
+	// Subscriptions runs the viewer's subscriptions to new posts; nil answers their operations
+	// 404 and presents Relationship.notify false.
+	Subscriptions PostSubscriptions
 	// Notifications runs the use cases of the viewer's notifications.
 	Notifications Notifications
 	// NotificationPreferences reads and changes the viewer's notification settings; nil answers

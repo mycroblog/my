@@ -52,8 +52,9 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // account, of a pending registration, and of an appeal, to the holders of the permission they
 // need, emailed by a job to those who get them by email, and left out once the permission is
 // gone; the decision on an appeal to the account that appealed; the notification settings, their
-// defaults and fixed rows, and the types turned off in the app, which create nothing; and the
-// emails of the notifications that stay unread.
+// defaults and fixed rows, and the types turned off in the app, which create nothing; the
+// emails of the notifications that stay unread; and the subscriptions to new posts with their
+// status notifications.
 func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 	t.Helper()
 	cases := []struct {
@@ -80,6 +81,8 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"NotifiesTheServiceClosure", notificationServiceClosure},
 		{"NotifiesVoiceRooms", notificationVoiceRooms},
 		{"NotifiesErrorGroups", notificationErrorGroups},
+		{"KeepsSubscriptions", notificationSubscriptions},
+		{"NotifiesSubscribersOfNewPosts", notificationNewPosts},
 		{"AppliesNotificationSettings", notificationSettings},
 		{"EmailsUnreadNotifications", notificationEmails},
 	}
@@ -95,6 +98,7 @@ type notificationEnv struct {
 	content      *appcontent.Service
 	interactions *appcontent.Interactions
 	svc          *appnotification.Service
+	deps         appnotification.ProjectorDeps
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
@@ -102,6 +106,8 @@ type notificationEnv struct {
 	// email jobs that the projectors enqueue.
 	staff  *stubStaff
 	outbox *recordingOutbox
+	// postJobs keeps the jobs that notify the subscribers of new posts.
+	postJobs *recordingOutbox
 }
 
 func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificationEnv {
@@ -117,6 +123,7 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	})
 	e := &notificationEnv{
 		accountEnv: ae, nh: nh, only: &uow.Projectors{}, reach: &contractReach{}, staff: newStubStaff(), outbox: &recordingOutbox{},
+		postJobs: &recordingOutbox{},
 	}
 	e.graph = appgraph.NewService(appgraph.Deps{
 		UnitOfWork: nh.UnitOfWork, Repository: nh.Graph, Accounts: ae.accounts, Clock: ae.clock, IDs: ae.ids, Host: contractHost,
@@ -126,8 +133,9 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	appcontent.RegisterInteractionProjectors(captured.Projectors, nh.Interactions)
 	deps := appnotification.ProjectorDeps{
 		Repository: nh.Notifications, Accounts: ae.accounts, Relationships: e.graph, Reach: e.reach, IDs: ae.ids,
-		Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.clock},
+		Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.clock}, PostJobs: e.postJobs,
 	}
+	e.deps = deps
 	appnotification.RegisterProjectors(captured.Projectors, deps)
 	appnotification.RegisterProjectors(e.only, deps)
 	modDeps := appnotification.ModeratorDeps{Repository: nh.Notifications, Staff: e.staff, IDs: ae.ids, Outbox: e.outbox}
