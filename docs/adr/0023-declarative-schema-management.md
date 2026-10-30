@@ -1,6 +1,6 @@
 # ADR-0023: DB スキーマは宣言的に管理し、Atlas（Community Edition）で適用する
 
-- Status: Accepted（v0 の破壊的変更の扱いを ADR-0087（実運用開始後のスキーマ変更とデータの引き継ぎ）が置き換える）
+- Status: Accepted（v0 の破壊的変更の扱いを ADR-0087（実運用開始後のスキーマ変更とデータの引き継ぎ）が、スキーマの適用を Atlas の CLI で行い単一バイナリに組み込まないことを ADR-0126（スキーマの適用を my に組み込み、Atlas の Go ライブラリで my schema apply する）が置き換える）
 - Date: 2026-10-16
 - Deciders: @rosylilly
 - Issue: —
