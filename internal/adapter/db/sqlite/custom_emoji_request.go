@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -160,9 +161,9 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequestsByID(ctx context.Context,
 }
 
 // CountCustomEmojiUsage implements content.CustomEmojiRequestRepository.
-func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string) (made, pending int, err error) {
-	row, err := r.db.reader().CountCustomEmojiUsage(ctx, toNullString(userID))
-	return int(row.Made), int(row.Pending), wrap(err, "count custom emoji usage")
+func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string, since, until time.Time) (approved, pending int, err error) {
+	row, err := r.db.reader().CountCustomEmojiUsage(ctx, sqlitegen.CountCustomEmojiUsageParams{UserID: userID, Since: toMillis(since), Until: toMillis(until)})
+	return int(row.Approved), int(row.Pending), wrap(err, "count custom emoji usage")
 }
 
 // IsMediaOfPendingCustomEmojiRequest implements content.CustomEmojiRequestRepository.

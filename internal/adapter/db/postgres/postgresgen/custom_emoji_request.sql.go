@@ -13,22 +13,34 @@ import (
 )
 
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
-SELECT (SELECT COUNT(*) FROM custom_emojis e WHERE e.created_by_user_id = $1::uuid AND e.domain = '')::bigint AS made,
-  (SELECT COUNT(*) FROM custom_emoji_pending_requests p
-    WHERE p.requester_user_id = $1::uuid AND p.reserved_shortcode IS NOT NULL)::bigint AS pending
+SELECT COUNT(*) FILTER (WHERE o.outcome = 'approved')::bigint AS approved,
+  COUNT(*) FILTER (WHERE o.request_id IS NULL)::bigint AS pending
+FROM custom_emoji_requests r
+LEFT JOIN custom_emoji_request_outcomes o ON o.request_id = r.id
+WHERE r.requester_user_id = $1::uuid AND r.kind = 'create'
+  AND r.created_at >= $2::timestamptz AND r.created_at < $3::timestamptz
+  AND (o.request_id IS NULL OR o.outcome = 'approved')
 `
 
-type CountCustomEmojiUsageRow struct {
-	Made    int64
-	Pending int64
+type CountCustomEmojiUsageParams struct {
+	UserID string
+	Since  time.Time
+	Until  time.Time
 }
 
-// CountCustomEmojiUsage counts what the limit of a creator counts (ADR-0070 section 4): the local emoji
-// that the user made and their pending requests to create one, apart.
-func (q *Queries) CountCustomEmojiUsage(ctx context.Context, userID string) (CountCustomEmojiUsageRow, error) {
-	row := q.db.QueryRow(ctx, countCustomEmojiUsage, userID)
+type CountCustomEmojiUsageRow struct {
+	Approved int64
+	Pending  int64
+}
+
+// CountCustomEmojiUsage counts what the monthly limit of a creator counts (ADR-0124 section 1): the
+// requests to create an emoji that the user submitted in [@since, @until), approved and pending
+// apart. Rejected, withdrawn, and lapsed requests do not count; deleting an approved emoji does
+// not change the count.
+func (q *Queries) CountCustomEmojiUsage(ctx context.Context, arg CountCustomEmojiUsageParams) (CountCustomEmojiUsageRow, error) {
+	row := q.db.QueryRow(ctx, countCustomEmojiUsage, arg.UserID, arg.Since, arg.Until)
 	var i CountCustomEmojiUsageRow
-	err := row.Scan(&i.Made, &i.Pending)
+	err := row.Scan(&i.Approved, &i.Pending)
 	return i, err
 }
 

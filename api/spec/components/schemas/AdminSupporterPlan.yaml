@@ -25,7 +25,7 @@ properties:
   annual_discount_percent:
     type: integer
   emoji_limit:
-    description: How many custom emoji the members may create when the role lets them.
+    description: How many custom emoji the members may create each month (UTC) when the role lets them.
     type: integer
   role:
     $ref: ./AdminSupporterPlanRole.yaml

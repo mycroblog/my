@@ -340,7 +340,7 @@ func (s *Server) ListOwnCustomEmojis(ctx context.Context, req ListOwnCustomEmoji
 		return nil, fmt.Errorf("clientapi: the custom emoji usage of %s: %w", v.UserID, err)
 	}
 	emojis, last := trim(emojis, pq.limit)
-	page := OwnCustomEmojiPage{Items: make([]OwnCustomEmoji, 0, len(emojis)), Used: usage.Used, Pending: usage.Pending}
+	page := OwnCustomEmojiPage{Items: make([]OwnCustomEmoji, 0, len(emojis)), Used: usage.Used, Pending: usage.Pending, ResetsAt: usage.ResetsAt.UTC()}
 	if usage.Limited {
 		limit := usage.Limit
 		page.Limit = &limit

@@ -55,8 +55,9 @@ export interface paths {
         /**
          * List the custom emoji that the user made
          * @description The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-         *     used of their limit: their emoji and their pending requests to create one, and the limit,
-         *     which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+         *     used of their monthly limit: the approved and pending requests to create an emoji that they
+         *     submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+         *     limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
          */
         get: operations["listOwnCustomEmojis"];
         put?: never;
@@ -122,8 +123,9 @@ export interface paths {
          *     §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
          *     request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
          *     A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-         *     pending request reserves, a `create` request once the user's emoji and pending `create`
-         *     requests are as many as their limit (`limit_reached`), and a second pending `image`
+         *     pending request reserves, a `create` request once the approved and pending `create`
+         *     requests that the user submitted this month (UTC) are as many as their monthly limit
+         *     (`limit_reached`), and a second pending `image`
          *     request for an emoji (`request_pending`) are a 422
          *     `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
          *     without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -8915,7 +8917,7 @@ export interface components {
             monthly_price: components["schemas"]["Money"];
             yearly_price: components["schemas"]["Money"];
             annual_discount_percent: number;
-            /** @description How many custom emoji the members may create when the role lets them. */
+            /** @description How many custom emoji the members may create each month (UTC) when the role lets them. */
             emoji_limit: number;
             role: components["schemas"]["AdminSupporterPlanRole"];
             prices_ready: boolean;
@@ -8943,7 +8945,7 @@ export interface components {
             monthly_price: components["schemas"]["Money"];
             /** @description 0 to 90. */
             annual_discount_percent: number;
-            /** @description 0 to 10,000. */
+            /** @description How many custom emoji the members may create each month (UTC), 0 to 10,000. */
             emoji_limit: number;
             /** @description 0 to 1,000,000, unique among the plans that are not retired. */
             rank: number;
@@ -10023,8 +10025,8 @@ export interface components {
          *     `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
          *     for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
          *     fetched (its server did not return it, or the instance rejects the media of its domain).
-         *     `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-         *     their limit. `request_pending`: the emoji already has a pending request for a new image.
+         *     `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+         *     this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
          *     `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
          * @enum {string}
          */
@@ -11788,19 +11790,25 @@ export interface components {
             updated_at: string;
         };
         /**
-         * @description A page of the custom emoji that the user made, with what the user used of their limit
-         *     (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-         *     one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-         *     they may have, absent for no limit.
+         * @description A page of the custom emoji that the user made, with what the user used of their monthly limit
+         *     (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+         *     calendar month and that are approved or pending (deleting an emoji does not lower it),
+         *     `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+         *     submit in a month, absent for no limit, and `resets_at` is when the count resets.
          */
         OwnCustomEmojiPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["OwnCustomEmoji"][];
-            /** @description The user's local emoji and pending requests to create one. */
+            /** @description The approved and pending requests to create an emoji that the user submitted this month. */
             used: number;
             /** @description The part of `used` that the user's pending requests to create an emoji take. */
             pending: number;
-            /** @description How many the user may have; absent for no limit. */
+            /** @description How many requests to create an emoji the user may submit in a month; absent for no limit. */
             limit?: number;
+            /**
+             * Format: date-time
+             * @description When the count resets, the first day of the next month at 00:00 UTC.
+             */
+            resets_at: string;
         };
         /** @description The authenticated user's subscription that goes on, and whether they may subscribe. */
         OwnSupporterSubscription: {
