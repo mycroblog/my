@@ -189,6 +189,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   voice_room_invited: "voice",
   admin_error_group: "staff",
   status: "mention",
+  announcement: "notice",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -219,6 +220,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   service_closure: "client:notifications.type.service_closure",
   admin_service_closure_due: "client:notifications.type.admin_service_closure_due",
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
+  announcement: "client:notifications.type.announcement",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",

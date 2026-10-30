@@ -85,22 +85,32 @@ type Repository interface {
 	// ListNotifications returns the recipient's visible notifications, newest first, starting
 	// after the notification ID before ("" for the newest) and returning at most limit
 	// notifications. A non-empty types keeps only notifications of those types, and hidden
-	// leaves out the notifications of its types. A notification is visible when it is not
-	// dismissed, no exclusion of the recipient that is in force at now has its source as the
-	// target, no domain exclusion of the recipient covers its source domain, and its status, if
-	// any, is not recorded as deleted.
-	ListNotifications(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, before string, limit int, now time.Time) ([]notification.Notification, error)
+	// leaves out the notifications of its types and of the announcements it does not show. A
+	// notification is visible when it is not dismissed, no exclusion of the recipient that is in
+	// force at now has its source as the target, no domain exclusion of the recipient covers its
+	// source domain, and its status, if any, is not recorded as deleted.
+	ListNotifications(ctx context.Context, recipientAccountID string, types []notification.Type, hidden Hidden, before string, limit int, now time.Time) ([]notification.Notification, error)
 	// ListNotificationsAfter is ListNotifications in the other direction: the recipient's
 	// visible notifications whose ID is greater than after, oldest first, at most limit.
-	ListNotificationsAfter(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, after string, limit int, now time.Time) ([]notification.Notification, error)
+	ListNotificationsAfter(ctx context.Context, recipientAccountID string, types []notification.Type, hidden Hidden, after string, limit int, now time.Time) ([]notification.Notification, error)
 	// NotificationListed reports whether the notification id is the recipient's and visible
 	// as in ListNotifications with hidden.
-	NotificationListed(ctx context.Context, recipientAccountID, id string, hidden []notification.Type, now time.Time) (bool, error)
+	NotificationListed(ctx context.Context, recipientAccountID, id string, hidden Hidden, now time.Time) (bool, error)
 	// CountNotificationsAfter counts the recipient's visible notifications, as in
 	// ListNotifications with hidden, whose ID is greater than after ("" counts them all).
-	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden []notification.Type, now time.Time) (int64, error)
+	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time) (int64, error)
 	// FindReadMarker returns an account's read marker; ErrNotFound means it has read nothing.
 	FindReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
 	// StatusHasNotifications reports whether a notification, dismissed or not, is about the status.
 	StatusHasNotifications(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
+}
+
+// Hidden is what the reads of the notifications leave out besides the dismissals, the
+// exclusions, and the deleted statuses, as of the moment of reading.
+type Hidden struct {
+	// Types are the moderator types whose permission the recipient's roles no longer grant.
+	Types []notification.Type
+	// ShownAnnouncements are the announcements that the users see now: the notifications of
+	// the other announcements (withdrawn or ended) are left out (ADR-0125 §2).
+	ShownAnnouncements []string
 }

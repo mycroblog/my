@@ -4029,7 +4029,8 @@ paths:
       description: |
         The server's announcements that every local user sees now (FR-726): published, and
         within their window. The ones whose `published_at` is the latest come first, each with
-        whether the user has read it. The list is not paginated.
+        whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+        through the past ones too.
       tags:
         - announcements
       security:
@@ -4072,6 +4073,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Announcement'
+        default:
+          $ref: '#/components/responses/Problem'
+  /announcements/history:
+    get:
+      operationId: listAnnouncementHistory
+      summary: List the announcements, past ones included
+      description: |
+        The server's announcements that have started to show to the local users (FR-726): the
+        published ones whose `published_at` has passed, those whose window has ended included
+        (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+        first, each with whether the user has read it. Only the announcements that show now can be
+        marked read (`markAnnouncementRead`).
+      tags:
+        - announcements
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of announcements.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementPage'
         default:
           $ref: '#/components/responses/Problem'
   /streaming:
@@ -6783,9 +6814,12 @@ paths:
       operationId: createAdminAnnouncement
       summary: Write an announcement
       description: |
-        Writes an announcement to every local user, a draft unless `publish` is set. The text
-        is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-        characters is a 422 naming `text`, and a window that ends when or before it starts a
+        Writes an announcement to every local user, a draft unless `publish` is set. The title is
+        plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+        to show (its publication, or the start of its window when that comes later), every local
+        user gets an `announcement` notification, unless they turned it off. A blank title, one of
+        more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+        text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
         422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
         permission.
       tags:
@@ -6825,9 +6859,11 @@ paths:
       operationId: updateAdminAnnouncement
       summary: Revise an announcement
       description: |
-        Replaces the text and the window of a draft or a published announcement, which keeps
-        its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-        input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+        Replaces the title, the text, and the window of a draft or a published announcement,
+        which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+        open. The input is checked as for a new announcement (422). A change after the
+        announcement has started to show notifies nobody again; moving the start of the window of
+        one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
         an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
         permission.
       tags:
@@ -6853,8 +6889,9 @@ paths:
       operationId: publishAdminAnnouncement
       summary: Publish an announcement
       description: |
-        Publishes a draft to every local user, within its window. Publishing a published
-        announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+        Publishes a draft to every local user, within its window; once it starts to show, every
+        local user gets an `announcement` notification, unless they turned it off. Publishing a
+        published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
         Recorded in the audit log. Needs the `manage_announcements` permission.
       tags:
         - admin-server
@@ -11562,6 +11599,7 @@ components:
       type: object
       required:
         - id
+        - title
         - text
         - content
         - state
@@ -11570,6 +11608,9 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/Id'
+        title:
+          description: The heading, in plain text; empty only for an announcement written before announcements had titles.
+          type: string
         text:
           description: The text, in Markdown.
           type: string
@@ -11598,11 +11639,18 @@ components:
           type: string
           format: date-time
     AdminAnnouncementCreateRequest:
-      description: A new announcement, with its text and its window.
+      description: A new announcement, with its title, its text, and its window.
       type: object
       required:
+        - title
         - text
       properties:
+        title:
+          description: |
+            The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+            characters. White space around it is trimmed.
+          type: string
+          minLength: 1
         text:
           description: The text, in Markdown.
           type: string
@@ -11621,11 +11669,18 @@ components:
           type: boolean
           default: false
     AdminAnnouncementInput:
-      description: The text and the window of an announcement.
+      description: The title, the text, and the window of an announcement.
       type: object
       required:
+        - title
         - text
       properties:
+        title:
+          description: |
+            The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+            characters. White space around it is trimmed.
+          type: string
+          minLength: 1
         text:
           description: The text, in Markdown.
           type: string
@@ -14368,13 +14423,20 @@ components:
       type: object
       required:
         - id
+        - title
         - content
         - published_at
         - updated_at
         - read
+        - ended
       properties:
         id:
           $ref: '#/components/schemas/Id'
+        title:
+          description: |
+            The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
+            Empty only for an announcement written before announcements had titles.
+          type: string
         content:
           description: |
             The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
@@ -14394,6 +14456,11 @@ components:
           format: date-time
         read:
           description: Whether the user has marked it read.
+          type: boolean
+        ended:
+          description: |
+            Whether its window has ended, which only the list with the past announcements
+            (`listAnnouncementHistory`) has; such an announcement can no longer be marked read.
           type: boolean
     AnnouncementList:
       description: The announcements.
@@ -18003,6 +18070,9 @@ components:
         error_group:
           description: What an `admin_error_group` tells of; omitted for the other types.
           $ref: '#/components/schemas/NotificationErrorGroup'
+        announcement:
+          description: The announcement that an `announcement` tells of, as the user sees it; omitted for the other types.
+          $ref: '#/components/schemas/Announcement'
     NotificationGroup:
       description: |
         A row of the notification settings: one or more notification types that the user turns on
@@ -18014,7 +18084,8 @@ components:
         `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
         `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-        `service_closure`, and `supporter` (the `supporter_*` types).
+        `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+        them that the user turns off in the app (on by default); it has no `email` channel.
       type: string
       enum:
         - mention
@@ -18040,6 +18111,7 @@ components:
         - moderation
         - service_closure
         - supporter
+        - announcement
     NotificationMarker:
       description: How far the authenticated user has read the notifications.
       type: object
@@ -18098,8 +18170,8 @@ components:
         reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
         emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
         the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-        offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
-        is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+        offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
+        `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
         subscription (`putPushSubscription`).
       type: object
       required:
@@ -18114,7 +18186,8 @@ components:
           description: |
             The kind of the row: `ordinary` (what other users did; in the app on and email off by
             default), `moderator` (to the holders of the permission it needs; both on by default),
-            or `instance` (the instance's notices to the user; always in the app).
+            or `instance` (the instance's notices to the user; always in the app, but for
+            `announcement`, which is on by default).
           type: string
           enum:
             - ordinary
@@ -18233,6 +18306,11 @@ components:
         (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
         someone else's post, a boost, an edit, or a post that the server fetched rather than received,
         nor when the user gets a `mention` of the same post.
+        `announcement` goes to every local user once a server-wide announcement starts to show (its
+        publication, or the start of its window when that comes later), once per announcement; its
+        `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+        nothing again, and the notification leaves the list and the unread count once the
+        announcement is withdrawn or its window ends.
       type: string
       enum:
         - follow
@@ -18266,6 +18344,7 @@ components:
         - voice_room_invited
         - admin_error_group
         - status
+        - announcement
     OAuthApp:
       description: |
         An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -19323,7 +19402,7 @@ components:
         alerts:
           description: The notification types to push, each at most once; empty pushes none.
           type: array
-          maxItems: 31
+          maxItems: 32
           items:
             $ref: '#/components/schemas/NotificationType'
     QrCode:
@@ -21747,3 +21826,15 @@ components:
       properties:
         endpoint_id:
           $ref: '#/components/schemas/Id'
+    AnnouncementPage:
+      description: A page of announcements.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Announcement'

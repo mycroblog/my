@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
@@ -30,6 +31,38 @@ func (a *App) setUpClosureNotifications(repo notification.Repository, moderators
 	}
 	notification.RegisterClosureProjectors(a.Projectors, d)
 	notification.RegisterClosureJobs(a.Handlers, d)
+}
+
+// setUpAnnouncementNotifications registers the announcement notifications (ADR-0125 §2): the
+// projector that schedules them when an announcement gets the time it starts to show, and the
+// job that creates them for every local user who is neither suspended nor deleted. push
+// enqueues the Web Push messages, nil none.
+func (a *App) setUpAnnouncementNotifications(repo notification.Repository, push *notification.Pusher) {
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
+	d := notification.AnnouncementDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Recipients: announcementRecipients{closureRecipients{a}},
+		Announcements: a.Instance, IDs: a.IDs, Clock: a.Clock, Outbox: outbox, Push: push,
+	}
+	notification.RegisterAnnouncementProjectors(a.Projectors, d)
+	notification.RegisterAnnouncementJobs(a.Handlers, d)
+}
+
+// announcementRecipients pages the local accounts of users, as the service closure
+// notifications do, and leaves out the suspended and the deleted ones.
+type announcementRecipients struct{ closureRecipients }
+
+// Notifiable implements notification.AnnouncementRecipients.
+func (r announcementRecipients) Notifiable(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	deleted, err := r.a.Accounts.DeletedTx(ctx, tx, accountID)
+	if err != nil || deleted {
+		return false, err
+	}
+	suspended, err := r.a.AccountPolicy.SuspendedTx(ctx, tx, accountID)
+	return !suspended, err
 }
 
 // closureRecipients pages the local accounts of users for the service closure notifications.

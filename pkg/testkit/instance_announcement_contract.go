@@ -3,6 +3,7 @@
 package testkit
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -13,19 +14,23 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
 // instanceAnnouncementCases are the cases of InstanceRepositoryContract about the server-wide
 // announcements (FR-726): drafts, publication, revisions, and withdrawal, the window in which
-// the users see one, each user's reads and their erasure, invalid input that writes nothing,
-// and the announcement_heads projection that equals a rebuild.
+// the users see one, the list with the past ones, the times at which their notifications are
+// scheduled, each user's reads and their erasure, invalid input that writes nothing, and the
+// announcement_heads projection that equals a rebuild.
 var instanceAnnouncementCases = []struct {
 	name string
 	run  func(t *testing.T, e *instanceEnv)
 }{
 	{"AnnouncementLifecycle", instanceAnnouncementLifecycle},
 	{"AnnouncementWindow", instanceAnnouncementWindow},
+	{"PastAnnouncements", instancePastAnnouncements},
+	{"SchedulesAnnouncements", instanceSchedulesAnnouncements},
 	{"RejectsInvalidAnnouncements", instanceRejectsInvalidAnnouncements},
 	{"ErasesAnnouncementReads", instanceErasesAnnouncementReads},
 	{"AnnouncementProjectionEqualsRebuild", instanceAnnouncementProjectionEqualsRebuild},
@@ -40,7 +45,7 @@ func (e *instanceEnv) createAnnouncement(t *testing.T, body string, publish bool
 	t.Helper()
 	e.clock.Advance(time.Second)
 	a, err := e.service.CreateAnnouncement(t.Context(), appinstance.CreateAnnouncementInput{
-		AnnouncementInput: appinstance.AnnouncementInput{Body: body, StartsAt: startsAt, EndsAt: endsAt},
+		AnnouncementInput: appinstance.AnnouncementInput{Title: "Title: " + instance.AnnouncementLabel("", body), Body: body, StartsAt: startsAt, EndsAt: endsAt},
 		Publish:           publish, CreatedByUserID: announcementAdmin,
 	})
 	if err != nil {
@@ -97,7 +102,7 @@ func instanceAnnouncementLifecycle(t *testing.T, e *instanceEnv) {
 
 	e.clock.Advance(time.Second)
 	updated, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
-		AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Body: "Maintenance on Monday."},
+		AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: "Maintenance on Monday", Body: "Maintenance on Monday."},
 	})
 	if err != nil {
 		t.Fatalf("UpdateAnnouncement = %v", err)
@@ -144,7 +149,7 @@ func instanceAnnouncementLifecycle(t *testing.T, e *instanceEnv) {
 		t.Errorf("PublishAnnouncement(withdrawn) = %v, want ErrAnnouncementWithdrawn", err)
 	}
 	if _, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
-		AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Body: "again"},
+		AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: "again", Body: "again"},
 	}); !errors.Is(err, instance.ErrAnnouncementWithdrawn) {
 		t.Errorf("UpdateAnnouncement(withdrawn) = %v, want ErrAnnouncementWithdrawn", err)
 	}
@@ -189,16 +194,131 @@ func instanceAnnouncementWindow(t *testing.T, e *instanceEnv) {
 	}
 }
 
+// instancePastAnnouncements checks the list with the past announcements (ADR-0125 §3): those
+// that have started to show, the ended ones included, newest ShowsFrom first, page by page,
+// without the drafts, the withdrawn ones, and those whose window has not started; and that the
+// title is trimmed and kept with each revision.
+func instancePastAnnouncements(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	now := e.clock.Now()
+	ended := e.createAnnouncement(t, "ended", true, time.Time{}, now.Add(30*time.Minute))
+	e.createAnnouncement(t, "draft", false, time.Time{}, time.Time{})
+	future := e.createAnnouncement(t, "future", true, now.Add(48*time.Hour), time.Time{})
+	withdrawn := e.createAnnouncement(t, "withdrawn", true, time.Time{}, time.Time{})
+	if _, err := e.service.WithdrawAnnouncement(ctx, withdrawn.ID, announcementAdmin); err != nil {
+		t.Fatal(err)
+	}
+	current := e.createAnnouncement(t, "current", true, time.Time{}, time.Time{})
+	e.clock.Advance(time.Hour)
+	var got []string
+	after := appinstance.AnnouncementCursor{}
+	for range 5 {
+		page, more, err := e.service.PastAnnouncements(ctx, announcementReader, after, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, a := range page {
+			label := a.Revision.Body
+			if a.Ended {
+				label += " (ended)"
+			}
+			got = append(got, label)
+		}
+		if !more {
+			break
+		}
+		last := page[len(page)-1]
+		after = appinstance.AnnouncementCursor{ShowsFrom: last.ShowsFrom(), ID: last.ID}
+	}
+	if want := []string{"current", "ended (ended)"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("past announcements = %q, want %q", got, want)
+	}
+	if _, ok, err := e.service.ShownAnnouncement(ctx, announcementReader, ended.ID); err != nil || ok {
+		t.Errorf("ShownAnnouncement(ended) = %v, %v; want not shown", ok, err)
+	}
+	if ids, err := e.service.ShownAnnouncementIDs(ctx); err != nil || !reflect.DeepEqual(ids, []string{current.ID}) {
+		t.Errorf("ShownAnnouncementIDs = %v, %v; want only the current one", ids, err)
+	}
+	updated, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
+		AnnouncementID: future.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: "  Moved  ", Body: "future", StartsAt: future.Revision.StartsAt},
+	})
+	if err != nil || updated.Revision.Title != "Moved" {
+		t.Errorf("UpdateAnnouncement(title) = %+v, %v; want the title trimmed", updated.Revision, err)
+	}
+}
+
+// instanceSchedulesAnnouncements checks when an announcement is scheduled for its notifications
+// (ADR-0125 §2): at its publication, at ShowsFrom, and again when a revision moves the start of
+// the window before it has shown; not for a draft, nor for a revision after it has shown.
+func instanceSchedulesAnnouncements(t *testing.T, e *instanceEnv) {
+	ctx := t.Context()
+	var scheduled []appinstance.AnnouncementScheduled
+	e.projectors.Register(appinstance.EventAnnouncementScheduled, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+		scheduled = append(scheduled, ev.(appinstance.AnnouncementScheduled))
+		return nil
+	})
+	take := func() []appinstance.AnnouncementScheduled {
+		out := scheduled
+		scheduled = nil
+		return out
+	}
+	start := e.clock.Now().Add(2 * time.Hour)
+	draft := e.createAnnouncement(t, "draft", false, start, time.Time{})
+	if got := take(); len(got) != 0 {
+		t.Errorf("scheduled for a draft = %+v, want none", got)
+	}
+	published, err := e.service.PublishAnnouncement(ctx, draft.ID, announcementAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := take(); len(got) != 1 || got[0].AnnouncementID != draft.ID || !got[0].ShowsFrom.Equal(start) || !published.ShowsFrom().Equal(start) {
+		t.Errorf("scheduled at the publication = %+v, want at the start of the window %v", got, start)
+	}
+	revise := func(title string, startsAt time.Time) {
+		t.Helper()
+		if _, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
+			AnnouncementID: draft.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: title, Body: "draft", StartsAt: startsAt},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	revise("same window", start)
+	if got := take(); len(got) != 0 {
+		t.Errorf("scheduled for a revision of the title = %+v, want none", got)
+	}
+	sooner := start.Add(-time.Hour)
+	revise("sooner", sooner)
+	if got := take(); len(got) != 1 || !got[0].ShowsFrom.Equal(sooner) {
+		t.Errorf("scheduled for a sooner start = %+v, want at %v", got, sooner)
+	}
+	e.clock.Advance(90 * time.Minute)
+	revise("after it showed", start)
+	if got := take(); len(got) != 0 {
+		t.Errorf("scheduled for a revision after it showed = %+v, want none", got)
+	}
+	now := e.clock.Now()
+	e.createAnnouncement(t, "at once", true, time.Time{}, time.Time{})
+	if got := take(); len(got) != 1 || !got[0].ShowsFrom.Equal(now.Add(time.Second)) {
+		t.Errorf("scheduled for an announcement published at once = %+v, want now", got)
+	}
+}
+
 func instanceRejectsInvalidAnnouncements(t *testing.T, e *instanceEnv) {
 	ctx := t.Context()
 	now := e.clock.Now()
 	for name, in := range map[string]appinstance.AnnouncementInput{
-		"blank":        {Body: " \n\t"},
-		"too long":     {Body: strings.Repeat("あ", instance.MaxAnnouncementBodyLength+1)},
-		"NUL":          {Body: "a\x00b"},
-		"invalid":      {Body: "\xff"},
-		"ends first":   {Body: "ok", StartsAt: now.Add(time.Hour), EndsAt: now},
-		"empty window": {Body: "ok", StartsAt: now, EndsAt: now},
+		"blank":          {Title: "t", Body: " \n\t"},
+		"too long":       {Title: "t", Body: strings.Repeat("あ", instance.MaxAnnouncementBodyLength+1)},
+		"NUL":            {Title: "t", Body: "a\x00b"},
+		"invalid":        {Title: "t", Body: "\xff"},
+		"ends first":     {Title: "t", Body: "ok", StartsAt: now.Add(time.Hour), EndsAt: now},
+		"empty window":   {Title: "t", Body: "ok", StartsAt: now, EndsAt: now},
+		"no title":       {Body: "ok"},
+		"blank title":    {Title: " \t", Body: "ok"},
+		"long title":     {Title: strings.Repeat("あ", instance.MaxAnnouncementTitleGraphemes+1), Body: "ok"},
+		"two-line title": {Title: "a\nb", Body: "ok"},
+		"title with NUL": {Title: "a\x00b", Body: "ok"},
+		"invalid title":  {Title: "\xff", Body: "ok"},
 	} {
 		if _, err := e.service.CreateAnnouncement(ctx, appinstance.CreateAnnouncementInput{AnnouncementInput: in, Publish: true}); !errors.Is(err, instance.ErrInvalidValue) {
 			t.Errorf("CreateAnnouncement(%s) = %v, want ErrInvalidValue", name, err)
@@ -209,7 +329,7 @@ func instanceRejectsInvalidAnnouncements(t *testing.T, e *instanceEnv) {
 	}
 	a := e.createAnnouncement(t, "ok", false, time.Time{}, time.Time{})
 	if _, err := e.service.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
-		AnnouncementID: a.ID, AnnouncementInput: appinstance.AnnouncementInput{Body: ""},
+		AnnouncementID: a.ID, AnnouncementInput: appinstance.AnnouncementInput{Title: "ok", Body: ""},
 	}); !errors.Is(err, instance.ErrInvalidValue) {
 		t.Errorf("UpdateAnnouncement(blank) = %v, want ErrInvalidValue", err)
 	}
@@ -245,7 +365,7 @@ func instanceAnnouncementProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 	for round := range 3 {
 		for step := range 30 {
 			e.clock.Advance(time.Second)
-			in := appinstance.AnnouncementInput{Body: fmt.Sprintf("announcement %d.%d", round, step)}
+			in := appinstance.AnnouncementInput{Title: fmt.Sprintf("title %d.%d", round, step), Body: fmt.Sprintf("announcement %d.%d", round, step)}
 			var err error
 			switch op := rng.IntN(5); {
 			case op == 0 || len(ids) == 0:

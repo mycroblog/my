@@ -25,7 +25,8 @@ type Type string
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
 // admin_service_closure_due, and admin_error_group go to the staff whose roles grant the permission they need
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
-// (ADR-0123).
+// (ADR-0123). announcement tells every local user of a server-wide announcement once it starts
+// to show (ADR-0125 §2).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -99,6 +100,9 @@ const (
 	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0123):
 	// SourceAccountID is the author and StatusID the post.
 	TypeStatus Type = "status"
+	// TypeAnnouncement tells a local account of a server-wide announcement once it starts to
+	// show (ADR-0125 §2): AnnouncementID is the announcement, and it has no source account.
+	TypeAnnouncement Type = "announcement"
 )
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
@@ -199,7 +203,7 @@ var Types = []Type{
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus,
+	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus, TypeAnnouncement,
 }
 
 // Valid reports whether t is a known notification type.
@@ -212,7 +216,7 @@ func (t Type) Valid() bool {
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus:
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus, TypeAnnouncement:
 		return true
 	}
 	return false
@@ -267,8 +271,10 @@ type Notification struct {
 	ErrorGroupChange ErrorGroupChange
 	ErrorGroupID     string
 	ErrorGroupHour   time.Time
-	DedupeKey        string
-	CreatedAt        time.Time
+	// AnnouncementID is the announcement of an announcement, "" for the other types.
+	AnnouncementID string
+	DedupeKey      string
+	CreatedAt      time.Time
 }
 
 var (
@@ -332,6 +338,9 @@ func (n Notification) Validate() error {
 	}
 	if n.Type == TypeStatus && (n.StatusID == "" || n.SourceAccountID == "") {
 		return errors.New("notification: a status names its post and its author")
+	}
+	if (n.Type == TypeAnnouncement) != (n.AnnouncementID != "") || (n.Type == TypeAnnouncement && n.SourceAccountID != "") {
+		return errors.New("notification: an announcement, and only it, names an announcement, and it has no source account")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -402,6 +411,12 @@ func AdminServiceClosureDueKey(announcementID string) string {
 // FollowKey is the dedupe key of a follow, follow_request, or follow_accepted notification:
 // one per follow and type. Following again after unfollowing is a new follow and notifies again.
 func FollowKey(t Type, followID string) string { return string(t) + ":" + followID }
+
+// AnnouncementKey is the dedupe key of an announcement notification: one per announcement and
+// recipient.
+func AnnouncementKey(announcementID string) string {
+	return string(TypeAnnouncement) + ":" + announcementID
+}
 
 // StatusKey is the dedupe key of a status notification: one per post and recipient.
 func StatusKey(statusID string) string { return string(TypeStatus) + ":" + statusID }

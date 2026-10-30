@@ -51,6 +51,7 @@ const notificationGroupLabels: Readonly<Record<NotificationGroup, ClientMessageK
   moderation: "client:settings.notifications.group.moderation",
   service_closure: "client:settings.notifications.group.service_closure",
   supporter: "client:settings.notifications.group.supporter",
+  announcement: "client:settings.notifications.group.announcement",
 };
 
 /** A channel of the table, in the order of its columns. */

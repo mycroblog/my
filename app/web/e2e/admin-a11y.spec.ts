@@ -313,6 +313,7 @@ const closureCheck: Schemas["AdminServiceClosureCheck"] = {
 /** A published announcement with a long first line and a link, as GET /admin/announcements lists it. */
 const announcement: Schemas["AdminAnnouncement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e6",
+  title: `Scheduled maintenance of the database ${"and of the media storage ".repeat(2)}`.trim(),
   text: `# Scheduled maintenance of the database ${"and of the media storage ".repeat(3)}\n\nSee [the status page](https://status.example/).`,
   content: `<h2>Scheduled maintenance of the database ${"and of the media storage ".repeat(3)}</h2><p>See <a href="https://status.example/">the status page</a>.</p>`,
   state: "published",

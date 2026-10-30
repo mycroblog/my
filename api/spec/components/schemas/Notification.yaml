@@ -66,3 +66,6 @@ properties:
   error_group:
     description: What an `admin_error_group` tells of; omitted for the other types.
     $ref: ./NotificationErrorGroup.yaml
+  announcement:
+    description: The announcement that an `announcement` tells of, as the user sees it; omitted for the other types.
+    $ref: ./Announcement.yaml

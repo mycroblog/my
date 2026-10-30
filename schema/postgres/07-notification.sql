@@ -23,7 +23,7 @@ CREATE TABLE notifications (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status', 'announcement'
   )),
   source_account_id uuid,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -63,6 +63,8 @@ CREATE TABLE notifications (
   error_group_change text CHECK (error_group_change IN ('created', 'regressed', 'others')),
   error_group_id uuid,
   error_group_hour timestamptz,
+  -- announcement: the announcements row.
+  announcement_id uuid,
   dedupe_key text NOT NULL,
   created_at timestamptz NOT NULL,
   -- nobody is notified of their own actions.
@@ -148,7 +150,7 @@ CREATE TABLE push_subscription_alerts (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'status', 'announcement'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 );
@@ -165,7 +167,7 @@ CREATE TABLE notification_settings (
     'account_moved', 'voice',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
     'admin_account_moved', 'admin_service_closure_due', 'admin_error_group',
-    'moderation', 'status'
+    'moderation', 'status', 'announcement'
   )),
   channel text NOT NULL CHECK (channel IN ('in_app', 'email')),
   enabled boolean NOT NULL,

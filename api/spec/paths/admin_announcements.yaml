@@ -24,9 +24,12 @@ post:
   operationId: createAdminAnnouncement
   summary: Write an announcement
   description: |
-    Writes an announcement to every local user, a draft unless `publish` is set. The text
-    is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-    characters is a 422 naming `text`, and a window that ends when or before it starts a
+    Writes an announcement to every local user, a draft unless `publish` is set. The title is
+    plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+    to show (its publication, or the start of its window when that comes later), every local
+    user gets an `announcement` notification, unless they turned it off. A blank title, one of
+    more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+    text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
     422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
     permission.
   tags: [admin-server]

@@ -24,6 +24,15 @@ type Deps struct {
 	// SupportersEnabled reports whether the supporter program is on, which offers the supporter
 	// row of the notification settings; nil means it is off.
 	SupportersEnabled func(ctx context.Context) (bool, error)
+	// Announcements tells which announcements the users see now: the list leaves out the
+	// notifications of the others (ADR-0125 §2). nil shows none of them.
+	Announcements ShownAnnouncements
+}
+
+// ShownAnnouncements tells which server-wide announcements the users see now: published and
+// within their window. *appinstance.Service implements it.
+type ShownAnnouncements interface {
+	ShownAnnouncementIDs(ctx context.Context) ([]string, error)
 }
 
 // Service runs the notification module's use cases of a local account's own notifications
@@ -74,7 +83,7 @@ func (q Query) limit() int {
 // hide_notifications, at the time of reading, also those notified before the block or mute,
 // and the notifications about deleted statuses. It also leaves out the moderator notifications
 // whose permission (notification.ModeratorPermission) the roles of accountID's user no longer
-// grant.
+// grant, and the notifications of the announcements that are withdrawn or ended.
 // An unknown type in q.Types fails with notification.ErrInvalidType.
 func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notification.Notification, error) {
 	for _, t := range q.Types {
@@ -82,7 +91,7 @@ func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notifi
 			return nil, fmt.Errorf("type %q: %w", t, notification.ErrInvalidType)
 		}
 	}
-	hidden, err := s.hiddenTypes(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,10 +102,10 @@ func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notifi
 }
 
 // Listed reports whether List would return accountID's notification id now: it exists for
-// accountID, is not dismissed, and no block, mute, domain mute, deleted status, or lost
-// permission hides it. The Web Push job checks it before sending.
+// accountID, is not dismissed, and no block, mute, domain mute, deleted status, lost
+// permission, or withdrawn or ended announcement hides it. The Web Push job checks it before sending.
 func (s *Service) Listed(ctx context.Context, accountID, id string) (bool, error) {
-	hidden, err := s.hiddenTypes(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID)
 	if err != nil {
 		return false, err
 	}
@@ -120,24 +129,32 @@ func (s *Service) UnreadCount(ctx context.Context, accountID string) (int64, err
 	if err != nil {
 		return 0, err
 	}
-	hidden, err := s.hiddenTypes(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID)
 	if err != nil {
 		return 0, err
 	}
 	return s.d.Repository.CountNotificationsAfter(ctx, accountID, m.LastReadID, hidden, s.d.Clock.Now())
 }
 
-// hiddenTypes returns the types of the moderator notifications that accountID's user no longer
-// has the permission for.
-func (s *Service) hiddenTypes(ctx context.Context, accountID string) ([]notification.Type, error) {
+// hidden returns what the reads of accountID's notifications leave out now: the types of the
+// moderator notifications that accountID's user no longer has the permission for, and every
+// announcement but those that the users see now.
+func (s *Service) hidden(ctx context.Context, accountID string) (Hidden, error) {
 	var granted []notification.Permission
 	if s.d.Staff != nil {
 		var err error
 		if granted, err = s.d.Staff.GrantedPermissions(ctx, accountID); err != nil {
-			return nil, fmt.Errorf("notification: the permissions of %s: %w", accountID, err)
+			return Hidden{}, fmt.Errorf("notification: the permissions of %s: %w", accountID, err)
 		}
 	}
-	return notification.HiddenTypes(granted), nil
+	h := Hidden{Types: notification.HiddenTypes(granted)}
+	if s.d.Announcements != nil {
+		var err error
+		if h.ShownAnnouncements, err = s.d.Announcements.ShownAnnouncementIDs(ctx); err != nil {
+			return Hidden{}, fmt.Errorf("notification: the announcements shown: %w", err)
+		}
+	}
+	return h, nil
 }
 
 // MarkRead marks accountID's notifications up to and including lastReadID as read, and

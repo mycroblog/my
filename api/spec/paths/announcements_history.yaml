@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAnnouncementHistory
+  summary: List the announcements, past ones included
+  description: |
+    The server's announcements that have started to show to the local users (FR-726): the
+    published ones whose `published_at` has passed, those whose window has ended included
+    (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+    first, each with whether the user has read it. Only the announcements that show now can be
+    marked read (`markAnnouncementRead`).
+  tags: [announcements]
+  security:
+    - oauth2: ["read:notifications"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of announcements.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AnnouncementPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

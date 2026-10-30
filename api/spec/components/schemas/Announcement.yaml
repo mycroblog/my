@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: MIT
 description: An announcement of the server to every local user (FR-726), as the user sees it.
 type: object
-required: [id, content, published_at, updated_at, read]
+required: [id, title, content, published_at, updated_at, read, ended]
 properties:
   id:
     $ref: ./Id.yaml
+  title:
+    description: |
+      The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
+      Empty for an announcement without one.
+    type: string
   content:
     description: |
       The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
@@ -24,4 +29,9 @@ properties:
     format: date-time
   read:
     description: Whether the user has marked it read.
+    type: boolean
+  ended:
+    description: |
+      Whether its window has ended, which only the list with the past announcements
+      (`listAnnouncementHistory`) has; such an announcement can no longer be marked read.
     type: boolean

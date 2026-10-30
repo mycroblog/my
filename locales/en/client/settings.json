@@ -2227,6 +2227,10 @@
     "defaultMessage": "Your supporter plan",
     "description": "Row of the notification settings table: a failed payment for the user's supporter plan, its end, and its retirement. Not shown in the mobile app."
   },
+  "settings.notifications.group.announcement": {
+    "defaultMessage": "Announcements",
+    "description": "Row of the notification settings table: a new announcement of the server's administrators to every user."
+  },
   "settings.notifications.sound.title": {
     "defaultMessage": "Notification sound",
     "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."

@@ -27,6 +27,10 @@
     "defaultMessage": "A webhook of {instance} was turned off",
     "description": "Web Push notification to an administrator: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.announcement": {
+    "defaultMessage": "Announcement from {instance}: {title}",
+    "description": "Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.appeal_decided": {
     "defaultMessage": "The moderators of {instance} decided your appeal",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."

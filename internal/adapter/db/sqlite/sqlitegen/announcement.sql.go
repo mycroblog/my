@@ -35,7 +35,7 @@ func (q *Queries) DeleteAnnouncementReadsOfUser(ctx context.Context, userID stri
 }
 
 const getAnnouncement = `-- name: GetAnnouncement :one
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id
@@ -49,6 +49,7 @@ type GetAnnouncementRow struct {
 	State           string
 	PublishedAt     sql.NullInt64
 	RevisionID      string
+	Title           string
 	Body            string
 	StartsAt        sql.NullInt64
 	EndsAt          sql.NullInt64
@@ -66,6 +67,7 @@ func (q *Queries) GetAnnouncement(ctx context.Context, id string) (GetAnnounceme
 		&i.State,
 		&i.PublishedAt,
 		&i.RevisionID,
+		&i.Title,
 		&i.Body,
 		&i.StartsAt,
 		&i.EndsAt,
@@ -125,13 +127,14 @@ func (q *Queries) InsertAnnouncementRead(ctx context.Context, arg InsertAnnounce
 }
 
 const insertAnnouncementRevision = `-- name: InsertAnnouncementRevision :exec
-INSERT INTO announcement_revisions (id, announcement_id, body, starts_at, ends_at, revised_by_user_id, revised_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO announcement_revisions (id, announcement_id, title, body, starts_at, ends_at, revised_by_user_id, revised_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertAnnouncementRevisionParams struct {
 	ID              string
 	AnnouncementID  string
+	Title           string
 	Body            string
 	StartsAt        sql.NullInt64
 	EndsAt          sql.NullInt64
@@ -143,6 +146,7 @@ func (q *Queries) InsertAnnouncementRevision(ctx context.Context, arg InsertAnno
 	_, err := q.db.ExecContext(ctx, insertAnnouncementRevision,
 		arg.ID,
 		arg.AnnouncementID,
+		arg.Title,
 		arg.Body,
 		arg.StartsAt,
 		arg.EndsAt,
@@ -243,7 +247,7 @@ func (q *Queries) ListAnnouncementStateChanges(ctx context.Context) ([]Announcem
 }
 
 const listAnnouncements = `-- name: ListAnnouncements :many
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id
@@ -257,6 +261,7 @@ type ListAnnouncementsRow struct {
 	State           string
 	PublishedAt     sql.NullInt64
 	RevisionID      string
+	Title           string
 	Body            string
 	StartsAt        sql.NullInt64
 	EndsAt          sql.NullInt64
@@ -280,6 +285,7 @@ func (q *Queries) ListAnnouncements(ctx context.Context) ([]ListAnnouncementsRow
 			&i.State,
 			&i.PublishedAt,
 			&i.RevisionID,
+			&i.Title,
 			&i.Body,
 			&i.StartsAt,
 			&i.EndsAt,
@@ -300,7 +306,7 @@ func (q *Queries) ListAnnouncements(ctx context.Context) ([]ListAnnouncementsRow
 }
 
 const listPublishedAnnouncements = `-- name: ListPublishedAnnouncements :many
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id
@@ -315,6 +321,7 @@ type ListPublishedAnnouncementsRow struct {
 	State           string
 	PublishedAt     sql.NullInt64
 	RevisionID      string
+	Title           string
 	Body            string
 	StartsAt        sql.NullInt64
 	EndsAt          sql.NullInt64
@@ -338,6 +345,7 @@ func (q *Queries) ListPublishedAnnouncements(ctx context.Context) ([]ListPublish
 			&i.State,
 			&i.PublishedAt,
 			&i.RevisionID,
+			&i.Title,
 			&i.Body,
 			&i.StartsAt,
 			&i.EndsAt,

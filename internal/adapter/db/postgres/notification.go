@@ -60,7 +60,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
 		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID),
 		ErrorGroupChange: toNullString(string(n.ErrorGroupChange)), ErrorGroupID: toNullString(n.ErrorGroupID), ErrorGroupHour: toNullTime(n.ErrorGroupHour),
-		DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		AnnouncementID: toNullString(n.AnnouncementID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -175,13 +175,13 @@ func (r *NotificationRepository) InsertDeletedStatus(ctx context.Context, tx uow
 }
 
 // ListNotifications implements notification.Repository.
-func (r *NotificationRepository) ListNotifications(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, before string, limit int, now time.Time) ([]notification.Notification, error) {
+func (r *NotificationRepository) ListNotifications(ctx context.Context, recipientAccountID string, types []notification.Type, hidden appnotification.Hidden, before string, limit int, now time.Time) ([]notification.Notification, error) {
 	n, err := toInt32(limit, "page limit")
 	if err != nil {
 		return nil, err
 	}
 	rows, err := r.db.reader().ListNotifications(ctx, postgresgen.ListNotificationsParams{
-		RecipientAccountID: recipientAccountID, Before: toNullString(before), AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden), Now: now, PageLimit: n,
+		RecipientAccountID: recipientAccountID, Before: toNullString(before), AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, PageLimit: n,
 	})
 	if err != nil {
 		return nil, wrap(err, "list notifications")
@@ -194,13 +194,13 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, recipien
 }
 
 // ListNotificationsAfter implements notification.Repository.
-func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, after string, limit int, now time.Time) ([]notification.Notification, error) {
+func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, recipientAccountID string, types []notification.Type, hidden appnotification.Hidden, after string, limit int, now time.Time) ([]notification.Notification, error) {
 	n, err := toInt32(limit, "page limit")
 	if err != nil {
 		return nil, err
 	}
 	rows, err := r.db.reader().ListNotificationsAfter(ctx, postgresgen.ListNotificationsAfterParams{
-		RecipientAccountID: recipientAccountID, After: after, AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden), Now: now, PageLimit: n,
+		RecipientAccountID: recipientAccountID, After: after, AllTypes: len(types) == 0, Types: typeNames(types), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, PageLimit: n,
 	})
 	if err != nil {
 		return nil, wrap(err, "list notifications after")
@@ -213,17 +213,17 @@ func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, rec
 }
 
 // NotificationListed implements notification.Repository.
-func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden []notification.Type, now time.Time) (bool, error) {
+func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden appnotification.Hidden, now time.Time) (bool, error) {
 	ok, err := r.db.reader().NotificationListed(ctx, postgresgen.NotificationListedParams{
-		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeNames(hidden), Now: now,
+		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now,
 	})
 	return ok, wrap(err, "notification listed")
 }
 
 // CountNotificationsAfter implements notification.Repository.
-func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden []notification.Type, now time.Time) (int64, error) {
+func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden appnotification.Hidden, now time.Time) (int64, error) {
 	n, err := r.db.reader().CountNotificationsAfter(ctx, postgresgen.CountNotificationsAfterParams{
-		RecipientAccountID: recipientAccountID, After: toNullString(after), HiddenTypes: typeNames(hidden), Now: now,
+		RecipientAccountID: recipientAccountID, After: toNullString(after), HiddenTypes: typeNames(hidden.Types), ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now,
 	})
 	return n, wrap(err, "count notifications")
 }
@@ -294,7 +294,7 @@ func notificationFrom(row postgresgen.Notification) notification.Notification {
 		AccountMoveID: fromNullString(row.AccountMoveID), AccountMoveOutcome: notification.MoveOutcome(fromNullString(row.AccountMoveOutcome)),
 		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), VoiceRoomID: fromNullString(row.VoiceRoomID),
 		ErrorGroupChange: notification.ErrorGroupChange(fromNullString(row.ErrorGroupChange)), ErrorGroupID: fromNullString(row.ErrorGroupID), ErrorGroupHour: fromNullTime(row.ErrorGroupHour),
-		DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
+		AnnouncementID: fromNullString(row.AnnouncementID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
 	}
 }
 
@@ -305,4 +305,12 @@ func typeNames(types []notification.Type) []string {
 		names[i] = string(t)
 	}
 	return names
+}
+
+// idList returns ids, empty rather than nil, for a uuid[] argument.
+func idList(ids []string) []string {
+	if ids == nil {
+		return []string{}
+	}
+	return ids
 }

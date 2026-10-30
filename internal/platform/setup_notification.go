@@ -13,13 +13,13 @@ import (
 )
 
 // setUpNotification builds Web Push, registers the notification module's projectors, and builds
-// its service and the notifications of the moderators, the service closure, and the supporters. It comes after the
+// its service and the notifications of the moderators, the service closure, the announcements, and the supporters. It comes after the
 // graph and content projectors, whose events these projectors turn into notifications. Unless
 // mail = none, the notifications that their recipients get by email are emailed once they stay
 // unread (ADR-0109 §4).
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	a.Notifications = notification.NewService(notification.Deps{
-		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a},
+		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a}, Announcements: a.Instance,
 		// The supporter row of the settings is offered while the program is on; the supporters
 		// module is built after this one.
 		SupportersEnabled: func(ctx context.Context) (bool, error) {
@@ -61,6 +61,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	a.voiceNotifier = notification.NewVoiceNotifier(deps)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
 	a.setUpClosureNotifications(repo, moderators, pusher)
+	a.setUpAnnouncementNotifications(repo, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)
 	return nil
 }

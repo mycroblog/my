@@ -4,6 +4,7 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
@@ -60,7 +61,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
 		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID),
 		ErrorGroupChange: toNullString(string(n.ErrorGroupChange)), ErrorGroupID: toNullString(n.ErrorGroupID), ErrorGroupHour: toNullTime(n.ErrorGroupHour),
-		DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
+		AnnouncementID: toNullString(n.AnnouncementID), DedupeKey: n.DedupeKey, CreatedAt: toMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -175,9 +176,9 @@ func (r *NotificationRepository) InsertDeletedStatus(ctx context.Context, tx uow
 }
 
 // ListNotifications implements notification.Repository.
-func (r *NotificationRepository) ListNotifications(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, before string, limit int, now time.Time) ([]notification.Notification, error) {
+func (r *NotificationRepository) ListNotifications(ctx context.Context, recipientAccountID string, types []notification.Type, hidden appnotification.Hidden, before string, limit int, now time.Time) ([]notification.Notification, error) {
 	rows, err := r.db.reader().ListNotifications(ctx, sqlitegen.ListNotificationsParams{
-		RecipientAccountID: recipientAccountID, Before: before, Types: typeSet(types), HiddenTypes: typeSet(hidden), Now: toMillis(now), PageLimit: int64(limit),
+		RecipientAccountID: recipientAccountID, Before: before, Types: typeSet(types), HiddenTypes: typeSet(hidden.Types), ShownAnnouncements: idSet(hidden.ShownAnnouncements), Now: toMillis(now), PageLimit: int64(limit),
 	})
 	if err != nil {
 		return nil, wrap(err, "list notifications")
@@ -190,9 +191,9 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, recipien
 }
 
 // ListNotificationsAfter implements notification.Repository.
-func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, recipientAccountID string, types, hidden []notification.Type, after string, limit int, now time.Time) ([]notification.Notification, error) {
+func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, recipientAccountID string, types []notification.Type, hidden appnotification.Hidden, after string, limit int, now time.Time) ([]notification.Notification, error) {
 	rows, err := r.db.reader().ListNotificationsAfter(ctx, sqlitegen.ListNotificationsAfterParams{
-		RecipientAccountID: recipientAccountID, After: after, Types: typeSet(types), HiddenTypes: typeSet(hidden), Now: toMillis(now), PageLimit: int64(limit),
+		RecipientAccountID: recipientAccountID, After: after, Types: typeSet(types), HiddenTypes: typeSet(hidden.Types), ShownAnnouncements: idSet(hidden.ShownAnnouncements), Now: toMillis(now), PageLimit: int64(limit),
 	})
 	if err != nil {
 		return nil, wrap(err, "list notifications after")
@@ -205,17 +206,17 @@ func (r *NotificationRepository) ListNotificationsAfter(ctx context.Context, rec
 }
 
 // NotificationListed implements notification.Repository.
-func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden []notification.Type, now time.Time) (bool, error) {
+func (r *NotificationRepository) NotificationListed(ctx context.Context, recipientAccountID, id string, hidden appnotification.Hidden, now time.Time) (bool, error) {
 	ok, err := r.db.reader().NotificationListed(ctx, sqlitegen.NotificationListedParams{
-		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeSet(hidden), Now: toMillis(now),
+		ID: id, RecipientAccountID: recipientAccountID, HiddenTypes: typeSet(hidden.Types), ShownAnnouncements: idSet(hidden.ShownAnnouncements), Now: toMillis(now),
 	})
 	return ok, wrap(err, "notification listed")
 }
 
 // CountNotificationsAfter implements notification.Repository.
-func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden []notification.Type, now time.Time) (int64, error) {
+func (r *NotificationRepository) CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden appnotification.Hidden, now time.Time) (int64, error) {
 	n, err := r.db.reader().CountNotificationsAfter(ctx, sqlitegen.CountNotificationsAfterParams{
-		RecipientAccountID: recipientAccountID, After: after, HiddenTypes: typeSet(hidden), Now: toMillis(now),
+		RecipientAccountID: recipientAccountID, After: after, HiddenTypes: typeSet(hidden.Types), ShownAnnouncements: idSet(hidden.ShownAnnouncements), Now: toMillis(now),
 	})
 	return n, wrap(err, "count notifications")
 }
@@ -240,7 +241,7 @@ func notificationFrom(row sqlitegen.Notification) notification.Notification {
 		AccountMoveID: row.AccountMoveID.String, AccountMoveOutcome: notification.MoveOutcome(row.AccountMoveOutcome.String),
 		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), VoiceRoomID: row.VoiceRoomID.String,
 		ErrorGroupChange: notification.ErrorGroupChange(row.ErrorGroupChange.String), ErrorGroupID: row.ErrorGroupID.String, ErrorGroupHour: fromNullTime(row.ErrorGroupHour),
-		DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
+		AnnouncementID: row.AnnouncementID.String, DedupeKey: row.DedupeKey, CreatedAt: fromMillis(row.CreatedAt),
 	}
 }
 
@@ -292,6 +293,14 @@ func notificationSettings(rows []sqlitegen.NotificationSetting, err error) ([]no
 
 // typeSet returns the types as the queries take them: each followed by a comma, after a leading
 // comma (",follow,mention,"), or "" for none.
+// idSet is typeSet for IDs.
+func idSet(ids []string) string {
+	if len(ids) == 0 {
+		return ""
+	}
+	return "," + strings.Join(ids, ",") + ","
+}
+
 func typeSet(types []notification.Type) string {
 	if len(types) == 0 {
 		return ""

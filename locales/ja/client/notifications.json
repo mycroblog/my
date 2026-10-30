@@ -195,6 +195,10 @@
     "defaultMessage": "{name}さんが投稿しました",
     "description": "Notification sentence. {name} is the display name of an account that the user subscribes to, which made the new post that the notification shows."
   },
+  "notifications.type.announcement": {
+    "defaultMessage": "運営からお知らせがあります",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement, which the notification shows by its title."
+  },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "サポーターのプランの支払いに失敗しました",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."

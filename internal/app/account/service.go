@@ -622,6 +622,19 @@ func (s *Service) FindByIDTx(ctx context.Context, tx uow.Tx, id string) (Actor, 
 	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
 }
 
+// DeletedTx reports, inside tx, whether an account is deleted (account.StateDeleted); an account
+// without lifecycle events is not.
+func (s *Service) DeletedTx(ctx context.Context, tx uow.Tx, id string) (bool, error) {
+	st, err := s.d.Repository.FindLifecycleStateTx(ctx, tx, id)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return st.State == account.StateDeleted, nil
+}
+
 // LocalAccountOfUserTx returns the local account of a user as LocalAccountOfUser does, read in tx.
 func (s *Service) LocalAccountOfUserTx(ctx context.Context, tx uow.Tx, userID string) (account.LocalAccount, error) {
 	return s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
