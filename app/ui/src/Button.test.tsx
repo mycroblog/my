@@ -10,6 +10,22 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Post" })).toBeInTheDocument();
   });
 
+  it("announces the keys that do the same as pressing it, and is still pressed with a pointer", async () => {
+    const user = userEvent.setup();
+    const onPress = vi.fn();
+    render(
+      <Button aria-keyshortcuts="Control+Enter Meta+Enter" variant="primary" onPress={onPress}>
+        Post
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: "Post" });
+    expect(button).toHaveAttribute("aria-keyshortcuts", "Control+Enter Meta+Enter");
+    expect(button).toHaveClass("bg-accent-fill");
+
+    await user.click(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it("is pressed with a pointer, Enter and Space", async () => {
     const user = userEvent.setup();
     const onPress = vi.fn();
