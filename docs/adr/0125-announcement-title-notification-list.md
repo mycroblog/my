@@ -1,6 +1,6 @@
 # ADR-0125: お知らせのタイトル・通知・一覧の画面と PC の右帯
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 - Deciders: @rosylilly
 - Issue: #1869
@@ -34,7 +34,7 @@ PC の幅でも、ホームを開かない限りお知らせは目に入らな�
 
 ## Decision（決定）
 
-推奨案は **A1・B1・C1**。
+**A1・B1・C1 を採用する。**
 
 ### 1. タイトル
 
