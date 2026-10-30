@@ -2656,6 +2656,7 @@ const (
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
 	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
 	NotificationGroupAdminWebhookDisabled    NotificationGroup = "admin_webhook_disabled"
+	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupBoost                   NotificationGroup = "boost"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
@@ -2692,6 +2693,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminSignUp:
 		return true
 	case NotificationGroupAdminWebhookDisabled:
+		return true
+	case NotificationGroupAnnouncement:
 		return true
 	case NotificationGroupBoost:
 		return true
@@ -2776,6 +2779,7 @@ const (
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
 	NotificationTypeAdminWebhookDisabled       NotificationType = "admin_webhook_disabled"
+	NotificationTypeAnnouncement               NotificationType = "announcement"
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
@@ -2820,6 +2824,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminSignUp:
 		return true
 	case NotificationTypeAdminWebhookDisabled:
+		return true
+	case NotificationTypeAnnouncement:
 		return true
 	case NotificationTypeAppealDecided:
 		return true
@@ -4624,11 +4630,14 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
+	// Title The heading, in plain text; empty for an announcement without one.
+	Title string `json:"title"`
+
 	// UpdatedAt When its text or window last changed.
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// AdminAnnouncementCreateRequest A new announcement, with its text and its window.
+// AdminAnnouncementCreateRequest A new announcement, with its title, its text, and its window.
 type AdminAnnouncementCreateRequest struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
@@ -4641,9 +4650,13 @@ type AdminAnnouncementCreateRequest struct {
 
 	// Text The text, in Markdown.
 	Text string `json:"text"`
+
+	// Title The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+	// characters. White space around it is trimmed.
+	Title string `json:"title"`
 }
 
-// AdminAnnouncementInput The text and the window of an announcement.
+// AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
@@ -4653,6 +4666,10 @@ type AdminAnnouncementInput struct {
 
 	// Text The text, in Markdown.
 	Text string `json:"text"`
+
+	// Title The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+	// characters. White space around it is trimmed.
+	Title string `json:"title"`
 }
 
 // AdminAnnouncementList The announcements, newest first.
@@ -6595,6 +6612,10 @@ type Announcement struct {
 	// headings from `h2`, and `http`, `https`, and `mailto` links).
 	Content string `json:"content"`
 
+	// Ended Whether its window has ended, which only the list with the past announcements
+	// (`listAnnouncementHistory`) has; such an announcement can no longer be marked read.
+	Ended bool `json:"ended"`
+
 	// EndsAt When it stops showing; omitted when it shows until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
 
@@ -6609,6 +6630,10 @@ type Announcement struct {
 	// Read Whether the user has marked it read.
 	Read bool `json:"read"`
 
+	// Title The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
+	// Empty for an announcement without one.
+	Title string `json:"title"`
+
 	// UpdatedAt When its text or window last changed.
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -6616,6 +6641,14 @@ type Announcement struct {
 // AnnouncementList The announcements.
 type AnnouncementList struct {
 	Items []Announcement `json:"items"`
+}
+
+// AnnouncementPage A page of announcements.
+type AnnouncementPage struct {
+	Items []Announcement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AppealModerationActionRequest An appeal of an action on the user's own account.
@@ -9815,6 +9848,9 @@ type Notification struct {
 	// its posts stay where they are.
 	AccountMove *AccountMove `json:"account_move,omitempty"`
 
+	// Announcement The announcement that an `announcement` tells of, as the user sees it; omitted for the other types.
+	Announcement *Announcement `json:"announcement,omitempty"`
+
 	// AppealId The appeal that an `admin_appeal` is about.
 	AppealId *Id `json:"appeal_id,omitempty"`
 
@@ -9929,6 +9965,11 @@ type Notification struct {
 	// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
 	// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
 	// nor when the user gets a `mention` of the same post.
+	// `announcement` goes to every local user once a server-wide announcement starts to show (its
+	// publication, or the start of its window when that comes later), once per announcement; its
+	// `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+	// nothing again, and the notification leaves the list and the unread count once the
+	// announcement is withdrawn or its window ends.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -9965,7 +10006,8 @@ type NotificationErrorGroupChange string
 // `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-// `service_closure`, and `supporter` (the `supporter_*` types).
+// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+// them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
 
 // NotificationMarker How far the authenticated user has read the notifications.
@@ -10012,8 +10054,8 @@ type NotificationSettingCell struct {
 // reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
 // emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
-// is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
+// `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
 // subscription (`putPushSubscription`).
 type NotificationSettingRow struct {
 	// Email One channel of one row of the notification settings.
@@ -10028,7 +10070,8 @@ type NotificationSettingRow struct {
 	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-	// `service_closure`, and `supporter` (the `supporter_*` types).
+	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+	// them that the user turns off in the app (on by default); it has no `email` channel.
 	Group NotificationGroup `json:"group"`
 
 	// InApp One channel of one row of the notification settings.
@@ -10036,7 +10079,8 @@ type NotificationSettingRow struct {
 
 	// Section The kind of the row: `ordinary` (what other users did; in the app on and email off by
 	// default), `moderator` (to the holders of the permission it needs; both on by default),
-	// or `instance` (the instance's notices to the user; always in the app).
+	// or `instance` (the instance's notices to the user; always in the app, but for
+	// `announcement`, which is on by default).
 	Section NotificationSettingRowSection `json:"section"`
 
 	// Types The notification types of the row.
@@ -10045,7 +10089,8 @@ type NotificationSettingRow struct {
 
 // NotificationSettingRowSection The kind of the row: `ordinary` (what other users did; in the app on and email off by
 // default), `moderator` (to the holders of the permission it needs; both on by default),
-// or `instance` (the instance's notices to the user; always in the app).
+// or `instance` (the instance's notices to the user; always in the app, but for
+// `announcement`, which is on by default).
 type NotificationSettingRowSection string
 
 // NotificationSettings The authenticated user's notification settings: the rows the user gets, in the order to
@@ -10075,7 +10120,8 @@ type NotificationSettingsUpdate struct {
 		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-		// `service_closure`, and `supporter` (the `supporter_*` types).
+		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+		// them that the user turns off in the app (on by default); it has no `email` channel.
 		Group NotificationGroup `json:"group"`
 	} `json:"changes"`
 }
@@ -10142,6 +10188,11 @@ type NotificationSettingsUpdateChangesChannel string
 // (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
 // someone else's post, a boost, an edit, or a post that the server fetched rather than received,
 // nor when the user gets a `mention` of the same post.
+// `announcement` goes to every local user once a server-wide announcement starts to show (its
+// publication, or the start of its window when that comes later), once per announcement; its
+// `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+// nothing again, and the notification leaves the list and the unread count once the
+// announcement is withdrawn or its window ends.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -13537,6 +13588,15 @@ type ListWebhookDeliveriesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAnnouncementHistoryParams defines parameters for ListAnnouncementHistory.
+type ListAnnouncementHistoryParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListBlocksParams defines parameters for ListBlocks.
 type ListBlocksParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -16429,9 +16489,12 @@ type ClientInterface interface {
 
 	// CreateAdminAnnouncementWithBody Write an announcement
 	//
-	// Writes an announcement to every local user, a draft unless `publish` is set. The text
-	// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-	// characters is a 422 naming `text`, and a window that ends when or before it starts a
+	// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+	// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+	// to show (its publication, or the start of its window when that comes later), every local
+	// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+	// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+	// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 	// 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -16442,9 +16505,12 @@ type ClientInterface interface {
 
 	// CreateAdminAnnouncement Write an announcement
 	//
-	// Writes an announcement to every local user, a draft unless `publish` is set. The text
-	// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-	// characters is a 422 naming `text`, and a window that ends when or before it starts a
+	// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+	// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+	// to show (its publication, or the start of its window when that comes later), every local
+	// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+	// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+	// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 	// 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -16462,9 +16528,11 @@ type ClientInterface interface {
 
 	// UpdateAdminAnnouncementWithBody Revise an announcement
 	//
-	// Replaces the text and the window of a draft or a published announcement, which keeps
-	// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-	// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+	// Replaces the title, the text, and the window of a draft or a published announcement,
+	// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+	// open. The input is checked as for a new announcement (422). A change after the
+	// announcement has started to show notifies nobody again; moving the start of the window of
+	// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 	// an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -16475,9 +16543,11 @@ type ClientInterface interface {
 
 	// UpdateAdminAnnouncement Revise an announcement
 	//
-	// Replaces the text and the window of a draft or a published announcement, which keeps
-	// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-	// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+	// Replaces the title, the text, and the window of a draft or a published announcement,
+	// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+	// open. The input is checked as for a new announcement (422). A change after the
+	// announcement has started to show notifies nobody again; moving the start of the window of
+	// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 	// an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -16488,8 +16558,9 @@ type ClientInterface interface {
 
 	// PublishAdminAnnouncement Publish an announcement
 	//
-	// Publishes a draft to every local user, within its window. Publishing a published
-	// announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+	// Publishes a draft to every local user, within its window; once it starts to show, every
+	// local user gets an `announcement` notification, unless they turned it off. Publishing a
+	// published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
 	// Recorded in the audit log. Needs the `manage_announcements` permission.
 	//
 	// Corresponds with POST /admin/announcements/{id}/publish (the `PublishAdminAnnouncement` operationId).
@@ -18629,10 +18700,22 @@ type ClientInterface interface {
 	//
 	// The server's announcements that every local user sees now (FR-726): published, and
 	// within their window. The ones whose `published_at` is the latest come first, each with
-	// whether the user has read it. The list is not paginated.
+	// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+	// through the past ones too.
 	//
 	// Corresponds with GET /announcements (the `ListAnnouncements` operationId).
 	ListAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAnnouncementHistory List the announcements, past ones included
+	//
+	// The server's announcements that have started to show to the local users (FR-726): the
+	// published ones whose `published_at` has passed, those whose window has ended included
+	// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+	// first, each with whether the user has read it. Only the announcements that show now can be
+	// marked read (`markAnnouncementRead`).
+	//
+	// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
+	ListAnnouncementHistory(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MarkAnnouncementRead Mark an announcement read
 	//
@@ -22345,9 +22428,12 @@ func (c *Client) ListAdminAnnouncements(ctx context.Context, reqEditors ...Reque
 
 // CreateAdminAnnouncementWithBody Write an announcement
 //
-// Writes an announcement to every local user, a draft unless `publish` is set. The text
-// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-// characters is a 422 naming `text`, and a window that ends when or before it starts a
+// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+// to show (its publication, or the start of its window when that comes later), every local
+// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 // 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -22368,9 +22454,12 @@ func (c *Client) CreateAdminAnnouncementWithBody(ctx context.Context, contentTyp
 
 // CreateAdminAnnouncement Write an announcement
 //
-// Writes an announcement to every local user, a draft unless `publish` is set. The text
-// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-// characters is a 422 naming `text`, and a window that ends when or before it starts a
+// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+// to show (its publication, or the start of its window when that comes later), every local
+// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 // 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -22408,9 +22497,11 @@ func (c *Client) GetAdminAnnouncement(ctx context.Context, id AnnouncementId, re
 
 // UpdateAdminAnnouncementWithBody Revise an announcement
 //
-// Replaces the text and the window of a draft or a published announcement, which keeps
-// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+// Replaces the title, the text, and the window of a draft or a published announcement,
+// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+// open. The input is checked as for a new announcement (422). A change after the
+// announcement has started to show notifies nobody again; moving the start of the window of
+// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 // an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -22431,9 +22522,11 @@ func (c *Client) UpdateAdminAnnouncementWithBody(ctx context.Context, id Announc
 
 // UpdateAdminAnnouncement Revise an announcement
 //
-// Replaces the text and the window of a draft or a published announcement, which keeps
-// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+// Replaces the title, the text, and the window of a draft or a published announcement,
+// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+// open. The input is checked as for a new announcement (422). A change after the
+// announcement has started to show notifies nobody again; moving the start of the window of
+// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 // an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -22454,8 +22547,9 @@ func (c *Client) UpdateAdminAnnouncement(ctx context.Context, id AnnouncementId,
 
 // PublishAdminAnnouncement Publish an announcement
 //
-// Publishes a draft to every local user, within its window. Publishing a published
-// announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+// Publishes a draft to every local user, within its window; once it starts to show, every
+// local user gets an `announcement` notification, unless they turned it off. Publishing a
+// published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
 // Recorded in the audit log. Needs the `manage_announcements` permission.
 //
 // Corresponds with POST /admin/announcements/{id}/publish (the `PublishAdminAnnouncement` operationId).
@@ -26375,11 +26469,33 @@ func (c *Client) TestWebhook(ctx context.Context, id WebhookId, reqEditors ...Re
 //
 // The server's announcements that every local user sees now (FR-726): published, and
 // within their window. The ones whose `published_at` is the latest come first, each with
-// whether the user has read it. The list is not paginated.
+// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+// through the past ones too.
 //
 // Corresponds with GET /announcements (the `ListAnnouncements` operationId).
 func (c *Client) ListAnnouncements(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAnnouncementsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAnnouncementHistory List the announcements, past ones included
+//
+// The server's announcements that have started to show to the local users (FR-726): the
+// published ones whose `published_at` has passed, those whose window has ended included
+// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+// first, each with whether the user has read it. Only the announcements that show now can be
+// marked read (`markAnnouncementRead`).
+//
+// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
+func (c *Client) ListAnnouncementHistory(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAnnouncementHistoryRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -38933,6 +39049,72 @@ func NewListAnnouncementsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListAnnouncementHistoryRequest constructs an http.Request for the ListAnnouncementHistory method
+func NewListAnnouncementHistoryRequest(server string, params *ListAnnouncementHistoryParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/announcements/history")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMarkAnnouncementReadRequest constructs an http.Request for the MarkAnnouncementRead method
 func NewMarkAnnouncementReadRequest(server string, id AnnouncementId) (*http.Request, error) {
 	var err error
@@ -46666,9 +46848,12 @@ type ClientWithResponsesInterface interface {
 
 	// CreateAdminAnnouncementWithBodyWithResponse Write an announcement
 	//
-	// Writes an announcement to every local user, a draft unless `publish` is set. The text
-	// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-	// characters is a 422 naming `text`, and a window that ends when or before it starts a
+	// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+	// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+	// to show (its publication, or the start of its window when that comes later), every local
+	// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+	// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+	// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 	// 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -46679,9 +46864,12 @@ type ClientWithResponsesInterface interface {
 
 	// CreateAdminAnnouncementWithResponse Write an announcement
 	//
-	// Writes an announcement to every local user, a draft unless `publish` is set. The text
-	// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-	// characters is a 422 naming `text`, and a window that ends when or before it starts a
+	// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+	// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+	// to show (its publication, or the start of its window when that comes later), every local
+	// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+	// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+	// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 	// 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -46701,9 +46889,11 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateAdminAnnouncementWithBodyWithResponse Revise an announcement
 	//
-	// Replaces the text and the window of a draft or a published announcement, which keeps
-	// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-	// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+	// Replaces the title, the text, and the window of a draft or a published announcement,
+	// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+	// open. The input is checked as for a new announcement (422). A change after the
+	// announcement has started to show notifies nobody again; moving the start of the window of
+	// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 	// an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -46714,9 +46904,11 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateAdminAnnouncementWithResponse Revise an announcement
 	//
-	// Replaces the text and the window of a draft or a published announcement, which keeps
-	// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-	// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+	// Replaces the title, the text, and the window of a draft or a published announcement,
+	// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+	// open. The input is checked as for a new announcement (422). A change after the
+	// announcement has started to show notifies nobody again; moving the start of the window of
+	// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 	// an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 	// permission.
 	//
@@ -46727,8 +46919,9 @@ type ClientWithResponsesInterface interface {
 
 	// PublishAdminAnnouncementWithResponse Publish an announcement
 	//
-	// Publishes a draft to every local user, within its window. Publishing a published
-	// announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+	// Publishes a draft to every local user, within its window; once it starts to show, every
+	// local user gets an `announcement` notification, unless they turned it off. Publishing a
+	// published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
 	// Recorded in the audit log. Needs the `manage_announcements` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49052,12 +49245,26 @@ type ClientWithResponsesInterface interface {
 	//
 	// The server's announcements that every local user sees now (FR-726): published, and
 	// within their window. The ones whose `published_at` is the latest come first, each with
-	// whether the user has read it. The list is not paginated.
+	// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+	// through the past ones too.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /announcements (the `ListAnnouncements` operationId).
 	ListAnnouncementsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAnnouncementsResponse, error)
+
+	// ListAnnouncementHistoryWithResponse List the announcements, past ones included
+	//
+	// The server's announcements that have started to show to the local users (FR-726): the
+	// published ones whose `published_at` has passed, those whose window has ended included
+	// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+	// first, each with whether the user has read it. Only the announcements that show now can be
+	// marked read (`markAnnouncementRead`).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
+	ListAnnouncementHistoryWithResponse(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*ListAnnouncementHistoryResponse, error)
 
 	// MarkAnnouncementReadWithResponse Mark an announcement read
 	//
@@ -63680,6 +63887,71 @@ func (r ListAnnouncementsResponse) ContentType() string {
 	return ""
 }
 
+// ListAnnouncementHistoryResponse200Headers the declared response headers of an HTTP 200 response for ListAnnouncementHistory
+type ListAnnouncementHistoryResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAnnouncementHistoryResponseDefaultHeaders the declared response headers of an HTTP default response for ListAnnouncementHistory
+type ListAnnouncementHistoryResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAnnouncementHistoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AnnouncementPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAnnouncementHistoryResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAnnouncementHistoryResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAnnouncementHistoryResponse) GetJSON200() *AnnouncementPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAnnouncementHistoryResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAnnouncementHistoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAnnouncementHistoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAnnouncementHistoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAnnouncementHistoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // MarkAnnouncementReadResponse200Headers the declared response headers of an HTTP 200 response for MarkAnnouncementRead
 type MarkAnnouncementReadResponse200Headers struct {
 	CacheControl *string
@@ -74970,9 +75242,12 @@ func (c *ClientWithResponses) ListAdminAnnouncementsWithResponse(ctx context.Con
 
 // CreateAdminAnnouncementWithBodyWithResponse Write an announcement
 //
-// Writes an announcement to every local user, a draft unless `publish` is set. The text
-// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-// characters is a 422 naming `text`, and a window that ends when or before it starts a
+// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+// to show (its publication, or the start of its window when that comes later), every local
+// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 // 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -74989,9 +75264,12 @@ func (c *ClientWithResponses) CreateAdminAnnouncementWithBodyWithResponse(ctx co
 
 // CreateAdminAnnouncementWithResponse Write an announcement
 //
-// Writes an announcement to every local user, a draft unless `publish` is set. The text
-// is Markdown; the users get it as sanitized HTML. A blank text or one longer than 5,000
-// characters is a 422 naming `text`, and a window that ends when or before it starts a
+// Writes an announcement to every local user, a draft unless `publish` is set. The title is
+// plain text and the text Markdown; the users get the text as sanitized HTML. Once it starts
+// to show (its publication, or the start of its window when that comes later), every local
+// user gets an `announcement` notification, unless they turned it off. A blank title, one of
+// more than 100 grapheme clusters or of more than one line, is a 422 naming `title`; a blank
+// text or one longer than 5,000 characters is a 422 naming `text`, and a window that ends when or before it starts a
 // 422 naming `ends_at`. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -75023,9 +75301,11 @@ func (c *ClientWithResponses) GetAdminAnnouncementWithResponse(ctx context.Conte
 
 // UpdateAdminAnnouncementWithBodyWithResponse Revise an announcement
 //
-// Replaces the text and the window of a draft or a published announcement, which keeps
-// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+// Replaces the title, the text, and the window of a draft or a published announcement,
+// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+// open. The input is checked as for a new announcement (422). A change after the
+// announcement has started to show notifies nobody again; moving the start of the window of
+// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 // an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -75042,9 +75322,11 @@ func (c *ClientWithResponses) UpdateAdminAnnouncementWithBodyWithResponse(ctx co
 
 // UpdateAdminAnnouncementWithResponse Revise an announcement
 //
-// Replaces the text and the window of a draft or a published announcement, which keeps
-// its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-// input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+// Replaces the title, the text, and the window of a draft or a published announcement,
+// which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+// open. The input is checked as for a new announcement (422). A change after the
+// announcement has started to show notifies nobody again; moving the start of the window of
+// one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
 // an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
 // permission.
 //
@@ -75061,8 +75343,9 @@ func (c *ClientWithResponses) UpdateAdminAnnouncementWithResponse(ctx context.Co
 
 // PublishAdminAnnouncementWithResponse Publish an announcement
 //
-// Publishes a draft to every local user, within its window. Publishing a published
-// announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+// Publishes a draft to every local user, within its window; once it starts to show, every
+// local user gets an `announcement` notification, unless they turned it off. Publishing a
+// published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
 // Recorded in the audit log. Needs the `manage_announcements` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78454,7 +78737,8 @@ func (c *ClientWithResponses) TestWebhookWithResponse(ctx context.Context, id We
 //
 // The server's announcements that every local user sees now (FR-726): published, and
 // within their window. The ones whose `published_at` is the latest come first, each with
-// whether the user has read it. The list is not paginated.
+// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+// through the past ones too.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -78465,6 +78749,25 @@ func (c *ClientWithResponses) ListAnnouncementsWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseListAnnouncementsResponse(rsp)
+}
+
+// ListAnnouncementHistoryWithResponse List the announcements, past ones included
+//
+// The server's announcements that have started to show to the local users (FR-726): the
+// published ones whose `published_at` has passed, those whose window has ended included
+// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
+// first, each with whether the user has read it. Only the announcements that show now can be
+// marked read (`markAnnouncementRead`).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
+func (c *ClientWithResponses) ListAnnouncementHistoryWithResponse(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*ListAnnouncementHistoryResponse, error) {
+	rsp, err := c.ListAnnouncementHistory(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAnnouncementHistoryResponse(rsp)
 }
 
 // MarkAnnouncementReadWithResponse Mark an announcement read
@@ -96731,6 +97034,83 @@ func ParseListAnnouncementsResponse(rsp *http.Response) (*ListAnnouncementsRespo
 		response.Headers200 = &headers
 	case true:
 		var headers ListAnnouncementsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAnnouncementHistoryResponse parses an HTTP response from a ListAnnouncementHistoryWithResponse call
+func ParseListAnnouncementHistoryResponse(rsp *http.Response) (*ListAnnouncementHistoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAnnouncementHistoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AnnouncementPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAnnouncementHistoryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAnnouncementHistoryResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

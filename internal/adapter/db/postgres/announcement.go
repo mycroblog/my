@@ -45,7 +45,7 @@ func (r *InstanceRepository) InsertAnnouncementRevision(ctx context.Context, tx 
 		return err
 	}
 	err = q.InsertAnnouncementRevision(ctx, postgresgen.InsertAnnouncementRevisionParams{
-		ID: rev.ID, AnnouncementID: rev.AnnouncementID, Body: rev.Body,
+		ID: rev.ID, AnnouncementID: rev.AnnouncementID, Title: rev.Title, Body: rev.Body,
 		StartsAt: toNullTime(rev.StartsAt), EndsAt: toNullTime(rev.EndsAt),
 		RevisedByUserID: toNullString(rev.RevisedByUserID), RevisedAt: rev.RevisedAt,
 	})
@@ -191,7 +191,7 @@ func announcementOf(row postgresgen.ListAnnouncementsRow) instance.Announcement 
 		ID: row.ID, CreatedAt: utc(row.CreatedAt),
 		State: instance.AnnouncementState(row.State), PublishedAt: fromNullTime(row.PublishedAt),
 		Revision: instance.AnnouncementRevision{
-			ID: row.RevisionID, AnnouncementID: row.ID, Body: row.Body,
+			ID: row.RevisionID, AnnouncementID: row.ID, Title: row.Title, Body: row.Body,
 			StartsAt: fromNullTime(row.StartsAt), EndsAt: fromNullTime(row.EndsAt),
 			RevisedByUserID: fromNullString(row.RevisedByUserID), RevisedAt: utc(row.RevisedAt),
 		},

@@ -202,12 +202,15 @@ CREATE TABLE announcements (
   created_at timestamptz NOT NULL
 );
 
--- Event (revision): one version of an announcement: its body in Markdown and the window in which
--- it shows once published. A NULL starts_at shows it from its publication, a NULL ends_at until
--- it is withdrawn. revised_by_user_id is NULL for a change from the CLI.
+-- Event (revision): one version of an announcement: its title (plain text of 1 to 100 grapheme
+-- clusters, checked by the application; the default '' reads as no title), its body in Markdown,
+-- and the window in which it shows once published. A NULL starts_at shows it from its
+-- publication, a NULL ends_at until it is withdrawn. revised_by_user_id is NULL for a change from
+-- the CLI.
 CREATE TABLE announcement_revisions (
   id uuid NOT NULL PRIMARY KEY,
   announcement_id uuid NOT NULL,
+  title text NOT NULL DEFAULT '',
   body text NOT NULL,
   starts_at timestamptz,
   ends_at timestamptz,

@@ -44,18 +44,22 @@ function account(permissions: Schemas["Permission"][]) {
 /** An unread announcement with a long word and a link, and a read one in Arabic, which reads right to left. */
 const unread: Schemas["Announcement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f1",
+  title: "Scheduled maintenance tonight",
   content: `<p>Scheduled maintenance of ${"the-database-and-the-media-storage-".repeat(3)}tonight. See <a href="https://status.example/">the status page</a>.</p>`,
   published_at: "2026-10-21T00:00:00Z",
   ends_at: "2026-10-28T00:00:00Z",
   updated_at: "2026-10-21T00:00:00Z",
   read: false,
+  ended: false,
 };
 const read: Schemas["Announcement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f2",
+  title: "مرحبا",
   content: "<p>مرحبا بكم في الخادم</p>",
   published_at: "2026-10-20T00:00:00Z",
   updated_at: "2026-10-20T00:00:00Z",
   read: true,
+  ended: false,
 };
 
 function json(route: Route, body: unknown, status = 200) {
@@ -165,6 +169,7 @@ test.describe("announcements", () => {
         announcements = [
           {
             id: "0192f0c4-7a8e-7000-8000-0000000000f3",
+            title: body.title,
             text: body.text,
             content: `<p>${body.text}</p>`,
             state: body.publish ? "published" : "draft",

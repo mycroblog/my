@@ -10,6 +10,7 @@ import (
 	"time"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/i18n"
@@ -23,6 +24,7 @@ import (
 type Announcements interface {
 	ShownAnnouncements(ctx context.Context, userID string) ([]appinstance.ReaderAnnouncement, error)
 	ShownAnnouncement(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, bool, error)
+	PastAnnouncements(ctx context.Context, userID string, after appinstance.AnnouncementCursor, limit int) ([]appinstance.ReaderAnnouncement, bool, error)
 	MarkAnnouncementRead(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, error)
 
 	Announcements(ctx context.Context) ([]instance.Announcement, error)
@@ -51,8 +53,8 @@ func timeOrZero(t *time.Time) time.Time {
 
 func newAnnouncement(a appinstance.ReaderAnnouncement) Announcement {
 	return Announcement{
-		Id: a.ID, Content: a.HTML, PublishedAt: a.ShowsFrom().UTC(), EndsAt: optionalTime(a.Revision.EndsAt),
-		UpdatedAt: a.Revision.RevisedAt.UTC(), Read: a.Read,
+		Id: a.ID, Title: a.Revision.Title, Content: a.HTML, PublishedAt: a.ShowsFrom().UTC(), EndsAt: optionalTime(a.Revision.EndsAt),
+		UpdatedAt: a.Revision.RevisedAt.UTC(), Read: a.Read, Ended: a.Ended,
 	}
 }
 
@@ -74,6 +76,43 @@ func (s *Server) ListAnnouncements(ctx context.Context, _ ListAnnouncementsReque
 	}
 	cache := cacheNoStore
 	return ListAnnouncements200JSONResponse{Body: list, Headers: ListAnnouncements200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// ListAnnouncementHistory serves GET /api/v1/announcements/history. The cursor is the
+// ShowsFrom and the ID of the last announcement of the previous page.
+func (s *Server) ListAnnouncementHistory(ctx context.Context, req ListAnnouncementHistoryRequestObject) (ListAnnouncementHistoryResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	q := s.parseOpaquePage(ctx, req.Params.Cursor, req.Params.Limit)
+	if q.problem != nil {
+		return ListAnnouncementHistorydefaultApplicationProblemPlusJSONResponse(*q.problem), nil
+	}
+	var after appinstance.AnnouncementCursor
+	if req.Params.Cursor != nil {
+		at, id, ok := decodeTimeCursor(*req.Params.Cursor)
+		if !ok || !kernel.ValidID(id) {
+			return ListAnnouncementHistorydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
+		}
+		after = appinstance.AnnouncementCursor{ShowsFrom: at, ID: id}
+	}
+	page := AnnouncementPage{Items: []Announcement{}}
+	if s.o.Announcements != nil {
+		list, more, err := s.o.Announcements.PastAnnouncements(ctx, v.UserID, after, q.limit)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: list the past announcements: %w", err)
+		}
+		for _, a := range list {
+			page.Items = append(page.Items, newAnnouncement(a))
+		}
+		if more {
+			last := list[len(list)-1]
+			page.NextCursor = encodeTimeCursor(last.ShowsFrom(), last.ID)
+		}
+	}
+	cache := cacheNoStore
+	return ListAnnouncementHistory200JSONResponse{Body: page, Headers: ListAnnouncementHistory200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // MarkAnnouncementRead serves POST /api/v1/announcements/{id}/read.
@@ -98,7 +137,7 @@ func (s *Server) MarkAnnouncementRead(ctx context.Context, req MarkAnnouncementR
 
 func (s *Server) newAdminAnnouncement(a instance.Announcement) AdminAnnouncement {
 	return AdminAnnouncement{
-		Id: a.ID, Text: a.Revision.Body, Content: s.o.Announcements.RenderAnnouncement(a.Revision.Body),
+		Id: a.ID, Title: a.Revision.Title, Text: a.Revision.Body, Content: s.o.Announcements.RenderAnnouncement(a.Revision.Body),
 		State: AdminAnnouncementState(a.State), StartsAt: optionalTime(a.Revision.StartsAt), EndsAt: optionalTime(a.Revision.EndsAt),
 		PublishedAt: optionalTime(a.PublishedAt), CreatedAt: a.CreatedAt.UTC(), UpdatedAt: a.Revision.RevisedAt.UTC(),
 	}
@@ -132,6 +171,8 @@ func (s *Server) announcementProblem(ctx context.Context, err error) (problem, b
 		return s.notFoundResponse(ctx), true
 	case errors.Is(err, instance.ErrAnnouncementWithdrawn):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true
+	case errors.Is(err, instance.ErrAnnouncementTitle):
+		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("title")), true
 	case errors.Is(err, instance.ErrAnnouncementWindow):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("ends_at")), true
 	case errors.Is(err, instance.ErrAnnouncementTooLong):
@@ -177,8 +218,10 @@ func (s *Server) CreateAdminAnnouncement(ctx context.Context, req CreateAdminAnn
 		return CreateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "text")), nil
 	}
 	a, err := s.o.Announcements.CreateAnnouncement(ctx, appinstance.CreateAnnouncementInput{
-		AnnouncementInput: appinstance.AnnouncementInput{Body: req.Body.Text, StartsAt: timeOrZero(req.Body.StartsAt), EndsAt: timeOrZero(req.Body.EndsAt)},
-		Publish:           req.Body.Publish != nil && *req.Body.Publish, CreatedByUserID: v.UserID,
+		AnnouncementInput: appinstance.AnnouncementInput{
+			Title: req.Body.Title, Body: req.Body.Text, StartsAt: timeOrZero(req.Body.StartsAt), EndsAt: timeOrZero(req.Body.EndsAt),
+		},
+		Publish: req.Body.Publish != nil && *req.Body.Publish, CreatedByUserID: v.UserID,
 	})
 	if p, ok := s.announcementProblem(ctx, err); ok {
 		return CreateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(p), nil
@@ -221,9 +264,11 @@ func (s *Server) UpdateAdminAnnouncement(ctx context.Context, req UpdateAdminAnn
 		return UpdateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "text")), nil
 	}
 	a, err := s.o.Announcements.UpdateAnnouncement(ctx, appinstance.UpdateAnnouncementInput{
-		AnnouncementID:    req.Id,
-		AnnouncementInput: appinstance.AnnouncementInput{Body: req.Body.Text, StartsAt: timeOrZero(req.Body.StartsAt), EndsAt: timeOrZero(req.Body.EndsAt)},
-		RevisedByUserID:   v.UserID,
+		AnnouncementID: req.Id,
+		AnnouncementInput: appinstance.AnnouncementInput{
+			Title: req.Body.Title, Body: req.Body.Text, StartsAt: timeOrZero(req.Body.StartsAt), EndsAt: timeOrZero(req.Body.EndsAt),
+		},
+		RevisedByUserID: v.UserID,
 	})
 	if p, ok := s.announcementProblem(ctx, err); ok {
 		return UpdateAdminAnnouncementdefaultApplicationProblemPlusJSONResponse(p), nil

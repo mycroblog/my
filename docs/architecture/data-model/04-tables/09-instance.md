@@ -17,7 +17,7 @@
 | `instance_brand_files` | イベント（版の子） | `brand_revision_id`, `rendition`（`enum(svg, favicon-32, favicon-48, apple-touch-180, pwa-192, pwa-512, maskable-512, logo-mail, logo-dark-mail, preview-1200x630)`）, `blob_key`, `content_type`（`enum(image/svg+xml, image/png)`）, `width`, `height`, `byte_size`, `sha256` | PK `(brand_revision_id, rendition)`。`set` の版だけが持つ |
 | `instance_brands` | 投影 | `kind`（PK）, `revision_id` | 設定している種類ごとに 1 行。`clear` の版で行を消す |
 | `announcements` | リソース | `id`, `created_at` | サーバーのローカルの利用者全員へのお知らせ（FR-726） |
-| `announcement_revisions` | イベント（版） | `id`, `announcement_id`, `body`（`string(5000)`。Markdown）, `starts_at`（NULL 可 = 公開した時から）, `ends_at`（NULL 可 = 取り下げるまで）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | インデックス `(announcement_id, id DESC)`。CHECK `ends_at > starts_at`（両方あるとき） |
+| `announcement_revisions` | イベント（版） | `id`, `announcement_id`, `title`（`string`。プレーンテキストで書記素 1〜100。既定 `''` = タイトルなし）, `body`（`string(5000)`。Markdown）, `starts_at`（NULL 可 = 公開した時から）, `ends_at`（NULL 可 = 取り下げるまで）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | インデックス `(announcement_id, id DESC)`。CHECK `ends_at > starts_at`（両方あるとき） |
 | `announcement_state_changes` | イベント | `id`, `announcement_id`, `state`（`enum(published, withdrawn)`）, `changed_by_user_id`（NULL 可 = CLI による変更）, `changed_at` | インデックス `(announcement_id, id DESC)` |
 | `announcement_heads` | 投影 | `announcement_id`（PK）, `revision_id`, `state`（`enum(draft, published, withdrawn)`）, `published_at`（最後に公開した時刻） | CHECK `(state = 'draft') = (published_at IS NULL)`。インデックス `(state)` |
 | `announcement_reads` | 現在値 | `user_id`, `announcement_id`, `read_at` | PK `(user_id, announcement_id)`。既読の履歴には意味がない（ADR-0020 規約 5） |
@@ -52,9 +52,12 @@
 - サーバーのロゴとアイコン（[ADR-0116](../../../adr/0116-custom-logo-and-icon.md)）は、種類（`icon`・`logo`・`logo_dark`）ごとの設定と消去を版として記録し、`instance_brands` が種類ごとに `id` の最大の版を指します（最大の版が `clear` なら行を持たず、組み込みの絵を使う）。
   ファイルの中身は BlobStore に `instance/brand/<版の id>/<rendition>.<svg|png>` のキーで置き、`instance_brand_files` はキー・寸法・大きさ・SHA-256 を持ちます。
   BlobStore への書き込みはトランザクションの前に行い、トランザクションが失敗したら書いたファイルを消します。版の内容は変わらないので、過去の版のファイルも消さず、`/brand/<版の id>/` の URL は同じ内容を返し続けます。
-- お知らせ（FR-726）は、`manage_announcements` を持つ人が下書きとして作り、公開し、取り下げます。本文と表示の期間（`starts_at`・`ends_at`）を変えるたびに版を記録し、`announcement_heads` が `id` の最大の版と、状態の変化の最後の結果を指します。
+- お知らせ（FR-726）は、`manage_announcements` を持つ人が下書きとして作り、公開し、取り下げます。タイトルと本文と表示の期間（`starts_at`・`ends_at`）を変えるたびに版を記録し、`announcement_heads` が `id` の最大の版と、状態の変化の最後の結果を指します。
   - 取り下げは取り消せません。取り下げたお知らせは変更も再公開もできず、新しいお知らせを作り直します。下書きのまま取り下げることもでき、そのときの `published_at` は取り下げた時刻です。
+  - タイトルは必須で、前後の空白を除いて書記素 1〜100、1 行で制御文字を含まないものです（`instance.ValidateAnnouncement`。作成と変更で検査し、違えば `ErrAnnouncementTitle`）。既定の `''` はタイトルのない版で、監査ログの名前は本文の最初の行で代えます（`AnnouncementLabel`）。
   - 利用者に見えるのは、公開中で今が期間の中にあるお知らせです。期間の始まりと公開の遅いほう（`ShowsFrom`）の新しい順に並べます。
+  - 過去を含む一覧（ADR-0125 §3）は、公開中で `ShowsFrom` を過ぎたお知らせ（期間の終わったものを含み、取り下げたものを除く）を `ShowsFrom`・`id` の新しい順に、（`ShowsFrom`, `id`）のカーソルでページに分けて返します。既読にできるのは今見えているものだけです。
+  - 公開と、まだ見え始めていない公開中のお知らせの期間の始まりを動かす変更は、`instance.announcement_scheduled`（`ShowsFrom` を持つ）を発行し、`notification` がそこから通知 `announcement` のジョブを積みます（§4.7）。見え始めた後の変更では発行しません。
   - 本文は文書と同じく版に Markdown のまま記録し、読むたびに HTML にしてサニタイズします（`instance.DocumentRenderer`、ADR-0019）。
   - 既読は `announcement_reads` の行の有無で表し、アカウントの消去（§8）で消えます。
 - サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md) §1）は、`manage_service_closure` を持つ人が管理 API・CLI（`my admin closure`）から予告し、日付を変え、取り消します。

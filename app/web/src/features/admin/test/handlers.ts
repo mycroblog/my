@@ -238,6 +238,7 @@ export function adminAnnouncementFixture(
 ): Schemas["AdminAnnouncement"] {
   return {
     id,
+    title: "Maintenance on Sunday",
     text: "Maintenance on **Sunday**.",
     content: "<p>Maintenance on <strong>Sunday</strong>.</p>",
     state: "draft",

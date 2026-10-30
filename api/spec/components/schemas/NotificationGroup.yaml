@@ -9,7 +9,8 @@ description: |
   `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
   notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
   `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-  `service_closure`, and `supporter` (the `supporter_*` types).
+  `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+  them that the user turns off in the app (on by default); it has no `email` channel.
 type: string
 enum:
   - mention
@@ -35,3 +36,4 @@ enum:
   - moderation
   - service_closure
   - supporter
+  - announcement

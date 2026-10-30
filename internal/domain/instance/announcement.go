@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -17,7 +18,23 @@ import (
 // MaxAnnouncementBodyLength bounds the Markdown of an announcement, in characters.
 const MaxAnnouncementBodyLength = 5000
 
+// MaxAnnouncementTitleGraphemes bounds the title of an announcement, in grapheme clusters
+// (ADR-0125 §1). MaxAnnouncementTitleLength bounds it in code points, so that a few clusters
+// of many code points stay small.
+const (
+	MaxAnnouncementTitleGraphemes = 100
+	MaxAnnouncementTitleLength    = 1000
+)
+
+// GraphemeCounter returns how many grapheme clusters s has. The application layer gives one
+// that follows Unicode text segmentation; this package uses only the standard library.
+type GraphemeCounter func(s string) int
+
 var (
+	// ErrAnnouncementTitle reports a title that is blank, longer than
+	// MaxAnnouncementTitleGraphemes, not one line of valid text, or surrounded by white space.
+	// It wraps ErrInvalidValue.
+	ErrAnnouncementTitle = fmt.Errorf("instance: invalid announcement title: %w", ErrInvalidValue)
 	// ErrAnnouncementBody reports a body that is blank or not valid text. It wraps
 	// ErrInvalidValue.
 	ErrAnnouncementBody = fmt.Errorf("instance: invalid announcement body: %w", ErrInvalidValue)
@@ -43,11 +60,14 @@ const (
 	AnnouncementWithdrawn AnnouncementState = "withdrawn"
 )
 
-// AnnouncementRevision is one version of an announcement (announcement_revisions): its body and
-// its window. The revision with the greatest ID is the current one.
+// AnnouncementRevision is one version of an announcement (announcement_revisions): its title,
+// its body, and its window. The revision with the greatest ID is the current one.
 type AnnouncementRevision struct {
 	ID             string
 	AnnouncementID string
+	// Title is the heading of the announcement in plain text, which the lists, the
+	// notifications, and Web Push show (ADR-0125 §1); "" for a revision without one.
+	Title string
 	// Body is the announcement in Markdown, rendered to sanitized HTML for the readers.
 	Body string
 	// StartsAt and EndsAt bound when a published announcement shows; the zero time leaves that
@@ -59,11 +79,15 @@ type AnnouncementRevision struct {
 	RevisedAt       time.Time
 }
 
-// ValidateAnnouncement checks a body and a window: a non-blank body of valid UTF-8 without NUL
-// and at most MaxAnnouncementBodyLength characters, and a window that, when it has both ends,
+// ValidateAnnouncement checks a title, a body, and a window: a title of 1 to
+// MaxAnnouncementTitleGraphemes grapheme clusters (counted by graphemes) on one line, without
+// surrounding white space or control characters; a non-blank body of valid UTF-8 without NUL
+// and at most MaxAnnouncementBodyLength characters; and a window that, when it has both ends,
 // ends after it starts.
-func ValidateAnnouncement(body string, startsAt, endsAt time.Time) error {
+func ValidateAnnouncement(title, body string, startsAt, endsAt time.Time, graphemes GraphemeCounter) error {
 	switch {
+	case !validAnnouncementTitle(title, graphemes):
+		return ErrAnnouncementTitle
 	case !utf8.ValidString(body), strings.ContainsRune(body, 0), strings.TrimSpace(body) == "":
 		return ErrAnnouncementBody
 	case utf8.RuneCountInString(body) > MaxAnnouncementBodyLength:
@@ -72,6 +96,14 @@ func ValidateAnnouncement(body string, startsAt, endsAt time.Time) error {
 		return ErrAnnouncementWindow
 	}
 	return nil
+}
+
+func validAnnouncementTitle(title string, graphemes GraphemeCounter) bool {
+	if title == "" || strings.TrimSpace(title) != title || !utf8.ValidString(title) ||
+		strings.ContainsFunc(title, unicode.IsControl) || utf8.RuneCountInString(title) > MaxAnnouncementTitleLength {
+		return false
+	}
+	return graphemes(title) <= MaxAnnouncementTitleGraphemes
 }
 
 // AnnouncementStateChange records a publication or a withdrawal (announcement_state_changes).
@@ -151,9 +183,24 @@ func (a Announcement) ShowsAt(t time.Time) bool {
 	return a.Revision.EndsAt.IsZero() || t.Before(a.Revision.EndsAt)
 }
 
-// AnnouncementLabel returns the display name of an announcement for the audit log: the first
-// non-blank line of its body, at most 80 characters.
-func AnnouncementLabel(body string) string {
+// HasShownBy reports whether a published announcement has started to show by t (ShowsFrom is
+// not after t), whether or not its window has ended since: the announcements of the list that
+// includes the past ones (ADR-0125 §3).
+func (a Announcement) HasShownBy(t time.Time) bool {
+	return a.State == AnnouncementPublished && !a.ShowsFrom().After(t)
+}
+
+// EndedBy reports whether the window of the announcement has ended by t.
+func (a Announcement) EndedBy(t time.Time) bool {
+	return !a.Revision.EndsAt.IsZero() && !t.Before(a.Revision.EndsAt)
+}
+
+// AnnouncementLabel returns the display name of an announcement for the audit log: its title,
+// or for a revision without one the first non-blank line of its body, at most 80 characters.
+func AnnouncementLabel(title, body string) string {
+	if title != "" {
+		return title
+	}
 	for line := range strings.Lines(body) {
 		line = strings.TrimSpace(strings.TrimLeft(strings.TrimSpace(line), "#>*-+ "))
 		if line == "" {

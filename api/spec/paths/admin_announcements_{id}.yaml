@@ -17,9 +17,11 @@ put:
   operationId: updateAdminAnnouncement
   summary: Revise an announcement
   description: |
-    Replaces the text and the window of a draft or a published announcement, which keeps
-    its state; an omitted `starts_at` or `ends_at` leaves that side of the window open. The
-    input is checked as for a new announcement (422). A withdrawn announcement is a 409 and
+    Replaces the title, the text, and the window of a draft or a published announcement,
+    which keeps its state; an omitted `starts_at` or `ends_at` leaves that side of the window
+    open. The input is checked as for a new announcement (422). A change after the
+    announcement has started to show notifies nobody again; moving the start of the window of
+    one that has not shown yet moves its notifications too. A withdrawn announcement is a 409 and
     an unknown ID a 404. Recorded in the audit log. Needs the `manage_announcements`
     permission.
   tags: [admin-server]

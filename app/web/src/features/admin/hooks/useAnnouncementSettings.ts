@@ -44,6 +44,14 @@ export function announcementName(text: string): string {
   return line ?? "";
 }
 
+/**
+ * The title that the form sends until it has a field of its own: the name of the text (announcementName), at most
+ * 100 characters.
+ */
+function titleOf(text: string): string {
+  return Array.from(announcementName(text)).slice(0, 100).join("").trim();
+}
+
 /** Why a text cannot be saved, localized; undefined when it can. */
 function useTextError() {
   const t = useT();
@@ -105,7 +113,7 @@ export function useNewAnnouncementForm() {
       if (create.isPending || textError(text) !== undefined) return;
       // The end counts from the moment the form is sent.
       const endsAt = duration === null ? {} : { ends_at: new Date(Date.now() + duration * 1000).toISOString() };
-      create.mutate({ text, publish, ...endsAt });
+      create.mutate({ title: titleOf(text), text, publish, ...endsAt });
     },
     isPending: create.isPending,
     /** Why writing failed, localized; the text stays. */
@@ -164,6 +172,7 @@ export function useAnnouncementActions(
           update.mutateAsync({
             id: announcement.id,
             body: {
+              title: announcement.title === "" ? titleOf(text) : announcement.title,
               text,
               ...(announcement.starts_at === undefined ? {} : { starts_at: announcement.starts_at }),
               ...(announcement.ends_at === undefined ? {} : { ends_at: announcement.ends_at }),

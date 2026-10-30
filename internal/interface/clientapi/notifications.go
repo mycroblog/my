@@ -269,6 +269,16 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 				return nil, err
 			}
 		}
+		if n.AnnouncementID != "" && s.o.Announcements != nil {
+			a, ok, err := s.o.Announcements.ShownAnnouncement(ctx, viewer.UserID, n.AnnouncementID)
+			if err != nil {
+				return nil, fmt.Errorf("clientapi: the announcement of notification %s: %w", n.ID, err)
+			}
+			if ok {
+				view := newAnnouncement(a)
+				item.Announcement = &view
+			}
+		}
 		if n.VoiceRoomID != "" {
 			id := n.VoiceRoomID
 			item.VoiceRoomId = &id

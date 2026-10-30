@@ -3,8 +3,9 @@ post:
   operationId: publishAdminAnnouncement
   summary: Publish an announcement
   description: |
-    Publishes a draft to every local user, within its window. Publishing a published
-    announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
+    Publishes a draft to every local user, within its window; once it starts to show, every
+    local user gets an `announcement` notification, unless they turned it off. Publishing a
+    published announcement changes nothing. A withdrawn announcement is a 409 and an unknown ID a 404.
     Recorded in the audit log. Needs the `manage_announcements` permission.
   tags: [admin-server]
   security:

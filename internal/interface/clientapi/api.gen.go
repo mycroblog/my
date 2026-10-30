@@ -2658,6 +2658,7 @@ const (
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
 	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
 	NotificationGroupAdminWebhookDisabled    NotificationGroup = "admin_webhook_disabled"
+	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupBoost                   NotificationGroup = "boost"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
@@ -2694,6 +2695,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminSignUp:
 		return true
 	case NotificationGroupAdminWebhookDisabled:
+		return true
+	case NotificationGroupAnnouncement:
 		return true
 	case NotificationGroupBoost:
 		return true
@@ -2778,6 +2781,7 @@ const (
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
 	NotificationTypeAdminWebhookDisabled       NotificationType = "admin_webhook_disabled"
+	NotificationTypeAnnouncement               NotificationType = "announcement"
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
@@ -2822,6 +2826,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminSignUp:
 		return true
 	case NotificationTypeAdminWebhookDisabled:
+		return true
+	case NotificationTypeAnnouncement:
 		return true
 	case NotificationTypeAppealDecided:
 		return true
@@ -4626,11 +4632,14 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
+	// Title The heading, in plain text; empty for an announcement without one.
+	Title string `json:"title"`
+
 	// UpdatedAt When its text or window last changed.
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// AdminAnnouncementCreateRequest A new announcement, with its text and its window.
+// AdminAnnouncementCreateRequest A new announcement, with its title, its text, and its window.
 type AdminAnnouncementCreateRequest struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
@@ -4643,9 +4652,13 @@ type AdminAnnouncementCreateRequest struct {
 
 	// Text The text, in Markdown.
 	Text string `json:"text"`
+
+	// Title The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+	// characters. White space around it is trimmed.
+	Title string `json:"title"`
 }
 
-// AdminAnnouncementInput The text and the window of an announcement.
+// AdminAnnouncementInput The title, the text, and the window of an announcement.
 type AdminAnnouncementInput struct {
 	// EndsAt When it stops showing, after `starts_at`; omitted to show it until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
@@ -4655,6 +4668,10 @@ type AdminAnnouncementInput struct {
 
 	// Text The text, in Markdown.
 	Text string `json:"text"`
+
+	// Title The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+	// characters. White space around it is trimmed.
+	Title string `json:"title"`
 }
 
 // AdminAnnouncementList The announcements, newest first.
@@ -6597,6 +6614,10 @@ type Announcement struct {
 	// headings from `h2`, and `http`, `https`, and `mailto` links).
 	Content string `json:"content"`
 
+	// Ended Whether its window has ended, which only the list with the past announcements
+	// (`listAnnouncementHistory`) has; such an announcement can no longer be marked read.
+	Ended bool `json:"ended"`
+
 	// EndsAt When it stops showing; omitted when it shows until it is withdrawn.
 	EndsAt *time.Time `json:"ends_at,omitempty"`
 
@@ -6611,6 +6632,10 @@ type Announcement struct {
 	// Read Whether the user has marked it read.
 	Read bool `json:"read"`
 
+	// Title The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
+	// Empty for an announcement without one.
+	Title string `json:"title"`
+
 	// UpdatedAt When its text or window last changed.
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -6618,6 +6643,14 @@ type Announcement struct {
 // AnnouncementList The announcements.
 type AnnouncementList struct {
 	Items []Announcement `json:"items"`
+}
+
+// AnnouncementPage A page of announcements.
+type AnnouncementPage struct {
+	Items []Announcement `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // AppealModerationActionRequest An appeal of an action on the user's own account.
@@ -9813,6 +9846,9 @@ type Notification struct {
 	// its posts stay where they are.
 	AccountMove *AccountMove `json:"account_move,omitempty"`
 
+	// Announcement The announcement that an `announcement` tells of, as the user sees it; omitted for the other types.
+	Announcement *Announcement `json:"announcement,omitempty"`
+
 	// AppealId The appeal that an `admin_appeal` is about.
 	AppealId *Id `json:"appeal_id,omitempty"`
 
@@ -9927,6 +9963,11 @@ type Notification struct {
 	// (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
 	// someone else's post, a boost, an edit, or a post that the server fetched rather than received,
 	// nor when the user gets a `mention` of the same post.
+	// `announcement` goes to every local user once a server-wide announcement starts to show (its
+	// publication, or the start of its window when that comes later), once per announcement; its
+	// `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+	// nothing again, and the notification leaves the list and the unread count once the
+	// announcement is withdrawn or its window ends.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -9963,7 +10004,8 @@ type NotificationErrorGroupChange string
 // `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-// `service_closure`, and `supporter` (the `supporter_*` types).
+// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+// them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
 
 // NotificationMarker How far the authenticated user has read the notifications.
@@ -10010,8 +10052,8 @@ type NotificationSettingCell struct {
 // reach it (`Preferences.email_suppression`). The ordinary notifications and `moderation` are
 // emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
-// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`)
-// is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+// offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
+// `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
 // subscription (`putPushSubscription`).
 type NotificationSettingRow struct {
 	// Email One channel of one row of the notification settings.
@@ -10026,7 +10068,8 @@ type NotificationSettingRow struct {
 	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-	// `service_closure`, and `supporter` (the `supporter_*` types).
+	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+	// them that the user turns off in the app (on by default); it has no `email` channel.
 	Group NotificationGroup `json:"group"`
 
 	// InApp One channel of one row of the notification settings.
@@ -10034,7 +10077,8 @@ type NotificationSettingRow struct {
 
 	// Section The kind of the row: `ordinary` (what other users did; in the app on and email off by
 	// default), `moderator` (to the holders of the permission it needs; both on by default),
-	// or `instance` (the instance's notices to the user; always in the app).
+	// or `instance` (the instance's notices to the user; always in the app, but for
+	// `announcement`, which is on by default).
 	Section NotificationSettingRowSection `json:"section"`
 
 	// Types The notification types of the row.
@@ -10043,7 +10087,8 @@ type NotificationSettingRow struct {
 
 // NotificationSettingRowSection The kind of the row: `ordinary` (what other users did; in the app on and email off by
 // default), `moderator` (to the holders of the permission it needs; both on by default),
-// or `instance` (the instance's notices to the user; always in the app).
+// or `instance` (the instance's notices to the user; always in the app, but for
+// `announcement`, which is on by default).
 type NotificationSettingRowSection string
 
 // NotificationSettings The authenticated user's notification settings: the rows the user gets, in the order to
@@ -10073,7 +10118,8 @@ type NotificationSettingsUpdate struct {
 		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
-		// `service_closure`, and `supporter` (the `supporter_*` types).
+		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
+		// them that the user turns off in the app (on by default); it has no `email` channel.
 		Group NotificationGroup `json:"group"`
 	} `json:"changes"`
 }
@@ -10140,6 +10186,11 @@ type NotificationSettingsUpdateChangesChannel string
 // (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
 // someone else's post, a boost, an edit, or a post that the server fetched rather than received,
 // nor when the user gets a `mention` of the same post.
+// `announcement` goes to every local user once a server-wide announcement starts to show (its
+// publication, or the start of its window when that comes later), once per announcement; its
+// `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+// nothing again, and the notification leaves the list and the unread count once the
+// announcement is withdrawn or its window ends.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
@@ -13529,6 +13580,15 @@ type ListWebhookDeliveriesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListAnnouncementHistoryParams defines parameters for ListAnnouncementHistory.
+type ListAnnouncementHistoryParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListBlocksParams defines parameters for ListBlocks.
 type ListBlocksParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -14719,6 +14779,9 @@ type ServerInterface interface {
 	// ListAnnouncements List the announcements
 	// (GET /announcements)
 	ListAnnouncements(w http.ResponseWriter, r *http.Request)
+	// ListAnnouncementHistory List the announcements, past ones included
+	// (GET /announcements/history)
+	ListAnnouncementHistory(w http.ResponseWriter, r *http.Request, params ListAnnouncementHistoryParams)
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
@@ -20610,6 +20673,52 @@ func (siw *ServerInterfaceWrapper) ListAnnouncements(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListAnnouncementHistory operation middleware
+func (siw *ServerInterfaceWrapper) ListAnnouncementHistory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAnnouncementHistoryParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAnnouncementHistory(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MarkAnnouncementRead operation middleware
 func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r *http.Request) {
 
@@ -25333,6 +25442,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reports", wrapper.CreateReport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements", wrapper.ListAnnouncements)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/announcements/{id}/read", wrapper.MarkAnnouncementRead)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements/history", wrapper.ListAnnouncementHistory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/finance/cost_totals", wrapper.GetFinanceCostTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/finance/income_totals", wrapper.GetFinanceIncomeTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/supporter/subscription", wrapper.GetOwnSupporterSubscription)
@@ -36942,6 +37052,68 @@ func (response ListAnnouncementsdefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type ListAnnouncementHistoryRequestObject struct {
+	Params ListAnnouncementHistoryParams
+}
+
+type ListAnnouncementHistoryResponseObject interface {
+	VisitListAnnouncementHistoryResponse(w http.ResponseWriter) error
+}
+
+type ListAnnouncementHistory200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListAnnouncementHistory200JSONResponse struct {
+	Body    AnnouncementPage
+	Headers ListAnnouncementHistory200ResponseHeaders
+}
+
+func (response ListAnnouncementHistory200JSONResponse) VisitListAnnouncementHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAnnouncementHistorydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAnnouncementHistorydefaultApplicationProblemPlusJSONResponse) VisitListAnnouncementHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MarkAnnouncementReadRequestObject struct {
 	Id AnnouncementId `json:"id"`
 }
@@ -46934,6 +47106,9 @@ type StrictServerInterface interface {
 	// ListAnnouncements List the announcements
 	// (GET /announcements)
 	ListAnnouncements(ctx context.Context, request ListAnnouncementsRequestObject) (ListAnnouncementsResponseObject, error)
+	// ListAnnouncementHistory List the announcements, past ones included
+	// (GET /announcements/history)
+	ListAnnouncementHistory(ctx context.Context, request ListAnnouncementHistoryRequestObject) (ListAnnouncementHistoryResponseObject, error)
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(ctx context.Context, request MarkAnnouncementReadRequestObject) (MarkAnnouncementReadResponseObject, error)
@@ -52587,6 +52762,32 @@ func (sh *strictHandler) ListAnnouncements(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAnnouncementsResponseObject); ok {
 		if err := validResponse.VisitListAnnouncementsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAnnouncementHistory operation middleware
+func (sh *strictHandler) ListAnnouncementHistory(w http.ResponseWriter, r *http.Request, params ListAnnouncementHistoryParams) {
+	var request ListAnnouncementHistoryRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAnnouncementHistory(ctx, request.(ListAnnouncementHistoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAnnouncementHistory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAnnouncementHistoryResponseObject); ok {
+		if err := validResponse.VisitListAnnouncementHistoryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

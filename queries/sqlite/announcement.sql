@@ -4,8 +4,8 @@
 INSERT INTO announcements (id, created_at) VALUES (?, ?);
 
 -- name: InsertAnnouncementRevision :exec
-INSERT INTO announcement_revisions (id, announcement_id, body, starts_at, ends_at, revised_by_user_id, revised_at)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO announcement_revisions (id, announcement_id, title, body, starts_at, ends_at, revised_by_user_id, revised_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: InsertAnnouncementStateChange :exec
 INSERT INTO announcement_state_changes (id, announcement_id, state, changed_by_user_id, changed_at) VALUES (?, ?, ?, ?, ?);
@@ -31,7 +31,7 @@ SELECT id, announcement_id, state, changed_by_user_id, changed_at FROM announcem
 
 -- An announcement with its current revision and state.
 -- name: GetAnnouncement :one
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id
@@ -40,7 +40,7 @@ WHERE a.id = ?;
 
 -- Every announcement, newest first.
 -- name: ListAnnouncements :many
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id
@@ -49,7 +49,7 @@ ORDER BY a.id DESC;
 
 -- The published announcements, newest first.
 -- name: ListPublishedAnnouncements :many
-SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.body, v.starts_at, v.ends_at,
+SELECT a.id, a.created_at, h.state, h.published_at, v.id AS revision_id, v.title, v.body, v.starts_at, v.ends_at,
   v.revised_by_user_id, v.revised_at
 FROM announcements a
 JOIN announcement_heads h ON h.announcement_id = a.id

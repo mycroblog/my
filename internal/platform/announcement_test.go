@@ -22,9 +22,11 @@ import (
 )
 
 // TestAnnouncements writes, publishes, revises, and withdraws an announcement through the admin
-// API on SQLite (FR-726), and checks that the operations need manage_announcements and are
-// audited, that every local user sees the published announcement as sanitized HTML and marks it
-// read for themselves, and that an open stream gets the publication and the withdrawal.
+// API on SQLite (FR-726), and checks that the operations need manage_announcements and a title
+// and are audited, that every local user sees the published announcement as sanitized HTML with
+// its title and marks it read for themselves, that each gets one announcement notification that
+// the withdrawal hides, that the list with the past announcements leaves out the withdrawn one,
+// and that an open stream gets the publication and the withdrawal.
 func TestAnnouncements(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
@@ -80,20 +82,31 @@ func TestAnnouncements(t *testing.T) {
 	if code := api(bobToken, http.MethodGet, "/admin/announcements", nil, nil); code != http.StatusForbidden {
 		t.Errorf("GET /admin/announcements without manage_announcements = %d, want 403", code)
 	}
-	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"text": "  "}, nil); code != http.StatusUnprocessableEntity {
+	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": "Maintenance", "text": "  "}, nil); code != http.StatusUnprocessableEntity {
 		t.Errorf("POST a blank announcement = %d, want 422", code)
+	}
+	for _, title := range []string{"", "  ", "Two\nlines", strings.Repeat("a", 101)} {
+		var p clientapi.Problem
+		if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": title, "text": "ok"}, &p); code != http.StatusUnprocessableEntity ||
+			p.Detail == nil || !strings.Contains(*p.Detail, "title") {
+			t.Errorf("POST an announcement titled %q = %d %+v, want 422 naming title", title, code, p)
+		}
+	}
+	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"text": "no title"}, nil); code != http.StatusUnprocessableEntity {
+		t.Errorf("POST an announcement without a title = %d, want 422", code)
 	}
 	now := time.Now().UTC()
 	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{
-		"text": "ok", "starts_at": now.Add(time.Hour), "ends_at": now,
+		"title": "ok", "text": "ok", "starts_at": now.Add(time.Hour), "ends_at": now,
 	}, nil); code != http.StatusUnprocessableEntity {
 		t.Errorf("POST a window that ends first = %d, want 422", code)
 	}
 
 	var draft clientapi.AdminAnnouncement
 	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{
-		"text": "# Maintenance\n\nOn **Sunday**. <script>alert(1)</script>",
-	}, &draft); code != http.StatusOK || draft.State != clientapi.AdminAnnouncementStateDraft || draft.PublishedAt != nil {
+		"title": "  Maintenance on Sunday ", "text": "# Maintenance\n\nOn **Sunday**. <script>alert(1)</script>",
+	}, &draft); code != http.StatusOK || draft.State != clientapi.AdminAnnouncementStateDraft || draft.PublishedAt != nil ||
+		draft.Title != "Maintenance on Sunday" {
 		t.Fatalf("POST /admin/announcements = %d %+v", code, draft)
 	}
 	if strings.Contains(draft.Content, "<script") || !strings.Contains(draft.Content, "<strong>Sunday</strong>") {
@@ -148,13 +161,46 @@ func TestAnnouncements(t *testing.T) {
 	data := next("announcement")
 	spec.ValidateSchema(t, "Announcement", data)
 	var streamed clientapi.Announcement
-	if err := json.Unmarshal(data, &streamed); err != nil || streamed.Id != draft.Id || streamed.Read {
+	if err := json.Unmarshal(data, &streamed); err != nil || streamed.Id != draft.Id || streamed.Read || streamed.Title != "Maintenance on Sunday" {
 		t.Errorf("announcement event = %s, %v", data, err)
 	}
 
 	got := list(bobToken)
-	if len(got) != 1 || got[0].Id != draft.Id || got[0].Read || got[0].Content != draft.Content {
+	if len(got) != 1 || got[0].Id != draft.Id || got[0].Read || got[0].Content != draft.Content || got[0].Ended {
 		t.Fatalf("GET /announcements = %+v, want the published announcement, unread", got)
+	}
+
+	// Each local user gets one announcement notification once the job runs, with the
+	// announcement as the user sees it.
+	notifications := func(token string) []clientapi.Notification {
+		t.Helper()
+		var page clientapi.NotificationPage
+		if code := api(token, http.MethodGet, "/notifications?types[]=announcement", nil, &page); code != http.StatusOK {
+			t.Fatalf("GET /notifications = %d", code)
+		}
+		return page.Items
+	}
+	if _, err := app.Runner.Drain(ctx); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+	if ns := notifications(bobToken); len(ns) != 1 || ns[0].Type != clientapi.NotificationTypeAnnouncement || ns[0].Account != nil ||
+		ns[0].Announcement == nil || ns[0].Announcement.Id != draft.Id || ns[0].Announcement.Title != "Maintenance on Sunday" {
+		t.Errorf("announcement notifications of bob = %+v, want one", ns)
+	}
+	history := func(token, cursor string) clientapi.AnnouncementPage {
+		t.Helper()
+		var page clientapi.AnnouncementPage
+		path := "/announcements/history?limit=1"
+		if cursor != "" {
+			path += "&cursor=" + cursor
+		}
+		if code := api(token, http.MethodGet, path, nil, &page); code != http.StatusOK {
+			t.Fatalf("GET %s = %d", path, code)
+		}
+		return page
+	}
+	if page := history(bobToken, ""); len(page.Items) != 1 || page.Items[0].Id != draft.Id || page.NextCursor != nil {
+		t.Errorf("GET /announcements/history = %+v, want the published announcement", page)
 	}
 	var read clientapi.Announcement
 	if code := api(bobToken, http.MethodPost, "/announcements/"+draft.Id+"/read", nil, &read); code != http.StatusOK || !read.Read {
@@ -168,11 +214,17 @@ func TestAnnouncements(t *testing.T) {
 	}
 
 	var updated clientapi.AdminAnnouncement
-	if code := api(adminToken, http.MethodPut, "/admin/announcements/"+draft.Id, map[string]any{"text": "Maintenance on Monday."}, &updated); code != http.StatusOK ||
-		updated.State != clientapi.AdminAnnouncementStatePublished || updated.Text != "Maintenance on Monday." {
+	if code := api(adminToken, http.MethodPut, "/admin/announcements/"+draft.Id, map[string]any{"text": "Maintenance on Monday."}, nil); code != http.StatusUnprocessableEntity {
+		t.Errorf("PUT without a title = %d, want 422", code)
+	}
+	if code := api(adminToken, http.MethodPut, "/admin/announcements/"+draft.Id, map[string]any{"title": "Maintenance on Monday", "text": "Maintenance on Monday."}, &updated); code != http.StatusOK ||
+		updated.State != clientapi.AdminAnnouncementStatePublished || updated.Text != "Maintenance on Monday." || updated.Title != "Maintenance on Monday" {
 		t.Errorf("PUT = %d %+v", code, updated)
 	}
 	next("announcement")
+	if ns := notifications(bobToken); len(ns) != 1 {
+		t.Errorf("announcement notifications of bob after the revision = %+v, want still one", ns)
+	}
 
 	var withdrawn clientapi.AdminAnnouncement
 	if code := api(adminToken, http.MethodPost, "/admin/announcements/"+draft.Id+"/withdraw", nil, &withdrawn); code != http.StatusOK ||
@@ -184,6 +236,12 @@ func TestAnnouncements(t *testing.T) {
 	}
 	if got := list(bobToken); len(got) != 0 {
 		t.Errorf("GET /announcements after the withdrawal = %+v, want none", got)
+	}
+	if ns := notifications(bobToken); len(ns) != 0 {
+		t.Errorf("announcement notifications of bob after the withdrawal = %+v, want none", ns)
+	}
+	if page := history(bobToken, ""); len(page.Items) != 0 {
+		t.Errorf("GET /announcements/history after the withdrawal = %+v, want none", page)
 	}
 	if code := api(bobToken, http.MethodPost, "/announcements/"+draft.Id+"/read", nil, nil); code != http.StatusNotFound {
 		t.Errorf("POST read of a withdrawn announcement = %d, want 404", code)
@@ -201,7 +259,7 @@ func TestAnnouncements(t *testing.T) {
 		audit.Items[0].Action != clientapi.AdminAuditActionAnnouncementWithdrawn ||
 		audit.Items[1].Action != clientapi.AdminAuditActionAnnouncementUpdated ||
 		audit.Items[2].Action != clientapi.AdminAuditActionAnnouncementPublished ||
-		audit.Items[3].Action != clientapi.AdminAuditActionAnnouncementCreated || audit.Items[3].TargetLabel != "Maintenance" {
+		audit.Items[3].Action != clientapi.AdminAuditActionAnnouncementCreated || audit.Items[3].TargetLabel != "Maintenance on Sunday" {
 		t.Errorf("GET the audit log = %d %+v", code, audit)
 	}
 }

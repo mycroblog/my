@@ -59,6 +59,11 @@ description: |
   (`account`, the author; `subscribeAccount`), once per post. It is not sent for a reply to
   someone else's post, a boost, an edit, or a post that the server fetched rather than received,
   nor when the user gets a `mention` of the same post.
+  `announcement` goes to every local user once a server-wide announcement starts to show (its
+  publication, or the start of its window when that comes later), once per announcement; its
+  `announcement` carries it, and it has no `account`. Editing the announcement afterwards sends
+  nothing again, and the notification leaves the list and the unread count once the
+  announcement is withdrawn or its window ends.
 type: string
 enum:
   - follow
@@ -92,3 +97,4 @@ enum:
   - voice_room_invited
   - admin_error_group
   - status
+  - announcement

@@ -43,6 +43,10 @@
     "defaultMessage": "‮∀ ʍǝqɥooʞ oɟ {instance} ʍɐs ʇnɹuǝp oɟɟ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.announcement": {
+    "defaultMessage": "‮∀uuonuɔǝɯǝuʇ ɟɹoɯ {instance}: {title}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.appeal_decided": {
     "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} pǝɔıpǝp ʎonɹ ɐddǝɐʅ‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -5,7 +5,8 @@ get:
   description: |
     The server's announcements that every local user sees now (FR-726): published, and
     within their window. The ones whose `published_at` is the latest come first, each with
-    whether the user has read it. The list is not paginated.
+    whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
+    through the past ones too.
   tags: [announcements]
   security:
     - oauth2: ["read:notifications"]

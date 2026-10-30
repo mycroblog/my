@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: MIT
-description: The text and the window of an announcement.
+description: The title, the text, and the window of an announcement.
 type: object
-required: [text]
+required: [title, text]
 properties:
+  title:
+    description: |
+      The heading, in plain text: 1 to 100 grapheme clusters on one line, without control
+      characters. White space around it is trimmed.
+    type: string
+    minLength: 1
   text:
     description: The text, in Markdown.
     type: string

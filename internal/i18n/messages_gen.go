@@ -3956,6 +3956,22 @@ func (l *Localizer) ServerPushAdminWebhookDisabled(instance string) string {
 	return l.format("server:push.admin_webhook_disabled", map[string]any{"instance": instance})
 }
 
+// ServerPushAnnouncementArgs holds the arguments of ServerPushAnnouncement, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushAnnouncementArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Title    string
+}
+
+// ServerPushAnnouncement formats "server:push.announcement". Web Push notification of a new announcement of the server to every local user. {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Announcement from {instance}: {title}
+func (l *Localizer) ServerPushAnnouncement(args ServerPushAnnouncementArgs) string {
+	return l.format("server:push.announcement", map[string]any{"instance": args.Instance, "title": args.Title})
+}
+
 // ServerPushAppealDecided formats "server:push.appeal_decided". Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: The moderators of {instance} decided your appeal

@@ -619,7 +619,7 @@ class Seeder {
     for (const a of announcements) {
       if (existing.includes(a.text)) continue;
       await api.POST("/admin/announcements", {
-        body: { text: a.text, publish: true },
+        body: { title: a.title, text: a.text, publish: true },
         headers: { "Idempotency-Key": idempotencyKey(a.key) },
       });
     }

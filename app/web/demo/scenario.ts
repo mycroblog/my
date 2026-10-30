@@ -592,13 +592,15 @@ export const invites: {
 };
 
 /** Announcements of the administrators, published to every local user. */
-export const announcements: readonly { key: string; text: string }[] = [
+export const announcements: readonly { key: string; title: string; text: string }[] = [
   {
     key: "announcement-welcome",
+    title: "Welcome to My Demo! / ようこそ",
     text: "**Welcome to My Demo!** Read the [rules](/about) and introduce yourself with the tag #introductions.\n\nようこそ！まずはルールを読んで、自己紹介してみてください。",
   },
   {
     key: "announcement-maintenance",
+    title: "Scheduled maintenance on Sunday",
     text: "Scheduled maintenance this Sunday, 02:00–03:00 UTC. Posting may be unavailable for a few minutes.",
   },
 ];

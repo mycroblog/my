@@ -111,6 +111,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/webhooks/{id}":                                     {Operation: "getAdminWebhook", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/webhooks/{id}/deliveries":                          {Operation: "listWebhookDeliveries", Scopes: []string{"admin:read"}},
 	"GET /api/v1/announcements":                                           {Operation: "listAnnouncements", Scopes: []string{"read:notifications"}},
+	"GET /api/v1/announcements/history":                                   {Operation: "listAnnouncementHistory", Scopes: []string{"read:notifications"}},
 	"GET /api/v1/authorized_apps":                                         {Operation: "listAuthorizedApps", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/blocks":                                                  {Operation: "listBlocks", Scopes: []string{"read:blocks"}},
 	"GET /api/v1/bookmarks":                                               {Operation: "listBookmarks", Scopes: []string{"read:bookmarks"}},

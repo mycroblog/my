@@ -355,6 +355,8 @@ paths:
     $ref: ./paths/announcements.yaml
   /announcements/{id}/read:
     $ref: ./paths/announcements_{id}_read.yaml
+  /announcements/history:
+    $ref: ./paths/announcements_history.yaml
   /streaming:
     $ref: ./paths/streaming.yaml
   /finance/cost_totals:
@@ -1242,6 +1244,8 @@ components:
       $ref: ./components/schemas/Announcement.yaml
     AnnouncementList:
       $ref: ./components/schemas/AnnouncementList.yaml
+    AnnouncementPage:
+      $ref: ./components/schemas/AnnouncementPage.yaml
     AppealModerationActionRequest:
       $ref: ./components/schemas/AppealModerationActionRequest.yaml
     AutoDeletePolicy:

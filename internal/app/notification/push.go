@@ -149,6 +149,10 @@ type pushJob struct {
 	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
 	ErrorGroupChange notification.ErrorGroupChange `json:"error_group_change,omitempty"`
 	ErrorGroupID     string                        `json:"error_group_id,omitempty"`
+	// AnnouncementID and AnnouncementTitle are the announcement of an announcement and its
+	// title when it was notified.
+	AnnouncementID    string `json:"announcement_id,omitempty"`
+	AnnouncementTitle string `json:"announcement_title,omitempty"`
 }
 
 // jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
@@ -158,7 +162,7 @@ func jobOf(n notification.Notification, subscriptionID string) pushJob {
 		SubscriptionID: subscriptionID, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
 		SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
 		ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
-		ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID,
+		ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID, AnnouncementID: n.AnnouncementID,
 	}
 }
 
@@ -176,6 +180,12 @@ type Pusher struct {
 // Pusher pushes nothing. The idempotency key is per notification and subscription, so that a
 // retried transaction or a reprojected event enqueues each job once.
 func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notification) error {
+	return p.enqueueWith(ctx, tx, n, nil)
+}
+
+// enqueueWith is enqueue with the payloads completed by complete (nil completes nothing): what
+// words the message that the notification row does not hold.
+func (p *Pusher) enqueueWith(ctx context.Context, tx uow.Tx, n notification.Notification, complete func(*pushJob)) error {
 	if p == nil || p.Repository == nil || p.Outbox == nil {
 		return nil
 	}
@@ -185,7 +195,11 @@ func (p *Pusher) enqueue(ctx context.Context, tx uow.Tx, n notification.Notifica
 	}
 	jobs := make([]queue.NewJob, 0, len(ids))
 	for _, id := range ids {
-		payload, err := json.Marshal(jobOf(n, id))
+		job := jobOf(n, id)
+		if complete != nil {
+			complete(&job)
+		}
+		payload, err := json.Marshal(job)
 		if err != nil {
 			return err
 		}
@@ -489,6 +503,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		NotificationID: job.NotificationID, Type: job.Type, Source: source, Recipient: recipient,
 		StatusID: job.StatusID, ReportID: job.ReportID, AppealID: job.AppealID, VoiceRoomID: job.VoiceRoomID,
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
+		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
 	}, instance), l, nil
 }
 
@@ -506,6 +521,9 @@ type Wording struct {
 	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
 	ErrorGroupChange notification.ErrorGroupChange
 	ErrorGroupID     string
+	// AnnouncementID and AnnouncementTitle are the announcement of an announcement and its
+	// title.
+	AnnouncementID, AnnouncementTitle string
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
@@ -602,11 +620,18 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushVoiceRoomStarted(name), "/voice/"+n.VoiceRoomID
 	case notification.TypeVoiceRoomInvited:
 		p.Title, p.Path = l.ServerPushVoiceRoomInvited(name), "/voice/"+n.VoiceRoomID
+	case notification.TypeAnnouncement:
+		p.Title = l.ServerPushAnnouncement(i18n.ServerPushAnnouncementArgs{Instance: instance, Title: n.AnnouncementTitle})
+		p.Path = AnnouncementPath(n.AnnouncementID)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}
 	return p
 }
+
+// AnnouncementPath is the web client's page of an announcement: the list of the announcements,
+// which opens at it (ADR-0125 §2).
+func AnnouncementPath(id string) string { return "/announcements?id=" + id }
 
 // statusPath is the web client's page of a status by the account acct (ADR-0053).
 func statusPath(acct, statusID string) string { return "/@" + acct + "/status/" + statusID }

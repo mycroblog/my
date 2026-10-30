@@ -79,6 +79,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"NotifiesModeratorsOfLimitedMoves", notificationLimitedMoves},
 		{"NotifiesAppeals", notificationAppeals},
 		{"NotifiesTheServiceClosure", notificationServiceClosure},
+		{"NotifiesAnnouncements", notificationAnnouncement},
 		{"NotifiesVoiceRooms", notificationVoiceRooms},
 		{"NotifiesErrorGroups", notificationErrorGroups},
 		{"KeepsSubscriptions", notificationSubscriptions},

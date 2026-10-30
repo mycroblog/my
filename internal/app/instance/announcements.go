@@ -8,7 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
+
+	"github.com/rivo/uniseg"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -18,12 +21,14 @@ import (
 )
 
 // The server-wide announcements (FR-726, data-model §4.9). The holders of manage_announcements
-// write an announcement in Markdown as a draft, publish it for every local user within an
+// write an announcement, a plain-text title and a body in Markdown, as a draft, publish it for every local user within an
 // optional window, revise it, and withdraw it for good; each change records an event and its
 // audit log entry in one transaction (ADR-0037). Every local user sees the published
 // announcements of the moment, rendered to sanitized HTML, and marks the ones they have read.
 // A publication, a revision of a published announcement, and a withdrawal signal the streams
-// once they commit (ADR-0050).
+// once they commit (ADR-0050). A publication, and a revision that moves the start of the window
+// of a published announcement that has not shown yet, emit AnnouncementScheduled, from which the
+// notification module schedules the announcement notifications at ShowsFrom (ADR-0125 §2).
 
 // AnnouncementRepository is the persistence port of the announcements. It is part of Repository.
 type AnnouncementRepository interface {
@@ -62,6 +67,8 @@ const (
 	EventAnnouncementStateChanged = "instance.announcement_state_changed"
 	// EventAnnouncementShown is the event type of AnnouncementShown.
 	EventAnnouncementShown = "instance.announcement_shown"
+	// EventAnnouncementScheduled is the event type of AnnouncementScheduled.
+	EventAnnouncementScheduled = "instance.announcement_scheduled"
 )
 
 // AnnouncementRevised is emitted when an announcement revision is inserted.
@@ -88,6 +95,17 @@ type AnnouncementShown struct {
 
 // EventType implements uow.Event.
 func (AnnouncementShown) EventType() string { return EventAnnouncementShown }
+
+// AnnouncementScheduled is emitted when a published announcement gets the time at which it
+// starts to show to the users (instance.Announcement.ShowsFrom): at its publication, and when a
+// revision moves the start of its window before it has shown. Its users are notified then.
+type AnnouncementScheduled struct {
+	AnnouncementID string
+	ShowsFrom      time.Time
+}
+
+// EventType implements uow.Event.
+func (AnnouncementScheduled) EventType() string { return EventAnnouncementScheduled }
 
 func registerAnnouncementProjectors(r *uow.Projectors, repo Repository) {
 	apply := func(ctx context.Context, tx uow.Tx, id, revisionID string, change *instance.AnnouncementStateChange) error {
@@ -156,8 +174,10 @@ func rebuildAnnouncementHeads(ctx context.Context, tx uow.Tx, repo Repository) e
 	return nil
 }
 
-// AnnouncementInput describes the body and the window of an announcement.
+// AnnouncementInput describes the title, the body, and the window of an announcement.
 type AnnouncementInput struct {
+	// Title is the heading in plain text; white space around it is trimmed.
+	Title string
 	// Body is the announcement in Markdown.
 	Body string
 	// StartsAt and EndsAt bound when the announcement shows once published; the zero time leaves
@@ -165,8 +185,11 @@ type AnnouncementInput struct {
 	StartsAt, EndsAt time.Time
 }
 
-func (in AnnouncementInput) validate() error {
-	return instance.ValidateAnnouncement(in.Body, in.StartsAt, in.EndsAt)
+// normalize returns in with its title trimmed, or an error wrapping instance.ErrInvalidValue
+// for a bad title, body, or window.
+func (in AnnouncementInput) normalize() (AnnouncementInput, error) {
+	in.Title = strings.TrimSpace(in.Title)
+	return in, instance.ValidateAnnouncement(in.Title, in.Body, in.StartsAt, in.EndsAt, uniseg.GraphemeClusterCount)
 }
 
 // CreateAnnouncementInput describes a new announcement.
@@ -179,22 +202,23 @@ type CreateAnnouncementInput struct {
 }
 
 // CreateAnnouncement records a new announcement, a draft unless in.Publish is set. It fails
-// with an error wrapping instance.ErrInvalidValue for a bad body or window.
+// with an error wrapping instance.ErrInvalidValue for a bad title, body, or window.
 func (s *Service) CreateAnnouncement(ctx context.Context, in CreateAnnouncementInput) (instance.Announcement, error) {
-	if err := in.validate(); err != nil {
+	var err error
+	if in.AnnouncementInput, err = in.normalize(); err != nil {
 		return instance.Announcement{}, err
 	}
 	now := s.d.Clock.Now()
 	id, revID, changeID := s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID()
-	label := instance.AnnouncementLabel(in.Body)
+	label := instance.AnnouncementLabel(in.Title, in.Body)
 	created := s.audit(appmoderation.AuditAnnouncementCreated, appmoderation.AuditTargetAnnouncement, id, label, revID, in.CreatedByUserID, now)
 	published := s.audit(appmoderation.AuditAnnouncementPublished, appmoderation.AuditTargetAnnouncement, id, label, changeID, in.CreatedByUserID, now)
 	rev := instance.AnnouncementRevision{
-		ID: revID, AnnouncementID: id, Body: in.Body, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
+		ID: revID, AnnouncementID: id, Title: in.Title, Body: in.Body, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		RevisedByUserID: in.CreatedByUserID, RevisedAt: now,
 	}
 	var out instance.Announcement
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.d.Repository.InsertAnnouncement(ctx, tx, id, now); err != nil {
 			return err
 		}
@@ -215,13 +239,23 @@ func (s *Service) CreateAnnouncement(ctx context.Context, in CreateAnnouncementI
 			}
 		}
 		var err error
-		out, err = s.d.Repository.Announcement(ctx, tx, id)
-		return err
+		if out, err = s.d.Repository.Announcement(ctx, tx, id); err != nil {
+			return err
+		}
+		return scheduleIfPublished(ctx, tx, out)
 	})
 	return out, err
 }
 
-// UpdateAnnouncementInput describes a new body and window of an announcement.
+// scheduleIfPublished emits AnnouncementScheduled for a published announcement.
+func scheduleIfPublished(ctx context.Context, tx uow.Tx, a instance.Announcement) error {
+	if a.State != instance.AnnouncementPublished {
+		return nil
+	}
+	return tx.Emit(ctx, AnnouncementScheduled{AnnouncementID: a.ID, ShowsFrom: a.ShowsFrom()})
+}
+
+// UpdateAnnouncementInput describes a new title, body, and window of an announcement.
 type UpdateAnnouncementInput struct {
 	AnnouncementInput
 	AnnouncementID string
@@ -229,24 +263,27 @@ type UpdateAnnouncementInput struct {
 	RevisedByUserID string
 }
 
-// UpdateAnnouncement records a revision of the announcement with a new body and window; a
-// published announcement stays published. It fails with an error wrapping ErrNotFound for an
-// unknown announcement, instance.ErrAnnouncementWithdrawn for a withdrawn one, and
-// instance.ErrInvalidValue for a bad body or window.
+// UpdateAnnouncement records a revision of the announcement with a new title, body, and
+// window; a published announcement stays published. A revision after the announcement has
+// started to show notifies nobody again; one that moves the start of the window before then
+// schedules the notifications at the new time. It fails with an error wrapping ErrNotFound for
+// an unknown announcement, instance.ErrAnnouncementWithdrawn for a withdrawn one, and
+// instance.ErrInvalidValue for a bad title, body, or window.
 func (s *Service) UpdateAnnouncement(ctx context.Context, in UpdateAnnouncementInput) (instance.Announcement, error) {
-	if err := in.validate(); err != nil {
+	var err error
+	if in.AnnouncementInput, err = in.normalize(); err != nil {
 		return instance.Announcement{}, err
 	}
 	now := s.d.Clock.Now()
 	revID := s.d.IDs.NewID()
 	audit := s.audit(appmoderation.AuditAnnouncementUpdated, appmoderation.AuditTargetAnnouncement, in.AnnouncementID,
-		instance.AnnouncementLabel(in.Body), revID, in.RevisedByUserID, now)
+		instance.AnnouncementLabel(in.Title, in.Body), revID, in.RevisedByUserID, now)
 	rev := instance.AnnouncementRevision{
-		ID: revID, AnnouncementID: in.AnnouncementID, Body: in.Body, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
+		ID: revID, AnnouncementID: in.AnnouncementID, Title: in.Title, Body: in.Body, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		RevisedByUserID: in.RevisedByUserID, RevisedAt: now,
 	}
 	var out instance.Announcement
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		cur, err := s.d.Repository.Announcement(ctx, tx, in.AnnouncementID)
 		if err != nil {
 			return err
@@ -268,8 +305,13 @@ func (s *Service) UpdateAnnouncement(ctx context.Context, in UpdateAnnouncementI
 				return err
 			}
 		}
-		out, err = s.d.Repository.Announcement(ctx, tx, in.AnnouncementID)
-		return err
+		if out, err = s.d.Repository.Announcement(ctx, tx, in.AnnouncementID); err != nil {
+			return err
+		}
+		if cur.State == instance.AnnouncementPublished && now.Before(cur.ShowsFrom()) && !out.ShowsFrom().Equal(cur.ShowsFrom()) {
+			return scheduleIfPublished(ctx, tx, out)
+		}
+		return nil
 	})
 	return out, err
 }
@@ -307,11 +349,13 @@ func (s *Service) setAnnouncementState(ctx context.Context, id, byUserID string,
 		case instance.AnnouncementWithdrawn:
 			return fmt.Errorf("change announcement %s: %w", id, instance.ErrAnnouncementWithdrawn)
 		}
-		if err := s.changeState(ctx, tx, change, withLabel(audit, instance.AnnouncementLabel(cur.Revision.Body))); err != nil {
+		if err := s.changeState(ctx, tx, change, withLabel(audit, instance.AnnouncementLabel(cur.Revision.Title, cur.Revision.Body))); err != nil {
 			return err
 		}
-		out, err = s.d.Repository.Announcement(ctx, tx, id)
-		return err
+		if out, err = s.d.Repository.Announcement(ctx, tx, id); err != nil {
+			return err
+		}
+		return scheduleIfPublished(ctx, tx, out)
 	})
 	return out, err
 }
@@ -358,6 +402,9 @@ type ReaderAnnouncement struct {
 	HTML string
 	// Read reports whether the user has marked it read.
 	Read bool
+	// Ended reports whether its window has ended (only the list with the past announcements
+	// has such).
+	Ended bool
 }
 
 // ShownAnnouncements returns the announcements that the users see now, those that started to
@@ -373,6 +420,99 @@ func (s *Service) ShownAnnouncements(ctx context.Context, userID string) ([]Read
 		return cmp.Or(b.ShowsFrom().Compare(a.ShowsFrom()), cmp.Compare(b.ID, a.ID))
 	})
 	return s.forReader(ctx, userID, all)
+}
+
+// AnnouncementNotice is what the announcement notifications read of an announcement (ADR-0125
+// §2): its title, and when it shows.
+type AnnouncementNotice struct {
+	ID    string
+	Title string
+	// Published reports whether it is published (neither a draft nor withdrawn).
+	Published bool
+	// ShowsFrom is when it starts to show once published (instance.Announcement.ShowsFrom).
+	ShowsFrom time.Time
+	// EndsAt is the end of its window; the zero time for none.
+	EndsAt time.Time
+}
+
+// ShowsAt reports whether the users see the announcement at t.
+func (n AnnouncementNotice) ShowsAt(t time.Time) bool {
+	return n.Published && !t.Before(n.ShowsFrom) && (n.EndsAt.IsZero() || t.Before(n.EndsAt))
+}
+
+// AnnouncementNotice returns the announcement id as its notifications read it; it fails with
+// an error wrapping ErrNotFound for an unknown one.
+func (s *Service) AnnouncementNotice(ctx context.Context, id string) (AnnouncementNotice, error) {
+	a, err := s.d.Repository.FindAnnouncement(ctx, id)
+	if err != nil {
+		return AnnouncementNotice{}, err
+	}
+	return NoticeOf(a), nil
+}
+
+// NoticeOf returns what the announcement notifications read of a.
+func NoticeOf(a instance.Announcement) AnnouncementNotice {
+	return AnnouncementNotice{
+		ID: a.ID, Title: a.Revision.Title, Published: a.State == instance.AnnouncementPublished,
+		ShowsFrom: a.ShowsFrom(), EndsAt: a.Revision.EndsAt,
+	}
+}
+
+// ShownAnnouncementIDs returns the IDs of the announcements that the users see now, whose
+// notifications stay listed: the notification module hides those of the withdrawn and the
+// ended announcements when it reads them (ADR-0125 §2).
+func (s *Service) ShownAnnouncementIDs(ctx context.Context) ([]string, error) {
+	all, err := s.d.Repository.ListAnnouncements(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	now := s.d.Clock.Now()
+	ids := make([]string, 0, len(all))
+	for _, a := range all {
+		if a.ShowsAt(now) {
+			ids = append(ids, a.ID)
+		}
+	}
+	return ids, nil
+}
+
+// AnnouncementCursor is the position of the last announcement of a page of PastAnnouncements:
+// its ShowsFrom and its ID. The zero value starts at the newest.
+type AnnouncementCursor struct {
+	ShowsFrom time.Time
+	ID        string
+}
+
+// PastAnnouncements returns a page of the announcements that have started to show (published,
+// with ShowsFrom passed), the ended ones included and the withdrawn ones left out (ADR-0125 §3):
+// those after the cursor in the order of ShowsFrom, newest first, then of ID, at most limit,
+// with whether the user userID has read each and whether each has ended. more reports whether
+// another page follows.
+func (s *Service) PastAnnouncements(ctx context.Context, userID string, after AnnouncementCursor, limit int) (page []ReaderAnnouncement, more bool, err error) {
+	all, err := s.d.Repository.ListAnnouncements(ctx, true)
+	if err != nil {
+		return nil, false, err
+	}
+	now := s.d.Clock.Now()
+	all = slices.DeleteFunc(all, func(a instance.Announcement) bool {
+		if !a.HasShownBy(now) {
+			return true
+		}
+		if after.ID == "" {
+			return false
+		}
+		// Keep only those after the cursor: older, or as old with a smaller ID.
+		c := a.ShowsFrom().Compare(after.ShowsFrom)
+		return c > 0 || (c == 0 && a.ID >= after.ID)
+	})
+	slices.SortStableFunc(all, func(a, b instance.Announcement) int {
+		return cmp.Or(b.ShowsFrom().Compare(a.ShowsFrom()), cmp.Compare(b.ID, a.ID))
+	})
+	if len(all) > limit {
+		all, more = all[:limit], true
+	}
+	page, err = s.forReader(ctx, userID, all)
+	return page, more, err
 }
 
 // ShownAnnouncement returns the announcement id as the user userID sees it, and false when the
@@ -408,8 +548,11 @@ func (s *Service) forReader(ctx context.Context, userID string, list []instance.
 	if err != nil {
 		return nil, err
 	}
+	now := s.d.Clock.Now()
 	for i, a := range list {
-		out[i] = ReaderAnnouncement{Announcement: a, HTML: s.RenderAnnouncement(a.Revision.Body), Read: slices.Contains(read, a.ID)}
+		out[i] = ReaderAnnouncement{
+			Announcement: a, HTML: s.RenderAnnouncement(a.Revision.Body), Read: slices.Contains(read, a.ID), Ended: a.EndedBy(now),
+		}
 	}
 	return out, nil
 }

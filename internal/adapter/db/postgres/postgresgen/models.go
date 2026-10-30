@@ -680,6 +680,7 @@ type Notification struct {
 	ErrorGroupChange        *string
 	ErrorGroupID            *string
 	ErrorGroupHour          *time.Time
+	AnnouncementID          *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

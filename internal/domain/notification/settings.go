@@ -73,6 +73,10 @@ const (
 	GroupServiceClosure Group = "service_closure"
 	// GroupSupporter is the supporter notifications (Type.Supporter).
 	GroupSupporter Group = "supporter"
+	// GroupAnnouncement is the server-wide announcements (ADR-0125 §2): unlike the other notices
+	// of the instance, the user turns it off in the app (on by default), and it has no email
+	// channel.
+	GroupAnnouncement Group = "announcement"
 )
 
 // Section is the kind of a group, which decides its defaults and how its emails are sent.
@@ -191,6 +195,10 @@ var Groups = []GroupSpec{
 		Group: GroupSupporter, Section: SectionInstance,
 		Types: []Type{TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired, TypeSupporterServiceClosure},
 		InApp: Rule{Default: true, Fixed: true}, Email: Rule{Default: true, Fixed: true},
+	},
+	{
+		Group: GroupAnnouncement, Section: SectionInstance, Types: []Type{TypeAnnouncement},
+		InApp: Rule{Default: true}, Email: Rule{Absent: true},
 	},
 }
 
