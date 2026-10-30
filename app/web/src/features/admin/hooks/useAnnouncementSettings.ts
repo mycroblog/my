@@ -32,7 +32,7 @@ export function useAdminAnnouncements(): AdminAnnouncement[] {
   return useSuspenseQuery(adminAnnouncementsQueryOptions(api)).data.items;
 }
 
-/** The first line of an announcement's text, without its Markdown marks: its name in the list and in the buttons. */
+/** The first line of an announcement's text, without its Markdown marks: the name of one written before titles. */
 function announcementName(text: string): string {
   const line = text
     .split("\n")
