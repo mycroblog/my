@@ -4,7 +4,19 @@
 // elevation, motion), the custom CSS with what the server does not check, and a preview of the overrides. An empty
 // input keeps the default, which its description names. The reasons the server refuses a theme stay above the button
 // (role="alert", web-client/README.md E2); what a save did stays on the page in a StatusMessage.
-import { Button, Grid, Hint, InlineError, Stack, StatusMessage, Text, TextArea, TextField, ThemePreview } from "@my/ui";
+import {
+  Button,
+  Grid,
+  Hint,
+  InlineError,
+  Stack,
+  StatusMessage,
+  Text,
+  TextArea,
+  TextField,
+  ThemePreview,
+  VisuallyHidden,
+} from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { type ColorField, useThemeSettings, type ValueField } from "../hooks/useThemeSettings";
 import { Section, RequirePermission } from "../../moderation";
@@ -92,23 +104,33 @@ function ThemeSettingsForm() {
 
 function ColorInputs({ field }: { field: ColorField }) {
   const t = useT();
-  const format = field.alpha ? "#rrggbbaa" : "#rrggbb";
+  // The row shows the token name once; each field's label repeats it only for assistive technology, so the field
+  // keeps its token in its name ("color-accent Light") while the screen shows "Light".
+  const token = <VisuallyHidden>{field.token}</VisuallyHidden>;
   return (
     <Grid as="li" columns={3} at="md" gap="2">
       <Text as="code" size="sm" weight="semibold" mono dir="ltr">
         {field.token}
       </Text>
       <TextField
-        label={t("client:admin.theme.color.light", { token: field.token })}
-        description={t("client:admin.theme.color.default", { value: field.defaults.light, format })}
+        label={
+          <>
+            {token} {t("client:admin.theme.color.light")}
+          </>
+        }
+        description={t("client:admin.theme.color.default", { value: field.defaults.light })}
         value={field.light.value}
         onChange={field.light.onChange}
         placeholder={field.defaults.light}
         autoComplete="off"
       />
       <TextField
-        label={t("client:admin.theme.color.dark", { token: field.token })}
-        description={t("client:admin.theme.color.default", { value: field.defaults.dark, format })}
+        label={
+          <>
+            {token} {t("client:admin.theme.color.dark")}
+          </>
+        }
+        description={t("client:admin.theme.color.default", { value: field.defaults.dark })}
         value={field.dark.value}
         onChange={field.dark.onChange}
         placeholder={field.defaults.dark}

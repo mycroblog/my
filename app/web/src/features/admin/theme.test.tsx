@@ -38,9 +38,9 @@ describe("the server's theme", () => {
     await renderApp({ path: "/admin/theme" });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Theme" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "color-accent, light theme" })).toHaveValue("#1447e6");
-    expect(screen.getByRole("textbox", { name: "color-surface, light theme" })).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "color-surface, light theme" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("textbox", { name: "color-accent Light" })).toHaveValue("#1447e6");
+    expect(screen.getByRole("textbox", { name: "color-surface Light" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "color-surface Light" })).toHaveAccessibleDescription(
       /Default: #fcf9f6/,
     );
     expect(screen.getByRole("textbox", { name: "radius-md" })).toHaveValue("2px");
@@ -65,7 +65,7 @@ describe("the server's theme", () => {
       }),
     );
     const { user } = await renderApp({ path: "/admin/theme" });
-    await user.type(await screen.findByRole("textbox", { name: "color-fg-muted, light theme" }), "#cccccc");
+    await user.type(await screen.findByRole("textbox", { name: "color-fg-muted Light" }), "#cccccc");
 
     const contrast = screen.getByRole("region", { name: "Contrast" });
     expect(
@@ -74,8 +74,8 @@ describe("the server's theme", () => {
       ),
     ).toBeInTheDocument();
 
-    await user.clear(screen.getByRole("textbox", { name: "color-fg-muted, light theme" }));
-    await user.type(screen.getByRole("textbox", { name: "color-fg-muted, light theme" }), "#333333");
+    await user.clear(screen.getByRole("textbox", { name: "color-fg-muted Light" }));
+    await user.type(screen.getByRole("textbox", { name: "color-fg-muted Light" }), "#333333");
     await user.type(screen.getByRole("textbox", { name: "spacing" }), "0.3rem");
     await user.click(screen.getByRole("button", { name: "Save theme" }));
 

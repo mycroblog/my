@@ -16,19 +16,19 @@
     "description": "Description of a number token field (line height)."
   },
   "admin.theme.color.dark": {
-    "defaultMessage": "{token}, dark theme",
-    "description": "Label of the field of a color token's value in the dark theme. {token} is the token name (not translated)."
+    "defaultMessage": "Dark",
+    "description": "Visible label of the field of a color token's value in the dark theme, after the token name that only assistive technology reads (\"color-accent Dark\")."
   },
   "admin.theme.color.default": {
-    "defaultMessage": "{format}. Default: {value}",
-    "description": "Description of a color field. {format} is #rrggbb or #rrggbbaa, {value} the default color (not translated)."
+    "defaultMessage": "Default: {value}",
+    "description": "Description of a color field. {value} is the default color (not translated)."
   },
   "admin.theme.color.light": {
-    "defaultMessage": "{token}, light theme",
-    "description": "Label of the field of a color token's value in the light theme. {token} is the token name, e.g. color-accent (not translated)."
+    "defaultMessage": "Light",
+    "description": "Visible label of the field of a color token's value in the light theme, after the token name that only assistive technology reads (\"color-accent Light\")."
   },
   "admin.theme.colors.description": {
-    "defaultMessage": "Each color has a value for the light and the dark theme, as #rrggbb. Text and controls must keep enough contrast with the backgrounds they sit on (WCAG 2.2 AA), so changing one color can require changing another.",
+    "defaultMessage": "Each color has a value for the light and the dark theme, as #rrggbb, or #rrggbbaa for a color whose default has an alpha. Text and controls must keep enough contrast with the backgrounds they sit on (WCAG 2.2 AA), so changing one color can require changing another.",
     "description": "Description of the colors section of the theme screen."
   },
   "admin.theme.colors.title": {
