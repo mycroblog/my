@@ -142,7 +142,7 @@ async function signedInServer(page: Page) {
   await page.route(`**/api/v1/accounts/${bob.id}/followers*`, (route) =>
     route.fulfill(json({ accounts: [alice, layla, { ...bob, id: "0192f0c4-7a8e-7000-8000-000000000003" }] })),
   );
-  for (const action of ["follow", "unfollow", "mute", "unmute", "block", "unblock"]) {
+  for (const action of ["follow", "unfollow", "mute", "unmute", "block", "unblock", "subscribe", "unsubscribe"]) {
     await page.route(`**/api/v1/accounts/${bob.id}/${action}`, (route) => {
       changes.push(action);
       relationship = {
@@ -153,6 +153,8 @@ async function signedInServer(page: Page) {
         ...(action === "unmute" && { muting: false, muting_notifications: false }),
         ...(action === "block" && { blocking: true, following: false, requested: false, followed_by: false }),
         ...(action === "unblock" && { blocking: false }),
+        ...(action === "subscribe" && { notify: true }),
+        ...(action === "unsubscribe" && { notify: false }),
       };
       return route.fulfill(json(relationship));
     });
@@ -171,7 +173,7 @@ function message(key: string): string {
 }
 
 /**
- * The relationship buttons: the follow button, then the menu button. They are the buttons of the profile's header
+ * The relationship buttons: the follow button, the bell of the new posts, then the menu button. They are the buttons of the profile's header
  * besides the back button before the heading, and appear once the relationship has loaded; until then the first
  * buttons of the main landmark are the actions of the posts below, so a search of the whole landmark could find a post's.
  */
@@ -190,8 +192,8 @@ test.describe("a profile", () => {
     server = await signedInServer(page);
     await page.goto(profile);
     await expect(page.getByRole("feed")).toBeVisible();
-    // The relationship has loaded: the follow button and the menu button are there.
-    await expect(relationshipButtons(page)).toHaveCount(2);
+    // The relationship has loaded: the follow button, the bell and the menu button are there.
+    await expect(relationshipButtons(page)).toHaveCount(3);
   });
 
   test("has no axe violations and does not scroll sideways", async ({ page, makeAxeBuilder }) => {
@@ -215,6 +217,7 @@ test.describe("a profile", () => {
   test("is a heading, the relationship buttons, the profile and its posts in tabs", async ({ page }) => {
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - button
+      - button "${message("profile.subscribe")}" [pressed=false]
       - button
       - button "${message("shell.back")}"
       - heading /Bartholomew/ [level=1]
@@ -272,7 +275,7 @@ test.describe("a profile", () => {
   });
 
   test("mutes from the menu, which works from the keyboard", async ({ page, makeAxeBuilder }) => {
-    const more = relationshipButtons(page).nth(1);
+    const more = relationshipButtons(page).nth(2);
     await more.focus();
     await page.keyboard.press("Enter");
     const menu = page.getByRole("menu");
@@ -282,6 +285,25 @@ test.describe("a profile", () => {
     await expect(menu).toBeHidden();
     await expect.poll(() => server.changes).toEqual(["mute"]);
     await expect(more).toBeFocused();
+  });
+
+  test("turns the notifications of the new posts on and off with the bell, at once and from the keyboard", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const bell = relationshipButtons(page).nth(1);
+    await expect(bell).toHaveAccessibleName(message("profile.subscribe"));
+    await expect(bell).toHaveAttribute("aria-pressed", "false");
+    await bell.focus();
+    await page.keyboard.press("Space");
+    await expect.poll(() => server.changes).toEqual(["subscribe"]);
+    await expect(bell).toHaveAttribute("aria-pressed", "true");
+    await expect(bell).toBeFocused();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await page.keyboard.press("Enter");
+    await expect.poll(() => server.changes).toEqual(["subscribe", "unsubscribe"]);
+    await expect(bell).toHaveAttribute("aria-pressed", "false");
   });
 
   test("keeps the selected tab in the URL", async ({ page }) => {

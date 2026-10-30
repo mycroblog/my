@@ -3,6 +3,9 @@
 // the follow button (@my/ui FollowButton), whose look and label are where the follow stands (Follow, the filled main
 // action; Requested, Following, Blocked, quiet with their icons), and that keeps its place while the relationship
 // loads, and
+// a bell toggle button (WAI-ARIA APG, button pattern, `aria-pressed`) that turns on and off the notifications of the
+// account's new posts (ADR-0123) at once; on the profile of an account of another server that the viewer does not
+// follow, it is shown turned off and cannot be pressed, with the line that says to follow first, and
 // a menu button (WAI-ARIA APG, menu button pattern) with "Add to list" for an account the viewer follows
 // (features/lists), mute, block and report (features/report). Undoing
 // a follow or a request, blocking and unblocking ask first in an alert dialog (WAI-ARIA APG, alert dialog
@@ -19,12 +22,14 @@ import {
   FollowButton,
   Hint,
   IconButton,
+  IconToggleButton,
   Link,
   Menu,
   MenuItem,
   MenuTrigger,
   MoreIcon,
   Stack,
+  SubscribeIcon,
 } from "@my/ui";
 import { useId, useState } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
@@ -123,6 +128,13 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
   // While the instance does not follow other servers (ADR-0076), no new follow of their accounts is offered; the
   // line that says so takes the button's place.
   const offersFollow = state.follow !== "none" || state.canFollow;
+  // The bell of the account's new posts (ADR-0123): only on the profile, with the menu. While a change of it is on its
+  // way, it shows the state asked for.
+  const subscribeId = useId();
+  const showSubscribe = showMenu && state.subscribe !== "hidden";
+  const followFirst = showSubscribe && state.subscribe === "follow-first";
+  const subscribed =
+    pending === "subscribe" ? true : pending === "unsubscribe" ? false : relationship.notify && !followFirst;
 
   return (
     <>
@@ -142,6 +154,19 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
           />
         ) : (
           <Hint as="span">{t("client:profile.follow.federation_restricted")}</Hint>
+        )}
+        {showSubscribe && (
+          <IconToggleButton
+            label={t("client:profile.subscribe")}
+            isSelected={subscribed}
+            isDisabled={followFirst}
+            {...(followFirst && { "aria-describedby": subscribeId })}
+            onChange={(on) => {
+              change(on ? "subscribe" : "unsubscribe");
+            }}
+          >
+            <SubscribeIcon filled={subscribed} />
+          </IconToggleButton>
         )}
         {showMenu && (
           <MenuTrigger>
@@ -194,6 +219,12 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
           <Hint id={pendingId} wrap="anywhere">
             {t("client:profile.follow.pending_remote", { host: isolate(account.domain) })}
           </Hint>
+        </Box>
+      )}
+      {/* The reason the bell cannot be pressed, which also describes it (a disabled button shows no tooltip). */}
+      {followFirst && (
+        <Box fullRow>
+          <Hint id={subscribeId}>{t("client:profile.subscribe.follow_first")}</Hint>
         </Box>
       )}
     </>

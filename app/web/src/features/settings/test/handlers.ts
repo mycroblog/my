@@ -151,6 +151,8 @@ export const ordinaryNotificationRows: NotificationRow[] = [
   notificationRow("poll_closed", "ordinary", ["poll_closed"]),
   notificationRow("account_moved", "ordinary", ["account_moved"]),
   notificationRow("voice", "ordinary", ["voice_room_started", "voice_room_invited"]),
+  // The new posts of the accounts that the user subscribes to: never by email, so the row has no email channel.
+  { group: "status", section: "ordinary", types: ["status"], in_app: { enabled: true, fixed: false } },
 ];
 
 /** The moderator rows of a holder of `manage_reports` and `manage_accounts`, at their defaults (both on). */
