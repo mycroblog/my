@@ -2410,5 +2410,9 @@
   "settings.linked_accounts.empty.description": {
     "defaultMessage": "Link one to sign in with that service.",
     "description": "Text of the empty list of linked accounts, above the button that links one."
+  },
+  "settings.notifications.row.no_email": {
+    "defaultMessage": "Not sent by email.",
+    "description": "Note under the name of a row of the notification settings that has no email cell: the server's announcements are never emailed."
   }
 }

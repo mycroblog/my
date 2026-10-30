@@ -163,7 +163,7 @@ export const moderatorNotificationRows: NotificationRow[] = [
   notificationRow("admin_account_moved", "moderator", ["admin_account_moved"], { email: true }),
 ];
 
-/** The instance's notices: always in the app; `service_closure` and `supporter` always by email too. */
+/** The instance's notices: always in the app but for `announcement`; `service_closure` and `supporter` always by email too. */
 export const instanceNotificationRows: NotificationRow[] = [
   notificationRow(
     "moderation",
@@ -176,6 +176,8 @@ export const instanceNotificationRows: NotificationRow[] = [
     inAppFixed: true,
     emailFixed: true,
   }),
+  // The administrators' announcements: in the app on by default and changeable, never by email (ADR-0125 §2).
+  { group: "announcement", section: "instance", types: ["announcement"], in_app: { enabled: true, fixed: false } },
 ];
 
 /** The supporter row, while the supporter program is enabled. */

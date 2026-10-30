@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
-// navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the open voice chat
-// rooms (on a room's page, its raised hands and about the room instead) and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the server's
+// announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead) and about
+// the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 // Signed out, the navigation is a bar along the top and the pages are one column at every width, with no third
 // column: they end with a footer that links to the server's information and documents instead.
 import { AppShell } from "@my/ui";
 import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useRef } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { AnnouncementsPanel } from "../../features/announcements";
 import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { useViewer } from "../../features/session";
@@ -17,6 +19,7 @@ import { hasClosed, useClosure } from "../../lib/closure";
 import { useBoundaryErrorReport } from "../../lib/errorReporting";
 import { useT } from "../../lib/i18n";
 import { AdminLayout, isStaffMode } from "./AdminLayout";
+import { AsideContext } from "./asideContext";
 import { ConnectionBanner } from "./ConnectionBanner";
 import { Navigation, useSignedOut } from "./Navigation";
 import { ServerInfo } from "./ServerInfo";
@@ -64,6 +67,8 @@ export function AppLayout() {
   // The voice chat pages list the rooms themselves, so the third column does not repeat them; a room's page has its
   // own blocks there instead.
   const onVoicePage = pathname === "/voice" || pathname.startsWith("/voice/");
+  // The list page of the announcements has them all, so the third column does not repeat them.
+  const onAnnouncementsPage = pathname === "/announcements" || pathname === "/announcements/";
   const voiceRoomId = voiceRoomPagePattern.exec(pathname)?.[1];
   if (staffMode) {
     return (
@@ -87,6 +92,7 @@ export function AppLayout() {
       </>
     );
   }
+  const hasAside = wide && !signedOut;
   return (
     <ComposeProvider>
       {/* The one bar for being offline or rate-limited (web-client/16-look-states-and-wording.md G17), in the page from the start so that the
@@ -94,24 +100,30 @@ export function AppLayout() {
       <ConnectionBanner />
       {/* The notice of the server's closure, not closable, above the page on every screen while it is announced. */}
       <ClosureBanner />
-      <AppShell
-        navigation={<Navigation />}
-        navigationPlacement={signedOut ? "top" : "side"}
-        skipLinkLabel={t("client:shell.skip_to_main")}
-        width={wideMain ? "wide" : "narrow"}
-        mainId={mainId}
-        mainRef={mainRef}
-        floatingVisible={showButton}
-        // Above the tab bar on phones (only its icon, named by its label). It always holds the new-post sheet, which pages
-        // without a feed keep for replies; the button shows only on pages with a feed.
-        floating={<ComposeEntry trigger={showButton ? "icon" : "none"} />}
-        {...(signedOut && { footer: <SiteFooter /> })}
-        {...(wide &&
-          !signedOut && {
+      {/* The pages leave out what the third column shows while it is there (the home page's announcements). */}
+      <AsideContext value={hasAside}>
+        <AppShell
+          navigation={<Navigation />}
+          navigationPlacement={signedOut ? "top" : "side"}
+          skipLinkLabel={t("client:shell.skip_to_main")}
+          width={wideMain ? "wide" : "narrow"}
+          mainId={mainId}
+          mainRef={mainRef}
+          floatingVisible={showButton}
+          // Above the tab bar on phones (only its icon, named by its label). It always holds the new-post sheet, which pages
+          // without a feed keep for replies; the button shows only on pages with a feed.
+          floating={<ComposeEntry trigger={showButton ? "icon" : "none"} />}
+          {...(signedOut && { footer: <SiteFooter /> })}
+          {...(hasAside && {
             aside: (
-              // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The open voice
-              // chat rooms come first, while there are any (web-client/09-app-shell.md §9).
+              // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The server's
+              // announcements come first, then the open voice chat rooms, while there are any (web-client/09-app-shell.md §9).
               <>
+                {!onAnnouncementsPage && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <AnnouncementsPanel />
+                  </ErrorBoundary>
+                )}
                 {!onVoicePage && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                     <VoiceRail />
@@ -128,11 +140,12 @@ export function AppLayout() {
               </>
             ),
           })}
-      >
-        <Outlet />
-        {/* The call goes on across pages: its bar ends every page while it lasts (web-client/09-app-shell.md §9). */}
-        <VoiceCallBar />
-      </AppShell>
+        >
+          <Outlet />
+          {/* The call goes on across pages: its bar ends every page while it lasts (web-client/09-app-shell.md §9). */}
+          <VoiceCallBar />
+        </AppShell>
+      </AsideContext>
     </ComposeProvider>
   );
 }

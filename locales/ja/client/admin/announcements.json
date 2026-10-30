@@ -1,4 +1,12 @@
 {
+  "admin.announcements.announcement_title": {
+    "defaultMessage": "タイトル",
+    "description": "Label of the field of an announcement's title."
+  },
+  "admin.announcements.announcement_title.description": {
+    "defaultMessage": "プレーンテキスト。一覧・通知・右の列の見出しになります。{count, plural, other {残り # 文字}}",
+    "description": "Description of the field of an announcement's title. {count} is how many characters may still be added, out of 100."
+  },
   "admin.announcements.cancel": {
     "defaultMessage": "キャンセル",
     "description": "Button that leaves a dialog of the announcements screen without changing anything."
@@ -20,8 +28,8 @@
     "description": "Button that writes a new announcement and publishes it."
   },
   "admin.announcements.description": {
-    "defaultMessage": "お知らせは、このサーバーの全員のホームのタイムラインの上に出て、それぞれが既読にできます。変更はすべて監査ログに残ります。",
-    "description": "Explanation at the top of the announcements screen."
+    "defaultMessage": "お知らせは、このサーバーの全員に表示され、公開した時と掲載の始まりの遅いほうで通知が届きます。変更はすべて監査ログに残ります。",
+    "description": "Description at the top of the admin screen of the announcements."
   },
   "admin.announcements.drafted": {
     "defaultMessage": "お知らせを下書きとして保存しました。変更は監査ログに残ります。",
@@ -42,6 +50,10 @@
   "admin.announcements.edit.close": {
     "defaultMessage": "閉じる",
     "description": "Accessible name of the button that closes the dialog that edits an announcement."
+  },
+  "admin.announcements.edit.description": {
+    "defaultMessage": "公開したお知らせを変更しても、通知は送り直しません。",
+    "description": "Note at the top of the dialog that edits an announcement."
   },
   "admin.announcements.edit.title": {
     "defaultMessage": "お知らせを編集",
@@ -90,10 +102,6 @@
   "admin.announcements.publish_one": {
     "defaultMessage": "公開する：{announcement}",
     "description": "Accessible name of the button that publishes an announcement. {announcement} is the first line of its text."
-  },
-  "admin.announcements.published": {
-    "defaultMessage": "お知らせを公開しました。変更は監査ログに残ります。",
-    "description": "Status after a new announcement was published."
   },
   "admin.announcements.published_at": {
     "defaultMessage": "公開日時",
@@ -146,6 +154,10 @@
   "admin.announcements.title": {
     "defaultMessage": "お知らせ",
     "description": "Title of the announcements screen, in the administration menu and as its heading."
+  },
+  "admin.announcements.title_required": {
+    "defaultMessage": "タイトルを入力してください。",
+    "description": "Error of the field of an announcement's title when it is empty."
   },
   "admin.announcements.too_long": {
     "defaultMessage": "{max} 文字以内にしてください。",

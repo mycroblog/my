@@ -1,4 +1,12 @@
 {
+  "admin.announcements.announcement_title": {
+    "defaultMessage": "Title",
+    "description": "Label of the field of an announcement's title."
+  },
+  "admin.announcements.announcement_title.description": {
+    "defaultMessage": "Plain text, the heading in the list, the notifications and the side column. {count, plural, one {# character left} other {# characters left}}",
+    "description": "Description of the field of an announcement's title. {count} is how many characters may still be added, out of 100."
+  },
   "admin.announcements.cancel": {
     "defaultMessage": "Cancel",
     "description": "Button that leaves a dialog of the announcements screen without changing anything."
@@ -20,8 +28,8 @@
     "description": "Button that writes a new announcement and publishes it."
   },
   "admin.announcements.description": {
-    "defaultMessage": "Announcements show above the home timeline of everyone on this server, who can mark them as read. The audit log records every change.",
-    "description": "Explanation at the top of the announcements screen."
+    "defaultMessage": "Announcements show to everyone on this server, who are notified when you publish one or when its time to show starts, whichever is later. The audit log records every change.",
+    "description": "Description at the top of the admin screen of the announcements."
   },
   "admin.announcements.drafted": {
     "defaultMessage": "Saved the announcement as a draft. The audit log records the change.",
@@ -42,6 +50,10 @@
   "admin.announcements.edit.close": {
     "defaultMessage": "Close",
     "description": "Accessible name of the button that closes the dialog that edits an announcement."
+  },
+  "admin.announcements.edit.description": {
+    "defaultMessage": "Changing a published announcement does not notify anyone again.",
+    "description": "Note at the top of the dialog that edits an announcement."
   },
   "admin.announcements.edit.title": {
     "defaultMessage": "Edit the announcement",
@@ -90,10 +102,6 @@
   "admin.announcements.publish_one": {
     "defaultMessage": "Publish: {announcement}",
     "description": "Accessible name of the button that publishes an announcement. {announcement} is the first line of its text."
-  },
-  "admin.announcements.published": {
-    "defaultMessage": "Published the announcement. The audit log records the change.",
-    "description": "Status after a new announcement was published."
   },
   "admin.announcements.published_at": {
     "defaultMessage": "Published",
@@ -146,6 +154,10 @@
   "admin.announcements.title": {
     "defaultMessage": "Announcements",
     "description": "Title of the announcements screen, in the administration menu and as its heading."
+  },
+  "admin.announcements.title_required": {
+    "defaultMessage": "Give the announcement a title.",
+    "description": "Error of the field of an announcement's title when it is empty."
   },
   "admin.announcements.too_long": {
     "defaultMessage": "Use at most {max} characters.",

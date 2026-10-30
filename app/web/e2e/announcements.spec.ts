@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements in every width × locale project (FR-726, ADR-0027): a user sees the published ones
-// above the home timeline with the unread one marked in words, and marks it read; an administrator writes an
-// announcement and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`
+// The server's announcements in every width × locale project (FR-726, ADR-0125, ADR-0027): below xl a user sees the
+// published ones above the home timeline with the unread one marked in words, and marks it read; from xl they are in
+// the third column by their titles instead; the list page has the ended ones and opens one from its notification,
+// marking it read; an administrator writes an announcement with its title and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`
 // has no API, so each test plays the server with page.route; names change with the locale, so the elements are
 // found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
@@ -52,6 +53,17 @@ const unread: Schemas["Announcement"] = {
   read: false,
   ended: false,
 };
+/** An announcement whose window has ended, which only the list page has. */
+const ended: Schemas["Announcement"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000f4",
+  title: "Rules updated",
+  content: "<p>We updated the rules.</p>",
+  published_at: "2026-09-01T00:00:00Z",
+  ends_at: "2026-09-08T00:00:00Z",
+  updated_at: "2026-09-01T00:00:00Z",
+  read: false,
+  ended: true,
+};
 const read: Schemas["Announcement"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f2",
   title: "مرحبا",
@@ -61,6 +73,11 @@ const read: Schemas["Announcement"] = {
   read: true,
   ended: false,
 };
+
+/** Whether the project's viewport has the third column (xl, 80rem). */
+function hasThirdColumn(): boolean {
+  return (test.info().project.use.viewport?.width ?? 0) >= 1280;
+}
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -130,6 +147,7 @@ test.describe("announcements", () => {
     page,
     makeAxeBuilder,
   }) => {
+    test.skip(hasThirdColumn(), "from xl the announcements are in the third column, not above the home timeline");
     let announcements = [unread, read];
     await serveApi(page, [], (key, route) => {
       if (key === "GET /announcements") return json(route, { items: announcements });
@@ -151,9 +169,68 @@ test.describe("announcements", () => {
     await expectNoHorizontalScroll(page);
 
     await markRead.click();
-    await expect(markRead).toBeHidden();
-    await expect(region.getByRole("heading", { level: 3 }).first()).toBeFocused();
-    await expect(region.getByText(message("announcements.unread"), { exact: true })).toBeHidden();
+    // The last unread one read: the region goes, and focus moves to the page's heading.
+    await expect(region).toBeHidden();
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeFocused();
+    await expectNoAxeViolations(makeAxeBuilder);
+  });
+
+  test("shows the titles in the third column from xl, and not above the home timeline", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    test.skip(!hasThirdColumn(), "below xl there is no third column");
+    await serveApi(page, [], (key, route) => {
+      if (key === "GET /announcements") return json(route, { items: [unread, read] });
+      if (key === "GET /announcements/history") return json(route, { items: [unread, read, ended] });
+      if (key === `POST /announcements/${unread.id}/read`) return json(route, { ...unread, read: true });
+      return null;
+    });
+    await page.goto("/home");
+    const panel = page.getByRole("complementary", { name: new RegExp(`^${message("announcements.title")}`, "u") });
+    const title = panel.getByRole("link", { name: new RegExp(`^${unread.title}`, "u") });
+    await expect(title).toBeVisible();
+    await expect(panel.getByRole("link", { name: read.title })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("region", { name: message("announcements.title") })).toHaveCount(0);
+    await expectNoAxeViolations(makeAxeBuilder);
+
+    // The title opens the announcement on the list page, which marks it read; the panel is not on that page.
+    await title.click();
+    const heading = page.getByRole("main").getByRole("heading", { level: 2, name: unread.title, exact: true });
+    await expect(heading).toBeFocused();
+    await expect(panel).toHaveCount(0);
+    await expectNoAxeViolations(makeAxeBuilder);
+  });
+
+  test("reads the ended announcements on the list page and opens one from its notification", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const reads: string[] = [];
+    await serveApi(page, [], (key, route) => {
+      if (key === "GET /announcements") return json(route, { items: [unread, read] });
+      if (key === "GET /announcements/history") {
+        return json(route, { items: [{ ...unread, read: reads.includes(unread.id) }, read, ended] });
+      }
+      if (key === `POST /announcements/${unread.id}/read`) {
+        reads.push(unread.id);
+        return json(route, { ...unread, read: true });
+      }
+      return null;
+    });
+    await page.goto("/announcements");
+    const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { level: 2, name: new RegExp(`^${ended.title}`, "u") })).toBeVisible();
+    await expect(main.getByText(message("announcements.ended"), { exact: true })).toBeVisible();
+    await expect(main.getByRole("article")).toHaveCount(3);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    // From its notification (or its Web Push): the page focuses it and marks it read.
+    await page.goto(`/announcements?id=${unread.id}`);
+    await expect(main.getByRole("heading", { level: 2, name: unread.title, exact: true })).toBeFocused();
+    expect(reads).toEqual([unread.id]);
+    await expect(main.getByRole("button", { name: message("announcements.mark_read"), exact: true })).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
@@ -165,7 +242,7 @@ test.describe("announcements", () => {
       if (key === "GET /admin/announcements") return json(route, { items: announcements });
       if (key === "POST /admin/announcements") {
         const body = route.request().postDataJSON() as Schemas["AdminAnnouncementCreateRequest"];
-        sent.push(`create ${String(body.publish)}`);
+        sent.push(`create ${String(body.publish)} ${body.title}`);
         announcements = [
           {
             id: "0192f0c4-7a8e-7000-8000-0000000000f3",
@@ -196,8 +273,11 @@ test.describe("announcements", () => {
     await expectNoHorizontalScroll(page);
 
     await form
-      .getByRole("textbox", { name: message("admin.announcements.text"), exact: true })
+      .getByRole("textbox", { name: message("admin.announcements.announcement_title"), exact: true })
       .fill("Maintenance tonight");
+    await form
+      .getByRole("textbox", { name: message("admin.announcements.text"), exact: true })
+      .fill("The server is read-only from 02:00.");
     await form.getByRole("button", { name: message("admin.announcements.create_published"), exact: true }).click();
     const list = main.getByRole("region", { name: message("admin.announcements.list.title"), exact: true });
     const withdraw = list.getByRole("button", {
@@ -205,7 +285,7 @@ test.describe("announcements", () => {
       exact: true,
     });
     await expect(withdraw).toBeVisible();
-    expect(sent).toEqual(["create true"]);
+    expect(sent).toEqual(["create true Maintenance tonight"]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -215,7 +295,7 @@ test.describe("announcements", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await dialog.getByRole("button", { name: message("admin.announcements.withdraw"), exact: true }).click();
     await expect(withdraw).toBeHidden();
-    expect(sent).toEqual(["create true", "withdraw"]);
+    expect(sent).toEqual(["create true Maintenance tonight", "withdraw"]);
     await expectNoAxeViolations(makeAxeBuilder);
   });
 });

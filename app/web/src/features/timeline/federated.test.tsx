@@ -175,6 +175,7 @@ describe("the navigation's timelines", () => {
       "/profile",
       "/bookmarks",
       "/settings",
+      "/announcements",
       "/lists",
     ]);
 

@@ -47,3 +47,6 @@ export const OnAvatars: Story = {
 
 /** A row without an actor (a notice of the server): the mark stands in the avatar's place. */
 export const Alone: Story = { args: { kind: "staff" } };
+
+/** An announcement of the server's administrators, which has no actor: its own mark in the avatar's place. */
+export const Announcement: Story = { args: { kind: "announcement" } };

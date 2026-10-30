@@ -215,6 +215,10 @@ export function useNotificationSettings(): NotificationSettingsView {
 
   const rowNote = (row: NotificationSettingRow, inApp: boolean): string | undefined => {
     if (!inApp) return t("client:settings.notifications.row.in_app_off");
+    // The announcements are never emailed (ADR-0125 §2): their empty email cell says why, unlike the other notices of
+    // the server, whose email is a choice or always on.
+    if (row.section === "instance" && row.email === undefined && channels.includes("email"))
+      return t("client:settings.notifications.row.no_email");
     const fixed = (["in_app", "email"] as const).filter(
       (channel) => channels.includes(channel) && row[channel]?.fixed === true,
     );

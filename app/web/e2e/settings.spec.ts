@@ -830,7 +830,18 @@ test.describe("navigation", () => {
     await expect(moveUp("search")).toBeFocused();
     await expect
       .poll(order)
-      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/profile", "/bookmarks", "/settings"]);
+      .toEqual([
+        "/home",
+        "/local",
+        "/public",
+        "/search",
+        "/notifications",
+        "/profile",
+        "/bookmarks",
+        "/settings",
+        "/announcements",
+        "/lists",
+      ]);
 
     // Space on a checkbox hides Profile.
     await section.getByRole("checkbox", { name: name("profile"), exact: true }).focus();
@@ -838,7 +849,17 @@ test.describe("navigation", () => {
     await expect(section.getByRole("checkbox", { name: name("profile"), exact: true })).not.toBeChecked();
     await expect
       .poll(order)
-      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
+      .toEqual([
+        "/home",
+        "/local",
+        "/public",
+        "/search",
+        "/notifications",
+        "/bookmarks",
+        "/settings",
+        "/announcements",
+        "/lists",
+      ]);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -846,7 +867,17 @@ test.describe("navigation", () => {
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     await expect
       .poll(order)
-      .toEqual(["/home", "/local", "/public", "/search", "/notifications", "/bookmarks", "/settings"]);
+      .toEqual([
+        "/home",
+        "/local",
+        "/public",
+        "/search",
+        "/notifications",
+        "/bookmarks",
+        "/settings",
+        "/announcements",
+        "/lists",
+      ]);
     await expect(section.getByRole("checkbox", { name: name("profile"), exact: true })).not.toBeChecked();
   });
 });

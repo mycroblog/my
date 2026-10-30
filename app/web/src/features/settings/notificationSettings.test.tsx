@@ -188,10 +188,32 @@ describe("the table", () => {
       "Voice chats",
       "New posts",
     ]);
-    expect(rowHeaders("From this server")).toEqual(["Notices from the moderators", "Closure of this server"]);
+    expect(rowHeaders("From this server")).toEqual([
+      "Notices from the moderators",
+      "Closure of this server",
+      "Announcements",
+    ]);
     expect(screen.queryByRole("table", { name: "For moderators" })).not.toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Mentions: In the app" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Mentions: Email" })).not.toBeChecked();
+  });
+
+  test("the Announcements row turns off in the app, and says that announcements are never emailed", async () => {
+    const api = settingsServer();
+    const { user } = await openSettings();
+    const inApp = screen.getByRole("checkbox", { name: "Announcements: In the app" });
+    expect(inApp).toBeChecked();
+    expect(inApp).toBeEnabled();
+    expect(screen.queryByRole("checkbox", { name: "Announcements: Email" })).not.toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /^Announcements/u });
+    expect(within(row).getByText("Not sent by email.")).toBeInTheDocument();
+
+    await user.click(inApp);
+
+    await waitFor(() => {
+      expect(api.patches).toEqual([{ changes: [{ group: "announcement", channel: "in_app", enabled: false }] }]);
+    });
+    expect(within(row).getByText("Off in the app, so it does not arrive any other way.")).toBeInTheDocument();
   });
 
   test("shows no email cell in the New posts row, which is never sent by email", async () => {

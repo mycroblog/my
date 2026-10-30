@@ -14,7 +14,8 @@
 // requester to their custom emoji, with the reason of a rejection; a supporter notification names the plan and
 // says when the grace period ends or why the subscription ended, and leads to the supporter page except in the
 // Tauri app, which shows no way to pay (ADR-0072 §14); and lost follows lead to the user's lists of followers and
-// follows.
+// follows. An announcement of the administrators has the announcement's mark in place of an avatar, and its title as
+// the sentence, a link to it on the list page, which marks it read.
 //
 // A group of the favourites or the boosts of one post is one row: "Alice and 2 others favourited your
 // post", with the avatars of the others in a row above the sentence, so the number of people is in the
@@ -108,6 +109,13 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
                 domain:
                   view.severance === null || view.severance.domain === null ? null : (
                     <bdi key="domain">{view.severance.domain}</bdi>
+                  ),
+                // The title is the administrators' plain text in any language, isolated by the link (Y10).
+                title:
+                  view.announcement === null ? null : (
+                    <PostCardNameLink key="title" href={view.announcement.href}>
+                      {view.announcement.title}
+                    </PostCardNameLink>
                   ),
                 followers: view.severance?.followers ?? 0,
                 following: view.severance?.following ?? 0,

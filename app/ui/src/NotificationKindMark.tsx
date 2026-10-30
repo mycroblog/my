@@ -6,6 +6,7 @@
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import {
+  AnnouncementIcon,
   BoostIcon,
   DirectVisibilityIcon,
   EmojiIcon,
@@ -21,7 +22,8 @@ import {
 
 /**
  * The kinds of notification that have a mark of their own; the rest are `notice`. `status` is a new post of an account
- * that the user subscribes to, with the ringing bell of the profile's subscribe button.
+ * that the user subscribes to, with the ringing bell of the profile's subscribe button. `announcement` is an
+ * announcement of the server's administrators, which has no actor, so its mark always stands alone.
  */
 export type NotificationKind =
   | "favourite"
@@ -34,7 +36,8 @@ export type NotificationKind =
   | "poll"
   | "voice"
   | "staff"
-  | "notice";
+  | "notice"
+  | "announcement";
 
 const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   favourite: () => <StarIcon filled />,
@@ -48,6 +51,7 @@ const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   voice: () => <VoiceIcon />,
   staff: () => <ModerationIcon />,
   notice: () => <NotificationsIcon />,
+  announcement: () => <AnnouncementIcon />,
 };
 
 const kindMark = tv({
@@ -73,6 +77,7 @@ const kindMark = tv({
       voice: { mark: "bg-soft text-accent" },
       staff: { mark: "bg-surface-sunken text-fg" },
       notice: { mark: "bg-surface-sunken text-fg" },
+      announcement: { mark: "bg-soft text-accent" },
     },
   },
 });

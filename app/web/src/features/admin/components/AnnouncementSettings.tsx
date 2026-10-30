@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The announcements screen below its heading (manage_announcements, FR-726): the form of a new announcement, then
-// every announcement, newest first. The text is Markdown, which the server renders to sanitized HTML; the list
-// shows each as the users see it, with its state in words. A new announcement shows for a chosen time from when it
-// is sent, or until it is withdrawn, and is published at once or kept as a draft. Editing opens a dialog with the
-// text; withdrawing cannot be undone, so it asks first (an alert dialog). What a change did stays on the page in a
+// The announcements screen below its heading (manage_announcements, FR-726, web-client/screens/admin-announcements.md):
+// the form of a new announcement, then every announcement, newest first. The title is plain text, the heading of the
+// announcement wherever the users see it, and the text is Markdown, which the server renders to sanitized HTML; the
+// list shows each as the users see it, with its title and its state in words. A new announcement shows for a chosen
+// time from when it is sent, or until it is withdrawn, and is published at once or kept as a draft. Editing opens a
+// dialog with the title and the text; withdrawing cannot be undone, so it asks first (an alert dialog). What a change did stays on the page in a
 // StatusMessage above the list; a failure stays there too (role="alert", web-client/README.md E2).
 import {
   Box,
@@ -25,16 +26,23 @@ import {
   Stack,
   StatusMessage,
   TextArea,
+  TextField,
 } from "@my/ui";
 import { useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterMove } from "../../../lib/useFocusAfterRemoval";
 import { DateTime, Section, RequirePermission } from "../../moderation";
-import { type AdminAnnouncement, type AnnouncementState, announcementTextLimit } from "../api/announcements";
+import {
+  type AdminAnnouncement,
+  type AnnouncementState,
+  announcementTextLimit,
+  announcementTitleLimit,
+} from "../api/announcements";
 import {
   type AnnouncementActions,
   announcementDurations,
-  announcementName,
+  announcementLabel,
+  titleLength,
   useAdminAnnouncements,
   useAnnouncementActions,
   useNewAnnouncementForm,
@@ -72,12 +80,42 @@ function useFormatRemaining() {
       : t("client:admin.settings.characters_left", { count: remaining });
 }
 
+/**
+ * The title of an announcement: one line of plain text, whose description counts the characters left (grapheme
+ * clusters, as the server counts them); past the limit, its error says so.
+ */
+function TitleField({
+  value,
+  onChange,
+  error,
+  autoFocus = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  error: string | undefined;
+  autoFocus?: boolean;
+}) {
+  const t = useT();
+  const remaining = Math.max(0, announcementTitleLimit - titleLength(value.trim()));
+  return (
+    <TextField
+      label={t("client:admin.announcements.announcement_title")}
+      description={t("client:admin.announcements.announcement_title.description", { count: remaining })}
+      value={value}
+      onChange={onChange}
+      autoFocus={autoFocus}
+      {...(error === undefined ? {} : { isInvalid: true, errorMessage: error })}
+    />
+  );
+}
+
 function NewAnnouncementForm() {
   const t = useT();
   const form = useNewAnnouncementForm();
   const formatRemaining = useFormatRemaining();
   return (
     <Stack as="form" gap="6" onSubmit={form.submit}>
+      <TitleField value={form.title} onChange={form.changeTitle} error={form.titleError} />
       <TextArea
         label={t("client:admin.announcements.text")}
         description={t("client:admin.announcements.text.description")}
@@ -161,7 +199,7 @@ type AnnouncementRowProps = { announcement: AdminAnnouncement; actions: Announce
 
 function AnnouncementRow({ announcement, actions }: AnnouncementRowProps) {
   const t = useT();
-  const name = announcementName(announcement.text);
+  const name = announcementLabel(announcement);
   return (
     <Stack gap="3">
       <Heading level={3} wrap="anywhere" focusable>
@@ -261,11 +299,14 @@ function EditAnnouncementForm({
 }) {
   const t = useT();
   const formatRemaining = useFormatRemaining();
+  const [title, setTitle] = useState(announcement.title);
   const [text, setText] = useState(announcement.text);
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const textError = submitted ? actions.textError(text) : undefined;
+  // Over the limit, the title says so at once; empty, once the form is sent.
+  const titleError = submitted || title.trim() !== "" ? actions.titleError(title) : undefined;
   return (
     <Stack
       as="form"
@@ -273,23 +314,24 @@ function EditAnnouncementForm({
       onSubmit={(event) => {
         event.preventDefault();
         setSubmitted(true);
-        if (isSaving || actions.textError(text) !== undefined) return;
+        if (isSaving || actions.titleError(title) !== undefined || actions.textError(text) !== undefined) return;
         setIsSaving(true);
         setFailed(false);
-        void actions.update(announcement, text).then((saved) => {
+        void actions.update(announcement, title, text).then((saved) => {
           setIsSaving(false);
           if (saved) close();
           else setFailed(true);
         });
       }}
     >
+      <Hint size="inherit">{t("client:admin.announcements.edit.description")}</Hint>
+      <TitleField value={title} onChange={setTitle} error={titleError} autoFocus />
       <TextArea
         label={t("client:admin.announcements.text")}
         description={t("client:admin.announcements.text.description")}
         value={text}
         onChange={setText}
         rows={8}
-        autoFocus
         characterLimit={announcementTextLimit}
         formatRemaining={formatRemaining}
         {...(textError === undefined ? {} : { isInvalid: true, errorMessage: textError })}

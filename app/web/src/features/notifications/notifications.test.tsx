@@ -7,12 +7,32 @@ import { afterEach, describe, expect, test } from "vitest";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, problem, resumableSession } from "../../test/msw/http";
 import { notificationsFixture } from "./test/handlers";
-import { accountFixture, otherAccountFixture, relationshipFixture, statusFixture } from "../../test/fixtures";
+import {
+  accountFixture,
+  otherAccountFixture,
+  relationshipFixture,
+  type Schemas,
+  statusFixture,
+} from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import { expectSignInStarted } from "../../test/signIn";
 import { expectSelectedTabControlsPanel } from "../../test/tabs";
 import type { Notification, NotificationMarker, NotificationType } from "./api/notifications";
+
+/** An announcement as the API answers it, published at 2026-10-21T00:00:00Z and unread, with `overrides`. */
+function announcementFixture(id: string, overrides: Partial<Schemas["Announcement"]> = {}): Schemas["Announcement"] {
+  return {
+    id,
+    title: "Maintenance on Sunday",
+    content: "<p>Maintenance on Sunday.</p>",
+    published_at: "2026-10-21T00:00:00Z",
+    updated_at: "2026-10-21T00:00:00Z",
+    read: false,
+    ended: false,
+    ...overrides,
+  };
+}
 
 /** The server's read marker as a variable, with the updates it received. */
 function markerServer(initial: NotificationMarker) {
@@ -359,6 +379,53 @@ describe("the notifications page", () => {
     const feed = await screen.findByRole("feed", { name: "Notifications" });
     const started = within(feed).getByRole("article", { name: /started a voice chat room/ });
     expect(within(started).getByRole("link", { name: "Open the room" })).toHaveAttribute("href", `/voice/${roomId}`);
+  });
+
+  test("tells of an announcement by its title, which opens it on the list page and marks it read", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const announcement = announcementFixture("0192f0c4-7a8e-7000-8000-0000000000f2", {
+      title: "Maintenance on Sunday",
+    });
+    const items: Notification[] = [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000da",
+        type: "announcement",
+        created_at: "2026-10-16T09:00:00Z",
+        announcement,
+      },
+    ];
+    const reads: string[] = [];
+    server.use(
+      http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })),
+      http.get(`${apiBase}/announcements/history`, () =>
+        HttpResponse.json({ items: [{ ...announcement, read: reads.includes(announcement.id) }] }),
+      ),
+      http.post(`${apiBase}/announcements/:id/read`, ({ params }) => {
+        reads.push(String(params["id"]));
+        return HttpResponse.json({ ...announcement, read: true });
+      }),
+    );
+
+    const { user, router } = await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const row = within(feed).getByRole("article", { name: /Announcement: Maintenance on Sunday/ });
+    // No one sent it: the announcement's mark stands in the avatar's place.
+    expect(row.innerHTML).toMatch(/data-notification-kind="announcement"/);
+    const link = within(row).getByRole("link", { name: "Maintenance on Sunday" });
+    expect(link).toHaveAttribute("href", `/announcements?id=${announcement.id}`);
+
+    await user.click(link);
+
+    const heading = await screen.findByRole("heading", { level: 2, name: /^Maintenance on Sunday/ });
+    expect(router.state.location.pathname).toBe("/announcements");
+    await waitFor(() => {
+      expect(reads).toEqual([announcement.id]);
+    });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
   });
 
   test("tells of custom emoji requests: a new one to an administrator, and a decision with its reason to the requester", async () => {

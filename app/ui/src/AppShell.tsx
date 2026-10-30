@@ -179,8 +179,11 @@ const asidePanel = tv({
 });
 
 export type AsidePanelProps = {
-  /** The panel's heading, an `h2` that names the `aside` landmark ("About this server"). */
-  heading: string;
+  /**
+   * The panel's heading, an `h2` that names the `aside` landmark ("About this server"): text, or text with a `Badge`
+   * of a count beside it ("Announcements", 2 unread), whose label then is part of the name.
+   */
+  heading: ReactNode;
   children: ReactNode;
 };
 

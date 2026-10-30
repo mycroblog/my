@@ -390,5 +390,13 @@
   "notifications.mention.reply": {
     "defaultMessage": "Reply",
     "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
+  },
+  "notifications.announcement.titled": {
+    "defaultMessage": "Announcement: {title}",
+    "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
+  },
+  "notifications.link.announcement": {
+    "defaultMessage": "Open the announcement",
+    "description": "Link from a notification of an announcement without a title to the announcement on the list page."
   }
 }

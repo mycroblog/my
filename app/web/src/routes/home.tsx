@@ -16,6 +16,7 @@ import { useSessionUnreachable } from "../lib/auth/SessionProvider";
 import { NetworkError } from "../lib/errors";
 import { useT } from "../lib/i18n";
 import { useOnReconnect } from "../lib/network";
+import { useHasAside } from "./-layout/asideContext";
 import { PageHeading } from "./-layout/PageHeading";
 
 /** The home timeline (FR-201): the signed-in user's posts and those of the accounts they follow. */
@@ -57,6 +58,7 @@ function HomePage() {
   const router = useRouter();
   const { saved } = Route.useLoaderData();
   const unreachable = useSessionUnreachable();
+  const hasAside = useHasAside();
   // Showing the kept posts: back online, the loader resumes the session and loads the timeline again (web-client/16-look-states-and-wording.md G17).
   useOnReconnect(() => {
     void router.invalidate();
@@ -64,8 +66,15 @@ function HomePage() {
   return (
     <>
       <PageHeading id={headingId}>{t("client:home.title")}</PageHeading>
-      {/* The server's announcements to every user (FR-726); not while the page shows the posts kept on this browser. */}
-      {!saved && <Announcements />}
+      {/* The server's announcements to every user (FR-726); not while the page shows the posts kept on this browser, and
+          not from xl, where they are at the top of the third column (ADR-0125 §4). */}
+      {!saved && !hasAside && (
+        <Announcements
+          onAllRead={() => {
+            document.getElementById(headingId)?.focus();
+          }}
+        />
+      )}
       {/* The first steps of a new user and the accounts suggested to follow (web-client/screens/home-first-run.md). */}
       {!saved && (
         <FirstRun

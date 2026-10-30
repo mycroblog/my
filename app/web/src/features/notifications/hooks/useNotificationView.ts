@@ -21,6 +21,7 @@ import {
   profilePath,
 } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
+import { announcementPath } from "../../announcements";
 import { useViewer } from "../../session";
 import { statusPath } from "../../status";
 import type {
@@ -150,6 +151,11 @@ export type NotificationView = {
   /** The account that an `account_moved` tells of the move to; null for the other types and when it is gone. */
   move: MoveNoticeView | null;
   /**
+   * The announcement that an `announcement` tells of, for `{title}` in its sentence: its title (the administrators'
+   * plain text, empty for one without a title) and the list page opened at it; null for the other types.
+   */
+  announcement: { title: string; href: string } | null;
+  /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
@@ -189,7 +195,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   voice_room_invited: "voice",
   admin_error_group: "staff",
   status: "status",
-  announcement: "notice",
+  announcement: "announcement",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -470,6 +476,11 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return notification.voice_room_id === undefined
         ? []
         : [{ href: `/voice/${notification.voice_room_id}`, label: "client:notifications.link.voice_room" }];
+    // A titled announcement's title is the link (announcementOf); one without a title leads to it here.
+    case "announcement":
+      return notification.announcement === undefined || notification.announcement.title !== ""
+        ? []
+        : [{ href: announcementPath(notification.announcement), label: "client:notifications.link.announcement" }];
     case "relationships_severed":
       return ownAcct === null
         ? []
@@ -480,6 +491,16 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     default:
       return [];
   }
+}
+
+/**
+ * The announcement of an `announcement`, whose title is the row's sentence (ADR-0125 §2); null for the other types and
+ * for one without its announcement or its title, which says only that there is one.
+ */
+function announcementOf(notification: Notification): NotificationView["announcement"] {
+  const { announcement } = notification;
+  if (notification.type !== "announcement" || announcement === undefined || announcement.title === "") return null;
+  return { title: announcement.title, href: announcementPath(announcement) };
 }
 
 /** The emoji of a `reaction` as its sentence shows it (NotificationView.reaction). */
@@ -513,6 +534,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       ? notification.moderation_action
       : undefined;
   const formatDate = (value: string) => intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" });
+  const announcement = announcementOf(notification);
   return {
     kind: kinds[notification.type],
     replyTo: notification.type === "mention" && status !== undefined ? status : null,
@@ -521,6 +543,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       requested.sentence ??
       closureSentenceOf(notification) ??
       errorGroupSentenceOf(notification) ??
+      (announcement === null ? null : "client:notifications.announcement.titled") ??
       (target === undefined ? null : "client:notifications.report_resolved.account") ??
       (others.length > 0 && groupSentence !== undefined ? groupSentence : sentences[notification.type]),
     actor: account === undefined ? null : actorOf(account),
@@ -535,6 +558,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     emojiRequest: requested.emojiRequest,
     supporter: supporterOf(notification, formatDate),
     move: moveOf(notification),
+    announcement,
     links: linksOf(notification, viewer.status === "signed-in" ? viewer.account.acct : null),
   };
 }
