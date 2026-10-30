@@ -15,7 +15,10 @@ test.describe("the registration page on the server", () => {
     await page.goto("/auth/sign_up");
     const main = page.getByRole("main");
     await expect(main.locator("#sign-up-agreement")).toBeVisible();
-    await expect(main.locator('button[type="submit"]')).toHaveAttribute("aria-describedby", "sign-up-agreement");
+    // A required checkbox agrees to them, described by the notice above the links.
+    const agreement = main.locator('input[name="agreement"]');
+    await expect(agreement).toHaveAttribute("required", "");
+    await expect(agreement).toHaveAttribute("aria-describedby", "sign-up-agreement");
     await expect(main.locator('.agreement a[href="/about/terms"]')).toBeVisible();
     await expect(main.locator('.agreement a[href="/about/privacy"]')).toBeVisible();
     // They open in a new tab, so the form keeps what was typed.

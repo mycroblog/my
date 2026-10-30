@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getInstanceOverview
-  summary: Get the counts and the operators of the instance
+  summary: Get the counts of the instance
   description: |
     What the landing page shows about the instance besides `GET /instance`: how many members it
-    has and how active they are, and who runs it. Only local, public data: the members are
-    counted, never listed, and only public posts count. The instance settings `public_counts`
-    and `public_operators` decide what it shows; a part that is off is left out. The counts and
-    the operators are read again every few minutes, so they may lag behind.
+    has and how active they are. Only local, public data: the members are counted, never listed,
+    and only public posts count. The instance setting `public_counts` decides whether it shows
+    them; while it is off, they are left out. The counts are read again every few minutes, so
+    they may lag behind.
   tags: [instance]
   security: []
   responses:

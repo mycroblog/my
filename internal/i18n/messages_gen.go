@@ -820,11 +820,25 @@ func (l *Localizer) ServerAuthSignOutSubmit() string {
 	return l.format("server:auth.sign_out.submit", nil)
 }
 
-// ServerAuthSignUpAgreement formats "server:auth.sign_up.agreement". Notice above the submit button of the registration form, followed by links to the instance's terms of service and privacy policy (only those it has published).
+// ServerAuthSignUpAgreement formats "server:auth.sign_up.agreement". Notice above the links to the instance's terms of service and privacy policy (only those it has published) on the registration form, followed by the checkbox that agrees to them.
 //
-//	en: By creating an account, you agree to these documents of this server.
+//	en: Read these documents of this server before you create an account.
 func (l *Localizer) ServerAuthSignUpAgreement() string {
 	return l.format("server:auth.sign_up.agreement", nil)
+}
+
+// ServerAuthSignUpAgreementLabel formats "server:auth.sign_up.agreement.label". Label of the required checkbox under the links to the instance's terms of service and privacy policy on the registration form.
+//
+//	en: I have read and agree to the documents above
+func (l *Localizer) ServerAuthSignUpAgreementLabel() string {
+	return l.format("server:auth.sign_up.agreement.label", nil)
+}
+
+// ServerAuthSignUpAgreementRequired formats "server:auth.sign_up.agreement.required". Error under the agreement checkbox of the registration form when the form was sent without it.
+//
+//	en: Agree to the documents above to create an account.
+func (l *Localizer) ServerAuthSignUpAgreementRequired() string {
+	return l.format("server:auth.sign_up.agreement.required", nil)
 }
 
 // ServerAuthSignUpClosed formats "server:auth.sign_up.closed". Body of the registration page while the server accepts no new accounts.

@@ -16,6 +16,8 @@ const pageHeading = tv({
       // the app's stylesheet hides it where the rail shows (data-hidden-with-rail), since a component knows no viewport.
       wide: "font-serif text-3xl font-medium tracking-tight",
     },
+    // The title of an editorial page's masthead (the landing page): the display size, from @3xl of the masthead.
+    display: { true: "text-4xl text-balance @3xl:text-5xl" },
   },
 });
 
@@ -31,6 +33,8 @@ export type PageHeadingProps = {
    * which of the like pages (the timelines) this is.
    */
   visuallyHidden?: boolean | "wide";
+  /** The display size, for the title of a `Masthead` (the landing page); the page title's size otherwise. */
+  display?: boolean;
   /** A decorative mark (`✳` or `✧`, mango) after the text, hidden from assistive technology. */
   spark?: SparkMark;
   /**
@@ -44,12 +48,12 @@ export type PageHeadingProps = {
  * The page's only level-one heading. After a navigation the app moves focus to it and names the document after its
  * text, so it is focusable by script (`tabIndex={-1}`) but not in the tab order.
  */
-export function PageHeading({ children, id, visuallyHidden = false, spark, back }: PageHeadingProps) {
+export function PageHeading({ children, id, visuallyHidden = false, display = false, spark, back }: PageHeadingProps) {
   const heading = (
     <h1
       id={id}
       tabIndex={-1}
-      className={pageHeading({ visuallyHidden })}
+      className={pageHeading({ visuallyHidden, display })}
       data-hidden-with-rail={visuallyHidden === "wide" ? "" : undefined}
     >
       {children}

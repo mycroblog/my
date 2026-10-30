@@ -32,7 +32,7 @@
     "description": "Tab of the jobs screen with the jobs not done yet: waiting, running and retrying."
   },
   "admin.jobs.history.attempt": {
-    "defaultMessage": "{number, number} 回目の試行：{outcome}",
+    "defaultMessage": "{number, number} 回目の試行: {outcome}",
     "description": "Heading of one record of a job's attempt history. {number} is the number of the run, from 1, formatted; {outcome} is admin.jobs.outcome.retry or admin.jobs.outcome.dead."
   },
   "admin.jobs.history.empty": {
@@ -76,7 +76,7 @@
     "description": "Button of a job that shows or hides the records of its runs that failed."
   },
   "admin.jobs.history.toggle_job": {
-    "defaultMessage": "試行の履歴：{type}",
+    "defaultMessage": "試行の履歴: {type}",
     "description": "Accessible name of the attempt history button of a job, which names the job. {type} is the job type."
   },
   "admin.jobs.idempotency_key": {
@@ -140,11 +140,11 @@
     "description": "Button of a failed job that runs it again."
   },
   "admin.jobs.retry_failed": {
-    "defaultMessage": "ジョブを再実行できませんでした：{reason}",
+    "defaultMessage": "ジョブを再実行できませんでした: {reason}",
     "description": "Error toast when a failed job could not be run again. {reason} is the server's localized reason."
   },
   "admin.jobs.retry_job": {
-    "defaultMessage": "再実行：{type}（{date} に失敗）",
+    "defaultMessage": "再実行: {type} ({date} に失敗)",
     "description": "Accessible name of the run-again button of a failed job, which names the job. {type} is the job type; {date} is when it failed, formatted."
   },
   "admin.jobs.run_at": {

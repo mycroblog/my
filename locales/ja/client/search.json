@@ -12,7 +12,7 @@
     "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0076)."
   },
   "search.failed": {
-    "defaultMessage": "アカウントを検索できませんでした：{reason}",
+    "defaultMessage": "アカウントを検索できませんでした: {reason}",
     "description": "Error under the search field when the search failed for another reason. {reason} is the localized reason."
   },
   "search.label": {
@@ -56,7 +56,7 @@
     "description": "Heading of the accounts found by name while their count is not known yet."
   },
   "search.results.title": {
-    "defaultMessage": "アカウント（{count}）",
+    "defaultMessage": "アカウント ({count})",
     "description": "Heading of the accounts found by name, with their count."
   },
   "search.results.count": {
@@ -68,7 +68,7 @@
     "description": "Shown when no account matches the typed name."
   },
   "search.results.failed": {
-    "defaultMessage": "アカウントを検索できませんでした：{reason}",
+    "defaultMessage": "アカウントを検索できませんでした: {reason}",
     "description": "Shown when the search by name fails. {reason} is the error."
   }
 }

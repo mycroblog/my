@@ -12,7 +12,7 @@
     "description": "Toast when copying an invite's link failed."
   },
   "admin.invites.copy_invite": {
-    "defaultMessage": "{action}：{code}",
+    "defaultMessage": "{action}: {code}",
     "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
   },
   "admin.invites.create": {
@@ -20,7 +20,7 @@
     "description": "Button that creates an invite."
   },
   "admin.invites.create_failed": {
-    "defaultMessage": "招待を作成できませんでした：{reason}",
+    "defaultMessage": "招待を作成できませんでした: {reason}",
     "description": "Error when creating an invite failed. {reason} is why."
   },
   "admin.invites.created": {
@@ -52,7 +52,7 @@
     "description": "Label of the select of how long an invite works."
   },
   "admin.invites.link": {
-    "defaultMessage": "招待する人に次のリンクを送ってください：",
+    "defaultMessage": "招待する人に次のリンクを送ってください:",
     "description": "Text before the sign-up link of a new invite."
   },
   "admin.invites.list.title": {
@@ -84,11 +84,11 @@
     "description": "Button that revokes an invite."
   },
   "admin.invites.revoke_failed": {
-    "defaultMessage": "招待を失効させられませんでした：{reason}",
+    "defaultMessage": "招待を失効させられませんでした: {reason}",
     "description": "Toast when revoking an invite failed. {reason} is why."
   },
   "admin.invites.revoke_invite": {
-    "defaultMessage": "失効：招待 {code}（{date} に作成）",
+    "defaultMessage": "失効: 招待 {code} ({date} に作成)",
     "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
   },
   "admin.invites.revoked": {
@@ -140,7 +140,7 @@
     "description": "How many people signed up with an invite, and how many it allows."
   },
   "admin.invites.used.unlimited": {
-    "defaultMessage": "{uses, number} 人（制限なし）",
+    "defaultMessage": "{uses, number} 人 (制限なし)",
     "description": "How many people signed up with an invite without a limit. {uses} is the number."
   },
   "admin.invites.uses": {

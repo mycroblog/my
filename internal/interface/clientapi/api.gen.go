@@ -2263,7 +2263,6 @@ const (
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
-	InstanceSettingKeyPublicOperators                  InstanceSettingKey = "public_operators"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
 	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
@@ -2341,8 +2340,6 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyPreviewImage:
 		return true
 	case InstanceSettingKeyPublicCounts:
-		return true
-	case InstanceSettingKeyPublicOperators:
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
@@ -9095,19 +9092,12 @@ type InstanceLimits struct {
 	RequireMediaDescription bool `json:"require_media_description"`
 }
 
-// InstanceOverview The counts and the operators of the instance (`GET /instance/overview`). Each part is
-// omitted while the instance setting that shows it is off.
+// InstanceOverview The counts of the instance (`GET /instance/overview`), omitted while the instance setting
+// `public_counts` is off.
 type InstanceOverview struct {
 	// Counts How many members the instance has, how many public posts they made lately, and since when it
 	// runs, as counted at `counted_at`. Omitted while the instance setting `public_counts` is off.
 	Counts *InstanceCounts `json:"counts,omitempty"`
-
-	// Operators The local accounts that show the badge of a staff role (a built-in `admin` or `moderator`
-	// role, or a role with a moderation or server permission) on their profile, highest role
-	// first; each has the badges it shows in `badges`. A staff member who shows no such badge,
-	// and an account that is suspended or deleted, is not listed. Omitted while the instance
-	// setting `public_operators` is off; empty when nobody shows such a badge.
-	Operators *[]Account `json:"operators,omitempty"`
 }
 
 // InstanceRegistrations How people sign up on the instance.
@@ -14881,7 +14871,7 @@ type ServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(w http.ResponseWriter, r *http.Request, params GetInstanceIncomeTotalsParams)
-	// GetInstanceOverview Get the counts and the operators of the instance
+	// GetInstanceOverview Get the counts of the instance
 	// (GET /instance/overview)
 	GetInstanceOverview(w http.ResponseWriter, r *http.Request)
 	// ListSupporterPlans List the supporter plans
@@ -47208,7 +47198,7 @@ type StrictServerInterface interface {
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	// (GET /instance/income_totals)
 	GetInstanceIncomeTotals(ctx context.Context, request GetInstanceIncomeTotalsRequestObject) (GetInstanceIncomeTotalsResponseObject, error)
-	// GetInstanceOverview Get the counts and the operators of the instance
+	// GetInstanceOverview Get the counts of the instance
 	// (GET /instance/overview)
 	GetInstanceOverview(ctx context.Context, request GetInstanceOverviewRequestObject) (GetInstanceOverviewResponseObject, error)
 	// ListSupporterPlans List the supporter plans

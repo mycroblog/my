@@ -148,7 +148,7 @@
     "description": "Label of the search field of the domain of the server of an account."
   },
   "admin.accounts.search.domain.description": {
-    "defaultMessage": "ほかのサーバーのドメイン（example.com など）。",
+    "defaultMessage": "ほかのサーバーのドメイン (example.com など)。",
     "description": "Help under the server search field."
   },
   "admin.accounts.search.origin": {
@@ -180,7 +180,7 @@
     "description": "Label of the search field of the username of an account."
   },
   "admin.accounts.search.username.description": {
-    "defaultMessage": "ユーザー名がこれで始まるアカウント。ハンドル（@name@domain）を入れると、そのサーバーでも絞り込みます。",
+    "defaultMessage": "ユーザー名がこれで始まるアカウント。ハンドル (@name@domain) を入れると、そのサーバーでも絞り込みます。",
     "description": "Help under the username search field."
   },
   "admin.accounts.state": {

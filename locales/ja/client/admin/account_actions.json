@@ -72,7 +72,7 @@
     "description": "Term of a list of account actions: when the action ends."
   },
   "admin.account_actions.issue_failed": {
-    "defaultMessage": "アカウントを処分できませんでした：{reason}",
+    "defaultMessage": "アカウントを処分できませんでした: {reason}",
     "description": "Error when a moderation action on an account fails; reason is the server's localized message."
   },
   "admin.account_actions.issued_at": {
@@ -184,7 +184,7 @@
     "description": "Label of the group of the posts an action on posts acts on."
   },
   "admin.account_actions.posts.content_warning": {
-    "defaultMessage": "CW：{text}",
+    "defaultMessage": "CW: {text}",
     "description": "Description of a post with a content warning in the choice of posts; text is the warning."
   },
   "admin.account_actions.posts.item": {

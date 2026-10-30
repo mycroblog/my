@@ -104,7 +104,7 @@
     "description": "Visually hidden text that names the busy list of notifications while its first page loads."
   },
   "notifications.moderation.action": {
-    "defaultMessage": "{kind}：{category}",
+    "defaultMessage": "{kind}: {category}",
     "description": "In a moderation notice notification: what the action on the user's account does ({kind}, e.g. 'Suspension') and the reason category ({category}, e.g. 'Spam'), both already translated by the server."
   },
   "notifications.moderation.until": {
@@ -112,7 +112,7 @@
     "description": "In a moderation notice notification: when the action on the user's account ends by itself; {date} is a formatted date and time."
   },
   "notifications.post.content_warning": {
-    "defaultMessage": "CW：{summary}",
+    "defaultMessage": "CW: {summary}",
     "description": "A notification's link to the post it is about, when the post is behind its author's content warning: the warning only. {summary} is the warning's text."
   },
   "notifications.post.open": {
@@ -236,7 +236,7 @@
     "description": "Link in the notification of an ended supporter subscription or a retired plan to the supporter page. Not shown in the mobile app."
   },
   "notifications.custom_emoji_request.reason": {
-    "defaultMessage": "管理者の理由：",
+    "defaultMessage": "管理者の理由:",
     "description": "Label before the reason of a rejected custom emoji request in its notification."
   },
   "notifications.type.account_moved": {
@@ -296,7 +296,7 @@
     "description": "Notification sentence: the moderators of the server resolved a report that the user filed. It never says how."
   },
   "notifications.unread": {
-    "defaultMessage": "未読：",
+    "defaultMessage": "未読:",
     "description": "Read by screen readers before the sentence of a notification that was new when the page opened."
   },
   "notifications.unread_count": {
@@ -392,7 +392,7 @@
     "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
   },
   "notifications.announcement.titled": {
-    "defaultMessage": "お知らせ：{title}",
+    "defaultMessage": "お知らせ: {title}",
     "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."
   },
   "notifications.link.announcement": {

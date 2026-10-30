@@ -4,7 +4,7 @@
     "description": "Button that saves the publication settings on the costs screen or the supporters screen."
   },
   "admin.publication.save_failed": {
-    "defaultMessage": "公開範囲を保存できませんでした：{reason}",
+    "defaultMessage": "公開範囲を保存できませんでした: {reason}",
     "description": "Shown beside the save button when the publication settings could not be saved; reason is the server's localized reason."
   },
   "admin.publication.saved": {

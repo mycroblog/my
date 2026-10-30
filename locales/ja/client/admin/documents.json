@@ -4,7 +4,7 @@
     "description": "Label of the text area of a document."
   },
   "admin.documents.body.description": {
-    "defaultMessage": "Markdown で書きます：見出し（#）、箇条書き（-）、リンク（[文字](URL)）、強調（**太字**）。改行はそのまま改行になります。どの言語で書いてもよく、アプリの言語にかかわらず全員が同じ本文を読みます。空にして保存すると、本文を削除します。",
+    "defaultMessage": "Markdown で書きます: 見出し (#)、箇条書き (-)、リンク ([文字](URL))、強調 (**太字**)。改行はそのまま改行になります。どの言語で書いてもよく、アプリの言語にかかわらず全員が同じ本文を読みます。空にして保存すると、本文を削除します。",
     "description": "Description of the text area of a document: the Markdown it takes, that one text serves every language, and how to remove the text."
   },
   "admin.documents.characters_left": {
@@ -48,7 +48,7 @@
     "description": "Button that saves the text of a document in the selected language."
   },
   "admin.documents.save_failed": {
-    "defaultMessage": "本文を保存できませんでした：{reason}",
+    "defaultMessage": "本文を保存できませんでした: {reason}",
     "description": "Error under a document's form when saving failed."
   },
   "admin.documents.saved": {

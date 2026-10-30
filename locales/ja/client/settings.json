@@ -44,7 +44,7 @@
     "description": "Error in the deletion dialog when the password the user typed is not their current password."
   },
   "settings.account.export.description": {
-    "defaultMessage": "投稿（ActivityStreams 形式）、プロフィール、アカウントへのモデレーションの処分と、フォロー・ブロック・ミュート・ブックマークの CSV を ZIP のアーカイブにまとめます。作成には時間がかかり、7 日間ダウンロードできます。",
+    "defaultMessage": "投稿 (ActivityStreams 形式)、プロフィール、アカウントへのモデレーションの処分と、フォロー・ブロック・ミュート・ブックマークの CSV を ZIP のアーカイブにまとめます。作成には時間がかかり、7 日間ダウンロードできます。",
     "description": "Explains the archive of the user's data, above the button that asks for one."
   },
   "settings.account.export.download": {
@@ -104,7 +104,7 @@
     "description": "Heading and document title of the settings page about the user's own account: the archives of their data and deleting the account."
   },
   "settings.autoplay.description": {
-    "defaultMessage": "アニメーション画像（GIF）や絵文字を自動で動かします。オフにすると、投稿やプロフィールは、ポインタを重ねている間、キーボードで中を移動している間、またはタップしてからもう一度タップするまでの間だけ動きます。どちらでも、端末で視差効果を減らす設定にしていれば止まります。このブラウザーに保存します。",
+    "defaultMessage": "アニメーション画像 (GIF) や絵文字を自動で動かします。オフにすると、投稿やプロフィールは、ポインタを重ねている間、キーボードで中を移動している間、またはタップしてからもう一度タップするまでの間だけ動きます。どちらでも、端末で視差効果を減らす設定にしていれば止まります。このブラウザーに保存します。",
     "description": "Help text of the switch that turns the autoplay of animated images on or off."
   },
   "settings.autoplay.label": {
@@ -200,7 +200,7 @@
     "description": "Label of the number of entries of an import that could not be carried out, e.g. accounts that no longer exist."
   },
   "settings.import_export.history.item": {
-    "defaultMessage": "{kind}（{date}）",
+    "defaultMessage": "{kind} ({date})",
     "description": "Heading of one import in the list. {kind} is the name of the list, e.g. Follows; {date} is when the import started, a formatted date and time."
   },
   "settings.import_export.history.mode": {
@@ -236,7 +236,7 @@
     "description": "Button that opens the file picker to choose the CSV file to import."
   },
   "settings.import_export.import.chosen": {
-    "defaultMessage": "選んだファイル：{name}",
+    "defaultMessage": "選んだファイル: {name}",
     "description": "Shows the name of the CSV file the user chose to import. {name} is the file name."
   },
   "settings.import_export.import.description": {
@@ -312,7 +312,7 @@
     "description": "Heading of the list of lines of the file that the import skips."
   },
   "settings.import_export.import.preview.skipped_line": {
-    "defaultMessage": "{line, number} 行目：{value}",
+    "defaultMessage": "{line, number} 行目: {value}",
     "description": "One line of the file that the import skips. {line} is the line number, {value} the line as written."
   },
   "settings.import_export.import.preview.title": {
@@ -352,7 +352,7 @@
     "description": "Heading and document title of the settings page for exporting and importing the user's follows, blocks, mutes, and bookmarks as CSV files."
   },
   "settings.list.action": {
-    "defaultMessage": "{action}：{name}",
+    "defaultMessage": "{action}: {name}",
     "description": "Accessible name of a button in a list of accounts. {action} is the button's visible text (for example 'Unblock'), {name} the account's display name."
   },
   "settings.list.more": {
@@ -400,7 +400,7 @@
     "description": "When a mute ends, under the muted account. {date} is a formatted date and time."
   },
   "settings.navigation.description": {
-    "defaultMessage": "ナビゲーションに出す項目とその順番を選びます。電話では、表示する項目の{count, plural, other {最初の # つ}}がタブバーに、残りがメニューに入ります。設定は常に表示します。このブラウザーに保存します。",
+    "defaultMessage": "ナビゲーションに出す項目とその順番を選びます。モバイルでは、表示する項目の{count, plural, other {最初の # つ}}がタブバーに、残りがメニューに入ります。設定は常に表示します。このブラウザーに保存します。",
     "description": "Help text of the navigation section. {count} is how many shown items the bottom tab bar of phones holds (5); the name of the Settings item is shell.nav.settings."
   },
   "settings.navigation.hidden": {
@@ -408,11 +408,11 @@
     "description": "Help text under an item of the navigation section whose checkbox is off: it is not in the navigation."
   },
   "settings.navigation.in_menu": {
-    "defaultMessage": "電話ではメニューに表示",
+    "defaultMessage": "モバイルではメニューに表示",
     "description": "Help text under an item of the navigation section: the item is shown in the menu (the sheet opened by the Menu button) on phones, and in the side rail on larger screens."
   },
   "settings.navigation.in_tab_bar": {
-    "defaultMessage": "電話ではタブバーに表示",
+    "defaultMessage": "モバイルではタブバーに表示",
     "description": "Help text under an item of the navigation section: the item is shown in the bottom tab bar on phones."
   },
   "settings.navigation.move_down": {
@@ -428,7 +428,7 @@
     "description": "Announced to screen readers after an item of the navigation moved. {name} is the item's label, {position} its new place counted from 1, {count} the number of items."
   },
   "settings.navigation.preview": {
-    "defaultMessage": "電話のタブバー",
+    "defaultMessage": "モバイルのタブバー",
     "description": "Caption under the preview of the bottom tab bar of phones in the navigation section: the icons and labels of the items it holds, then Menu (shell.nav.menu)."
   },
   "settings.navigation.reset": {
@@ -468,7 +468,7 @@
     "description": "Heading of the section of the preferences page with what new posts start with: the visibility, who may quote, the language, and whether every attachment needs a description."
   },
   "settings.preferences.posting.description": {
-    "defaultMessage": "新しい投稿は、ここで選んだ値で始まります（投稿ごとに変えられます）。アカウントに保存します。",
+    "defaultMessage": "新しい投稿は、ここで選んだ値で始まります (投稿ごとに変えられます)。アカウントに保存します。",
     "description": "Description under the section of the preferences page with what new posts start with."
   },
   "settings.preferences.timeline.title": {
@@ -668,7 +668,7 @@
     "description": "Shown in the push notification settings when the browser has no Push API."
   },
   "settings.require_media_description.description": {
-    "defaultMessage": "投稿する前に、説明（代替テキスト）のない画像・動画・音声に説明を付けるよう求めます。見られない人・聞こえない人もあなたの投稿を追えるようにするためです。",
+    "defaultMessage": "投稿する前に、説明 (代替テキスト) のない画像・動画・音声に説明を付けるよう求めます。見られない人・聞こえない人もあなたの投稿を追えるようにするためです。",
     "description": "Help text of the switch that asks for a description of every attachment."
   },
   "settings.require_media_description.label": {
@@ -700,7 +700,7 @@
     "description": "Option of the color theme radio group: follow the device's light or dark setting."
   },
   "settings.time_zone.device_differs": {
-    "defaultMessage": "この端末のタイムゾーンは設定と違います：{zone}",
+    "defaultMessage": "この端末のタイムゾーンは設定と違います: {zone}",
     "description": "Note under the time zone select when the chosen zone is not the time zone of the device in use. {zone} is that device zone as the select names it, like (UTC+09:00) Japan Standard Time."
   },
   "settings.time_zone.description": {
@@ -716,7 +716,7 @@
     "description": "Option of the time zone select for a zone that has no name, only its difference from UTC. {offset} is like +05:00 or −05:00."
   },
   "settings.time_zone.option": {
-    "defaultMessage": "（UTC{offset}）{name}",
+    "defaultMessage": "(UTC{offset}) {name}",
     "description": "Option of the time zone select. {offset} is the zone's difference from UTC, like +09:00 or −05:00; {name} is the zone's name in the display language, like Japan Standard Time."
   },
   "settings.time_zone.use_device": {
@@ -840,7 +840,7 @@
     "description": "Status after the automatic deletion settings were saved turned off."
   },
   "settings.auto_delete.save_failed": {
-    "defaultMessage": "設定を保存できませんでした：{reason}",
+    "defaultMessage": "設定を保存できませんでした: {reason}",
     "description": "Error after saving the automatic deletion settings failed. {reason} is the localized reason."
   },
   "settings.auto_delete.unsaved.title": {
@@ -944,11 +944,11 @@
     "description": "Error when two-factor authentication was turned on or off in another tab or device meanwhile."
   },
   "settings.two_factor.rate_limited": {
-    "defaultMessage": "間違ったコードが多すぎます：{reason}",
+    "defaultMessage": "間違ったコードが多すぎます: {reason}",
     "description": "Error after too many wrong codes. {reason} is the server's explanation of when to try again."
   },
   "settings.two_factor.failed": {
-    "defaultMessage": "二要素認証を変更できませんでした：{reason}",
+    "defaultMessage": "二要素認証を変更できませんでした: {reason}",
     "description": "Error when a change of two-factor authentication failed. {reason} is the server's explanation."
   },
   "settings.two_factor.enabled": {
@@ -1072,11 +1072,11 @@
     "description": "Alert when the user already has the most passkeys allowed (20)."
   },
   "settings.passkeys.add.rate_limited": {
-    "defaultMessage": "間違ったパスワードが多すぎます：{reason}",
+    "defaultMessage": "間違ったパスワードが多すぎます: {reason}",
     "description": "Alert when too many wrong passwords were entered to add a passkey. {reason} is the server's message, which says when to try again."
   },
   "settings.passkeys.add.failed": {
-    "defaultMessage": "パスキーを追加できませんでした：{reason}",
+    "defaultMessage": "パスキーを追加できませんでした: {reason}",
     "description": "Alert when adding a passkey failed for another reason. {reason} is the error's message."
   },
   "settings.passkeys.added": {
@@ -1116,7 +1116,7 @@
     "description": "Button that closes the dialog without removing the passkey."
   },
   "settings.passkeys.remove.failed": {
-    "defaultMessage": "パスキーを削除できませんでした：{reason}",
+    "defaultMessage": "パスキーを削除できませんでした: {reason}",
     "description": "Alert in the dialog when removing a passkey failed. {reason} is the error's message."
   },
   "settings.passkeys.removed": {
@@ -1168,11 +1168,11 @@
     "description": "Status after the password was changed."
   },
   "settings.password.rate_limited": {
-    "defaultMessage": "間違ったパスワードが多すぎます：{reason}",
+    "defaultMessage": "間違ったパスワードが多すぎます: {reason}",
     "description": "Alert when too many wrong current passwords were entered to change the password. {reason} is the server's message, which says when to try again."
   },
   "settings.password.failed": {
-    "defaultMessage": "パスワードを変更できませんでした：{reason}",
+    "defaultMessage": "パスワードを変更できませんでした: {reason}",
     "description": "Alert when changing the password failed for another reason. {reason} is the error's message."
   },
   "settings.password.remove.title": {
@@ -1212,7 +1212,7 @@
     "description": "Status after the password was removed."
   },
   "settings.password.remove.failed": {
-    "defaultMessage": "パスワードを削除できませんでした：{reason}",
+    "defaultMessage": "パスワードを削除できませんでした: {reason}",
     "description": "Alert in the dialog when removing the password failed. {reason} is the error's message."
   },
   "settings.password.set.title": {
@@ -1276,7 +1276,7 @@
     "description": "Announced when a badge is hidden. {badge} is the badge's name, which the staff wrote."
   },
   "settings.profile.badges.failed": {
-    "defaultMessage": "バッジを変えられませんでした：{reason}",
+    "defaultMessage": "バッジを変えられませんでした: {reason}",
     "description": "Error under a badge's switch when the change was not saved. {reason} is the localized reason."
   },
   "settings.domain_mutes.title": {
@@ -1312,7 +1312,7 @@
     "description": "Button that mutes the domain entered in the field."
   },
   "settings.domain_mutes.mute_failed": {
-    "defaultMessage": "ドメインをミュートできませんでした：{reason}",
+    "defaultMessage": "ドメインをミュートできませんでした: {reason}",
     "description": "Shown under the form when muting a domain fails. {reason} is the server's explanation."
   },
   "settings.domain_mutes.muted": {
@@ -1376,7 +1376,7 @@
     "description": "Label of the optional website field of an OAuth app."
   },
   "settings.apps.website.description": {
-    "defaultMessage": "任意です。アプリのホームページの URL です（https または http で始まるもの）。",
+    "defaultMessage": "任意です。アプリのホームページの URL です (https または http で始まるもの)。",
     "description": "Description of the website field of an OAuth app."
   },
   "settings.apps.redirect_uris": {
@@ -1384,7 +1384,7 @@
     "description": "Label of the field of the redirect URIs of an OAuth app."
   },
   "settings.apps.redirect_uris.description": {
-    "defaultMessage": "1 行に 1 つ、{max}個までです。https の URL、アプリ独自のスキーム（com.example.app の形式）、ループバックの URL（127.0.0.1 の http）を使えます。",
+    "defaultMessage": "1 行に 1 つ、{max}個までです。https の URL、アプリ独自のスキーム (com.example.app の形式)、ループバックの URL (127.0.0.1 の http) を使えます。",
     "description": "Description of the redirect URIs field of an OAuth app. {max} is the most URIs."
   },
   "settings.apps.redirect_uris.required": {
@@ -1396,7 +1396,7 @@
     "description": "Label of the field of the scopes of an OAuth app."
   },
   "settings.apps.scope.description": {
-    "defaultMessage": "アプリが要求できる範囲の上限を、スペースで区切って入力します（例：「read write」）。管理やサポーターのスコープはアプリには使えません。",
+    "defaultMessage": "アプリが要求できる範囲の上限を、スペースで区切って入力します (例: 「read write」)。管理やサポーターのスコープはアプリには使えません。",
     "description": "Description of the scopes field of an OAuth app."
   },
   "settings.apps.scope.required": {
@@ -1408,7 +1408,7 @@
     "description": "Legend of the choice between a public and a confidential OAuth app."
   },
   "settings.apps.client_type.public": {
-    "defaultMessage": "公開（public）",
+    "defaultMessage": "公開 (public)",
     "description": "Choice of a public OAuth app."
   },
   "settings.apps.client_type.public.description": {
@@ -1416,7 +1416,7 @@
     "description": "Description of the choice of a public OAuth app."
   },
   "settings.apps.client_type.confidential": {
-    "defaultMessage": "非公開（confidential）",
+    "defaultMessage": "非公開 (confidential)",
     "description": "Choice of a confidential OAuth app."
   },
   "settings.apps.client_type.confidential.description": {
@@ -1428,7 +1428,7 @@
     "description": "Button that registers an OAuth app."
   },
   "settings.apps.register_failed": {
-    "defaultMessage": "アプリを登録できませんでした：{reason}",
+    "defaultMessage": "アプリを登録できませんでした: {reason}",
     "description": "Alert when registering an OAuth app failed. {reason} is the server's explanation."
   },
   "settings.apps.registered": {
@@ -1488,7 +1488,7 @@
     "description": "Button that saves the changes to an OAuth app."
   },
   "settings.apps.save_failed": {
-    "defaultMessage": "アプリを保存できませんでした：{reason}",
+    "defaultMessage": "アプリを保存できませんでした: {reason}",
     "description": "Alert when saving an OAuth app failed. {reason} is the server's explanation."
   },
   "settings.apps.saved": {
@@ -1508,7 +1508,7 @@
     "description": "Explanation in the dialog that confirms deleting an OAuth app."
   },
   "settings.apps.delete.failed": {
-    "defaultMessage": "アプリを削除できませんでした：{reason}",
+    "defaultMessage": "アプリを削除できませんでした: {reason}",
     "description": "Alert when deleting an OAuth app failed. {reason} is the server's explanation."
   },
   "settings.apps.deleted": {
@@ -1528,7 +1528,7 @@
     "description": "Explanation in the dialog that confirms a new secret for an OAuth app."
   },
   "settings.apps.rotate.failed": {
-    "defaultMessage": "シークレットを再発行できませんでした：{reason}",
+    "defaultMessage": "シークレットを再発行できませんでした: {reason}",
     "description": "Alert when giving an OAuth app a new secret failed. {reason} is the server's explanation."
   },
   "settings.apps.token": {
@@ -1556,7 +1556,7 @@
     "description": "Button that issues tokens of an OAuth app."
   },
   "settings.apps.token.failed": {
-    "defaultMessage": "トークンを発行できませんでした：{reason}",
+    "defaultMessage": "トークンを発行できませんでした: {reason}",
     "description": "Alert when issuing tokens failed. {reason} is the server's explanation."
   },
   "settings.apps.token.result.title": {
@@ -1580,7 +1580,7 @@
     "description": "Label of the issued refresh token."
   },
   "settings.apps.token.granted_scope": {
-    "defaultMessage": "スコープ：{scope}",
+    "defaultMessage": "スコープ: {scope}",
     "description": "The scopes of the issued tokens. {scope} is a list of scopes."
   },
   "settings.apps.secret.title": {
@@ -1604,7 +1604,7 @@
     "description": "Button that copies a value to the clipboard."
   },
   "settings.apps.copy.label": {
-    "defaultMessage": "コピー：{name}",
+    "defaultMessage": "コピー: {name}",
     "description": "Accessible name of a button that copies a value. {name} is the value's label."
   },
   "settings.apps.copied": {
@@ -1664,7 +1664,7 @@
     "description": "Label of when an authorized app last made a request."
   },
   "settings.authorized_apps.last_used.at": {
-    "defaultMessage": "{date}（1 時間単位）",
+    "defaultMessage": "{date} (1 時間単位)",
     "description": "When an app was last used. {date} is a date with the hour only, because the server records the time to the hour."
   },
   "settings.authorized_apps.last_used.never": {
@@ -1692,7 +1692,7 @@
     "description": "Button that closes the dialog without revoking the app."
   },
   "settings.authorized_apps.revoke.failed": {
-    "defaultMessage": "アプリを取り消せませんでした：{reason}",
+    "defaultMessage": "アプリを取り消せませんでした: {reason}",
     "description": "Alert in the dialog when revoking an authorized app failed. {reason} is the error's message."
   },
   "settings.authorized_apps.revoked": {
@@ -1728,7 +1728,7 @@
     "description": "Shown next to that button, and read out, after the verification email was sent."
   },
   "settings.email_suppression.verification.failed": {
-    "defaultMessage": "確認のメールを送れませんでした：{reason} もう一度試してください。",
+    "defaultMessage": "確認のメールを送れませんでした: {reason} もう一度試してください。",
     "description": "Alert next to that button when the email could not be sent. {reason} is the server's explanation."
   },
   "settings.email_suppression.verification.rate_limited": {
@@ -1784,7 +1784,7 @@
     "description": "Error in the dialog that unlinks an account when the account is the user's last way to sign in."
   },
   "settings.linked_accounts.unlink.failed": {
-    "defaultMessage": "連携を解除できませんでした：{reason}",
+    "defaultMessage": "連携を解除できませんでした: {reason}",
     "description": "Error in the dialog that unlinks an account. {reason} is the server's or the network's reason."
   },
   "settings.linked_accounts.unlinked": {
@@ -1844,7 +1844,7 @@
     "description": "Button that closes the dialog that links an account."
   },
   "settings.linked_accounts.link.failed": {
-    "defaultMessage": "連携を始められませんでした：{reason}",
+    "defaultMessage": "連携を始められませんでした: {reason}",
     "description": "Error in the dialog that links an account. {reason} is the server's or the network's reason."
   },
   "settings.linked_accounts.linked": {
@@ -1892,7 +1892,7 @@
     "description": "Note once the user confirmed an operation at a linked service and came back. {provider} is the service's name."
   },
   "settings.external_confirmation.start_failed": {
-    "defaultMessage": "確認を始められませんでした：{reason}",
+    "defaultMessage": "確認を始められませんでした: {reason}",
     "description": "Alert when starting a confirmation with a linked service failed. {reason} is the server's or the network's reason."
   },
   "settings.external_confirmation.failed.mismatch": {
@@ -1940,7 +1940,7 @@
     "description": "Shown instead of the form of a new invite when the user may not create invites: the server or their roles do not let them, their account is restricted, or the server takes no new accounts."
   },
   "settings.invites.usage": {
-    "defaultMessage": "使える招待：{max, number} 件中 {usable, number} 件",
+    "defaultMessage": "使える招待: {max, number} 件中 {usable, number} 件",
     "description": "How many usable invites the user holds, and how many the server lets one person hold at once."
   },
   "settings.invites.full": {
@@ -1952,7 +1952,7 @@
     "description": "Label of the choice of how many people may sign up with a new invite."
   },
   "settings.invites.max_uses.description": {
-    "defaultMessage": "この招待で登録できる人数です（{max, number} 人まで）。",
+    "defaultMessage": "この招待で登録できる人数です ({max, number} 人まで)。",
     "description": "Help of the number of sign-ups of a new invite. {max} is the most the server allows."
   },
   "settings.invites.uses": {
@@ -1964,7 +1964,7 @@
     "description": "Label of the choice of how long a new invite works."
   },
   "settings.invites.expires_in.description": {
-    "defaultMessage": "この期間が過ぎると招待は使えなくなります（最長 {max}）。",
+    "defaultMessage": "この期間が過ぎると招待は使えなくなります (最長 {max})。",
     "description": "Help of how long a new invite works. {max} is the longest time the server allows, formatted like the options (for example \"30 days\")."
   },
   "settings.invites.duration.minutes": {
@@ -1984,7 +1984,7 @@
     "description": "Button that creates a new invite on the user's invites page."
   },
   "settings.invites.create_failed": {
-    "defaultMessage": "招待を作成できませんでした：{reason}",
+    "defaultMessage": "招待を作成できませんでした: {reason}",
     "description": "Error when creating an invite failed. {reason} is the server's reason."
   },
   "settings.invites.created": {
@@ -1992,7 +1992,7 @@
     "description": "Status after the user created an invite. {code} is its code."
   },
   "settings.invites.link": {
-    "defaultMessage": "招待する人に次のリンクを送ってください：",
+    "defaultMessage": "招待する人に次のリンクを送ってください:",
     "description": "Text before the sign-up link of a new invite."
   },
   "settings.invites.list.title": {
@@ -2052,7 +2052,7 @@
     "description": "Button that copies the sign-up link of an invite."
   },
   "settings.invites.copy_invite": {
-    "defaultMessage": "{action}：{code}",
+    "defaultMessage": "{action}: {code}",
     "description": "Accessible name of the copy button of an invite: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Copy link') and {code} the invite's code."
   },
   "settings.invites.copied": {
@@ -2068,7 +2068,7 @@
     "description": "Button that revokes an invite at once."
   },
   "settings.invites.revoke_invite": {
-    "defaultMessage": "失効：招待 {code}（{date} に作成）",
+    "defaultMessage": "失効: 招待 {code} ({date} に作成)",
     "description": "Accessible name of the revoke button of an invite. {code} is its code; {date} when it was created, formatted."
   },
   "settings.invites.revoked": {
@@ -2076,7 +2076,7 @@
     "description": "Status after the user revoked an invite. {code} is its code."
   },
   "settings.invites.revoke_failed": {
-    "defaultMessage": "招待を失効させられませんでした：{reason}",
+    "defaultMessage": "招待を失効させられませんでした: {reason}",
     "description": "Toast when revoking an invite failed. {reason} is the server's reason."
   },
   "settings.notifications.title": {
@@ -2084,7 +2084,7 @@
     "description": "Title of the settings page of notifications (which notifications arrive in the app, by push, by email, and with a sound), and its entry in the settings menu."
   },
   "settings.notifications.table.description": {
-    "defaultMessage": "通知の種類ごとに、または列の「すべて」で列ごとに、受け取り方を選びます。アプリ内でオフにした種類の通知は作られないので、プッシュ・メール・音でも届きません（届いている通知は残ります）。",
+    "defaultMessage": "通知の種類ごとに、または列の「すべて」で列ごとに、受け取り方を選びます。アプリ内でオフにした種類の通知は作られないので、プッシュ・メール・音でも届きません (届いている通知は残ります)。",
     "description": "Help text above the tables of the notification settings: a row or a whole column (its All box), and turning a kind off in the app stops it everywhere."
   },
   "settings.notifications.section.ordinary": {
@@ -2104,7 +2104,7 @@
     "description": "Header of the first column of the notification settings tables, which names the kind of notification of each row."
   },
   "settings.notifications.column.all": {
-    "defaultMessage": "すべて：{section}の{channel}",
+    "defaultMessage": "すべて: {section}の{channel}",
     "description": "Accessible name of a checkbox of the All row of a notification settings table, which turns every cell of its column on or off at once. Starts with the row header (settings.notifications.column.all.short). {channel} is the column (In the app, Push, Email, Sound); {section} is the table's heading."
   },
   "settings.notifications.column.all.short": {
@@ -2116,7 +2116,7 @@
     "description": "Note under the name of a row of the notification settings table whose in-app cell is off, which is why its other cells cannot be changed."
   },
   "settings.notifications.row.always_on": {
-    "defaultMessage": "常にオン：{channels}。",
+    "defaultMessage": "常にオン: {channels}。",
     "description": "Note under the name of a row of the notification settings table with cells that cannot be turned off. {channels} is a list of the column names (In the app, Email)."
   },
   "settings.notifications.channel.in_app": {
@@ -2136,7 +2136,7 @@
     "description": "Column header of the notification settings tables: whether this device plays a sound when the notifications arrive while the app is open."
   },
   "settings.notifications.cell": {
-    "defaultMessage": "{type}：{channel}",
+    "defaultMessage": "{type}: {channel}",
     "description": "Accessible name of a checkbox of the notification settings tables. {type} is the row (a kind of notification), {channel} the column (In the app, Push, Email, Sound)."
   },
   "settings.notifications.group.mention": {
@@ -2292,7 +2292,7 @@
     "description": "Heading of the section of the profile settings with whether follow requests need approval and whether the account is a bot."
   },
   "settings.profile.save_failed": {
-    "defaultMessage": "プロフィールを保存できませんでした：{reason}",
+    "defaultMessage": "プロフィールを保存できませんでした: {reason}",
     "description": "Error beside the save button of the profile settings when the server refused the save. {reason} is the server's reason."
   },
   "settings.auto_delete.policy": {
@@ -2332,7 +2332,7 @@
     "description": "Accessible name of the box of an example post that the automatic deletion would delete."
   },
   "settings.auto_delete.preview.failed": {
-    "defaultMessage": "投稿を数えられませんでした：{reason}",
+    "defaultMessage": "投稿を数えられませんでした: {reason}",
     "description": "Error in place of the estimate of the automatic deletion. {reason} is the localized reason."
   },
   "settings.security.title": {
@@ -2400,7 +2400,7 @@
     "description": "Text of the empty list of muted domains, above the button that mutes one."
   },
   "settings.domain_mutes.unmute_failed": {
-    "defaultMessage": "{domain} のミュートを解除できませんでした：{reason}",
+    "defaultMessage": "{domain} のミュートを解除できませんでした: {reason}",
     "description": "Error above the list of muted domains when unmuting one failed. {domain} is the domain; {reason} is the server's explanation."
   },
   "settings.linked_accounts.count": {

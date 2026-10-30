@@ -32,7 +32,7 @@
     "description": "State of a custom emoji request that its requester withdrew."
   },
   "custom_emoji_requests.state.lapsed": {
-    "defaultMessage": "失効（絵文字が削除されました）",
+    "defaultMessage": "失効 (絵文字が削除されました)",
     "description": "State of a request for a new image of a custom emoji that was deleted before the request was decided."
   },
   "custom_emoji_requests.created_at": {

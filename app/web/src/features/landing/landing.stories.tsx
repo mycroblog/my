@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
-import { instanceFixture, type Schemas, statusPage } from "../../test/fixtures";
+import { type Schemas, statusPage } from "../../test/fixtures";
 import { apiBase } from "../../test/msw/http";
 import {
   answering,
@@ -15,10 +15,11 @@ import {
   screenLoader,
   settled,
 } from "../../test/stories";
+import { instanceWithContact } from "./test/handlers";
 
 /** GET /instance answering a server with a summary and rules, which takes members by approval. */
 function instanceWith(changes: Partial<Schemas["Instance"]>) {
-  return http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, ...changes }));
+  return http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceWithContact, ...changes }));
 }
 
 const described = instanceWith({
@@ -40,7 +41,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A server with a summary, rules, counts, and its operator; the progress line moves to the section it names. */
+/** A server with a summary, rules, counts, and the account to contact; the progress line moves to the section it names. */
 export const Normal: Story = {
   play: async (context) => {
     const { canvas, userEvent } = context;
@@ -69,10 +70,10 @@ export const Empty: Story = answering(
   http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([]))),
 );
 
-/** The server's counts and operators have not arrived yet. */
+/** The server's counts have not arrived yet. */
 export const Loading: Story = loadingOn("get", "/instance/overview");
 
-/** The server failed to answer its counts and operators. */
+/** The server failed to answer its counts. */
 export const ServerError: Story = failingOn("get", "/instance/overview");
 
 /** In Japanese, with a summary of the length a Japanese server writes. */

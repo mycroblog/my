@@ -60,7 +60,7 @@
     "description": "Status message after disabling the supporter program."
   },
   "admin.supporters.program.failed": {
-    "defaultMessage": "課金の機能を切り替えられませんでした：{reason}",
+    "defaultMessage": "課金の機能を切り替えられませんでした: {reason}",
     "description": "Error of enabling or disabling the program, with the server's reason."
   },
   "admin.supporters.warning.no_provider": {
@@ -100,7 +100,7 @@
     "description": "Term of the payment provider's mode (test or live)."
   },
   "admin.supporters.payment.mode.test": {
-    "defaultMessage": "テスト（実際の請求は起きません）",
+    "defaultMessage": "テスト (実際の請求は起きません)",
     "description": "Value of the mode for test credentials."
   },
   "admin.supporters.payment.mode.live": {
@@ -132,7 +132,7 @@
     "description": "Outcome of a reconciliation that succeeded."
   },
   "admin.supporters.payment.outcome.partial": {
-    "defaultMessage": "途中まで（続きが引き継ぎます）",
+    "defaultMessage": "途中まで (続きが引き継ぎます)",
     "description": "Outcome of a reconciliation that used its request cap; a continuation goes on."
   },
   "admin.supporters.payment.outcome.failed": {
@@ -152,7 +152,7 @@
     "description": "Term of the subscriptions whose state the last reconciliation changed."
   },
   "admin.supporters.payment.error.request_cap": {
-    "defaultMessage": "1 回の照合の要求の上限（payments_reconcile_max_requests）に達し、1 分後に続きが引き継ぎます。多くの回でこうなるなら、payments_reconcile_max_requests を上げるか payments_reconcile_interval を延ばしてください。",
+    "defaultMessage": "1 回の照合の要求の上限 (payments_reconcile_max_requests) に達し、1 分後に続きが引き継ぎます。多くの回でこうなるなら、payments_reconcile_max_requests を上げるか payments_reconcile_interval を延ばしてください。",
     "description": "How to fix a reconciliation that stopped at its request cap."
   },
   "admin.supporters.payment.error.permission": {
@@ -184,7 +184,7 @@
     "description": "How to fix a failure for a stale signature."
   },
   "admin.supporters.payment.error.mode_mismatch": {
-    "defaultMessage": "API の鍵のモード（テストかライブ）が事業者の側と違います。同じモードの API の鍵と webhook の署名シークレットを使って、再デプロイしてください。",
+    "defaultMessage": "API の鍵のモード (テストかライブ) が事業者の側と違います。同じモードの API の鍵と webhook の署名シークレットを使って、再デプロイしてください。",
     "description": "How to fix a failure for a mode mismatch."
   },
   "admin.supporters.payment.error.invalid_response": {
@@ -200,7 +200,7 @@
     "description": "Warning of the payment provider section: the last reconciliation corrected subscriptions."
   },
   "admin.supporters.payment.reconcile.description": {
-    "defaultMessage": "照合は、定期の照合を待たずに、事業者から加入とお金の動きを今すぐ読み直します。1 時間（UTC）に 1 回まで実行でき、監査ログに残ります。",
+    "defaultMessage": "照合は、定期の照合を待たずに、事業者から加入とお金の動きを今すぐ読み直します。1 時間 (UTC) に 1 回まで実行でき、監査ログに残ります。",
     "description": "Description of the button that reconciles with the payment provider now."
   },
   "admin.supporters.payment.reconcile.run": {
@@ -212,11 +212,11 @@
     "description": "Status message after queueing a reconciliation."
   },
   "admin.supporters.payment.reconcile.too_soon": {
-    "defaultMessage": "この 1 時間（UTC）の照合はもう実行されています。次の 1 時間に試してください。",
+    "defaultMessage": "この 1 時間 (UTC) の照合はもう実行されています。次の 1 時間に試してください。",
     "description": "Error of a reconciliation started again within the same UTC hour."
   },
   "admin.supporters.payment.reconcile.failed": {
-    "defaultMessage": "照合を始められませんでした：{reason}",
+    "defaultMessage": "照合を始められませんでした: {reason}",
     "description": "Error of starting a reconciliation, with the server's reason."
   },
   "admin.supporters.new.title": {
@@ -244,7 +244,7 @@
     "description": "Error of the role field of a new plan when it is empty."
   },
   "admin.supporters.plan.role_value": {
-    "defaultMessage": "{role}（位置 {position}）",
+    "defaultMessage": "{role} (位置 {position})",
     "description": "The role of a plan in the list: its key and position."
   },
   "admin.supporters.plan.role.no_permissions": {
@@ -304,7 +304,7 @@
     "description": "Error of the currency field."
   },
   "admin.supporters.plan.discount": {
-    "defaultMessage": "年払いの割引率（%）",
+    "defaultMessage": "年払いの割引率 (%)",
     "description": "Label of the discount of the yearly price."
   },
   "admin.supporters.plan.discount.description": {
@@ -312,11 +312,11 @@
     "description": "Description of the yearly discount field."
   },
   "admin.supporters.plan.emoji_limit": {
-    "defaultMessage": "絵文字の作成数の上限（毎月）",
+    "defaultMessage": "絵文字の作成数の上限 (毎月)",
     "description": "Label of the monthly custom emoji limit of a plan, and its term in the list."
   },
   "admin.supporters.plan.emoji_limit.description": {
-    "defaultMessage": "ロールが絵文字の作成を許すとき、加入者が 1 か月（UTC）に作れる数です。",
+    "defaultMessage": "ロールが絵文字の作成を許すとき、加入者が 1 か月 (UTC) に作れる数です。",
     "description": "Description of the monthly custom emoji limit field."
   },
   "admin.supporters.plan.rank": {
@@ -352,7 +352,7 @@
     "description": "Visibility of a plan that takes no new subscriptions; its subscriptions go on."
   },
   "admin.supporters.plan.save_failed": {
-    "defaultMessage": "プランを保存できませんでした：{reason}",
+    "defaultMessage": "プランを保存できませんでした: {reason}",
     "description": "Error of saving a plan, with the server's reason."
   },
   "admin.supporters.plan.created": {
@@ -368,7 +368,7 @@
     "description": "Status message after retiring a plan."
   },
   "admin.supporters.plan.change_failed": {
-    "defaultMessage": "プランを変更できませんでした：{reason}",
+    "defaultMessage": "プランを変更できませんでした: {reason}",
     "description": "Error of retiring a plan, with the server's reason."
   },
   "admin.supporters.plans.title": {
@@ -404,7 +404,7 @@
     "description": "Term of the yearly price of a plan."
   },
   "admin.supporters.plan.yearly_value": {
-    "defaultMessage": "{amount}（{discount}% 割引）",
+    "defaultMessage": "{amount} ({discount}% 割引)",
     "description": "The yearly price of a plan and its discount in percent."
   },
   "admin.supporters.plan.members": {
@@ -444,7 +444,7 @@
     "description": "Title of the confirmation before retiring a plan."
   },
   "admin.supporters.plan.retire.description": {
-    "defaultMessage": "元に戻せません。プランは新しい加入を受け付けなくなり、すべての加入が期間の終わりに解約されます（支払いの前の加入はすぐに終わります）。",
+    "defaultMessage": "元に戻せません。プランは新しい加入を受け付けなくなり、すべての加入が期間の終わりに解約されます (支払いの前の加入はすぐに終わります)。",
     "description": "Explanation in the confirmation before retiring a plan."
   },
   "admin.supporters.cancel": {
@@ -576,7 +576,7 @@
     "description": "Button that ends a subscription at once, and the confirm button of its dialog."
   },
   "admin.supporters.subscription.cancel_of": {
-    "defaultMessage": "{action}：{name}",
+    "defaultMessage": "{action}: {name}",
     "description": "Accessible name of the button that ends a subscription at once: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('End now') and {name} the supporter."
   },
   "admin.supporters.subscription.cancel.title": {
@@ -592,7 +592,7 @@
     "description": "Status message after ending a subscription at once."
   },
   "admin.supporters.subscription.cancel_failed": {
-    "defaultMessage": "加入を解約できませんでした：{reason}",
+    "defaultMessage": "加入を解約できませんでした: {reason}",
     "description": "Error of ending a subscription, with the server's reason."
   },
   "admin.supporters.list_visibility": {

@@ -64,7 +64,7 @@
     "description": "Title of the confirmation before upholding an appeal."
   },
   "admin.appeal.decide_failed": {
-    "defaultMessage": "決定を保存できませんでした：{reason}",
+    "defaultMessage": "決定を保存できませんでした: {reason}",
     "description": "Error in the confirmation of a decision on an appeal when the request failed. {reason} is why."
   },
   "admin.appeal.decided_at": {

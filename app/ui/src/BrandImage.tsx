@@ -17,7 +17,7 @@ const brandIcon = tv({
   base: "block shrink-0 object-contain",
   variants: {
     size: {
-      /** Fills its box, such as the mark's tile of a calling card. */
+      /** Fills its box. */
       fill: "size-full",
       /** Beside the server's name in a panel. */
       md: "size-10 rounded-lg",

@@ -76,7 +76,7 @@
     "description": "Button that closes the report dialog after the report was sent."
   },
   "report.failed": {
-    "defaultMessage": "通報を送信できませんでした：{reason}",
+    "defaultMessage": "通報を送信できませんでした: {reason}",
     "description": "Error in the report dialog when sending the report failed; the answers are kept. {reason} is the error message, a full sentence."
   },
   "report.forward": {
@@ -96,7 +96,7 @@
     "description": "Menu item on another account's post or profile that opens the dialog to report the account to the moderators."
   },
   "report.posts.content_warning": {
-    "defaultMessage": "CW：{text}",
+    "defaultMessage": "CW: {text}",
     "description": "Shown instead of the text of a post with a content warning in the report dialog. {text} is the warning the author wrote."
   },
   "report.posts.description": {

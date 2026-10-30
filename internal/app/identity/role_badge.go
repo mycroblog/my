@@ -59,49 +59,6 @@ func (s *Service) ProfileBadges(ctx context.Context, userID string) ([]identity.
 	return s.d.Repository.ListProfileBadges(ctx, userID)
 }
 
-// PublicStaffUserIDs returns the users who show the badge of a staff role (identity.IsStaffRole)
-// on their profile, by their highest such role, highest first, and by ID within a role: who
-// runs the instance, as GET /instance/overview lists them. A staff member who shows no such
-// badge is left out, so that nobody is listed without having chosen to show their role.
-func (s *Service) PublicStaffUserIDs(ctx context.Context) ([]string, error) {
-	roles, err := s.d.Repository.ListRoles(ctx)
-	if err != nil {
-		return nil, err
-	}
-	staff := map[string]bool{}
-	for _, r := range roles {
-		if r.Badge != nil && identity.IsStaffRole(r.Key, r.Permissions) {
-			staff[r.ID] = true
-		}
-	}
-	var out []string
-	seen := map[string]bool{}
-	// roles are highest position first, so each user comes under their highest staff role.
-	for _, r := range roles {
-		if !staff[r.ID] {
-			continue
-		}
-		holders, err := s.d.Repository.ListRoleHolderIDs(ctx, r.ID)
-		if err != nil {
-			return nil, err
-		}
-		for _, userID := range holders {
-			if seen[userID] {
-				continue
-			}
-			badges, err := s.d.Repository.ListProfileBadges(ctx, userID)
-			if err != nil {
-				return nil, err
-			}
-			if slices.ContainsFunc(badges, func(b identity.ProfileBadge) bool { return b.RoleID == r.ID }) {
-				seen[userID] = true
-				out = append(out, userID)
-			}
-		}
-	}
-	return out, nil
-}
-
 // BadgeChoices returns the roles that a user holds and that have a badge, with whether the user
 // shows it on their profile, highest position first.
 func (s *Service) BadgeChoices(ctx context.Context, userID string) ([]identity.BadgeChoice, error) {

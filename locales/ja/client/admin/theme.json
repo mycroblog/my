@@ -1,18 +1,18 @@
 {
   "admin.theme.bounds.default": {
-    "defaultMessage": "既定値：{value}",
+    "defaultMessage": "既定値: {value}",
     "description": "Description of a token field without bounds (font family, shadow, easing). {value} is the default (not translated)."
   },
   "admin.theme.bounds.duration": {
-    "defaultMessage": "既定値：{value}。ms か s で、{min}ms から {max}ms まで。",
+    "defaultMessage": "既定値: {value}。ms か s で、{min}ms から {max}ms まで。",
     "description": "Description of a duration token field."
   },
   "admin.theme.bounds.length": {
-    "defaultMessage": "既定値：{value}。0 か rem / px で、{min}rem から {max}rem まで。",
+    "defaultMessage": "既定値: {value}。0 か rem / px で、{min}rem から {max}rem まで。",
     "description": "Description of a length token field. {value} is the default, {min} and {max} numbers (not translated)."
   },
   "admin.theme.bounds.number": {
-    "defaultMessage": "既定値：{value}。{min} から {max} までの数。",
+    "defaultMessage": "既定値: {value}。{min} から {max} までの数。",
     "description": "Description of a number token field (line height)."
   },
   "admin.theme.color.dark": {
@@ -20,7 +20,7 @@
     "description": "Visible label of the field of a color token's value in the dark theme, after the token name that only assistive technology reads (\"color-accent Dark\")."
   },
   "admin.theme.color.default": {
-    "defaultMessage": "既定値：{value}",
+    "defaultMessage": "既定値: {value}",
     "description": "Description of a color field. {value} is the default color (not translated)."
   },
   "admin.theme.color.light": {
@@ -28,7 +28,7 @@
     "description": "Visible label of the field of a color token's value in the light theme, after the token name that only assistive technology reads (\"color-accent Light\")."
   },
   "admin.theme.colors.description": {
-    "defaultMessage": "色はライトとダークのテーマごとに #rrggbb で指定します。既定値に透明度のある色は #rrggbbaa で指定します。文字と操作部品は、その背景とのコントラスト（WCAG 2.2 AA）を保つ必要があるので、1 つの色を変えると別の色も変える必要があることがあります。",
+    "defaultMessage": "色はライトとダークのテーマごとに #rrggbb で指定します。既定値に透明度のある色は #rrggbbaa で指定します。文字と操作部品は、その背景とのコントラスト (WCAG 2.2 AA) を保つ必要があるので、1 つの色を変えると別の色も変える必要があることがあります。",
     "description": "Description of the colors section of the theme screen."
   },
   "admin.theme.colors.title": {
@@ -44,7 +44,7 @@
     "description": "A color pair below its minimum contrast in the light theme. {fg} and {bg} are token names, {ratio} and {minimum} numbers (not translated)."
   },
   "admin.theme.contrast.ok": {
-    "defaultMessage": "すべての文字と操作部品の色が、両方のテーマで背景と十分なコントラストを持っています（WCAG 2.2 AA）。",
+    "defaultMessage": "すべての文字と操作部品の色が、両方のテーマで背景と十分なコントラストを持っています (WCAG 2.2 AA)。",
     "description": "Shown when every contrast pair of the theme meets its minimum."
   },
   "admin.theme.contrast.title": {
@@ -120,7 +120,7 @@
     "description": "Sample link text in the theme preview."
   },
   "admin.theme.preview.muted": {
-    "defaultMessage": "補足の文字：日時・ハンドル・ヒント",
+    "defaultMessage": "補足の文字: 日時・ハンドル・ヒント",
     "description": "Sample secondary text in the theme preview."
   },
   "admin.theme.preview.text": {
@@ -136,11 +136,11 @@
     "description": "Button that saves the theme."
   },
   "admin.theme.save_failed": {
-    "defaultMessage": "テーマを保存できませんでした：{reason}",
+    "defaultMessage": "テーマを保存できませんでした: {reason}",
     "description": "Error when saving the theme failed for another reason. {reason} is the localized cause."
   },
   "admin.theme.save_refused": {
-    "defaultMessage": "テーマを保存できませんでした：",
+    "defaultMessage": "テーマを保存できませんでした:",
     "description": "Lead-in of the list of reasons the server refused the theme."
   },
   "admin.theme.saved": {
@@ -156,7 +156,7 @@
     "description": "Title of the admin screen that sets the instance theme (design token overrides and custom CSS), and its link in the admin menu."
   },
   "admin.theme.tokens.description": {
-    "defaultMessage": "フォント、文字の大きさと行の高さ、余白の単位、角丸、影（elevation）、動きの時間と緩急です。範囲の外の値は保存できません。その値でアプリがどう見えるかはサーバーは確かめません。",
+    "defaultMessage": "フォント、文字の大きさと行の高さ、余白の単位、角丸、影 (elevation)、動きの時間と緩急です。範囲の外の値は保存できません。その値でアプリがどう見えるかはサーバーは確かめません。",
     "description": "Description of the section of the non-color tokens on the theme screen."
   },
   "admin.theme.tokens.title": {

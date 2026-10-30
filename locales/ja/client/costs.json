@@ -36,7 +36,7 @@
     "description": "Tab of the totals by calendar year on the costs screen and the public costs page."
   },
   "costs.totals.caption": {
-    "defaultMessage": "{granularity}ごとの合計（{basis}）",
+    "defaultMessage": "{granularity}ごとの合計 ({basis})",
     "description": "Accessible caption of the table of totals on the costs screen and the public costs page: the chosen period kind and the way payments are counted."
   },
   "costs.totals.period": {
@@ -60,7 +60,7 @@
     "description": "Badge of a period whose total includes imported charges that the cloud provider has not closed yet and may still change, on the costs screen and the public costs page."
   },
   "costs.period.week": {
-    "defaultMessage": "{range}（{week}）",
+    "defaultMessage": "{range} ({week})",
     "description": "A week of the totals on the costs screen and the public costs page: its dates and its ISO week number such as 2026-W17."
   },
   "costs.breakdown.title": {
@@ -88,7 +88,7 @@
     "description": "Rule of the totals on the costs screen and the public costs page: dates without time zones."
   },
   "costs.rules.week_start": {
-    "defaultMessage": "週は月曜から日曜です（ISO 8601）。年をまたぐ週は、年の集計では 2 つの年に分かれます。",
+    "defaultMessage": "週は月曜から日曜です (ISO 8601)。年をまたぐ週は、年の集計では 2 つの年に分かれます。",
     "description": "Rule of the totals on the costs screen and the public costs page: the first day of a week."
   },
   "costs.rules.amortized": {
@@ -212,11 +212,11 @@
     "description": "Title of the bar chart of the costs and the income of each period. shown is costs, income, or both."
   },
   "costs.chart.summary.both": {
-    "defaultMessage": "{period}は費用 {costs}、収入 {income}。費用が最も多かったのは {peakPeriod}（{peak}）。",
+    "defaultMessage": "{period}は費用 {costs}、収入 {income}。費用が最も多かったのは {peakPeriod} ({peak})。",
     "description": "Summary under the chart of the costs and the income: the current period's costs and income, and the period with the highest costs. Amounts are formatted."
   },
   "costs.chart.summary.costs": {
-    "defaultMessage": "{period}は費用 {costs}。費用が最も多かったのは {peakPeriod}（{peak}）。",
+    "defaultMessage": "{period}は費用 {costs}。費用が最も多かったのは {peakPeriod} ({peak})。",
     "description": "Summary under the chart of the costs alone: the current period's costs and the period with the highest costs."
   },
   "costs.chart.summary.income": {
@@ -224,7 +224,7 @@
     "description": "Summary under the chart of the income alone: the current period's income after fees."
   },
   "costs.chart.estimated_period": {
-    "defaultMessage": "{period}（見込み）",
+    "defaultMessage": "{period} (見込み)",
     "description": "A period under the axis and in the table of the costs chart whose costs include estimates."
   },
   "costs.chart.empty": {

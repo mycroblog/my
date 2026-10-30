@@ -44,7 +44,7 @@
     "description": "Button that closes a dialog of a login provider without changing it."
   },
   "admin.login_providers.change_failed": {
-    "defaultMessage": "ログインプロバイダーを変更できませんでした：{reason}",
+    "defaultMessage": "ログインプロバイダーを変更できませんでした: {reason}",
     "description": "Error of a change of a login provider. {reason} is the server's reason."
   },
   "admin.login_providers.claims": {
@@ -60,7 +60,7 @@
     "description": "Label of the claim name of a condition row. {number} is the row's number."
   },
   "admin.login_providers.claims.description": {
-    "defaultMessage": "ID トークンの各 claim がいずれかの値を持つ利用者だけがログインできます（Google Workspace のドメインなら hd）。条件がなければ、プロバイダーの利用者すべてがログインできます。",
+    "defaultMessage": "ID トークンの各 claim がいずれかの値を持つ利用者だけがログインできます (Google Workspace のドメインなら hd)。条件がなければ、プロバイダーの利用者すべてがログインできます。",
     "description": "Description of the claim conditions of an OpenID Connect provider."
   },
   "admin.login_providers.claims.remove": {
@@ -160,7 +160,7 @@
     "description": "Button that opens the dialog that changes a login provider."
   },
   "admin.login_providers.edit.kind": {
-    "defaultMessage": "種類：{kind}",
+    "defaultMessage": "種類: {kind}",
     "description": "The kind of the provider in its edit dialog, which cannot change. {kind} is the kind's name."
   },
   "admin.login_providers.edit.title": {
@@ -292,7 +292,7 @@
     "description": "Button that saves the changes of a login provider."
   },
   "admin.login_providers.save_failed": {
-    "defaultMessage": "ログインプロバイダーを保存できませんでした：{reason}",
+    "defaultMessage": "ログインプロバイダーを保存できませんでした: {reason}",
     "description": "Error of a refused login provider. {reason} is the server's reason."
   },
   "admin.login_providers.scopes": {
@@ -308,7 +308,7 @@
     "description": "Label of the Mastodon server of a login provider."
   },
   "admin.login_providers.server.description": {
-    "defaultMessage": "Mastodon サーバーのドメイン（例：mastodon.social）。",
+    "defaultMessage": "Mastodon サーバーのドメイン (例: mastodon.social)。",
     "description": "Description of the Mastodon server field."
   },
   "admin.login_providers.state": {

@@ -40,7 +40,7 @@
     "description": "Title of the confirmation of deleting a role. {role} is its key (isolated)."
   },
   "admin.roles.delete_failed": {
-    "defaultMessage": "ロールを削除できませんでした：{reason}",
+    "defaultMessage": "ロールを削除できませんでした: {reason}",
     "description": "Error in the confirmation when deleting a role failed. {reason} is the server's explanation."
   },
   "admin.roles.delete_role": {
@@ -88,7 +88,7 @@
     "description": "Heading of the list of roles, highest position first."
   },
   "admin.roles.missing_permissions": {
-    "defaultMessage": "自分のロールにない権限：{permissions}",
+    "defaultMessage": "自分のロールにない権限: {permissions}",
     "description": "Error under the permissions of a role that the server refused. {permissions} lists the permissions (identifiers, isolated)."
   },
   "admin.roles.new.accounts": {
@@ -232,7 +232,7 @@
     "description": "Button that saves the changes of a role in its dialog."
   },
   "admin.roles.save_failed": {
-    "defaultMessage": "ロールを保存できませんでした：{reason}",
+    "defaultMessage": "ロールを保存できませんでした: {reason}",
     "description": "Error of the role form or dialog. {reason} is the server's explanation."
   },
   "admin.roles.submit": {
@@ -264,7 +264,7 @@
     "description": "Button of a role that opens the dialog to change its badge."
   },
   "admin.roles.badge.edit_role": {
-    "defaultMessage": "{action}：{role}",
+    "defaultMessage": "{action}: {role}",
     "description": "Accessible name of the button that opens the badge dialog: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Badge') and {role} the role's key."
   },
   "admin.roles.badge.edit.title": {

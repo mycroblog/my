@@ -12,7 +12,7 @@
 <label for="sign-in-password">{{.L.ServerAuthSignInPasswordLabel}}</label>
 <input id="sign-in-password" name="password" type="password" autocomplete="current-password" required{{if .Error}} aria-invalid="true" aria-describedby="sign-in-error"{{end}}>
 </div>
-{{template "human_check" .}}<div class="actions">
+{{template "human_check" .}}<div class="actions actions-block">
 <button class="button" type="submit">{{.L.ServerAuthSignInSubmit}}</button>
 </div>
 </form>
@@ -22,10 +22,11 @@
 <input type="hidden" name="challenge" value="{{.Challenge}}">
 <input type="hidden" name="credential" value="">
 <p id="passkey-error" class="alert" role="alert" data-passkey-error="{{$.L.ServerAuthSignInPasskeyCancelled}}"{{if not .Error}} hidden{{end}}>{{.Error}}</p>
-<div class="actions">
+<div class="actions actions-block">
 <button class="button" type="submit">{{$.L.ServerAuthSignInPasskey}}</button>
 </div>
 </form>
 <script type="module" src="{{.Script}}"></script>
-{{end}}{{template "external_logins" .}}{{if .CanResetPassword}}<p class="links"><a href="/auth/forgot_password">{{.L.ServerAuthSignInForgotPasswordLink}}</a></p>{{end}}{{if .CanSignUp}}<p class="links"><a href="/auth/sign_up">{{.L.ServerAuthSignInSignUpLink}}</a></p>{{end}}
+{{end}}{{template "external_logins" .}}{{if or .CanResetPassword .CanSignUp}}<hr class="rule">
+<div class="links links-center">{{if .CanResetPassword}}<a href="/auth/forgot_password">{{.L.ServerAuthSignInForgotPasswordLink}}</a>{{end}}{{if .CanSignUp}}<a href="/auth/sign_up">{{.L.ServerAuthSignInSignUpLink}}</a>{{end}}</div>{{end}}
 {{end}}

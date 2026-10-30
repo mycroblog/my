@@ -69,7 +69,6 @@ default locale, who can see the timelines, the instance name, description, terms
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Who can open voice chat rooms, while the configuration `voice` is not `off` ([configuration](../reference/configuration.md#voice)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `start_voice_rooms`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
 | `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
-| `public_operators` | `true` / `false` | `true` | Whether the landing page and `GET /api/v1/instance/overview` list the people who run the server: the accounts of this server that show the badge of a staff role (the built-in `admin` or `moderator` role, or a role with a moderation or server permission) on their profile, with their badges. A staff member who does not show their badge is never listed. When `false`, the API leaves the list out |
 | `featured_accounts` | usernames of up to 20 local accounts, separated by spaces or commas (empty = none) | empty | The accounts that the suggestions of people to follow show first, in this order, before the people of this server who posted recently. An account whose owner turned off "Suggest my account and find it by part of its name" is not suggested. See [suggestions](#suggestions-of-accounts) |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Who can create invites of their own besides the staff with `manage_invites` ([member invites](registration.md#member-invites)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_invites`, which only the built-in `admin` role has by default and which a role of a supporter plan may have. In `approval` mode, a usable invite approves the new user at once, so `everyone` lets every user skip the review |
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
@@ -132,9 +131,11 @@ whole username, or for the people who follow it.
   pages `/about/terms`, `/about/privacy`, and `/about/commerce` show them. Raw HTML, images, and links other than `http`,
   `https`, and `mailto` are removed. The pages need no sign-in (they are web client pages, so they need JavaScript).
   `/about/commerce` is the URL to give to the payment provider.
-- A document you write is linked from the registration screen (the consent text and links before the create button), the footer
-  of every screen the server renders, and the web client (the third column, the menu, the settings, and the sign-in screen).
+- A document you write is linked from the registration screen, the footer of every screen the server renders, and the web client (the third column, the menu, the settings, and the sign-in screen).
   A document that is not written is not linked, and its API answers 404.
+- While the terms of service or the privacy policy is written, the registration screen lists them before the create button
+  with a required checkbox, "I have read and agree to the documents above". The server refuses a registration without it,
+  also one through a login provider. Without either document, the screen asks for no agreement.
 
 ### Name and domain
 
@@ -156,8 +157,8 @@ An instance has a domain and a name, separately.
 The contact for the operators (`contact_account`, `contact_email`) and the image that represents the instance (`thumbnail`
 and the text `thumbnail_alt`) appear in the places below. Whatever is unset does not appear.
 
-- "About this server" of the web client (`/about`). The thumbnail also appears on the first screen (`/`) for people who are not
-  signed in.
+- "About this server" of the web client (`/about`). The thumbnail and the contact account also appear on the first screen (`/`)
+  for people who are not signed in.
 - `contact` (`account` and `email`) and `thumbnail` (`url`, `width`, `height`, `alt`) in `GET /api/v1/instance`.
 - `metadata` in NodeInfo: `maintainer` by the Misskey convention (`name` is the display name of the contact account, or its
   username when it has none; `email` is `contact_email`), `staffAccounts` by the Pleroma and Akkoma convention (the actor ID of
@@ -242,7 +243,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Running costs | `finance_visibility` (the `breakdown` option says that the provider and category become known), `finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income` (how much people who can view finance see) |
   | Income | `income_visibility` (the `plans` option says that, for a plan with few subscribers, people may guess who subscribes) |
   | Supporter list | `supporter_list_visibility` |
-  | Landing page | `public_counts`, `public_operators` |
+  | Landing page | `public_counts` |
   | Suggested accounts | `featured_accounts` |
   | Search engines and AI | `search_indexing`, `indexable_default`, `ai_usage`, `security_contact` |
   | Apps | `user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration` |

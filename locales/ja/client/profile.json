@@ -1,6 +1,6 @@
 {
   "profile.change_failed": {
-    "defaultMessage": "アカウントとの関係を変更できませんでした：{reason}",
+    "defaultMessage": "アカウントとの関係を変更できませんでした: {reason}",
     "description": "Toast when following, blocking, muting or undoing one of them failed. {reason} is the error message."
   },
   "profile.confirm.block.action": {
@@ -168,7 +168,7 @@
     "description": "Button at the end of a follow list that loads the next accounts."
   },
   "profile.list.load_more_failed": {
-    "defaultMessage": "続きのアカウントを読み込めませんでした：{reason}",
+    "defaultMessage": "続きのアカウントを読み込めませんでした: {reason}",
     "description": "Shown and announced when the next page of a follow list failed to load. {reason} is the error message."
   },
   "profile.list.load_more.failed.heading": {
@@ -212,7 +212,7 @@
     "description": "Heading and document title of a profile address that names no account the user may see."
   },
   "profile.relationship_failed": {
-    "defaultMessage": "フォローの状態を読み込めませんでした：{reason}",
+    "defaultMessage": "フォローの状態を読み込めませんでした: {reason}",
     "description": "Shown on a profile instead of the follow button when the relationship failed to load. {reason} is the error message."
   },
   "profile.remote.fetching": {

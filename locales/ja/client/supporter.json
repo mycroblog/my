@@ -108,7 +108,7 @@
     "description": "Term: the amount in the final confirmation."
   },
   "supporter.confirm.amount.value": {
-    "defaultMessage": "{price}（更新しても同じ金額）",
+    "defaultMessage": "{price} (更新しても同じ金額)",
     "description": "The amount of the subscription. price is an amount per interval."
   },
   "supporter.confirm.payments": {
@@ -140,7 +140,7 @@
     "description": "Button that goes to the payment provider's page."
   },
   "supporter.confirm.failed": {
-    "defaultMessage": "支払いの画面を開けませんでした：{reason}",
+    "defaultMessage": "支払いの画面を開けませんでした: {reason}",
     "description": "Why the payment page could not open."
   },
   "supporter.commerce": {
@@ -184,7 +184,7 @@
     "description": "Term: a change that waits for the end of the period."
   },
   "supporter.subscription.scheduled.value": {
-    "defaultMessage": "{date} に {plan}（{price}）へ変更",
+    "defaultMessage": "{date} に {plan} ({price}) へ変更",
     "description": "The scheduled change. plan is the new plan's name, price an amount per interval, date a formatted date and time."
   },
   "supporter.state.pending": {
@@ -252,11 +252,11 @@
     "description": "Button that opens the payment provider's page of payment methods and invoices."
   },
   "supporter.portal.failed": {
-    "defaultMessage": "支払い方法の画面を開けませんでした：{reason}",
+    "defaultMessage": "支払い方法の画面を開けませんでした: {reason}",
     "description": "Why the payment provider's page could not open."
   },
   "supporter.command.failed": {
-    "defaultMessage": "加入を変更できませんでした：{reason}",
+    "defaultMessage": "加入を変更できませんでした: {reason}",
     "description": "Why a change of the subscription failed."
   },
   "supporter.cancel_subscription": {
@@ -372,7 +372,7 @@
     "description": "Announced when the user is taken off the list."
   },
   "supporter.listing.failed": {
-    "defaultMessage": "選択を保存できませんでした：{reason}",
+    "defaultMessage": "選択を保存できませんでした: {reason}",
     "description": "Why the choice was not saved."
   }
 }

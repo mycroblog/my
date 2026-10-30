@@ -52,7 +52,7 @@
     "description": "Button at the end of the list of the accounts that reacted to a post that loads the next ones."
   },
   "reaction.list.load_more_failed": {
-    "defaultMessage": "続きのリアクションを読み込めませんでした：{reason}",
+    "defaultMessage": "続きのリアクションを読み込めませんでした: {reason}",
     "description": "Shown and announced when the next page of the accounts that reacted to a post failed to load. {reason} is the error message."
   }
 }

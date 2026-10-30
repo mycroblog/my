@@ -403,7 +403,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	e.srv.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"Visa（末尾 0002、有効期限 1/2027）", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form"} {
+	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("portal page lacks %q", want)
 		}

@@ -4,7 +4,7 @@
     "description": "Label of the reason category that a moderator chose for an action on the user's own account. {category} is the category."
   },
   "moderation.action.kind": {
-    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {投稿のセンシティブ化} delete_statuses {投稿の削除} force_sensitive {メディアの強制センシティブ} limit {サイレンス（投稿はフォロワー限定になり、公開タイムラインに出ない）} restrict_posting {投稿の禁止（投稿・返信・ブースト・編集ができない）} restrict_interaction {交流の禁止（フォロー・お気に入り・ブースト・返信ができない）} disable_login {ログインの停止} suspend {凍結（アプリを使えず、プロフィールと投稿が隠れる）} ban {BAN（アカウントは削除される）} other {モデレーションの処分}}",
+    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {投稿のセンシティブ化} delete_statuses {投稿の削除} force_sensitive {メディアの強制センシティブ} limit {サイレンス (投稿はフォロワー限定になり、公開タイムラインに出ない)} restrict_posting {投稿の禁止 (投稿・返信・ブースト・編集ができない)} restrict_interaction {交流の禁止 (フォロー・お気に入り・ブースト・返信ができない)} disable_login {ログインの停止} suspend {凍結 (アプリを使えず、プロフィールと投稿が隠れる)} ban {BAN (アカウントは削除される)} other {モデレーションの処分}}",
     "description": "Label of the kind of a moderation action on the user's own account, in the notice of the action and the list of the user's actions. {kind} is the kind; the label must make sense whether or not the action is still in effect."
   }
 }

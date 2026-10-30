@@ -80,7 +80,7 @@
     "description": "Accessible name of the tabs that filter the domain actions."
   },
   "admin.domain_actions.issue_failed": {
-    "defaultMessage": "ドメインを処分できませんでした：{reason}",
+    "defaultMessage": "ドメインを処分できませんでした: {reason}",
     "description": "Error when a new domain action failed. {reason} is the server's localized reason, which names the field at fault."
   },
   "admin.domain_actions.issued": {
@@ -144,11 +144,11 @@
     "description": "Button of a domain action in effect that lifts it."
   },
   "admin.domain_actions.lift_action": {
-    "defaultMessage": "解除：{domain} の「{kind}」（{date} に処分）",
+    "defaultMessage": "解除: {domain} の「{kind}」({date} に処分)",
     "description": "Accessible name of the lift button of a domain action, which names the action. {kind} is its kind; {domain} its domain; {date} when it was taken, formatted."
   },
   "admin.domain_actions.lift_failed": {
-    "defaultMessage": "処分を解除できませんでした：{reason}",
+    "defaultMessage": "処分を解除できませんでした: {reason}",
     "description": "Error toast when a domain action could not be lifted. {reason} is the server's localized reason."
   },
   "admin.domain_actions.lifted": {
@@ -256,7 +256,7 @@
     "description": "Label of the text area of a domain block CSV to import."
   },
   "admin.domain_actions.csv.csv.description": {
-    "defaultMessage": "Mastodon がエクスポートしたドメインブロックの CSV（{max, number} 行まで）。#domain の見出しのないファイルは、凍結するドメインの一覧として読みます。",
+    "defaultMessage": "Mastodon がエクスポートしたドメインブロックの CSV ({max, number} 行まで)。#domain の見出しのないファイルは、凍結するドメインの一覧として読みます。",
     "description": "Help text under the text area of a domain block CSV. {max} is the most rows one import holds."
   },
   "admin.domain_actions.csv.csv.required": {
@@ -280,7 +280,7 @@
     "description": "Status after the domain block CSV was saved. {name} is the file name."
   },
   "admin.domain_actions.csv.export.failed": {
-    "defaultMessage": "CSV をエクスポートできませんでした：{reason}",
+    "defaultMessage": "CSV をエクスポートできませんでした: {reason}",
     "description": "Error when the domain block CSV could not be exported. {reason} is why."
   },
   "admin.domain_actions.csv.file": {
@@ -308,7 +308,7 @@
     "description": "Status after an import of a domain block CSV. {issued} is the number of actions taken; {skipped} the number of rows that took none."
   },
   "admin.domain_actions.csv.import.failed": {
-    "defaultMessage": "行をインポートできませんでした：{reason}",
+    "defaultMessage": "行をインポートできませんでした: {reason}",
     "description": "Error when the server refused the import of the chosen rows of a domain block CSV. {reason} is why."
   },
   "admin.domain_actions.csv.import.title": {
@@ -324,7 +324,7 @@
     "description": "Submit button that shows what importing each row of a domain block CSV would do, without changing anything."
   },
   "admin.domain_actions.csv.preview.failed": {
-    "defaultMessage": "CSV を読み込めませんでした：{reason}",
+    "defaultMessage": "CSV を読み込めませんでした: {reason}",
     "description": "Error under the import form when the server refused the domain block CSV. {reason} is why."
   },
   "admin.domain_actions.csv.preview.summary": {
@@ -340,7 +340,7 @@
     "description": "Help text under the private note of an import of a domain block CSV."
   },
   "admin.domain_actions.csv.row.issue": {
-    "defaultMessage": "{line, number} 行目。処分：{kinds}",
+    "defaultMessage": "{line, number} 行目。処分: {kinds}",
     "description": "What importing a row of a domain block CSV does, under the checkbox that chooses it. {line} is its line; {kinds} the list of the kinds of action, such as Suspend and Reject reports."
   },
   "admin.domain_actions.csv.row.skipped": {

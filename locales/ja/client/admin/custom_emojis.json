@@ -24,11 +24,11 @@
     "description": "Button that opens the file chooser for the image of a new custom emoji."
   },
   "admin.custom_emojis.image.chosen": {
-    "defaultMessage": "選んだ画像：{name}",
+    "defaultMessage": "選んだ画像: {name}",
     "description": "The image file chosen for a new custom emoji. {name} is the file name."
   },
   "admin.custom_emojis.image.large_hint": {
-    "defaultMessage": "この画像は 100 KB より大きいです。これより大きいカスタム絵文字を表示しないサーバー（既定の GoToSocial など）があります。",
+    "defaultMessage": "この画像は 100 KB より大きいです。これより大きいカスタム絵文字を表示しないサーバー (既定の GoToSocial など) があります。",
     "description": "Note under a chosen custom emoji image larger than 100 KB; it can still be registered."
   },
   "admin.custom_emojis.image.required": {
@@ -44,11 +44,11 @@
     "description": "Label of the shortcode of a new custom emoji: the name people type between colons."
   },
   "admin.custom_emojis.shortcode.description": {
-    "defaultMessage": "2〜30 文字の英字（A〜Z）・数字・アンダースコアで、大文字と小文字を区別します。投稿ではショートコードの前後をコロンで囲んで入力します。後から変えられません。",
+    "defaultMessage": "2〜30 文字の英字 (A〜Z)・数字・アンダースコアで、大文字と小文字を区別します。投稿ではショートコードの前後をコロンで囲んで入力します。後から変えられません。",
     "description": "Help of the shortcode of a new custom emoji. :blobcat: is an example (not translated)."
   },
   "admin.custom_emojis.shortcode.invalid": {
-    "defaultMessage": "2〜30 文字の英字（A〜Z）・数字・アンダースコアにしてください。",
+    "defaultMessage": "2〜30 文字の英字 (A〜Z)・数字・アンダースコアにしてください。",
     "description": "Error of a shortcode that is empty or breaks the rules."
   },
   "admin.custom_emojis.category": {
@@ -120,7 +120,7 @@
     "description": "Status after registering a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
   "admin.custom_emojis.create_failed": {
-    "defaultMessage": "カスタム絵文字を登録できませんでした：{reason}",
+    "defaultMessage": "カスタム絵文字を登録できませんでした: {reason}",
     "description": "Error under the form when registering a custom emoji failed. {reason} is the localized reason."
   },
   "admin.custom_emojis.list.title": {
@@ -200,7 +200,7 @@
     "description": "State of a custom emoji that is shown."
   },
   "admin.custom_emojis.state.disabled": {
-    "defaultMessage": "無効（文字で表示）",
+    "defaultMessage": "無効 (文字で表示)",
     "description": "State of a custom emoji that is shown nowhere: its :shortcode: stays text."
   },
   "admin.custom_emojis.picker": {
@@ -220,7 +220,7 @@
     "description": "Value of a custom emoji's category or other names when it has none."
   },
   "admin.custom_emojis.no_image": {
-    "defaultMessage": "表示しない（そのサーバーのメディアを拒否しています）",
+    "defaultMessage": "表示しない (そのサーバーのメディアを拒否しています)",
     "description": "Value of a remote custom emoji's image when the server does not show it, because a domain action rejects the media of its server."
   },
   "admin.custom_emojis.updated_at": {
@@ -264,7 +264,7 @@
     "description": "Status after saving the settings of a custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
   "admin.custom_emojis.change_failed": {
-    "defaultMessage": "カスタム絵文字を変更できませんでした：{reason}",
+    "defaultMessage": "カスタム絵文字を変更できませんでした: {reason}",
     "description": "Error when changing, replacing the image of, or deleting a custom emoji failed. {reason} is the localized reason."
   },
   "admin.custom_emojis.replace_image": {

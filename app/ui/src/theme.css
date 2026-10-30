@@ -274,8 +274,11 @@
   --text-2xl--line-height: 1.4;
   --text-3xl: 1.875rem;
   --text-3xl--line-height: 1.3;
-  --text-4xl: initial;
-  --text-5xl: initial;
+  /* Display: the title and the chapter titles of an editorial page (Masthead, Section surface="chapter"). */
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 1.2;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.15;
   --text-6xl: initial;
   --text-7xl: initial;
   --text-8xl: initial;

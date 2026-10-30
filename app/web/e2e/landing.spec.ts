@@ -51,7 +51,7 @@ function status(n: number, content: string): Status {
   };
 }
 
-/** The counts of a small server and the administrator who runs it. */
+/** The counts of a small server. */
 const overview: InstanceOverview = {
   counts: {
     members: 120,
@@ -59,17 +59,6 @@ const overview: InstanceOverview = {
     started_at: "2026-03-14T00:00:00Z",
     counted_at: "2026-10-28T00:00:00Z",
   },
-  operators: [
-    {
-      ...account,
-      id: "0192f0c4-7a8e-7000-8000-000000000007",
-      username: "olive",
-      acct: "olive",
-      display_name: "Olive",
-      url: "https://my.example/@olive",
-      badges: [{ role_id: "0192f0c4-7a8e-7000-8000-0000000000b1", label: "Admin", color: "red" }],
-    },
-  ],
 };
 
 /** Plays the instance, its overview and its local timeline for a visitor without a session. */
@@ -124,25 +113,21 @@ test.describe("the landing page", () => {
     await expect(page.getByRole("main").getByRole("article")).toHaveCount(2);
   });
 
-  test("shows the server's calling card, then three sections under a progress line, then the footer", async ({
-    page,
-  }) => {
+  test("shows the server's masthead, then three sections under a progress line, then the footer", async ({ page }) => {
     await expect(page).toHaveURL(/\/$/);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 })).toHaveText("my example");
     await expect(main.locator('a[href$="/auth/sign_up"]')).toBeVisible();
     await expect(main).toMatchAriaSnapshot(`
       - main:
-        - button
-        - heading "my example" [level=1]
         - paragraph: my.example
+        - heading "my example" [level=1]
         - paragraph: A small server for gardeners and everyone who likes to grow things.
         - list:
           - listitem
           - listitem
-          - listitem:
-            - link
         - link
+        - button
         - link
         - navigation:
           - list:
@@ -156,10 +141,6 @@ test.describe("the landing page", () => {
           - heading [level=2]
           - paragraph: We grow vegetables, herbs and flowers.
           - paragraph: Everyone is welcome, whatever the size of their garden.
-          - heading [level=3]
-          - list:
-            - listitem:
-              - link
           - heading [level=3]
           - feed:
             - article
@@ -176,6 +157,7 @@ test.describe("the landing page", () => {
               - paragraph: Mark sensitive media
         - region:
           - heading [level=2]
+          - heading [level=3]
           - list:
             - listitem
             - listitem
@@ -186,9 +168,9 @@ test.describe("the landing page", () => {
     `);
   });
 
-  test("moves from the calling card to the steps of joining, past the rules", async ({ page }) => {
+  test("moves from the masthead to the steps of joining, past the rules", async ({ page }) => {
     const main = page.getByRole("main");
-    // The calling card's link comes first; the sticky progress line of the sections links the steps of joining too.
+    // The masthead's link comes first; the sticky progress line of the sections links the steps of joining too.
     await main.locator('a[href="#landing-join"]').first().click();
     await expect(main.locator("#landing-join")).toBeFocused();
     await expect(main.locator("#landing-join")).toBeInViewport();

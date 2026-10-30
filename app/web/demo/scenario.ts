@@ -213,8 +213,6 @@ export const instanceTexts: Readonly<Record<string, string>> = {
   name: "My Demo",
   short_description: "A demo server of my, filled with a small community. 小さなコミュニティのデモサーバーです。",
   description: [
-    "# Welcome",
-    "",
     "This server runs the demo scenario of my: a few people who post, follow, react, report, and support the server.",
     "Nothing here is real; the payments go through a fake provider and no money moves.",
     "",
@@ -237,7 +235,6 @@ export const instanceSettings: Readonly<Record<string, string>> = {
   income_visibility: "totals",
   supporter_list_visibility: "public",
   public_counts: "true",
-  public_operators: "true",
 };
 
 /** The instance rules, added with `my instance rule add`, in order. */

@@ -132,7 +132,7 @@
     "description": "Paragraph of a service closure email during the notice: until when the user may export their data. {exportUntil} is the deadline of the export as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure.message": {
-    "defaultMessage": "運営者からのメッセージ：{message}",
+    "defaultMessage": "運営者からのメッセージ: {message}",
     "description": "Paragraph of a service closure email: the message that the administrators wrote with the announcement. {message} is their text, written in any language."
   },
   "mail.service_closure.move": {
@@ -168,7 +168,7 @@
     "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_day_before.subject": {
-    "defaultMessage": "{instance} は 1 日以内（{closesAt}）に終了します",
+    "defaultMessage": "{instance} は 1 日以内 ({closesAt}) に終了します",
     "description": "Subject of the reminder email of the service closure to every user with a verified address, a day before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_export_week_before.body": {
@@ -192,7 +192,7 @@
     "description": "First paragraph of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_week_before.subject": {
-    "defaultMessage": "{instance} の終了（{closesAt}）まで 1 週間です",
+    "defaultMessage": "{instance} の終了 ({closesAt}) まで 1 週間です",
     "description": "Subject of the reminder email of the service closure to every user with a verified address, a week before the closing date. {instance} is the server's display name, or its domain name when it has none. {closesAt} is the closing date as YYYY-MM-DD HH:MM followed by the user's time zone in parentheses, such as 2026-12-01 09:00 (Asia/Tokyo)."
   },
   "mail.service_closure_withdrawn.body": {
@@ -204,11 +204,11 @@
     "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.signature.contact": {
-    "defaultMessage": "連絡先：{email}",
+    "defaultMessage": "連絡先: {email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
   },
   "mail.signature.unsubscribe": {
-    "defaultMessage": "このメールを止める：{url}",
+    "defaultMessage": "このメールを止める: {url}",
     "description": "Last line of the signature of a notification email with its one-click unsubscribe link. {url} is the link."
   },
   "mail.supporter_payment_failed.action": {
@@ -220,7 +220,7 @@
     "description": "First paragraph of the email to a subscriber whose payment for a supporter plan failed. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
   "mail.supporter_payment_failed.detail": {
-    "defaultMessage": "プランの特典は {endsAt}（UTC）まで続きます。それまでに支払いが成功しなければ、特典はなくなります。",
+    "defaultMessage": "プランの特典は {endsAt} (UTC) まで続きます。それまでに支払いが成功しなければ、特典はなくなります。",
     "description": "Second paragraph of the email to a subscriber whose payment for a supporter plan failed, before the link to the supporter page. {endsAt} is the end of the grace period as YYYY-MM-DD HH:MM in UTC."
   },
   "mail.supporter_payment_failed.subject": {

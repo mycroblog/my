@@ -356,6 +356,7 @@ export { Cluster, type ClusterProps } from "./Cluster";
 export { InfoPage, type InfoPageProps } from "./InfoPage";
 // The landing page's parts read in order, and the steps that follow an action (web-client/screens/landing.md).
 export { SectionProgress, type SectionProgressPart, type SectionProgressProps } from "./SectionProgress";
+export { Masthead, type MastheadFact, type MastheadProps } from "./Masthead";
 export { Steps, type Step, type StepsProps } from "./Steps";
 // Where a flow of steps stands (the report dialog).
 export { Stepper, type StepperProps } from "./Stepper";

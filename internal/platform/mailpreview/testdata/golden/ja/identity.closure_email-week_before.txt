@@ -4,7 +4,7 @@ Example Social は 1 週間後の 2027-04-01 00:00 (Asia/Tokyo) に終了しま�
 
 閉鎖日までなら、アカウントの設定から別のサーバーへアカウントを移転し、フォロワーに移転先をフォローしてもらうこともできます。
 
-運営者からのメッセージ：Thank you for being here. Please take your posts with you.
+運営者からのメッセージ: Thank you for being here. Please take your posts with you.
 
 エクスポートする
 https://social.example/settings/import-export
@@ -12,6 +12,6 @@ https://social.example/settings/import-export
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 Example Social のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。

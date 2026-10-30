@@ -21,11 +21,11 @@
   },
   "landing.since": {
     "defaultMessage": "Since {date}",
-    "description": "In the landing page's calling card: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
+    "description": "In the landing page's masthead: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
   },
-  "landing.run_by": {
-    "defaultMessage": "{others, plural, =0 {Run by {name}} one {Run by {name} and # other} other {Run by {name} and # others}}",
-    "description": "Link in the landing page's calling card to the list of the people who run the server. {name} is the display name of the first of them; {others} is how many more there are."
+  "landing.contact.fact": {
+    "defaultMessage": "Contact: {name}",
+    "description": "Link in the landing page's masthead to the account people contact about the server (the setting contact_account). {name} is its display name."
   },
   "landing.progress.label": {
     "defaultMessage": "Parts of this page",
@@ -33,11 +33,11 @@
   },
   "landing.place.title": {
     "defaultMessage": "What kind of place is this?",
-    "description": "Heading of the first section of the landing page: the server's description, who runs it, and what people post."
+    "description": "Heading of the first section of the landing page: the server's description, whom to contact, and what people post."
   },
-  "landing.operators.title": {
-    "defaultMessage": "Who runs it",
-    "description": "Heading of the list of the people who run the server, on the landing page."
+  "landing.contact.title": {
+    "defaultMessage": "Contact",
+    "description": "Heading of the account people contact about the server, on the landing page."
   },
   "landing.activity.title": {
     "defaultMessage": "What people post",
@@ -114,6 +114,10 @@
   "landing.steps.invite_open": {
     "defaultMessage": "Open the link and create your account",
     "description": "Second step of joining a server where only people with an invite may sign up."
+  },
+  "landing.here.title": {
+    "defaultMessage": "With an account on this server",
+    "description": "Heading of the steps for joining this server with an account of its own, beside the steps for following from another server, on the landing page."
   },
   "landing.elsewhere.title": {
     "defaultMessage": "With an account on another server",

@@ -32,8 +32,8 @@ export type RecentPosts =
   | { status: "error"; reason: string; retry: () => void; isRetrying: boolean }
   | { status: "ready"; posts: readonly RecentPost[] };
 
-/** Someone who runs the server, as the landing page lists them. */
-type Operator = {
+/** The account people contact about the server (the setting `contact_account`), as the landing page shows it. */
+type Contact = {
   id: string;
   /** The display name, or the username when there is none. */
   name: string;
@@ -80,8 +80,8 @@ export type Landing = {
   localTimeline: boolean;
   /** The counts; undefined while they load, when they fail, and when the server hides them. */
   counts: Counts | undefined;
-  /** The people who run the server; empty while they load, when they fail, and when the server hides them. */
-  operators: readonly Operator[];
+  /** The account to contact about the server; undefined while the instance loads, when it cannot, and when it has none. */
+  contact: Contact | undefined;
   recentPosts: RecentPosts;
 };
 
@@ -109,14 +109,11 @@ function paragraphs(text: string | undefined): string[] {
     .filter((paragraph) => paragraph !== "");
 }
 
-/** No operators: one array, so that the value stays the same between renders. */
-const noOperators: readonly Operator[] = [];
-
 /**
  * What the landing page shows people who are not signed in: the instance from GET /instance (which the shell reads
- * on every page and the route's loader has asked for), its counts and operators from GET /instance/overview, and a
+ * on every page and the route's loader has asked for), its counts from GET /instance/overview, and a
  * sample of the local timeline when the instance lets everyone read it. A failure of the instance leaves the page with
- * the name and the way to sign in; a failure of the overview leaves out the counts and the operators; a failure of the
+ * the name and the way to sign in; a failure of the overview leaves out the counts; a failure of the
  * sample shows in its own part.
  */
 export function useLanding(): Landing {
@@ -143,6 +140,7 @@ export function useLanding(): Landing {
 
   const domain = instance === undefined ? undefined : domainToUnicode(instance.domain);
   const counts = overview?.counts;
+  const account = instance?.contact?.account;
   return {
     name,
     domain,
@@ -166,16 +164,18 @@ export function useLanding(): Landing {
               date: intl.formatDate(counts.started_at, { year: "numeric", month: "long" }),
             },
           },
-    operators:
-      overview?.operators?.map((account) => ({
-        id: account.id,
-        name: account.display_name || account.username,
-        handle: handleOf(account.acct),
-        fullHandle: `@${account.username}@${domain ?? domainToUnicode(account.domain)}`,
-        avatar: imageSources(account.avatar),
-        href: profilePath(account.acct),
-        badges: account.badges.map((b) => ({ id: b.role_id, label: b.label, color: b.color })),
-      })) ?? noOperators,
+    contact:
+      account === undefined
+        ? undefined
+        : {
+            id: account.id,
+            name: account.display_name || account.username,
+            handle: handleOf(account.acct),
+            fullHandle: `@${account.username}@${domain ?? domainToUnicode(account.domain)}`,
+            avatar: imageSources(account.avatar),
+            href: profilePath(account.acct),
+            badges: account.badges.map((b) => ({ id: b.role_id, label: b.label, color: b.color })),
+          },
     recentPosts,
   };
 }

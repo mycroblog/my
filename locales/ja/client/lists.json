@@ -8,7 +8,7 @@
     "description": "Heading of the region of the user's lists on the lists page."
   },
   "lists.count": {
-    "defaultMessage": "{count, plural, other {リスト # 件}}（上限 {max}）",
+    "defaultMessage": "{count, plural, other {リスト # 件}} (上限 {max})",
     "description": "Read for the count beside the heading of the user's lists, drawn as '3 / 50'. {count} is the number of lists, {max} the most a user may have."
   },
   "lists.empty": {
@@ -68,7 +68,7 @@
     "description": "The number of members of a list, in its row on the lists page and on the list's page."
   },
   "lists.list_action": {
-    "defaultMessage": "{action}：{name}",
+    "defaultMessage": "{action}: {name}",
     "description": "Accessible name of a button in a row of the user's lists. {action} is the button's visible text (for example 'Rename'), {name} the list's name."
   },
   "lists.rename": {
@@ -128,7 +128,7 @@
     "description": "Heading of the region of a list's members. {name} is the list's name."
   },
   "lists.members.count": {
-    "defaultMessage": "{count, plural, other {メンバー # 人}}（上限 {max}）",
+    "defaultMessage": "{count, plural, other {メンバー # 人}} (上限 {max})",
     "description": "Read for the count beside the heading of a list's members, drawn as '12 / 1,000'. {count} is the number of members, {max} the most a list may have."
   },
   "lists.members.search": {

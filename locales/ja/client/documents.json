@@ -12,7 +12,7 @@
     "description": "Link to the server's public page of its privacy policy."
   },
   "documents.revised": {
-    "defaultMessage": "最終改定日：{date}",
+    "defaultMessage": "最終改定日: {date}",
     "description": "When the current revision of a document (terms of service, privacy policy, commerce disclosures) was recorded, above its text; {date} is a formatted date."
   },
   "documents.terms": {

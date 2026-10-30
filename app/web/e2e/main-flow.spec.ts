@@ -218,6 +218,7 @@ test.describe("the main flow", () => {
       await page.locator('input[type="email"][autocomplete="username"]').fill(alice.email);
       await page.locator('input[type="password"][autocomplete="new-password"]').fill(alice.password);
       await page.locator("textarea").fill("E2E of the main flow");
+      await page.locator('input[name="agreement"]').check();
       await page.locator('main button[type="submit"]').first().click();
       // The registration waits for a moderator: the user is signed in to the server's pages only.
       await expect(page).toHaveURL(/\/auth\/sign_in$/);

@@ -72,7 +72,7 @@
     "description": "Button at the end of a timeline that loads older posts."
   },
   "timeline.load_more.failed": {
-    "defaultMessage": "続きの投稿を読み込めませんでした：{reason}",
+    "defaultMessage": "続きの投稿を読み込めませんでした: {reason}",
     "description": "Message, read out and shown at the end of a timeline, when older posts failed to load. {reason} is the error message, a full sentence."
   },
   "timeline.loading": {
@@ -132,19 +132,19 @@
     "description": "Accessible name of the note button of the image viewer that shows or hides the picture's description (alt text) over the picture. The button exists only for a picture that has a description."
   },
   "timeline.card.author": {
-    "defaultMessage": "作者：{author}",
+    "defaultMessage": "作者: {author}",
     "description": "Line under the description of a link card naming the author of the linked page. {author} is the author's name as the page gives it, or the verified account (timeline.card.account)."
   },
   "timeline.card.author_published": {
-    "defaultMessage": "作者：{author} · {date}",
+    "defaultMessage": "作者: {author} · {date}",
     "description": "Line under the description of a link card naming the author of the linked page and when it was published. {author} is the author's name; {date} is the formatted date."
   },
   "timeline.card.published": {
-    "defaultMessage": "公開：{date}",
+    "defaultMessage": "公開: {date}",
     "description": "Line under the description of a link card saying when the linked page was published. {date} is the formatted date."
   },
   "timeline.card.account": {
-    "defaultMessage": "{name}（{handle}）",
+    "defaultMessage": "{name} ({handle})",
     "description": "The verified author of a linked page as an account: {name} is the display name, {handle} the handle such as @alice@example.com."
   },
   "timeline.card.failed": {
@@ -156,7 +156,7 @@
     "description": "Button above the home timeline when new posts have arrived; pressing it shows them at the top. Screen readers also read it out when the count changes."
   },
   "timeline.new_posts.failed": {
-    "defaultMessage": "新しい投稿を読み込めませんでした：{reason}",
+    "defaultMessage": "新しい投稿を読み込めませんでした: {reason}",
     "description": "Message read out when pressing the new posts button failed to load them. {reason} is the error message, a full sentence."
   },
   "timeline.offline.home": {

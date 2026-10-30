@@ -48,5 +48,4 @@ enum:
   - member_invite_max_uses
   - member_invite_max_expires_in
   - public_counts
-  - public_operators
   - featured_accounts

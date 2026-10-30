@@ -24,11 +24,11 @@
     "description": "Label of the field of the username of the account to contact about the server."
   },
   "admin.settings.contact.account.description": {
-    "defaultMessage": "このサーバーのアカウントのユーザー名（例：admin）",
+    "defaultMessage": "このサーバーのアカウントのユーザー名 (例: admin)",
     "description": "Help under the field of the contact account: what to type in it."
   },
   "admin.settings.contact.description": {
-    "defaultMessage": "このサーバーを運営する人への連絡先と、サーバーを表す画像です。このサーバーについてのページ、訪れた人を迎えるページ、ほかのサーバー（NodeInfo）に表示されます。表示しない項目は空にしてください。",
+    "defaultMessage": "このサーバーを運営する人への連絡先と、サーバーを表す画像です。このサーバーについてのページ、訪れた人を迎えるページ、ほかのサーバー (NodeInfo) に表示されます。表示しない項目は空にしてください。",
     "description": "Explanation above the fields of the server's contact and thumbnail on the server settings screen."
   },
   "admin.settings.contact.email": {
@@ -48,7 +48,7 @@
     "description": "Button that saves the server's contact and thumbnail."
   },
   "admin.settings.contact.save_failed": {
-    "defaultMessage": "連絡先とサムネイルを保存できませんでした：{reason}",
+    "defaultMessage": "連絡先とサムネイルを保存できませんでした: {reason}",
     "description": "Error when saving the server's contact and thumbnail failed. {reason} is the server's localized reason."
   },
   "admin.settings.contact.saved": {
@@ -68,7 +68,7 @@
     "description": "Button that opens the file picker to choose the server's thumbnail."
   },
   "admin.settings.contact.thumbnail.description": {
-    "defaultMessage": "このサーバーについてのページと、訪れた人を迎えるページの上に表示される横長の画像（1600 × 900 ピクセルなど）です。",
+    "defaultMessage": "このサーバーについてのページと、訪れた人を迎えるページの上に表示される横長の画像 (1600 × 900 ピクセルなど) です。",
     "description": "Help about the server's thumbnail: where it shows and what size suits it."
   },
   "admin.settings.contact.thumbnail.failed": {
@@ -100,7 +100,7 @@
     "description": "Button that saves the server's descriptions."
   },
   "admin.settings.descriptions.save_failed": {
-    "defaultMessage": "説明を保存できませんでした：{reason}",
+    "defaultMessage": "説明を保存できませんでした: {reason}",
     "description": "Error when saving the server's descriptions failed. {reason} is the server's localized reason."
   },
   "admin.settings.descriptions.saved": {
@@ -160,7 +160,7 @@
     "description": "Choice of publishing the running costs with their breakdown by provider and category."
   },
   "admin.settings.finance.breakdown.description": {
-    "defaultMessage": "誰でも、事業者と区分ごとの合計も見られます。どの事業者（クラウドなど）でこのサーバーを動かしているかが知られます。",
+    "defaultMessage": "誰でも、事業者と区分ごとの合計も見られます。どの事業者 (クラウドなど) でこのサーバーを動かしているかが知られます。",
     "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
   },
   "admin.settings.finance.viewer.description": {
@@ -300,7 +300,7 @@
     "description": "Choice that asks search engines not to index any page."
   },
   "admin.settings.crawlers.search.deny.description": {
-    "defaultMessage": "すべてのページで、検索エンジンに索引に載せないよう求めます（noindex）。リンクのプレビューはこれまでどおり表示されます。",
+    "defaultMessage": "すべてのページで、検索エンジンに索引に載せないよう求めます (noindex)。リンクのプレビューはこれまでどおり表示されます。",
     "description": "Description of asking search engines not to index any page."
   },
   "admin.settings.crawlers.indexable_default": {
@@ -344,7 +344,7 @@
     "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
   },
   "admin.settings.crawlers.security_contact.description": {
-    "defaultMessage": "脆弱性を報告する先です。https か mailto の URI（メールアドレスなら先頭に mailto と半角のコロンを付けたもの）を入れます。設定している間だけ、サーバーは /.well-known/security.txt を返します。",
+    "defaultMessage": "脆弱性を報告する先です。https か mailto の URI (メールアドレスなら先頭に mailto と半角のコロンを付けたもの) を入れます。設定している間だけ、サーバーは /.well-known/security.txt を返します。",
     "description": "Help text of the security contact field."
   },
   "admin.settings.domain_actions.comments.none": {
@@ -392,7 +392,7 @@
     "description": "A length of time in seconds."
   },
   "admin.settings.federation.authorized_fetch": {
-    "defaultMessage": "署名のある要求だけに答える（Authorized Fetch）",
+    "defaultMessage": "署名のある要求だけに答える (Authorized Fetch)",
     "description": "Checkbox of the authorized fetch setting."
   },
   "admin.settings.federation.authorized_fetch.description": {
@@ -504,7 +504,7 @@
     "description": "Error of a field of the server's name that holds only spaces."
   },
   "admin.settings.name.description": {
-    "defaultMessage": "アプリがこのサーバーを名指す場所（サイドバー、ブラウザのタブ、ログインの画面、メール、リンクのプレビュー）では、ドメイン {domain} の代わりに名前が表示されます。どの言語で書いてもよく、アプリの言語にかかわらず全員に同じ名前が表示されます。名前がなければドメインが表示されます。ハンドルとリンクは、いつもドメインのままです。",
+    "defaultMessage": "アプリがこのサーバーを名指す場所 (サイドバー、ブラウザのタブ、ログインの画面、メール、リンクのプレビュー) では、ドメイン {domain} の代わりに名前が表示されます。どの言語で書いてもよく、アプリの言語にかかわらず全員に同じ名前が表示されます。名前がなければドメインが表示されます。ハンドルとリンクは、いつもドメインのままです。",
     "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
   },
   "admin.settings.name.field": {
@@ -516,7 +516,7 @@
     "description": "Button that saves the server's names on the server settings screen."
   },
   "admin.settings.name.save_failed": {
-    "defaultMessage": "名前を保存できませんでした：{reason}",
+    "defaultMessage": "名前を保存できませんでした: {reason}",
     "description": "Error when saving the server's name failed. {reason} is the server's localized reason, which names the field at fault."
   },
   "admin.settings.name.saved": {
@@ -540,7 +540,7 @@
     "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
   },
   "admin.settings.policies.save_failed": {
-    "defaultMessage": "設定を保存できませんでした。何も変わっていません：{reason}",
+    "defaultMessage": "設定を保存できませんでした。何も変わっていません: {reason}",
     "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
   },
   "admin.settings.policies.saved": {
@@ -684,11 +684,11 @@
     "description": "Heading of the section of the server settings about posts."
   },
   "admin.settings.posts.require_media_description": {
-    "defaultMessage": "すべての画像に説明（代替テキスト）を必須にする",
+    "defaultMessage": "すべての画像に説明 (代替テキスト) を必須にする",
     "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
   },
   "admin.settings.posts.require_media_description.description": {
-    "defaultMessage": "説明（代替テキスト）のない画像のある投稿と編集を受け付けません。画像を見られない人も、すべての投稿の内容が分かるようにします。",
+    "defaultMessage": "説明 (代替テキスト) のない画像のある投稿と編集を受け付けません。画像を見られない人も、すべての投稿の内容が分かるようにします。",
     "description": "Description of the checkbox that requires a description of every image."
   },
   "admin.settings.title": {
@@ -724,7 +724,7 @@
     "description": "Checkbox of letting apps register themselves."
   },
   "admin.settings.oauth_apps.dynamic.description": {
-    "defaultMessage": "アプリがログインなしで自分を登録します（RFC 7591）。メタデータ文書を使えないツール向けです。",
+    "defaultMessage": "アプリがログインなしで自分を登録します (RFC 7591)。メタデータ文書を使えないツール向けです。",
     "description": "Description of the checkbox of dynamic client registration."
   },
   "admin.settings.voice.title": {
@@ -764,7 +764,7 @@
     "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
   },
   "admin.settings.voice.retention.description": {
-    "defaultMessage": "ルームが終わってから、参加・退出・話す許可・退出させたことの記録を残す日数です（{min}〜{max} 日）。通報されたルームの記録は、その通報が残る間は残ります。",
+    "defaultMessage": "ルームが終わってから、参加・退出・話す許可・退出させたことの記録を残す日数です ({min}〜{max} 日)。通報されたルームの記録は、その通報が残る間は残ります。",
     "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
   },
   "admin.settings.voice.retention.invalid": {
@@ -804,7 +804,7 @@
     "description": "Label of the field of how many usable invites one member may hold at once."
   },
   "admin.settings.invites.max_active.description": {
-    "defaultMessage": "1 人が同時に持てる使える招待の数です（{min}〜{max}）。0 にすると誰も招待を作成できません。",
+    "defaultMessage": "1 人が同時に持てる使える招待の数です ({min}〜{max})。0 にすると誰も招待を作成できません。",
     "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
   },
   "admin.settings.invites.max_uses": {
@@ -812,7 +812,7 @@
     "description": "Label of the field of how many people may sign up with one invite a member creates."
   },
   "admin.settings.invites.max_uses.description": {
-    "defaultMessage": "1 つの招待で登録できる人数の上限です（{min}〜{max}）。",
+    "defaultMessage": "1 つの招待で登録できる人数の上限です ({min}〜{max})。",
     "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
   },
   "admin.settings.invites.number.invalid": {
@@ -842,14 +842,6 @@
   "admin.settings.landing.counts.description": {
     "defaultMessage": "利用者の数、この 7 日の日ごとの公開の投稿の数、サーバーが動き始めた時期。数えるのは公開の投稿だけで、数は数分ごとに更新します。",
     "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
-  },
-  "admin.settings.landing.operators": {
-    "defaultMessage": "運営している人を見せる",
-    "description": "Checkbox of whether the landing page lists the people who run the server."
-  },
-  "admin.settings.landing.operators.description": {
-    "defaultMessage": "スタッフのロール（管理者・モデレーター、またはモデレーションかサーバーの権限を持つロール）のバッジをプロフィールに出している、このサーバーのアカウントと、そのバッジ。バッジを出していないスタッフは載せません。",
-    "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
   },
   "admin.settings.featured.title": {
     "defaultMessage": "おすすめのアカウント",

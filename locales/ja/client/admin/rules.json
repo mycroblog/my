@@ -4,7 +4,7 @@
     "description": "Button that adds a new rule after the others."
   },
   "admin.rules.add_failed": {
-    "defaultMessage": "ルールを追加できませんでした：{reason}",
+    "defaultMessage": "ルールを追加できませんでした: {reason}",
     "description": "Error when adding a rule failed. {reason} is why."
   },
   "admin.rules.added": {
@@ -16,7 +16,7 @@
     "description": "Button that closes a dialog of the rules without changing anything."
   },
   "admin.rules.change_failed": {
-    "defaultMessage": "ルールを変更できませんでした：{reason}",
+    "defaultMessage": "ルールを変更できませんでした: {reason}",
     "description": "Error when changing, moving or retiring a rule failed. {reason} is why."
   },
   "admin.rules.description": {
@@ -36,7 +36,7 @@
     "description": "Title of the dialog of a rule's texts."
   },
   "admin.rules.edit_rule": {
-    "defaultMessage": "編集：{rule}",
+    "defaultMessage": "編集: {rule}",
     "description": "Accessible name of the edit button of a rule. {rule} is its text."
   },
   "admin.rules.empty": {
@@ -48,7 +48,7 @@
     "description": "Description of the empty list of rules."
   },
   "admin.rules.heading": {
-    "defaultMessage": "ルール {place}：{rule}",
+    "defaultMessage": "ルール {place}: {rule}",
     "description": "Heading of a rule in the list. {place} is its place, from 1; {rule} its text."
   },
   "admin.rules.hint": {
@@ -64,7 +64,7 @@
     "description": "Button that moves a rule one place down."
   },
   "admin.rules.move_down_rule": {
-    "defaultMessage": "下へ：{rule}",
+    "defaultMessage": "下へ: {rule}",
     "description": "Accessible name of the button that moves a rule down. {rule} is its text."
   },
   "admin.rules.move_up": {
@@ -72,7 +72,7 @@
     "description": "Button that moves a rule one place up."
   },
   "admin.rules.move_up_rule": {
-    "defaultMessage": "上へ：{rule}",
+    "defaultMessage": "上へ: {rule}",
     "description": "Accessible name of the button that moves a rule up. {rule} is its text."
   },
   "admin.rules.moved": {
@@ -100,7 +100,7 @@
     "description": "Question of the dialog that confirms retiring a rule. {rule} is its text."
   },
   "admin.rules.retire_rule": {
-    "defaultMessage": "廃止：{rule}",
+    "defaultMessage": "廃止: {rule}",
     "description": "Accessible name of the retire button of a rule. {rule} is its text."
   },
   "admin.rules.retired": {

@@ -12,7 +12,7 @@
     "description": "Instead of the action form when the reported account no longer exists."
   },
   "admin.report.action.issued": {
-    "defaultMessage": "処分（{kind}）を出し、通報を解決しました。",
+    "defaultMessage": "処分 ({kind}) を出し、通報を解決しました。",
     "description": "Status message after taking an account action from a report; kind is the kind of action."
   },
   "admin.report.action.missing_permission": {
@@ -32,7 +32,7 @@
     "description": "Button that makes the viewer the moderator who handles a report that another moderator handles."
   },
   "admin.report.assign_failed": {
-    "defaultMessage": "通報の担当を引き受けられませんでした：{reason}",
+    "defaultMessage": "通報の担当を引き受けられませんでした: {reason}",
     "description": "Toast when taking a report fails."
   },
   "admin.report.assigned": {
@@ -120,7 +120,7 @@
     "description": "A report without notes."
   },
   "admin.report.notes.failed": {
-    "defaultMessage": "メモを追加できませんでした：{reason}",
+    "defaultMessage": "メモを追加できませんでした: {reason}",
     "description": "Error under the note field when adding fails."
   },
   "admin.report.notes.new": {
@@ -200,7 +200,7 @@
     "description": "Help of the reopen button."
   },
   "admin.report.reopen_failed": {
-    "defaultMessage": "通報を再開できませんでした：{reason}",
+    "defaultMessage": "通報を再開できませんでした: {reason}",
     "description": "Toast when reopening fails."
   },
   "admin.report.reopened": {
@@ -232,11 +232,11 @@
     "description": "Heading of the buttons that resolve a report without an action."
   },
   "admin.report.resolve_failed": {
-    "defaultMessage": "通報を解決できませんでした：{reason}",
+    "defaultMessage": "通報を解決できませんでした: {reason}",
     "description": "Toast when resolving fails."
   },
   "admin.report.resolved": {
-    "defaultMessage": "通報を解決しました：{outcome}",
+    "defaultMessage": "通報を解決しました: {outcome}",
     "description": "Status message after resolving; outcome is how it was resolved."
   },
   "admin.report.resolved_at": {
@@ -308,7 +308,7 @@
     "description": "Button that leaves a report to nobody."
   },
   "admin.report.unassign_failed": {
-    "defaultMessage": "担当を外せませんでした：{reason}",
+    "defaultMessage": "担当を外せませんでした: {reason}",
     "description": "Toast when unassigning fails."
   },
   "admin.report.unassigned": {
@@ -488,7 +488,7 @@
     "description": "Description of the confirmation before a moderator ends a voice chat room."
   },
   "admin.report.voice.end.note_field": {
-    "defaultMessage": "理由（任意）",
+    "defaultMessage": "理由 (任意)",
     "description": "Label of the optional reason a moderator gives for ending a voice chat room."
   },
   "admin.report.voice.end.note_field.description": {
@@ -504,7 +504,7 @@
     "description": "Button that closes the confirmation of ending a voice chat room without ending it."
   },
   "admin.report.voice.end.failed": {
-    "defaultMessage": "ルームを終えられませんでした：{reason}",
+    "defaultMessage": "ルームを終えられませんでした: {reason}",
     "description": "Error in the confirmation when ending a voice chat room failed. {reason} is why."
   },
   "admin.report.voice.ended": {

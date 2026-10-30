@@ -32,11 +32,11 @@ function LandingPage() {
   return <Landing heading={<LandingHeading />} />;
 }
 
-/** The page's heading: the instance's name, in its calling card (and so the document's title). */
+/** The page's heading: the instance's name, the title of its masthead (and so the document's title). */
 function LandingHeading() {
   const instance = useInstanceName();
   return (
-    <PageHeading>
+    <PageHeading display>
       <span dir="auto">{instance}</span>
     </PageHeading>
   );

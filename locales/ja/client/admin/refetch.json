@@ -28,7 +28,7 @@
     "description": "Status message after a moderator asked to refetch one remote post."
   },
   "admin.refetch.failed": {
-    "defaultMessage": "取り直しを依頼できませんでした：{reason}",
+    "defaultMessage": "取り直しを依頼できませんでした: {reason}",
     "description": "Toast when asking to refetch remote posts failed. {reason} is the server's explanation."
   }
 }

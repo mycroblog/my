@@ -21,11 +21,11 @@
   },
   "landing.since": {
     "defaultMessage": "{date} から",
-    "description": "In the landing page's calling card: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
+    "description": "In the landing page's masthead: since when the server runs. {date} is the formatted month and year, for example 'March 2026'."
   },
-  "landing.run_by": {
-    "defaultMessage": "{others, plural, =0 {{name} が運営} other {{name} ほか # 人が運営}}",
-    "description": "Link in the landing page's calling card to the list of the people who run the server. {name} is the display name of the first of them; {others} is how many more there are."
+  "landing.contact.fact": {
+    "defaultMessage": "連絡先: {name}",
+    "description": "Link in the landing page's masthead to the account people contact about the server (the setting contact_account). {name} is its display name."
   },
   "landing.progress.label": {
     "defaultMessage": "このページの区画",
@@ -33,11 +33,11 @@
   },
   "landing.place.title": {
     "defaultMessage": "どんな場所？",
-    "description": "Heading of the first section of the landing page: the server's description, who runs it, and what people post."
+    "description": "Heading of the first section of the landing page: the server's description, whom to contact, and what people post."
   },
-  "landing.operators.title": {
-    "defaultMessage": "運営している人",
-    "description": "Heading of the list of the people who run the server, on the landing page."
+  "landing.contact.title": {
+    "defaultMessage": "連絡先",
+    "description": "Heading of the account people contact about the server, on the landing page."
   },
   "landing.activity.title": {
     "defaultMessage": "投稿の様子",
@@ -115,6 +115,10 @@
     "defaultMessage": "リンクを開いてアカウントを作成",
     "description": "Second step of joining a server where only people with an invite may sign up."
   },
+  "landing.here.title": {
+    "defaultMessage": "このサーバーのアカウントで",
+    "description": "Heading of the steps for joining this server with an account of its own, beside the steps for following from another server, on the landing page."
+  },
   "landing.elsewhere.title": {
     "defaultMessage": "ほかのサーバーのアカウントで",
     "description": "Heading of the steps for following people of this server from an account on another server, on the landing page."
@@ -124,11 +128,11 @@
     "description": "Step of following from another server."
   },
   "landing.elsewhere.copy": {
-    "defaultMessage": "その人のハンドル（{handle} など）を写す",
+    "defaultMessage": "その人のハンドル ({handle} など) を写す",
     "description": "Step of following from another server. {handle} is an example handle of this server, such as '@alice@example.social'."
   },
   "landing.elsewhere.copy_plain": {
-    "defaultMessage": "その人の名前の下にあるハンドル（@名前@ドメイン）を写す",
+    "defaultMessage": "その人の名前の下にあるハンドル (@名前@ドメイン) を写す",
     "description": "Step of following from another server, when the page has no example handle to show."
   },
   "landing.elsewhere.search": {
@@ -140,7 +144,7 @@
     "description": "Note under the step of searching on one's own server."
   },
   "landing.powered_by": {
-    "defaultMessage": "my で動いています（AGPL-3.0 のフリーソフトウェア）",
+    "defaultMessage": "my で動いています (AGPL-3.0 のフリーソフトウェア)",
     "description": "Line in the footer of the landing page that names the software the server runs and its license, before the link to its source code."
   }
 }

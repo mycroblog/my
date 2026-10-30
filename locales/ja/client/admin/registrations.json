@@ -52,7 +52,7 @@
     "description": "Title of the confirmation before rejecting a registration. {applicant} is the applicant's @username."
   },
   "admin.registrations.decide_failed": {
-    "defaultMessage": "決定を保存できませんでした：{reason}",
+    "defaultMessage": "決定を保存できませんでした: {reason}",
     "description": "Error in the confirmation of approving or rejecting a registration when the request failed. {reason} is why."
   },
   "admin.registrations.email": {

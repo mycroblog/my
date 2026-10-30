@@ -17,6 +17,8 @@ export type PageHeadingProps = {
   visuallyHidden?: boolean | "wide";
   /** The brand's spark beside the heading, for a heading that opens a page (the landing). */
   spark?: ViewProps["spark"];
+  /** The display size, for the title of the landing page's masthead. */
+  display?: boolean;
 };
 
 /**
@@ -25,7 +27,7 @@ export type PageHeadingProps = {
  * On a page whose heading only says where the user is, which the navigation already shows (a timeline,
  * the notifications), it is visually hidden but stays in the accessibility tree (web-client/README.md Y5).
  */
-export function PageHeading({ children, id, visuallyHidden, spark }: PageHeadingProps) {
+export function PageHeading({ children, id, visuallyHidden, spark, display }: PageHeadingProps) {
   // The heading renders inside its route's match, as do the route's pending and error components.
   const hideHeading = useMatch({ strict: false, select: (match) => match.staticData.hideHeading ?? false });
   const hidden = visuallyHidden ?? hideHeading;
@@ -35,6 +37,7 @@ export function PageHeading({ children, id, visuallyHidden, spark }: PageHeading
       {...(id !== undefined && { id })}
       {...(spark !== undefined && { spark })}
       {...(back !== null && { back })}
+      {...(display !== undefined && { display })}
       visuallyHidden={hidden}
     >
       {children}

@@ -12,11 +12,10 @@ import (
 )
 
 // The overview of the instance that the landing page shows (GET /instance/overview): how many
-// members it has, how many public posts they made lately, since when it runs, and who runs it.
-// Only local, public data: the members are counted, never listed, and the operators are the
-// accounts that chose to show the badge of a staff role. The parts are read through other
-// modules and kept for OverviewTTL, so that the landing page, which every visitor opens, adds
-// no database work per request (ADR-0003).
+// members it has, how many public posts they made lately, and since when it runs. Only local,
+// public data: the members are counted, never listed. The counts are read through other modules
+// and kept for OverviewTTL, so that the landing page, which every visitor opens, adds no
+// database work per request (ADR-0003).
 
 // OverviewDays is the number of days of 24 hours that Counts.DailyPosts covers.
 const OverviewDays = 7
@@ -43,9 +42,8 @@ func (c Counts) clone() Counts {
 }
 
 // OverviewSources reads the parts of the overview from the other modules: the account module
-// counts the members and knows when the instance actor was made, the content module counts the
-// posts, and the identity and account modules name the operators. internal/platform implements
-// it.
+// counts the members and knows when the instance actor was made, and the content module counts
+// the posts. internal/platform implements it.
 type OverviewSources interface {
 	// CountMembers returns the number of local accounts that are not deleted.
 	CountMembers(ctx context.Context) (int, error)
@@ -54,20 +52,16 @@ type OverviewSources interface {
 	// DailyPublicPosts counts the public posts of local accounts that are not deleted in each
 	// of the days periods of 24 hours before to, oldest first.
 	DailyPublicPosts(ctx context.Context, to time.Time, days int) ([]int, error)
-	// OperatorAccountIDs returns the local accounts that show the badge of a staff role on
-	// their profile, highest role first.
-	OperatorAccountIDs(ctx context.Context) ([]string, error)
 }
 
-// Overview reads the parts of the overview and keeps each for OverviewTTL. It is safe for
-// concurrent use; a part that fails to read is read again on the next call.
+// Overview reads the counts and keeps them for OverviewTTL. It is safe for concurrent use; counts
+// that fail to read are read again on the next call.
 type Overview struct {
 	src   OverviewSources
 	clock kernel.Clock
 
-	mu          sync.Mutex
-	counts      cached[Counts]
-	operatorIDs cached[[]string]
+	mu     sync.Mutex
+	counts cached[Counts]
 }
 
 type cached[T any] struct {
@@ -105,20 +99,4 @@ func (o *Overview) Counts(ctx context.Context) (Counts, error) {
 	}
 	o.counts = cached[Counts]{value: Counts{Members: members, DailyPosts: daily, StartedAt: started, CountedAt: now}, at: now, ok: true}
 	return o.counts.value.clone(), nil
-}
-
-// OperatorAccountIDs returns the accounts of the operators, read at most OverviewTTL ago.
-func (o *Overview) OperatorAccountIDs(ctx context.Context) ([]string, error) {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	now := o.clock.Now()
-	if o.operatorIDs.fresh(now) {
-		return slices.Clone(o.operatorIDs.value), nil
-	}
-	ids, err := o.src.OperatorAccountIDs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	o.operatorIDs = cached[[]string]{value: ids, at: now, ok: true}
-	return slices.Clone(ids), nil
 }

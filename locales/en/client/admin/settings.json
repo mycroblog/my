@@ -843,14 +843,6 @@
     "defaultMessage": "How many members the server has, how many public posts they made on each of the last 7 days, and since when the server runs. Only public posts count, and the numbers are refreshed every few minutes.",
     "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
   },
-  "admin.settings.landing.operators": {
-    "defaultMessage": "Show who runs the server",
-    "description": "Checkbox of whether the landing page lists the people who run the server."
-  },
-  "admin.settings.landing.operators.description": {
-    "defaultMessage": "The accounts of this server that show the badge of a staff role (administrator, moderator, or a role with moderation or server permissions) on their profile, with their badges. A staff member who does not show their badge is never listed.",
-    "description": "Explanation of the checkbox that lists the people who run the server on the landing page."
-  },
   "admin.settings.featured.title": {
     "defaultMessage": "Suggested accounts",
     "description": "Heading of the section of the server settings about the accounts suggested to follow."

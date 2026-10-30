@@ -8,6 +8,6 @@ https://social.example/auth/verify_email?token=sample-token
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 social.example の登録にこのメールアドレスが使われたため、このメールを送りました。登録した覚えがない場合は、このメールを無視してください。

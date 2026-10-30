@@ -20,7 +20,7 @@
     "description": "Button that tries again to load the income totals after a failure."
   },
   "income.totals.caption": {
-    "defaultMessage": "{granularity}ごとの収入（{basis}）",
+    "defaultMessage": "{granularity}ごとの収入 ({basis})",
     "description": "Accessible caption of the table of the income totals: the chosen period kind and the way payments are counted."
   },
   "income.totals.gross": {
@@ -68,7 +68,7 @@
     "description": "Rule of the income totals: the time zone in which a payment provider (such as stripe) dates its money movements (UTC, Asia/Tokyo)."
   },
   "income.rules.amortized": {
-    "defaultMessage": "{days} 日より長い期間の支払い（年払いなど）は、支払った期間の日数に日割りで載せます。その返金は、返金の日までの分を返金の日にまとめて差し引き、それより後の日の分を打ち消します。ほかの支払いはその日付に載せます。",
+    "defaultMessage": "{days} 日より長い期間の支払い (年払いなど) は、支払った期間の日数に日割りで載せます。その返金は、返金の日までの分を返金の日にまとめて差し引き、それより後の日の分を打ち消します。ほかの支払いはその日付に載せます。",
     "description": "Rule of the spread income totals. {days} is the number of days a payment must cover to be spread, such as 31."
   },
   "income.rules.cash": {

@@ -12,7 +12,7 @@
     "description": "Button that leaves a dialog of the announcements screen without changing anything."
   },
   "admin.announcements.change_failed": {
-    "defaultMessage": "お知らせを変更できませんでした：{reason}",
+    "defaultMessage": "お知らせを変更できませんでした: {reason}",
     "description": "Error after a change of an announcement failed. {reason} is why."
   },
   "admin.announcements.create_draft": {
@@ -20,7 +20,7 @@
     "description": "Button that writes a new announcement as a draft."
   },
   "admin.announcements.create_failed": {
-    "defaultMessage": "お知らせを書けませんでした：{reason}",
+    "defaultMessage": "お知らせを書けませんでした: {reason}",
     "description": "Error after writing an announcement failed. {reason} is why."
   },
   "admin.announcements.create_published": {
@@ -60,7 +60,7 @@
     "description": "Title of the dialog that edits the text of an announcement."
   },
   "admin.announcements.edit_one": {
-    "defaultMessage": "編集：{announcement}",
+    "defaultMessage": "編集: {announcement}",
     "description": "Accessible name of the button that edits an announcement. {announcement} is the first line of its text."
   },
   "admin.announcements.empty": {
@@ -76,7 +76,7 @@
     "description": "Term of when an announcement stops showing."
   },
   "admin.announcements.heading": {
-    "defaultMessage": "{announcement}（{state}）",
+    "defaultMessage": "{announcement} ({state})",
     "description": "Heading of an announcement in the list. {announcement} is the first line of its text; {state} its state (draft, published, withdrawn)."
   },
   "admin.announcements.list.title": {
@@ -100,7 +100,7 @@
     "description": "Description of the checkbox that publishes a new announcement at once."
   },
   "admin.announcements.publish_one": {
-    "defaultMessage": "公開する：{announcement}",
+    "defaultMessage": "公開する: {announcement}",
     "description": "Accessible name of the button that publishes an announcement. {announcement} is the first line of its text."
   },
   "admin.announcements.published_at": {
@@ -144,7 +144,7 @@
     "description": "Label of the text of an announcement."
   },
   "admin.announcements.text.description": {
-    "defaultMessage": "Markdown で書きます（段落・強調・リスト・引用・コード・リンク）。HTML は取り除かれます。",
+    "defaultMessage": "Markdown で書きます (段落・強調・リスト・引用・コード・リンク)。HTML は取り除かれます。",
     "description": "Description of the text field of an announcement: which Markdown it takes."
   },
   "admin.announcements.text_required": {
@@ -184,7 +184,7 @@
     "description": "Title of the dialog that confirms withdrawing an announcement. {announcement} is the first line of its text."
   },
   "admin.announcements.withdraw_one": {
-    "defaultMessage": "取り下げる：{announcement}",
+    "defaultMessage": "取り下げる: {announcement}",
     "description": "Accessible name of the button that withdraws an announcement. {announcement} is the first line of its text."
   },
   "admin.announcements.withdrawn": {

@@ -67,10 +67,11 @@ func TestSignUpAsksToAgreeToTheDocuments(t *testing.T) {
 	b := newBrowser(t, newDocumentServer(t, newFakeIdentity(), docs))
 	body := b.do(http.MethodGet, authpages.PathSignUp, nil, map[string]string{"Accept-Language": "ja"}).Body.String()
 	wantContains(t, body,
-		`<p id="sign-up-agreement">アカウントを作成すると、このサーバーの次の文書に同意したことになります。</p>`,
+		`<p id="sign-up-agreement">アカウントを作成する前に、このサーバーの次の文書を読んでください。</p>`,
 		// The form keeps what was typed: the agreement's links open in a new tab, which assistive technology reads.
-		`<li><a href="/about/terms" target="_blank" rel="noopener noreferrer">利用規約<span class="visually-hidden"> （新しいタブで開きます）</span></a></li>`,
-		`<button class="button" type="submit" aria-describedby="sign-up-agreement">`,
+		`<li><a href="/about/terms" target="_blank" rel="noopener noreferrer">利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a></li>`,
+		// A required checkbox agrees to them, described by the notice above the links.
+		`<label class="check"><input id="sign-up-agreement-check" name="agreement" type="checkbox" value="yes" required aria-describedby="sign-up-agreement"><span>上の文書を読み、同意します</span></label>`,
 		// The footer's links lead from page to page of the server in the same tab.
 		`<li><a href="/about/terms">利用規約</a></li>`,
 	)
@@ -79,6 +80,34 @@ func TestSignUpAsksToAgreeToTheDocuments(t *testing.T) {
 	body = b.do(http.MethodGet, authpages.PathSignIn, nil, nil).Body.String()
 	wantContains(t, body, `<footer class="footer">`, `<a href="/about/terms">Terms of service</a>`)
 	wantLacks(t, body, "sign-up-agreement")
+}
+
+// TestSignUpNeedsTheAgreement checks that the server, not only the browser's required checkbox,
+// refuses a registration without the agreement while the instance has published a document, and
+// keeps the box checked when the form comes back with other errors.
+func TestSignUpNeedsTheAgreement(t *testing.T) {
+	docs := &fakeDocuments{docs: map[instance.TextKey]appinstance.Document{
+		instance.TextTerms: {Key: instance.TextTerms, HTML: "<p>t</p>", RevisedAt: revised},
+	}}
+	id := newFakeIdentity()
+	b := newBrowser(t, newDocumentServer(t, id, docs))
+	fields := []string{"username", "alice", "email", "alice@example.com", "password", "correct horse"}
+	w := b.do(http.MethodPost, authpages.PathSignUp, signUpForm(b, fields...), nil)
+	if w.Code != http.StatusUnprocessableEntity || len(id.signUps) != 0 {
+		t.Fatalf("POST sign_up without the agreement = %d with %d sign-ups, want 422 and none", w.Code, len(id.signUps))
+	}
+	wantContains(t, w.Body.String(),
+		`<p id="sign-up-agreement-error" class="field-error">Agree to the documents above to create an account.</p>`,
+		`aria-describedby="sign-up-agreement sign-up-agreement-error" aria-invalid="true"`,
+	)
+
+	w = b.do(http.MethodPost, authpages.PathSignUp, signUpForm(b, "username", "", "agreement", "yes"), nil)
+	wantContains(t, w.Body.String(), `value="yes" required checked`)
+
+	w = b.do(http.MethodPost, authpages.PathSignUp, signUpForm(b, append(fields, "agreement", "yes")...), nil)
+	if w.Code != http.StatusSeeOther || len(id.signUps) != 1 {
+		t.Fatalf("POST sign_up with the agreement = %d with %d sign-ups, want 303 and one\n%s", w.Code, len(id.signUps), w.Body.String())
+	}
 }
 
 func TestDocumentFailures(t *testing.T) {

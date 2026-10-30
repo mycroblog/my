@@ -20,7 +20,7 @@
     "description": "Button above the list of aliases that opens the form that adds one, and the heading of that form."
   },
   "account_move.aliases.add_failed": {
-    "defaultMessage": "別名を追加できませんでした：{reason}",
+    "defaultMessage": "別名を追加できませんでした: {reason}",
     "description": "Error next to the form that adds an alias. {reason} is the server's explanation."
   },
   "account_move.aliases.added": {
@@ -56,7 +56,7 @@
     "description": "Button that removes an alias."
   },
   "account_move.aliases.remove_failed": {
-    "defaultMessage": "別名を削除できませんでした：{reason}",
+    "defaultMessage": "別名を削除できませんでした: {reason}",
     "description": "Error under the list of aliases when removing one failed. {reason} is the server's explanation."
   },
   "account_move.aliases.remove_of": {
@@ -88,7 +88,7 @@
     "description": "Status message after the move was cancelled."
   },
   "account_move.cancel.failed": {
-    "defaultMessage": "移転を取り消せませんでした：{reason}",
+    "defaultMessage": "移転を取り消せませんでした: {reason}",
     "description": "Error in the dialog that cancels the move. {reason} is the server's explanation."
   },
   "account_move.cancel.open": {
@@ -152,7 +152,7 @@
     "description": "Status message after the account moved. {handle} is the new account's handle."
   },
   "account_move.move.failed": {
-    "defaultMessage": "アカウントを移転できませんでした：{reason}",
+    "defaultMessage": "アカウントを移転できませんでした: {reason}",
     "description": "Error in the dialog that moves the account when it failed. {reason} is the server's explanation."
   },
   "account_move.move.form.title": {
@@ -160,7 +160,7 @@
     "description": "Heading of the section with the form that names the account to move to."
   },
   "account_move.move.lookup_failed": {
-    "defaultMessage": "そのアカウントが見つかりませんでした：{reason}",
+    "defaultMessage": "そのアカウントが見つかりませんでした: {reason}",
     "description": "Error next to the form that names the account to move to. {reason} is the server's explanation."
   },
   "account_move.move.password.field": {
