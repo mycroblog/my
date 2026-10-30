@@ -1,6 +1,6 @@
 # ADR-0124: カスタム絵文字の作成数の上限を毎月リセットする
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 - Deciders: @rosylilly
 - Issue: #1868
@@ -33,7 +33,7 @@
 
 ## Decision（決定）
 
-推奨案は **1**。
+**1 を採用する。**
 
 ### 1. 数えるもの
 

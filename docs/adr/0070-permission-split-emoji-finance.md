@@ -1,6 +1,6 @@
 # ADR-0070: 権限の分割: 絵文字の作成と会計の閲覧
 
-- Status: Accepted
+- Status: Accepted（§4 の数えるものと上限が下がったときの扱いを ADR-0124（カスタム絵文字の作成数の上限を毎月リセットする）が置き換える）
 - Date: 2026-10-22
 - Deciders: @rosylilly
 - Issue: #910
