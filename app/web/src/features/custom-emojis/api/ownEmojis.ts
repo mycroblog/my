@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the user's page of their custom emoji (web-client/README.md S1, ADR-0070 §2, §3, §6,
-// create_custom_emojis): the emoji the user made with what they used of their limit (GET /custom_emojis/mine), their
+// create_custom_emojis, ADR-0124): the emoji the user made with what they used of their monthly limit and when it
+// resets (GET /custom_emojis/mine), their
 // requests (GET /custom_emoji_requests), requesting a new emoji or a new image of one with an uploaded image (POST
 // /custom_emoji_requests), withdrawing a pending request (POST .../withdraw), and changing (PATCH) and deleting
 // (DELETE /custom_emojis/mine/{id}) an emoji the user made. A request that breaks a rule is a 422
@@ -115,7 +116,7 @@ export function deleteOwnCustomEmojiMutation(api: Api) {
   };
 }
 
-type EmojiPages = InfiniteData<{ items: OwnCustomEmoji[]; next_cursor?: string; used: number; limit?: number }>;
+type EmojiPages = InfiniteData<Schemas["OwnCustomEmojiPage"]>;
 type RequestPages = InfiniteData<{ items: CustomEmojiRequest[]; next_cursor?: string }>;
 
 /** A new request: the requests gain it (newest first), and a request to create counts against the limit. */
@@ -162,8 +163,8 @@ export async function cacheChangedOwnCustomEmoji(queryClient: QueryClient, emoji
 }
 
 /**
- * A deleted emoji: it leaves the cached list, which is fetched again for the limit it frees, with the requests (a
- * pending request for a new image of it lapsed) and the picker.
+ * A deleted emoji: it leaves the cached list, which is fetched again (deleting frees nothing of the month's limit), with
+ * the requests (a pending request for a new image of it lapsed) and the picker.
  */
 export async function cacheDeletedOwnCustomEmoji(queryClient: QueryClient, id: string): Promise<void> {
   await Promise.all([

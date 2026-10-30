@@ -250,14 +250,14 @@
   タブの中の先頭に「費用の概要」（§14。収支はいつも）を、「費用」の区画（`h2` の `section`）に今の期間の事業者ごとの内訳（設定によらずいつも）と期間の区切りの規則を、「収入」の区画に応答が `plans` を持つとき（`finance_viewer_income` か `income_visibility` が `plans`、または `manage_finance`）だけいまのプランごとの加入者の数、収入の数え方の規則を出す。合計の表と手数料を引いた収入と収支の表は、概要のグラフが出さないとき（通貨が 2 つ以上）だけ出す。総額・手数料・個々の支払い・加入者は出さない。
   インスタンス設定 `finance_viewer_item_names`・`finance_viewer_item_memos` のどちらかが有効なら、今の期間の項目の行（名前・事業者・区分・額・メモ。名前とメモはサーバーが返したときだけ。`dir="auto"`）を内訳の下に出し、画面の説明の下に、項目の名前とメモのどちらを見せているかを書く。`manage_finance` を持つ人にはサーバーがすべての行を返すので、この文を出さない。
   権限のない閲覧者には、要求を送らずに理由（権限の名前）を出す。loader は閲覧者を待ち、権限があるときだけ 2 つの合計を待つが、合計の失敗はページの失敗にはせず、それぞれの区画の中に出す。
-- **自分のカスタム絵文字**（`/settings/custom-emojis`、`routes/settings.custom-emojis.tsx`、`features/custom-emojis` の `OwnCustomEmojis`、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md) §1〜§4）: `create_custom_emojis` を持つ人の設定の画面で、ナビゲーションの項目を増やさず、設定のメニューにその人にだけ「あなたのカスタム絵文字」を出す。
+- **自分のカスタム絵文字**（`/settings/custom-emojis`、`routes/settings.custom-emojis.tsx`、`features/custom-emojis` の `OwnCustomEmojis`、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md) §1〜§3、[ADR-0124](../../adr/0124-custom-emoji-monthly-limit.md)）: `create_custom_emojis` を持つ人の設定の画面で、ナビゲーションの項目を増やさず、設定のメニューにその人にだけ「あなたのカスタム絵文字」を出す。
   権限のない閲覧者には、要求を送らずに理由（権限の名前）を出す。loader は権限があるときだけ自分の絵文字（`GET /custom_emojis/mine`）と申請（`GET /custom_emoji_requests`）を待つ（スコープ `read:custom_emojis` / `write:custom_emojis`。`admin:*` を要さない）。
   「カスタム絵文字を申請する」「あなたの申請」「あなたが作ったカスタム絵文字」の 3 つの区画（`h2` の `section`）を並べる。
-  - **申請**: 使った数と上限（「{上限} 個のうち {使った数} 個。審査中の申請を含む」、上限がなければそのこと）と、画像（`FileTrigger`）と shortcode のフォーム。管理画面の登録と同じく画像を `POST /media`（`purpose=emoji`）で送って処理を待ち、`POST /custom_emoji_requests`（`kind=create`）を送る。
+  - **申請**: 今月の作成の使った数と毎月の上限（メーター「今月の作成」に「{使った数} / {上限} 個（うち審査中 {審査中} 個）」。使った数はその UTC の暦月に出した作成の申請のうち承認済みと審査中の数で、絵文字を消しても減らない）と、次のリセットの日時（`resets_at`、翌月 1 日 00:00 UTC を閲覧者のタイムゾーンで）、上限がなければそのこと、と画像（`FileTrigger`）と shortcode のフォーム。管理画面の登録と同じく画像を `POST /media`（`purpose=emoji`）で送って処理を待ち、`POST /custom_emoji_requests`（`kind=create`）を送る。
     サーバーの拒否（422 `invalid-custom-emoji`。上限の `limit_reached` も）は `detail` をフォームの下（`role="alert"`）に出して入力を残す。成功したら入力を空にし、申請と自分の絵文字（使った数）に無効化の印を付けてから、結果を `StatusMessage` に出す。
   - **申請の一覧**: 新しい順。各申請は画像と見出し（`:shortcode:`、`dir="ltr"`）と、内容（新しい絵文字・画像の差し替え）・状態・申請した日時・終わった日時・却下の理由（`dir="auto"`）の説明リスト。審査中の申請は「取り下げる」を持ち、応答で行を置き換える。
   - **自分の絵文字**: 新しい順。各絵文字は管理画面の行と同じ説明リストで、「編集する」（カテゴリ・別名・ピッカーに出すかのダイアログ。有効・無効は管理者だけが変える）・「画像の差し替えを申請」（`FileTrigger` で選ぶとすぐに `kind=image` の申請を送る。承認まで絵文字は今の画像のまま）・「削除する」（`ConfirmDialog`）を持つ。
-    変えた絵文字は応答で行を置き換え、消した絵文字は一覧から除いてフォーカスを次の行のボタンに移し、使った数・申請（画像の申請が失効する）・ピッカーの絵文字に無効化の印を付ける。
+    変えた絵文字は応答で行を置き換え、消した絵文字は一覧から除いてフォーカスを次の行のボタンに移し、自分の絵文字（使った数は減らない）・申請（画像の申請が失効する）・ピッカーの絵文字に無効化の印を付ける。
 - **サポーターのプラン**（`/settings/supporter`、`routes/settings.supporter.tsx`、`features/supporters` の `SupporterSubscriptionSettings`、[ADR-0072](../../adr/0072-supporter-plans-and-roles.md) §6・§8・§13・§14）: 設定のメニューは、`GET /instance` の `supporters_enabled` が真のときだけ（Tauri のアプリでは出さない）「サポーターのプラン」を出す。
   loader は公開のプラン（`GET /instance/supporter_plans`）と自分の加入（`GET /supporter/subscription`。続いている加入と、加入できない理由 `ineligible_reason`）を待つが、失敗はページの失敗にせず本文に出す。どちらかが 404 なら、課金が無効でプランを提供していないことだけを出す。
   - **加入**: 続いている加入がなければ「プランを選ぶ」の区画に、プランの `RadioGroup`（名前は `dir="auto"`・`lang=""`、説明に月額と年額と管理者の説明）と支払いの間隔（月払い・年払い、選んだプランの額）の `RadioGroup` を出す。加入できない利用者には理由（メールの確認がまだ・このサーバーの利用者でない・凍結か削除の手続き中）を書き、「加入する」を出さない。

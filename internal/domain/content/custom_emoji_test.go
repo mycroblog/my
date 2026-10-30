@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/domain/content"
 )
@@ -107,5 +108,26 @@ func TestDefaultCustomEmojiSettings(t *testing.T) {
 	s.Enabled = false
 	if s.IsDefault() {
 		t.Error("a disabled emoji has the default settings")
+	}
+}
+
+func TestCustomEmojiLimitPeriod(t *testing.T) {
+	jst := time.FixedZone("JST", 9*60*60)
+	cases := []struct {
+		now          time.Time
+		since, until time.Time
+	}{
+		{time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC), time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)},
+		{time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)},
+		{time.Date(2026, 10, 31, 23, 59, 59, 999, time.UTC), time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)},
+		{time.Date(2026, 12, 31, 23, 0, 0, 0, time.UTC), time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC), time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)},
+		// The month is the UTC one: 08:00 on the 1st in Japan is still the previous month.
+		{time.Date(2026, 11, 1, 8, 0, 0, 0, jst), time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)},
+	}
+	for _, c := range cases {
+		since, until := content.CustomEmojiLimitPeriod(c.now)
+		if !since.Equal(c.since) || !until.Equal(c.until) {
+			t.Errorf("CustomEmojiLimitPeriod(%v) = %v, %v; want %v, %v", c.now, since, until, c.since, c.until)
+		}
 	}
 }
