@@ -31,6 +31,10 @@ const (
 	// published, or withdrawn (FR-726). It goes to every subscriber, which reads whether its
 	// viewer sees the announcement now.
 	KindAnnouncement Kind = "announcement"
+	// KindPublicEntry signals a new post that the public timelines may list (ADR-0127 §4): it
+	// goes to the timeline subscriptions of the timelines it names (OnLocal, OnFederated), each
+	// of which decides whether its viewer's timeline lists the post.
+	KindPublicEntry Kind = "public_entry"
 
 	// The signals of a voice chat room (ADR-0101 §3) go to the room subscriptions of their
 	// RoomID only. KindVoiceRoom signals that the room or its participants changed: each
@@ -46,6 +50,19 @@ const (
 	// KindVoiceMute carries the session SessionID muted by the account By.
 	KindVoiceMute Kind = "voice_mute"
 )
+
+// Timeline names a public timeline whose new posts a timeline subscription receives (ADR-0127).
+type Timeline string
+
+const (
+	// TimelineLocal is the local timeline: the posts of the local accounts.
+	TimelineLocal Timeline = "local"
+	// TimelineFederated is the federated timeline: the public posts of local and remote accounts.
+	TimelineFederated Timeline = "federated"
+)
+
+// Valid reports whether t names a public timeline.
+func (t Timeline) Valid() bool { return t == TimelineLocal || t == TimelineFederated }
 
 // MaxEmojiSize is the largest Emoji of a KindVoiceReaction signal, in bytes: a Unicode emoji or
 // a :shortcode: (ADR-0101 §3).
@@ -66,9 +83,13 @@ type Event struct {
 	Kind Kind
 	// AccountID is the account whose notifications changed (KindNotifications).
 	AccountID string
-	// EntryID is the ID of the new timeline entry (KindHomeEntry): a status ID for a post, a
-	// boost ID for a boost.
+	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
+	// for a post, a boost ID for a boost.
 	EntryID string
+	// OnLocal and OnFederated name the public timelines that may list the post of a
+	// KindPublicEntry signal; at least one is set.
+	OnLocal     bool
+	OnFederated bool
 	// AnnouncementID is the ID of the announcement that changed (KindAnnouncement).
 	AnnouncementID string
 
@@ -123,6 +144,14 @@ type RoomSubscriber interface {
 	// subscriptions of the process, not of an account, and waits for the broker as Subscribe
 	// does.
 	SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error)
+}
+
+// TimelineSubscriber opens the subscriptions of the public timeline streams (ADR-0127).
+type TimelineSubscriber interface {
+	// SubscribeTimeline opens a subscription of accountID to the KindPublicEntry signals of the
+	// timeline t. It counts toward the subscriptions of the account, as Subscribe does, and
+	// waits for the broker as Subscribe does.
+	SubscribeTimeline(ctx context.Context, accountID string, t Timeline) (Subscription, error)
 }
 
 // Subscription is one open subscription.

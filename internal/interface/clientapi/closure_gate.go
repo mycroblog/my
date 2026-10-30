@@ -46,7 +46,7 @@ var closureOperations = map[string]bool{
 // closureOperation returns the operation of the service closure that operationID is.
 func closureOperation(operationID string) instance.ClosureOperation {
 	switch {
-	case operationID == "streamEvents", operationID == "streamVoiceRoom":
+	case operationID == "streamEvents", operationID == "streamTimeline", operationID == "streamVoiceRoom":
 		return instance.ClosureStream
 	case closureOperations[operationID]:
 		return instance.ClosureOwnData

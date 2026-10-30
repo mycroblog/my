@@ -177,7 +177,8 @@ LIMIT sqlc.arg(page_limit);
 
 -- ListLocalEntries is the local timeline (FR-202): the public and local posts of local accounts
 -- (public only when include_local is 0, for visitors that are not logged in), except those of
--- authors kept from discovery and those the viewer ('' for none) blocks, is blocked by, or mutes.
+-- authors kept from discovery and those the viewer ('' for none) blocks, is blocked by, or mutes,
+-- from window_floor ('' for no bound) up.
 -- name: ListLocalEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
@@ -185,6 +186,7 @@ FROM feed_entries e
 WHERE e.is_local = 1 AND e.kind = 'post' AND e.visibility IN ('public', 'local')
   AND (CAST(sqlc.arg(include_local) AS INTEGER) = 1 OR e.visibility = 'public')
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR e.id < CAST(sqlc.arg(before) AS TEXT))
+  AND e.id >= CAST(sqlc.arg(window_floor) AS TEXT)
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = e.author_account_id
@@ -200,13 +202,15 @@ LIMIT sqlc.arg(page_limit);
 
 -- ListPublicEntries is the federated timeline (FR-202): the public posts of local and remote
 -- accounts, except those of authors and domains kept from discovery and those the viewer ('' for
--- none) blocks, is blocked by, or mutes.
+-- none) blocks, is blocked by, or mutes,
+-- from window_floor ('' for no bound) up.
 -- name: ListPublicEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
 FROM feed_entries e
 WHERE e.kind = 'post' AND e.visibility = 'public'
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR e.id < CAST(sqlc.arg(before) AS TEXT))
+  AND e.id >= CAST(sqlc.arg(window_floor) AS TEXT)
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = e.author_account_id

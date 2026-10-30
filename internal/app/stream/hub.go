@@ -35,18 +35,21 @@ type Hub struct {
 
 	mu   sync.Mutex
 	subs map[*subscription]struct{}
-	// accounts holds the account subscriptions, byAccount them by account, and byRoom the room
+	// accounts holds the account subscriptions, byAccount them and the timeline subscriptions by
+	// account, byTimeline the timeline subscriptions by timeline, and byRoom the room
 	// subscriptions by room.
-	accounts  map[*subscription]struct{}
-	byAccount map[string]map[*subscription]struct{}
-	byRoom    map[string]map[*subscription]struct{}
-	closed    bool
+	accounts   map[*subscription]struct{}
+	byAccount  map[string]map[*subscription]struct{}
+	byTimeline map[string]map[*subscription]struct{}
+	byRoom     map[string]map[*subscription]struct{}
+	closed     bool
 }
 
 var (
-	_ Publisher      = (*Hub)(nil)
-	_ Subscriber     = (*Hub)(nil)
-	_ RoomSubscriber = (*Hub)(nil)
+	_ Publisher          = (*Hub)(nil)
+	_ Subscriber         = (*Hub)(nil)
+	_ RoomSubscriber     = (*Hub)(nil)
+	_ TimelineSubscriber = (*Hub)(nil)
 )
 
 // NewHub returns an empty Hub bounded by o.
@@ -62,7 +65,8 @@ func NewHub(o HubOptions) *Hub {
 	}
 	return &Hub{
 		o: o, subs: map[*subscription]struct{}{}, accounts: map[*subscription]struct{}{},
-		byAccount: map[string]map[*subscription]struct{}{}, byRoom: map[string]map[*subscription]struct{}{},
+		byAccount: map[string]map[*subscription]struct{}{}, byTimeline: map[string]map[*subscription]struct{}{},
+		byRoom: map[string]map[*subscription]struct{}{},
 	}
 }
 
@@ -83,6 +87,27 @@ func (h *Hub) Subscribe(ctx context.Context, accountID string) (Subscription, er
 	h.subs[s] = struct{}{}
 	h.accounts[s] = struct{}{}
 	add(h.byAccount, accountID, s)
+	return s, nil
+}
+
+// SubscribeTimeline implements TimelineSubscriber. A Hub is always ready, so it waits for
+// nothing.
+func (h *Hub) SubscribeTimeline(ctx context.Context, accountID string, t Timeline) (Subscription, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		return nil, ErrClosed
+	}
+	if len(h.subs) >= h.o.MaxTotal || len(h.byAccount[accountID]) >= h.o.MaxPerAccount {
+		return nil, ErrTooManySubscriptions
+	}
+	s := &subscription{hub: h, accountID: accountID, timeline: t, events: make(chan Event, h.o.Buffer), done: make(chan struct{})}
+	h.subs[s] = struct{}{}
+	add(h.byAccount, accountID, s)
+	add(h.byTimeline, string(t), s)
 	return s, nil
 }
 
@@ -123,19 +148,32 @@ func remove(m map[string]map[*subscription]struct{}, key string, s *subscription
 	}
 }
 
-// Publish implements Publisher. A signal of KindNotifications goes to the subscriptions of its
-// account, one of KindHomeEntry or KindAnnouncement to every account subscription, and a voice
-// signal to the subscriptions of its room.
+// Publish implements Publisher. A signal of KindNotifications goes to the account
+// subscriptions of its account, one of KindHomeEntry or KindAnnouncement to every account
+// subscription, one of KindPublicEntry to the timeline subscriptions of the timelines it names,
+// and a voice signal to the subscriptions of its room.
 func (h *Hub) Publish(e Event) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	targets := h.accounts
 	switch {
 	case e.Kind == KindNotifications:
-		targets = h.byAccount[e.AccountID]
+		h.deliverLocked(h.byAccount[e.AccountID], e)
+	case e.Kind == KindPublicEntry:
+		if e.OnLocal {
+			h.deliverLocked(h.byTimeline[string(TimelineLocal)], e)
+		}
+		if e.OnFederated {
+			h.deliverLocked(h.byTimeline[string(TimelineFederated)], e)
+		}
 	case e.Kind.IsVoice():
-		targets = h.byRoom[e.RoomID]
+		h.deliverLocked(h.byRoom[e.RoomID], e)
+	default:
+		h.deliverLocked(h.accounts, e)
 	}
+}
+
+// deliverLocked hands e to the subscriptions of targets that want it; h.mu is held.
+func (h *Hub) deliverLocked(targets map[*subscription]struct{}, e Event) {
 	for s := range targets {
 		if !s.wants(e) {
 			continue
@@ -182,9 +220,13 @@ func (h *Hub) removeLocked(s *subscription) {
 		return
 	}
 	delete(h.subs, s)
-	if s.roomID != "" {
+	switch {
+	case s.roomID != "":
 		remove(h.byRoom, s.roomID, s)
-	} else {
+	case s.timeline != "":
+		remove(h.byTimeline, string(s.timeline), s)
+		remove(h.byAccount, s.accountID, s)
+	default:
 		delete(h.accounts, s)
 		remove(h.byAccount, s.accountID, s)
 	}
@@ -193,9 +235,10 @@ func (h *Hub) removeLocked(s *subscription) {
 
 type subscription struct {
 	hub *Hub
-	// accountID is the account of an account subscription, roomID the room of a room
-	// subscription.
+	// accountID is the account of an account or timeline subscription, timeline the timeline of
+	// a timeline subscription, and roomID the room of a room subscription.
 	accountID string
+	timeline  Timeline
 	roomID    string
 	// session is the session of a room subscription.
 	session string
@@ -203,9 +246,12 @@ type subscription struct {
 	done    chan struct{}
 }
 
-// wants reports whether a room subscription takes a voice signal: not one for another session.
+// wants reports whether a subscription takes a signal: a timeline subscription no notifications
+// of its account, and a room subscription no voice signal for another session.
 func (s *subscription) wants(e Event) bool {
 	switch e.Kind {
+	case KindNotifications:
+		return s.timeline == ""
 	case KindVoiceSignal:
 		return e.To == "" || e.To == s.session
 	case KindVoiceMute:

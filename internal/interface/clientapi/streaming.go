@@ -89,22 +89,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sub, err := s.o.Streams.Subscribe(ctx, v.AccountID)
-	switch {
-	case errors.Is(err, stream.ErrTooManySubscriptions):
-		l := s.localizer(r)
-		s.writeProblem(w, r, http.StatusTooManyRequests, ProblemTypeTooManyStreams, l.ServerErrorsRateLimited(), l.ServerErrorsStreamingTooMany())
-		return
-	case errors.Is(err, stream.ErrClosed), errors.Is(err, stream.ErrUnavailable):
-		if errors.Is(err, stream.ErrUnavailable) {
-			s.o.Logger.WarnContext(ctx, "streaming broker unavailable", slog.Any("error", err))
-		}
-		w.Header().Set("Retry-After", strconv.Itoa(streamRetryAfter))
-		s.writeProblem(w, r, http.StatusServiceUnavailable, ProblemTypeBlank, s.localizer(r).ServerErrorsStreamingUnavailable(), "")
-		return
-	case ctx.Err() != nil:
-		return // the client went while the broker got ready
-	case err != nil:
-		s.responseError(w, r, err)
+	if s.subscribeRefused(w, r, err) {
 		return
 	}
 	defer sub.Close()
@@ -120,6 +105,44 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		// Notifications from the moment the stream opens; earlier ones are in the list.
 		lastNotification: kernel.UUIDv7Floor(time.Now()),
 	}
+	s.runStream(w, r, st, sub, streamKindUser, st.handle, nil)
+}
+
+// subscribeRefused answers a subscription that failed with err and reports true, or reports
+// false for a nil err: a 429 for too many streams of the user, a 503 with Retry-After for a
+// broker that is unavailable or shutting down, nothing for a client that went while the broker
+// got ready, and the error otherwise.
+func (s *Server) subscribeRefused(w http.ResponseWriter, r *http.Request, err error) bool {
+	ctx := r.Context()
+	switch {
+	case err == nil:
+		return false
+	case errors.Is(err, stream.ErrTooManySubscriptions):
+		l := s.localizer(r)
+		s.writeProblem(w, r, http.StatusTooManyRequests, ProblemTypeTooManyStreams, l.ServerErrorsRateLimited(), l.ServerErrorsStreamingTooMany())
+	case errors.Is(err, stream.ErrClosed), errors.Is(err, stream.ErrUnavailable):
+		if errors.Is(err, stream.ErrUnavailable) {
+			s.o.Logger.WarnContext(ctx, "streaming broker unavailable", slog.Any("error", err))
+		}
+		w.Header().Set("Retry-After", strconv.Itoa(streamRetryAfter))
+		s.writeProblem(w, r, http.StatusServiceUnavailable, ProblemTypeBlank, s.localizer(r).ServerErrorsStreamingUnavailable(), "")
+	case ctx.Err() != nil:
+		// The client went while the broker got ready.
+	default:
+		s.responseError(w, r, err)
+	}
+	return true
+}
+
+// runStream serves the open subscription sub as the Server-Sent Events of st, counted in
+// StreamConnections as kind: it hands each signal to handle and writes a heartbeat every
+// StreamHeartbeat. It returns when the client goes, the subscription ends, handle fails, a
+// write times out, or a heartbeat finds that the access token is no longer valid, that the
+// server was closed, or that alive (nil for none) reports false.
+func (s *Server) runStream(w http.ResponseWriter, r *http.Request, st *streamState, sub stream.Subscription, kind string,
+	handle func(context.Context, stream.Event) error, alive func(context.Context) bool,
+) {
+	ctx := r.Context()
 	token, _, _ := bearerToken(r.Header)
 
 	// The stream outlives the server's read timeout, which would otherwise end it.
@@ -127,9 +150,9 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		s.responseError(w, r, err)
 		return
 	}
-	kind := kernel.NewLabels(labelStreamKind, streamKindUser)
-	s.streams.Add(ctx, 1, kind)
-	defer s.streams.Add(context.WithoutCancel(ctx), -1, kind)
+	labels := kernel.NewLabels(labelStreamKind, kind)
+	s.streams.Add(ctx, 1, labels)
+	defer s.streams.Add(context.WithoutCancel(ctx), -1, labels)
 	h := w.Header()
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", cacheNoStore)
@@ -158,13 +181,16 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 			if s.streamClosed(ctx) {
 				return // the server was closed (ADR-0088 §2)
 			}
+			if alive != nil && !alive(ctx) {
+				return
+			}
 			if st.write(": heartbeat\n\n") != nil {
 				return
 			}
 		case e := <-sub.Events():
-			if err := st.handle(ctx, e); err != nil {
+			if err := handle(ctx, e); err != nil {
 				if !errors.Is(err, errStreamWrite) && ctx.Err() == nil {
-					s.o.Logger.ErrorContext(ctx, "streaming", slog.String("account_id", v.AccountID), slog.Any("error", err))
+					s.o.Logger.ErrorContext(ctx, "streaming", slog.String("account_id", st.viewer.AccountID), slog.Any("error", err))
 				}
 				return
 			}

@@ -451,8 +451,10 @@ type StreamBrokerFactory func(t *testing.T, o stream.HubOptions) StreamBroker
 // StreamBrokerContract verifies a stream broker: a notification signal reaches the
 // subscriptions of its account and a home entry every subscription, once when published in the
 // process and also when published in another; the signals of a voice chat room reach the room
-// subscriptions of that room only, from this process and from another; the subscriptions per account and per process
-// are bounded and Close releases them; a subscriber that falls behind is ended; and a broken
+// subscriptions of that room only, from this process and from another; a public timeline entry
+// reaches the timeline subscriptions of the timelines it names only, and a timeline subscription
+// receives no account signal; the subscriptions per account (timeline subscriptions included) and
+// per process are bounded and Close releases them; a subscriber that falls behind is ended; and a broken
 // listener ends every subscription, after which new ones open and receive again.
 func StreamBrokerContract(t *testing.T, newBroker StreamBrokerFactory) {
 	t.Helper()
@@ -464,6 +466,8 @@ func StreamBrokerContract(t *testing.T, newBroker StreamBrokerFactory) {
 		{"Routes", stream.HubOptions{}, brokerRoutes},
 		{"RoutesRemoteSignals", stream.HubOptions{}, brokerRoutesRemote},
 		{"RoutesRoomSignals", stream.HubOptions{}, brokerRoutesRooms},
+		{"RoutesTimelineSignals", stream.HubOptions{}, brokerRoutesTimelines},
+		{"LimitsTimelineSubscriptions", stream.HubOptions{MaxPerAccount: 2, MaxTotal: 3}, brokerLimitsTimelines},
 		{"Limits", stream.HubOptions{MaxPerAccount: 2, MaxTotal: 3}, brokerLimits},
 		{"DropsSlowSubscribers", stream.HubOptions{Buffer: 2}, brokerDropsSlow},
 		{"EndsOnBroken", stream.HubOptions{}, brokerEndsOnBroken},
@@ -639,34 +643,91 @@ func brokerRoutesRemote(t *testing.T, b StreamBroker) {
 	b.Remote.Publish(note)
 	b.Remote.Publish(entry)
 
-	// Signals of another process may arrive in any order and twice.
-	want := func(name string, s stream.Subscription, wanted ...stream.Event) {
-		t.Helper()
-		missing := slices.Clone(wanted)
-		deadline := time.Now().Add(b.Timeout)
-		for len(missing) > 0 {
-			e, ok := brokerNext(s, time.Until(deadline))
-			if !ok {
-				t.Errorf("%s did not receive %+v", name, missing)
-				return
-			}
-			if !slices.Contains(wanted, e) {
-				t.Errorf("%s received %+v", name, e)
-			}
-			missing = slices.DeleteFunc(missing, func(m stream.Event) bool { return m == e })
+	brokerWant(t, b, "alice", alice, note, entry)
+	brokerWant(t, b, "bob", bob, entry)
+}
+
+// brokerWant checks that s receives each of wanted within the timeout and nothing else within
+// the grace after: the signals of another process may arrive in any order and twice.
+func brokerWant(t *testing.T, b StreamBroker, name string, s stream.Subscription, wanted ...stream.Event) {
+	t.Helper()
+	missing := slices.Clone(wanted)
+	deadline := time.Now().Add(b.Timeout)
+	for len(missing) > 0 {
+		e, ok := brokerNext(s, time.Until(deadline))
+		if !ok {
+			t.Errorf("%s did not receive %+v", name, missing)
+			return
 		}
-		for {
-			e, ok := brokerNext(s, streamGrace)
-			if !ok {
-				return
-			}
-			if !slices.Contains(wanted, e) {
-				t.Errorf("%s received %+v", name, e)
-			}
+		if !slices.Contains(wanted, e) {
+			t.Errorf("%s received %+v", name, e)
+		}
+		missing = slices.DeleteFunc(missing, func(m stream.Event) bool { return m == e })
+	}
+	for {
+		e, ok := brokerNext(s, streamGrace)
+		if !ok {
+			return
+		}
+		if !slices.Contains(wanted, e) {
+			t.Errorf("%s received %+v", name, e)
 		}
 	}
-	want("alice", alice, note, entry)
-	want("bob", bob, entry)
+}
+
+// brokerSubscribeTimeline opens a timeline subscription of accountID to tl.
+func brokerSubscribeTimeline(t *testing.T, b StreamBroker, accountID string, tl stream.Timeline) stream.Subscription {
+	t.Helper()
+	timelines, ok := b.Subscriber.(stream.TimelineSubscriber)
+	if !ok {
+		t.Fatalf("the subscriber %T opens no timeline subscriptions", b.Subscriber)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), b.Timeout)
+	defer cancel()
+	s, err := timelines.SubscribeTimeline(ctx, accountID, tl)
+	if err != nil {
+		t.Fatalf("SubscribeTimeline(%q, %q): %v", accountID, tl, err)
+	}
+	t.Cleanup(s.Close)
+	return s
+}
+
+func brokerRoutesTimelines(t *testing.T, b StreamBroker) {
+	alice := brokerSubscribe(t, b, NamedID("alice"))
+	aliceLocal := brokerSubscribeTimeline(t, b, NamedID("alice"), stream.TimelineLocal)
+	bobFederated := brokerSubscribeTimeline(t, b, NamedID("bob"), stream.TimelineFederated)
+	publishers := map[string]stream.Publisher{"this process": b.Publisher}
+	if b.Remote != nil {
+		publishers["another process"] = b.Remote
+	}
+	for from, pub := range publishers {
+		note := stream.Event{Kind: stream.KindNotifications, AccountID: NamedID("alice")}
+		home := stream.Event{Kind: stream.KindHomeEntry, EntryID: NamedID("s1")}
+		local := stream.Event{Kind: stream.KindPublicEntry, EntryID: NamedID("local"), OnLocal: true}
+		both := stream.Event{Kind: stream.KindPublicEntry, EntryID: NamedID("both"), OnLocal: true, OnFederated: true}
+		federated := stream.Event{Kind: stream.KindPublicEntry, EntryID: NamedID("federated"), OnFederated: true}
+		for _, e := range []stream.Event{note, home, local, both, federated} {
+			pub.Publish(e)
+		}
+		brokerWant(t, b, "alice's account subscription from "+from, alice, note, home)
+		brokerWant(t, b, "alice's local timeline from "+from, aliceLocal, local, both)
+		brokerWant(t, b, "bob's federated timeline from "+from, bobFederated, both, federated)
+	}
+}
+
+func brokerLimitsTimelines(t *testing.T, b StreamBroker) {
+	brokerSubscribe(t, b, NamedID("alice"))
+	local := brokerSubscribeTimeline(t, b, NamedID("alice"), stream.TimelineLocal)
+	timelines := b.Subscriber.(stream.TimelineSubscriber)
+	if _, err := timelines.SubscribeTimeline(t.Context(), NamedID("alice"), stream.TimelineFederated); !errors.Is(err, stream.ErrTooManySubscriptions) {
+		t.Errorf("third subscription of alice: %v, want ErrTooManySubscriptions", err)
+	}
+	brokerSubscribeTimeline(t, b, NamedID("bob"), stream.TimelineFederated)
+	if _, err := timelines.SubscribeTimeline(t.Context(), NamedID("carol"), stream.TimelineLocal); !errors.Is(err, stream.ErrTooManySubscriptions) {
+		t.Errorf("fourth subscription: %v, want ErrTooManySubscriptions", err)
+	}
+	local.Close()
+	brokerSubscribeTimeline(t, b, NamedID("alice"), stream.TimelineFederated)
 }
 
 func brokerLimits(t *testing.T, b StreamBroker) {

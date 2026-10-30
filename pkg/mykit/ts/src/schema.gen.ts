@@ -3138,6 +3138,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/streaming/timelines/{timeline}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The timeline to stream, `local` or `federated`; any other is a 404. */
+                timeline: "local" | "federated";
+            };
+            cookie?: never;
+        };
+        /**
+         * Stream the new posts of the local or the federated timeline
+         * @description A Server-Sent Events stream (`text/event-stream`) of the new posts of the local timeline
+         *     (`local`) or the federated timeline (`federated`), from the moment it opens. Read it with
+         *     `fetch` and send the access token in `Authorization`, like every other operation
+         *     (`EventSource` cannot send it). Only logged-in users open it, whatever the instance setting
+         *     `local_timeline_access` or `federated_timeline_access` allows anonymous visitors; while the
+         *     setting of the timeline is `off` it is a 404.
+         *
+         *     Events:
+         *
+         *     - `update`: a new post of the timeline, as `GET /api/v1/timelines/local` or
+         *       `GET /api/v1/timelines/public` would list it for the user at that moment (the visibility,
+         *       the user's blocks, mutes, and muted domains, and the user's timeline languages apply).
+         *       `data` is a `Status`. The local timeline has the public posts of the local accounts and
+         *       their `local` posts; the federated timeline has the public posts of local and remote
+         *       accounts, never `local` posts, and neither has boosts. A remote post arrives when the
+         *       server stores it.
+         *
+         *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
+         *     the access token stops being valid, when the setting of the timeline becomes `off`, when
+         *     the client does not keep up, and when it shuts down; nothing is replayed, so after
+         *     reconnecting read the first page of the timeline again for what was missed. The stream
+         *     counts toward the streams a user may hold open at once, with `GET /api/v1/streaming`; past
+         *     the limit the answer is 429 with type `/api/v1/problems/too-many-streams`. While the server
+         *     cannot receive updates (its broker is not ready, or it is shutting down) the answer is 503
+         *     with `Retry-After`; try again after that many seconds. The server may also end an open
+         *     stream when it may have missed updates; reconnect and read again, as after any other end.
+         */
+        get: operations["streamTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/finance/cost_totals": {
         parameters: {
             query?: never;
@@ -18192,6 +18240,31 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event stream. It stays open until the client or the server ends it. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    streamTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The timeline to stream, `local` or `federated`; any other is a 404. */
+                timeline: "local" | "federated";
+            };
             cookie?: never;
         };
         requestBody?: never;

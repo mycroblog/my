@@ -137,9 +137,10 @@ type Relay struct {
 }
 
 var (
-	_ Publisher      = (*Relay)(nil)
-	_ Subscriber     = (*Relay)(nil)
-	_ RoomSubscriber = (*Relay)(nil)
+	_ Publisher          = (*Relay)(nil)
+	_ Subscriber         = (*Relay)(nil)
+	_ RoomSubscriber     = (*Relay)(nil)
+	_ TimelineSubscriber = (*Relay)(nil)
 )
 
 // listening is one listener of a Relay, from its start to its close.
@@ -286,6 +287,11 @@ func (r *Relay) receive(payload []byte) {
 // begun while the broker was unreachable, starts a fresh one once if that start fails.
 func (r *Relay) Subscribe(ctx context.Context, accountID string) (Subscription, error) {
 	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.Subscribe(ctx, accountID) })
+}
+
+// SubscribeTimeline implements TimelineSubscriber, as Subscribe does.
+func (r *Relay) SubscribeTimeline(ctx context.Context, accountID string, t Timeline) (Subscription, error) {
+	return r.subscribe(ctx, func() (Subscription, error) { return r.hub.SubscribeTimeline(ctx, accountID, t) })
 }
 
 // SubscribeRoom implements RoomSubscriber, as Subscribe does.

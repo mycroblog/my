@@ -23,7 +23,9 @@ var (
 // signal is the wire format of a signal on a Bus (ADR-0050 §1):
 // {"v":1,"o":"<process id>","k":"home_entry","e":"<entry id>"} or
 // {"v":1,"o":"<process id>","k":"notifications","a":"<account id>"} or
-// {"v":1,"o":"<process id>","k":"announcement","n":"<announcement id>"}, and the signals of the
+// {"v":1,"o":"<process id>","k":"announcement","n":"<announcement id>"} or
+// {"v":1,"o":"<process id>","k":"public_entry","e":"<entry id>","tl":["local","federated"]}
+// ("tl" names the timelines that may list the post, at least one), and the signals of the
 // voice chat rooms (ADR-0101 §3), which carry the room as "r":
 // {"v":1,"o":…,"k":"voice_room","r":"<room>"},
 // {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>","t":"<session>"},
@@ -44,8 +46,10 @@ type signal struct {
 	To             string `json:"t,omitempty"`
 	ParticipantID  string `json:"p,omitempty"`
 	On             *bool  `json:"on,omitempty"`
-	SessionID      string `json:"s,omitempty"`
-	By             string `json:"b,omitempty"`
+	// Timelines is the "tl" of a public_entry signal.
+	Timelines []Timeline `json:"tl,omitempty"`
+	SessionID string     `json:"s,omitempty"`
+	By        string     `json:"b,omitempty"`
 }
 
 // encodeSignal encodes e as published by the process origin. It fails for a payload over
@@ -56,6 +60,13 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 		RoomID: e.RoomID, MessageID: e.MessageID, To: e.To, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
 	}
 	switch e.Kind {
+	case KindPublicEntry:
+		if e.OnLocal {
+			s.Timelines = append(s.Timelines, TimelineLocal)
+		}
+		if e.OnFederated {
+			s.Timelines = append(s.Timelines, TimelineFederated)
+		}
 	case KindVoiceMic:
 		on := e.On
 		s.On = &on
@@ -96,6 +107,19 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindNotifications, AccountID: s.AccountID}, nil
 	case s.Kind == KindAnnouncement && s.AnnouncementID != "":
 		return s.Origin, Event{Kind: KindAnnouncement, AnnouncementID: s.AnnouncementID}, nil
+	case s.Kind == KindPublicEntry && s.E != "":
+		e := Event{Kind: KindPublicEntry, EntryID: s.E}
+		for _, t := range s.Timelines {
+			switch t {
+			case TimelineLocal:
+				e.OnLocal = true
+			case TimelineFederated:
+				e.OnFederated = true
+			}
+		}
+		if e.OnLocal || e.OnFederated {
+			return s.Origin, e, nil
+		}
 	}
 	return "", Event{}, fmt.Errorf("%w: kind %q", errMalformedSignal, s.Kind)
 }
