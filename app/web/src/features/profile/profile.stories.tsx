@@ -44,6 +44,9 @@ export const Normal: Story = {};
 /** An account that follows the viewer, who has not followed back. */
 export const FollowsYou: Story = answering(relatedAs({ followed_by: true }), ...bob);
 
+/** An account whose new posts the viewer is notified of: the bell is on. */
+export const Subscribed: Story = answering(relatedAs({ notify: true }), ...bob);
+
 /** An account the viewer blocked. */
 export const Blocked: Story = answering(relatedAs({ blocking: true }), ...bob);
 
@@ -57,9 +60,20 @@ export const Own: Story = at(
   posting(postsOf(viewerFixture)),
 );
 
-/** An account of another server: its full handle and the note that only the posts this server received are shown. */
+/**
+ * An account of another server: its full handle and the note that only the posts this server received are shown. The
+ * viewer does not follow it, so the bell cannot be pressed, and the line under the buttons says to follow first.
+ */
 export const Remote: Story = at(
   "/@carol@remote.example",
+  lookingUp(remoteAccountFixture),
+  posting(postsOf(remoteAccountFixture)),
+);
+
+/** An account of another server that the viewer follows, whose new posts the viewer is notified of. */
+export const RemoteSubscribed: Story = at(
+  "/@carol@remote.example",
+  relatedAs({ following: true, notify: true }),
   lookingUp(remoteAccountFixture),
   posting(postsOf(remoteAccountFixture)),
 );

@@ -188,7 +188,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   voice_room_started: "voice",
   voice_room_invited: "voice",
   admin_error_group: "staff",
-  status: "mention",
+  status: "status",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {

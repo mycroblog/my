@@ -192,6 +192,50 @@ describe("the notifications page", () => {
     expect(within(tabs).getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
   });
 
+  test("shows a new post of a subscribed account with its own mark, and its tab keeps only those", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const newPost: Notification = {
+      id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+      type: "status",
+      created_at: "2026-10-17T09:00:00Z",
+      account: otherAccountFixture,
+      status: { ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b3"), content: "<p>a new post</p>" },
+    };
+    const requested: string[][] = [];
+    server.use(
+      http.get(`${apiBase}/notifications`, ({ request }) => {
+        const types = new URL(request.url).searchParams.getAll("types");
+        requested.push(types);
+        const items = [newPost, ...notificationsFixture];
+        return HttpResponse.json({ items: items.filter((n) => types.length === 0 || types.includes(n.type)) });
+      }),
+    );
+    const { user, router } = await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const row = await within(feed).findByRole("article", { name: /Bob posted/ });
+    expect(row.innerHTML).toMatch(/data-notification-kind="status"/);
+    // The post opens on its page; the row is not a mention, so it offers no reply of its own.
+    expect(within(row).getByRole("link", { name: /a new post/ })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b3",
+    );
+    expect(within(row).queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
+
+    const tabs = screen.getByRole("tablist", { name: "Notification types" });
+    await user.click(within(tabs).getByRole("tab", { name: "New posts" }));
+
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ filter: "posts" });
+    });
+    await waitFor(() => {
+      expect(within(screen.getByRole("feed", { name: "Notifications" })).getAllByRole("article")).toHaveLength(1);
+    });
+    expect(requested.at(-1)).toEqual(["status"]);
+    expectSelectedTabControlsPanel("New posts");
+  });
+
   test("loads older notifications a page at a time", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a2", unread_count: 0 });

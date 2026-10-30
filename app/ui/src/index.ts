@@ -212,6 +212,7 @@ export {
   SignUpIcon,
   StarIcon,
   SubmenuIcon,
+  SubscribeIcon,
   type ToggleIconProps,
   VoiceIcon,
   WarningIcon,

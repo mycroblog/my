@@ -83,6 +83,8 @@ import {
   PiUserCircleDashed,
   PiArrowUp,
   PiBell,
+  PiBellRinging,
+  PiBellRingingFill,
   PiBookmarkSimple,
   PiBookmarkSimpleFill,
   PiCaretLeft,
@@ -187,6 +189,9 @@ export const iconTable = {
   },
   // Quotation marks are not a direction, so they do not mirror.
   QuoteIcon: { off: glyph(PiQuotes, "PiQuotes") },
+  // A ringing bell: the subscription to an account's new posts, and the notification of one. The plain bell is the
+  // notifications themselves (NotificationsIcon).
+  SubscribeIcon: { off: glyph(PiBellRinging, "PiBellRinging"), on: glyph(PiBellRingingFill, "PiBellRingingFill") },
   // Playback of audio and video: a triangle pointing along the line would flip, but a play button points to the
   // end of the line in left-to-right text and the media's time still runs that way, so it does not mirror.
   PlayIcon: { off: glyph(PiPlayFill, "PiPlayFill") },
@@ -429,6 +434,11 @@ export function BoostIcon({ filled = false }: ToggleIconProps) {
 /** A star, for favouriting; filled while on. */
 export function StarIcon({ filled = false }: ToggleIconProps) {
   return renderIcon(iconTable.StarIcon, filled);
+}
+
+/** A ringing bell, for being notified of an account's new posts; filled while on. */
+export function SubscribeIcon({ filled = false }: ToggleIconProps) {
+  return renderIcon(iconTable.SubscribeIcon, filled);
 }
 
 /** A bookmark ribbon, for bookmarking; filled while on. */

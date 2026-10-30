@@ -11,6 +11,7 @@ import {
   imageFixture,
   otherAccountFixture,
   relationshipFixture,
+  remoteAccountFixture,
   statusPage,
   timelineStatusFixture,
   viewerFixture,
@@ -44,7 +45,11 @@ function bobServer(relationship: Partial<Relationship> = {}, account: Partial<ty
             ? { blocking: true }
             : action === "mute"
               ? { muting: true, muting_notifications: true }
-              : {};
+              : action === "subscribe"
+                ? { ...relationship, notify: true }
+                : action === "unsubscribe"
+                  ? { ...relationship, notify: false }
+                  : {};
       return HttpResponse.json(relationshipFixture(String(params["id"]), after));
     }),
   );
@@ -377,6 +382,92 @@ describe("the menu of a profile", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "More actions for \u2068Bob\u2069" })).toHaveFocus();
     });
+  });
+});
+
+describe("the bell of a profile", () => {
+  /** Carol of another server, with the viewer's relationship with her; returns the changes the server received. */
+  function carolServer(relationship: Partial<Relationship> = {}) {
+    const changes: string[] = [];
+    server.use(
+      http.get(`${apiBase}/accounts/relationships`, () =>
+        HttpResponse.json([relationshipFixture(remoteAccountFixture.id, relationship)]),
+      ),
+      http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
+        const action = String(params["action"]);
+        changes.push(action);
+        return HttpResponse.json(
+          relationshipFixture(String(params["id"]), { ...relationship, notify: action === "subscribe" }),
+        );
+      }),
+    );
+    return { changes };
+  }
+
+  test("turns the notifications of a local account's new posts on and off at once, without a follow", async () => {
+    server.use(resumableSession());
+    const { changes } = bobServer();
+    const { user } = await renderApp({ path: "/@bob" });
+
+    const bell = await screen.findByRole("button", { name: "Notify me of new posts" });
+    expect(bell).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
+
+    await user.click(bell);
+
+    await waitFor(() => {
+      expect(bell).toHaveAttribute("aria-pressed", "true");
+    });
+    expect(changes).toEqual(["subscribe"]);
+    expect(await screen.findByText(/^You will be notified of the new posts of ⁨Bob⁩\.$/)).toBeInTheDocument();
+    // The focus stays on the bell, whose name does not change.
+    expect(bell).toHaveFocus();
+
+    await user.click(bell);
+
+    await waitFor(() => {
+      expect(bell).toHaveAttribute("aria-pressed", "false");
+    });
+    expect(changes).toEqual(["subscribe", "unsubscribe"]);
+  });
+
+  test("cannot be pressed on an account of another server that the viewer does not follow, and says why", async () => {
+    server.use(resumableSession());
+    const { changes } = carolServer();
+    await renderApp({ path: "/@carol@remote.example" });
+
+    const bell = await screen.findByRole("button", { name: "Notify me of new posts" });
+    expect(bell).toBeDisabled();
+    expect(bell).toHaveAttribute("aria-pressed", "false");
+    expect(bell).toHaveAccessibleDescription("Follow this account to be notified of its new posts.");
+    expect(within(main()).getByText("Follow this account to be notified of its new posts.")).toBeVisible();
+    expect(changes).toEqual([]);
+  });
+
+  test("turns on for an account of another server that the viewer follows", async () => {
+    server.use(resumableSession());
+    const { changes } = carolServer({ following: true });
+    const { user } = await renderApp({ path: "/@carol@remote.example" });
+
+    const bell = await screen.findByRole("button", { name: "Notify me of new posts" });
+    expect(bell).toBeEnabled();
+    expect(within(main()).queryByText("Follow this account to be notified of its new posts.")).not.toBeInTheDocument();
+
+    await user.click(bell);
+
+    await waitFor(() => {
+      expect(bell).toHaveAttribute("aria-pressed", "true");
+    });
+    expect(changes).toEqual(["subscribe"]);
+  });
+
+  test("is not shown while the viewer blocks the account", async () => {
+    server.use(resumableSession());
+    bobServer({ blocking: true });
+    await renderApp({ path: "/@bob" });
+
+    expect(await screen.findByRole("button", { name: "Blocked" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Notify me of new posts" })).not.toBeInTheDocument();
   });
 });
 
