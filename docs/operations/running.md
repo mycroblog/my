@@ -13,7 +13,7 @@ my version        # print the version of the binary
 
 `my serve` validates the configuration, builds the database, job queue and key-management adapters, and accepts HTTP on `listen`.
 It speaks plain HTTP/1.1 there, without TLS: put a reverse proxy or load balancer in front that terminates HTTPS (and HTTP/2 or HTTP/3 for the clients) and forwards over HTTP/1.1.
-The real-time updates (`GET /api/v1/streaming` and the voice chat room streams) are long-lived responses that send a heartbeat comment every 30 seconds (15 for a voice room) and stay open while idle.
+The real-time updates (`GET /api/v1/streaming`, the streams of the local and federated timelines, and the voice chat room streams) are long-lived responses that send a heartbeat comment every 30 seconds (15 for a voice room) and stay open while idle.
 The proxy must not buffer these responses (nginx: the server sends `X-Accel-Buffering: no`), and its idle or read timeout must be longer than the heartbeat interval.
 It does not apply the schema: apply it with `my schema apply` before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
@@ -139,7 +139,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead`) |
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
 | `my.timeline.delivery.lag` | Histogram, seconds | None (from the creation of a local post to its write into home timelines and the notification to streams) |
-| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `voice` for the streams of the voice chat rooms) |
+| `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` for the streams of the local and federated timelines, `voice` for the streams of the voice chat rooms) |
 | `my.accounts.registered` | Counter | None |
 | `my.statuses.created` | Counter | `my.visibility` |
 | `my.billing.imports` | Counter | `my.billing.source` (`aws` / `gcp`), `my.outcome` (`success` / `failed`), `error.type` (only with `failed`: the kind of failure, as in [Importing cloud usage charges](billing-import.md)). Every attempt counts, including the retries and the failures that wait for the next daily import |

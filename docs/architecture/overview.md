@@ -168,10 +168,13 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 ### 4.4 リアルタイム更新（SSE）
 
 1. コマンドのトランザクションがコミットされると、`uow.Projectors` に登録したコミットフックが、そのトランザクションで発行したイベントを受け取る（[data-model §2.1](data-model/02-consistency.md#21-トランザクションの規律)）
-2. `timeline` のフックは新しい投稿・ブーストの ID を、`notification` のフックは通知を受け取りうるアカウントを、`stream.Publisher` に知らせる。知らせるのは「何が変わったか」だけで、内容は載せない
+2. `timeline` のフックは新しい投稿・ブーストの ID を、`notification` のフックは通知を受け取りうるアカウントを、`stream.Publisher` に知らせる。知らせるのは「何が変わったか」だけで、内容は載せない。
+   ローカル・連合のタイムラインに載りうる投稿は、載りうるタイムラインを添えた「公開のタイムラインの新着」（`stream.KindPublicEntry`）としても知らせる（ADR-0127）
 3. `GET /api/v1/streaming` の各接続は `stream.Subscriber` で自分のアカウントを購読し、知らせを受けるたびにユースケースで読み直す。
    ホームに載るかは `timeline.Service.HomeEntry`（ホームのタイムラインと同じ条件と `CanView`）、通知は前回送ったものより新しい通知の一覧で決める
 4. 結果を SSE のイベント（`update` は `Status`、`notification` は `Notification`）として送る。手順は [client-api.md §5](client-api.md#5-ストリーミング)
+5. `GET /api/v1/streaming/timelines/{timeline}` の各接続は `stream.TimelineSubscriber` でそのタイムラインを購読し、`Hub` はそのタイムラインを名指す公開のタイムラインの新着だけを配る。
+   載るかは `timeline.Service.LocalEntry` / `PublicEntry`（REST の `Local` / `Public` と同じ条件と `CanView`、閲覧者のタイムラインの言語）で決める。手順は [client-api.md §5.1](client-api.md#51-ローカル連合のタイムラインのストリーム)
 
 - 組み立て（`internal/platform`）は、設定 `stream`（[設定のリファレンス](../reference/configuration.md)）でブローカーを選ぶ。設定は推測せず、既定は `hub`（[ADR-0050](../adr/0050-stream-pubsub-across-processes.md) §3）
   - `hub`: `stream.Hub` だけで、**1 つのプロセスの中だけ** で知らせを配る。web のプロセスが複数ある構成、web と worker を分けた構成（Inbox の処理で作られた通知は worker で生まれる）では、
@@ -182,10 +185,10 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
   - シャットダウン: web と all のロールは、シャットダウンの開始時にブローカーを閉じる（開いたストリームを終え、送信バッファの知らせを送り、listener を閉じてブローカーの資源を消す）。
     worker のロールはストリームを持たないので、実行中のジョブが終わってから閉じ、ジョブの知らせを最後まで送る。all のロールでシャットダウン中に終わったジョブの知らせは、ほかのプロセスに届かない
   - 2 つのプロセスの結合テスト（`internal/platform` の `TestStreamsAcrossProcesses`）: 同じ DB と同じブローカーの web と worker の 2 つの App で、worker で作った投稿と、worker が Inbox の処理で作った通知が、
-    web のストリームに届くことを、メモリの `Bus`、`stream = postgres`（PR では pgmem）、`stream = pubsub`（プロセス内の Pub/Sub サーバー pstest）で確かめる
+    web のストリーム（ホームと通知、連合のタイムライン）に届くことを、メモリの `Bus`、`stream = postgres`（PR では pgmem）、`stream = pubsub`（プロセス内の Pub/Sub サーバー pstest）で確かめる
 - プロセスをまたぐ配信は `stream.Relay` が行う。`Relay` は `Publisher` / `Subscriber` を実装し、プロセスの中の振り分け・上限・遅い購読者の切断は自分の `Hub` に任せ、
   プロセスの間はポート `stream.Bus`（すべてのプロセスへ同報し、受け取るだけ）で運ぶ
-  - 知らせは JSON `{"v":1,"o":"<process id>","k":"home_entry","e":"<entry id>"}`（通知は `"k":"notifications","a":"<account id>"`、お知らせは `"k":"announcement","n":"<announcement id>"`）で、1 KiB を超える符号化は失敗させる。知らない `v` の知らせと、知らない種類の知らせは捨てる
+  - 知らせは JSON `{"v":1,"o":"<process id>","k":"home_entry","e":"<entry id>"}`（通知は `"k":"notifications","a":"<account id>"`、お知らせは `"k":"announcement","n":"<announcement id>"`、公開のタイムラインの新着は `"k":"public_entry","e":"<entry id>","tl":["local","federated"]`）で、1 KiB を超える符号化は失敗させる。知らない `v` の知らせと、知らない種類の知らせは捨てる
   - `Publish` は自分の `Hub` にすぐ配り、有限の送信バッファ（1,024 件）に積む。送信の goroutine が `Bus.Send` を呼ぶ。あふれたときと送れなかったときは捨て、件数を `Relay.Stats` とログに出す。
     受けた知らせのうち、自分のプロセス ID のもの（発行時に配り済み）は捨てる
   - listen は遅延させる。ローカルの購読が 0 から 1 になったら `Bus.Listen` し、0 に戻って 60 秒たったら `Listener.Close` する。`Subscribe(ctx, accountID)` は listener の準備を最大 10 秒待ち、
@@ -196,7 +199,8 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
     プロセスごとの資源（キュー・subscription）を作るブローカーは任意のポート `stream.Sweeper` を実装し、定期ジョブ `stream.sweep`（15 分ごと）が、作成から 5 分以上たち印のないプロセスの資源を消す
   - アダプタは `testkit.StreamBusContract` を、`Hub` と `Relay` は `testkit.StreamBrokerContract` を通す。プロセス内のメモリの `stream.MemoryBroker` はテスト用
 - 配信は best effort で、再送しない。クライアントは再接続したらホームと通知を読み直す
-- ホームの新着は、接続中の利用者ごとに 1 回 `HomeEntry` を読む。読み取りの回数は「新しい投稿数 × 接続数」に比例する
+- ホームの新着は、接続中の利用者ごとに 1 回 `HomeEntry` を読む。読み取りの回数は「新しい投稿数 × 接続数」に比例する。
+  公開のタイムラインの新着も、そのタイムラインのストリームを開いている接続ごとに 1 回 `LocalEntry` / `PublicEntry` を読む
 
 ## 5. データ設計の原則
 
