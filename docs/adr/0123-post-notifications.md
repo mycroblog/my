@@ -1,6 +1,6 @@
 # ADR-0123: 投稿の通知: 特定のアカウントの新しい投稿を通知と Web Push で知らせる
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 - Deciders: @rosylilly
 - Issue: #1867
@@ -33,7 +33,7 @@
 
 ## Decision（決定）
 
-推奨案は **A1・B1**。
+**A1・B1 を採用する。**
 
 ### 1. 購読
 
