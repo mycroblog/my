@@ -63,14 +63,18 @@ func timelinePublicEntries(t *testing.T, e *timelineEnv) {
 	}{
 		{
 			"Local",
-			func(v appcontent.Viewer, q apptimeline.Query) (apptimeline.Page, error) { return e.svc.Local(ctx, v, q) },
+			func(v appcontent.Viewer, q apptimeline.Query) (apptimeline.Page, error) {
+				return e.svc.Local(ctx, v, q)
+			},
 			func(v appcontent.Viewer, id string, q apptimeline.Query) (apptimeline.Entry, bool, error) {
 				return e.svc.LocalEntry(ctx, v, id, q)
 			},
 		},
 		{
 			"Public",
-			func(v appcontent.Viewer, q apptimeline.Query) (apptimeline.Page, error) { return e.svc.Public(ctx, v, q) },
+			func(v appcontent.Viewer, q apptimeline.Query) (apptimeline.Page, error) {
+				return e.svc.Public(ctx, v, q)
+			},
 			func(v appcontent.Viewer, id string, q apptimeline.Query) (apptimeline.Entry, bool, error) {
 				return e.svc.PublicEntry(ctx, v, id, q)
 			},
