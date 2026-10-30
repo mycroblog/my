@@ -46,6 +46,28 @@ func (q *Queries) AdjustTagUsage(ctx context.Context, arg AdjustTagUsageParams) 
 	return err
 }
 
+const countListMembers = `-- name: CountListMembers :one
+SELECT count(*) FROM list_members WHERE list_id = $1
+`
+
+func (q *Queries) CountListMembers(ctx context.Context, listID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countListMembers, listID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListsOfOwner = `-- name: CountListsOfOwner :one
+SELECT count(*) FROM lists WHERE owner_account_id = $1
+`
+
+func (q *Queries) CountListsOfOwner(ctx context.Context, ownerAccountID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countListsOfOwner, ownerAccountID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteAllFeedDirectRecipients = `-- name: DeleteAllFeedDirectRecipients :exec
 DELETE FROM feed_direct_recipients
 `
@@ -233,6 +255,92 @@ func (q *Queries) DeleteFeedTagEntries(ctx context.Context, entryID string) erro
 	return err
 }
 
+const deleteList = `-- name: DeleteList :exec
+DELETE FROM lists WHERE id = $1
+`
+
+func (q *Queries) DeleteList(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteList, id)
+	return err
+}
+
+const deleteListMember = `-- name: DeleteListMember :exec
+DELETE FROM list_members WHERE list_id = $1 AND member_account_id = $2
+`
+
+type DeleteListMemberParams struct {
+	ListID          string
+	MemberAccountID string
+}
+
+func (q *Queries) DeleteListMember(ctx context.Context, arg DeleteListMemberParams) error {
+	_, err := q.db.Exec(ctx, deleteListMember, arg.ListID, arg.MemberAccountID)
+	return err
+}
+
+const deleteListMembersOfFollow = `-- name: DeleteListMembersOfFollow :exec
+DELETE FROM list_members WHERE owner_account_id = $1 AND member_account_id = $2
+`
+
+type DeleteListMembersOfFollowParams struct {
+	OwnerAccountID  string
+	MemberAccountID string
+}
+
+// DeleteListMembersOfFollow takes the followee of an ended follow out of every list of the
+// follower.
+func (q *Queries) DeleteListMembersOfFollow(ctx context.Context, arg DeleteListMembersOfFollowParams) error {
+	_, err := q.db.Exec(ctx, deleteListMembersOfFollow, arg.OwnerAccountID, arg.MemberAccountID)
+	return err
+}
+
+const deleteListMembersOfList = `-- name: DeleteListMembersOfList :exec
+DELETE FROM list_members WHERE list_id = $1
+`
+
+func (q *Queries) DeleteListMembersOfList(ctx context.Context, listID string) error {
+	_, err := q.db.Exec(ctx, deleteListMembersOfList, listID)
+	return err
+}
+
+const deleteListMembersWithoutFollow = `-- name: DeleteListMembersWithoutFollow :exec
+DELETE FROM list_members WHERE NOT EXISTS (
+  SELECT 1 FROM feed_follow_edges f
+  WHERE f.follower_account_id = list_members.owner_account_id AND f.followee_account_id = list_members.member_account_id)
+`
+
+// DeleteListMembersWithoutFollow takes out of the lists every member whose owner no longer
+// actively follows it, after a rebuild of feed_follow_edges.
+func (q *Queries) DeleteListMembersWithoutFollow(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteListMembersWithoutFollow)
+	return err
+}
+
+const deleteListName = `-- name: DeleteListName :exec
+DELETE FROM list_names WHERE list_id = $1
+`
+
+func (q *Queries) DeleteListName(ctx context.Context, listID string) error {
+	_, err := q.db.Exec(ctx, deleteListName, listID)
+	return err
+}
+
+const feedFollowEdgeExists = `-- name: FeedFollowEdgeExists :one
+SELECT EXISTS (SELECT 1 FROM feed_follow_edges WHERE follower_account_id = $1 AND followee_account_id = $2)
+`
+
+type FeedFollowEdgeExistsParams struct {
+	FollowerAccountID string
+	FolloweeAccountID string
+}
+
+func (q *Queries) FeedFollowEdgeExists(ctx context.Context, arg FeedFollowEdgeExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, feedFollowEdgeExists, arg.FollowerAccountID, arg.FolloweeAccountID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const getFeedEntry = `-- name: GetFeedEntry :one
 SELECT id, kind, status_id, author_account_id, author_domain, original_author_account_id,
   original_author_domain, visibility, is_local, language, revision_seq, is_reply
@@ -255,6 +363,34 @@ func (q *Queries) GetFeedEntry(ctx context.Context, id string) (FeedEntry, error
 		&i.Language,
 		&i.RevisionSeq,
 		&i.IsReply,
+	)
+	return i, err
+}
+
+const getList = `-- name: GetList :one
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
+FROM lists l JOIN list_names n ON n.list_id = l.id
+WHERE l.id = $1
+`
+
+type GetListRow struct {
+	ID             string
+	OwnerAccountID string
+	CreatedAt      time.Time
+	Name           string
+	MembersCount   int64
+}
+
+func (q *Queries) GetList(ctx context.Context, id string) (GetListRow, error) {
+	row := q.db.QueryRow(ctx, getList, id)
+	var i GetListRow
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerAccountID,
+		&i.CreatedAt,
+		&i.Name,
+		&i.MembersCount,
 	)
 	return i, err
 }
@@ -362,6 +498,48 @@ func (q *Queries) InsertFeedTagEntry(ctx context.Context, arg InsertFeedTagEntry
 		arg.RevisedAt,
 	)
 	return err
+}
+
+const insertList = `-- name: InsertList :exec
+
+INSERT INTO lists (id, owner_account_id, created_at) VALUES ($1, $2, $3)
+`
+
+type InsertListParams struct {
+	ID             string
+	OwnerAccountID string
+	CreatedAt      time.Time
+}
+
+// Lists (data-model 4.6, ADR-0122) -----------------------------------------------------------------
+func (q *Queries) InsertList(ctx context.Context, arg InsertListParams) error {
+	_, err := q.db.Exec(ctx, insertList, arg.ID, arg.OwnerAccountID, arg.CreatedAt)
+	return err
+}
+
+const insertListMember = `-- name: InsertListMember :execrows
+INSERT INTO list_members (list_id, member_account_id, owner_account_id, added_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (list_id, member_account_id) DO NOTHING
+`
+
+type InsertListMemberParams struct {
+	ListID          string
+	MemberAccountID string
+	OwnerAccountID  string
+	AddedAt         time.Time
+}
+
+func (q *Queries) InsertListMember(ctx context.Context, arg InsertListMemberParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertListMember,
+		arg.ListID,
+		arg.MemberAccountID,
+		arg.OwnerAccountID,
+		arg.AddedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const listAllFeedDirectRecipients = `-- name: ListAllFeedDirectRecipients :many
@@ -528,6 +706,35 @@ func (q *Queries) ListAllFeedTagEntries(ctx context.Context) ([]FeedTagEntry, er
 			&i.Visibility,
 			&i.IsLocal,
 			&i.RevisedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllListMembers = `-- name: ListAllListMembers :many
+SELECT list_id, member_account_id, owner_account_id, added_at FROM list_members ORDER BY list_id, member_account_id
+`
+
+func (q *Queries) ListAllListMembers(ctx context.Context) ([]ListMember, error) {
+	rows, err := q.db.Query(ctx, listAllListMembers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMember{}
+	for rows.Next() {
+		var i ListMember
+		if err := rows.Scan(
+			&i.ListID,
+			&i.MemberAccountID,
+			&i.OwnerAccountID,
+			&i.AddedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -849,6 +1056,208 @@ func (q *Queries) ListHomeEntries(ctx context.Context, arg ListHomeEntriesParams
 			&i.Language,
 			&i.RevisionSeq,
 			&i.IsReply,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listListEntries = `-- name: ListListEntries :many
+SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+FROM feed_entries e
+WHERE e.author_account_id IN (
+    SELECT m.member_account_id FROM list_members m
+    JOIN feed_follow_edges f ON f.follower_account_id = m.owner_account_id AND f.followee_account_id = m.member_account_id
+    WHERE m.list_id = $1 AND m.owner_account_id = $2)
+  AND e.author_account_id <> $2
+  AND ($3::uuid IS NULL OR e.id < $3::uuid)
+  AND e.id >= COALESCE($4::uuid, '00000000-0000-0000-0000-000000000000')
+  AND (e.kind = 'post' OR EXISTS (
+    SELECT 1 FROM feed_follow_edges f
+    WHERE f.follower_account_id = $2 AND f.followee_account_id = e.author_account_id AND f.show_boosts))
+  AND (e.visibility <> 'direct' OR EXISTS (
+    SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = $2 AND d.entry_id = e.id))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_exclusions x
+    WHERE x.viewer_account_id = $2
+      AND x.target_account_id IN (e.author_account_id, e.original_author_account_id)
+      AND (x.expires_at IS NULL OR x.expires_at > $5::timestamptz))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_author_restrictions r
+    WHERE r.account_id IN (e.author_account_id, e.original_author_account_id) AND r.restriction = 'profile_view'
+      AND (r.effective_until IS NULL OR r.effective_until > $5::timestamptz))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_domain_restrictions dr
+    WHERE dr.restriction = 'profile_view'
+      AND (dr.effective_until IS NULL OR dr.effective_until > $5::timestamptz)
+      AND (dr.domain IN (e.author_domain, e.original_author_domain)
+        OR right(e.author_domain, length(dr.domain) + 1) = '.' || dr.domain
+        OR right(e.original_author_domain, length(dr.domain) + 1) = '.' || dr.domain))
+  AND NOT EXISTS (
+    SELECT 1 FROM feed_domain_mutes dm
+    WHERE dm.viewer_account_id = $2 AND e.kind = 'boost'
+      AND (dm.domain = e.original_author_domain OR right(e.original_author_domain, length(dm.domain) + 1) = '.' || dm.domain))
+  AND ($6::boolean OR e.language = 'und' OR e.language = ANY($7::text[]))
+ORDER BY e.id DESC
+LIMIT $8
+`
+
+type ListListEntriesParams struct {
+	ListID       string
+	Viewer       string
+	Before       *string
+	WindowFloor  *string
+	Now          time.Time
+	AllLanguages bool
+	Languages    []string
+	PageLimit    int32
+}
+
+// ListListEntries is the timeline of a list: ListHomeEntries with the authors (posters and
+// boosters) limited to the members of the list, which never include the viewer.
+func (q *Queries) ListListEntries(ctx context.Context, arg ListListEntriesParams) ([]FeedEntry, error) {
+	rows, err := q.db.Query(ctx, listListEntries,
+		arg.ListID,
+		arg.Viewer,
+		arg.Before,
+		arg.WindowFloor,
+		arg.Now,
+		arg.AllLanguages,
+		arg.Languages,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeedEntry{}
+	for rows.Next() {
+		var i FeedEntry
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.StatusID,
+			&i.AuthorAccountID,
+			&i.AuthorDomain,
+			&i.OriginalAuthorAccountID,
+			&i.OriginalAuthorDomain,
+			&i.Visibility,
+			&i.IsLocal,
+			&i.Language,
+			&i.RevisionSeq,
+			&i.IsReply,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listListIDsWithMember = `-- name: ListListIDsWithMember :many
+SELECT list_id FROM list_members WHERE owner_account_id = $1 AND member_account_id = $2 ORDER BY list_id
+`
+
+type ListListIDsWithMemberParams struct {
+	OwnerAccountID  string
+	MemberAccountID string
+}
+
+func (q *Queries) ListListIDsWithMember(ctx context.Context, arg ListListIDsWithMemberParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listListIDsWithMember, arg.OwnerAccountID, arg.MemberAccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var list_id string
+		if err := rows.Scan(&list_id); err != nil {
+			return nil, err
+		}
+		items = append(items, list_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listListMembers = `-- name: ListListMembers :many
+SELECT member_account_id FROM list_members
+WHERE list_id = $1 AND ($2::uuid IS NULL OR member_account_id > $2::uuid)
+ORDER BY member_account_id
+LIMIT $3
+`
+
+type ListListMembersParams struct {
+	ListID    string
+	After     *string
+	PageLimit int32
+}
+
+// ListListMembers returns the members of a list after the member ID after (NULL starts at the
+// first), in the order of their IDs.
+func (q *Queries) ListListMembers(ctx context.Context, arg ListListMembersParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listListMembers, arg.ListID, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var member_account_id string
+		if err := rows.Scan(&member_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, member_account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listListsOfOwner = `-- name: ListListsOfOwner :many
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
+FROM lists l JOIN list_names n ON n.list_id = l.id
+WHERE l.owner_account_id = $1
+ORDER BY l.id
+`
+
+type ListListsOfOwnerRow struct {
+	ID             string
+	OwnerAccountID string
+	CreatedAt      time.Time
+	Name           string
+	MembersCount   int64
+}
+
+func (q *Queries) ListListsOfOwner(ctx context.Context, ownerAccountID string) ([]ListListsOfOwnerRow, error) {
+	rows, err := q.db.Query(ctx, listListsOfOwner, ownerAccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListListsOfOwnerRow{}
+	for rows.Next() {
+		var i ListListsOfOwnerRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerAccountID,
+			&i.CreatedAt,
+			&i.Name,
+			&i.MembersCount,
 		); err != nil {
 			return nil, err
 		}
@@ -1326,5 +1735,20 @@ type UpsertFeedFollowEdgeParams struct {
 
 func (q *Queries) UpsertFeedFollowEdge(ctx context.Context, arg UpsertFeedFollowEdgeParams) error {
 	_, err := q.db.Exec(ctx, upsertFeedFollowEdge, arg.FollowerAccountID, arg.FolloweeAccountID, arg.ShowBoosts)
+	return err
+}
+
+const upsertListName = `-- name: UpsertListName :exec
+INSERT INTO list_names (list_id, name) VALUES ($1, $2)
+ON CONFLICT (list_id) DO UPDATE SET name = excluded.name
+`
+
+type UpsertListNameParams struct {
+	ListID string
+	Name   string
+}
+
+func (q *Queries) UpsertListName(ctx context.Context, arg UpsertListNameParams) error {
+	_, err := q.db.Exec(ctx, upsertListName, arg.ListID, arg.Name)
 	return err
 }

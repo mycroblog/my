@@ -4,7 +4,7 @@ get:
   summary: Stream real-time updates
   description: |
     A Server-Sent Events stream (`text/event-stream`) of the authenticated user's new home
-    timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
+    and list timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
     send the access token in `Authorization`, like every other operation (`EventSource`
     cannot send it).
 
@@ -12,6 +12,9 @@ get:
 
     - `update`: a new post or boost in the home timeline, as it would appear there (the
       viewer's follows, timeline languages, blocks, and mutes apply). `data` is a `Status`.
+    - `list_update`: the same post or boost, once for each of the viewer's lists whose
+      timeline shows it (its author is a member), right after its `update`. `data` is
+      `{"list_id": "<list id>", "status": <Status>}`.
     - `notification`: a new notification. `data` is a `Notification`.
     - `announcement`: an announcement that the users see was published or changed. `data`
       is an `Announcement`.
@@ -20,8 +23,8 @@ get:
 
     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
     the access token stops being valid, when the client does not keep up, and when it shuts
-    down; nothing is replayed, so after reconnecting read the home timeline and the
-    notifications again for what was missed. Announcements whose window starts later
+    down; nothing is replayed, so after reconnecting read the home timeline, the open list
+    timelines, and the notifications again for what was missed. Announcements whose window starts later
     arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
     open at once; past it the answer is 429 with type
     `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its

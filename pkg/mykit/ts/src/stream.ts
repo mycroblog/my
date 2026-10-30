@@ -18,6 +18,7 @@ type Announcement = components["schemas"]["Announcement"];
  */
 export type StreamEvent =
   | { type: "update"; status: Status }
+  | { type: "list_update"; listId: string; status: Status }
   | { type: "notification"; notification: Notification }
   | { type: "announcement"; announcement: Announcement }
   | { type: "announcement_removed"; id: string }
@@ -266,13 +267,21 @@ function dispatch(events: ServerSentEvent[], options: StreamOptions): void {
   }
 }
 
-/** The events of the spec, whose data is an object with an `id`. */
-const knownEvents: ReadonlySet<string> = new Set(["update", "notification", "announcement", "announcement_removed"]);
+/** The events of the spec, whose data is an object with an `id`, but `list_update`'s. */
+const knownEvents: ReadonlySet<string> = new Set([
+  "update",
+  "list_update",
+  "notification",
+  "announcement",
+  "announcement_removed",
+]);
 
 /**
  * Types an event by its name: the data of `update`, `notification`, and `announcement` is the server's Status,
- * Notification, and Announcement, and that of `announcement_removed` the announcement's ID. An unknown name is an
- * `unknown` event. It throws for a known event whose data is no JSON object with an `id`.
+ * Notification, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
+ * whose timeline shows the post of an `update`), and that of `announcement_removed` the announcement's ID. An unknown
+ * name is an `unknown` event. It throws for a known event whose data is no JSON object with an `id` (for
+ * `list_update`, with a `list_id` and a `status` that has an `id`).
  */
 export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent {
   if (!knownEvents.has(event)) return { type: "unknown", event, data };
@@ -281,6 +290,18 @@ export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent 
     value = JSON.parse(data);
   } catch (error) {
     throw new Error(`mykit: the data of a stream event "${event}" is no JSON`, { cause: error });
+  }
+  if (event === "list_update") {
+    const { list_id: listId, status } = (value ?? {}) as { list_id?: unknown; status?: unknown };
+    if (
+      typeof listId !== "string" ||
+      typeof status !== "object" ||
+      status === null ||
+      typeof (status as Record<string, unknown>)["id"] !== "string"
+    ) {
+      throw new Error(`mykit: the data of a stream event "${event}" has no list_id or status`);
+    }
+    return { type: "list_update", listId, status: status as Status };
   }
   if (typeof value !== "object" || value === null || typeof (value as Record<string, unknown>)["id"] !== "string") {
     throw new Error(`mykit: the data of a stream event "${event}" has no id`);

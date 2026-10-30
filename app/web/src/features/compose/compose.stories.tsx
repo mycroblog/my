@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0112 §1: empty, written with a
-// content warning and a poll, too long, a reply, a quote, and a post the server refused.
+// content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, and a
+// post the server refused.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, userEvent, within } from "storybook/test";
@@ -82,6 +83,29 @@ export const TooLong: Story = {
     const text = dialog.getByRole("textbox", { name: "Your post" });
     await userEvent.type(text, "A very long story about bread, which goes on well past the limit of the server.");
     await expect(text).toHaveAttribute("aria-invalid", "true");
+  },
+};
+
+/** Ctrl+Enter in the empty text: the send bar says why nothing was sent, as the button does. */
+export const ShortcutWhileEmpty: Story = {
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await expect(dialog.getByRole("textbox", { name: "Your post" })).toHaveFocus();
+    await userEvent.keyboard("{Control>}{Enter}{/Control}");
+    await expect(await dialog.findByText("Write something to post.")).toBeInTheDocument();
+  },
+};
+
+/** An image file dragged over the form: a dashed outline and the words say where to drop it. */
+export const DraggingFiles: Story = {
+  play: async (context) => {
+    const dialog = within(await openCompose(context));
+    const text = dialog.getByRole("textbox", { name: "Your post" });
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(new File(["png"], "photo.png", { type: "image/png" }));
+    text.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer }));
+    await expect(await dialog.findByText("Drop files to attach them")).toBeVisible();
   },
 };
 

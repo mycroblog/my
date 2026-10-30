@@ -43,7 +43,7 @@ type AccountErasureFactory func(t *testing.T, opts uow.Options) AccountErasureHa
 // database adapter, with the real modules: an account deleted longer than the delay ago, without
 // a retention hold, loses its personal data (profile, keys, email addresses, credentials,
 // sessions, preferences, statuses, favourites, bookmarks, boosts, follows, mutes, domain mutes, uploads,
-// notifications, timeline rows) while its row, URI, domain, username, and lifecycle stay; its
+// notifications, timeline rows, lists and their membership in others' lists) while its row, URI, domain, username, and lifecycle stay; its
 // statuses become deletions with origin account_deletion, the other accounts' counters lose it,
 // and a status that the moderation records need keeps its rows until they are gone, after which
 // the account is recorded as erased once.
@@ -278,6 +278,33 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 		t.Fatal(err)
 	}
 	e.rows(t, "account_aliases", "account_id", aliceID, 1)
+	// Alice lists bob, and bob lists alice (rows as the commands of lists write them).
+	aliceList, bobList := e.ids.NewID(), e.ids.NewID()
+	if feeds, ok := e.eh.TimelineErasure.(apptimeline.Repository); ok {
+		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			for _, m := range []apptimeline.ListMember{
+				{ListID: aliceList, OwnerAccountID: aliceID, MemberAccountID: bob},
+				{ListID: bobList, OwnerAccountID: bob, MemberAccountID: aliceID},
+			} {
+				l := apptimeline.List{ID: m.ListID, OwnerAccountID: m.OwnerAccountID, Name: "friends", CreatedAt: e.clock.Now()}
+				if err := feeds.InsertList(ctx, tx, l); err != nil {
+					return err
+				}
+				m.AddedAt = e.clock.Now()
+				if _, err := feeds.InsertListMember(ctx, tx, m); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		t.Fatal("the timeline erasure repository is no timeline.Repository")
+	}
+	e.rows(t, "lists", "owner_account_id", aliceID, 1)
+	e.rows(t, "list_members", "member_account_id", aliceID, 1)
 
 	e.deleteAccount(t, aliceID)
 	e.clock.Advance(appaccount.ErasureDelay)
@@ -318,6 +345,13 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	e.rows(t, "mutes", "target_account_id", aliceID, 0)
 	e.rows(t, "feed_exclusions", "viewer_account_id", aliceID, 0)
 	e.rows(t, "feed_domain_mutes", "viewer_account_id", aliceID, 0)
+	// Alice's list goes with its name and members, and she leaves bob's list, which stays.
+	e.rows(t, "lists", "owner_account_id", aliceID, 0)
+	e.rows(t, "list_names", "list_id", aliceList, 0)
+	e.rows(t, "list_members", "owner_account_id", aliceID, 0)
+	e.rows(t, "list_members", "member_account_id", aliceID, 0)
+	e.rows(t, "lists", "owner_account_id", bob, 1)
+	e.rows(t, "list_names", "list_id", bobList, 1)
 	e.rows(t, "notification_domain_exclusions", "viewer_account_id", aliceID, 0)
 	e.rows(t, "boosts", "booster_account_id", aliceID, 0)
 	e.rows(t, "boost_edges", "booster_account_id", aliceID, 0)

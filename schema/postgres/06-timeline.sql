@@ -109,6 +109,39 @@ CREATE TABLE feed_domain_restrictions (
   PRIMARY KEY (domain, restriction)
 );
 
+-- ---------------------------------------------------------------------------------------------
+-- timeline: lists (data-model §4.6, ADR-0122). Owned by internal/app/timeline: the owner's
+-- commands write them, the projector of graph.follow_terminated takes the ended follows out of
+-- list_members, and only the owner reads them.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a list of the accounts that its owner follows, which only the owner sees.
+CREATE TABLE lists (
+  id uuid NOT NULL PRIMARY KEY,
+  owner_account_id uuid NOT NULL,
+  created_at timestamptz NOT NULL
+);
+CREATE INDEX lists_owner_account_id_id ON lists (owner_account_id, id);
+
+-- Current value: the name of a list (1 to 50 graphemes); renaming it keeps no history.
+CREATE TABLE list_names (
+  list_id uuid NOT NULL PRIMARY KEY,
+  name text NOT NULL
+);
+
+-- Current value: the members of a list, each an account that the owner actively follows
+-- (feed_follow_edges). owner_account_id copies the list's immutable owner, so that the end of a
+-- follow removes its followee from every list of the follower in one statement.
+CREATE TABLE list_members (
+  list_id uuid NOT NULL,
+  member_account_id uuid NOT NULL,
+  owner_account_id uuid NOT NULL,
+  added_at timestamptz NOT NULL,
+  PRIMARY KEY (list_id, member_account_id)
+);
+CREATE INDEX list_members_owner_member ON list_members (owner_account_id, member_account_id);
+CREATE INDEX list_members_member_account_id ON list_members (member_account_id);
+
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.
 CREATE INDEX feed_entries_original_author_account_id ON feed_entries (original_author_account_id);

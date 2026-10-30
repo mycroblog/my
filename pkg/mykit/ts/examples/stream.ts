@@ -17,6 +17,9 @@ export async function watch(signal: AbortSignal): Promise<void> {
         case "update":
           console.log("new post", event.status.id);
           break;
+        case "list_update":
+          console.log("new post in list", event.listId, event.status.id);
+          break;
         case "notification":
           console.log("notification", event.notification.type);
           break;

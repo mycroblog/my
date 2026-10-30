@@ -448,6 +448,10 @@ my admin emoji requests reject [-reason <text>] <request id>                    
   stays even if the requester's account is deleted.
 - A creator can change their emoji only while they hold `create_custom_emojis`. The emoji stay if the role is removed.
   Administrators can change and delete every emoji regardless of the creator.
-- When the role comes from a supporter plan, the number of emoji a user can create is limited by the plan's emoji limit; it
-  counts the emoji they created plus their pending creation requests. A role an administrator assigned by hand, and a server
-  where supporters are disabled, have no limit.
+- When the role comes from a supporter plan, the number of emoji a user can create each month is limited by the plan's
+  monthly emoji limit. It counts the creation requests the user submitted in the current calendar month (UTC) that are
+  approved or pending; rejected and withdrawn requests do not count, and deleting an emoji does not free a place. A request
+  counts in the month it was submitted, even if it is approved in the next one. The count resets at 00:00 UTC on the first
+  day of each month, and the settings page shows the user when, in their own time zone. Replacing the image of an emoji, and
+  emoji that administrators register, do not count. A role an administrator assigned by hand, and a server where supporters
+  are disabled, have no limit.

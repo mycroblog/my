@@ -1,20 +1,21 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A page of the custom emoji that the user made, with what the user used of their limit
-  (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-  one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-  they may have, absent for no limit.
+  A page of the custom emoji that the user made, with what the user used of their monthly limit
+  (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+  calendar month and that are approved or pending (deleting an emoji does not lower it),
+  `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+  submit in a month, absent for no limit, and `resets_at` is when the count resets.
 allOf:
   - $ref: ./PageInfo.yaml
   - type: object
-    required: [items, used, pending]
+    required: [items, used, pending, resets_at]
     properties:
       items:
         type: array
         items:
           $ref: ./OwnCustomEmoji.yaml
       used:
-        description: The user's local emoji and pending requests to create one.
+        description: The approved and pending requests to create an emoji that the user submitted this month.
         type: integer
         minimum: 0
       pending:
@@ -22,6 +23,10 @@ allOf:
         type: integer
         minimum: 0
       limit:
-        description: How many the user may have; absent for no limit.
+        description: How many requests to create an emoji the user may submit in a month; absent for no limit.
         type: integer
         minimum: 0
+      resets_at:
+        description: When the count resets, the first day of the next month at 00:00 UTC.
+        type: string
+        format: date-time

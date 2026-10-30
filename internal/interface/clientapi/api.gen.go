@@ -6166,7 +6166,7 @@ type AdminSupporterPlan struct {
 	CreatedAt             time.Time `json:"created_at"`
 	Description           string    `json:"description"`
 
-	// EmojiLimit How many custom emoji the members may create when the role lets them.
+	// EmojiLimit How many custom emoji the members may create each month (UTC) when the role lets them.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -6210,7 +6210,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// Description Up to 1,000 characters of plain text.
 	Description *string `json:"description,omitempty"`
 
-	// EmojiLimit 0 to 10,000.
+	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
 	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
@@ -7759,8 +7759,8 @@ type CustomEmojiProblem struct {
 	// `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 	// for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 	// fetched (its server did not return it, or the instance rejects the media of its domain).
-	// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-	// their limit. `request_pending`: the emoji already has a pending request for a new image.
+	// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+	// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 	// `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 	Reason *CustomEmojiProblemReason `json:"reason,omitempty"`
 
@@ -7788,8 +7788,8 @@ type CustomEmojiProblem struct {
 // `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
 // for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
 // fetched (its server did not return it, or the instance rejects the media of its domain).
-// `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-// their limit. `request_pending`: the emoji already has a pending request for a new image.
+// `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+// this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
 // `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
 type CustomEmojiProblemReason string
 
@@ -9327,6 +9327,36 @@ type LinkedIdentityList struct {
 	Providers []LinkableLoginProvider `json:"providers"`
 }
 
+// List A list of accounts that the user follows, which only the user sees. Its timeline shows the
+// posts and boosts of its members.
+type List struct {
+	// CreatedAt When the user created the list.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// MembersCount How many accounts are in the list.
+	MembersCount int `json:"members_count"`
+
+	// Name The name of the list, 1 to 50 characters.
+	Name string `json:"name"`
+}
+
+// ListCollection The user's lists, oldest first.
+type ListCollection struct {
+	Items []List `json:"items"`
+}
+
+// ListRequest The name of a list.
+type ListRequest struct {
+	// Name 1 to 50 characters (grapheme clusters) on one line, without control characters. White
+	// space around it is removed.
+	Name string `json:"name"`
+}
+
 // LoginProviderClaimCondition A condition of an `oidc` provider: a user signs in only when the claim of the ID token
 // has one of the values, such as `hd` for the domain of a Google Workspace organization.
 type LoginProviderClaimCondition struct {
@@ -10239,14 +10269,15 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their limit
-// (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-// one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-// they may have, absent for no limit.
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
+// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// calendar month and that are approved or pending (deleting an emoji does not lower it),
+// `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+// submit in a month, absent for no limit, and `resets_at` is when the count resets.
 type OwnCustomEmojiPage struct {
 	Items []OwnCustomEmoji `json:"items"`
 
-	// Limit How many the user may have; absent for no limit.
+	// Limit How many requests to create an emoji the user may submit in a month; absent for no limit.
 	Limit *int `json:"limit,omitempty"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -10255,7 +10286,10 @@ type OwnCustomEmojiPage struct {
 	// Pending The part of `used` that the user's pending requests to create an emoji take.
 	Pending int `json:"pending"`
 
-	// Used The user's local emoji and pending requests to create one.
+	// ResetsAt When the count resets, the first day of the next month at 00:00 UTC.
+	ResetsAt time.Time `json:"resets_at"`
+
+	// Used The approved and pending requests to create an emoji that the user submitted this month.
 	Used int `json:"used"`
 }
 
@@ -10771,6 +10805,12 @@ type PreviewDomainBlockImportRequest struct {
 //     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
+//   - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
+//     Delete one first.
+//   - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
+//     allowed. Remove one first.
+//   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
+//     follow request was accepted) can be added to a list.
 //   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
 //     account's actor, or to the user itself.
 //   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -12933,6 +12973,16 @@ type InviteId = Id
 // Limit defines model for Limit.
 type Limit = int
 
+// ListAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ListAccountId = Id
+
+// ListId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ListId = Id
+
 // LoginProviderId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -13586,6 +13636,15 @@ type ListOwnInvitesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListListAccountsParams defines parameters for ListListAccounts.
+type ListListAccountsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListOwnModerationActionsParams defines parameters for ListOwnModerationActions.
 type ListOwnModerationActionsParams struct {
 	// Active Keep only the actions in effect now, neither lifted nor expired.
@@ -13679,6 +13738,15 @@ type SearchTagsParams struct {
 
 // GetHomeTimelineParams defines parameters for GetHomeTimeline.
 type GetHomeTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetListTimelineParams defines parameters for GetListTimeline.
+type GetListTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -13947,6 +14015,12 @@ type BeginLinkIdentityJSONRequestBody = LinkIdentityRequest
 // BeginExternalConfirmationJSONRequestBody defines body for BeginExternalConfirmation for application/json ContentType.
 type BeginExternalConfirmationJSONRequestBody = ExternalConfirmationRequest
 
+// CreateListJSONRequestBody defines body for CreateList for application/json ContentType.
+type CreateListJSONRequestBody = ListRequest
+
+// UpdateListJSONRequestBody defines body for UpdateList for application/json ContentType.
+type UpdateListJSONRequestBody = ListRequest
+
 // UploadMediaMultipartRequestBody defines body for UploadMedia for multipart/form-data ContentType.
 type UploadMediaMultipartRequestBody = MediaUpload
 
@@ -14120,6 +14194,9 @@ type ServerInterface interface {
 	// ListAccountFollowing List the accounts that an account follows
 	// (GET /accounts/{id}/following)
 	ListAccountFollowing(w http.ResponseWriter, r *http.Request, id AccountId, params ListAccountFollowingParams)
+	// ListAccountLists List the user's lists that have an account
+	// (GET /accounts/{id}/lists)
+	ListAccountLists(w http.ResponseWriter, r *http.Request, id AccountId)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14738,6 +14815,30 @@ type ServerInterface interface {
 	// UnlinkIdentity Unlink an account at a login provider
 	// (DELETE /linked_identities/{id})
 	UnlinkIdentity(w http.ResponseWriter, r *http.Request, id Id)
+	// ListLists List the user's lists
+	// (GET /lists)
+	ListLists(w http.ResponseWriter, r *http.Request)
+	// CreateList Create a list
+	// (POST /lists)
+	CreateList(w http.ResponseWriter, r *http.Request)
+	// DeleteList Delete a list
+	// (DELETE /lists/{id})
+	DeleteList(w http.ResponseWriter, r *http.Request, id ListId)
+	// GetList Get a list
+	// (GET /lists/{id})
+	GetList(w http.ResponseWriter, r *http.Request, id ListId)
+	// UpdateList Rename a list
+	// (PATCH /lists/{id})
+	UpdateList(w http.ResponseWriter, r *http.Request, id ListId)
+	// ListListAccounts List the members of a list
+	// (GET /lists/{id}/accounts)
+	ListListAccounts(w http.ResponseWriter, r *http.Request, id ListId, params ListListAccountsParams)
+	// RemoveListAccount Remove an account from a list
+	// (DELETE /lists/{id}/accounts/{account_id})
+	RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId)
+	// AddListAccount Add an account to a list
+	// (POST /lists/{id}/accounts/{account_id})
+	AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId)
 	// UploadMedia Upload a media file
 	// (POST /media)
 	UploadMedia(w http.ResponseWriter, r *http.Request)
@@ -14951,6 +15052,9 @@ type ServerInterface interface {
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(w http.ResponseWriter, r *http.Request, params GetHomeTimelineParams)
+	// GetListTimeline Get the timeline of a list
+	// (GET /timelines/list/{id})
+	GetListTimeline(w http.ResponseWriter, r *http.Request, id ListId, params GetListTimelineParams)
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(w http.ResponseWriter, r *http.Request, params GetLocalTimelineParams)
@@ -15578,6 +15682,32 @@ func (siw *ServerInterfaceWrapper) ListAccountFollowing(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListAccountFollowing(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAccountLists operation middleware
+func (siw *ServerInterfaceWrapper) ListAccountLists(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAccountLists(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -21738,6 +21868,237 @@ func (siw *ServerInterfaceWrapper) UnlinkIdentity(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// ListLists operation middleware
+func (siw *ServerInterfaceWrapper) ListLists(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLists(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateList operation middleware
+func (siw *ServerInterfaceWrapper) CreateList(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateList(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteList operation middleware
+func (siw *ServerInterfaceWrapper) DeleteList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteList(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetList operation middleware
+func (siw *ServerInterfaceWrapper) GetList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetList(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateList operation middleware
+func (siw *ServerInterfaceWrapper) UpdateList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateList(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListListAccounts operation middleware
+func (siw *ServerInterfaceWrapper) ListListAccounts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListListAccountsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListListAccounts(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveListAccount operation middleware
+func (siw *ServerInterfaceWrapper) RemoveListAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId ListAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveListAccount(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddListAccount operation middleware
+func (siw *ServerInterfaceWrapper) AddListAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId ListAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddListAccount(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UploadMedia operation middleware
 func (siw *ServerInterfaceWrapper) UploadMedia(w http.ResponseWriter, r *http.Request) {
 
@@ -23473,6 +23834,61 @@ func (siw *ServerInterfaceWrapper) GetHomeTimeline(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetListTimeline operation middleware
+func (siw *ServerInterfaceWrapper) GetListTimeline(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ListId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetListTimelineParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetListTimeline(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetLocalTimeline operation middleware
 func (siw *ServerInterfaceWrapper) GetLocalTimeline(w http.ResponseWriter, r *http.Request) {
 
@@ -24813,6 +25229,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.FollowAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/followers", wrapper.ListAccountFollowers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/following", wrapper.ListAccountFollowing)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/lists", wrapper.ListAccountLists)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/remove_from_followers", wrapper.RemoveAccountFromFollowers)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unblock", wrapper.UnblockAccount)
@@ -24829,6 +25246,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/domain_mutes", wrapper.ListDomainMutes)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/domain_mutes", wrapper.MuteDomain)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/domain_mutes/{domain}", wrapper.UnmuteDomain)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lists", wrapper.ListLists)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lists", wrapper.CreateList)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/lists/{id}", wrapper.DeleteList)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lists/{id}", wrapper.GetList)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/lists/{id}", wrapper.UpdateList)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lists/{id}/accounts", wrapper.ListListAccounts)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/lists/{id}/accounts/{account_id}", wrapper.RemoveListAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lists/{id}/accounts/{account_id}", wrapper.AddListAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/media", wrapper.UploadMedia)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/media/{id}", wrapper.GetMedia)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/media/{id}", wrapper.UpdateMedia)
@@ -24870,6 +25295,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/local", wrapper.GetLocalTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/public", wrapper.GetPublicTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/tag/{hashtag}", wrapper.GetHashtagTimeline)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/list/{id}", wrapper.GetListTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports", wrapper.ListOwnReports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reports", wrapper.CreateReport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements", wrapper.ListAnnouncements)
@@ -25390,6 +25816,24 @@ type ErrorGroupJSONResponse struct {
 	Body ErrorGroup
 
 	Headers ErrorGroupResponseHeaders
+}
+
+type ListResponseHeaders struct {
+	CacheControl *string
+}
+type ListJSONResponse struct {
+	Body List
+
+	Headers ListResponseHeaders
+}
+
+type ListCollectionResponseHeaders struct {
+	CacheControl *string
+}
+type ListCollectionJSONResponse struct {
+	Body ListCollection
+
+	Headers ListCollectionResponseHeaders
 }
 
 type LoginProviderProblemResponseHeaders struct {
@@ -26626,6 +27070,61 @@ type ListAccountFollowingdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ListAccountFollowingdefaultApplicationProblemPlusJSONResponse) VisitListAccountFollowingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountListsRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type ListAccountListsResponseObject interface {
+	VisitListAccountListsResponse(w http.ResponseWriter) error
+}
+
+type ListAccountLists200JSONResponse struct{ ListCollectionJSONResponse }
+
+func (response ListAccountLists200JSONResponse) VisitListAccountListsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccountListsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListAccountListsdefaultApplicationProblemPlusJSONResponse) VisitListAccountListsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -39054,6 +39553,422 @@ func (response UnlinkIdentitydefaultApplicationProblemPlusJSONResponse) VisitUnl
 	return err
 }
 
+type ListListsRequestObject struct {
+}
+
+type ListListsResponseObject interface {
+	VisitListListsResponse(w http.ResponseWriter) error
+}
+
+type ListLists200JSONResponse struct{ ListCollectionJSONResponse }
+
+func (response ListLists200JSONResponse) VisitListListsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListListsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListListsdefaultApplicationProblemPlusJSONResponse) VisitListListsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateListRequestObject struct {
+	Body *CreateListJSONRequestBody
+}
+
+type CreateListResponseObject interface {
+	VisitCreateListResponse(w http.ResponseWriter) error
+}
+
+type CreateList200JSONResponse struct{ ListJSONResponse }
+
+func (response CreateList200JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateListdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateListdefaultApplicationProblemPlusJSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteListRequestObject struct {
+	Id ListId `json:"id"`
+}
+
+type DeleteListResponseObject interface {
+	VisitDeleteListResponse(w http.ResponseWriter) error
+}
+
+type DeleteList204Response struct {
+}
+
+func (response DeleteList204Response) VisitDeleteListResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteListdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteListdefaultApplicationProblemPlusJSONResponse) VisitDeleteListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetListRequestObject struct {
+	Id ListId `json:"id"`
+}
+
+type GetListResponseObject interface {
+	VisitGetListResponse(w http.ResponseWriter) error
+}
+
+type GetList200JSONResponse struct{ ListJSONResponse }
+
+func (response GetList200JSONResponse) VisitGetListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetListdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetListdefaultApplicationProblemPlusJSONResponse) VisitGetListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateListRequestObject struct {
+	Id   ListId `json:"id"`
+	Body *UpdateListJSONRequestBody
+}
+
+type UpdateListResponseObject interface {
+	VisitUpdateListResponse(w http.ResponseWriter) error
+}
+
+type UpdateList200JSONResponse struct{ ListJSONResponse }
+
+func (response UpdateList200JSONResponse) VisitUpdateListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateListdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateListdefaultApplicationProblemPlusJSONResponse) VisitUpdateListResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListListAccountsRequestObject struct {
+	Id     ListId `json:"id"`
+	Params ListListAccountsParams
+}
+
+type ListListAccountsResponseObject interface {
+	VisitListListAccountsResponse(w http.ResponseWriter) error
+}
+
+type ListListAccounts200JSONResponse struct{ AccountPageJSONResponse }
+
+func (response ListListAccounts200JSONResponse) VisitListListAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListListAccountsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListListAccountsdefaultApplicationProblemPlusJSONResponse) VisitListListAccountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveListAccountRequestObject struct {
+	Id        ListId        `json:"id"`
+	AccountId ListAccountId `json:"account_id"`
+}
+
+type RemoveListAccountResponseObject interface {
+	VisitRemoveListAccountResponse(w http.ResponseWriter) error
+}
+
+type RemoveListAccount204Response struct {
+}
+
+func (response RemoveListAccount204Response) VisitRemoveListAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveListAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveListAccountdefaultApplicationProblemPlusJSONResponse) VisitRemoveListAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddListAccountRequestObject struct {
+	Id        ListId        `json:"id"`
+	AccountId ListAccountId `json:"account_id"`
+}
+
+type AddListAccountResponseObject interface {
+	VisitAddListAccountResponse(w http.ResponseWriter) error
+}
+
+type AddListAccount204Response struct {
+}
+
+func (response AddListAccount204Response) VisitAddListAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AddListAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AddListAccountdefaultApplicationProblemPlusJSONResponse) VisitAddListAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UploadMediaRequestObject struct {
 	Body *multipart.Reader
 }
@@ -43227,6 +44142,62 @@ func (response GetHomeTimelinedefaultApplicationProblemPlusJSONResponse) VisitGe
 	return err
 }
 
+type GetListTimelineRequestObject struct {
+	Id     ListId `json:"id"`
+	Params GetListTimelineParams
+}
+
+type GetListTimelineResponseObject interface {
+	VisitGetListTimelineResponse(w http.ResponseWriter) error
+}
+
+type GetListTimeline200JSONResponse struct{ StatusPageJSONResponse }
+
+func (response GetListTimeline200JSONResponse) VisitGetListTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetListTimelinedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetListTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetListTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetLocalTimelineRequestObject struct {
 	Params GetLocalTimelineParams
 }
@@ -45438,6 +46409,9 @@ type StrictServerInterface interface {
 	// ListAccountFollowing List the accounts that an account follows
 	// (GET /accounts/{id}/following)
 	ListAccountFollowing(ctx context.Context, request ListAccountFollowingRequestObject) (ListAccountFollowingResponseObject, error)
+	// ListAccountLists List the user's lists that have an account
+	// (GET /accounts/{id}/lists)
+	ListAccountLists(ctx context.Context, request ListAccountListsRequestObject) (ListAccountListsResponseObject, error)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
@@ -46056,6 +47030,30 @@ type StrictServerInterface interface {
 	// UnlinkIdentity Unlink an account at a login provider
 	// (DELETE /linked_identities/{id})
 	UnlinkIdentity(ctx context.Context, request UnlinkIdentityRequestObject) (UnlinkIdentityResponseObject, error)
+	// ListLists List the user's lists
+	// (GET /lists)
+	ListLists(ctx context.Context, request ListListsRequestObject) (ListListsResponseObject, error)
+	// CreateList Create a list
+	// (POST /lists)
+	CreateList(ctx context.Context, request CreateListRequestObject) (CreateListResponseObject, error)
+	// DeleteList Delete a list
+	// (DELETE /lists/{id})
+	DeleteList(ctx context.Context, request DeleteListRequestObject) (DeleteListResponseObject, error)
+	// GetList Get a list
+	// (GET /lists/{id})
+	GetList(ctx context.Context, request GetListRequestObject) (GetListResponseObject, error)
+	// UpdateList Rename a list
+	// (PATCH /lists/{id})
+	UpdateList(ctx context.Context, request UpdateListRequestObject) (UpdateListResponseObject, error)
+	// ListListAccounts List the members of a list
+	// (GET /lists/{id}/accounts)
+	ListListAccounts(ctx context.Context, request ListListAccountsRequestObject) (ListListAccountsResponseObject, error)
+	// RemoveListAccount Remove an account from a list
+	// (DELETE /lists/{id}/accounts/{account_id})
+	RemoveListAccount(ctx context.Context, request RemoveListAccountRequestObject) (RemoveListAccountResponseObject, error)
+	// AddListAccount Add an account to a list
+	// (POST /lists/{id}/accounts/{account_id})
+	AddListAccount(ctx context.Context, request AddListAccountRequestObject) (AddListAccountResponseObject, error)
 	// UploadMedia Upload a media file
 	// (POST /media)
 	UploadMedia(ctx context.Context, request UploadMediaRequestObject) (UploadMediaResponseObject, error)
@@ -46269,6 +47267,9 @@ type StrictServerInterface interface {
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(ctx context.Context, request GetHomeTimelineRequestObject) (GetHomeTimelineResponseObject, error)
+	// GetListTimeline Get the timeline of a list
+	// (GET /timelines/list/{id})
+	GetListTimeline(ctx context.Context, request GetListTimelineRequestObject) (GetListTimelineResponseObject, error)
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(ctx context.Context, request GetLocalTimelineRequestObject) (GetLocalTimelineResponseObject, error)
@@ -46997,6 +47998,32 @@ func (sh *strictHandler) ListAccountFollowing(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAccountFollowingResponseObject); ok {
 		if err := validResponse.VisitListAccountFollowingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAccountLists operation middleware
+func (sh *strictHandler) ListAccountLists(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request ListAccountListsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAccountLists(ctx, request.(ListAccountListsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAccountLists")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAccountListsResponseObject); ok {
+		if err := validResponse.VisitListAccountListsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -52674,6 +53701,227 @@ func (sh *strictHandler) UnlinkIdentity(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// ListLists operation middleware
+func (sh *strictHandler) ListLists(w http.ResponseWriter, r *http.Request) {
+	var request ListListsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLists(ctx, request.(ListListsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLists")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListListsResponseObject); ok {
+		if err := validResponse.VisitListListsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateList operation middleware
+func (sh *strictHandler) CreateList(w http.ResponseWriter, r *http.Request) {
+	var request CreateListRequestObject
+
+	var body CreateListJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateList(ctx, request.(CreateListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateListResponseObject); ok {
+		if err := validResponse.VisitCreateListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteList operation middleware
+func (sh *strictHandler) DeleteList(w http.ResponseWriter, r *http.Request, id ListId) {
+	var request DeleteListRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteList(ctx, request.(DeleteListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteListResponseObject); ok {
+		if err := validResponse.VisitDeleteListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetList operation middleware
+func (sh *strictHandler) GetList(w http.ResponseWriter, r *http.Request, id ListId) {
+	var request GetListRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetList(ctx, request.(GetListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetListResponseObject); ok {
+		if err := validResponse.VisitGetListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateList operation middleware
+func (sh *strictHandler) UpdateList(w http.ResponseWriter, r *http.Request, id ListId) {
+	var request UpdateListRequestObject
+
+	request.Id = id
+
+	var body UpdateListJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateList(ctx, request.(UpdateListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateListResponseObject); ok {
+		if err := validResponse.VisitUpdateListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListListAccounts operation middleware
+func (sh *strictHandler) ListListAccounts(w http.ResponseWriter, r *http.Request, id ListId, params ListListAccountsParams) {
+	var request ListListAccountsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListListAccounts(ctx, request.(ListListAccountsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListListAccounts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListListAccountsResponseObject); ok {
+		if err := validResponse.VisitListListAccountsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveListAccount operation middleware
+func (sh *strictHandler) RemoveListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId) {
+	var request RemoveListAccountRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveListAccount(ctx, request.(RemoveListAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveListAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveListAccountResponseObject); ok {
+		if err := validResponse.VisitRemoveListAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddListAccount operation middleware
+func (sh *strictHandler) AddListAccount(w http.ResponseWriter, r *http.Request, id ListId, accountId ListAccountId) {
+	var request AddListAccountRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddListAccount(ctx, request.(AddListAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddListAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddListAccountResponseObject); ok {
+		if err := validResponse.VisitAddListAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // UploadMedia operation middleware
 func (sh *strictHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	var request UploadMediaRequestObject
@@ -54625,6 +55873,33 @@ func (sh *strictHandler) GetHomeTimeline(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHomeTimelineResponseObject); ok {
 		if err := validResponse.VisitGetHomeTimelineResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetListTimeline operation middleware
+func (sh *strictHandler) GetListTimeline(w http.ResponseWriter, r *http.Request, id ListId, params GetListTimelineParams) {
+	var request GetListTimelineRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetListTimeline(ctx, request.(GetListTimelineRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetListTimeline")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetListTimelineResponseObject); ok {
+		if err := validResponse.VisitGetListTimelineResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

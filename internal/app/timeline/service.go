@@ -9,6 +9,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
@@ -21,16 +22,19 @@ const (
 // ErrLoginRequired reports a timeline that only a logged-in local account has: the home timeline.
 var ErrLoginRequired = errors.New("timeline: the timeline needs a logged-in account")
 
-// Deps are the ports a Service uses.
+// Deps are the ports a Service uses. UnitOfWork and IDs serve the commands of lists.
 type Deps struct {
+	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
+	IDs        kernel.IDGenerator
 }
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from
 // the timeline module's own projections, fan-out-on-read (ADR-0013). The SQL narrows the
 // candidates as data-model §6 maps the visibility policy; before returning them, Service applies
-// appcontent.CanView again to every entry (NFR-SEC-4) and drops those it denies.
+// appcontent.CanView again to every entry (NFR-SEC-4) and drops those it denies. It also keeps
+// the viewer's lists and reads their timelines (lists.go).
 type Service struct {
 	d Deps
 }

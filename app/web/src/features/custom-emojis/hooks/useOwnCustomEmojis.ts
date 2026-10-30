@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of their custom emoji (ADR-0070 §2, §3, §4, create_custom_emojis): what they used of their limit,
+// The user's page of their custom emoji (ADR-0070 §2, §3, ADR-0124, create_custom_emojis): what they used of their
+// monthly limit,
 // the form that requests a new emoji, their requests with withdrawing a pending one, and the emoji they made with
 // changing their settings, requesting a new image, and deleting them. What each change did is announced and kept in a
 // StatusMessage; a failure stays next to its cause.
@@ -38,18 +39,27 @@ function failure(t: Translate, error: unknown): string {
 }
 
 /**
- * The user's emoji, newest first, with what they used of their limit: `pending` is the part of `used` that their pending
- * requests take, and `limit` is undefined for no limit.
+ * The user's emoji, newest first, with what they used of their monthly limit: `used` counts the requests to create an
+ * emoji they submitted this UTC calendar month that are approved or pending, `pending` is the part of `used` that their
+ * pending requests take, `limit` is undefined for no limit, and `resetsAt` is when the count resets (the first day of
+ * the next month at 00:00 UTC).
  */
 export function useOwnCustomEmojis(): PagedList<OwnCustomEmoji> & {
   used: number;
   pending: number;
   limit: number | undefined;
+  resetsAt: string | undefined;
 } {
   const api = useApi();
   const query = useSuspenseInfiniteQuery(ownCustomEmojisQueryOptions(api));
   const first = query.data.pages[0];
-  return { ...toPagedList(query), used: first?.used ?? 0, pending: first?.pending ?? 0, limit: first?.limit };
+  return {
+    ...toPagedList(query),
+    used: first?.used ?? 0,
+    pending: first?.pending ?? 0,
+    limit: first?.limit,
+    resetsAt: first?.resets_at,
+  };
 }
 
 /** The user's requests in every state, newest first. */

@@ -114,6 +114,12 @@ description: |
     this problem; signing in and resetting a password stay available outside the client API.
   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
     allowed. Unmute one first.
+  - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
+    Delete one first.
+  - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
+    allowed. Remove one first.
+  - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
+    follow request was accepted) can be added to a list.
   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
     account's actor, or to the user itself.
   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases

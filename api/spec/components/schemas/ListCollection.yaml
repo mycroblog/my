@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The user's lists, oldest first.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./List.yaml

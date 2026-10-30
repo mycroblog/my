@@ -67,11 +67,13 @@ tags:
   - name: statuses
     description: Posts, their threads and edit history, and boosts, favourites, bookmarks, and pins of them.
   - name: timelines
-    description: The home, local, hashtag, and account timelines.
+    description: The home, local, hashtag, list, and account timelines.
+  - name: lists
+    description: The authenticated user's lists of the accounts the user follows, which only the user sees.
   - name: reports
     description: Reports of accounts and posts to the moderators.
   - name: streaming
-    description: Real-time updates of the home timeline, the notifications, and the announcements.
+    description: Real-time updates of the home and list timelines, the notifications, and the announcements.
   - name: announcements
     description: The server's announcements to every local user and which of them the user has read.
   - name: custom-emojis
@@ -173,8 +175,9 @@ paths:
       summary: List the custom emoji that the user made
       description: |
         The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-        used of their limit: their emoji and their pending requests to create one, and the limit,
-        which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+        used of their monthly limit: the approved and pending requests to create an emoji that they
+        submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+        limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
       tags:
         - custom-emojis
       security:
@@ -279,8 +282,9 @@ paths:
         §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
         request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
         A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-        pending request reserves, a `create` request once the user's emoji and pending `create`
-        requests are as many as their limit (`limit_reached`), and a second pending `image`
+        pending request reserves, a `create` request once the approved and pending `create`
+        requests that the user submitted this month (UTC) are as many as their monthly limit
+        (`limit_reached`), and a second pending `image`
         request for an emoji (`request_pending`) are a 422
         `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
         without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -2509,6 +2513,23 @@ paths:
           $ref: '#/components/responses/AccountPage'
         default:
           $ref: '#/components/responses/Problem'
+  /accounts/{id}/lists:
+    get:
+      operationId: listAccountLists
+      summary: List the user's lists that have an account
+      description: The user's lists that the account is in, oldest first.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - read:follows
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/ListCollection'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/mute:
     post:
       operationId: muteAccount
@@ -2850,6 +2871,167 @@ paths:
       responses:
         '204':
           description: The domain is not muted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /lists:
+    get:
+      operationId: listLists
+      summary: List the user's lists
+      description: Every list of the user (at most 50), oldest first. Nobody else sees them.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - read:follows
+      responses:
+        '200':
+          $ref: '#/components/responses/ListCollection'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createList
+      summary: Create a list
+      description: |
+        Creates an empty list with the name. A name that is not one (blank, too long, or with
+        control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+        `/api/v1/problems/too-many-lists`.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - write:follows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/List'
+        default:
+          $ref: '#/components/responses/Problem'
+  /lists/{id}:
+    get:
+      operationId: getList
+      summary: Get a list
+      description: A list of the user. Another user's list is a 404, as if it did not exist.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - read:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          $ref: '#/components/responses/List'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateList
+      summary: Rename a list
+      description: |
+        Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/List'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteList
+      summary: Delete a list
+      description: |
+        Deletes the list and its members; the members' accounts and follows do not change.
+        Another user's list is a 404.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '204':
+          description: The list is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /lists/{id}/accounts:
+    get:
+      operationId: listListAccounts
+      summary: List the members of a list
+      description: |
+        The accounts in the list, in the order of their IDs. Members that are deactivated or
+        deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+        Another user's list is a 404.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - read:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/AccountPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /lists/{id}/accounts/{account_id}:
+    post:
+      operationId: addListAccount
+      summary: Add an account to a list
+      description: |
+        Adds an account that the user follows to the list. Adding a member again changes
+        nothing. An account that the user does not follow, or whose follow request is still
+        pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+        more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+        account, for any reason, it leaves every list of the user, and following it again does not
+        bring it back. The account is not told. Another user's list is a 404.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/ListAccountId'
+      responses:
+        '204':
+          description: The account is in the list.
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: removeListAccount
+      summary: Remove an account from a list
+      description: |
+        Takes the account out of the list. An account that is not in it changes nothing.
+        Another user's list is a 404.
+      tags:
+        - lists
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/ListAccountId'
+      responses:
+        '204':
+          description: The account is not in the list.
         default:
           $ref: '#/components/responses/Problem'
   /media:
@@ -3959,6 +4141,28 @@ paths:
           $ref: '#/components/responses/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
+  /timelines/list/{id}:
+    get:
+      operationId: getListTimeline
+      summary: Get the timeline of a list
+      description: |
+        The posts and boosts of the list's members, newest first, as the home timeline shows them
+        (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+        showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+      tags:
+        - timelines
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusPage'
+        default:
+          $ref: '#/components/responses/Problem'
   /reports:
     get:
       operationId: listOwnReports
@@ -4080,7 +4284,7 @@ paths:
       summary: Stream real-time updates
       description: |
         A Server-Sent Events stream (`text/event-stream`) of the authenticated user's new home
-        timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
+        and list timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
         send the access token in `Authorization`, like every other operation (`EventSource`
         cannot send it).
 
@@ -4088,6 +4292,9 @@ paths:
 
         - `update`: a new post or boost in the home timeline, as it would appear there (the
           viewer's follows, timeline languages, blocks, and mutes apply). `data` is a `Status`.
+        - `list_update`: the same post or boost, once for each of the viewer's lists whose
+          timeline shows it (its author is a member), right after its `update`. `data` is
+          `{"list_id": "<list id>", "status": <Status>}`.
         - `notification`: a new notification. `data` is a `Notification`.
         - `announcement`: an announcement that the users see was published or changed. `data`
           is an `Announcement`.
@@ -4096,8 +4303,8 @@ paths:
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the client does not keep up, and when it shuts
-        down; nothing is replayed, so after reconnecting read the home timeline and the
-        notifications again for what was missed. Announcements whose window starts later
+        down; nothing is replayed, so after reconnecting read the home timeline, the open list
+        timelines, and the notifications again for what was missed. Announcements whose window starts later
         arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
         open at once; past it the answer is 429 with type
         `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
@@ -9952,6 +10159,20 @@ components:
         minimum: 1
         maximum: 40
         default: 20
+    ListAccountId:
+      name: account_id
+      in: path
+      required: true
+      description: The ID of the account.
+      schema:
+        $ref: '#/components/schemas/Id'
+    ListId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the list.
+      schema:
+        $ref: '#/components/schemas/Id'
     OAuthAppId:
       name: id
       in: path
@@ -10530,6 +10751,24 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/WebhookProblem'
+    List:
+      description: The list.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/List'
+    ListCollection:
+      description: The user's lists, oldest first.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListCollection'
   schemas:
     AdminBrandImage:
       description: |
@@ -13663,7 +13902,7 @@ components:
         annual_discount_percent:
           type: integer
         emoji_limit:
-          description: How many custom emoji the members may create when the role lets them.
+          description: How many custom emoji the members may create each month (UTC) when the role lets them.
           type: integer
         role:
           $ref: '#/components/schemas/AdminSupporterPlanRole'
@@ -13712,7 +13951,7 @@ components:
           description: 0 to 90.
           type: integer
         emoji_limit:
-          description: 0 to 10,000.
+          description: How many custom emoji the members may create each month (UTC), 0 to 10,000.
           type: integer
         rank:
           description: 0 to 1,000,000, unique among the plans that are not retired.
@@ -15550,8 +15789,8 @@ components:
         `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
         for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
         fetched (its server did not return it, or the instance rejects the media of its domain).
-        `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-        their limit. `request_pending`: the emoji already has a pending request for a new image.
+        `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+        this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
         `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
       type: string
       enum:
@@ -17488,6 +17727,53 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LinkableLoginProvider'
+    List:
+      description: |
+        A list of accounts that the user follows, which only the user sees. Its timeline shows the
+        posts and boosts of its members.
+      type: object
+      required:
+        - id
+        - name
+        - members_count
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          description: The name of the list, 1 to 50 characters.
+          type: string
+        members_count:
+          description: How many accounts are in the list.
+          type: integer
+          minimum: 0
+        created_at:
+          description: When the user created the list.
+          type: string
+          format: date-time
+    ListCollection:
+      description: The user's lists, oldest first.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/List'
+    ListRequest:
+      description: The name of a list.
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          description: |
+            1 to 50 characters (grapheme clusters) on one line, without control characters. White
+            space around it is removed.
+          type: string
+          minLength: 1
+          maxLength: 200
     MediaAnimatedVariants:
       description: |
         The moving renditions of an animation, absent for a still image: animated WebP for
@@ -18434,10 +18720,11 @@ components:
           format: date-time
     OwnCustomEmojiPage:
       description: |
-        A page of the custom emoji that the user made, with what the user used of their limit
-        (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-        one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-        they may have, absent for no limit.
+        A page of the custom emoji that the user made, with what the user used of their monthly limit
+        (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+        calendar month and that are approved or pending (deleting an emoji does not lower it),
+        `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+        submit in a month, absent for no limit, and `resets_at` is when the count resets.
       allOf:
         - $ref: '#/components/schemas/PageInfo'
         - type: object
@@ -18445,13 +18732,14 @@ components:
             - items
             - used
             - pending
+            - resets_at
           properties:
             items:
               type: array
               items:
                 $ref: '#/components/schemas/OwnCustomEmoji'
             used:
-              description: The user's local emoji and pending requests to create one.
+              description: The approved and pending requests to create an emoji that the user submitted this month.
               type: integer
               minimum: 0
             pending:
@@ -18459,9 +18747,13 @@ components:
               type: integer
               minimum: 0
             limit:
-              description: How many the user may have; absent for no limit.
+              description: How many requests to create an emoji the user may submit in a month; absent for no limit.
               type: integer
               minimum: 0
+            resets_at:
+              description: When the count resets, the first day of the next month at 00:00 UTC.
+              type: string
+              format: date-time
     OwnSupporterSubscription:
       description: |
         The authenticated user's subscription that goes on, and whether they may subscribe.
@@ -19156,6 +19448,12 @@ components:
           this problem; signing in and resetting a password stay available outside the client API.
         - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
           allowed. Unmute one first.
+        - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
+          Delete one first.
+        - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
+          allowed. Remove one first.
+        - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
+          follow request was accepted) can be added to a list.
         - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
           account's actor, or to the user itself.
         - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases

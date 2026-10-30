@@ -46,6 +46,10 @@ LIMIT :limit + 1
 - **読み取り窓**: `:window_floor` は「基準時刻 − 窓」の UUIDv7 の下限です（§1.3）。基準時刻は現在時刻で、カーソルがあればカーソルの `id` の時刻です。
   窓の既定値は 7 日（`timeline.HomeWindow`）です。ページが埋まらなければ、窓を 4 倍（`timeline.HomeWindowGrowth`）に広げて読み直すことを 3 回（`timeline.HomeWindowWidenings`）まで行い、それでも埋まらなければ下限なしで読みます。
 
+- **リスト（FR-211）**: ホームと同じ条件（読み取り窓・`show_boosts`・`direct` の宛先・ブロックとミュート・`profile_view`・ドメインのミュート・言語）を、作者（投稿者またはブーストした人）をそのリストのメンバーに限って当てます。
+  作者の集合は `list_members` を `feed_follow_edges` と結合した `IN (SELECT member_account_id … WHERE list_id = :list AND owner_account_id = :viewer)` で、閲覧者自身の投稿とブーストは入れません（`e.author_account_id <> :viewer`）。
+  リストの持ち主でない閲覧者には、クエリの前にリストが無いものとして答えます。
+
 ### 6.2 ローカル / 連合（FR-202）
 
 ```sql

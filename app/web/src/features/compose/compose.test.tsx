@@ -5,7 +5,7 @@
 // browser APIs and check what the client did with them.
 import { Button } from "@my/ui";
 import { createMemoryHistory, createRootRouteWithContext, createRouter, Outlet } from "@tanstack/react-router";
-import { isInaccessible, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -871,6 +871,163 @@ describe("videos and audio files", () => {
         "movie.mkv is not a JPEG, PNG, GIF, or WebP image, an MP4 or WebM video, or an MP3, Ogg, or M4A audio file.",
       ),
     ).toBeInTheDocument();
+    expect(within(sheet).queryByRole("list", { name: "Attached media" })).not.toBeInTheDocument();
+    expect(parts).toHaveLength(0);
+  });
+});
+
+/** A clipboard holding `files`, and text when `text` is given (a copied spreadsheet cell holds both). */
+function clipboard(files: File[], text?: string): DataTransfer {
+  // user-event pastes what getData("text") returns when the paste event is not prevented.
+  const clipboardData = {
+    files,
+    types: [...(files.length > 0 ? ["Files"] : []), ...(text === undefined ? [] : ["text/plain"])],
+    getData: (type: string) => (type === "text" || type === "text/plain" ? (text ?? "") : ""),
+  };
+  return clipboardData as unknown as DataTransfer;
+}
+
+/** A drag that carries `files`, or only text. */
+function carrying(files: File[] | null) {
+  return {
+    dataTransfer: { types: files === null ? ["text/plain"] : ["Files"], files: files ?? [], dropEffect: "none" },
+  };
+}
+
+describe("the keyboard shortcut, pasting and dropping", () => {
+  test("Ctrl+Enter and Cmd+Enter post from the text as the button does, and say why a draft is not sent", async () => {
+    signedIn();
+    const sent = recordPosts();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+    expect(within(sheet).getByRole("button", { name: "Post" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Control+Enter Meta+Enter",
+    );
+
+    // An empty draft is not sent: the send bar says why, as when the button is pressed (G23).
+    await user.keyboard("{Control>}{Enter}{/Control}");
+    expect(within(sheet).getByText("Write something to post.")).toBeInTheDocument();
+    expect(text).toHaveFocus();
+    expect(sent).toHaveLength(0);
+
+    await user.type(text, "Hello");
+    // The Enter that commits an IME conversion sends nothing.
+    // oxlint-disable-next-line testing-library/prefer-user-event -- user-event cannot send isComposing.
+    fireEvent.keyDown(text, { key: "Enter", ctrlKey: true, isComposing: true });
+    // oxlint-disable-next-line testing-library/prefer-user-event -- user-event cannot send keyCode 229.
+    fireEvent.keyDown(text, { key: "Enter", metaKey: true, keyCode: 229 });
+    expect(sent).toHaveLength(0);
+
+    await user.keyboard("{Meta>}{Enter}{/Meta}");
+    expect(await findToast("Posted.")).toBeInTheDocument();
+    expect(sent.map((s) => s.body["text"])).toEqual(["Hello"]);
+  });
+
+  test("Ctrl+Enter posts from the content warning while its completion list is open", async () => {
+    signedIn();
+    const sent = recordPosts();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    await user.type(await within(sheet).findByRole("textbox", { name: "Your post" }), "Plot twist");
+    await user.click(within(sheet).getByRole("button", { name: "Add a content warning" }));
+    const warning = within(sheet).getByRole("textbox", { name: "Content warning" });
+    await user.type(warning, "Spoilers :smi");
+    await screen.findByRole("listbox");
+
+    await user.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(await findToast("Posted.")).toBeInTheDocument();
+    expect(sent[0]?.body["spoiler_text"]).toBe("Spoilers :smi");
+  });
+
+  test("a pasted image without text is attached, and a clipboard with text pastes only the text", async () => {
+    signedIn();
+    await stubImageApis();
+    const uploads = recordUploads();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+
+    // A copied spreadsheet cell holds an image of the cell and its text: the text is pasted, nothing is attached.
+    await user.paste(clipboard([new File(["png"], "cell.png", { type: "image/png" })], "42"));
+    expect(text).toHaveValue("42");
+    expect(within(sheet).queryByRole("list", { name: "Attached media" })).not.toBeInTheDocument();
+
+    await user.paste(clipboard([new File(["png"], "image.png", { type: "image/png" })]));
+    // The image is attached and no text is pasted.
+    expect(text).toHaveValue("42");
+    expect(await within(sheet).findByRole("textbox", { name: "Description of attachment 1" })).toBeInTheDocument();
+    expect(within(sheet).queryByRole("textbox", { name: "Description of attachment 2" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(uploads.map((file) => file.name)).toEqual(["image.png"]);
+    });
+  });
+
+  test("files dropped on the form are attached, with the drop target shown while they are dragged over it", async () => {
+    signedIn();
+    await stubImageApis();
+    const uploads = recordUploads();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+    const photo = new File(["jpeg"], "photo.jpeg", { type: "image/jpeg" });
+
+    // Text dragged over the form is left to the field.
+    fireEvent.dragEnter(text, carrying(null));
+    expect(within(sheet).queryByText("Drop files to attach them")).not.toBeInTheDocument();
+
+    fireEvent.dragEnter(text, carrying([photo]));
+    expect(within(sheet).getByText("Drop files to attach them")).toBeInTheDocument();
+    fireEvent.drop(text, carrying([photo]));
+
+    expect(within(sheet).queryByText("Drop files to attach them")).not.toBeInTheDocument();
+    expect(await within(sheet).findByRole("textbox", { name: "Description of attachment 1" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(uploads.map((file) => file.name)).toEqual(["photo.jpg"]);
+    });
+  });
+
+  test("pasted and dropped files are refused past the limit and for other types, as picked ones are", async () => {
+    signedIn();
+    await stubImageApis();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+
+    expect(text).toHaveFocus();
+    await user.paste(clipboard([new File(["pdf"], "notes.pdf", { type: "application/pdf" })]));
+    expect(
+      await screen.findByText(
+        "notes.pdf is not a JPEG, PNG, GIF, or WebP image, an MP4 or WebM video, or an MP3, Ogg, or M4A audio file.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(sheet).queryByRole("list", { name: "Attached media" })).not.toBeInTheDocument();
+
+    const photos = [1, 2, 3, 4, 5].map((n) => new File(["png"], `photo-${n}.png`, { type: "image/png" }));
+    fireEvent.drop(text, carrying(photos));
+    expect(await screen.findByText("A post can have at most 4 files. The rest were not added.")).toBeInTheDocument();
+    expect(await within(sheet).findByRole("textbox", { name: "Description of attachment 4" })).toBeInTheDocument();
+    expect(within(sheet).queryByRole("textbox", { name: "Description of attachment 5" })).not.toBeInTheDocument();
+  });
+
+  test("a post with a poll takes no pasted or dropped files (FR-112)", async () => {
+    signedIn();
+    await stubImageApis();
+    const parts = recordMediaParts();
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    const text = await within(sheet).findByRole("textbox", { name: "Your post" });
+    await user.click(within(sheet).getByRole("button", { name: "Add a poll" }));
+    const photo = new File(["png"], "photo.png", { type: "image/png" });
+
+    await user.click(text);
+    await user.paste(clipboard([photo]));
+    fireEvent.dragEnter(text, carrying([photo]));
+    expect(within(sheet).queryByText("Drop files to attach them")).not.toBeInTheDocument();
+    fireEvent.drop(text, carrying([photo]));
+
     expect(within(sheet).queryByRole("list", { name: "Attached media" })).not.toBeInTheDocument();
     expect(parts).toHaveLength(0);
   });

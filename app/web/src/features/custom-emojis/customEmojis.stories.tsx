@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's custom emoji page (/settings/custom-emojis): their emoji with what they used of their limit, its pending
-// part apart, their requests, and the form that requests a new one, in the states of ADR-0112 §1.
+// The user's custom emoji page (/settings/custom-emojis): their emoji with what they used of their monthly limit, its
+// pending part apart, and when it resets, their requests, and the form that requests a new one, in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
@@ -19,7 +19,7 @@ import {
 } from "../../test/stories";
 import { customEmojiRequestFixture, ownCustomEmojiFixture } from "./test/handlers";
 
-/** GET /custom_emojis/mine answering `items` with `used` of `limit`, `pending` of them pending requests. */
+/** GET /custom_emojis/mine answering `items` with `used` of `limit`, `pending` of them pending requests, resetting in November. */
 function mine(items: Schemas["OwnCustomEmoji"][], used: number, pending: number, limit?: number) {
   return http.get(`${apiBase}/custom_emojis/mine`, ({ request }) =>
     withViewer(request, () =>
@@ -27,6 +27,7 @@ function mine(items: Schemas["OwnCustomEmoji"][], used: number, pending: number,
         items,
         used,
         pending,
+        resets_at: "2026-11-01T00:00:00Z",
         ...(limit === undefined ? {} : { limit }),
       } satisfies Schemas["OwnCustomEmojiPage"]),
     ),
@@ -72,7 +73,7 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = {
   play: async (context) => {
     await settled(context);
-    await expect(context.canvas.getByRole("meter", { name: "Custom emoji used" })).toHaveAttribute(
+    await expect(context.canvas.getByRole("meter", { name: "Created this month" })).toHaveAttribute(
       "aria-valuetext",
       "3 of 5, 1 of them pending",
     );

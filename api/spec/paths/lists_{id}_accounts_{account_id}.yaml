@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: addListAccount
+  summary: Add an account to a list
+  description: |
+    Adds an account that the user follows to the list. Adding a member again changes
+    nothing. An account that the user does not follow, or whose follow request is still
+    pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+    more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+    account, for any reason, it leaves every list of the user, and following it again does not
+    bring it back. The account is not told. Another user's list is a 404.
+  tags: [lists]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/ListAccountId.yaml
+  responses:
+    "204":
+      description: The account is in the list.
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: removeListAccount
+  summary: Remove an account from a list
+  description: |
+    Takes the account out of the list. An account that is not in it changes nothing.
+    Another user's list is a 404.
+  tags: [lists]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/ListId.yaml
+    - $ref: ../components/parameters/ListAccountId.yaml
+  responses:
+    "204":
+      description: The account is not in the list.
+    default:
+      $ref: ../components/responses/Problem.yaml

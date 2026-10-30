@@ -55,8 +55,9 @@ export interface paths {
         /**
          * List the custom emoji that the user made
          * @description The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
-         *     used of their limit: their emoji and their pending requests to create one, and the limit,
-         *     which a supporter plan sets and which is absent for no limit (ADR-0070 §4). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+         *     used of their monthly limit: the approved and pending requests to create an emoji that they
+         *     submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
+         *     limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
          */
         get: operations["listOwnCustomEmojis"];
         put?: never;
@@ -122,8 +123,9 @@ export interface paths {
          *     §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
          *     request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
          *     A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
-         *     pending request reserves, a `create` request once the user's emoji and pending `create`
-         *     requests are as many as their limit (`limit_reached`), and a second pending `image`
+         *     pending request reserves, a `create` request once the approved and pending `create`
+         *     requests that the user submitted this month (UTC) are as many as their monthly limit
+         *     (`limit_reached`), and a second pending `image`
          *     request for an emoji (`request_pending`) are a 422
          *     `/api/v1/problems/invalid-custom-emoji` whose `reason` says which. A `create` request
          *     without `shortcode` and an `image` request without `emoji_id` are a 422 naming the
@@ -1716,6 +1718,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the user's lists that have an account
+         * @description The user's lists that the account is in, oldest first.
+         */
+        get: operations["listAccountLists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/mute": {
         parameters: {
             query?: never;
@@ -2035,6 +2057,113 @@ export interface paths {
          * @description The domain is normalized as in `muteDomain`. Without a mute it changes nothing.
          */
         delete: operations["unmuteDomain"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the user's lists
+         * @description Every list of the user (at most 50), oldest first. Nobody else sees them.
+         */
+        get: operations["listLists"];
+        put?: never;
+        /**
+         * Create a list
+         * @description Creates an empty list with the name. A name that is not one (blank, too long, or with
+         *     control characters) is a 422 naming `name`. A user has at most 50 lists; one more is a 422
+         *     `/api/v1/problems/too-many-lists`.
+         */
+        post: operations["createList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a list
+         * @description A list of the user. Another user's list is a 404, as if it did not exist.
+         */
+        get: operations["getList"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a list
+         * @description Deletes the list and its members; the members' accounts and follows do not change.
+         *     Another user's list is a 404.
+         */
+        delete: operations["deleteList"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename a list
+         * @description Gives the list a new name, checked as in `createList`. Another user's list is a 404.
+         */
+        patch: operations["updateList"];
+        trace?: never;
+    };
+    "/lists/{id}/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the members of a list
+         * @description The accounts in the list, in the order of their IDs. Members that are deactivated or
+         *     deleted are left out, so a page may hold fewer than `limit` accounts before the last.
+         *     Another user's list is a 404.
+         */
+        get: operations["listListAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lists/{id}/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add an account to a list
+         * @description Adds an account that the user follows to the list. Adding a member again changes
+         *     nothing. An account that the user does not follow, or whose follow request is still
+         *     pending, is a 422 `/api/v1/problems/not-followed`. A list has at most 1000 members; one
+         *     more is a 422 `/api/v1/problems/too-many-list-members`. When the user stops following an
+         *     account, for any reason, it leaves every list of the user, and following it again does not
+         *     bring it back. The account is not told. Another user's list is a 404.
+         */
+        post: operations["addListAccount"];
+        /**
+         * Remove an account from a list
+         * @description Takes the account out of the list. An account that is not in it changes nothing.
+         *     Another user's list is a 404.
+         */
+        delete: operations["removeListAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2834,6 +2963,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/timelines/list/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the timeline of a list
+         * @description The posts and boosts of the list's members, newest first, as the home timeline shows them
+         *     (the viewer's timeline languages, blocks, mutes, domain mutes, and each follow's choice of
+         *     showing boosts apply). The user's own posts are not in it. Another user's list is a 404.
+         */
+        get: operations["getListTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports": {
         parameters: {
             query?: never;
@@ -2921,7 +3072,7 @@ export interface paths {
         /**
          * Stream real-time updates
          * @description A Server-Sent Events stream (`text/event-stream`) of the authenticated user's new home
-         *     timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
+         *     and list timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
          *     send the access token in `Authorization`, like every other operation (`EventSource`
          *     cannot send it).
          *
@@ -2929,6 +3080,9 @@ export interface paths {
          *
          *     - `update`: a new post or boost in the home timeline, as it would appear there (the
          *       viewer's follows, timeline languages, blocks, and mutes apply). `data` is a `Status`.
+         *     - `list_update`: the same post or boost, once for each of the viewer's lists whose
+         *       timeline shows it (its author is a member), right after its `update`. `data` is
+         *       `{"list_id": "<list id>", "status": <Status>}`.
          *     - `notification`: a new notification. `data` is a `Notification`.
          *     - `announcement`: an announcement that the users see was published or changed. `data`
          *       is an `Announcement`.
@@ -2937,8 +3091,8 @@ export interface paths {
          *
          *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
          *     the access token stops being valid, when the client does not keep up, and when it shuts
-         *     down; nothing is replayed, so after reconnecting read the home timeline and the
-         *     notifications again for what was missed. Announcements whose window starts later
+         *     down; nothing is replayed, so after reconnecting read the home timeline, the open list
+         *     timelines, and the notifications again for what was missed. Announcements whose window starts later
          *     arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
          *     open at once; past it the answer is 429 with type
          *     `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
@@ -8983,7 +9137,7 @@ export interface components {
             monthly_price: components["schemas"]["Money"];
             yearly_price: components["schemas"]["Money"];
             annual_discount_percent: number;
-            /** @description How many custom emoji the members may create when the role lets them. */
+            /** @description How many custom emoji the members may create each month (UTC) when the role lets them. */
             emoji_limit: number;
             role: components["schemas"]["AdminSupporterPlanRole"];
             prices_ready: boolean;
@@ -9011,7 +9165,7 @@ export interface components {
             monthly_price: components["schemas"]["Money"];
             /** @description 0 to 90. */
             annual_discount_percent: number;
-            /** @description 0 to 10,000. */
+            /** @description How many custom emoji the members may create each month (UTC), 0 to 10,000. */
             emoji_limit: number;
             /** @description 0 to 1,000,000, unique among the plans that are not retired. */
             rank: number;
@@ -10091,8 +10245,8 @@ export interface components {
          *     `remote_emoji`: the operation is for local emoji only. `local_emoji`: the operation is
          *     for remote emoji only. `fetch_failed`: the image of the remote emoji could not be
          *     fetched (its server did not return it, or the instance rejects the media of its domain).
-         *     `limit_reached`: the user's custom emoji and pending requests to create one are as many as
-         *     their limit. `request_pending`: the emoji already has a pending request for a new image.
+         *     `limit_reached`: the approved and pending requests to create an emoji that the user submitted
+         *     this month (UTC) are as many as their monthly limit. `request_pending`: the emoji already has a pending request for a new image.
          *     `invalid_reason`: the reason of a rejection is longer than 500 characters or not text.
          * @enum {string}
          */
@@ -11255,6 +11409,34 @@ export interface components {
             providers: components["schemas"]["LinkableLoginProvider"][];
         };
         /**
+         * @description A list of accounts that the user follows, which only the user sees. Its timeline shows the
+         *     posts and boosts of its members.
+         */
+        List: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the list, 1 to 50 characters. */
+            name: string;
+            /** @description How many accounts are in the list. */
+            members_count: number;
+            /**
+             * Format: date-time
+             * @description When the user created the list.
+             */
+            created_at: string;
+        };
+        /** @description The user's lists, oldest first. */
+        ListCollection: {
+            items: components["schemas"]["List"][];
+        };
+        /** @description The name of a list. */
+        ListRequest: {
+            /**
+             * @description 1 to 50 characters (grapheme clusters) on one line, without control characters. White
+             *     space around it is removed.
+             */
+            name: string;
+        };
+        /**
          * @description The moving renditions of an animation, absent for a still image: animated WebP for
          *     `small` and `medium`, and a GIF for `large`.
          */
@@ -11865,19 +12047,25 @@ export interface components {
             updated_at: string;
         };
         /**
-         * @description A page of the custom emoji that the user made, with what the user used of their limit
-         *     (ADR-0070 §4): `used` counts the user's local emoji and their pending requests to create
-         *     one, `pending` is the part of `used` that the pending requests take, and `limit` is how many
-         *     they may have, absent for no limit.
+         * @description A page of the custom emoji that the user made, with what the user used of their monthly limit
+         *     (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+         *     calendar month and that are approved or pending (deleting an emoji does not lower it),
+         *     `pending` is the part of `used` that the pending requests take, `limit` is how many they may
+         *     submit in a month, absent for no limit, and `resets_at` is when the count resets.
          */
         OwnCustomEmojiPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["OwnCustomEmoji"][];
-            /** @description The user's local emoji and pending requests to create one. */
+            /** @description The approved and pending requests to create an emoji that the user submitted this month. */
             used: number;
             /** @description The part of `used` that the user's pending requests to create an emoji take. */
             pending: number;
-            /** @description How many the user may have; absent for no limit. */
+            /** @description How many requests to create an emoji the user may submit in a month; absent for no limit. */
             limit?: number;
+            /**
+             * Format: date-time
+             * @description When the count resets, the first day of the next month at 00:00 UTC.
+             */
+            resets_at: string;
         };
         /** @description The authenticated user's subscription that goes on, and whether they may subscribe. */
         OwnSupporterSubscription: {
@@ -12347,6 +12535,12 @@ export interface components {
          *       this problem; signing in and resetting a password stay available outside the client API.
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
+         *     - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
+         *       Delete one first.
+         *     - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
+         *       allowed. Remove one first.
+         *     - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
+         *       follow request was accepted) can be added to a list.
          *     - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
          *       account's actor, or to the user itself.
          *     - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -14408,6 +14602,26 @@ export interface components {
                 "application/problem+json": components["schemas"]["WebhookProblem"];
             };
         };
+        /** @description The list. */
+        List: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["List"];
+            };
+        };
+        /** @description The user's lists, oldest first. */
+        ListCollection: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ListCollection"];
+            };
+        };
     };
     parameters: {
         /** @description The ID of the account action. */
@@ -14458,6 +14672,10 @@ export interface components {
         OAuthClientHost: string;
         /** @description The maximum number of items in the page. */
         Limit: number;
+        /** @description The ID of the account. */
+        ListAccountId: components["schemas"]["Id"];
+        /** @description The ID of the list. */
+        ListId: components["schemas"]["Id"];
         /** @description The ID of the OAuth app (not its `client_id`). */
         OAuthAppId: components["schemas"]["Id"];
         /** @description The ID of the user who signed up. */
@@ -16325,6 +16543,22 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listAccountLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
     muteAccount: {
         parameters: {
             query?: never;
@@ -16620,6 +16854,163 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The domain is not muted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["List"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["List"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["List"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listListAccounts: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AccountPage"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addListAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["ListAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account is in the list. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeListAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["ListAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account is not in the list. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -17555,6 +17946,27 @@ export interface operations {
             path: {
                 /** @description The hashtag without the `#`, matched case-insensitively. */
                 hashtag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatusPage"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getListTimeline: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the list. */
+                id: components["parameters"]["ListId"];
             };
             cookie?: never;
         };
