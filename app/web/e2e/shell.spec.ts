@@ -495,12 +495,15 @@ test.describe("the menu of the phones' tab bar", () => {
             - link
           - listitem:
             - link
+          - listitem:
+            - link
         - paragraph:
           - link "${instanceName}"
         - paragraph:
           - link
     `);
-    await expect(sheet.getByRole("link")).toHaveText([/./, /./, /./, /./, /./]);
+    await expect(sheet.getByRole("link")).toHaveText([/./, /./, /./, /./, /./, /./]);
+    await expect(sheet.locator('a[href="/announcements"]')).toBeVisible();
     await expect(sheet.locator('a[href="/"]')).toBeVisible();
     await expect(sheet.locator('a[href="/about"]')).toBeVisible();
     await expect(sheet.locator('a[href="/profile"]')).toBeVisible();

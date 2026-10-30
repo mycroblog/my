@@ -6,6 +6,7 @@
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import {
+  AnnouncementIcon,
   BoostIcon,
   DirectVisibilityIcon,
   EmojiIcon,
@@ -18,9 +19,22 @@ import {
   VoiceIcon,
 } from "./Icons";
 
-/** The kinds of notification that have a mark of their own; the rest are `notice`. */
+/**
+ * The kinds of notification that have a mark of their own; the rest are `notice`. `announcement` is an announcement of
+ * the server's administrators, which has no actor, so its mark always stands alone.
+ */
 export type NotificationKind =
-  "favourite" | "boost" | "follow" | "mention" | "reaction" | "quote" | "poll" | "voice" | "staff" | "notice";
+  | "favourite"
+  | "boost"
+  | "follow"
+  | "mention"
+  | "reaction"
+  | "quote"
+  | "poll"
+  | "voice"
+  | "staff"
+  | "notice"
+  | "announcement";
 
 const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   favourite: () => <StarIcon filled />,
@@ -33,6 +47,7 @@ const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   voice: () => <VoiceIcon />,
   staff: () => <ModerationIcon />,
   notice: () => <NotificationsIcon />,
+  announcement: () => <AnnouncementIcon />,
 };
 
 const kindMark = tv({
@@ -57,6 +72,7 @@ const kindMark = tv({
       voice: { mark: "bg-soft text-accent" },
       staff: { mark: "bg-surface-sunken text-fg" },
       notice: { mark: "bg-surface-sunken text-fg" },
+      announcement: { mark: "bg-soft text-accent" },
     },
   },
 });

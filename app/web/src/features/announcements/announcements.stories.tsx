@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements as a user sees them, above the home timeline (/home),
-// in the states of ADR-0112 §1. The home timeline itself is in its own stories.
+// The server's announcements as a user sees them, above the home timeline (/home) below xl and in the third column
+// from xl, in the states of ADR-0112 §1. The home timeline itself is in its own stories; the list page is in
+// announcementList.stories.tsx.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
@@ -10,23 +11,27 @@ import { answering, failingOn, inLocale, narrow, renderScreen, screenLoader, set
 import { announcementFixture } from "./test/handlers";
 
 /** Two unread announcements, one long with an end, and two read ones. */
-const four: Schemas["Announcement"][] = [
+const announcementsFixture: Schemas["Announcement"][] = [
   announcementFixture("0199f0e0-0000-7000-8000-00000000b001", {
+    title: "Maintenance on Sunday from 02:00 to 04:00 UTC: the server will be read-only",
     content:
       '<p>Maintenance on <strong>Sunday</strong> from 02:00 to 04:00 UTC. The server will be read-only while we move the database to a bigger disk; posts you write in that time wait in your browser and go out once we are back. <a href="https://status.my.example/">Status page</a></p>',
     published_at: "2026-10-21T00:00:00Z",
     ends_at: "2026-10-28T00:00:00Z",
   }),
   announcementFixture("0199f0e0-0000-7000-8000-00000000b002", {
+    title: "Voice chat is here",
     content: "<p>Voice chat is here: start a room from the navigation.</p>",
     published_at: "2026-10-20T00:00:00Z",
   }),
   announcementFixture("0199f0e0-0000-7000-8000-00000000b003", {
+    title: "Welcome!",
     content: "<p>Welcome to everyone who joined this week!</p>",
     published_at: "2026-10-15T00:00:00Z",
     read: true,
   }),
   announcementFixture("0199f0e0-0000-7000-8000-00000000b004", {
+    title: "New rules",
     content: "<p>We updated the rules: please credit the recipes you share.</p>",
     published_at: "2026-10-01T00:00:00Z",
     updated_at: "2026-10-03T00:00:00Z",
@@ -51,7 +56,7 @@ const meta = {
   title: "Screens/About/Announcements",
   render: renderScreen,
   loaders: [screenLoader],
-  parameters: { screen: { path: "/home", signedIn: true, handlers: announcing(four) } },
+  parameters: { screen: { path: "/home", signedIn: true, handlers: announcing(announcementsFixture) } },
   play: async (context) => {
     await settled(context);
     await expect(await context.canvas.findByRole("region", { name: /^Announcements/u })).toBeInTheDocument();
@@ -65,7 +70,10 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = {};
 
 /** One unread announcement. */
-export const One: Story = answering(...announcing(four.slice(1, 2)));
+export const One: Story = answering(...announcing(announcementsFixture.slice(1, 2)));
+
+/** Only read announcements: nothing shows above the home timeline; the list page has them. */
+export const AllRead: Story = { ...answering(...announcing(announcementsFixture.slice(2))), play: settled };
 
 /** No announcements: nothing shows above the home timeline. */
 export const Empty: Story = { ...answering(...announcing([])), play: settled };
@@ -79,9 +87,10 @@ export const Japanese: Story = {
   ...answering(
     ...announcing([
       announcementFixture("0199f0e0-0000-7000-8000-00000000b005", {
+        title: "日曜日のメンテナンス",
         content: "<p>日曜日の 2 時から 4 時までメンテナンスを行います。その間は投稿できません。</p>",
       }),
-      ...four.slice(2),
+      ...announcementsFixture.slice(2),
     ]),
   ),
 };
@@ -91,3 +100,17 @@ export const RightToLeft: Story = inLocale("ar-XB");
 
 /** At 320 CSS px. */
 export const Narrow: Story = narrow;
+
+/**
+ * On a desktop (xl): the titles in the panel at the top of the third column, the unread first, and nothing above the
+ * home timeline.
+ */
+export const ThirdColumn: Story = {
+  globals: { viewport: { value: "desktop", isRotated: false } },
+  play: async (context) => {
+    await settled(context);
+    const panel = await context.canvas.findByRole("complementary", { name: /^Announcements/u });
+    await expect(panel).toBeInTheDocument();
+    await expect(context.canvas.queryByRole("region", { name: /^Announcements/u })).not.toBeInTheDocument();
+  },
+};

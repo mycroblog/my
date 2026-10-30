@@ -30,6 +30,20 @@ import {
   settled,
 } from "../../test/stories";
 
+/** An announcement as the API answers it, published at 2026-10-21T00:00:00Z and unread, with `overrides`. */
+function announcementFixture(id: string, overrides: Partial<Schemas["Announcement"]> = {}): Schemas["Announcement"] {
+  return {
+    id,
+    title: "Maintenance on Sunday",
+    content: "<p>Maintenance on Sunday.</p>",
+    published_at: "2026-10-21T00:00:00Z",
+    updated_at: "2026-10-21T00:00:00Z",
+    read: false,
+    ended: false,
+    ...overrides,
+  };
+}
+
 type Notification = Schemas["Notification"];
 
 /** The ID of the `n`th notification; a higher one is newer. */
@@ -118,6 +132,13 @@ const emojiRequest = {
 
 /** The notifications from the server to the user: moderation, reports, suspensions, emoji, supporters, closure. */
 const fromServer: Notification[] = [
+  // An announcement of the administrators, by its title (ADR-0125 §2).
+  notification(0, "announcement", {
+    id: notificationId(101),
+    announcement: announcementFixture("0192f0c4-7a8e-7000-8000-0000000000fa", {
+      title: "Maintenance on Sunday from 02:00 to 04:00 UTC",
+    }),
+  }),
   notification(0, "moderation_notice", {
     moderation_action: {
       id: "0192f0c4-7a8e-7000-8000-0000000000f1",

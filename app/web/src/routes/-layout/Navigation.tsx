@@ -23,7 +23,8 @@
 // member category, such as view_finance) shows neither. A viewer with view_finance has Finances, after the user's
 // items and before the staff's areas, in the rail, the sidebar and the menu's sheet, never in the tab bar.
 // While the server has voice chat on (ADR-0100 §2), Voice chat, the list of the open rooms, comes right after the
-// user's items the same way.
+// user's items the same way, and Announcements, the list of the server's announcements (ADR-0125 §4), after it, with
+// the number of the unread ones that show now as a badge ("Announcements, 2 unread").
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
 // their number as a badge the same way ("Moderation, 3 pending"), and so does the tab bar's Menu button, which
 // leads there ("Menu, 3 pending in moderation"): the count is in the names and drawn as digits, never shown by
@@ -47,6 +48,7 @@
 import {
   AboutIcon,
   AdminIcon,
+  AnnouncementIcon,
   AppNav,
   AppNavAccount,
   AppNavAction,
@@ -70,6 +72,7 @@ import {
 } from "@my/ui";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
+import { useUnreadAnnouncementCount } from "../../features/announcements";
 import { useOpenCompose } from "../../features/compose";
 import { useAdminEntry } from "../../features/admin";
 import { useFinanceEntry } from "../../features/costs";
@@ -106,6 +109,7 @@ export const navigationSections = [
   "/bookmarks",
   "/settings",
   "/voice",
+  "/announcements",
   "/finance",
   "/moderation",
   "/admin",
@@ -166,6 +170,19 @@ const voiceItem: NavigationItem = {
   section: "/voice",
   label: "client:voice.title",
   icon: <VoiceIcon />,
+  shows: "rail",
+};
+
+/**
+ * The list of the server's announcements (ADR-0125 §4): after the user's items (and Voice chat) in the rail and in the
+ * menu's sheet, never in the tab bar.
+ */
+const announcementsItem: NavigationItem = {
+  id: "announcements",
+  href: "/announcements",
+  section: "/announcements",
+  label: "client:announcements.title",
+  icon: <AnnouncementIcon />,
   shows: "rail",
 };
 
@@ -291,6 +308,7 @@ export function Navigation() {
   const signUpHref = useSignUpHref();
   const status = useSessionStatus();
   const unread = useUnreadNotificationCount();
+  const unreadAnnouncements = useUnreadAnnouncementCount();
   const moderationEntry = useModerationEntry();
   const adminEntry = useAdminEntry();
   const financeEntry = useFinanceEntry();
@@ -322,6 +340,7 @@ export function Navigation() {
     items = [
       ...userItems,
       ...(voiceAvailable ? [voiceItem] : []),
+      announcementsItem,
       ...(financeEntry.available ? [financeItem] : []),
       ...staffItems,
     ];
@@ -334,6 +353,13 @@ export function Navigation() {
         count: unread,
         label: t("client:notifications.unread_count", { count: unread }),
         name: t("client:shell.nav.notifications_unread", { count: unread }),
+      };
+    }
+    if (section === "/announcements" && unreadAnnouncements > 0) {
+      return {
+        count: unreadAnnouncements,
+        label: t("client:announcements.unread_count", { count: unreadAnnouncements }),
+        name: t("client:shell.nav.announcements_unread", { count: unreadAnnouncements }),
       };
     }
     if (section === "/moderation" && moderationEntry.available && moderationEntry.pending > 0) {

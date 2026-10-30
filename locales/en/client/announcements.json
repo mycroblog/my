@@ -1,7 +1,35 @@
 {
+  "announcements.all": {
+    "defaultMessage": "All announcements",
+    "description": "Link from the announcements above the home timeline and in the side column to the list page of every announcement, the ended ones included."
+  },
+  "announcements.empty": {
+    "defaultMessage": "No announcements yet",
+    "description": "Heading of the empty list page of the announcements."
+  },
+  "announcements.empty.description": {
+    "defaultMessage": "Announcements from the administrators of this server appear here.",
+    "description": "Text of the empty list page of the announcements."
+  },
+  "announcements.ended": {
+    "defaultMessage": "Ended",
+    "description": "Marker of an announcement that no longer shows, next to its heading on the list page."
+  },
+  "announcements.ended_at": {
+    "defaultMessage": "Ended {date}",
+    "description": "When an ended announcement stopped showing, on the list page. {date} is the date and time, formatted."
+  },
   "announcements.heading": {
     "defaultMessage": "Announcement of {date}",
-    "description": "Heading of one announcement of the server. {date} is the day it started to show, formatted."
+    "description": "Heading of an announcement that has no title. {date} is the day it started to show, formatted."
+  },
+  "announcements.list.failed": {
+    "defaultMessage": "The announcements could not be loaded",
+    "description": "Error in place of the list of announcements when it could not be loaded."
+  },
+  "announcements.loading": {
+    "defaultMessage": "Loading the announcements",
+    "description": "Text for screen readers while the list page of the announcements loads."
   },
   "announcements.mark_read": {
     "defaultMessage": "Mark as read",
@@ -11,9 +39,21 @@
     "defaultMessage": "The announcement could not be marked as read: {reason}",
     "description": "Error after marking an announcement read failed. {reason} is why."
   },
+  "announcements.more": {
+    "defaultMessage": "Show more",
+    "description": "Button at the end of the list of announcements that loads older ones."
+  },
+  "announcements.more_failed": {
+    "defaultMessage": "More announcements could not be loaded",
+    "description": "Error at the end of the list of announcements when older ones could not be loaded."
+  },
+  "announcements.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads the list of announcements again after it failed."
+  },
   "announcements.title": {
     "defaultMessage": "Announcements",
-    "description": "Heading of the server's announcements above the home timeline."
+    "description": "Heading of the server's announcements: the list page, its item of the navigation, the region above the home timeline, and the panel of the side column."
   },
   "announcements.unread": {
     "defaultMessage": "Unread",
@@ -26,5 +66,9 @@
   "announcements.until": {
     "defaultMessage": "Shown until {date}",
     "description": "When an announcement stops showing. {date} is the date and time, formatted."
+  },
+  "announcements.withdrawn": {
+    "defaultMessage": "That announcement was withdrawn, so it no longer shows.",
+    "description": "Note above the list of announcements when the page was opened for one (from a notification) that the administrators withdrew."
   }
 }

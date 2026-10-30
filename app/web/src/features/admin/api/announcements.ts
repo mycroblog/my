@@ -19,6 +19,9 @@ export type AnnouncementInput = Schemas["AdminAnnouncementInput"];
 /** The most characters of an announcement's text (AdminAnnouncementInput). */
 export const announcementTextLimit = 5000;
 
+/** The most grapheme clusters of an announcement's title (AdminAnnouncementInput, ADR-0125 §1). */
+export const announcementTitleLimit = 100;
+
 /** Every announcement, newest first (GET /admin/announcements). */
 export function adminAnnouncementsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/announcements");

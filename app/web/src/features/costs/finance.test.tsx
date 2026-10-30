@@ -66,7 +66,7 @@ describe("a user with view_finance", () => {
       within(sheet)
         .getAllByRole("link")
         .map((item) => item.getAttribute("href")),
-    ).toEqual(["/profile", "/bookmarks", "/settings", "/finance", "/", "/about"]);
+    ).toEqual(["/profile", "/bookmarks", "/settings", "/announcements", "/finance", "/", "/about"]);
 
     await user.click(within(sheet).getByRole("link", { name: "Finances" }));
     const heading = await screen.findByRole("heading", { level: 1, name: "Finances" });

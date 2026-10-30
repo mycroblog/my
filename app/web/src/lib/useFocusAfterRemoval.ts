@@ -57,9 +57,14 @@ export function useFocusHeadingAfterMove(list: RefObject<HTMLElement | null>): (
 
 /**
  * Keeps focus when a lifted action stays in the list without its lift button: once the row has rendered
- * without the button, focus moves to the row's heading (`h3`), or to its row header (`th`, with `tabIndex={-1}`) in a table. Returns `lifted(id)`, to call when the action is lifted.
+ * without the button, focus moves to the row's heading (`h3`), or to its row header (`th`, with `tabIndex={-1}`) in a table;
+ * `heading` selects another heading for rows that have one (the `h2` of the list of a page). Returns `lifted(id)`, to
+ * call when the action is lifted.
  */
-export function useFocusHeadingAfterLift(list: RefObject<HTMLElement | null>): (id: string) => void {
+export function useFocusHeadingAfterLift(
+  list: RefObject<HTMLElement | null>,
+  heading = "h3, th",
+): (id: string) => void {
   const pendingRef = useRef<string | null>(null);
   // Runs after every render: focus is moved in the DOM, outside React, once the button is gone.
   useEffect(() => {
@@ -68,7 +73,7 @@ export function useFocusHeadingAfterLift(list: RefObject<HTMLElement | null>): (
     const row = list.current?.querySelector<HTMLElement>(`[data-row-id="${id}"]`);
     if (row?.querySelector("button") != null) return;
     pendingRef.current = null;
-    row?.querySelector<HTMLElement>("h3, th")?.focus();
+    row?.querySelector<HTMLElement>(heading)?.focus();
   });
   return (id) => {
     pendingRef.current = id;

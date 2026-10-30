@@ -6,11 +6,25 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { instanceFixture, preferencesFixture } from "../../test/fixtures";
+import { instanceFixture, preferencesFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { navigationKey, signInKey } from "../../lib/storage";
 import { renderApp } from "../../test/render";
+
+/** An announcement as the API answers it, published at 2026-10-21T00:00:00Z and unread, with `overrides`. */
+function announcementFixture(id: string, overrides: Partial<Schemas["Announcement"]> = {}): Schemas["Announcement"] {
+  return {
+    id,
+    title: "Maintenance on Sunday",
+    content: "<p>Maintenance on Sunday.</p>",
+    published_at: "2026-10-21T00:00:00Z",
+    updated_at: "2026-10-21T00:00:00Z",
+    read: false,
+    ended: false,
+    ...overrides,
+  };
+}
 
 /** GET /instance with the given public timelines turned on or off. */
 function instanceWith(timelines: (typeof instanceFixture)["timelines"]) {
@@ -218,7 +232,7 @@ describe("the timelines' items", () => {
       within(within(navigation()).getByRole("list"))
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
+    ).toEqual(["/home", "/notifications", "/search", "/profile", "/bookmarks", "/settings", "/announcements"]);
   });
 
   test("offer the timelines kept for signed-in users", async () => {
@@ -267,7 +281,16 @@ describe("the user's arrangement", () => {
       within(list)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/search", "/notifications", "/home", "/profile", "/public", "/bookmarks", "/settings"]);
+    ).toEqual([
+      "/search",
+      "/notifications",
+      "/home",
+      "/profile",
+      "/public",
+      "/bookmarks",
+      "/settings",
+      "/announcements",
+    ]);
 
     await user.click(within(navigation()).getByRole("button", { name: "Menu" }));
     const sheet = await screen.findByRole("dialog", { name: "Menu" });
@@ -275,7 +298,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
   });
 
   test("keeps the place of a timeline the server does not offer among the first five", async () => {
@@ -296,7 +319,7 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
   });
 
   test("follows a change made in another tab", async () => {
@@ -328,7 +351,7 @@ describe("the tab bar's Menu", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "my example", "More about this server"]);
+    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "my example", "More about this server"]);
     expect(within(sheet).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
 
@@ -439,7 +462,17 @@ describe("the sidebar's server and viewer", () => {
       within(list)
         .getAllByRole("link")
         .map((link) => link.getAttribute("href")),
-    ).toEqual(["/home", "/local", "/public", "/notifications", "/search", "/profile", "/bookmarks", "/settings"]);
+    ).toEqual([
+      "/home",
+      "/local",
+      "/public",
+      "/notifications",
+      "/search",
+      "/profile",
+      "/bookmarks",
+      "/settings",
+      "/announcements",
+    ]);
   });
 
   test("shows no account while signed out, and the server's name leads to the landing page", async () => {
@@ -480,5 +513,26 @@ describe("the sidebar's server and viewer", () => {
     expect(within(nav).getByRole("link", { name: "my example" })).toHaveAccessibleDescription(
       "このサーバーのトップページ",
     );
+  });
+});
+
+describe("the announcements' item", () => {
+  test("leads to the list page and counts the unread announcements that show now", async () => {
+    server.use(
+      http.get(`${apiBase}/announcements`, () =>
+        HttpResponse.json({
+          items: [
+            announcementFixture("0199f0e0-0000-7000-8000-00000000b001"),
+            announcementFixture("0199f0e0-0000-7000-8000-00000000b002"),
+            announcementFixture("0199f0e0-0000-7000-8000-00000000b003", { read: true }),
+          ],
+        }),
+      ),
+    );
+    await renderApp({ path: "/home" });
+    await screen.findByRole("heading", { level: 1, name: "Home" });
+
+    const item = await within(navigation()).findByRole("link", { name: "Announcements, 2 unread" });
+    expect(item).toHaveAttribute("href", "/announcements");
   });
 });

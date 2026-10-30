@@ -230,5 +230,9 @@
   "shell.back": {
     "defaultMessage": "Back",
     "description": "Icon button before the heading of a page that is not an item of the navigation (a post, a follow list); it goes back to the previous page, or to the home page when the page was opened directly. Shown as its tooltip too."
+  },
+  "shell.nav.announcements_unread": {
+    "defaultMessage": "Announcements, {count, plural, one {# unread} other {# unread}}",
+    "description": "Accessible name of the navigation item of the announcements while some are unread. {count} is how many; the visible label comes first."
   }
 }

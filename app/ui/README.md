@@ -576,7 +576,7 @@ arbitrary value. A look that no prop gives is a new prop or component in the kit
 ### Notification rows and quotes
 
 `NotificationKindMark` is the avatar slot of a notification's row: the actor's avatar with a small round mark of the kind
-(favourite, boost, follow, mention, reaction, quote, poll, voice, staff, notice) on its corner, or the mark alone, as large as an
+(favourite, boost, follow, mention, reaction, quote, poll, voice, staff, notice, announcement) on its corner, or the mark alone, as large as an
 avatar, for a row without an actor. Each kind has its own icon; its color only repeats it, and the sentence says the kind in
 words, so the mark is decorative.
 `NotificationSentence` is the sentence of a notification in the author slot of a `PostCard` (`isUnread` adds the dot, the heavier
@@ -697,7 +697,7 @@ against viewport breakpoints.
 | Component | What it draws | Its props |
 | --- | --- | --- |
 | `AppShell` | The skip link, the navigation, `main` (padded at its end for the tab bar and the floating button), the third column (xl) and the floating slot | `navigation`, `children`, `skipLinkLabel`, `mainId`, `mainRef`, `aside` (only where the third column shows), `floating`, `floatingVisible` (sets `data-compose-fab` on `main`, which `with-compose-fab:` and the app's `scroll-padding-block-end` follow), `navigationPlacement` (`side` / `top`: the signed-out top bar above the page) |
-| `AsidePanel` | A section of the third column: an `aside` named by its small muted `h2` | `heading`, `children` |
+| `AsidePanel` | A section of the third column: an `aside` named by its small muted `h2` (text, or text with a count `Badge`) | `heading`, `children` |
 | `AppNav` | The `nav` landmark: bottom tab bar, rail from md, sidebar from lg | `label`, `header` (the wordmark and server name: `AppNavBrand`), `action` (the rail's button: `AppNavAction`), `footer` (sidebar only), `placement` (`side` / `top`), the items as children |
 | `AppNavItem` | An item: a `RailItem` (icon, label, count's `Badge`; soft fill when current) | `href`, `icon`, `label`, `current`, `badge` (`AppNavBadge`: `count`, `label`, `name`, the link's name while it shows), `shows` (`always` / `tab-bar` / `rail`) |
 | `FloatingButton` | The round primary button that starts the page's main action (below md; the rail has `AppNavAction`): `label`, `icon`, `iconOnly` (a 3rem circle named by `aria-label`, with the label as a tooltip); its place on the page is `AppShell`'s | `label`, `icon`, `iconOnly`, `onPress` |
