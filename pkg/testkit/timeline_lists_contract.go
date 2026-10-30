@@ -164,6 +164,12 @@ func timelineListMembers(t *testing.T, e *timelineEnv) {
 	e.addMember(t, alice, friends.ID, carol)
 	e.addMember(t, alice, others.ID, bob)
 	e.members(t, alice, friends.ID, bob, carol)
+	if l, err := e.svc.List(ctx, alice, friends.ID); err != nil || l.MembersCount != 2 {
+		t.Errorf("List = %+v, %v; want 2 members", l, err)
+	}
+	if ls, err := e.svc.Lists(ctx, alice); err != nil || len(ls) != 2 || ls[0].MembersCount != 2 || ls[1].MembersCount != 1 {
+		t.Errorf("Lists = %+v, %v; want 2 and 1 members", ls, err)
+	}
 	if _, err := e.graph.AcceptFollowRequest(ctx, locked, alice); err != nil {
 		t.Fatalf("AcceptFollowRequest: %v", err)
 	}

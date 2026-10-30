@@ -368,7 +368,8 @@ func (q *Queries) GetFeedEntry(ctx context.Context, id string) (FeedEntry, error
 }
 
 const getList = `-- name: GetList :one
-SELECT l.id, l.owner_account_id, l.created_at, n.name
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
 FROM lists l JOIN list_names n ON n.list_id = l.id
 WHERE l.id = $1
 `
@@ -378,6 +379,7 @@ type GetListRow struct {
 	OwnerAccountID string
 	CreatedAt      time.Time
 	Name           string
+	MembersCount   int64
 }
 
 func (q *Queries) GetList(ctx context.Context, id string) (GetListRow, error) {
@@ -388,6 +390,7 @@ func (q *Queries) GetList(ctx context.Context, id string) (GetListRow, error) {
 		&i.OwnerAccountID,
 		&i.CreatedAt,
 		&i.Name,
+		&i.MembersCount,
 	)
 	return i, err
 }
@@ -1225,7 +1228,8 @@ func (q *Queries) ListListMembers(ctx context.Context, arg ListListMembersParams
 }
 
 const listListsOfOwner = `-- name: ListListsOfOwner :many
-SELECT l.id, l.owner_account_id, l.created_at, n.name
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
 FROM lists l JOIN list_names n ON n.list_id = l.id
 WHERE l.owner_account_id = $1
 ORDER BY l.id
@@ -1236,6 +1240,7 @@ type ListListsOfOwnerRow struct {
 	OwnerAccountID string
 	CreatedAt      time.Time
 	Name           string
+	MembersCount   int64
 }
 
 func (q *Queries) ListListsOfOwner(ctx context.Context, ownerAccountID string) ([]ListListsOfOwnerRow, error) {
@@ -1252,6 +1257,7 @@ func (q *Queries) ListListsOfOwner(ctx context.Context, ownerAccountID string) (
 			&i.OwnerAccountID,
 			&i.CreatedAt,
 			&i.Name,
+			&i.MembersCount,
 		); err != nil {
 			return nil, err
 		}

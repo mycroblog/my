@@ -11344,6 +11344,8 @@ export interface components {
             id: components["schemas"]["Id"];
             /** @description The name of the list, 1 to 50 characters. */
             name: string;
+            /** @description How many accounts are in the list. */
+            members_count: number;
             /**
              * Format: date-time
              * @description When the user created the list.

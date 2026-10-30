@@ -63,7 +63,7 @@ func listFrom(row sqlitegen.GetListRow, err error) (apptimeline.List, error) {
 	if err != nil {
 		return apptimeline.List{}, notFound(err, apptimeline.ErrNotFound, "list")
 	}
-	return apptimeline.List{ID: row.ID, OwnerAccountID: row.OwnerAccountID, Name: row.Name, CreatedAt: fromMillis(row.CreatedAt)}, nil
+	return apptimeline.List{ID: row.ID, OwnerAccountID: row.OwnerAccountID, Name: row.Name, CreatedAt: fromMillis(row.CreatedAt), MembersCount: int(row.MembersCount)}, nil
 }
 
 // CountLists implements timeline.Repository.
@@ -147,7 +147,7 @@ func (r *TimelineRepository) ListsOf(ctx context.Context, ownerAccountID string)
 	}
 	out := make([]apptimeline.List, len(rows))
 	for i, row := range rows {
-		out[i] = apptimeline.List{ID: row.ID, OwnerAccountID: row.OwnerAccountID, Name: row.Name, CreatedAt: fromMillis(row.CreatedAt)}
+		out[i] = apptimeline.List{ID: row.ID, OwnerAccountID: row.OwnerAccountID, Name: row.Name, CreatedAt: fromMillis(row.CreatedAt), MembersCount: int(row.MembersCount)}
 	}
 	return out, nil
 }

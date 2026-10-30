@@ -365,12 +365,14 @@ INSERT INTO list_names (list_id, name) VALUES ($1, $2)
 ON CONFLICT (list_id) DO UPDATE SET name = excluded.name;
 
 -- name: GetList :one
-SELECT l.id, l.owner_account_id, l.created_at, n.name
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
 FROM lists l JOIN list_names n ON n.list_id = l.id
 WHERE l.id = $1;
 
 -- name: ListListsOfOwner :many
-SELECT l.id, l.owner_account_id, l.created_at, n.name
+SELECT l.id, l.owner_account_id, l.created_at, n.name,
+  (SELECT count(*) FROM list_members m WHERE m.list_id = l.id) AS members_count
 FROM lists l JOIN list_names n ON n.list_id = l.id
 WHERE l.owner_account_id = $1
 ORDER BY l.id;

@@ -42,7 +42,7 @@ type EntryLists interface {
 }
 
 func newList(l apptimeline.List) List {
-	return List{Id: l.ID, Name: l.Name, CreatedAt: l.CreatedAt}
+	return List{Id: l.ID, Name: l.Name, CreatedAt: l.CreatedAt, MembersCount: l.MembersCount}
 }
 
 func listCollection(ls []apptimeline.List) ListCollectionJSONResponse {

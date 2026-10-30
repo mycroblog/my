@@ -9330,6 +9330,9 @@ type List struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
+	// MembersCount How many accounts are in the list.
+	MembersCount int `json:"members_count"`
+
 	// Name The name of the list, 1 to 50 characters.
 	Name string `json:"name"`
 }

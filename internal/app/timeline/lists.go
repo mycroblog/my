@@ -23,12 +23,13 @@ import (
 // only the owner reads them. Every lookup of a list that another account owns answers as for a
 // list that does not exist (ErrNotFound), so that its existence does not show.
 
-// List is a list (lists with its current name, list_names).
+// List is a list (lists with its current name, list_names) and how many members it has.
 type List struct {
 	ID             string
 	OwnerAccountID string
 	Name           string
 	CreatedAt      time.Time
+	MembersCount   int
 }
 
 // ListMember is a member of a list (list_members): an account that the owner actively follows.
