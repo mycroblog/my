@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package schema embeds the desired-state schema (ADR-0023) so that Go code can apply it without
-// depending on the working directory. Each dialect's schema is the directory schema/<dialect>, one
+// Package schema embeds the desired-state schema (ADR-0023, ADR-0126) so that Go code can apply it
+// without depending on the working directory. Each dialect's schema is the directory schema/<dialect>, one
 // file per module (ADR-0082); SQLite and Postgres hold its files concatenated in name order, the
 // order in which Atlas executes them.
 //
-// Atlas applies these files in every real deployment (`scripts/task.sh db:apply`). Database adapter tests
+// `my schema apply` applies these files with the Atlas Go library in every real deployment (and in
+// `scripts/task.sh db:apply`); PostgresBootstrap runs first on PostgreSQL. Database adapter tests
 // instead execute them directly on a new, empty database: on an empty database Atlas's plan
 // consists of exactly the statements in the files, and CI's `scripts/task.sh db:check-all` verifies, for both
-// dialects, that Atlas applies the same files cleanly and leaves no diff.
+// dialects, that `my schema apply` applies the same files cleanly and that the Atlas CLI finds no diff
+// left. The Atlas CLI also checks changes to them (`scripts/task.sh db:lint`).
 //
 // Tables lists the tables a schema declares. The readiness check of the database adapters uses
 // it to decide whether the schema is applied: every declared table exists.

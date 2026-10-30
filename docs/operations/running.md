@@ -15,8 +15,8 @@ my version        # print the version of the binary
 It speaks plain HTTP/1.1 there, without TLS: put a reverse proxy or load balancer in front that terminates HTTPS (and HTTP/2 or HTTP/3 for the clients) and forwards over HTTP/1.1.
 The real-time updates (`GET /api/v1/streaming` and the voice chat room streams) are long-lived responses that send a heartbeat comment every 30 seconds (15 for a voice room) and stay open while idle.
 The proxy must not buffer these responses (nginx: the server sends `X-Accel-Buffering: no`), and its idle or read timeout must be longer than the heartbeat interval.
-It does not apply the schema: apply it with Atlas before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
-In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service applies it before the server starts.
+It does not apply the schema: apply it with `my schema apply` before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
+In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503.
 
 In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
@@ -374,7 +374,7 @@ With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), 
   Its `title` is translated according to `Accept-Language` and contains no internal detail. The cause (a connection error, or the names of missing tables) goes to the log.
 - One readiness check is cut off after 3 seconds.
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
-  (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). Atlas applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
+  (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
   Column and index differences are not checked; `scripts/task.sh db:check` detects differences.
 
 ## Security headers

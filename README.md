@@ -26,9 +26,9 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- The `schema` service applies the schema of `schema/sqlite/` to the database in a named volume with Atlas Community
-  Edition and exits; the server (`role=all`) starts once it has succeeded. The schema is applied again on every `up`,
-  so after an upgrade you start the server the same way.
+- The `schema` service runs `my schema apply` of the server image, which brings the database in a named volume to the
+  schema of that release, and exits; the server (`role=all`) starts once it has succeeded. The schema is applied again
+  on every `up`, so after an upgrade you start the server the same way.
 - The server listens on `127.0.0.1:8080` (the port is `MY_HTTP_PORT` in `.env`). It is ready when
   `curl localhost:8080/readyz` returns `{"status":"ok"}`.
 - The key encryption key (KEK) reaches the server as the Docker secret `/run/secrets/my_kek`, never as an environment

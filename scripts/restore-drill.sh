@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# The restore drill (docs/operations/backup.md, "Recovery drill"): for each dialect, start this tree's images on the
+# The restore drill (docs/operations/backup.md, "Recovery drill"): for each dialect, start this tree's image on the
 # stack of deploy/docker/upgrade-test/compose.yaml, fill the instance through the server (two local accounts, a post
 # with an image, a followers-only post, a local follow, and a follow of carol on remote.test), and back it up while the
 # server runs: `my db backup` (SQLite) or `pg_dump` (PostgreSQL), then the media. Then remove every container and
@@ -64,11 +64,10 @@ cleanup() {
 trap cleanup EXIT
 
 # --- Images and remote.test ----------------------------------------------------------------------
-echo "restore-drill: building the images" >&2
+echo "restore-drill: building the image" >&2
 version="$(git -C "$root" describe --tags --match 'v[0-9]*' --always --dirty 2>/dev/null || echo dev)"
-export MY_IMAGE="my-restore-drill:$version" MY_SCHEMA_IMAGE="my-restore-drill-schema:$version"
+export MY_IMAGE="my-restore-drill:$version"
 docker build -q --build-arg "VERSION=$version" --target app -t "$MY_IMAGE" "$root" >/dev/null
-docker build -q --target schema -t "$MY_SCHEMA_IMAGE" "$root" >/dev/null
 
 remote_test_files "$work"
 cp "$root/schema/postgres.bootstrap.sql" "$work/postgres.bootstrap.sql"
@@ -174,12 +173,8 @@ run() {
 	export MY_DB="$dialect"
 	if [[ "$dialect" == sqlite ]]; then
 		export MY_DATABASE_URL=/data/my.db
-		export SCHEMA_URL=sqlite:///data/my.db
-		export SCHEMA_DEV_URL='sqlite://dev?mode=memory'
 	else
 		export MY_DATABASE_URL='postgres://my:my@db:5432/my?sslmode=disable'
-		export SCHEMA_URL='postgres://my:my@db:5432/my?sslmode=disable&search_path=public'
-		export SCHEMA_DEV_URL='postgres://my:my@db:5432/my_dev?sslmode=disable&search_path=public'
 	fi
 
 	# The instance: start it as deploy/docker/compose.yaml does and fill it through the server.

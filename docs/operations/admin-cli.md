@@ -5,7 +5,7 @@ A guide for operators: how to create the first administrator, manage roles from 
 ## Prerequisites
 
 - The configuration (`host`, `db`, `database_url`, `kek`, and so on) is set as the [configuration reference](../reference/configuration.md) describes. `my config check` verifies it.
-- The schema is applied to the database (apply `schema/<dialect>/` with Atlas; see [database.md](database.md)).
+- The schema is applied to the database (`my schema apply`; see [database.md](database.md)).
 
 ## Creating an administrator
 

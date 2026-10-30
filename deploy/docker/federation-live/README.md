@@ -10,7 +10,7 @@ between this server and Mastodon and Akkoma's LitePub relay, for the live test o
 | --- | --- |
 | `compose.yaml` | The stack: the TLS proxy, PostgreSQL (this server, Mastodon, Misskey, and Akkoma), Redis, this server built from the checkout, Mastodon (web and Sidekiq), GoToSocial, Misskey with its configuration file, Akkoma with its configuration file, and Activity-Relay (server and worker) |
 | `Caddyfile` | The proxy: one certificate of the private CA for `my.test`, `mastodon.test`, `gts.test`, `misskey.test`, `akkoma.test`, and `relay.test`, forwarded by host name |
-| `postgres-init.sh` | The roles and databases of this server, prepared with `schema/postgres.bootstrap.sql`, of Misskey, and of Akkoma with its extensions |
+| `postgres-init.sh` | The roles and databases of this server (which `my schema apply` prepares), of Misskey, and of Akkoma with its extensions |
 | `akkoma/` | The image of Akkoma: its official release zip, pinned by SHA-256, on Debian; the entrypoint trusts the private CA, migrates, and starts it |
 | `*_test.go` | The scenarios (`go test -tags federationlive`), black-box clients of this server's client API, the Mastodon client API (Mastodon and GoToSocial), and the Misskey API (`misskey_test.go`) |
 | `../../../scripts/federation-live.sh` | Generates the CA and the secrets, starts the stack, creates the users, runs the scenarios, collects the logs, and removes the stack |

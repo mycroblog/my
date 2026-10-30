@@ -43,12 +43,12 @@ only when every job passes, tags that commit, drafts a GitHub Release, and publi
 The slow suite's `upgrade` job checks the upgrade that operators are promised: from the latest patch release of the previous minor version.
 For each of SQLite and PostgreSQL it:
 
-1. builds the server and schema images of that release from its tag, and of the commit being released;
-2. applies the previous release's schema, starts its server, and fills the database through it: two local accounts, a public and a
+1. builds the server image of that release from its tag, and of the commit being released;
+2. applies the previous release's schema with that release's own tools, starts its server, and fills the database through it: two local accounts, a public and a
    followers-only post, a local follow, and a follow request to an account on a static ActivityPub server (`remote.test`), which the
    server fetches and stores as a remote account;
-3. stops that server and upgrades in the order of [Upgrading](database.md#upgrading), with the new images: `my db upgrade -check`,
-   `atlas schema apply`, `my db upgrade`, then the new server;
+3. stops that server and upgrades in the order of [Upgrading](database.md#upgrading), with the new server image: `my db upgrade -check`,
+   `my schema apply`, `my db upgrade`, then the new server;
 4. checks that `/readyz` answers 200, that `my projection verify` finds nothing to correct, and that the data reads back through the
    client API: both accounts sign in with their passwords, and the posts, the follow, the follow request, and the remote account are kept.
    A new post must also succeed.
@@ -68,10 +68,12 @@ scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.3                  # both dial
 scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.3 DIALECTS=postgres
 ```
 
-The previous release's images are built from its tag. To use images from a registry instead, set both `MY_PREVIOUS_IMAGE` and
-`MY_PREVIOUS_SCHEMA_IMAGE` to that release's server and schema images.
+The previous release's images are built from its tag. A release that still shipped a separate schema image (Atlas Community Edition and
+its schema, the `schema` target of its `Dockerfile`) applies its schema with that image; a later one with its own `my schema apply`.
+To use images from a registry instead, set `MY_PREVIOUS_IMAGE` to that release's server image, and, for a release with a schema image,
+`MY_PREVIOUS_SCHEMA_IMAGE` to that image.
 
-When it fails, the job prints every container's logs. A failure in `my db upgrade -check` or `atlas schema apply` usually means a schema change
+When it fails, the job prints every container's logs. A failure in `my db upgrade -check` or `my schema apply` usually means a schema change
 that the previous release's data does not satisfy; a failure in the reads means data that the upgrade did not carry over.
 Fix it on `main` before releasing: [Versions](#versions) promises this upgrade.
 
@@ -91,8 +93,8 @@ What an operator runs to upgrade to this release ([Upgrading](database.md#upgrad
   removes data that an earlier release carried over, that release by name (it is what `my db upgrade -check` names when it stops).
 - Anything to do by hand before or after, such as a new required setting.
 
-To fill it, compare the data upgrade steps registered in `my` with those of the previous release, and run the schema's `--dry-run`
-from the previous release's database.
+To fill it, compare the data upgrade steps registered in `my` with those of the previous release, and run the new release's
+`my schema apply -dry-run` on a database of the previous release.
 
 ### Breaking changes
 
