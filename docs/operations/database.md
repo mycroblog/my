@@ -17,8 +17,8 @@ on an up-to-date one it does nothing. It is safe to run any number of times, and
 
 ### With `my schema apply`
 
-`my schema apply` reads the same configuration as the server (`db` and `database_url`, from `-config <file>` or the
-environment) and brings the database to the schema of the binary's release:
+`my schema apply` reads the database settings of the server's configuration (`db`, `database_url`, and `database_dev_url`,
+from `-config <file>` or the environment; it needs no other setting) and brings the database to the schema of the binary's release:
 
 ```sh
 my schema apply -dry-run   # print the SQL statements it would run, and change nothing

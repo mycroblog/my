@@ -29,7 +29,7 @@ func runSchema(args []string, stdout, stderr io.Writer) int {
 	if code >= 0 {
 		return code
 	}
-	cfg, _, err := config.Load(config.Source{File: *c.file})
+	cfg, _, err := config.LoadSchemaApply(config.Source{File: *c.file})
 	if err != nil {
 		printLoadError(stderr, err)
 		return 1
@@ -93,7 +93,8 @@ func schemaUsage(w io.Writer) {
   my schema apply [-dry-run] [-allow-destructive] [-config <file>]
 
 my schema apply brings the database of db and database_url (the server's own
-settings) to the schema of this release, which the binary holds. It compares
+settings; it reads only those and database_dev_url) to the schema of this
+release, which the binary holds. It compares
 the database with the schema, prints the SQL statements of the difference, and
 runs them in one transaction: when one fails, none of them stays. A database
 that already matches the schema is left unchanged, so running it again is safe.

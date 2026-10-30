@@ -18,6 +18,9 @@ func TestSchemaApply(t *testing.T) {
 	newAdminEnv(t)
 	path := filepath.Join(t.TempDir(), "new.db")
 	t.Setenv(config.EnvPrefix+"DATABASE_URL", path)
+	// It reads only the database's settings.
+	t.Setenv(config.EnvPrefix+"HOST", "")
+	t.Setenv(config.EnvPrefix+"KEK", "")
 
 	code, stdout, stderr := runCmd(t, schemaCmd, "apply", "-dry-run")
 	if code != 0 || !strings.HasPrefix(stdout, "CREATE TABLE") || !strings.HasSuffix(stdout, "none applied (dry run)\n") {

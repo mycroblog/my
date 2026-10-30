@@ -78,6 +78,9 @@ var maintenanceKeys = map[string]bool{
 	"maintenance_until": true, "maintenance_retry_after": true,
 }
 
+// schemaApplyKeys are the settings LoadSchemaApply reads.
+var schemaApplyKeys = map[string]bool{"db": true, "database_url": true, "database_dev_url": true}
+
 // env returns the environment variable that sets f.
 func (f *field) env() string { return EnvPrefix + strings.ToUpper(f.key) }
 
