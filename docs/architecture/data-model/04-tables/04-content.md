@@ -281,7 +281,7 @@
   審査中の `create` は shortcode を予約し（`reserved_shortcode` の一意と、ローカルの絵文字の作成のときの照合）、`image` は 1 つの絵文字に 1 つまでです。審査中の申請の画像は申請者の未添付のアップロードのままで、未使用のアップロードの掃除はそれを残します（`content.PendingCustomEmojiRequestMedia`）。アカウントの消去は消します。
   承認は同じトランザクションで結果の行を書き、`custom_emojis`（作成者は申請者）・`custom_emoji_images` を作ります。画像は申請者のアップロードの処理結果をインスタンスの Actor のアップロードとして複製したもので、申請者のアップロードは未使用に戻ります。承認のときに申請者が `create_custom_emojis` を持たないか、shortcode がローカルの絵文字にあれば承認は失敗します。
   作成者は、`create_custom_emojis` を持ち、アカウントが使える間だけ、自分の絵文字の別名・カテゴリ・ピッカーに出すかを変え、削除できます。絵文字の削除は、その絵文字の審査中の `image` の申請を `lapsed` で閉じます。
-  作成数の上限はポート `content.CustomEmojiQuota` が返し（プランのロールは `supporters.Service.EmojiLimit`、ADR-0072 §11）、作成者の絵文字と審査中の `create` の申請の合計が上限以上なら新しい `create` を断ります。上限なし（既定）のときは数えません。
+  作成数の上限はポート `content.CustomEmojiQuota` が返し（プランのロールは `supporters.Service.EmojiLimit`、ADR-0072 §11）、その UTC の暦月（1 日 00:00 UTC から翌月 1 日 00:00 UTC まで）に作成者が出した `create` の申請のうち、承認された（`approved`）ものと審査中のものの数が上限以上なら新しい `create` を断ります（ADR-0124）。月は申請の `created_at` で決め、月をまたいで承認された申請は出した月に数えます。却下・取り下げ・失効した申請は数えず、承認した絵文字を後で削除しても数は減りません。`image` の申請と管理画面・CLI で作った絵文字は数えません。上限なし（既定）のときは数えません。使った数の API は次のリセットの時刻（翌月 1 日 00:00 UTC）も返します。
 - リモートの絵文字の消去（ADR-0051 §1、FR-803）: 1 日ごとのジョブ `content.purge_remote_emojis` が、どの投稿の版（`status_revision_emojis`）・プロフィールの版（`account_profile_revision_emojis`、`account` の公開 API `IsEmojiReferenced`）・
   リアクション（`reactions.custom_emoji_id`）からも参照されないリモートの絵文字を消します。保持期間（下の「リモート投稿の保持期間」）とプロフィールの整理で版が消えた後に絵文字を残さないためです。
   管理者が無効にした絵文字は、参照が無くても行・画像・設定ごと残します。消すと次に届いたときに有効として記録し直され、`(shortcode, domain)` に対する無効化が失われるからです。
