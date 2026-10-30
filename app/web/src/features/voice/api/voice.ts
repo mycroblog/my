@@ -24,6 +24,8 @@ export type VoiceRoomUpdate = Schemas["VoiceRoomUpdate"];
 export type VoiceRoomJoin = Schemas["VoiceRoomJoin"];
 export type VoiceRoomEntry = Schemas["VoiceRoomEntry"];
 export type VoiceRoomHistoryEntry = Schemas["VoiceRoomHistoryEntry"];
+/** The emoji a room shows before its name (FR-923): a Unicode emoji, or a custom emoji of this server with its image. */
+export type VoiceRoomEmoji = Schemas["VoiceRoomIcon"];
 
 /** The visibilities of a room, in the order of the form. */
 export const voiceRoomVisibilities = [

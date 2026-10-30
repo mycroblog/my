@@ -24,6 +24,14 @@ import { isolate, nameOf } from "./useProfile";
 /** Where the viewer's follow of the account stands; a block replaces the follow, which it ends. */
 type FollowState = "none" | "requested" | "following" | "blocking";
 
+/**
+ * Whether the viewer can turn on the notifications of the account's new posts (ADR-0123 §1): `available` (an account
+ * of this server, or one of another server that the viewer follows), `follow-first` (an account of another server that
+ * the viewer does not follow yet: the button is shown turned off, with the reason), or `hidden` (a blocked account, or
+ * one of another server that the instance cannot follow now).
+ */
+type SubscribeState = "available" | "follow-first" | "hidden";
+
 export type RelationshipState =
   /** Nobody is signed in; `signInHref` signs in and comes back to the profile. */
   | { kind: "signed-out"; signInHref: string }
@@ -43,6 +51,8 @@ export type RelationshipState =
        * refuses. A follow or a request that already exists can still be undone.
        */
       canFollow: boolean;
+      /** Whether the notifications of the account's new posts can be turned on; `relationship.notify` is whether they are. */
+      subscribe: SubscribeState;
       /** The change on its way to the server, or null. */
       pending: RelationshipAction | null;
       /** Sends a change. Its result is announced; a failure is shown in a toast. */
@@ -74,7 +84,18 @@ function doneMessage(t: Translate, action: RelationshipAction, relationship: Rel
       return t("client:profile.done.muted", values);
     case "unmute":
       return t("client:profile.done.unmuted", values);
+    case "subscribe":
+      return t("client:profile.done.subscribed", values);
+    case "unsubscribe":
+      return t("client:profile.done.unsubscribed", values);
   }
+}
+
+/** Whether the viewer can subscribe to the account's new posts: one of another server only while it is followed. */
+function subscribeStateOf(follow: FollowState, remote: boolean, canFollow: boolean): SubscribeState {
+  if (follow === "blocking") return "hidden";
+  if (!remote || follow === "following") return "available";
+  return canFollow || follow === "requested" ? "follow-first" : "hidden";
 }
 
 /** Returns the viewer's relationship with `account` and the way to change it. */
@@ -115,11 +136,15 @@ export function useRelationship(account: Account): RelationshipState {
   if (query.isError) return { kind: "error", message: errorMessage(query.error) };
   // The server leaves out an account that blocks the viewer, whose profile is then not found at all.
   if (query.data === undefined || query.data === null) return { kind: "loading" };
+  const follow = followStateOf(query.data);
+  const remote = isRemoteAcct(account.acct);
+  const canFollow = followsRemote || !remote;
   return {
     kind: "other",
     relationship: query.data,
-    follow: followStateOf(query.data),
-    canFollow: followsRemote || !isRemoteAcct(account.acct),
+    follow,
+    canFollow,
+    subscribe: subscribeStateOf(follow, remote, canFollow),
     pending: mutation.isPending ? mutation.variables : null,
     change: (action) => {
       if (!mutation.isPending) mutation.mutate(action);

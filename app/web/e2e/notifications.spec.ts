@@ -168,6 +168,7 @@ test.describe("notifications", () => {
         - tab
         - tab
         - tab
+        - tab
       - tabpanel:
         - feed:
           - article:
@@ -303,19 +304,56 @@ test.describe("notifications", () => {
     await expect(page.getByRole("tab").nth(1)).toHaveAttribute("aria-selected", "true");
   });
 
+  test("a new post of a subscribed account is a row with its own mark, which the last tab keeps", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const newPost = {
+      id: "0192f0c4-7a8e-7000-8000-0000000000a4",
+      type: "status",
+      created_at: "2026-10-16T10:00:00Z",
+      account: bob,
+      status: { ...post, id: "0192f0c4-7a8e-7000-8000-0000000000b2", content: "<p>A new post</p>" },
+    };
+    await page.route(
+      (url) => url.pathname === "/api/v1/notifications",
+      (route) => {
+        const types = new URL(route.request().url()).searchParams.getAll("types");
+        const items = [newPost, ...notifications];
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ items: items.filter((n) => types.length === 0 || types.includes(n.type)) }),
+        });
+      },
+    );
+    await page.goto("/notifications");
+    const feed = page.getByRole("feed");
+    await expect(feed.getByRole("article")).toHaveCount(4);
+    const row = feed.getByRole("article").first();
+    await expect(row.locator('[data-notification-kind="status"]')).toBeVisible();
+    await expect(row.locator('a[href="/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b2"]')).toBeVisible();
+
+    await page.getByRole("tab").last().click();
+    await expect(page).toHaveURL(/\/notifications\?filter=posts$/);
+    await expect(page.getByRole("feed").getByRole("article")).toHaveCount(1);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+  });
+
   // On a phone the type tabs do not all fit: the list scrolls sideways and shows each tab whole once reached.
   test("every type tab is reached whole from the keyboard, also when it starts selected", async ({ page }) => {
     await page.goto("/notifications");
     const tabs = page.getByRole("tab");
-    await expect(tabs).toHaveCount(5);
+    await expect(tabs).toHaveCount(6);
     await tabs.first().focus();
     const rtl = (await page.locator("html").getAttribute("dir")) === "rtl";
-    for (let index = 1; index < 5; index += 1) {
+    for (let index = 1; index < 6; index += 1) {
       await page.keyboard.press(rtl ? "ArrowLeft" : "ArrowRight");
       await expect(tabs.nth(index)).toBeFocused();
       await expectTabWhollyVisible(tabs.nth(index));
     }
-    await expect(page).toHaveURL(/\/notifications\?filter=favourites$/);
+    await expect(page).toHaveURL(/\/notifications\?filter=posts$/);
     await page.reload();
     await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
     await expectTabWhollyVisible(tabs.last());
@@ -328,7 +366,7 @@ test.describe("notifications", () => {
     test.skip(testInfo.project.use.hasTouch !== true, "touch only on the phone widths");
     await page.goto("/notifications");
     const list = page.getByRole("tablist");
-    const favourites = page.getByRole("tab").last();
+    const newPosts = page.getByRole("tab").last();
     await expect(page.getByRole("tab").first()).toHaveAttribute("aria-selected", "true");
     // Swipe towards the inline start, which brings the tabs at the inline end into view.
     const box = await list.boundingBox();
@@ -351,10 +389,10 @@ test.describe("notifications", () => {
     // The list scrolled: the tabs at the inline start are now behind the fade of that edge.
     if (await list.evaluate((element) => element.scrollWidth > element.clientWidth))
       await expect(list).toHaveAttribute("data-overflow-start");
-    await expectTabWhollyVisible(favourites);
-    await favourites.tap();
-    await expect(favourites).toHaveAttribute("aria-selected", "true");
-    await expect(page).toHaveURL(/\/notifications\?filter=favourites$/);
-    await expectTabWhollyVisible(favourites);
+    await expectTabWhollyVisible(newPosts);
+    await newPosts.tap();
+    await expect(newPosts).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/\/notifications\?filter=posts$/);
+    await expectTabWhollyVisible(newPosts);
   });
 });

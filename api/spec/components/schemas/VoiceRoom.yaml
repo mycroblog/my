@@ -10,6 +10,8 @@ properties:
   name:
     description: The name of the room, 1 to 100 characters.
     type: string
+  icon:
+    $ref: ./VoiceRoomIcon.yaml
   description:
     description: The description of the room, up to 500 characters; empty for none.
     type: string

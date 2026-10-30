@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Link } from "./Link";
 import { VoiceRoomCard, type VoiceRoomCardProps } from "./VoiceRoomCard";
+import { VoiceRoomIcon } from "./VoiceRoomIcon";
 
 const props: VoiceRoomCardProps = {
   name: "Friday night radio",
@@ -42,6 +43,13 @@ describe("VoiceRoomCard", () => {
     expect(item).toHaveTextContent("Host");
     expect(item).toHaveTextContent("Talking about music.");
     expect(within(item).getByRole("list", { name: "Hashtags" })).toBeInTheDocument();
+  });
+
+  it("shows the room's icon before its name without changing the name that the heading and the link are read by", () => {
+    renderCard({ icon: <VoiceRoomIcon emoji={{ unicode: "\u{1F3B5}" }} /> });
+    const link = screen.getByRole("link", { name: "Friday night radio" });
+    expect(link).toHaveTextContent("\u{1F3B5}Friday night radio");
+    expect(screen.getByRole("heading", { level: 2, name: "Friday night radio" })).toBeInTheDocument();
   });
 
   it("links each hashtag to its page", () => {

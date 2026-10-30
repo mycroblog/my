@@ -9,6 +9,7 @@ import { Box } from "./Box";
 import { Link } from "./Link";
 import { Stack } from "./Stack";
 import { VoiceRoomCard } from "./VoiceRoomCard";
+import { VoiceRoomIcon } from "./VoiceRoomIcon";
 
 const host = (
   <Link href="/@alice" variant="standalone">
@@ -69,6 +70,17 @@ export const Default: Story = {
     );
     await expect(canvas.getByRole("link", { name: "Alice Example" })).toBeVisible();
     await expect(canvas.getByRole("list", { name: "Hashtags" })).toBeVisible();
+  },
+};
+
+/** A room with an emoji icon before its name: the heading and the link are still named by the name alone. */
+export const WithIcon: Story = {
+  decorators: inList,
+  args: { icon: <VoiceRoomIcon emoji={{ unicode: "\u{1F3B5}" }} /> },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("link", { name: "Friday night radio" })).toHaveTextContent(
+      "\u{1F3B5}Friday night radio",
+    );
   },
 };
 

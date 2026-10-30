@@ -1864,6 +1864,8 @@ components:
       $ref: ./components/schemas/VoiceRoomHistoryEntry.yaml
     VoiceRoomHistoryPage:
       $ref: ./components/schemas/VoiceRoomHistoryPage.yaml
+    VoiceRoomIcon:
+      $ref: ./components/schemas/VoiceRoomIcon.yaml
     VoiceRoomJoin:
       $ref: ./components/schemas/VoiceRoomJoin.yaml
     VoiceRoomPage:

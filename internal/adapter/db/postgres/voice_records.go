@@ -31,6 +31,7 @@ func (r *VoiceRepository) Revisions(ctx context.Context, tx uow.Tx, roomID strin
 			ID: row.ID, RoomID: row.RoomID,
 			Settings: voice.Settings{
 				Name: row.Name, Description: row.Description, Visibility: voice.Visibility(row.Visibility), Speakers: voice.Speakers(row.Speakers),
+				Icon: voice.IconOf(row.IconEmojiKey, fromNullString(row.IconCustomEmojiID)),
 			},
 			RevisedByAccountID: row.RevisedByAccountID, RevisedAt: utc(row.RevisedAt),
 		}

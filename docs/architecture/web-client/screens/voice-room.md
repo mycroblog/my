@@ -2,7 +2,7 @@
 start: "/voice"
 persona: "yuki"
 paths: ["app/web/src/features/voice/**", "app/ui/src/StageAvatar.tsx", "app/ui/src/CallDock.tsx", "app/ui/src/CallConnectionBadge.tsx", "app/ui/src/LivePill.tsx"]
-unavailable: {"開いているルームに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者になり、マイクをオンにする（話者を自由に許すルーム）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "挙手する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者から、聞くだけに戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "自分のマイクをオフにする（話者）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ホストとして、挙手した人に発言を許可する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ほかのルームの通話中に、このルームへ移る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "退出する（ホストでない人）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "終わったルームの画面から、開いているルームの一覧へ行く": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
+unavailable: {"開いているルームに参加する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者になり、マイクをオンにする（話者を自由に許すルーム）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "挙手する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "話者から、聞くだけに戻る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "自分のマイクをオフにする（話者）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ホストとして、挙手した人に発言を許可する": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "ホストとして、ルームのアイコンの絵文字を変える": "the demo scenario opens no voice chat room, and hosting one needs a microphone in the agent's browser", "ほかのルームの通話中に、このルームへ移る": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "退出する（ホストでない人）": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC", "終わったルームの画面から、開いているルームの一覧へ行く": "the demo scenario opens no voice chat room, and a call needs a second participant connected over WebRTC"}
 ---
 
 ## 通話のルーム（`/voice/{id}`）
@@ -15,7 +15,7 @@ unavailable: {"開いているルームに参加する": "the demo scenario open
 - 聞く人。ルームに入って聞き、ときどき挙手やリアクションをする。通話のたびに数十分。
 - 話す人。マイクを入れたり切ったりし、聞くだけに戻る。通話のたびに何度も。
 - ホストと共同ホスト。挙手した人に発言を許可し、参加者のマイクを切り、退出させ、招待する。ルームを開くたび。
-- 共有されたリンクや通知から来た人。ルームが見えなければ要約を、終わっていれば次に行ける所を読む。
+- 共有されたリンクや通知から来た人。ルームが見えなければ要約（名前を出すルームでは、アイコンも名前の左に）を、終わっていれば次に行ける所を読む。
 
 ### 2. 作業
 
@@ -27,19 +27,21 @@ unavailable: {"開いているルームに参加する": "the demo scenario open
 | 話者から、聞くだけに戻る | 1 |
 | 自分のマイクをオフにする（話者） | 1 |
 | ホストとして、挙手した人に発言を許可する | 2 |
+| ホストとして、ルームのアイコンの絵文字を変える | 4 |
 | ほかのルームの通話中に、このルームへ移る | 1 |
 | 退出する（ホストでない人） | 1 |
 | 終わったルームの画面から、開いているルームの一覧へ行く | 1 |
 
 手順は、ドックのボタンを押す数と、アバター（メニューのボタン）とメニューの項目を押す数。
 発言の許可は、挙手した人のアバターと「発話を許可」の 2 つ（`xl` では 3 列目の「挙手している人」の「許可」の 1 つでもできる）。
+アイコンを変えるのは、頭の設定・設定のダイアログの「変える」（アイコンがなければ「絵文字を選ぶ」）・ピッカーの絵文字・「保存」の 4 つ。外すのは「変える」とピッカーの代わりに「アイコンを外す」の 1 つで、3 つ。
 
 ### 3. 情報の優先順位とまとまり
 
 ルームの画面はナビゲーションの項目ではない（ルームの一覧や投稿のリンクから開く）ので、画面の上に戻るボタンを置く（`staticData.back`。来た画面へ、履歴がなければホームへ）。
 
 1. ルームの頭（カード）: ライブのピル・通話中は自分の接続の状態のバッジ（`CallConnectionBadge`: 接続しています… / 接続しました / 接続し直しています…）・人数と開いてからの時間、共有、ホストには設定、ほかの人には「その他の操作」。
-   その下にページの見出し（`h1`）のルーム名、説明、ハッシュタグ（ハッシュタグの画面へのリンク）。再接続の間はライブのピルを点線の枠に変える（ルームは開いているが、自分には聞こえていない）。
+   その下にページの見出し（`h1`）のルーム名（アイコンの絵文字があれば名前の左に。飾りで、見出しの名前はルーム名だけ）、説明、ハッシュタグ（ハッシュタグの画面へのリンク）。再接続の間はライブのピルを点線の枠に変える（ルームは開いているが、自分には聞こえていない）。
 2. 話している人 · N（`h2`）: 大きなアバターの格子。役割・話している輪・マイクオフ（斜線のマイク）・挙手・いま送ったリアクション。
 3. 聞いている人 · N（`h2`）: 小さなアバターの格子。
 4. ドック（ページの最後、`ShellDock`）:

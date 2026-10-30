@@ -166,6 +166,10 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 	for i, a := range actors {
 		byID[a.Account.ID] = accounts[i]
 	}
+	icons, err := s.voiceRoomIcons(ctx, views)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]VoiceRoom, 0, len(views))
 	for _, v := range views {
 		st := v.Revision.Settings
@@ -173,7 +177,7 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 			Id: v.ID, Name: st.Name, Description: st.Description, Hashtags: make([]string, 0, len(st.Hashtags)),
 			Visibility: VoiceRoomVisibility(st.Visibility), Speakers: VoiceRoomSpeakers(st.Speakers),
 			Host: byID[v.Head.HostAccountID], OpenedAt: v.OpenedAt.UTC(), ParticipantsCount: len(v.Participants),
-			Participants: make([]VoiceRoomParticipant, 0, len(v.Participants)),
+			Participants: make([]VoiceRoomParticipant, 0, len(v.Participants)), Icon: icons[st.Icon],
 		}
 		for _, t := range st.Hashtags {
 			r.Hashtags = append(r.Hashtags, t.Name)
@@ -192,6 +196,37 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 		out = append(out, r)
 	}
 	return out, nil
+}
+
+// voiceRoomIcons presents the icons of the current settings of rooms that can be shown (FR-923),
+// keyed by the icon; a room without one, or whose custom emoji was disabled or deleted, has none.
+func (s *Server) voiceRoomIcons(ctx context.Context, views []appvoice.RoomView) (map[voice.Icon]*VoiceRoomIcon, error) {
+	icons := make([]voice.Icon, 0, len(views))
+	for _, v := range views {
+		if i := v.Revision.Settings.Icon; !i.IsZero() {
+			icons = append(icons, i)
+		}
+	}
+	out := map[voice.Icon]*VoiceRoomIcon{}
+	if len(icons) == 0 || s.o.Voice == nil {
+		return out, nil
+	}
+	shown, err := s.o.Voice.Icons(ctx, icons)
+	if err != nil {
+		return nil, err
+	}
+	for i, view := range shown {
+		out[i] = newVoiceRoomIcon(view)
+	}
+	return out, nil
+}
+
+// newVoiceRoomIcon presents an icon that can be shown.
+func newVoiceRoomIcon(v appvoice.IconView) *VoiceRoomIcon {
+	if c := v.Custom; c != nil {
+		return &VoiceRoomIcon{Name: c.Shortcode, Emoji: &CustomEmoji{Shortcode: c.Shortcode, Url: c.URL, StaticUrl: c.StaticURL}}
+	}
+	return &VoiceRoomIcon{Name: v.Unicode}
 }
 
 func (s *Server) newVoiceRoom(ctx context.Context, v appvoice.RoomView) (VoiceRoom, error) {
@@ -307,7 +342,7 @@ func (s *Server) OpenVoiceRoom(ctx context.Context, req OpenVoiceRoomRequestObje
 		return respond[OpenVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	b := req.Body
-	in := appvoice.SettingsInput{Name: b.Name, Description: deref(b.Description)}
+	in := appvoice.SettingsInput{Name: b.Name, Description: deref(b.Description), Icon: deref(b.Icon)}
 	if b.Hashtags != nil {
 		in.Hashtags = *b.Hashtags
 	}
@@ -370,7 +405,7 @@ func (s *Server) UpdateVoiceRoom(ctx context.Context, req UpdateVoiceRoomRequest
 		return respond[UpdateVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	b := req.Body
-	patch := appvoice.SettingsPatch{Name: b.Name, Description: b.Description, Hashtags: b.Hashtags}
+	patch := appvoice.SettingsPatch{Name: b.Name, Description: b.Description, Hashtags: b.Hashtags, Icon: b.Icon}
 	if b.Visibility != nil {
 		vis := voice.Visibility(*b.Visibility)
 		patch.Visibility = &vis

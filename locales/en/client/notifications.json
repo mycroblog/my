@@ -47,6 +47,10 @@
     "defaultMessage": "Mentions",
     "description": "Tab on the notifications page that shows only posts that mention the user."
   },
+  "notifications.filter.posts": {
+    "defaultMessage": "New posts",
+    "description": "Tab on the notifications page that shows only the new posts of the accounts whose new posts the user chose to be notified of."
+  },
   "notifications.group.boost": {
     "defaultMessage": "{name} and {count, plural, one {# other} other {# others}} boosted your post",
     "description": "Notification sentence for several boosts of one of the user's posts, grouped in one row. {name} is the display name of the newest account that boosted it; {count} is the number of the other accounts that did (1 or more)."

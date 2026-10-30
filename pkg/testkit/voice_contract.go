@@ -284,7 +284,9 @@ func (e *voiceEnv) participants(t *testing.T, roomID string) []appvoice.Particip
 
 func voiceOpen(t *testing.T, e *voiceEnv) {
 	host := NamedID("voice-host")
-	want := e.openRoom(t, host, voiceSettings("Friday night", "go", "music"), true)
+	settings := voiceSettings("Friday night", "go", "music")
+	settings.Icon = voice.Icon{Unicode: "\U0001F3B5"}
+	want := e.openRoom(t, host, settings, true)
 	if got := e.find(t, want.ID); !reflect.DeepEqual(got, want) {
 		t.Errorf("FindRoom =\n%+v\nwant\n%+v", got, want)
 	}
@@ -316,6 +318,7 @@ func voiceRevise(t *testing.T, e *voiceEnv) {
 	s := voiceSettings("After", "music", "art")
 	s.Description = ""
 	s.Visibility, s.Speakers = voice.VisibilityMutuals, voice.SpeakersFollowers
+	s.Icon = voice.Icon{CustomEmojiID: NamedID("voice-emoji")}
 	rev := e.revise(t, room.ID, host, s)
 	got := e.find(t, room.ID)
 	if !reflect.DeepEqual(got.Revision, rev) || got.Head.RevisionID != rev.ID {

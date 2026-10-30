@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The form of a room's settings (ADR-0100 §3, §9): its name, description, hashtags, who sees and joins it, and who
+// The form of a room's settings (ADR-0100 §3, §9): its name, its emoji icon (FR-923), description, hashtags, who sees and joins it, and who
 // speaks without asking. Opening a room also offers the start post for a room of the `local` or `followers`
 // visibility, on by default (回答 13): the host writes its text, which starts as a draft with the room's name and
 // follows the name until the host edits it (回答 39); the server adds the room's link at its end. The other
@@ -17,6 +17,7 @@ import {
   openVoiceRoomMutation,
   updateVoiceRoomMutation,
   type VoiceRoom,
+  type VoiceRoomEmoji,
   type VoiceRoomJoin,
   voiceRoomLimits,
   type VoiceRoomSettings,
@@ -24,6 +25,7 @@ import {
   type VoiceRoomUpdate,
   type VoiceRoomVisibility,
 } from "../api/voice";
+import type { ReactionChoice } from "../../emoji";
 import { voiceSupported } from "../rtc/connect";
 import { useViewer } from "../../session";
 import { type VoiceCallGesture, useVoiceCallState } from "./useVoiceCallProvider";
@@ -31,6 +33,8 @@ import { type VoiceCallGesture, useVoiceCallState } from "./useVoiceCallProvider
 /** What the form holds. `postText` null is the draft that follows the name; a string is the host's own text. */
 type VoiceRoomDraft = {
   name: string;
+  /** The emoji before the name, with what shows it; undefined for none. */
+  icon: VoiceRoomEmoji | undefined;
   description: string;
   hashtags: string;
   visibility: VoiceRoomVisibility;
@@ -89,6 +93,7 @@ export function parseHashtags(text: string): string[] {
 function draftOf(room: VoiceRoom | undefined): VoiceRoomDraft {
   return {
     name: room?.name ?? "",
+    icon: room?.icon,
     description: room?.description ?? "",
     hashtags: room === undefined ? "" : room.hashtags.map((tag) => `#${tag}`).join(" "),
     visibility: room?.visibility ?? "local",
@@ -212,13 +217,19 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
       }
       const settings = {
         name: draft.name.trim(),
+        icon: draft.icon?.name ?? "",
         description: draft.description.trim(),
         hashtags: parseHashtags(draft.hashtags),
         visibility: draft.visibility,
         speakers: draft.speakers,
       };
       if (room === undefined) {
-        const body: VoiceRoomSettings = { ...settings, ...(offersPost && draft.post && { post: { text: postText } }) };
+        const { icon, ...rest } = settings;
+        const body: VoiceRoomSettings = {
+          ...rest,
+          ...(icon !== "" && { icon }),
+          ...(offersPost && draft.post && { post: { text: postText } }),
+        };
         // From the submit's gesture, as the join button does: the audio of the host's call starts here (ADR-0101 §7).
         const gesture = viewer.status === "signed-in" && voiceSupported() ? call.prepare(viewer.account.id) : undefined;
         open.mutate({ settings: body, gesture });
@@ -236,9 +247,18 @@ export function useVoiceRoomForm({ room, onDone }: Options): VoiceRoomForm {
 function changeOf(room: VoiceRoom, settings: Required<Omit<VoiceRoomSettings, "post">>): VoiceRoomUpdate {
   const change: VoiceRoomUpdate = {};
   if (settings.name !== room.name) change.name = settings.name;
+  // An icon that the room has but cannot show (its custom emoji was disabled) reads as none and stays as it is.
+  if (settings.icon !== (room.icon?.name ?? "")) change.icon = settings.icon;
   if (settings.description !== room.description) change.description = settings.description;
   if (settings.hashtags.join(" ") !== room.hashtags.join(" ")) change.hashtags = settings.hashtags;
   if (settings.visibility !== room.visibility) change.visibility = settings.visibility;
   if (settings.speakers !== room.speakers) change.speakers = settings.speakers;
   return change;
+}
+
+/** The icon of a room from the emoji picked (a Unicode emoji, or a custom emoji of this server with its image). */
+export function iconOf(choice: ReactionChoice): VoiceRoomEmoji {
+  if ("unicode" in choice) return { name: choice.unicode };
+  const { shortcode, url, static_url } = choice.custom;
+  return { name: shortcode, emoji: { shortcode, url, static_url } };
 }

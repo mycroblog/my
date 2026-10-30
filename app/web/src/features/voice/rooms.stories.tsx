@@ -17,12 +17,13 @@ function openRooms(rooms: Schemas["VoiceRoom"][]): RequestHandler[] {
   ];
 }
 
-/** Bob's room, and a second one with three speakers and a listener. */
+/** Bob's room, and a second one with an emoji icon before its name, three speakers and a listener. */
 const twoRooms = openRooms([
   voiceRoomFixture(),
   voiceRoomFixture({
     id: "0192f0c4-7a8e-7000-8000-0000000000f2",
     name: "Morning coffee",
+    icon: { name: "\u{2615}" },
     description: "",
     hashtags: [],
     participants: [
@@ -49,6 +50,10 @@ export const Normal: Story = {
   play: async (context) => {
     await settled(context);
     await expect(context.canvas.getByRole("link", { name: "Friday night radio" })).toBeInTheDocument();
+    // The icon decorates the name, which still names the link.
+    await expect(context.canvas.getByRole("link", { name: "Morning coffee" })).toHaveTextContent(
+      "\u{2615}Morning coffee",
+    );
   },
 };
 

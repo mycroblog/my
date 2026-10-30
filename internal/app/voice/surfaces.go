@@ -280,6 +280,8 @@ type Summary struct {
 	Name          string
 	Description   string
 	HostAccountID string
+	// Icon is the icon of the room while Shown (FR-923).
+	Icon voice.Icon
 }
 
 // Summary returns the summary of a room, after evaluating its expiry; ErrNotFound for an unknown
@@ -303,7 +305,7 @@ func (s *Service) Summary(ctx context.Context, roomID string) (Summary, error) {
 	if !public || rec.Revision.Settings.Visibility != voice.VisibilityLocal {
 		return out, nil
 	}
-	out.Shown, out.Name = true, rec.Revision.Settings.Name
+	out.Shown, out.Name, out.Icon = true, rec.Revision.Settings.Name, rec.Revision.Settings.Icon
 	if !out.Ended {
 		out.Description, out.HostAccountID = rec.Revision.Settings.Description, rec.Head.HostAccountID
 	}

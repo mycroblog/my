@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An open voice chat room in a list (ADR-0100 §8), in the look of the room's stage: the "Live" pill with how many are
 // in the room and how long it has been open (and "Joined" while the user is in its call), the room's name as a
-// heading that links to its page, the stacked avatars of its speakers (the host first) beside the host, and, in the
+// heading that links to its page (after the room's emoji icon, which only decorates), the stacked avatars of its speakers (the host first) beside the host, and, in the
 // full form, its description and hashtags, each a link to the hashtag's page as on the stage. It is the one look of
 // an open room wherever one shows: the list page, the third column, a hashtag's page, and a profile. The name, the
 // description and the hashtags are the host's own text in any language (dir="auto"). The `card` surface is a raised
@@ -45,6 +45,8 @@ export type VoiceRoomCardTag = { label: string; href: string };
 export type VoiceRoomCardProps = {
   /** The room's name, the host's text. */
   name: string;
+  /** The room's emoji before its name (`VoiceRoomIcon`), which only decorates; absent for none. */
+  icon?: ReactNode;
   /** The room's page. */
   href: string;
   /** The heading's level: one below the heading of the list. */
@@ -77,6 +79,7 @@ export type VoiceRoomCardProps = {
 /** One open room as an `li`: put several in a `ul` (`Stack as="ul"`). */
 export function VoiceRoomCard({
   name,
+  icon,
   href,
   headingLevel = 2,
   liveLabel,
@@ -101,6 +104,7 @@ export function VoiceRoomCard({
       </div>
       <Heading level={headingLevel} size="subsection" wrap="anywhere">
         <Link href={href} variant="standalone">
+          {icon}
           <span dir="auto" className={slots.name()}>
             {name}
           </span>
