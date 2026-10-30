@@ -49,7 +49,7 @@ func (e *timelineEnv) addMember(t *testing.T, owner, listID, member string) {
 
 func (e *timelineEnv) members(t *testing.T, owner, listID string, want ...string) {
 	t.Helper()
-	got, err := e.svc.ListMembers(t.Context(), owner, listID, "", apptimeline.MaxListMembersLimit)
+	got, err := e.svc.ListMembers(t.Context(), owner, listID, "", timeline.MaxListMembers)
 	if err != nil {
 		t.Fatalf("ListMembers: %v", err)
 	}

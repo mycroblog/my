@@ -132,15 +132,20 @@ type Options struct {
 	// Timelines reads the timelines, and TimelineReader the statuses they list.
 	Timelines      Timelines
 	TimelineReader TimelineReader
+	// Lists keeps the viewer's lists and reads their timelines; nil answers their operations
+	// with 404.
+	Lists Lists
 	// TimelineLanguages returns the languages that a user's timelines show, none for every
 	// language (FR-208); nil shows every language.
 	TimelineLanguages func(ctx context.Context, userID string) ([]string, error)
 	// Streams opens the subscriptions of the streaming endpoint; nil answers it with 503.
 	// HomeEntries tells the streams whether a home timeline lists a new entry; nil streams no
-	// home timeline entries. StreamHeartbeat overrides DefaultStreamHeartbeat when positive,
-	// and StreamWriteTimeout DefaultStreamWriteTimeout.
+	// home timeline entries. EntryLists tells them which lists of the viewer list such an
+	// entry; nil streams no list_update events. StreamHeartbeat overrides
+	// DefaultStreamHeartbeat when positive, and StreamWriteTimeout DefaultStreamWriteTimeout.
 	Streams            stream.Subscriber
 	HomeEntries        HomeEntries
+	EntryLists         EntryLists
 	StreamHeartbeat    time.Duration
 	StreamWriteTimeout time.Duration
 	// Permissions reads the permissions of the viewer's roles, which the admin operations need

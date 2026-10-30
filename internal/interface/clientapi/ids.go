@@ -23,7 +23,7 @@ import (
 
 // pathIDParams are the names of the path parameters of the spec that carry an ID (the Id
 // schema); the other path parameters are domains, keys and kinds.
-var pathIDParams = [...]string{"id", "user_id", "role_id", "delivery_id", "quote_id"}
+var pathIDParams = [...]string{"id", "user_id", "role_id", "delivery_id", "quote_id", "account_id"}
 
 // pathIDsValid reports whether every ID in the path of r is canonical.
 func pathIDsValid(r *http.Request) bool {

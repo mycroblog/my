@@ -47,12 +47,6 @@ type ListTimelineQuery struct {
 	Floor string
 }
 
-// Page sizes of the members of a list.
-const (
-	DefaultListMembersLimit = 40
-	MaxListMembersLimit     = 80
-)
-
 // Graphemes counts the grapheme clusters of s under Unicode text segmentation (UAX #29), the
 // counter that list names are validated with (timeline.ValidListName).
 func Graphemes(s string) int { return uniseg.GraphemeClusterCount(s) }

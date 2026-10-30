@@ -547,6 +547,18 @@
     "defaultMessage": "You already mute the most domains allowed. Unmute one first.",
     "description": "API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains."
   },
+  "errors.lists.too_many": {
+    "defaultMessage": "You already have the most lists allowed. Delete one first.",
+    "description": "API error title for HTTP 422 when the user creates another list beyond the limit of lists."
+  },
+  "errors.list_members.too_many": {
+    "defaultMessage": "This list already has the most members allowed. Remove one first.",
+    "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
+  },
+  "errors.list_members.not_followed": {
+    "defaultMessage": "Only accounts you follow can be added to a list.",
+    "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
+  },
   "errors.service_closing": {
     "defaultMessage": "The closure of this server is announced.",
     "description": "API error title for HTTP 409 when the closure of the server is announced (ADR-0088 §2), which stops new registrations and supporter subscriptions."
