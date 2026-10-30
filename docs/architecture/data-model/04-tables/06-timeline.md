@@ -28,3 +28,23 @@
 - `feed_author_restrictions` / `feed_domain_restrictions` の処分による行は、`moderation` のイベント `moderation.account_restrictions_changed` / `moderation.domain_restrictions_changed` から作ります。
   イベントは処分と解除のたびに、その後に有効な制限（制限ごとに最も遅い期限）を載せるので、projector はそのアカウント・ドメインの 3 つの制限を、載っているものは書き、載っていないものは消します。
 - 将来 fan-out-on-write に切り替える場合も、`home_feed`（閲覧者 × エントリ）をこのモジュールの投影として追加するだけで済みます（ADR-0013）。
+
+#### リスト
+
+フォロー中の人を、持ち主だけに見えるリストにまとめます（FR-211、[ADR-0122](../../../adr/0122-lists.md)）。リストの表は `timeline` が持ち、書くのも読むのも `timeline` だけです。
+メンバーの条件（承認済みのフォロー）は自前の `feed_follow_edges` で確かめ、`graph` の公開 API は呼びません。
+
+| テーブル | 分類 | カラム | 制約 / 用途 |
+| --- | --- | --- | --- |
+| `lists` | リソース | `id`, `owner_account_id`, `created_at` | PK `(id)`、インデックス `(owner_account_id, id)`（持ち主のリストの一覧と数） |
+| `list_names` | 現在値 | `list_id`, `name`（書記素で 1〜50） | PK `(list_id)`。名前の変更は上書きし、履歴を持たない（ADR-0020 規約 5） |
+| `list_members` | 現在値 | `list_id`, `member_account_id`, `owner_account_id`（リストの持ち主の写し。不変）, `added_at` | PK `(list_id, member_account_id)`、インデックス `(owner_account_id, member_account_id)`（フォローの終了で外す・あるアカウントが入っているリスト）、`(member_account_id)`（消去） |
+
+- 持ち主のコマンドが書きます。メンバーに足せるのは、持ち主の `feed_follow_edges` に行がある（`active` のフォローの）相手だけです。承認待ちの相手は足せません。
+- 上限は 1 人 50 リスト・1 リスト 1,000 メンバーで、超える作成・追加は断ります。メンバーの数は挿入の後に数えるので、入っている相手を足し直しても上限で断られません。
+- リストの削除は、名前とメンバーの行を同じトランザクションで消します。
+- `graph.follow_terminated`（`active` だったフォローの終了。理由を問わない）の projector は、`feed_follow_edges` の行を消すのと同じ更新で、`list_members` から持ち主 = フォローした人・メンバー = フォローされた人の行を消します。フォローし直しても戻しません。移転でフォローが移るときも、移転元のフォローの終了として外れます。
+- ブロック・ミュートはメンバーのまま残し、リストのタイムラインの読み取りで除きます。
+- リストのタイムラインは新しい投影を作らず、`feed_entries` を `list_members` で絞って読みます（§6、ADR-0013）。
+- リストは投影ではないので、`timeline.RebuildProjections` は空にしません。再構築した `feed_follow_edges` に行のないメンバーだけを消します（§9）。
+- アカウントの消去（§8）は、本人のリスト（名前とメンバーを含む）と、ほかの人のリストの本人のメンバーの行を消します。
