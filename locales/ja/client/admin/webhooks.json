@@ -4,7 +4,7 @@
     "description": "Button that closes a dialog of a webhook without changing it."
   },
   "admin.webhooks.change_failed": {
-    "defaultMessage": "webhook を変更できませんでした：{reason}",
+    "defaultMessage": "webhook を変更できませんでした: {reason}",
     "description": "Error of a change of a webhook. {reason} is the server's reason."
   },
   "admin.webhooks.created": {
@@ -84,11 +84,11 @@
     "description": "Button that sends a delivery of a webhook again."
   },
   "admin.webhooks.deliveries.redeliver_failed": {
-    "defaultMessage": "もう一度送れませんでした：{reason}",
+    "defaultMessage": "もう一度送れませんでした: {reason}",
     "description": "Error of sending a delivery again. {reason} is the server's reason."
   },
   "admin.webhooks.deliveries.redeliver_of": {
-    "defaultMessage": "{action}：{event} {id}",
+    "defaultMessage": "{action}: {event} {id}",
     "description": "Accessible name of the button that sends a delivery again: it starts with the button's visible text, so that the visible label is in the name. {action} is the button's visible text ('Send again'), {event} the event's name and {id} the message ID."
   },
   "admin.webhooks.deliveries.redelivered": {
@@ -276,7 +276,7 @@
     "description": "How many attempts of a webhook failed since its last success."
   },
   "admin.webhooks.failure.since": {
-    "defaultMessage": "開始：",
+    "defaultMessage": "開始:",
     "description": "Text before the time of the first failed attempt of a webhook since its last success."
   },
   "admin.webhooks.list.title": {
@@ -284,7 +284,7 @@
     "description": "Heading of the list of the webhooks."
   },
   "admin.webhooks.missing_permissions": {
-    "defaultMessage": "足りない権限：{permissions}",
+    "defaultMessage": "足りない権限: {permissions}",
     "description": "Line under the refusal of a webhook's events: the permissions the user lacks. {permissions} is a list of permission names such as manage_accounts."
   },
   "admin.webhooks.new.title": {
@@ -296,11 +296,11 @@
     "description": "Why a webhook has its state: a staff member set it."
   },
   "admin.webhooks.reason.failing": {
-    "defaultMessage": "（送信が失敗し続けました）",
+    "defaultMessage": "(送信が失敗し続けました)",
     "description": "Why the server disabled a webhook: its deliveries kept failing for 72 hours and 20 attempts."
   },
   "admin.webhooks.reason.gone": {
-    "defaultMessage": "（宛先がなくなったと答えました）",
+    "defaultMessage": "(宛先がなくなったと答えました)",
     "description": "Why the server disabled a webhook: its endpoint answered 410 Gone."
   },
   "admin.webhooks.rotate": {
@@ -328,7 +328,7 @@
     "description": "Button that saves the changes of a webhook."
   },
   "admin.webhooks.save_failed": {
-    "defaultMessage": "webhook を保存できませんでした：{reason}",
+    "defaultMessage": "webhook を保存できませんでした: {reason}",
     "description": "Error of a webhook form that the server refused for another reason than a field. {reason} is the server's reason."
   },
   "admin.webhooks.secret.copied": {
@@ -344,7 +344,7 @@
     "description": "Toast when the browser refused to copy the secret of a webhook."
   },
   "admin.webhooks.secret.notice": {
-    "defaultMessage": "今すぐ受け取り側に写してください。二度と表示されません。受け取り側はこの秘密で各メッセージの署名を確かめます（Standard Webhooks）。",
+    "defaultMessage": "今すぐ受け取り側に写してください。二度と表示されません。受け取り側はこの秘密で各メッセージの署名を確かめます (Standard Webhooks)。",
     "description": "Note under the secret of a webhook, which is shown only once."
   },
   "admin.webhooks.secret.title": {

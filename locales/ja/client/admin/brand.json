@@ -4,7 +4,7 @@
     "description": "Label of the field of the color behind the icon on home screens and app icons."
   },
   "admin.brand.background.description": {
-    "defaultMessage": "ホーム画面とアプリのアイコンで、アイコンの後ろに塗る色です（#ffffff など）。",
+    "defaultMessage": "ホーム画面とアプリのアイコンで、アイコンの後ろに塗る色です (#ffffff など)。",
     "description": "Help under the background color field of the icon."
   },
   "admin.brand.background.invalid": {
@@ -16,7 +16,7 @@
     "description": "Text in place of the preview while a brand image is not set."
   },
   "admin.brand.check_failed": {
-    "defaultMessage": "ファイルを確かめられませんでした：{reason}",
+    "defaultMessage": "ファイルを確かめられませんでした: {reason}",
     "description": "Error when checking the chosen SVG failed for a reason other than the file. {reason} is the server's localized reason."
   },
   "admin.brand.checked": {
@@ -32,7 +32,7 @@
     "description": "Button that opens the file picker to choose the SVG of a brand image."
   },
   "admin.brand.clear_failed": {
-    "defaultMessage": "組み込みのものに戻せませんでした：{reason}",
+    "defaultMessage": "組み込みのものに戻せませんでした: {reason}",
     "description": "Error beside the button that clears a brand image. {reason} is the server's localized reason."
   },
   "admin.brand.description": {
@@ -40,7 +40,7 @@
     "description": "Explanation above the forms of the server's icon and logos."
   },
   "admin.brand.dropped": {
-    "defaultMessage": "ファイルから取り除いたもの（{count, number}）：",
+    "defaultMessage": "ファイルから取り除いたもの ({count, number}):",
     "description": "Heading of the list of the elements and attributes the server removed from the chosen SVG. {count} is how many."
   },
   "admin.brand.error.aspect_ratio.icon": {
@@ -72,7 +72,7 @@
     "description": "Error under the file button when the save button is pressed without a chosen file."
   },
   "admin.brand.error.no_viewbox": {
-    "defaultMessage": "SVG に viewBox がありません。viewBox 付きで書き出し直してください（多くの編集ソフトは付けます）。",
+    "defaultMessage": "SVG に viewBox がありません。viewBox 付きで書き出し直してください (多くの編集ソフトは付けます)。",
     "description": "Error when the SVG has no valid viewBox."
   },
   "admin.brand.error.not_svg": {
@@ -84,7 +84,7 @@
     "description": "Error when a PNG rendition was refused."
   },
   "admin.brand.error.text": {
-    "defaultMessage": "絵に文字が含まれています。編集ソフトで文字をアウトライン（パス）にしてから、選び直してください。",
+    "defaultMessage": "絵に文字が含まれています。編集ソフトで文字をアウトライン (パス) にしてから、選び直してください。",
     "description": "Error when the SVG has text elements."
   },
   "admin.brand.error.too_complex": {
@@ -192,7 +192,7 @@
     "description": "Caption of the preview of the logo at the top of an email."
   },
   "admin.brand.preview.mail_dark": {
-    "defaultMessage": "メール（暗い背景）",
+    "defaultMessage": "メール (暗い背景)",
     "description": "Caption of the preview of the logo at the top of an email on a dark background."
   },
   "admin.brand.preview.new": {
@@ -204,7 +204,7 @@
     "description": "Caption of the preview of the icon in a browser tab."
   },
   "admin.brand.save_failed": {
-    "defaultMessage": "保存できませんでした：{reason}",
+    "defaultMessage": "保存できませんでした: {reason}",
     "description": "Error beside the save button of a brand image. {reason} is the server's localized reason."
   },
   "admin.brand.title": {

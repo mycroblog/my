@@ -40,11 +40,11 @@
     "description": "Explanation under the heading of the list of moderated servers on the server's information page."
   },
   "about.domains.kind.limit": {
-    "defaultMessage": "制限：投稿を公開のタイムラインに出さない",
+    "defaultMessage": "制限: 投稿を公開のタイムラインに出さない",
     "description": "Next to a server in the list of moderated servers: its posts stay off the public timelines and its accounts reach only their followers."
   },
   "about.domains.kind.suspend": {
-    "defaultMessage": "停止：一切連合しない",
+    "defaultMessage": "停止: 一切連合しない",
     "description": "Next to a server in the list of moderated servers: this server does not federate with it at all."
   },
   "about.domains.loading": {
@@ -96,7 +96,7 @@
     "description": "Summary of the folded details under the server's statements to search engines and AI: how it states them, the accounts' own choices, and their legal meaning."
   },
   "about.crawlers.how": {
-    "defaultMessage": "このサーバーは、この表明を robots.txt（既知の AI クローラーの一覧を含む）、ページの robots の meta タグと X-Robots-Tag・Content-Usage・tdm-reservation のヘッダー、/.well-known/tdmrep.json で示します。これらは要請です。主要なクローラーの多くは一部に従うとしていますが、従わないクローラーを技術的に止めるものではありません。",
+    "defaultMessage": "このサーバーは、この表明を robots.txt (既知の AI クローラーの一覧を含む)、ページの robots の meta タグと X-Robots-Tag・Content-Usage・tdm-reservation のヘッダー、/.well-known/tdmrep.json で示します。これらは要請です。主要なクローラーの多くは一部に従うとしていますが、従わないクローラーを技術的に止めるものではありません。",
     "description": "How the server states its search and AI settings: the machine-readable means it uses."
   },
   "about.crawlers.accounts": {
@@ -148,15 +148,15 @@
     "description": "Link to the plain-text license notices of the npm packages bundled into the web app's code, on the server's information page."
   },
   "about.licenses.npm_sw": {
-    "defaultMessage": "オフライン対応（Service Worker）に含まれる npm のパッケージ",
+    "defaultMessage": "オフライン対応 (Service Worker) に含まれる npm のパッケージ",
     "description": "Link to the plain-text license notices of the npm packages bundled into the web app's Service Worker, which keeps the app working offline, on the server's information page."
   },
   "about.licenses.unicode": {
-    "defaultMessage": "Unicode の絵文字のデータと CLDR の絵文字の名前（Unicode License v3）",
+    "defaultMessage": "Unicode の絵文字のデータと CLDR の絵文字の名前 (Unicode License v3)",
     "description": "Link to the plain-text Unicode License v3, under which the emoji list (emoji-test.txt) and the CLDR emoji names and keywords bundled in the emoji picker are distributed, on the server's information page. Keep 'Unicode License v3' and 'CLDR' as they are."
   },
   "about.licenses.noto": {
-    "defaultMessage": "Noto Color Emoji のフォント（SIL Open Font License 1.1）",
+    "defaultMessage": "Noto Color Emoji のフォント (SIL Open Font License 1.1)",
     "description": "Link to the plain-text SIL Open Font License 1.1, under which the Noto Color Emoji font that draws emoji is distributed, on the server's information page. Keep 'Noto Color Emoji' and 'SIL Open Font License 1.1' as they are."
   },
   "about.rules.title": {
@@ -168,7 +168,7 @@
     "description": "Heading of the section of the server's information page that tells where to get the source code of the server's software."
   },
   "about.source.license": {
-    "defaultMessage": "このサーバーは、GNU Affero General Public License 第 3 版（AGPL-3.0）のもとで公開されている自由ソフトウェアで動いています。サーバーを使う人は誰でも、動いているソースコードを入手できます。",
+    "defaultMessage": "このサーバーは、GNU Affero General Public License 第 3 版 (AGPL-3.0) のもとで公開されている自由ソフトウェアで動いています。サーバーを使う人は誰でも、動いているソースコードを入手できます。",
     "description": "Paragraph in the source code section of the server's information page: the license of the server's software and the right of its users to get the source code."
   },
   "about.source.view": {

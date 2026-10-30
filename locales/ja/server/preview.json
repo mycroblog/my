@@ -36,11 +36,11 @@
     "description": "Alt text of a profile's header image in a link preview (og:image:alt) when the header is the preview image. {name} is the display name, or the username when there is none."
   },
   "preview.title": {
-    "defaultMessage": "{name}（@{handle}）",
+    "defaultMessage": "{name} (@{handle})",
     "description": "Title of the link preview (og:title and the page title) of a profile or a post. {name} is the display name, or the username when there is none; {handle} is username@domain."
   },
   "preview.voice_room_open": {
-    "defaultMessage": "{room} — {host}さんの通話（開催中）",
+    "defaultMessage": "{room} — {host}さんの通話 (開催中)",
     "description": "Title of the link preview (og:title and the page title) of a voice chat room that is open, shown only when the instance shows the summaries of its rooms. {room} is the room's name; {host} is the display name of the host, or the username when there is none."
   },
   "preview.voice_room_ended": {

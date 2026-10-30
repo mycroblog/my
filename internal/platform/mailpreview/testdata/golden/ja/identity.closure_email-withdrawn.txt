@@ -3,6 +3,6 @@ Example Social の運営者が、サーバーの終了の告知を取り消し�
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 Example Social のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。

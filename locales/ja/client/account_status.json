@@ -24,7 +24,7 @@
     "description": "Character count of the appeal field when it is over the limit. {count} is the number of characters too many."
   },
   "account_status.appeal.closed": {
-    "defaultMessage": "この処分に異議を申し立てられる期限（{date}）は過ぎました。",
+    "defaultMessage": "この処分に異議を申し立てられる期限 ({date}) は過ぎました。",
     "description": "Shown instead of the appeal button when the time to appeal a moderation action has passed. {date} is a formatted date and time."
   },
   "account_status.appeal.confirm.description": {
@@ -44,7 +44,7 @@
     "description": "Term of the user's appeal of a moderation action: the moderators' explanation of their decision."
   },
   "account_status.appeal.failed": {
-    "defaultMessage": "異議を申し立てられませんでした：{reason}",
+    "defaultMessage": "異議を申し立てられませんでした: {reason}",
     "description": "In the appeal dialog when sending the appeal failed. {reason} is why, from the server."
   },
   "account_status.appeal.open": {
@@ -108,7 +108,7 @@
     "description": "Shown instead of the appeal button when a moderation action cannot be appealed."
   },
   "account_status.appeal.until": {
-    "defaultMessage": "{days, plural, other {異議の申し立ては 1 回だけ、あと # 日以内（{date}まで）にできます。}}",
+    "defaultMessage": "{days, plural, other {異議の申し立ては 1 回だけ、あと # 日以内 ({date}まで) にできます。}}",
     "description": "Above the button that appeals a moderation action. {days} is the time left to appeal, rounded up to whole days; {date} is the deadline, a formatted date and time. The server's status page says the same without the date."
   },
   "account_status.ends_in": {

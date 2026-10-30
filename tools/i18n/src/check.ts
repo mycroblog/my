@@ -12,7 +12,8 @@
 // The generated files only the TS clients read (client pseudo-locales, TS accessors) are not committed and not
 // checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
 //   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
-//          in any non-pseudo locale; an ASCII colon or comma in Japanese text (use "：" and "、")
+//          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
+//          (use ":", ";", "()" and "、")
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
 //   warn:  untranslated key (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
@@ -80,8 +81,10 @@ function copyStyleFindings(locale: string, text: string): string[] {
   const out: string[] = glossaryFindings(glossary, locale, text);
   if (/[!！]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
   if (new Intl.Locale(locale).language === "ja") {
-    if (text.includes(":"))
-      out.push('use the full-width colon "：" in Japanese (web-client/16-look-states-and-wording.md G20)');
+    if (/[：；（）]/u.test(text))
+      out.push(
+        'use the ASCII colon, semicolon and parentheses (": ", "; ", " (…)") in Japanese, not "：", "；", "（）" (web-client/16-look-states-and-wording.md G20)',
+      );
     if (text.includes(","))
       out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
   }

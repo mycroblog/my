@@ -8,7 +8,7 @@
     "description": "Heading of the form that announces the closure of the service."
   },
   "admin.closure.announce_failed": {
-    "defaultMessage": "予告を保存できませんでした：{reason}",
+    "defaultMessage": "予告を保存できませんでした: {reason}",
     "description": "Error after announcing or changing the closure failed. {reason} is why."
   },
   "admin.closure.announced": {
@@ -40,7 +40,7 @@
     "description": "Label of the estimate of the deliveries of the closure."
   },
   "admin.closure.check.deletes.value": {
-    "defaultMessage": "約{deletes}件（アカウント{accounts}件、inbox {inboxes}件）",
+    "defaultMessage": "約{deletes}件 (アカウント{accounts}件、inbox {inboxes}件)",
     "description": "Estimate of the closure's Delete deliveries. {deletes}, {accounts} and {inboxes} are numbers."
   },
   "admin.closure.check.federation": {
@@ -116,7 +116,7 @@
     "description": "Heading of the section where the administrator checks and closes the server."
   },
   "admin.closure.close_failed": {
-    "defaultMessage": "サーバーをクローズできませんでした：{reason}",
+    "defaultMessage": "サーバーをクローズできませんでした: {reason}",
     "description": "Error in the dialog after closing failed. {reason} is why."
   },
   "admin.closure.closed": {
@@ -256,7 +256,7 @@
     "description": "Question of the dialog that withdraws the announcement of the closure."
   },
   "admin.closure.withdraw_failed": {
-    "defaultMessage": "予告を取り消せませんでした：{reason}",
+    "defaultMessage": "予告を取り消せませんでした: {reason}",
     "description": "Error in the dialog after withdrawing failed. {reason} is why."
   },
   "admin.closure.withdrawn": {

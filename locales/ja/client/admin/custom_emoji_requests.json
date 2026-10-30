@@ -84,7 +84,7 @@
     "description": "Button that closes the dialog that rejects a custom emoji request."
   },
   "admin.custom_emoji_requests.decide_failed": {
-    "defaultMessage": "申請を処理できませんでした：{reason}",
+    "defaultMessage": "申請を処理できませんでした: {reason}",
     "description": "Error after approving or rejecting a custom emoji request failed. {reason} is the server's explanation."
   }
 }

@@ -28,11 +28,11 @@
     "description": "Kind of an audited operation: an administrator withdrew an announcement."
   },
   "admin.audit_log.action.appeal_overturned": {
-    "defaultMessage": "異議申し立ての容認（処分の解除）",
+    "defaultMessage": "異議申し立ての容認 (処分の解除)",
     "description": "Heading of an audit log entry: a moderator granted a user's appeal and lifted the action it appealed."
   },
   "admin.audit_log.action.appeal_upheld": {
-    "defaultMessage": "異議申し立ての棄却（処分の維持）",
+    "defaultMessage": "異議申し立ての棄却 (処分の維持)",
     "description": "Heading of an audit log entry: a moderator rejected a user's appeal and kept the action it appealed."
   },
   "admin.audit_log.action.domain_action_issued": {

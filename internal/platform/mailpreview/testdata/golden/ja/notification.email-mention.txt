@@ -6,7 +6,7 @@ https://social.example/@bob@remote.example/status/01JSAMPLE0STATUS00000000000
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 通知の設定で「メンション」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
-このメールを止める：https://social.example/mail/unsubscribe?token=sample-unsubscribe-token
+このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

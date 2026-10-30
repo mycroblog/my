@@ -20,7 +20,7 @@
     "description": "Heading of the screen shown in place of the app while the server is under maintenance; also the page name in the browser tab."
   },
   "maintenance.until": {
-    "defaultMessage": "終了予定：{time}",
+    "defaultMessage": "終了予定: {time}",
     "description": "When the maintenance is expected to end, on the maintenance screen. {time} is a date and time in the user's locale and time zone."
   }
 }

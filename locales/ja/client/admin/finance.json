@@ -8,7 +8,7 @@
     "description": "Description of the costs screen in the administration menu of the settings."
   },
   "admin.finance.description": {
-    "defaultMessage": "このサーバーの運営にかかる費用と収入の合計を見て、費用（単発の支払いと定期的な支払い）を記録します。項目とその名前・メモは公開されません。",
+    "defaultMessage": "このサーバーの運営にかかる費用と収入の合計を見て、費用 (単発の支払いと定期的な支払い) を記録します。項目とその名前・メモは公開されません。",
     "description": "Description of the costs screen, above its tabs."
   },
   "admin.finance.tabs.label": {
@@ -152,7 +152,7 @@
     "description": "Label of the name of a cost (such as a domain or a server plan) on the costs screen."
   },
   "admin.finance.name.description": {
-    "defaultMessage": "何の費用か（example.com、メインのサーバーなど）。{max} 文字まで。",
+    "defaultMessage": "何の費用か (example.com、メインのサーバーなど)。{max} 文字まで。",
     "description": "Explanation of the name of a cost on the costs screen."
   },
   "admin.finance.provider": {
@@ -244,7 +244,7 @@
     "description": "Label of the amount of a payment on the costs screen."
   },
   "admin.finance.amount.description": {
-    "defaultMessage": "通貨の主単位で（円なら 1650、ドルなら 12.34）。",
+    "defaultMessage": "通貨の主単位で (円なら 1650、ドルなら 12.34)。",
     "description": "Explanation of the amount of a payment on the costs screen."
   },
   "admin.finance.amount.invalid": {
@@ -256,7 +256,7 @@
     "description": "Label of the currency code of a payment on the costs screen."
   },
   "admin.finance.currency.description": {
-    "defaultMessage": "3 文字のコード（JPY、USD など）。",
+    "defaultMessage": "3 文字のコード (JPY、USD など)。",
     "description": "Explanation of the ISO 4217 currency code on the costs screen."
   },
   "admin.finance.currency.invalid": {
@@ -280,7 +280,7 @@
     "description": "Button that closes the panel that records a cost without recording it."
   },
   "admin.finance.create_failed": {
-    "defaultMessage": "費用を登録できませんでした：{reason}",
+    "defaultMessage": "費用を登録できませんでした: {reason}",
     "description": "Error below the form of a new cost on the costs screen, with the server's reason."
   },
   "admin.finance.created": {
@@ -344,7 +344,7 @@
     "description": "Button that opens the dialog that changes the name, provider, category, and memo of a cost on the costs screen."
   },
   "admin.finance.edit_one": {
-    "defaultMessage": "編集：{name}",
+    "defaultMessage": "編集: {name}",
     "description": "Accessible name of the edit button of a cost on the costs screen."
   },
   "admin.finance.edit.title": {
@@ -356,7 +356,7 @@
     "description": "Button that opens the dialog of a new price from a date on on the costs screen."
   },
   "admin.finance.revise_one": {
-    "defaultMessage": "金額を改定：{name}",
+    "defaultMessage": "金額を改定: {name}",
     "description": "Accessible name of the price button of a cost on the costs screen."
   },
   "admin.finance.revise.title": {
@@ -380,7 +380,7 @@
     "description": "Button that opens the dialog of the end of a regular cost on the costs screen."
   },
   "admin.finance.end_one": {
-    "defaultMessage": "終了日を設定：{name}",
+    "defaultMessage": "終了日を設定: {name}",
     "description": "Accessible name of the end button of a cost on the costs screen."
   },
   "admin.finance.end.title": {
@@ -412,7 +412,7 @@
     "description": "Button that removes a cost recorded by mistake from every period on the costs screen."
   },
   "admin.finance.cancel_one": {
-    "defaultMessage": "取り消す：{name}",
+    "defaultMessage": "取り消す: {name}",
     "description": "Accessible name of the delete button of a cost on the costs screen."
   },
   "admin.finance.cancel.title": {
@@ -428,7 +428,7 @@
     "description": "Result of deleting a cost on the costs screen."
   },
   "admin.finance.change_failed": {
-    "defaultMessage": "費用を変更できませんでした：{reason}",
+    "defaultMessage": "費用を変更できませんでした: {reason}",
     "description": "Error of a change of a cost on the costs screen, with the server's reason."
   },
   "admin.finance.cancel_dialog": {
@@ -452,7 +452,7 @@
     "description": "Heading when no cloud provider's charges are imported on the costs screen."
   },
   "admin.finance.imports.none.description": {
-    "defaultMessage": "サーバーの運営者がデプロイの設定（billing_sources）で有効にします。",
+    "defaultMessage": "サーバーの運営者がデプロイの設定 (billing_sources) で有効にします。",
     "description": "Explanation of how to turn the billing imports on on the costs screen."
   },
   "admin.finance.imports.time_zone": {
@@ -472,11 +472,11 @@
     "description": "Value of an import that has not happened on the costs screen."
   },
   "admin.finance.imports.requests_today": {
-    "defaultMessage": "今日の課金される要求（UTC）",
+    "defaultMessage": "今日の課金される要求 (UTC)",
     "description": "Term of the billed requests to the provider this UTC day, with the cap, on the costs screen."
   },
   "admin.finance.imports.requests_month": {
-    "defaultMessage": "今月の課金される要求（UTC）",
+    "defaultMessage": "今月の課金される要求 (UTC)",
     "description": "Term of the billed requests to the provider this UTC month, with the cap, on the costs screen."
   },
   "admin.finance.imports.used_of": {
@@ -512,35 +512,35 @@
     "description": "Result of an import attempt that succeeded."
   },
   "admin.finance.imports.error.permission": {
-    "defaultMessage": "失敗：認証情報に請求データを読む権限がありません。サーバーのロールかサービスアカウントに権限を付けてください。",
+    "defaultMessage": "失敗: 認証情報に請求データを読む権限がありません。サーバーのロールかサービスアカウントに権限を付けてください。",
     "description": "Result of an import attempt refused for lack of permission, with how to fix it."
   },
   "admin.finance.imports.error.not_enabled": {
-    "defaultMessage": "失敗：アカウントで請求データが有効になっていません。事業者の画面で有効にしてください。",
+    "defaultMessage": "失敗: アカウントで請求データが有効になっていません。事業者の画面で有効にしてください。",
     "description": "Result of an import attempt whose billing data is not enabled, with how to fix it."
   },
   "admin.finance.imports.error.not_found": {
-    "defaultMessage": "失敗：請求データが見つかりません。デプロイの設定のデータセットやテーブルを確かめてください。",
+    "defaultMessage": "失敗: 請求データが見つかりません。デプロイの設定のデータセットやテーブルを確かめてください。",
     "description": "Result of an import attempt that found no billing data, with how to fix it."
   },
   "admin.finance.imports.error.throttled": {
-    "defaultMessage": "失敗：事業者が要求を制限しました。もう一度試します。",
+    "defaultMessage": "失敗: 事業者が要求を制限しました。もう一度試します。",
     "description": "Result of an import attempt that was throttled; it is retried."
   },
   "admin.finance.imports.error.request_cap": {
-    "defaultMessage": "見送り：課金される要求の上限に達しました。翌日か翌月の取り込みが再び試します。",
+    "defaultMessage": "見送り: 課金される要求の上限に達しました。翌日か翌月の取り込みが再び試します。",
     "description": "Result of an import attempt that called nothing because the cap of billed requests is reached."
   },
   "admin.finance.imports.error.bytes_cap": {
-    "defaultMessage": "失敗：問い合わせが課金されるバイト数の上限を超えます。",
+    "defaultMessage": "失敗: 問い合わせが課金されるバイト数の上限を超えます。",
     "description": "Result of an import attempt whose query would scan too much."
   },
   "admin.finance.imports.error.invalid_response": {
-    "defaultMessage": "失敗：事業者の応答を読めませんでした。",
+    "defaultMessage": "失敗: 事業者の応答を読めませんでした。",
     "description": "Result of an import attempt with an unusable answer."
   },
   "admin.finance.imports.error.unavailable": {
-    "defaultMessage": "失敗：事業者が応答しませんでした。もう一度試します。",
+    "defaultMessage": "失敗: 事業者が応答しませんでした。もう一度試します。",
     "description": "Result of an import attempt whose provider did not answer; it is retried."
   },
   "admin.finance.imports.run": {
@@ -548,7 +548,7 @@
     "description": "Button that imports a provider's charges now, besides the daily import, on the costs screen."
   },
   "admin.finance.imports.run_one": {
-    "defaultMessage": "今すぐ取り込む：{provider}",
+    "defaultMessage": "今すぐ取り込む: {provider}",
     "description": "Accessible name of the import button of a provider on the costs screen."
   },
   "admin.finance.imports.queued": {
@@ -560,7 +560,7 @@
     "description": "Error of an import started again within the hour on the costs screen."
   },
   "admin.finance.imports.failed": {
-    "defaultMessage": "取り込みを始められませんでした：{reason}",
+    "defaultMessage": "取り込みを始められませんでした: {reason}",
     "description": "Error of starting an import on the costs screen, with the server's reason."
   },
   "admin.finance.publication.title": {

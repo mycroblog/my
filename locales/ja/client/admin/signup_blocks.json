@@ -1,6 +1,6 @@
 {
   "admin.signup_blocks.add_failed": {
-    "defaultMessage": "拒否を追加できませんでした：{reason}",
+    "defaultMessage": "拒否を追加できませんでした: {reason}",
     "description": "Error under the form of a new sign-up block when the server refused it. {reason} is why."
   },
   "admin.signup_blocks.added": {
@@ -80,11 +80,11 @@
     "description": "Text at the top of the section that imports a list of sign-up blocks."
   },
   "admin.signup_blocks.import.done": {
-    "defaultMessage": "拒否を {added, number} 件追加しました（{kind}、{severity}）。{skipped, plural, =0 {追加しなかった行はありません。} other {# 行は追加しませんでした。}}",
+    "defaultMessage": "拒否を {added, number} 件追加しました ({kind}、{severity})。{skipped, plural, =0 {追加しなかった行はありません。} other {# 行は追加しませんでした。}}",
     "description": "Status after an import of a list of sign-up blocks. {added} is the number of blocks added; {skipped} the number of lines skipped; {kind} the kind of the list, such as Email domain; {severity} the effect, such as Refuse."
   },
   "admin.signup_blocks.import.failed": {
-    "defaultMessage": "拒否をまとめて追加できませんでした：{reason}",
+    "defaultMessage": "拒否をまとめて追加できませんでした: {reason}",
     "description": "Error under the import form of sign-up blocks when the server refused the list. {reason} is why."
   },
   "admin.signup_blocks.import.file": {
@@ -100,7 +100,7 @@
     "description": "Error when the browser could not read the chosen file of a list of sign-up blocks. {name} is the file name."
   },
   "admin.signup_blocks.import.file.read": {
-    "defaultMessage": "{name} を読み込みました：{count, plural, other {# 件の値}}。",
+    "defaultMessage": "{name} を読み込みました: {count, plural, other {# 件の値}}。",
     "description": "Status after the chosen file of a list of sign-up blocks was read into the list. {name} is the file name; {count} the number of values in it."
   },
   "admin.signup_blocks.import.file.too_large": {
@@ -212,11 +212,11 @@
     "description": "Button that lifts a sign-up block."
   },
   "admin.signup_blocks.lift_action": {
-    "defaultMessage": "解除：{kind} {value} の拒否（{date} に追加）",
+    "defaultMessage": "解除: {kind} {value} の拒否 ({date} に追加)",
     "description": "Accessible name of the lift button of a sign-up block. {kind} is its kind, such as Email domain; {value} what it matches; {date} when it was added, formatted."
   },
   "admin.signup_blocks.lift_failed": {
-    "defaultMessage": "拒否を解除できませんでした：{reason}",
+    "defaultMessage": "拒否を解除できませんでした: {reason}",
     "description": "Toast when lifting a sign-up block failed. {reason} is why."
   },
   "admin.signup_blocks.lifted": {
@@ -332,7 +332,7 @@
     "description": "Label of the value field of a new sign-up block on an IP range."
   },
   "admin.signup_blocks.value.ip_range.description": {
-    "defaultMessage": "192.0.2.0/24 のような CIDR の範囲（IPv6 も使えます）か、1 つの IP アドレスを入力します。",
+    "defaultMessage": "192.0.2.0/24 のような CIDR の範囲 (IPv6 も使えます) か、1 つの IP アドレスを入力します。",
     "description": "Help text under the IP range field of a new sign-up block."
   },
   "admin.signup_blocks.value.ip_range.required": {

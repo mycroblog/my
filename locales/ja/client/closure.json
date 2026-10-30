@@ -20,7 +20,7 @@
     "description": "Accessible name of the region that holds the notice of the server's closure, in the list of landmarks."
   },
   "closure.message_from": {
-    "defaultMessage": "運営者からのメッセージ：",
+    "defaultMessage": "運営者からのメッセージ:",
     "description": "Label before the operators' own message in the notice of the server's closure and on the closed screen."
   },
   "closure.closed.body": {

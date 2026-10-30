@@ -24,7 +24,7 @@
     "description": "How many public posts carry a hashtag, shown after the hashtag in the list of suggestions while the user types a hashtag. {count} is the number of posts."
   },
   "compose.failed": {
-    "defaultMessage": "投稿を送信できませんでした：{reason}",
+    "defaultMessage": "投稿を送信できませんでした: {reason}",
     "description": "Error after publishing a post failed. The draft is kept. {reason} is the error message."
   },
   "compose.language.label": {
@@ -68,7 +68,7 @@
     "description": "Shown over the new-post form while the user drags files over it: dropping them attaches them to the post."
   },
   "compose.media.failed": {
-    "defaultMessage": "ファイルを添付できませんでした：{reason}",
+    "defaultMessage": "ファイルを添付できませんでした: {reason}",
     "description": "State of an attached file whose upload failed. {reason} is the error message."
   },
   "compose.media.failed_processing": {
@@ -76,7 +76,7 @@
     "description": "Why an attached file failed: the server could not process it."
   },
   "compose.media.hint": {
-    "defaultMessage": "{max, plural, other {# 件}}まで（画像は JPEG・PNG・GIF・WebP、動画は MP4・WebM、音声は MP3・Ogg・M4A）。位置情報などのメタデータは取り除きます。",
+    "defaultMessage": "{max, plural, other {# 件}}まで (画像は JPEG・PNG・GIF・WebP、動画は MP4・WebM、音声は MP3・Ogg・M4A)。位置情報などのメタデータは取り除きます。",
     "description": "Help text next to the button that attaches media. {max} is the most files a post can have. JPEG, PNG, GIF, WebP, MP4, WebM, MP3, Ogg, M4A are format names (not translated)."
   },
   "compose.media.list": {
@@ -96,7 +96,7 @@
     "description": "Notice when the user picked more files than a post can have. {max} is the most files a post can have."
   },
   "compose.media.unsupported": {
-    "defaultMessage": "{name} は対応している形式（画像は JPEG・PNG・GIF・WebP、動画は MP4・WebM、音声は MP3・Ogg・M4A）ではありません。",
+    "defaultMessage": "{name} は対応している形式 (画像は JPEG・PNG・GIF・WebP、動画は MP4・WebM、音声は MP3・Ogg・M4A) ではありません。",
     "description": "Notice when a picked file is not a type the server accepts. {name} is the file name. The format names are not translated."
   },
   "compose.media.uploading": {
@@ -140,7 +140,7 @@
     "description": "Button that puts a post that could not be sent back into the form."
   },
   "compose.outbox.failed": {
-    "defaultMessage": "投稿を送信できませんでした：{reason}",
+    "defaultMessage": "投稿を送信できませんでした: {reason}",
     "description": "State of a post that could not be sent. {reason} is the error message."
   },
   "compose.outbox.label": {
@@ -256,7 +256,7 @@
     "description": "Heading of the form that writes a new post (the side panel on wide screens, the sheet on phones)."
   },
   "compose.visibility.button": {
-    "defaultMessage": "公開範囲：{visibility}",
+    "defaultMessage": "公開範囲: {visibility}",
     "description": "Button that opens the choice of who can see the post. {visibility} is the current choice, for example 'Public'."
   },
   "compose.visibility.ceiling": {
@@ -324,7 +324,7 @@
     "description": "Label of the field with the content warning text of a post."
   },
   "compose.warning.toggle": {
-    "defaultMessage": "注意書き（CW）を付ける",
+    "defaultMessage": "注意書き (CW) を付ける",
     "description": "Toggle button (an icon) that adds a content warning: a short text shown instead of the post until the reader opens it."
   },
   "compose.quote.label": {
@@ -368,11 +368,11 @@
     "description": "Description of the quote policy 'Only you'."
   },
   "compose.quote_policy.tooltip": {
-    "defaultMessage": "引用：{value}",
+    "defaultMessage": "引用: {value}",
     "description": "Tooltip of the select that chooses who may quote the post, shown on hover and keyboard focus. {value} is the current choice, for example 'Followers'."
   },
   "compose.language.tooltip": {
-    "defaultMessage": "言語：{value}",
+    "defaultMessage": "言語: {value}",
     "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."
   },
   "compose.blocked.empty": {

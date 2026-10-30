@@ -8,6 +8,6 @@ https://social.example/settings/import-export
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 Example Social のアカウントのメールアドレスに送っています。サーバーの終了はあなたのデータに関わるため、このメールは止められません。

@@ -44,7 +44,7 @@
     "description": "Description under the button that resumes deliveries to a remote server."
   },
   "admin.instance.mark_failed": {
-    "defaultMessage": "配送を再開できませんでした：{reason}",
+    "defaultMessage": "配送を再開できませんでした: {reason}",
     "description": "Error toast when deliveries to a remote server could not be resumed. {reason} is the server's localized reason."
   },
   "admin.instance.marked_available": {

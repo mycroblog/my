@@ -4,7 +4,7 @@
     "description": "Button that closes a dialog of the OAuth apps screen without changing anything."
   },
   "admin.oauth_apps.change_failed": {
-    "defaultMessage": "アプリを変更できませんでした：{reason}",
+    "defaultMessage": "アプリを変更できませんでした: {reason}",
     "description": "Error of disabling or enabling an app, or of denying or allowing a host. {reason} says why."
   },
   "admin.oauth_apps.column.app": {
@@ -152,7 +152,7 @@
     "description": "Label of the field of the host to deny."
   },
   "admin.oauth_apps.hosts.host.description": {
-    "defaultMessage": "client_id の URL のホスト名です（例：app.example）。スキーム、ポート、パスは付けません。",
+    "defaultMessage": "client_id の URL のホスト名です (例: app.example)。スキーム、ポート、パスは付けません。",
     "description": "Description of the field of the host to deny."
   },
   "admin.oauth_apps.hosts.title": {
@@ -168,7 +168,7 @@
     "description": "Heading of the list of OAuth apps, and its table caption."
   },
   "admin.oauth_apps.owner": {
-    "defaultMessage": "登録した利用者：{id}",
+    "defaultMessage": "登録した利用者: {id}",
     "description": "The ID of the user who registered an app. {id} is the user's ID."
   },
   "admin.oauth_apps.public": {

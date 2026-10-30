@@ -4,7 +4,7 @@
     "description": "Text instead of the action form for a deleted account."
   },
   "admin.account.action.issued": {
-    "defaultMessage": "処分しました（{kind}）。",
+    "defaultMessage": "処分しました ({kind})。",
     "description": "Status after an action was taken on an account; kind is its kind."
   },
   "admin.account.action.posts": {
@@ -44,11 +44,11 @@
     "description": "Button that lifts a moderation action on an account, and the confirmation's button."
   },
   "admin.account.actions.lift_action": {
-    "defaultMessage": "解除：「{kind}」（{date} に処分）",
+    "defaultMessage": "解除: 「{kind}」({date} に処分)",
     "description": "Accessible name of the button that lifts an account action; kind is the kind, date when it was taken."
   },
   "admin.account.actions.lift_failed": {
-    "defaultMessage": "処分を解除できませんでした：{reason}",
+    "defaultMessage": "処分を解除できませんでした: {reason}",
     "description": "Error in the lift confirmation; reason is the server's localized message."
   },
   "admin.account.actions.lift_reason": {
@@ -116,7 +116,7 @@
     "description": "Term of the private data: the primary email address."
   },
   "admin.account.private.failed": {
-    "defaultMessage": "メールアドレスと IP アドレスを表示できませんでした：{reason}",
+    "defaultMessage": "メールアドレスと IP アドレスを表示できませんでした: {reason}",
     "description": "Toast when showing the email and IP addresses failed; reason is the server's localized message."
   },
   "admin.account.private.ip": {
@@ -256,15 +256,15 @@
     "description": "Heading when the instance has no roles at all."
   },
   "admin.account.roles.failed": {
-    "defaultMessage": "ロールを変更できませんでした：{reason}",
+    "defaultMessage": "ロールを変更できませんでした: {reason}",
     "description": "Error in the confirmation of a role change; reason is the server's localized message."
   },
   "admin.account.roles.failed.last_admin": {
-    "defaultMessage": "ロールを剥奪できませんでした：このアカウントはこのサーバーのただ 1 人の管理者です。先にほかのアカウントに admin を付与してください。",
+    "defaultMessage": "ロールを剥奪できませんでした: このアカウントはこのサーバーのただ 1 人の管理者です。先にほかのアカウントに admin を付与してください。",
     "description": "Error in the confirmation of revoking admin that the server refused because the account is the only admin."
   },
   "admin.account.roles.failed.outranked": {
-    "defaultMessage": "ロールを変更できませんでした：あなたのいちばん高いロールより上のロールか、あなたが持っていない権限を含むロールです。付与・剥奪できるのは、あなたのいちばん高いロール以下のロールだけで、付与できるのは、含まれる権限をすべて持っているロールだけです。",
+    "defaultMessage": "ロールを変更できませんでした: あなたのいちばん高いロールより上のロールか、あなたが持っていない権限を含むロールです。付与・剥奪できるのは、あなたのいちばん高いロール以下のロールだけで、付与できるのは、含まれる権限をすべて持っているロールだけです。",
     "description": "Error in the confirmation of a role change that the server refused because the role is above the viewer's highest role."
   },
   "admin.account.roles.grant": {
@@ -300,7 +300,7 @@
     "description": "Accessible name of the spinner while the roles of an account load."
   },
   "admin.account.roles.missing_permissions": {
-    "defaultMessage": "このロールは付与できません：あなたが持っていない権限（{permissions}）を含んでいます。",
+    "defaultMessage": "このロールは付与できません: あなたが持っていない権限 ({permissions}) を含んでいます。",
     "description": "Why a role has no grant button: the viewer lacks some of the role's permissions; permissions lists them, comma separated."
   },
   "admin.account.roles.none": {
@@ -308,7 +308,7 @@
     "description": "A local account's user has no roles."
   },
   "admin.account.roles.outranked": {
-    "defaultMessage": "このロールはあなたのいちばん高いロール（{role}）より上なので、付与・剥奪できません。",
+    "defaultMessage": "このロールはあなたのいちばん高いロール ({role}) より上なので、付与・剥奪できません。",
     "description": "Why a role has no grant or revoke button; role is the key of the viewer's highest role."
   },
   "admin.account.roles.permissions": {
@@ -352,7 +352,7 @@
     "description": "Heading of the region of a local account's admin page about its two-factor authentication."
   },
   "admin.account.two_factor.on": {
-    "defaultMessage": "有効：ログインには認証アプリのコードが必要です。",
+    "defaultMessage": "有効: ログインには認証アプリのコードが必要です。",
     "description": "Text while the account's user has two-factor authentication."
   },
   "admin.account.two_factor.off": {
@@ -380,7 +380,7 @@
     "description": "Status message after removing the two-factor authentication of the account {handle}."
   },
   "admin.account.two_factor.failed": {
-    "defaultMessage": "二要素認証を解除できませんでした：{reason}",
+    "defaultMessage": "二要素認証を解除できませんでした: {reason}",
     "description": "Error in the confirmation when the removal failed. {reason} is the server's explanation."
   },
   "admin.account.password_reset.title": {
@@ -408,7 +408,7 @@
     "description": "Status message after issuing a password reset link for the account {handle}."
   },
   "admin.account.password_reset.failed": {
-    "defaultMessage": "リンクを発行できませんでした：{reason}",
+    "defaultMessage": "リンクを発行できませんでした: {reason}",
     "description": "Error in the confirmation when issuing the link failed. {reason} is the server's explanation."
   },
   "admin.account.password_reset.link": {
@@ -468,7 +468,7 @@
     "description": "Status message after lifting the email suppression of the account {handle}."
   },
   "admin.account.email_suppression.failed": {
-    "defaultMessage": "抑止を解除できませんでした：{reason}",
+    "defaultMessage": "抑止を解除できませんでした: {reason}",
     "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
   },
   "admin.account.registration.invited_by": {

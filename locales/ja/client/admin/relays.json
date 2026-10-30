@@ -8,11 +8,11 @@
     "description": "Button that closes the dialog of a relay without changing it."
   },
   "admin.relays.change_failed": {
-    "defaultMessage": "リレーを変更できませんでした：{reason}",
+    "defaultMessage": "リレーを変更できませんでした: {reason}",
     "description": "Error of leaving, joining again or deleting a relay. {reason} says why."
   },
   "admin.relays.create_failed": {
-    "defaultMessage": "リレーに参加できませんでした：{reason}",
+    "defaultMessage": "リレーに参加できませんでした: {reason}",
     "description": "Error of the form that registers a relay, for another reason than its URL. {reason} says why."
   },
   "admin.relays.created": {
@@ -44,7 +44,7 @@
     "description": "Warning on a relay whose host a domain action suspends."
   },
   "admin.relays.dropped": {
-    "defaultMessage": "上限を超えて捨てた数（直近 24 時間）",
+    "defaultMessage": "上限を超えて捨てた数 (直近 24 時間)",
     "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were dropped over the hourly limit."
   },
   "admin.relays.empty": {
@@ -168,7 +168,7 @@
     "description": "Description of the relays screen in the administration menu of the settings."
   },
   "admin.relays.taken": {
-    "defaultMessage": "取り込んだ数（直近 24 時間）",
+    "defaultMessage": "取り込んだ数 (直近 24 時間)",
     "description": "Term in a relay's details: the activities it brought in during the last 24 hours that were taken in."
   },
   "admin.relays.title": {
@@ -192,7 +192,7 @@
     "description": "Label of the URL of a new relay, its inbox or its actor, and term of it in a relay's details."
   },
   "admin.relays.url.description": {
-    "defaultMessage": "リレーの inbox（Mastodon 方式）か Actor（LitePub 方式）の https の URL。",
+    "defaultMessage": "リレーの inbox (Mastodon 方式) か Actor (LitePub 方式) の https の URL。",
     "description": "Help of the URL of a new relay."
   }
 }

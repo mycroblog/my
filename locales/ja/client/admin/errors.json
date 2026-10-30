@@ -1,6 +1,6 @@
 {
   "admin.errors.action_failed": {
-    "defaultMessage": "エラーを変更できませんでした：{reason}",
+    "defaultMessage": "エラーを変更できませんでした: {reason}",
     "description": "Toast when resolving, muting or unmuting an error group failed. {reason} is why."
   },
   "admin.errors.actor.cli": {
@@ -108,7 +108,7 @@
     "description": "Change in an error group's history: it was unmuted."
   },
   "admin.errors.event.with_version": {
-    "defaultMessage": "{change}（版 {version}）",
+    "defaultMessage": "{change} (版 {version})",
     "description": "Change in an error group's history with the version it names. {change} is the change, such as admin.errors.event.resolved; {version} is the version of the server."
   },
   "admin.errors.filter.all_sources": {
@@ -164,7 +164,7 @@
     "description": "Heading of the table of every hour in the last 90 days in which an error group occurred, under the chart of the last hours."
   },
   "admin.errors.hourly.chart": {
-    "defaultMessage": "1 時間ごとの発生（直近 {hours, number} 時間）",
+    "defaultMessage": "1 時間ごとの発生 (直近 {hours, number} 時間)",
     "description": "Title of the bar chart of an error group's occurrences in each of the last hours."
   },
   "admin.errors.hourly.chart.none": {
@@ -172,7 +172,7 @@
     "description": "Summary under the chart of an error group's occurrences per hour when none happened."
   },
   "admin.errors.hourly.chart.summary": {
-    "defaultMessage": "直近 {hours, number} 時間に {total, number} 回、1 時間で最も多いのは {peak, number} 回（{peakAt}）、今の 1 時間は {latest, number} 回。",
+    "defaultMessage": "直近 {hours, number} 時間に {total, number} 回、1 時間で最も多いのは {peak, number} 回 ({peakAt})、今の 1 時間は {latest, number} 回。",
     "description": "Summary under the chart of an error group's occurrences per hour: the total, the busiest hour, and the current hour. peakAt is a formatted date and hour."
   },
   "admin.errors.hourly.count": {

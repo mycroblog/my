@@ -16,11 +16,11 @@
     "description": "Label of the meter of how many custom emoji the user requested this month (UTC) against their monthly limit."
   },
   "custom_emojis.usage.value": {
-    "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個（上限{pending, plural, =0 {} other {。うち審査中 # 個}}）} other {{used, number} / {limit, number} 個{pending, plural, =0 {} other {（うち審査中 # 個）}}}}",
+    "defaultMessage": "{full, select, true {{used, number} / {limit, number} 個 (上限{pending, plural, =0 {} other {。うち審査中 # 個}})} other {{used, number} / {limit, number} 個{pending, plural, =0 {} other {(うち審査中 # 個)}}}}",
     "description": "The value of the meter of the requests to create a custom emoji that the user submitted this month (UTC). {used} counts the approved and pending ones; {pending} is how many of them are pending; {limit} is how many they may submit in a month; {full} is true when they reached it."
   },
   "custom_emojis.usage.unlimited": {
-    "defaultMessage": "{used, plural, other {今月はカスタム絵文字を # 個申請しました}}{pending, plural, =0 {} other {（うち審査中 # 個）}}。上限はありません。",
+    "defaultMessage": "{used, plural, other {今月はカスタム絵文字を # 個申請しました}}{pending, plural, =0 {} other {(うち審査中 # 個)}}。上限はありません。",
     "description": "How many custom emoji the user requested this month (UTC) when their roles set no limit. {used} counts the approved and pending requests to create one; {pending} is how many of them are pending."
   },
   "custom_emojis.usage.resets": {
@@ -40,11 +40,11 @@
     "description": "Button that opens the file picker for the image of a requested custom emoji."
   },
   "custom_emojis.image.chosen": {
-    "defaultMessage": "選んだ画像：{name}",
+    "defaultMessage": "選んだ画像: {name}",
     "description": "The chosen image file. {name} is its file name."
   },
   "custom_emojis.image.large_hint": {
-    "defaultMessage": "この画像は 100 KB より大きいです。これより大きいカスタム絵文字を表示しないサーバー（既定の GoToSocial など）があります。",
+    "defaultMessage": "この画像は 100 KB より大きいです。これより大きいカスタム絵文字を表示しないサーバー (既定の GoToSocial など) があります。",
     "description": "Hint for an image of a requested custom emoji larger than 100 KB."
   },
   "custom_emojis.image.required": {
@@ -60,11 +60,11 @@
     "description": "Label of the shortcode of a requested custom emoji."
   },
   "custom_emojis.shortcode.description": {
-    "defaultMessage": "2〜30 文字の英字（A〜Z）・数字・アンダースコアで、大文字と小文字を区別します。投稿ではショートコードの前後をコロンで囲んで入力します。後から変えられません。",
+    "defaultMessage": "2〜30 文字の英字 (A〜Z)・数字・アンダースコアで、大文字と小文字を区別します。投稿ではショートコードの前後をコロンで囲んで入力します。後から変えられません。",
     "description": "Rules of the shortcode of a requested custom emoji."
   },
   "custom_emojis.shortcode.invalid": {
-    "defaultMessage": "2〜30 文字の英字（A〜Z）・数字・アンダースコアにしてください。",
+    "defaultMessage": "2〜30 文字の英字 (A〜Z)・数字・アンダースコアにしてください。",
     "description": "Error of a shortcode that breaks the rules."
   },
   "custom_emojis.submit": {
@@ -76,7 +76,7 @@
     "description": "Status after requesting a custom emoji. {emoji} is its :shortcode:."
   },
   "custom_emojis.request_failed": {
-    "defaultMessage": "申請できませんでした：{reason}",
+    "defaultMessage": "申請できませんでした: {reason}",
     "description": "Error of a custom emoji request that failed. {reason} is the server's explanation, such as a taken shortcode or a reached limit."
   },
   "custom_emojis.requests.title": {
@@ -100,7 +100,7 @@
     "description": "Status after withdrawing a custom emoji request."
   },
   "custom_emojis.withdraw_failed": {
-    "defaultMessage": "申請を取り下げられませんでした：{reason}",
+    "defaultMessage": "申請を取り下げられませんでした: {reason}",
     "description": "Error after withdrawing a custom emoji request failed. {reason} is the server's explanation."
   },
   "custom_emojis.list.title": {
@@ -124,7 +124,7 @@
     "description": "State of an enabled custom emoji."
   },
   "custom_emojis.state.disabled": {
-    "defaultMessage": "管理者が無効にしました（文字で表示）",
+    "defaultMessage": "管理者が無効にしました (文字で表示)",
     "description": "State of a custom emoji that an administrator disabled."
   },
   "custom_emojis.picker": {
@@ -236,7 +236,7 @@
     "description": "Status after deleting the user's custom emoji."
   },
   "custom_emojis.change_failed": {
-    "defaultMessage": "カスタム絵文字を変更できませんでした：{reason}",
+    "defaultMessage": "カスタム絵文字を変更できませんでした: {reason}",
     "description": "Error after a change of the user's custom emoji failed. {reason} is the server's explanation."
   }
 }

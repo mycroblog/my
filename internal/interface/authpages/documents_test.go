@@ -69,7 +69,7 @@ func TestSignUpAsksToAgreeToTheDocuments(t *testing.T) {
 	wantContains(t, body,
 		`<p id="sign-up-agreement">アカウントを作成する前に、このサーバーの次の文書を読んでください。</p>`,
 		// The form keeps what was typed: the agreement's links open in a new tab, which assistive technology reads.
-		`<li><a href="/about/terms" target="_blank" rel="noopener noreferrer">利用規約<span class="visually-hidden"> （新しいタブで開きます）</span></a></li>`,
+		`<li><a href="/about/terms" target="_blank" rel="noopener noreferrer">利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a></li>`,
 		// A required checkbox agrees to them, described by the notice above the links.
 		`<label class="check"><input id="sign-up-agreement-check" name="agreement" type="checkbox" value="yes" required aria-describedby="sign-up-agreement"><span>上の文書を読み、同意します</span></label>`,
 		// The footer's links lead from page to page of the server in the same tab.

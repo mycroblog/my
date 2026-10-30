@@ -412,7 +412,7 @@ func TestStatusProblems(t *testing.T) {
 		{fmt.Errorf("x: %w", appcontent.ErrMediaNotReady), http.StatusUnprocessableEntity, "", "添付したファイルは処理中か、処理できませんでした。"},
 		{appcontent.ErrTooManyMedia, http.StatusUnprocessableEntity, "", "1 件の投稿に添付できるファイルは重複なしで 4 個までです。"},
 		{appcontent.ErrReplyTargetNotFound, http.StatusUnprocessableEntity, "", "返信先の投稿が見つかりません。"},
-		{fmt.Errorf("x: %w", content.ErrInvalidPoll), http.StatusUnprocessableEntity, "", "投票の選択肢は互いに異なる 2〜4 個（それぞれ 50 文字以内）にし、期間は 5 分〜30 日にしてください。"},
+		{fmt.Errorf("x: %w", content.ErrInvalidPoll), http.StatusUnprocessableEntity, "", "投票の選択肢は互いに異なる 2〜4 個 (それぞれ 50 文字以内) にし、期間は 5 分〜30 日にしてください。"},
 		{appcontent.ErrPollWithMedia, http.StatusUnprocessableEntity, "", "投票のある投稿にはファイルを添付できません。"},
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},

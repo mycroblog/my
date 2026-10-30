@@ -8,7 +8,7 @@
     "description": "Error message when a request failed because the device has no network connection. Shown as the reason why something could not load or be sent."
   },
   "api.error.status": {
-    "defaultMessage": "サーバーが要求を処理できませんでした（エラー {status}）。しばらくしてから試してください。",
+    "defaultMessage": "サーバーが要求を処理できませんでした (エラー {status})。しばらくしてから試してください。",
     "description": "Error message when the server failed without describing the problem. {status} is the HTTP status code, for example 502."
   }
 }

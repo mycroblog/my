@@ -156,7 +156,7 @@
     "description": "API error title for HTTP 422 when an uploaded video or audio file is longer than the server accepts."
   },
   "errors.media_unsupported_codec": {
-    "defaultMessage": "この動画・音声のコーデックには対応していません。HEVC（高効率）の動画はアップロードできません。H.264（互換性優先）で撮影してください。",
+    "defaultMessage": "この動画・音声のコーデックには対応していません。HEVC (高効率) の動画はアップロードできません。H.264 (互換性優先) で撮影してください。",
     "description": "Detail of the HTTP 415 API error when an uploaded video or audio file is in an accepted container but its codec is not accepted. HEVC and H.264 are codec names (not translated); High Efficiency and Most Compatible are the names of the iPhone camera formats."
   },
   "errors.media_unsupported_format": {
@@ -356,7 +356,7 @@
     "description": "Detail of the HTTP 422 API error when a post attaches a media file whose processing has not finished or failed."
   },
   "errors.status.missing_media_description": {
-    "defaultMessage": "このサーバーでは、すべての画像に説明（代替テキスト）が必要です。投稿する前に、それぞれの画像に説明を付けてください。",
+    "defaultMessage": "このサーバーでは、すべての画像に説明 (代替テキスト) が必要です。投稿する前に、それぞれの画像に説明を付けてください。",
     "description": "Detail of the HTTP 422 API error when an attached image has no alternative text while the server requires one for every image (the instance setting require_media_description)."
   },
   "errors.status.not_author": {
@@ -388,7 +388,7 @@
     "description": "Detail of the HTTP 422 API error when a user votes in a poll whose end has passed."
   },
   "errors.status.poll_invalid": {
-    "defaultMessage": "投票の選択肢は互いに異なる {min}〜{max} 個（それぞれ {length} 文字以内）にし、期間は 5 分〜30 日にしてください。",
+    "defaultMessage": "投票の選択肢は互いに異なる {min}〜{max} 個 (それぞれ {length} 文字以内) にし、期間は 5 分〜30 日にしてください。",
     "description": "Detail of the HTTP 422 API error when a new poll has too few or too many options, a blank, too long, or repeated option, or a duration out of range. {min} and {max} bound the number of options, {length} is the maximum number of characters of an option."
   },
   "errors.status.poll_invalid_choices": {
@@ -544,7 +544,7 @@
     "description": "API error title for HTTP 422 when a custom emoji, or a request for one, breaks a rule; the detail and the reason property say which."
   },
   "errors.invalid_custom_emoji_detail": {
-    "defaultMessage": "{reason, select, invalid_shortcode {ショートコードは、2〜30 文字の英字（A〜Z）・数字・アンダースコアです。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。} invalid_alias {別名は 2〜30 文字の英字（A〜Z）・数字・アンダースコアで、1 つの絵文字に 10 個までです。} invalid_category {カテゴリは 64 文字までです。} media_not_found {アップロードした画像の中に見つかりません。} media_not_ready {画像はまだ処理中です。少し待ってからもう一度試してください。} unsupported_format {画像は PNG・GIF・WebP のどれかにしてください。} too_large {画像がこのサーバーの上限より大きいです。} too_big {画像は縦横とも 1024 ピクセル以下にしてください。} remote_emoji {この操作は、このサーバーのカスタム絵文字にだけ行えます。} local_emoji {この操作は、ほかのサーバーのカスタム絵文字にだけ行えます。} fetch_failed {カスタム絵文字の画像を、そのサーバーから取得できませんでした。} limit_reached {今月のカスタム絵文字の申請の数が、毎月の上限に達しています。数は毎月 1 日（UTC）にリセットされます。} request_pending {このカスタム絵文字には、審査中の画像の差し替えの申請があります。} invalid_reason {理由は 500 文字までです。} other {カスタム絵文字が規則に合いません。}}",
+    "defaultMessage": "{reason, select, invalid_shortcode {ショートコードは、2〜30 文字の英字 (A〜Z)・数字・アンダースコアです。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。} invalid_alias {別名は 2〜30 文字の英字 (A〜Z)・数字・アンダースコアで、1 つの絵文字に 10 個までです。} invalid_category {カテゴリは 64 文字までです。} media_not_found {アップロードした画像の中に見つかりません。} media_not_ready {画像はまだ処理中です。少し待ってからもう一度試してください。} unsupported_format {画像は PNG・GIF・WebP のどれかにしてください。} too_large {画像がこのサーバーの上限より大きいです。} too_big {画像は縦横とも 1024 ピクセル以下にしてください。} remote_emoji {この操作は、このサーバーのカスタム絵文字にだけ行えます。} local_emoji {この操作は、ほかのサーバーのカスタム絵文字にだけ行えます。} fetch_failed {カスタム絵文字の画像を、そのサーバーから取得できませんでした。} limit_reached {今月のカスタム絵文字の申請の数が、毎月の上限に達しています。数は毎月 1 日 (UTC) にリセットされます。} request_pending {このカスタム絵文字には、審査中の画像の差し替えの申請があります。} invalid_reason {理由は 500 文字までです。} other {カスタム絵文字が規則に合いません。}}",
     "description": "Detail of the API error (HTTP 422) of a custom emoji that breaks a rule. {reason} is the reason code (not shown); each branch explains one rule."
   },
   "errors.custom_emoji_request_conflict": {

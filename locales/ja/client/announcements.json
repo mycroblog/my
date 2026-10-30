@@ -36,7 +36,7 @@
     "description": "Button that marks an announcement read."
   },
   "announcements.mark_read_failed": {
-    "defaultMessage": "お知らせを既読にできませんでした：{reason}",
+    "defaultMessage": "お知らせを既読にできませんでした: {reason}",
     "description": "Error after marking an announcement read failed. {reason} is why."
   },
   "announcements.more": {

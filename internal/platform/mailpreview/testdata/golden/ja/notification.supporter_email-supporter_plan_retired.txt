@@ -8,6 +8,6 @@ https://social.example/notifications
 -- 
 Example Social
 https://social.example
-連絡先：admin@social.example
+連絡先: admin@social.example
 
 Example Social のサポーターのプランに加入している、または加入していたため、このメールが届いています。

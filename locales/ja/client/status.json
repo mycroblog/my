@@ -24,7 +24,7 @@
     "description": "Item of a post's More actions menu, for the user's own posts: opens the dialog that edits the post."
   },
   "status.action.failed": {
-    "defaultMessage": "変更を保存できませんでした：{reason}",
+    "defaultMessage": "変更を保存できませんでした: {reason}",
     "description": "Toast when boosting, favouriting or bookmarking a post failed; the button is set back. {reason} is the error message, a full sentence."
   },
   "status.action.favourite": {
@@ -72,7 +72,7 @@
     "description": "Toast after the user's post was deleted."
   },
   "status.delete.failed": {
-    "defaultMessage": "投稿を削除できませんでした：{reason}",
+    "defaultMessage": "投稿を削除できませんでした: {reason}",
     "description": "Toast when deleting the user's post failed. {reason} is the error message, a full sentence."
   },
   "status.delete.title": {
@@ -92,7 +92,7 @@
     "description": "Toast after the user's post was edited and saved."
   },
   "status.edit.failed": {
-    "defaultMessage": "編集を保存できませんでした：{reason}",
+    "defaultMessage": "編集を保存できませんでした: {reason}",
     "description": "Shown in the dialog that edits the user's post when saving failed. {reason} is the error message, a full sentence."
   },
   "status.edit.fixed": {
@@ -176,7 +176,7 @@
     "description": "One of the changes a revision made, joined into {changes} of status.history.changes: the content warning."
   },
   "status.history.changes": {
-    "defaultMessage": "変更：{changes}",
+    "defaultMessage": "変更: {changes}",
     "description": "What a revision of a post changed from the one before. {changes} is a list of the changes, like text, content warning."
   },
   "status.history.current": {
@@ -224,7 +224,7 @@
     "description": "Toast after the user pinned their post to their profile."
   },
   "status.pin.failed": {
-    "defaultMessage": "投稿を固定できませんでした：{reason}",
+    "defaultMessage": "投稿を固定できませんでした: {reason}",
     "description": "Toast when pinning the user's post failed, for example because they already pinned as many posts as allowed. {reason} is the error message, a full sentence."
   },
   "status.pin.label": {
@@ -276,7 +276,7 @@
     "description": "Button under the options of a poll that sends the user's choice."
   },
   "status.poll.vote_failed": {
-    "defaultMessage": "回答できませんでした：{reason}",
+    "defaultMessage": "回答できませんでした: {reason}",
     "description": "Toast when the user's vote in a poll failed, for example because the poll has ended. {reason} is the error message, a full sentence."
   },
   "status.poll.voted": {
@@ -300,7 +300,7 @@
     "description": "Toast after the user unpinned their post from their profile."
   },
   "status.unpin.failed": {
-    "defaultMessage": "投稿の固定を外せませんでした：{reason}",
+    "defaultMessage": "投稿の固定を外せませんでした: {reason}",
     "description": "Toast when unpinning the user's post failed. {reason} is the error message, a full sentence."
   },
   "status.thread.ancestors": {
@@ -404,7 +404,7 @@
     "description": "Toast after the user changed who may quote one of their posts."
   },
   "status.quote_policy.failed": {
-    "defaultMessage": "引用できる人を変更できませんでした：{reason}",
+    "defaultMessage": "引用できる人を変更できませんでした: {reason}",
     "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
   },
   "status.quotes.action": {
@@ -424,7 +424,7 @@
     "description": "Toast after the user withdrew the approval of a quote of their post."
   },
   "status.quote.revoke.failed": {
-    "defaultMessage": "引用から自分の投稿を外せませんでした：{reason}",
+    "defaultMessage": "引用から自分の投稿を外せませんでした: {reason}",
     "description": "Toast when the withdrawal of the approval of a quote failed. {reason} is the server's reason."
   },
   "status.edit.remove_quote": {

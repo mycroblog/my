@@ -122,7 +122,7 @@ func TestProfilePreview(t *testing.T) {
 		want := map[string]string{
 			"og:type":           "profile",
 			"og:site_name":      "Example Social",
-			"og:title":          "Alice（@alice@example.org）",
+			"og:title":          "Alice (@alice@example.org)",
 			"og:url":            "https://social.example/@alice",
 			"og:description":    "Hello, #go world & friends",
 			"og:locale":         "ja",
@@ -148,7 +148,7 @@ func TestProfilePreview(t *testing.T) {
 		// The page's language is the account's, never Accept-Language; the client's default
 		// stays the instance's.
 		if !strings.Contains(body, `<html lang="ja" dir="ltr">`) || !strings.Contains(body, `"defaultLocale":"en"`) ||
-			!strings.Contains(body, "<title>Alice（@alice@example.org）</title>") {
+			!strings.Contains(body, "<title>Alice (@alice@example.org)</title>") {
 			t.Errorf("GET %s:\n%s", path, body)
 		}
 		if !strings.Contains(body, `<link rel="alternate" type="application/activity+json" href="https://social.example/ap/actors/`+aliceID+`">`) {
@@ -475,7 +475,7 @@ func TestPreviewEscaping(t *testing.T) {
 		got := metas(t, body)
 		title := attack + " (@alice@example.org)"
 		if path == "/@alice" {
-			title = attack + "（@alice@example.org）"
+			title = attack + " (@alice@example.org)"
 		}
 		checks := map[string]string{"og:title": title, "og:site_name": attack}
 		switch path {

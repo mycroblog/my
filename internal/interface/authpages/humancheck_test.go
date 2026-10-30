@@ -120,21 +120,21 @@ func TestHumanCheckWidget(t *testing.T) {
 			`<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`,
 			`<div class="cf-turnstile" data-sitekey="turnstile-site-key" data-action="ACTION" data-language="ja" data-theme="auto"></div>`,
 			"このページは Cloudflare Turnstile でボットかどうかを確認します。",
-			`<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile のプライバシーポリシー<span class="visually-hidden"> （新しいタブで開きます）</span></a>`,
+			`<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
 		}, []string{"利用規約</a>"}},
 		{hcaptcha, []string{
 			`<script src="https://js.hcaptcha.com/1/api.js?hl=ja" async defer></script>`,
 			`<div class="h-captcha" data-sitekey="hcaptcha-site-key" data-theme="light"></div>`,
 			"このページは hCaptcha でボットかどうかを確認します。",
-			`<a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">hCaptcha のプライバシーポリシー<span class="visually-hidden"> （新しいタブで開きます）</span></a>`,
-			`<a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">hCaptcha の利用規約<span class="visually-hidden"> （新しいタブで開きます）</span></a>`,
+			`<a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">hCaptcha のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
+			`<a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">hCaptcha の利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
 		}, []string{"data-action", "data-language"}},
 		{recaptcha, []string{
 			`<script src="https://www.google.com/recaptcha/api.js?hl=ja" async defer></script>`,
 			`<div class="g-recaptcha" data-sitekey="recaptcha-site-key" data-theme="light"></div>`,
 			"このサイトは reCAPTCHA で保護されており、Google のプライバシーポリシーと利用規約が適用されます。",
-			`<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google のプライバシーポリシー<span class="visually-hidden"> （新しいタブで開きます）</span></a>`,
-			`<a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Google の利用規約<span class="visually-hidden"> （新しいタブで開きます）</span></a>`,
+			`<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google のプライバシーポリシー<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
+			`<a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Google の利用規約<span class="visually-hidden"> (新しいタブで開きます)</span></a>`,
 		}, []string{"data-action", "data-language"}},
 	} {
 		t.Run(string(tc.widget.Service), func(t *testing.T) {
