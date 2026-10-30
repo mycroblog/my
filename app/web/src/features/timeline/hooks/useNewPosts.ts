@@ -9,7 +9,7 @@ import type { StreamedTimeline } from "../api/newStatuses";
 import { useNewStatuses } from "./useNewStatuses";
 import { useReaderInFeed } from "./useReaderPause";
 
-/** What a streamed timeline (the home timeline, a list) needs to show new posts: the button's count and press, and how the feed keeps the reader's place. */
+/** What a streamed timeline (the home timeline, a list, the local or the federated timeline) needs to show new posts: the button's count and press, and how the feed keeps the reader's place. */
 export type NewPosts = {
   /** The count the "N new posts" button shows; 0 hides it. */
   count: number;
@@ -26,7 +26,8 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * New posts of the home timeline or of a list (ADR-0122 §4), by the reader's setting (ADR-0077). Off: they wait behind the button until it is
+ * New posts of the home timeline, of a list (ADR-0122 §4), or of the local or the federated timeline (ADR-0127 §5), by
+ * the reader's setting (ADR-0077). Off: they wait behind the button until it is
  * pressed (web-client/README.md Y7). On: they are inserted at once, and the feed keeps the post being read in place, unless
  * the reader is in the feed (focus or a selection: paused, they wait behind the button as when off) or they may not join
  * the loaded ones (a gap: the first page is loaded again at the top, otherwise on pressing the button). While the reader

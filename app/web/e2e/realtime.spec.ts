@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Real-time updates in every width × locale project (FR-207, ADR-0027, web-client/README.md Y7): a new post from
-// GET /api/v1/streaming waits behind the "N new posts" button and is not inserted until the button is
+// GET /api/v1/streaming (or, on the local and the federated timelines, GET /api/v1/streaming/timelines/{timeline})
+// waits behind the "N new posts" button and is not inserted until the button is
 // pressed (or is inserted at once when the reader chose it), and a notification raises the unread badge. `vite preview` has no API, so the spec answers the
 // OAuth refresh and the client API with `page.route`; each answer to the stream is one response body
 // that ends, so the client also reconnects throughout, as it does after the server ends a stream.
@@ -167,6 +168,45 @@ test.describe("new posts inserted on their own (ADR-0077)", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
   });
+});
+
+test.describe("new posts in the local and the federated timelines (ADR-0127)", () => {
+  for (const { path, stream, timeline } of [
+    { path: "/local", stream: "local", timeline: "local" },
+    { path: "/public", stream: "federated", timeline: "public" },
+  ] as const) {
+    test(`${path} keeps the timeline's stream open and shows its new posts behind the button`, async ({
+      page,
+      makeAxeBuilder,
+    }) => {
+      await signedInServer(page, "");
+      await page.route(`**/api/v1/timelines/${timeline}*`, (route) =>
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: loaded }) }),
+      );
+      let connections = 0;
+      await page.route(`**/api/v1/streaming/timelines/${stream}`, async (route) => {
+        connections += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: "text/event-stream",
+          body: `: connected\n\n${connections === 1 ? sse("update", arriving) : ""}`,
+        });
+      });
+      await page.goto(path);
+      const feed = page.getByRole("feed");
+      const button = page.getByRole("main").getByRole("status").getByRole("button");
+      await expect(button).toBeVisible();
+      await expect(button).toHaveAccessibleName(/1/);
+      await expect(feed.getByRole("article")).toHaveCount(2);
+      await expectNoAxeViolations(makeAxeBuilder);
+
+      await button.click();
+      await expect(feed.getByRole("article")).toHaveCount(3);
+      await expect(feed.getByRole("article").first()).toContainText("arrived through the stream");
+      await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+      await expectNoHorizontalScroll(page);
+    });
+  }
 });
 
 /** The reader chose the automatic insertion; the stream sends `arriving` only once `release()` is called, after the page has settled. */

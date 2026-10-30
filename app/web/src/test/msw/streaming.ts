@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// GET /streaming (operationId streamEvents, lib/sse): the default handler and the event streams of the tests
-// that send events (web-client/10-api-client-and-auth.md §10).
+// GET /streaming (operationId streamEvents, lib/sse) and GET /streaming/timelines/{timeline} (streamTimeline): the
+// default handlers and the event streams of the tests that send events (web-client/10-api-client-and-auth.md §10).
 import { http, HttpResponse } from "msw";
 import { preferencesFixture } from "../fixtures";
 import { apiBase, authorized, unauthenticated } from "./http";
@@ -47,12 +47,12 @@ export function eventStreamResponse(): { response: Response; stream: TestEventSt
 }
 
 /**
- * GET /streaming (operationId streamEvents) for a test that sends events: every connection opens a new
- * stream, and `current()` is the latest. Pass `handler` to `server.use()`.
+ * GET /streaming (operationId streamEvents), or the stream at `path` (`/streaming/timelines/local`), for a test that
+ * sends events: every connection opens a new stream, and `current()` is the latest. Pass `handler` to `server.use()`.
  */
-export function streamingServer() {
+export function streamingServer(path = "/streaming") {
   const streams: TestEventStream[] = [];
-  const handler = http.get(`${apiBase}/streaming`, ({ request }) => {
+  const handler = http.get(`${apiBase}${path}`, ({ request }) => {
     if (!authorized(request)) return unauthenticated(request);
     const { response, stream } = eventStreamResponse();
     streams.push(stream);
@@ -65,15 +65,15 @@ export function streamingServer() {
     /** The latest stream; throws before the first connection. */
     current: (): TestEventStream => {
       const stream = streams.at(-1);
-      if (stream === undefined) throw new Error("the client has not connected to GET /streaming");
+      if (stream === undefined) throw new Error(`the client has not connected to GET ${path}`);
       return stream;
     },
   };
 }
 
 /**
- * The default GET /streaming: a stream that sends nothing and ends at once, as a server ends a stream; it
- * needs a token. It does not stay open: MSW intercepts Node's fetch at the socket, and a response that is
+ * The default GET /streaming and GET /streaming/timelines/{timeline}: a stream that sends nothing and ends at once, as
+ * a server ends a stream; it needs a token. It does not stay open: MSW intercepts Node's fetch at the socket, and a response that is
  * still streaming when a test ends (its request aborted by the unmount) has let a later test's request
  * reach the real network. A test that sends events opens its streams with `streamingServer()`.
  */
@@ -89,6 +89,12 @@ export function newPostsHeld() {
 
 export const handlers = [
   http.get(`${apiBase}/streaming`, ({ request }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const { response, stream } = eventStreamResponse();
+    stream.close();
+    return response;
+  }),
+  http.get(`${apiBase}/streaming/timelines/:timeline`, ({ request }) => {
     if (!authorized(request)) return unauthenticated(request);
     const { response, stream } = eventStreamResponse();
     stream.close();

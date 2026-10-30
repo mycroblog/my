@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Real-time updates of the home timeline through the whole app (web-client/README.md S10, Y7, T4; FR-207): the
+// Real-time updates of the home, the local and the federated timelines through the whole app (web-client/README.md S10,
+// Y7, T4; FR-207; ADR-0127 §5): the
 // layout's event stream, MSW as the server's GET /streaming, and the "N new posts" button.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -485,5 +486,113 @@ describe("new posts inserted on their own (ADR-0077)", () => {
     await waitFor(() => {
       expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 3");
     });
+  });
+});
+
+describe("new posts in the local and the federated timelines (ADR-0127 §5)", () => {
+  /** Opens the timeline's page signed in, with the auto-insert setting, once its stream is open. */
+  async function openPublic(kind: "local" | "public", autoInsert: boolean) {
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+    vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    const streams = streamingServer(`/streaming/timelines/${kind === "local" ? "local" : "federated"}`);
+    server.use(
+      resumableSession(),
+      streams.handler,
+      http.get(`${apiBase}/preferences`, () =>
+        HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: autoInsert }),
+      ),
+    );
+    const view = await renderApp({ path: `/${kind}` });
+    const feed = await screen.findByRole("feed", { name: kind === "local" ? "Local timeline" : "Federated timeline" });
+    await waitFor(() => {
+      expect(streams.connections()).toBe(1);
+    });
+    return { ...view, feed, streams };
+  }
+
+  afterEach(() => {
+    FakeIntersectionObserver.observers.clear();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  test("wait behind the button on the local timeline, show on pressing it, and the stream closes when the page is left", async () => {
+    const { streams, feed, user, router, queryClient } = await openPublic("local", false);
+
+    streams.current().send("update", newStatus(1));
+    const button = await screen.findByRole("button", { name: "1 new post" });
+    expect(within(feed).getAllByRole("article")).toHaveLength(1);
+
+    await user.click(button);
+    const articles = await within(feed).findAllByRole("article", {}, { timeout: 2_000 });
+    expect(articles).toHaveLength(2);
+    expect(articles[0]).toHaveAccessibleDescription("New post 1");
+    expect(screen.getByRole("heading", { level: 1, name: "Local timeline" })).toHaveFocus();
+
+    await act(() => router.navigate({ to: "/home" }));
+    await screen.findByRole("feed", { name: "Home" });
+    // The client no longer reads the stream: what the server still sends reaches neither the waiting posts nor the
+    // cached timeline, and the stream does not come back while the page is not shown.
+    streams.current().send("update", newStatus(2));
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    expect(
+      JSON.stringify([
+        queryClient.getQueryData(["stream", "local-new-statuses"]),
+        queryClient.getQueryData(["get", "/timelines/local", "pages"]),
+      ]),
+    ).not.toContain(newStatus(2).id);
+    expect(streams.connections()).toBe(1);
+  });
+
+  test("insert at the top of the federated timeline at once with the auto-insert setting", async () => {
+    const { streams, feed } = await openPublic("public", true);
+
+    streams.current().send("update", newStatus(1));
+
+    await waitFor(() => {
+      expect(within(feed).getAllByRole("article")).toHaveLength(3);
+    });
+    expect(within(feed).getAllByRole("article")[0]).toHaveAccessibleDescription("New post 1");
+    expect(screen.queryByRole("button", { name: /new post/ })).not.toBeInTheDocument();
+  });
+
+  test("wait while focus is in the feed, and insert when it leaves", async () => {
+    const { streams, feed, user } = await openPublic("local", true);
+    within(feed).getAllByRole("article")[0]?.focus();
+
+    streams.current().send("update", newStatus(1));
+    await screen.findByRole("button", { name: "1 new post" });
+    expect(within(feed).getAllByRole("article")).toHaveLength(1);
+
+    await user.tab({ shift: true });
+    await waitFor(() => {
+      expect(within(feed).getAllByRole("article")).toHaveLength(2);
+    });
+  });
+
+  test("read the first page again after the stream reconnected", async () => {
+    let local = [timelineStatusFixture];
+    server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage(local))));
+    const { streams, feed } = await openPublic("local", false);
+
+    // A post arrives while the stream is down; nothing replays it.
+    local = [newStatus(1), timelineStatusFixture];
+    streams.current().close();
+
+    await waitFor(() => {
+      expect(streams.connections()).toBe(2);
+    }, reconnectTimeout);
+    expect(await screen.findByRole("button", { name: "1 new post" })).toBeInTheDocument();
+    expect(within(feed).getAllByRole("article")).toHaveLength(1);
+  });
+
+  test("open no stream for a visitor who is not signed in", async () => {
+    const streams = streamingServer("/streaming/timelines/local");
+    server.use(streams.handler);
+    await renderApp({ path: "/local" });
+    await screen.findByRole("feed", { name: "Local timeline" });
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(streams.connections()).toBe(0);
   });
 });

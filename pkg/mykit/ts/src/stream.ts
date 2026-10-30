@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // The client of GET /api/v1/streaming (streamEvents): the Server-Sent Events of the user's new home entries,
-// notifications, and announcements. It reads the body of fetch, since EventSource cannot send the Authorization header.
+// notifications, and announcements; and, with `timeline`, of GET /api/v1/streaming/timelines/{timeline}
+// (streamTimeline): the new posts of the local or the federated timeline. It reads the body of fetch, since EventSource
+// cannot send the Authorization header.
 import { apiBasePath, type ClientOptions, parseOrigin } from "./client.js";
 import { isAbort, OAuthError } from "./oauth.js";
 import { NetworkError, ProblemError, problemFromResponse } from "./problem.js";
@@ -11,6 +13,9 @@ import { parseRetryAfter, type Sleep, sleepSignal } from "./transport.js";
 type Status = components["schemas"]["Status"];
 type Notification = components["schemas"]["Notification"];
 type Announcement = components["schemas"]["Announcement"];
+
+/** A timeline whose new posts GET /streaming/timelines/{timeline} streams. */
+export type StreamTimeline = "local" | "federated";
 
 /**
  * An event of the stream, with its data parsed. `unknown` is an event that this version of the library does not know,
@@ -31,6 +36,12 @@ export const defaultHeartbeatTimeout = 60_000;
 export type StreamOptions = Omit<ClientOptions, "retry"> & {
   /** Ends the stream; runStream resolves once it aborts. */
   signal: AbortSignal;
+  /**
+   * Reads the stream of the local or the federated timeline (GET /streaming/timelines/{timeline}) instead of the
+   * user's (GET /streaming). It sends `update` events only, needs the scope read:statuses and a signed-in user, and is a
+   * 404 while the instance turns the timeline off, which ends runStream.
+   */
+  timeline?: StreamTimeline;
   /**
    * Called whenever a stream opens: `reconnected` is false for the first one and true for every later one. The server
    * replays nothing, so after a reconnection read the home timeline and the notifications again for what happened
@@ -81,7 +92,7 @@ export function streamDelay(failures: number): number {
 }
 
 /**
- * Reads GET /streaming until `signal` aborts. It sends the access token of the TokenSource and, after a 401, refreshes
+ * Reads GET /streaming (or, with `timeline`, GET /streaming/timelines/{timeline}) until `signal` aborts. It sends the access token of the TokenSource and, after a 401, refreshes
  * it once per connection. It never sends Last-Event-ID: the server does not resume a stream. Whenever the stream ends
  * or fails, it connects again: after a 429 (too many streams) or a 503 it waits for Retry-After, and otherwise for an
  * exponential backoff with jitter. A stream that is silent for the heartbeat timeout counts as failed.
@@ -92,7 +103,8 @@ export function streamDelay(failures: number): number {
  * OAuthError of a refresh token that was revoked.
  */
 export async function runStream(options: StreamOptions): Promise<void> {
-  const url = `${parseOrigin(options.server)}${apiBasePath}/streaming`;
+  const path = options.timeline === undefined ? "/streaming" : `/streaming/timelines/${options.timeline}`;
+  const url = `${parseOrigin(options.server)}${apiBasePath}${path}`;
   const fetch = options.fetch ?? ((request: Request) => globalThis.fetch(request));
   const sleep: Sleep = options.sleep ?? sleepSignal;
   const heartbeat = options.heartbeatTimeout ?? defaultHeartbeatTimeout;

@@ -16,6 +16,7 @@ export {
   runStream,
   type StreamEvent,
   type StreamOptions,
+  type StreamTimeline,
 } from "./stream.js";
 export { EventStreamParser, type ServerSentEvent } from "./sse.js";
 export { RefreshingTokenSource, staticToken, type OnTokens, type Token, type TokenSource } from "./token.js";

@@ -142,8 +142,11 @@ for status, err := range mykit.All(ctx, fetch) {
 `API.Stream` (Go) and `runStream` (TypeScript) read the Server-Sent Events of `GET /streaming`: new posts of the home
 timeline (and, for each of the user's lists that shows one, a list update), notifications, and announcements, as typed
 events. The stream needs the scopes `read:statuses` and
-`read:notifications`. mykit does not read the streams of the local and federated timelines
-(`GET /streaming/timelines/{timeline}`).
+`read:notifications`. In TypeScript, `runStream` with `timeline: "local"` or `timeline: "federated"` reads the stream of
+the local or the federated timeline instead (`GET /streaming/timelines/{timeline}`): `update` events only, for a
+signed-in user with the scope `read:statuses`, and a 404 that ends the stream while the server turns that timeline off.
+After a reconnection, read the first page of that timeline again.
+The Go client does not read those streams.
 
 - It connects again whenever the stream ends or fails, with an exponential backoff, or after `Retry-After` for a 429
   (too many streams) or a 503. A stream that sends nothing, heartbeats included, for 60 seconds (the default; the server
