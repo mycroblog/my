@@ -25,7 +25,7 @@ function ThemeSettingsForm() {
       <Hint size="inherit">{t("client:admin.theme.description")}</Hint>
       <Section surface="card" title={t("client:admin.theme.colors.title")}>
         <Hint size="inherit">{t("client:admin.theme.colors.description")}</Hint>
-        <Stack as="ul" gap="4">
+        <Stack as="ul" container gap="4">
           {form.colorFields.map((field) => (
             <ColorInputs key={field.token} field={field} />
           ))}
@@ -94,7 +94,7 @@ function ColorInputs({ field }: { field: ColorField }) {
   const t = useT();
   const format = field.alpha ? "#rrggbbaa" : "#rrggbb";
   return (
-    <Grid as="li" container columns={3} at="md" gap="2">
+    <Grid as="li" columns={3} at="md" gap="2">
       <Text as="code" size="sm" weight="semibold" mono dir="ltr">
         {field.token}
       </Text>
