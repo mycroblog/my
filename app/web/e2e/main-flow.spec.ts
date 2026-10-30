@@ -358,8 +358,9 @@ test.describe("the main flow", () => {
       await expectToast(page, message("compose.posted"));
 
       await navigate(bobPage, "home");
-      // The stream may deliver the post after the timeline opened: it then waits behind the "1 new post"
-      // button (web-client/README.md Y7) instead of being in the feed from the first render.
+      // The stream may deliver the post after the timeline opened: the new user's timeline then inserts it on its
+      // own (timeline_auto_insert is on by default), or it waits behind the "1 new post" button while the feed
+      // holds focus (web-client/README.md Y7), instead of being in the feed from the first render.
       const newPosts = bobPage.getByRole("main").getByRole("status").getByRole("button");
       await expect(articleWith(bobPage, followersOnly).or(newPosts)).toBeVisible();
       if (await newPosts.isVisible()) await newPosts.click();
