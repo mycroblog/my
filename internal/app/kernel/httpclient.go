@@ -29,9 +29,10 @@ type HTTPClient interface {
 	// Do sends req and returns the response once its headers arrive. The caller reads and closes
 	// Body. Do fails with an error wrapping ErrForbiddenDestination for a refused destination
 	// (also when a redirect leads to one), ErrTooManyRedirects, ErrResponseTooLarge when the
-	// response's Content-Length exceeds the purpose's limit, ErrInvalidHTTPRequest for a
-	// request that cannot be sent, and the error of the request's CheckRedirect. A status code
-	// of 3xx (when the client does not follow it), 4xx or 5xx is a response, not an error.
+	// response's Content-Length exceeds the purpose's limit (except for HTTPPurposeRobots, whose
+	// caller reads what the limit lets through), ErrInvalidHTTPRequest for a request that cannot
+	// be sent, and the error of the request's CheckRedirect. A status code of 3xx (when the
+	// client does not follow it), 4xx or 5xx is a response, not an error.
 	Do(ctx context.Context, req *HTTPRequest) (*HTTPResponse, error)
 }
 
@@ -69,6 +70,26 @@ const (
 	// as is, and the caller refuses it. The deployment configuration may exempt some destinations
 	// from the guard for it alone (login_provider_allowed_destinations).
 	HTTPPurposeLoginProvider
+	// HTTPPurposeRobots fetches the robots.txt of an origin (ADR-0131 §2). A larger file is not
+	// refused by its Content-Length: the caller reads up to the limit and uses what it read.
+	HTTPPurposeRobots
+)
+
+// LinkCardAgentToken is the product token of the link card crawler: the name that robots.txt
+// addresses it by, and that its User-Agent starts with (ADR-0131 §1).
+const LinkCardAgentToken = "my-linkcard"
+
+// HTTPAgent names who a request says it is in its User-Agent.
+type HTTPAgent int
+
+// Agents.
+const (
+	// HTTPAgentServer is the server itself, "my/<version>", and the agent of every request that
+	// names no other.
+	HTTPAgentServer HTTPAgent = iota
+	// HTTPAgentLinkCard is the link card crawler, "my-linkcard/<version>": the fetches of a card's
+	// page, its image, and the robots.txt that they obey (ADR-0131 §1).
+	HTTPAgentLinkCard
 )
 
 // MaxRedirects is the number of redirects the HTTPClient follows for one request.
@@ -85,7 +106,8 @@ type HTTPLimits struct {
 
 // DefaultHTTPLimits returns the limits of ADR-0019 §1 for p (ADR-0042 §3 for
 // HTTPPurposeHumanCheck, ADR-0060 for HTTPPurposeWebhook, ADR-0090 §1 for
-// HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider; HTTPPurposeWebPush reads at most the small error document of a push
+// HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider, ADR-0131 §2 for
+// HTTPPurposeRobots; HTTPPurposeWebPush reads at most the small error document of a push
 // service), and false for an unknown purpose.
 func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 	switch p {
@@ -105,6 +127,8 @@ func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 		return HTTPLimits{MaxBodyBytes: 5 << 10, Timeout: 10 * time.Second}, true
 	case HTTPPurposeLoginProvider:
 		return HTTPLimits{MaxBodyBytes: 256 << 10, Timeout: 15 * time.Second}, true
+	case HTTPPurposeRobots:
+		return HTTPLimits{MaxBodyBytes: 512 << 10, Timeout: 10 * time.Second}, true
 	}
 	return HTTPLimits{}, false
 }
@@ -115,12 +139,15 @@ type HTTPRequest struct {
 	Method string
 	// URL is the absolute URL to request.
 	URL string
-	// Header holds the request headers. The client sets User-Agent and Accept-Encoding itself.
+	// Header holds the request headers. The client sets User-Agent (see Agent) and
+	// Accept-Encoding itself.
 	Header http.Header
 	// Body is the request body, nil for none.
 	Body []byte
 	// Purpose selects the response limits; it is required.
 	Purpose HTTPPurpose
+	// Agent selects the User-Agent; the zero value is the server's.
+	Agent HTTPAgent
 	// NoRedirects makes the client return a 3xx answer as is instead of following it. A POST
 	// whose answer redirects must not count as delivered (a 301, 302, or 303 would be followed
 	// with a GET), so deliveries set it.

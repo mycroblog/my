@@ -291,6 +291,26 @@ describe("the server's policies", () => {
     expect(settings.patches).toHaveLength(1);
   });
 
+  test("turns the check of robots.txt for link cards off and back on, off by default", async () => {
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const federation = await screen.findByRole("region", { name: "Federation" });
+    const ignore = within(federation).getByRole("checkbox", { name: "Fetch link cards without checking robots.txt" });
+    expect(ignore).not.toBeChecked();
+    expect(ignore).toHaveAccessibleDescription(/can then no longer refuse the cards with robots\.txt/);
+
+    await user.click(ignore);
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { link_cards_ignore_robots_txt: "true" } }]);
+    expect(ignore).toBeChecked();
+
+    await user.click(ignore);
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+    await waitFor(() => expect(settings.patches).toHaveLength(2));
+    expect(settings.patches[1]).toEqual({ values: { link_cards_ignore_robots_txt: "false" } });
+  });
+
   test("switches the three routes by which apps register, all on by default", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

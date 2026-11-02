@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+const deleteLinkCard = `-- name: DeleteLinkCard :exec
+DELETE FROM link_cards WHERE url = $1
+`
+
+// DeleteLinkCard deletes the card of @url; the statuses keep their references, and get a card when
+// one is fetched again.
+func (q *Queries) DeleteLinkCard(ctx context.Context, url string) error {
+	_, err := q.db.Exec(ctx, deleteLinkCard, url)
+	return err
+}
+
 const deleteLinkCardMediaFile = `-- name: DeleteLinkCardMediaFile :exec
 DELETE FROM media_files WHERE media_files.id = $1::uuid AND media_files.origin = 'remote' AND media_files.owner_account_id IS NULL
 `

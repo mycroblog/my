@@ -40,6 +40,7 @@ const policyKeys = [
   "remote_media_policy",
   "remote_media_cache_ttl",
   "link_cards_enabled",
+  "link_cards_ignore_robots_txt",
   "domain_actions_visibility",
   "domain_actions_rationale_visibility",
   // The publication of the costs, the income and the supporter list is set next to those screens (usePublicationSettings).

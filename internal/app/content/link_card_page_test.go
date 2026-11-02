@@ -159,3 +159,101 @@ func TestLinkCardURL(t *testing.T) {
 		}
 	}
 }
+
+// TestLinkCardPageDirectives checks the robots meta tags of a page (ADR-0131 §5): which tags are
+// read, what each directive takes away, that the stricter wins, and what always stays.
+func TestLinkCardPageDirectives(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name, metas            string
+		noDescription, noImage bool
+	}{
+		{"no directive", ``, false, false},
+		{"nosnippet", `<meta name="robots" content="nosnippet">`, true, false},
+		{"max-snippet:0", `<meta name="robots" content="max-snippet:0">`, true, false},
+		{"max-snippet with a space", `<meta name="robots" content="max-snippet: 0">`, true, false},
+		{"a positive max-snippet", `<meta name="robots" content="max-snippet:50">`, false, false},
+		{"max-snippet:-1", `<meta name="robots" content="max-snippet:-1">`, false, false},
+		{"noimageindex", `<meta name="robots" content="noimageindex">`, false, true},
+		{"max-image-preview:none", `<meta name="robots" content="max-image-preview:none">`, false, true},
+		{"max-image-preview:large", `<meta name="robots" content="max-image-preview:large">`, false, false},
+		{"noindex", `<meta name="robots" content="noindex">`, false, false},
+		{"nofollow", `<meta name="robots" content="nofollow">`, false, false},
+		{"noarchive", `<meta name="robots" content="noarchive">`, false, false},
+		{"none", `<meta name="robots" content="none">`, false, false},
+		{"unavailable_after", `<meta name="robots" content="unavailable_after: 25 Jun 2010 15:00:00 PST, nosnippet">`, true, false},
+		{"a list", `<meta name="robots" content="noindex, nosnippet, noimageindex">`, true, true},
+		{"any case", `<META NAME="ROBOTS" CONTENT="NoSnippet">`, true, false},
+		{"the crawler's tag", `<meta name="my-linkcard" content="nosnippet">`, true, false},
+		{"the crawler's tag in another case", `<meta name="MY-LINKCARD" content="noimageindex">`, false, true},
+		{"another bot's tag", `<meta name="googlebot" content="nosnippet, noimageindex">`, false, false},
+		{"another bot by name", `<meta name="robots" content="googlebot: nosnippet">`, false, false},
+		{"this crawler by name", `<meta name="robots" content="my-linkcard: nosnippet">`, true, false},
+		{"a bot's name covers the list after it", `<meta name="robots" content="googlebot: nosnippet, noimageindex">`, false, false},
+		{"two tags add up", `<meta name="robots" content="nosnippet"><meta name="my-linkcard" content="noimageindex">`, true, true},
+		{"the stricter wins in any order", `<meta name="robots" content="max-snippet:-1"><meta name="robots" content="max-snippet:0">`, true, false},
+		{"a property is not a tag name", `<meta property="robots" content="nosnippet">`, false, false},
+		{"a tag in the body is not read", `</head><body><meta name="robots" content="nosnippet">`, false, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			page := `<html><head><title>T</title><meta name="description" content="meta">
+<meta property="og:description" content="og"><meta name="twitter:description" content="tw">
+<meta property="og:site_name" content="Site"><meta name="author" content="Ann">
+<meta property="og:image" content="/a.png"><meta property="og:image:alt" content="alt">` + tc.metas + `</head></html>`
+			got, err := content.ParseLinkCardPage(strings.NewReader(page), "text/html", "https://example.com/a")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Title != "T" || got.SiteName != "Site" || got.AuthorName != "Ann" {
+				t.Errorf("title, site name, or author changed: %+v", got)
+			}
+			if (got.Description == "") != tc.noDescription {
+				t.Errorf("description = %q, want removed = %v", got.Description, tc.noDescription)
+			}
+			if (got.ImageURL == "") != tc.noImage || (got.ImageAlt == "") != tc.noImage {
+				t.Errorf("image = %q, alt = %q, want removed = %v", got.ImageURL, got.ImageAlt, tc.noImage)
+			}
+		})
+	}
+}
+
+// TestLinkCardPageNoSnippetTakesEverySource checks that a description comes from no source once
+// it is refused, JSON-LD included.
+func TestLinkCardPageNoSnippetTakesEverySource(t *testing.T) {
+	t.Parallel()
+	page := `<head><title>T</title><meta name="robots" content="nosnippet"><meta name="description" content="meta">
+<script type="application/ld+json">{"@type":"Article","description":"ld"}</script></head>`
+	got, err := content.ParseLinkCardPage(strings.NewReader(page), "text/html", "https://example.com/a")
+	if err != nil || got.Description != "" {
+		t.Errorf("description = %q, %v", got.Description, err)
+	}
+}
+
+// TestLinkCardPageRobotsHeader checks the values of X-Robots-Tag: with no bot's name or this
+// crawler's, value by value.
+func TestLinkCardPageRobotsHeader(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name                   string
+		values                 []string
+		noDescription, noImage bool
+	}{
+		{"none", nil, false, false},
+		{"for every bot", []string{"nosnippet"}, true, false},
+		{"this crawler", []string{"my-linkcard: nosnippet, max-image-preview:none"}, true, true},
+		{"another bot", []string{"otherbot: nosnippet, noimageindex"}, false, false},
+		{"values stand alone", []string{"otherbot: nosnippet", "noimageindex"}, false, true},
+		{"the scope changes in a value", []string{"otherbot: nosnippet, my-linkcard: noimageindex"}, false, true},
+		{"this crawler, then another", []string{"my-linkcard: nosnippet, otherbot: noimageindex"}, true, false},
+		{"none of the card's directives", []string{"noindex, nofollow, noarchive, none"}, false, false},
+	}
+	for _, tc := range cases {
+		p := content.LinkCardPage{Description: "d", ImageURL: "https://example.com/a.png", ImageAlt: "a", Title: "T"}
+		p.ApplyRobots(tc.values)
+		if p.Title != "T" || (p.Description == "") != tc.noDescription || (p.ImageURL == "") != tc.noImage || (p.ImageAlt == "") != tc.noImage {
+			t.Errorf("%s: %+v", tc.name, p)
+		}
+	}
+}

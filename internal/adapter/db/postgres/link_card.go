@@ -91,6 +91,15 @@ func (r *StatusRepository) ListUnreferencedLinkCards(ctx context.Context, fetche
 	return out, nil
 }
 
+// DeleteLinkCard implements content.LinkCardRepository.
+func (r *StatusRepository) DeleteLinkCard(ctx context.Context, tx uow.Tx, url string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.DeleteLinkCard(ctx, url), "delete link card")
+}
+
 // DeleteUnreferencedLinkCard implements content.LinkCardRepository.
 func (r *StatusRepository) DeleteUnreferencedLinkCard(ctx context.Context, tx uow.Tx, url string, fetchedAt time.Time) (bool, error) {
 	q, err := r.db.queries(tx)

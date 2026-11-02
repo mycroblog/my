@@ -2,8 +2,8 @@
 
 This page explains link previews to operators and developers and lists the steps to check them by hand.
 
-These are the previews that other services show of this server's pages. The cards this server shows for the links in its own posts,
-and how to stop fetching them from a domain, are in [instance settings](instance-settings.md#link-card-domains).
+These are the previews that other services show of this server's pages. The cards this server shows for the links in its own posts
+are in [Cards of links in posts](#cards-of-links-in-posts) below; how to stop fetching them from a domain is in [instance settings](instance-settings.md#link-card-domains).
 
 ## What the server returns
 
@@ -170,3 +170,42 @@ LINE caches previews too. To check a change, add a query to the URL.
 
 On every service, check that the URL of a `private` post and the URL of a nonexistent post both give the same generic preview
 (only the instance name, or nothing) and that no body, display name, or image appears.
+
+## Cards of links in posts
+
+To show a card for a link in a post, this server's job fetches the linked page and its image, and it obeys what the linked site says about that.
+Its requests are `my-linkcard/<version> (+https://<host>/)` for the page, the image, and `robots.txt`. Every other request of the server, the media proxy's included, stays `my/<version> (+https://<host>/)`.
+
+### robots.txt
+
+The name in `robots.txt` is `my-linkcard`, in any case. Without a group of that name, the `*` group applies, as RFC 9309 says. `Allow`, `Disallow`, `*`, and `$` are read, with the longest match winning and `Allow` winning a tie; `Crawl-delay` and other records are not read.
+`robots.txt` is read up to 512 KiB in 10 seconds, and what was read of a larger file is used. The server keeps only the rules for `my-linkcard`, per origin (scheme, host, and port).
+
+| Answer for `robots.txt` | What the server does | Kept for |
+| --- | --- | --- |
+| 200 | Obeys the file | 24 hours |
+| 4xx other than 429 | No file: fetches | 24 hours |
+| 429, 5xx, a network failure, or a redirect that the server refuses | Fetches nothing from the origin | 1 hour |
+| More than 5 redirects | No file: fetches | 24 hours |
+
+- The URL of the page is checked before it is requested, whatever the visibility of the post. So is each URL it redirects to, against the `robots.txt` of that URL's origin, and a redirect to a refused URL ends there: the server does not request it and makes no card.
+- A refused URL is not fetched again for 24 hours, like any other failure of a page.
+- An image is checked the same way against its own origin. A refused image leaves a card without an image.
+- A refetch, which a post can cause 14 days after the last fetch, removes the card when `robots.txt` disallows its URL. When the file only could not be read, the card stays.
+- The server does not go through its cards to recheck them, so a site that changes its rules loses a card at that card's next refetch.
+
+`link_cards_ignore_robots_txt` ([instance settings](instance-settings.md#settings-one-key-one-value)) turns all of this off: the server neither fetches nor uses `robots.txt`. It still names itself `my-linkcard`, and linked sites can then not refuse the fetches with `robots.txt`.
+
+### Directives of a page
+
+The server also reads the directives of the page it fetched: `<meta name="robots">` and `<meta name="my-linkcard">` in the `<head>`, and `X-Robots-Tag` with no bot's name or with `my-linkcard:`. Directives for another bot do not apply. When there are several, the stricter wins.
+They apply whatever `link_cards_ignore_robots_txt` says.
+
+| Directive | Card |
+| --- | --- |
+| `nosnippet`, `max-snippet:0` | No description |
+| `noimageindex`, `max-image-preview:none` | No image, which is not fetched |
+| `noindex`, `nofollow`, `noarchive`, `none`, and the others | No change |
+
+The title, the site name, and the author stay under every directive; a site that does not want them refuses the fetch in `robots.txt`.
+The directives are known only after the page is fetched, so they do not stop the request for the page. A refetch applies the directives the page has then.

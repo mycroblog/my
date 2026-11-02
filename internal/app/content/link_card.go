@@ -41,6 +41,10 @@ const (
 	// LinkCardFailureNamespace is the KeyValueStore namespace of that memory, keyed by the
 	// SHA-256 of the URL.
 	LinkCardFailureNamespace = "content.link_card_failure"
+	// linkCardFailed and linkCardFailedRobots are the values of that memory: a failure of the
+	// page, and a URL that robots.txt refused, which the operator's setting can overrule.
+	linkCardFailed       = "1"
+	linkCardFailedRobots = "robots"
 	// LinkCardLockTTL bounds the lock that keeps two jobs from fetching one URL at once.
 	LinkCardLockTTL = 60 * time.Second
 	// LinkCardLockNamespace is the KeyValueStore namespace of that lock, keyed as the memory.
@@ -71,6 +75,9 @@ type LinkCardRepository interface {
 	FindLinkCardTx(ctx context.Context, tx uow.Tx, url string) (content.LinkCard, error)
 	// UpsertLinkCard records the card of its URL, replacing the one fetched before.
 	UpsertLinkCard(ctx context.Context, tx uow.Tx, c content.LinkCard) error
+	// DeleteLinkCard deletes the card of a URL, whichever statuses refer to it; a URL without one
+	// is not an error.
+	DeleteLinkCard(ctx context.Context, tx uow.Tx, url string) error
 	// ListUnreferencedLinkCards returns up to limit cards fetched before fetchedBefore that no
 	// status refers to, ordered by URL.
 	ListUnreferencedLinkCards(ctx context.Context, fetchedBefore time.Time, limit int) ([]content.LinkCard, error)
@@ -144,6 +151,9 @@ type LinkCardsDeps struct {
 	Creators LinkCardCreators
 	// Enabled returns the link_cards_enabled instance setting; nil means enabled.
 	Enabled func(ctx context.Context) (bool, error)
+	// IgnoreRobotsTxt returns the link_cards_ignore_robots_txt instance setting; nil means that
+	// robots.txt is obeyed.
+	IgnoreRobotsTxt func(ctx context.Context) (bool, error)
 	// Language returns the Accept-Language of the fetches: the instance's default locale.
 	Language func(ctx context.Context) (string, error)
 	// LocalHosts are the hosts of this instance, whose URLs get no card.
@@ -300,9 +310,9 @@ func (l *LinkCards) imageRefused(ctx context.Context, host string) (bool, error)
 	return l.d.Domains.ImagesStopped(ctx, host)
 }
 
-// checkRedirect returns the HTTPRequest.CheckRedirect that ends a fetch at a redirect to a host
-// that refused reports, with an error wrapping errLinkCardRefused.
-func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
+// checkRedirectHost returns the HTTPRequest.CheckRedirect that ends a fetch at a redirect to a
+// host that refused reports, with an error wrapping errLinkCardRefused.
+func (l *LinkCards) checkRedirectHost(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
 	return func(ctx context.Context, url string) error {
 		switch stop, err := refused(ctx, content.LinkHost(url)); {
 		case err != nil:
@@ -314,10 +324,25 @@ func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string)
 	}
 }
 
+// checkRedirect is checkRedirectHost for the fetches of a page and an image, which also stop at
+// a redirect to a URL that its origin's robots.txt refuses, before requesting it, with the error
+// of checkRobots. The last hop is the final URL, so no response comes from a refused URL.
+func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
+	checkHost := l.checkRedirectHost(refused)
+	return func(ctx context.Context, url string) error {
+		if err := checkHost(ctx, url); err != nil {
+			return err
+		}
+		return l.checkRobots(ctx, url)
+	}
+}
+
 // Fetch fetches the card of the URL that a status links, unless the card is fresh, the URL
 // failed within LinkCardFailureTTL, its host is suspended or a rule of the crawler stops fetching
 // from it, or link cards are disabled. A fetch skipped for its host writes no failure memory, so
 // that the next status that links the URL gets a card as soon as the action or the rule is gone.
+// A URL that robots.txt refuses is remembered as a failure, and loses the card it has when the
+// file says so, but not when the file only could not be read (ADR-0131 §4).
 // It reports retry when another job is fetching the URL. Failures of the page are remembered and
 // are not errors; an error is a failure of the stores.
 func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err error) {
@@ -338,9 +363,15 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 		return false, err
 	}
 	key := linkCardKey(u)
-	switch _, err := l.d.KV.Get(ctx, LinkCardFailureNamespace, key); {
+	switch failure, err := l.d.KV.Get(ctx, LinkCardFailureNamespace, key); {
 	case err == nil:
-		return false, nil
+		// With robots.txt ignored, what it refused before is no reason to wait.
+		if string(failure) != linkCardFailedRobots {
+			return false, nil
+		}
+		if ignore, err := l.ignoresRobots(ctx); err != nil || !ignore {
+			return false, err
+		}
 	case !errors.Is(err, kernel.ErrKeyNotFound):
 		return false, fmt.Errorf("read link card failure memory: %w", err)
 	}
@@ -369,7 +400,16 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 		if ctx.Err() != nil {
 			return false, ctx.Err()
 		}
-		if err := l.d.KV.Set(ctx, LinkCardFailureNamespace, key, []byte("1"), LinkCardFailureTTL); err != nil {
+		failure := linkCardFailed
+		if isRobotsRefusal(err) {
+			failure = linkCardFailedRobots
+		}
+		if errors.Is(err, errRobotsDisallowed) {
+			if err := l.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return l.d.Repository.DeleteLinkCard(ctx, tx, u) }); err != nil {
+				return false, err
+			}
+		}
+		if err := l.d.KV.Set(ctx, LinkCardFailureNamespace, key, []byte(failure), LinkCardFailureTTL); err != nil {
 			return false, fmt.Errorf("write link card failure memory: %w", err)
 		}
 		return false, nil
@@ -381,8 +421,12 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 }
 
 // fetchCard fetches the page of u and its image, and returns the card. A page that makes no
-// card fails with errLinkCardUnusable.
+// card fails with errLinkCardUnusable, and a URL that robots.txt refuses with the error of
+// checkRobots, which wraps it.
 func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, error) {
+	if err := l.checkRobots(ctx, u); err != nil {
+		return content.LinkCard{}, err
+	}
 	header := http.Header{"Accept": {"text/html, application/xhtml+xml"}}
 	if l.d.Language != nil {
 		if lang, err := l.d.Language(ctx); err == nil && lang != "" {
@@ -390,7 +434,8 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 		}
 	}
 	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
-		URL: u, Purpose: kernel.HTTPPurposeHTML, Header: header, CheckRedirect: l.checkRedirect(l.fetchRefused),
+		URL: u, Purpose: kernel.HTTPPurposeHTML, Agent: kernel.HTTPAgentLinkCard, Header: header,
+		CheckRedirect: l.checkRedirect(l.fetchRefused),
 	})
 	if errors.Is(err, errLinkCardRefused) {
 		return content.LinkCard{}, err
@@ -408,6 +453,7 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 	if err != nil {
 		return content.LinkCard{}, fmt.Errorf("%w: %w", errLinkCardUnusable, err)
 	}
+	page.ApplyRobots(resp.Header.Values("X-Robots-Tag"))
 	card := content.LinkCard{
 		URL: u, CardURL: page.URL, Title: page.Title, Description: page.Description, SiteName: page.SiteName,
 		AuthorName: page.AuthorName, PublishedAt: page.PublishedAt, Language: page.Language, FetchedAt: l.d.Clock.Now(),
@@ -432,13 +478,19 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 
 // image returns the media file of the image at imageURL of a card that touches hosts: the one
 // recorded for the URL before, or the image fetched once, checked, and recorded with its size
-// and blurhash. It returns "" when no image is fetched from one of the hosts or the image cannot
-// be used, so that the card has no image (ADR-0062 §3, §7).
+// and blurhash. It returns "" when no image is fetched from one of the hosts, robots.txt refuses
+// its URL, or the image cannot be used, so that the card has no image (ADR-0062 §3, §7, ADR-0131 §4).
 func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt string) (string, error) {
 	for _, host := range hosts {
 		if refused, err := l.imageRefused(ctx, host); err != nil || refused {
 			return "", err
 		}
+	}
+	if err := l.checkRobots(ctx, imageURL); err != nil {
+		if isRobotsRefusal(err) {
+			return "", nil
+		}
+		return "", err
 	}
 	var existing content.LinkCardMedia
 	err := l.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -482,7 +534,7 @@ func (l *LinkCards) probeImage(ctx context.Context, imageURL string) (content.Li
 		return content.LinkCardMedia{}, false
 	}
 	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
-		URL: imageURL, Purpose: kernel.HTTPPurposeImage, Header: http.Header{"Accept": {"image/*"}},
+		URL: imageURL, Purpose: kernel.HTTPPurposeImage, Agent: kernel.HTTPAgentLinkCard, Header: http.Header{"Accept": {"image/*"}},
 		CheckRedirect: l.checkRedirect(l.imageRefused),
 	})
 	if err != nil {

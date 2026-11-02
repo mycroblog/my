@@ -407,6 +407,14 @@
     "defaultMessage": "The server fetches the page of the first link in each post, whoever can see the post, and shows its title, description, and image under it. The linked sites learn when the link was posted, but not by whom.",
     "description": "Description of the link cards checkbox."
   },
+  "admin.settings.federation.link_cards_ignore_robots_txt": {
+    "defaultMessage": "Fetch link cards without checking robots.txt",
+    "description": "Checkbox of the link_cards_ignore_robots_txt setting: whether the fetches of link cards skip the robots.txt of the linked sites."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "defaultMessage": "Linked sites can then no longer refuse the cards with robots.txt, and the server still names itself my-linkcard. A page's own robots directives and the link card domains keep applying. Turn this on only when many cards are missing.",
+    "description": "Description of the checkbox that makes the fetches of link cards skip robots.txt. my-linkcard is the crawler's name in robots.txt and is not translated."
+  },
   "admin.settings.federation.mode": {
     "defaultMessage": "Federation direction",
     "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0076): which way posts flow between this server and other servers."
