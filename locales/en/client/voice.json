@@ -491,13 +491,13 @@
     "defaultMessage": "Hands",
     "description": "The host's and co-hosts' button in the controls of a voice chat call that lists the raised hands."
   },
+  "voice.dock.hands.counted": {
+    "defaultMessage": "Hands, {count, plural, one {# raised hand} other {# raised hands}}",
+    "description": "Accessible name of the Hands button while it shows the number of raised hands as a badge. It starts with the word of voice.dock.hands, as it is shown."
+  },
   "voice.hands.heading": {
     "defaultMessage": "Raised hands · {count, number}",
     "description": "Heading of the list of the raised hands in a voice chat room. {count} is how many."
-  },
-  "voice.hands.count": {
-    "defaultMessage": "{count, plural, one {# raised hand} other {# raised hands}}",
-    "description": "Read by assistive technology as the description of the Hands button: how many raised a hand."
   },
   "voice.hands.empty": {
     "defaultMessage": "No raised hands right now.",

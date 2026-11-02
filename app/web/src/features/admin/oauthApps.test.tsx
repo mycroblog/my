@@ -159,7 +159,7 @@ describe("the OAuth apps screen", () => {
       }),
     );
     const { user } = await renderApp({ path: "/admin/oauth-apps" });
-    await user.click(await screen.findByRole("button", { name: "Deny the host app.example" }));
+    await user.click(await screen.findByRole("button", { name: "Deny host: app.example" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Deny app.example?" });
     await user.click(within(dialog).getByRole("button", { name: "Deny" }));
 

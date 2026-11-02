@@ -49,7 +49,7 @@ const meta = {
           label="Hands"
           icon={<RaiseHandIcon />}
           showLabel
-          count={{ value: 2, label: "2 raised hands" }}
+          count={{ value: 2, name: "Hands, 2 raised hands" }}
         />
       </>
     ),
@@ -65,8 +65,8 @@ export const Host: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("toolbar", { name: "Call controls" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Turn microphone off" })).toBeVisible();
-    // The count describes the button, whose name stays the same.
-    await expect(canvas.getByRole("button", { name: "Hands" })).toHaveAccessibleDescription("2 raised hands");
+    // The count it shows is part of its name.
+    await expect(canvas.getByRole("button", { name: "Hands, 2 raised hands" })).toBeVisible();
     // Every control is at least 44 px square.
     for (const button of canvas.getAllByRole("button")) {
       const box = button.getBoundingClientRect();

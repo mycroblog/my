@@ -488,8 +488,8 @@
     "description": "Description of the checkbox that removes the quote of a post in its edit dialog."
   },
   "status.action.read_replies": {
-    "defaultMessage": "{count, plural, one {Read # reply} other {Read # replies}}",
-    "description": "Name and tooltip of the link in a post's action bar that opens the post's page to read its replies; the link shows a speech bubble and the number. {count} is the number of replies (at least 1)."
+    "defaultMessage": "{count, plural, one {Read {shown} reply} other {Read {shown} replies}}",
+    "description": "Name and tooltip of the link in a post's action bar that opens the post's page to read its replies; the link shows a speech bubble and the number. {count} is the number of replies (at least 1), {shown} the same number as the link shows it (compact, such as 1.2K)."
   },
   "status.thread.failed.heading": {
     "defaultMessage": "Could not load the replies",

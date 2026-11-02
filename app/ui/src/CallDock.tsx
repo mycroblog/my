@@ -6,7 +6,7 @@
 //
 // Place it at the end of the page in the shell's `ShellDock`, which keeps it at the bottom edge of the page's column,
 // clear of the tab bar; like `CallBar`, its height is the `--call-bar-block-size` of the document while it shows.
-import { type ReactNode, useId, useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import {
   Button as RACButton,
   type ButtonProps as RACButtonProps,
@@ -118,8 +118,8 @@ type CallDockButtonBaseProps = {
   variant?: "primary" | "soft" | "danger" | "danger-soft";
   /** `md` (48 px, default) in the dock, `sm` (44 px) in the mini-player. */
   size?: "md" | "sm";
-  /** A count over the button ("2" raised hands), with the words assistive technology reads as its description. */
-  count?: { value: number; label: string } | undefined;
+  /** A count over the button ("2" raised hands), with the button's name while it shows it ("Hands, 2 raised hands"). */
+  count?: { value: number; name: string } | undefined;
 };
 
 type CallDockPlainButtonProps = CallDockButtonBaseProps & {
@@ -147,7 +147,6 @@ export type CallDockButtonProps = CallDockPlainButtonProps | CallDockToggleButto
  */
 export function CallDockButton(props: CallDockButtonProps) {
   const { label, icon, showLabel = false, variant, size, count, isDisabled = false } = props;
-  const countId = useId();
   const slots = callDockButton({
     size,
     variant,
@@ -159,15 +158,12 @@ export function CallDockButton(props: CallDockButtonProps) {
     <>
       {icon}
       {showLabel && <span>{label}</span>}
-      {count !== undefined && (
-        <Badge id={countId} tone="hand" count={count.value} label={count.label} className={slots.count()} />
-      )}
+      {count !== undefined && <Badge tone="hand" count={count.value} decorative className={slots.count()} />}
     </>
   );
-  // The name is the label alone, also with a count: the count describes the button, so its name stays the same.
+  // The count it shows is part of its name (web-client/README.md Y2).
   const common = {
-    "aria-label": label,
-    ...(count === undefined ? {} : { "aria-describedby": countId }),
+    "aria-label": count?.name ?? label,
     isDisabled,
     className,
   };

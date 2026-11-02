@@ -39,9 +39,10 @@ export type BadgeProps = Omit<ComponentPropsWithRef<"span">, "children"> &
       }
     | {
         /**
-         * The badge sits in a control that is named elsewhere (`aria-label`, with the count in it): the digits are
-         * drawn as generated content, so that they are neither text of the control nor read, and the control's
-         * visible text stays its label (WCAG 2.5.3).
+         * The badge sits in a control, whose name has the count (its `aria-label`, or visually hidden text beside the
+         * badge): the digits are drawn as generated content, so that they are neither text of the control nor read,
+         * and the control's visible text stays its label (web-client/README.md Y2). A capped "99+" is then not a
+         * visible text that the name, with the real count, lacks.
          */
         decorative: true;
         label?: never;

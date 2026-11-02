@@ -67,7 +67,7 @@ describe("the relays screen", () => {
     expect(within(rejectedRow).getByText("Rejected by the relay")).toBeInTheDocument();
     expect(within(rejectedRow).getByText("Sends only")).toBeInTheDocument();
     expect(within(rejectedRow).getByText("https://pleroma.example/inbox")).toBeInTheDocument();
-    expect(within(rejectedRow).getByRole("button", { name: "Join ⁦pleroma.example⁩ again" })).toBeInTheDocument();
+    expect(within(rejectedRow).getByRole("button", { name: "Join again: ⁦pleroma.example⁩" })).toBeInTheDocument();
     expect(within(rejectedRow).getByRole("button", { name: "Delete ⁦pleroma.example⁩" })).toBeInTheDocument();
   });
 
@@ -178,11 +178,11 @@ describe("the relays screen", () => {
     const list = await screen.findByRole("region", { name: "Relays of this server" });
 
     await user.click(await within(list).findByRole("button", { name: `Leave ${name}` }));
-    expect(await within(list).findByRole("button", { name: `Join ${name} again` })).toBeInTheDocument();
+    expect(await within(list).findByRole("button", { name: `Join again: ${name}` })).toBeInTheDocument();
     expect(within(list).getByText("Left")).toBeInTheDocument();
     expect(within(list).getByRole("status")).toHaveTextContent(`The server left ${name}.`);
 
-    await user.click(within(list).getByRole("button", { name: `Join ${name} again` }));
+    await user.click(within(list).getByRole("button", { name: `Join again: ${name}` }));
     expect(await within(list).findByRole("button", { name: `Leave ${name}` })).toBeInTheDocument();
     expect(within(list).getByRole("status")).toHaveTextContent(`The server asked to join ${name} again.`);
   });
@@ -206,7 +206,7 @@ describe("the relays screen", () => {
       ),
     );
     const { user } = await renderApp({ path: "/admin/relays" });
-    await user.click(await screen.findByRole("button", { name: `Join ${name} again` }));
+    await user.click(await screen.findByRole("button", { name: `Join again: ${name}` }));
 
     const list = screen.getByRole("region", { name: "Relays of this server" });
     expect(await within(list).findByRole("alert")).toHaveTextContent(

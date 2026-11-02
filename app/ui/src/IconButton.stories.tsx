@@ -39,13 +39,20 @@ export const Default: Story = {
   },
 };
 
-/** A toggle of a post's action bar: the icon's shape and `aria-pressed` change, the name does not. */
+/** A toggle of a post's action bar: the icon's shape and `aria-pressed` change, and the name has the count it shows. */
 function Favourite() {
   const [isSelected, setIsSelected] = useState(false);
+  const count = isSelected ? 13 : 12;
   return (
-    <IconToggleButton label="Favourite" tone="warning" isSelected={isSelected} onChange={setIsSelected}>
+    <IconToggleButton
+      label="Favourite"
+      countedLabel={`Favourite, ${count}`}
+      tone="warning"
+      isSelected={isSelected}
+      onChange={setIsSelected}
+    >
       <StarIcon filled={isSelected} />
-      <span aria-hidden="true">{isSelected ? 13 : 12}</span>
+      <span aria-hidden="true">{count}</span>
     </IconToggleButton>
   );
 }
@@ -53,11 +60,11 @@ function Favourite() {
 export const Toggle: Story = {
   render: () => <Favourite />,
   play: async ({ canvas, userEvent }) => {
-    const button = canvas.getByRole("button", { name: "Favourite", pressed: false });
+    const button = canvas.getByRole("button", { name: "Favourite, 12", pressed: false });
     await userEvent.tab();
     await expect(await canvas.findByRole("tooltip")).toHaveTextContent("Favourite");
     await userEvent.keyboard(" ");
-    await expect(canvas.getByRole("button", { name: "Favourite", pressed: true })).toBe(button);
+    await expect(canvas.getByRole("button", { name: "Favourite, 13", pressed: true })).toBe(button);
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(canvas.queryByRole("tooltip")).not.toBeInTheDocument());
   },

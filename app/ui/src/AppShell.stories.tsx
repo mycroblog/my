@@ -145,7 +145,12 @@ function SampleNav({
       <AppNavItem href="#home" icon={<HomeIcon />} label={l.home} current />
       <AppNavItem href="#local" icon={<LocalIcon />} label={l.local} />
       <AppNavItem href="#public" icon={<FederatedIcon />} label={l.federated} />
-      <AppNavItem href="#notifications" icon={<NotificationsIcon />} label={l.notifications} badge={unread} />
+      <AppNavItem
+        href="#notifications"
+        icon={<NotificationsIcon />}
+        label={l.notifications}
+        badge={{ ...unread, name: `${l.notifications}, 3 unread` }}
+      />
       <AppNavItem href="#search" icon={<SearchIcon />} label={l.search} />
       <AppNavItem href="#profile" icon={<ProfileIcon />} label={l.profile} shows="rail" />
       <AppNavItem href="#bookmarks" icon={<BookmarkIcon />} label={l.bookmarks} shows="rail" />

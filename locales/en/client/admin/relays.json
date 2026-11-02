@@ -60,7 +60,7 @@
     "description": "Button that asks to join again a relay that was left or rejected the server."
   },
   "admin.relays.follow_relay": {
-    "defaultMessage": "Join {name} again",
+    "defaultMessage": "Join again: {name}",
     "description": "Accessible name of the button that joins a relay again. {name} is the host name of its URL."
   },
   "admin.relays.followed": {
