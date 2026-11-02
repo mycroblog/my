@@ -119,6 +119,10 @@
     "defaultMessage": "モデレーターが解除するまで続きます",
     "description": "Under a moderation action in effect on the user's account that has no end date. The server's status page says the same."
   },
+  "account_status.no_end": {
+    "defaultMessage": "この処分に期限はありません",
+    "description": "Under a moderation action in effect on the user's account whose kind does not last for a time, such as a warning: says that the missing end date is not an omission."
+  },
   "account_status.expires_at": {
     "defaultMessage": "期限",
     "description": "Term of a moderation action on the user's account: when it ends."

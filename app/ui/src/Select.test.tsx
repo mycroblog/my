@@ -24,6 +24,15 @@ describe("Select", () => {
     expect(trigger).toHaveAccessibleDescription("Used for new posts.");
   });
 
+  it("names the trigger of the toolbar variant by the value and its aria-label", () => {
+    render(
+      <Select variant="toolbar" aria-label="Language" value="en" items={languages}>
+        {(item) => <SelectItem textValue={item.name}>{item.name}</SelectItem>}
+      </Select>,
+    );
+    expect(screen.getByRole("button", { name: "English Language" })).toBeInTheDocument();
+  });
+
   it("opens with the keyboard, moves with the arrow keys and selects with Enter", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

@@ -134,6 +134,15 @@ export const Appealing: Story = {
   },
 };
 
+/** A warning in effect: its kind has no end, and the screen says so rather than leaving the end out. */
+export const WarningWithoutEnd: Story = {
+  ...answering(...acting([action({ kind: "warn", kind_label: "Warning" }, ["expires_at"])])),
+  play: async (context) => {
+    await settled(context);
+    await expect(await context.canvas.findByText("This action has no end date")).toBeVisible();
+  },
+};
+
 /** An account without any moderation action. */
 export const Empty: Story = answering(...acting([]));
 

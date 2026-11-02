@@ -37,8 +37,8 @@ export function mcpCommand(options: {
 }): string[] {
   // The init page runs on every new page of the browser, before the first tool call returns. On the first page it
   // opens the mailbox in a second tab when the task reads email, then the start, so the agent never types an
-  // address, and waits until the client has drawn the screen's heading, so that the first snapshot shows the screen
-  // rather than the loading state. A page opened later (the mailbox, or a link of an email that opens a tab) keeps
+  // address, and waits until the client has drawn the screen's heading, and the requests of the shell to settle, so that the first snapshot shows the
+  // screen rather than the loading state. A page opened later (the mailbox, or a link of an email that opens a tab) keeps
   // its own address. Playwright MCP loads it with require().
   const initPage = join(options.dir, "init-page.cjs");
   writeFileSync(
@@ -56,6 +56,10 @@ export function mcpCommand(options: {
           ]),
       `  await page.goto(${JSON.stringify(options.startURL)});`,
       '  await page.locator("h1").first().waitFor({ timeout: 30000 });',
+      // The heading comes before what the requests of the shell bring (the viewer's permissions behind the navigation,
+      // the panels of the third column), and a task's way there must not depend on how fast the agent reads. A stream
+      // of the page never lets the network go idle, so the wait has a limit and running out of it is not a failure.
+      '  await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});',
       "};",
       "",
     ].join("\n"),
