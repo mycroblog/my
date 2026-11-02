@@ -612,7 +612,7 @@ over a bordered group; `Stack`'s `marker="decimalInside"` puts numbers inside th
 `AccountItem` is the avatar, the display name and the handle of an account: a link to the profile with `href`, plain text
 without. `nameContent` shows the name with custom emoji, `layout` is `row` (default), `padded` (a whole-row target with a
 hover background) or `inline` (as wide as its text), `details` adds lines under the handle and `trailing` an action or a
-badge at the end (`trailingPlacement="below"` puts it under the account until the container is `@md` wide). A list of
+badge at the end (`trailingPlacement="below"` puts it under the account until its own width reaches `@lg`). A list of
 accounts is `<Stack as="ul" divided>` of `<Box as="li">`.
 
 ### Which component for which pattern
