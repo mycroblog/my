@@ -39,6 +39,58 @@
     "defaultMessage": "返信",
     "description": "Button under a post that starts a reply to it."
   },
+  "status.author.block": {
+    "defaultMessage": "{handle} をブロック",
+    "description": "Item of a post's menu that blocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.direct_message": {
+    "defaultMessage": "{handle} にダイレクトメッセージ",
+    "description": "Item of a post's menu that opens the new-post form as a direct message to the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow": {
+    "defaultMessage": "{handle} をフォロー",
+    "description": "Item of a post's menu that follows the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow_back": {
+    "defaultMessage": "{handle} をフォローバック",
+    "description": "Item of a post's menu that follows the post's author, who follows the user. {handle} is the author's short handle."
+  },
+  "status.author.mute": {
+    "defaultMessage": "{handle} をミュート",
+    "description": "Item of a post's menu that mutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.relationship_failed": {
+    "defaultMessage": "{handle} をフォローしているかを読み込めませんでした: {reason} 選ぶともう一度試します。",
+    "description": "Item of a post's menu shown in place of follow, mute and block when the relationship failed to load; choosing it loads it again. {handle} is the author's short handle, {reason} the error message."
+  },
+  "status.author.request": {
+    "defaultMessage": "{handle} にフォローをリクエスト",
+    "description": "Item of a post's menu that asks to follow the post's author, whose account approves its followers. {handle} is the author's short handle."
+  },
+  "status.author.unblock": {
+    "defaultMessage": "{handle} のブロックを解除",
+    "description": "Item of a post's menu that unblocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unfollow": {
+    "defaultMessage": "{handle} のフォローをやめる",
+    "description": "Item of a post's menu that stops following the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unmute": {
+    "defaultMessage": "{handle} のミュートを解除",
+    "description": "Item of a post's menu that unmutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.withdraw": {
+    "defaultMessage": "{handle} へのフォローのリクエストを取り消す",
+    "description": "Item of a post's menu that withdraws the user's pending follow request, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.moderation.account": {
+    "defaultMessage": "このアカウントをモデレーションで開く",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author."
+  },
+  "status.moderation.post": {
+    "defaultMessage": "この投稿をモデレーションで開く",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author, starting from this post."
+  },
   "status.bookmark.off": {
     "defaultMessage": "ブックマークを外しました",
     "description": "Read out by screen readers after the user removed the bookmark of a post."

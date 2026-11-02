@@ -29,6 +29,8 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert:      p.TimelineAutoInsert,
+		LocaleFollowsBrowser:    p.LocaleFollowsBrowser,
+		TimeZoneFollowsBrowser:  p.TimeZoneFollowsBrowser,
 		UpdatedAt:               p.UpdatedAt,
 	})
 	if err != nil {
@@ -51,6 +53,8 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert:      p.TimelineAutoInsert,
+		LocaleFollowsBrowser:    p.LocaleFollowsBrowser,
+		TimeZoneFollowsBrowser:  p.TimeZoneFollowsBrowser,
 		UpdatedAt:               p.UpdatedAt,
 	})
 	if err != nil {
@@ -141,6 +145,8 @@ func userPreferencesFrom(ctx context.Context, q *postgresgen.Queries, row postgr
 		DefaultPostLanguage:     row.DefaultPostLanguage,
 		RequireMediaDescription: row.RequireMediaDescription,
 		TimelineAutoInsert:      row.TimelineAutoInsert,
+		LocaleFollowsBrowser:    row.LocaleFollowsBrowser,
+		TimeZoneFollowsBrowser:  row.TimeZoneFollowsBrowser,
 		UpdatedAt:               utc(row.UpdatedAt),
 	}, nil
 }

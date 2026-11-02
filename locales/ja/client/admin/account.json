@@ -11,6 +11,26 @@
     "defaultMessage": "投稿への処分は、その投稿への通報の画面から行います。",
     "description": "Help above the form of an action on an account's page."
   },
+  "admin.account.action.post.chosen": {
+    "defaultMessage": "投稿の削除と閲覧注意の設定は、この投稿に対して行います。",
+    "description": "Help under the post that an account's moderation page starts from, above the form of an action."
+  },
+  "admin.account.action.post.failed": {
+    "defaultMessage": "投稿を読み込めませんでした: {reason} 投稿への処分は、その投稿への通報の画面から行います。",
+    "description": "Help above the form of an action when the post that an account's moderation page starts from failed to load or is gone. {reason} is the error message."
+  },
+  "admin.account.action.post.label": {
+    "defaultMessage": "開いた投稿",
+    "description": "Accessible name of the post that an account's moderation page starts from."
+  },
+  "admin.account.action.post.loading": {
+    "defaultMessage": "投稿を読み込んでいます…",
+    "description": "Help above the form of an action while the post that an account's moderation page starts from loads."
+  },
+  "admin.account.action.post.remote": {
+    "defaultMessage": "ほかのサーバーのアカウントには、投稿ごとの処分はできません。",
+    "description": "Help under the post that an account's moderation page starts from, for an account of another server."
+  },
   "admin.account.action.title": {
     "defaultMessage": "処分する",
     "description": "Heading of the region of an account's admin page with the form of a new action."

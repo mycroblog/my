@@ -196,13 +196,14 @@ func instanceAnnouncementWindow(t *testing.T, e *instanceEnv) {
 
 // instancePastAnnouncements checks the list with the past announcements (ADR-0125 §3): those
 // that have started to show, the ended ones included, newest ShowsFrom first, page by page,
-// without the drafts, the withdrawn ones, and those whose window has not started; and that the
-// title is trimmed and kept with each revision.
+// without the drafts, the withdrawn ones, and those whose window has not started; that one of
+// them reads the same alone, with the reader's read; and that the title is trimmed and kept
+// with each revision.
 func instancePastAnnouncements(t *testing.T, e *instanceEnv) {
 	ctx := t.Context()
 	now := e.clock.Now()
 	ended := e.createAnnouncement(t, "ended", true, time.Time{}, now.Add(30*time.Minute))
-	e.createAnnouncement(t, "draft", false, time.Time{}, time.Time{})
+	draft := e.createAnnouncement(t, "draft", false, time.Time{}, time.Time{})
 	future := e.createAnnouncement(t, "future", true, now.Add(48*time.Hour), time.Time{})
 	withdrawn := e.createAnnouncement(t, "withdrawn", true, time.Time{}, time.Time{})
 	if _, err := e.service.WithdrawAnnouncement(ctx, withdrawn.ID, announcementAdmin); err != nil {
@@ -235,6 +236,28 @@ func instancePastAnnouncements(t *testing.T, e *instanceEnv) {
 	}
 	if _, ok, err := e.service.ShownAnnouncement(ctx, announcementReader, ended.ID); err != nil || ok {
 		t.Errorf("ShownAnnouncement(ended) = %v, %v; want not shown", ok, err)
+	}
+	if a, ok, err := e.service.PastAnnouncement(ctx, announcementReader, ended.ID); err != nil || !ok || !a.Ended || a.Read {
+		t.Errorf("PastAnnouncement(ended) = %+v, %v, %v; want it, ended and unread", a, ok, err)
+	}
+	if a, ok, err := e.service.PastAnnouncement(ctx, announcementReader, current.ID); err != nil || !ok || a.Ended || a.Read {
+		t.Errorf("PastAnnouncement(current) = %+v, %v, %v; want it, not ended and unread", a, ok, err)
+	}
+	if _, err := e.service.MarkAnnouncementRead(ctx, announcementReader, current.ID); err != nil {
+		t.Fatal(err)
+	}
+	if a, ok, err := e.service.PastAnnouncement(ctx, announcementReader, current.ID); err != nil || !ok || !a.Read {
+		t.Errorf("PastAnnouncement(read) = %+v, %v, %v; want it read", a, ok, err)
+	}
+	if a, ok, err := e.service.PastAnnouncement(ctx, announcementAdmin, current.ID); err != nil || !ok || a.Read {
+		t.Errorf("PastAnnouncement(of another user) = %+v, %v, %v; want it unread", a, ok, err)
+	}
+	for name, id := range map[string]string{
+		"draft": draft.ID, "future": future.ID, "withdrawn": withdrawn.ID, "unknown": "0199f0e0-0000-7000-8000-0000000000ff",
+	} {
+		if _, ok, err := e.service.PastAnnouncement(ctx, announcementReader, id); err != nil || ok {
+			t.Errorf("PastAnnouncement(%s) = %v, %v; want none", name, ok, err)
+		}
 	}
 	if ids, err := e.service.ShownAnnouncementIDs(ctx); err != nil || !reflect.DeepEqual(ids, []string{current.ID}) {
 		t.Errorf("ShownAnnouncementIDs = %v, %v; want only the current one", ids, err)

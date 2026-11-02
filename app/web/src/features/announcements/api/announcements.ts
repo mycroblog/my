@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server data of the announcements (FR-726, ADR-0125, web-client/README.md S1): the announcements that every local
 // user sees now with whether the viewer has read each (GET /announcements), the pages of those that have started to
-// show, the ended ones included (GET /announcements/history), marking one read, and what the event stream says about
-// them (lib/sse): a published or changed announcement replaces or joins the list, and a withdrawn one leaves both.
+// show, the ended ones included (GET /announcements/history), one of those alone (GET /announcements/{id}), marking one
+// read, and what the event stream says about them (lib/sse): a published or changed announcement replaces or joins the
+// list, and a withdrawn one leaves them.
 import { type InfiniteData, infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
@@ -45,6 +46,11 @@ export function announcementHistoryQueryOptions(api: Api) {
   });
 }
 
+/** One announcement that has started to show, ended or not (GET /announcements/{id}); a 404 when it does not. */
+export function announcementQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/announcements/{id}", { params: { path: { id } } });
+}
+
 /** Marks an announcement read (POST /announcements/{id}/read), as the options of useMutation. */
 export function markAnnouncementReadMutation(api: Api) {
   return {
@@ -83,10 +89,13 @@ function withHistoryItem<Param>(
 
 /**
  * Writes an announcement that the response of marking it read or the event stream gave into the list of those shown
- * now, and into the pages of the past ones that already have it. A new one is not placed among the pages: their order
- * is the server's, so they are read again instead.
+ * now, into the pages of the past ones that already have it, and over the announcement alone when it is cached. A new
+ * one is not placed among the pages: their order is the server's, so they are read again instead.
  */
 export function cacheAnnouncement(queryClient: QueryClient, api: Api, announcement: Announcement): void {
+  queryClient.setQueryData<Announcement>(announcementQueryOptions(api, announcement.id).queryKey, (cached) =>
+    cached === undefined ? cached : announcement,
+  );
   queryClient.setQueryData<AnnouncementList>(announcementsQueryOptions(api).queryKey, (list) =>
     list === undefined ? list : withAnnouncement(list, announcement),
   );
@@ -104,17 +113,19 @@ export function cacheAnnouncement(queryClient: QueryClient, api: Api, announceme
 
 /**
  * Takes an announcement that no longer shows off the list of those shown now. It was withdrawn or its window changed,
- * which the event does not tell apart, so the past ones are read again.
+ * which the event does not tell apart, so the past ones and the announcement alone are read again.
  */
 export function removeAnnouncement(queryClient: QueryClient, api: Api, id: string): void {
   queryClient.setQueryData<AnnouncementList>(announcementsQueryOptions(api).queryKey, (list) =>
     list === undefined ? list : { items: list.items.filter((item) => item.id !== id) },
   );
   void queryClient.invalidateQueries({ queryKey: announcementHistoryQueryOptions(api).queryKey, exact: true });
+  void queryClient.invalidateQueries({ queryKey: announcementQueryOptions(api, id).queryKey, exact: true });
 }
 
 /** After the stream reconnected: reads the announcements again, since the server replays nothing. */
 export function catchUpAnnouncements(queryClient: QueryClient, api: Api): void {
   void queryClient.invalidateQueries({ queryKey: announcementsQueryOptions(api).queryKey, exact: true });
   void queryClient.invalidateQueries({ queryKey: announcementHistoryQueryOptions(api).queryKey, exact: true });
+  void queryClient.invalidateQueries({ queryKey: ["get", "/announcements/{id}"] });
 }

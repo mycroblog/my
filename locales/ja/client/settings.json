@@ -363,6 +363,14 @@
     "defaultMessage": "選ぶとすぐに切り替わります。",
     "description": "Help text of the display language select."
   },
+  "settings.locale.follow_browser": {
+    "defaultMessage": "このブラウザに従う ({language})",
+    "description": "Option of the display language select: follow the browser's language. language is the language it shows now, in that language."
+  },
+  "settings.locale.follow_browser_description": {
+    "defaultMessage": "ブラウザの言語を使います。アプリがその言語に対応していないときは、このサーバーの言語を使います。",
+    "description": "Description of the option that follows the browser's language."
+  },
   "settings.locale.label": {
     "defaultMessage": "表示言語",
     "description": "Label of the select of the language the app is shown in."
@@ -706,6 +714,14 @@
   "settings.time_zone.description": {
     "defaultMessage": "日時をこのタイムゾーンで表示します。",
     "description": "Help text of the time zone select."
+  },
+  "settings.time_zone.follow_browser": {
+    "defaultMessage": "このブラウザに従う ({zone})",
+    "description": "Option of the time zone select: follow the browser's time zone. zone is that zone's name."
+  },
+  "settings.time_zone.follow_browser_description": {
+    "defaultMessage": "日時はブラウザのタイムゾーンで表示します。",
+    "description": "Description of the option that follows the browser's time zone."
   },
   "settings.time_zone.label": {
     "defaultMessage": "タイムゾーン",

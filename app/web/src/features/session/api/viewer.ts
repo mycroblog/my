@@ -4,8 +4,8 @@
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
 
-/** An account, as the client API returns it. */
-export type Account = components["schemas"]["Account"];
+/** The signed-in user's own account, with what only they see of it: their permissions, say. */
+export type CredentialAccount = components["schemas"]["CredentialAccount"];
 
 /** The signed-in user's own account (GET /accounts/verify_credentials). */
 export function viewerQueryOptions(api: Api) {

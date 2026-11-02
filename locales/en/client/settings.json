@@ -363,6 +363,14 @@
     "defaultMessage": "The app switches to it at once.",
     "description": "Help text of the display language select."
   },
+  "settings.locale.follow_browser": {
+    "defaultMessage": "Follow this browser ({language})",
+    "description": "Option of the display language select: follow the browser's language. language is the language it shows now, in that language."
+  },
+  "settings.locale.follow_browser_description": {
+    "defaultMessage": "Uses the browser's language, or this server's when the app is not available in it.",
+    "description": "Description of the option that follows the browser's language."
+  },
   "settings.locale.label": {
     "defaultMessage": "Display language",
     "description": "Label of the select of the language the app is shown in."
@@ -706,6 +714,14 @@
   "settings.time_zone.description": {
     "defaultMessage": "Dates and times are shown in this time zone.",
     "description": "Help text of the time zone select."
+  },
+  "settings.time_zone.follow_browser": {
+    "defaultMessage": "Follow this browser ({zone})",
+    "description": "Option of the time zone select: follow the browser's time zone. zone is that zone's name."
+  },
+  "settings.time_zone.follow_browser_description": {
+    "defaultMessage": "Dates are shown in the browser's time zone.",
+    "description": "Description of the option that follows the browser's time zone."
   },
   "settings.time_zone.label": {
     "defaultMessage": "Time zone",

@@ -12,6 +12,7 @@ import { errorMessage } from "../../../lib/errors";
 import { useFederation } from "../../../lib/federation";
 import { isRemoteAcct } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
+import { moderationAccountPath } from "../../../lib/paths";
 import { useQuote, useReply } from "../../compose";
 import { useViewer } from "../../session";
 import { hasRelation, relationCount } from "../api/cache";
@@ -103,6 +104,11 @@ export type StatusActions = {
    * post of the viewer; null otherwise. The result or the failure is shown.
    */
   revokeQuote: (() => void) | null;
+  /**
+   * The moderation page of the post's author, and the same page starting from this post, for a viewer with the
+   * permission that page asks for (manage_accounts); null otherwise, and on the viewer's own posts.
+   */
+  moderation: { accountHref: string; postHref: string } | null;
 };
 
 /** What is announced when the viewer turns `relation` on or off. */
@@ -313,5 +319,12 @@ export function useStatusActions(status: Status): StatusActions | null {
           revoke.mutate({ quotedId: quoted.id });
         }
       : null,
+    moderation:
+      !isAuthor && viewer.account.permissions.includes("manage_accounts")
+        ? {
+            accountHref: moderationAccountPath(post.account.id),
+            postHref: moderationAccountPath(post.account.id, post.id),
+          }
+        : null,
   };
 }

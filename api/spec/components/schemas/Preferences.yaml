@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: MIT
 description: The authenticated user's preferences.
 type: object
-required: [locale, time_zone, time_zone_chosen, default_visibility, default_quote_policy, default_post_language, require_media_description, timeline_auto_insert, timeline_languages]
+required: [locale, locale_follows_browser, time_zone, time_zone_chosen, time_zone_follows_browser, default_visibility, default_quote_policy, default_post_language, require_media_description, timeline_auto_insert, timeline_languages]
 properties:
   locale:
     description: The UI locale, a BCP 47 language tag.
     type: string
+  locale_follows_browser:
+    description: |
+      Whether clients with a browser show its language instead of `locale`, or the server's default
+      language when the browser names none they have. They keep `locale` at what they last detected,
+      for what has no browser (email, push). True for a new user.
+    type: boolean
   time_zone:
     description: The time zone, an IANA name such as `Asia/Tokyo`; `UTC` until one is chosen.
     type: string
@@ -13,6 +19,11 @@ properties:
     description: |
       Whether a time zone has been chosen: false for a new user until a request sets
       `time_zone`. Clients may then set it to the device's time zone.
+    type: boolean
+  time_zone_follows_browser:
+    description: |
+      Whether clients with a browser show dates in its time zone instead of `time_zone`. They keep
+      `time_zone` at what they last detected, for what has no browser. True for a new user.
     type: boolean
   default_visibility:
     $ref: ./Visibility.yaml

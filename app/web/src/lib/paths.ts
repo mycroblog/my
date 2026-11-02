@@ -40,6 +40,15 @@ export function moderationReportPath(id: string): string {
   return `/moderation/reports/${id}`;
 }
 
+/**
+ * The moderation page of the account `id`, which a post's menu leads to. With `statusId`, the page starts from that post
+ * of the account: its form of an action offers it.
+ */
+export function moderationAccountPath(id: string, statusId?: string): string {
+  const path = `/moderation/accounts/${encodeURIComponent(id)}`;
+  return statusId === undefined ? path : `${path}?${new URLSearchParams({ status: statusId }).toString()}`;
+}
+
 /** The administration page of the error groups, which an `admin_error_group` of more groups than are told one by one leads to. */
 export const adminErrorsPath = "/admin/errors";
 

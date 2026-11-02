@@ -20,6 +20,12 @@ type Preferences struct {
 	// TimeZoneChosen is whether the user (or a client for them) has chosen TimeZone. A new user
 	// has not, and the web client then offers the browser's zone (data-model §4.1).
 	TimeZoneChosen bool
+	// LocaleFollowsBrowser is whether the web client shows the browser's language, or the
+	// instance's when the browser names none it has, and keeps Locale at what it last detected
+	// for what has no browser (email, push). A new user follows the browser.
+	LocaleFollowsBrowser bool
+	// TimeZoneFollowsBrowser is the same for the browser's time zone and TimeZone.
+	TimeZoneFollowsBrowser bool
 	// DefaultVisibility is the visibility a new post starts with.
 	DefaultVisibility Visibility
 	// DefaultQuotePolicy is who may quote a new post (ADR-0069 §1).

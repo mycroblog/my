@@ -6,7 +6,7 @@ import { composeKey } from "../../../lib/storage";
 import { useViewer } from "../../session";
 import { cacheReplyTarget, type Status } from "../api/compose";
 import { type ComposeState, DraftStore } from "./draftStore";
-import { replyMentions } from "./policy";
+import { directMessageText, replyMentions } from "./policy";
 
 /** The id of the post's text area, which a reply focuses. Only one form is on the page at a time. */
 export const composeTextId = "compose-text";
@@ -21,6 +21,8 @@ export type ComposeController = {
   reply: (status: Status) => void;
   /** Quotes `status` in the draft (FR-114): the form shows it, then gets focus. */
   quote: (status: Status) => void;
+  /** Starts a direct message to the account `acct`: the form mentions it with the direct visibility, then gets focus. */
+  directMessage: (acct: string) => void;
 };
 
 export const ComposeContext = createContext<ComposeController | null>(null);
@@ -60,6 +62,17 @@ export function useComposeController(): ComposeController | null {
       cacheReplyTarget(api, queryClient, status);
       setIsSheetOpen(true);
     },
+    directMessage(acct) {
+      const { draft } = draftStore.getSnapshot();
+      // A new conversation: it answers and quotes nothing, whatever the draft was for.
+      draftStore.edit({
+        text: directMessageText(draft.text, acct),
+        visibility: "direct",
+        replyToId: null,
+        quoteId: null,
+      });
+      setIsSheetOpen(true);
+    },
   };
 }
 
@@ -87,4 +100,12 @@ export function useReply(): ((status: Status) => void) | null {
  */
 export function useQuote(): ((status: Status) => void) | null {
   return useComposeContext()?.quote ?? null;
+}
+
+/**
+ * Returns `directMessage(acct)`, which opens the form as a direct message to the account `acct`, or null while nobody
+ * is signed in.
+ */
+export function useDirectMessage(): ((acct: string) => void) | null {
+  return useComposeContext()?.directMessage ?? null;
 }

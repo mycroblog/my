@@ -19,7 +19,7 @@ import {
 import { server } from "../../test/msw/server";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
-import type { Relationship } from "./api/accounts";
+import type { Relationship } from "../relationship";
 
 const bob = { ...otherAccountFixture, followers_count: 12, following_count: 1 };
 

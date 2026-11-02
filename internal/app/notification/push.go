@@ -629,9 +629,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 	return p
 }
 
-// AnnouncementPath is the web client's page of an announcement: the list of the announcements,
-// which opens at it (ADR-0125 §2).
-func AnnouncementPath(id string) string { return "/announcements?id=" + id }
+// AnnouncementPath is the web client's page of an announcement.
+func AnnouncementPath(id string) string { return "/announcements/" + id }
 
 // statusPath is the web client's page of a status by the account acct (ADR-0053).
 func statusPath(acct, statusID string) string { return "/@" + acct + "/status/" + statusID }

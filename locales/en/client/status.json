@@ -39,6 +39,58 @@
     "defaultMessage": "Reply",
     "description": "Button under a post that starts a reply to it."
   },
+  "status.author.block": {
+    "defaultMessage": "Block {handle}",
+    "description": "Item of a post's menu that blocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.direct_message": {
+    "defaultMessage": "Direct message {handle}",
+    "description": "Item of a post's menu that opens the new-post form as a direct message to the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow": {
+    "defaultMessage": "Follow {handle}",
+    "description": "Item of a post's menu that follows the post's author. {handle} is the author's short handle."
+  },
+  "status.author.follow_back": {
+    "defaultMessage": "Follow {handle} back",
+    "description": "Item of a post's menu that follows the post's author, who follows the user. {handle} is the author's short handle."
+  },
+  "status.author.mute": {
+    "defaultMessage": "Mute {handle}",
+    "description": "Item of a post's menu that mutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.relationship_failed": {
+    "defaultMessage": "Could not load whether you follow {handle}: {reason} Choose this to try again.",
+    "description": "Item of a post's menu shown in place of follow, mute and block when the relationship failed to load; choosing it loads it again. {handle} is the author's short handle, {reason} the error message."
+  },
+  "status.author.request": {
+    "defaultMessage": "Request to follow {handle}",
+    "description": "Item of a post's menu that asks to follow the post's author, whose account approves its followers. {handle} is the author's short handle."
+  },
+  "status.author.unblock": {
+    "defaultMessage": "Unblock {handle}",
+    "description": "Item of a post's menu that unblocks the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unfollow": {
+    "defaultMessage": "Unfollow {handle}",
+    "description": "Item of a post's menu that stops following the post's author, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.author.unmute": {
+    "defaultMessage": "Unmute {handle}",
+    "description": "Item of a post's menu that unmutes the post's author. {handle} is the author's short handle."
+  },
+  "status.author.withdraw": {
+    "defaultMessage": "Cancel follow request to {handle}",
+    "description": "Item of a post's menu that withdraws the user's pending follow request, after a confirmation. {handle} is the author's short handle."
+  },
+  "status.moderation.account": {
+    "defaultMessage": "Open this account in moderation",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author."
+  },
+  "status.moderation.post": {
+    "defaultMessage": "Open this post in moderation",
+    "description": "Item of a post's menu, for moderators, that opens the moderation page of the post's author, starting from this post."
+  },
   "status.bookmark.off": {
     "defaultMessage": "Bookmark removed",
     "description": "Read out by screen readers after the user removed the bookmark of a post."

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's announcements in every width × locale project (FR-726, ADR-0125, ADR-0027): below xl a user sees the
 // published ones above the home timeline with the unread one marked in words, and marks it read; from xl they are in
-// the third column by their titles instead; the list page has the ended ones and opens one from its notification,
-// marking it read; an administrator writes an announcement with its title and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`
+// the third column by their titles instead; the list page has the ended ones; the page of one, opened from its
+// notification, marks it read; an administrator writes an announcement with its title and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`
 // has no API, so each test plays the server with page.route; names change with the locale, so the elements are
 // found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
@@ -183,6 +183,7 @@ test.describe("announcements", () => {
     await serveApi(page, [], (key, route) => {
       if (key === "GET /announcements") return json(route, { items: [unread, read] });
       if (key === "GET /announcements/history") return json(route, { items: [unread, read, ended] });
+      if (key === `GET /announcements/${unread.id}`) return json(route, unread);
       if (key === `POST /announcements/${unread.id}/read`) return json(route, { ...unread, read: true });
       return null;
     });
@@ -194,11 +195,11 @@ test.describe("announcements", () => {
     await expect(page.getByRole("main").getByRole("region", { name: message("announcements.title") })).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
 
-    // The title opens the announcement on the list page, which marks it read; the panel is not on that page.
+    // The title opens the announcement's page, which marks it read.
     await title.click();
-    const heading = page.getByRole("main").getByRole("heading", { level: 2, name: unread.title, exact: true });
+    const heading = page.getByRole("main").getByRole("heading", { level: 1, name: unread.title, exact: true });
     await expect(heading).toBeFocused();
-    await expect(panel).toHaveCount(0);
+    await expect(page.getByRole("main").getByText(message("announcements.unread"), { exact: true })).toHaveCount(0);
     await expectNoAxeViolations(makeAxeBuilder);
   });
 
@@ -216,6 +217,9 @@ test.describe("announcements", () => {
         reads.push(unread.id);
         return json(route, { ...unread, read: true });
       }
+      if (key === `GET /announcements/${unread.id}`) {
+        return json(route, { ...unread, read: reads.includes(unread.id) });
+      }
       return null;
     });
     await page.goto("/announcements");
@@ -226,11 +230,11 @@ test.describe("announcements", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
-    // From its notification (or its Web Push): the page focuses it and marks it read.
-    await page.goto(`/announcements?id=${unread.id}`);
-    await expect(main.getByRole("heading", { level: 2, name: unread.title, exact: true })).toBeFocused();
-    expect(reads).toEqual([unread.id]);
+    // From its notification (or its Web Push): its own page, which marks it read.
+    await page.goto(`/announcements/${unread.id}`);
+    await expect(main.getByRole("heading", { level: 1, name: unread.title, exact: true })).toBeVisible();
     await expect(main.getByRole("button", { name: message("announcements.mark_read"), exact: true })).toHaveCount(0);
+    expect(reads).toEqual([unread.id]);
     await expectNoAxeViolations(makeAxeBuilder);
   });
 

@@ -77,11 +77,6 @@ export const Normal: Story = {};
 /** More announcements to load at the end of the list. */
 export const MoreToLoad: Story = answering(...listing(history, true));
 
-/** Opened from the notification of an announcement that was withdrawn: the top of the list says so. */
-export const Withdrawn: Story = {
-  parameters: { screen: { path: "/announcements?id=0199f0e0-0000-7000-8000-00000000b0ff" } },
-};
-
 /** No announcement has shown yet. */
 export const Empty: Story = answering(...listing([]));
 

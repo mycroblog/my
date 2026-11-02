@@ -28,6 +28,8 @@ func (r *IdentityRepository) InsertPreferences(ctx context.Context, tx uow.Tx, p
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: boolToInt(p.RequireMediaDescription),
 		TimelineAutoInsert:      boolToInt(p.TimelineAutoInsert),
+		LocaleFollowsBrowser:    boolToInt(p.LocaleFollowsBrowser),
+		TimeZoneFollowsBrowser:  boolToInt(p.TimeZoneFollowsBrowser),
 		UpdatedAt:               toMillis(p.UpdatedAt),
 	})
 	if err != nil {
@@ -49,6 +51,8 @@ func (r *IdentityRepository) UpdatePreferences(ctx context.Context, tx uow.Tx, p
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: boolToInt(p.RequireMediaDescription),
 		TimelineAutoInsert:      boolToInt(p.TimelineAutoInsert),
+		LocaleFollowsBrowser:    boolToInt(p.LocaleFollowsBrowser),
+		TimeZoneFollowsBrowser:  boolToInt(p.TimeZoneFollowsBrowser),
 		UpdatedAt:               toMillis(p.UpdatedAt),
 		UserID:                  p.UserID,
 	})
@@ -140,6 +144,8 @@ func userPreferencesFrom(ctx context.Context, q *sqlitegen.Queries, row sqlitege
 		DefaultPostLanguage:     row.DefaultPostLanguage,
 		RequireMediaDescription: row.RequireMediaDescription != 0,
 		TimelineAutoInsert:      row.TimelineAutoInsert != 0,
+		LocaleFollowsBrowser:    row.LocaleFollowsBrowser != 0,
+		TimeZoneFollowsBrowser:  row.TimeZoneFollowsBrowser != 0,
 		UpdatedAt:               fromMillis(row.UpdatedAt),
 	}, nil
 }

@@ -5,9 +5,9 @@ import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import type { Announcement } from "../api/announcements";
 
-/** The path of the list page opened at `announcement` (from a title or a notification). */
+/** The path of the page of `announcement`. */
 export function announcementPath(announcement: Pick<Announcement, "id">): string {
-  return `/announcements?id=${encodeURIComponent(announcement.id)}`;
+  return `/announcements/${encodeURIComponent(announcement.id)}`;
 }
 
 export function AnnouncementTitle({ announcement }: { announcement: Announcement }) {

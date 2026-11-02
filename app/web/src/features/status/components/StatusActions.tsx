@@ -13,6 +13,7 @@ import {
   type IconToggleButtonProps,
   Menu,
   MenuItem,
+  MenuSeparator,
   MenuTrigger,
   MoreIcon,
   QuoteIcon,
@@ -25,8 +26,10 @@ import { type ReactNode, useId, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { type ReactionChoice, ReactionPickerButton } from "../../emoji";
+import { RelationshipConfirmDialog } from "../../relationship";
 import { ReportDialog } from "../../report";
 import type { ReactionEmoji, Status } from "../api/status";
+import { useAuthorActions } from "../hooks/useAuthorActions";
 import { type RelationToggle, useStatusActions } from "../hooks/useStatusActions";
 import { EditStatusDialog } from "./EditStatusDialog";
 import { QuotePolicyDialog } from "./QuotePolicyDialog";
@@ -51,8 +54,9 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
 
 /**
  * The action bar of a post: reply, boost, quote (FR-114), favourite, the picker of emoji reactions (ADR-0052 §5), bookmark, and a menu with
- * the link, the report of another account's post (features/report), the revocation of this post's approved quote of a post of the
- * viewer (ADR-0069 §3) and, for the viewer's own posts, edit (EditStatusDialog), who may quote it (QuotePolicyDialog), the posts that
+ * the link, the revocation of this post's approved quote of a post of the viewer (ADR-0069 §3), for another account's post what the
+ * viewer can do about its author (useAuthorActions) with the report of the post (features/report) and, with the permission, the
+ * links to the moderation page (useStatusActions), and, for the viewer's own posts, edit (EditStatusDialog), who may quote it (QuotePolicyDialog), the posts that
  * quote it, pin or unpin, and delete behind a confirmation (WAI-ARIA APG, alert dialog pattern). Nothing while
  * nobody is signed in. The toggles keep their names in both states and expose the state with
  * `aria-pressed` (APG, button pattern); a count is part of the toggle's name (WCAG 2.5.3). On a post of another server while the
@@ -63,6 +67,8 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
   const t = useT();
   const staysLocalId = useId();
   const actions = useStatusActions(status);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const author = useAuthorActions(status.boost ?? status, isMenuOpen);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -130,21 +136,12 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
         tone="accent"
         icon={(on) => <BookmarkIcon filled={on} />}
       />
-      <MenuTrigger>
+      <MenuTrigger onOpenChange={setIsMenuOpen}>
         <IconButton variant="subtle" size="toolbar" label={t("client:status.action.more")}>
           <MoreIcon />
         </IconButton>
         <Menu aria-label={t("client:status.action.more")} placement="bottom end">
           <MenuItem onAction={actions.copyLink}>{t("client:status.action.copy_link")}</MenuItem>
-          {actions.canReport && (
-            <MenuItem
-              onAction={() => {
-                setIsReporting(true);
-              }}
-            >
-              {t("client:report.open")}
-            </MenuItem>
-          )}
           {actions.canEdit && (
             <MenuItem
               onAction={() => {
@@ -184,6 +181,55 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
               {t("client:status.action.delete")}
             </MenuItem>
           )}
+          {author !== null && <MenuSeparator />}
+          {/* The items keep their ids when their action flips: React Aria's collections cannot change an item's id
+              while the menu is still mounted while it closes. */}
+          {author?.follow != null && (
+            <MenuItem id="follow" isDisabled={author.follow.isDisabled} onAction={author.follow.run}>
+              {author.follow.label}
+            </MenuItem>
+          )}
+          {author?.directMessage != null && (
+            <MenuItem id="direct-message" onAction={author.directMessage.run}>
+              {author.directMessage.label}
+            </MenuItem>
+          )}
+          {author?.mute != null && (
+            <MenuItem id="mute" isDisabled={author.mute.isDisabled} onAction={author.mute.run}>
+              {author.mute.label}
+            </MenuItem>
+          )}
+          {author?.block != null && (
+            <MenuItem
+              id="block"
+              intent={author.block.isUndo ? "neutral" : "danger"}
+              isDisabled={author.block.isDisabled}
+              onAction={author.block.run}
+            >
+              {author.block.label}
+            </MenuItem>
+          )}
+          {author?.failure != null && (
+            <MenuItem id="relationship-retry" onAction={author.failure.retry}>
+              {author.failure.label}
+            </MenuItem>
+          )}
+          {actions.canReport && (
+            <MenuItem
+              onAction={() => {
+                setIsReporting(true);
+              }}
+            >
+              {t("client:report.open")}
+            </MenuItem>
+          )}
+          {actions.moderation !== null && <MenuSeparator />}
+          {actions.moderation !== null && (
+            <MenuItem href={actions.moderation.accountHref}>{t("client:status.moderation.account")}</MenuItem>
+          )}
+          {actions.moderation !== null && (
+            <MenuItem href={actions.moderation.postHref}>{t("client:status.moderation.post")}</MenuItem>
+          )}
         </Menu>
       </MenuTrigger>
       {note !== undefined && (
@@ -194,6 +240,7 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
       {actions.canReport && (
         <ReportDialog account={post.account} status={post} isOpen={isReporting} onOpenChange={setIsReporting} />
       )}
+      {author !== null && <RelationshipConfirmDialog {...author.confirmation} />}
       {actions.canEdit && <EditStatusDialog status={post} isOpen={isEditing} onOpenChange={setIsEditing} />}
       {actions.quotePolicy !== null && (
         <QuotePolicyDialog

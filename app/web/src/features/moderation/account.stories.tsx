@@ -3,7 +3,7 @@
 // registration, the actions on it, the reports about it, and the action form, in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { otherAccountFixture, rtlNameAccountFixture, type Schemas } from "../../test/fixtures";
+import { otherAccountFixture, rtlNameAccountFixture, type Schemas, statusFixture } from "../../test/fixtures";
 import { apiBase, problem, withViewer } from "../../test/msw/http";
 import {
   answering,
@@ -94,6 +94,9 @@ function accountsApi(details: Schemas["AdminAccountDetail"][]) {
   ];
 }
 
+/** The post a page opened from a post's menu starts from. */
+const startingPost = statusFixture(storyId("e0", 1));
+
 const meta = {
   title: "Screens/Moderation/Account",
   render: renderScreen,
@@ -116,6 +119,20 @@ export const Normal: Story = showing("Repeated insults in replies to people who 
 
 /** A suspended account of another server. */
 export const Remote: Story = { parameters: { screen: { path: `/moderation/accounts/${remote.id}` } } };
+
+/** Opened from a post's menu: the page starts from that post. */
+export const FromPost: Story = {
+  parameters: {
+    screen: {
+      path: `/moderation/accounts/${bob.id}?status=${startingPost.id}`,
+      handlers: [
+        moderatorViewer,
+        ...accountsApi([bob, remote]),
+        http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(startingPost)),
+      ],
+    },
+  },
+};
 
 /** An account without actions or reports. */
 export const Clean: Story = answering(...accountsApi([adminAccountDetailFixture(otherAccountFixture)]));
