@@ -163,6 +163,14 @@ func TestRobotsTxt(t *testing.T) {
 					t.Errorf("names %s: %v, want %v\n%s", agent, got, want, body)
 				}
 			}
+			// The policy token's group states the preference against training, and nothing while
+			// training is allowed.
+			if got := strings.Contains(body, "\nUser-agent: __usage_ai-training\nDisallow: /\n"); got != tc.training {
+				t.Errorf("states the preference against AI training: %v, want %v\n%s", got, tc.training, body)
+			}
+			if !tc.training && strings.Contains(body, "__usage_ai-training") {
+				t.Errorf("names the policy token while training is allowed:\n%s", body)
+			}
 			// Link preview fetchers and search engines are never named: noindex states the search
 			// policy, and previews keep working (ADR-0028).
 			for _, agent := range []string{"facebookexternalhit", "Twitterbot", "Googlebot", "Bingbot", "Applebot"} {

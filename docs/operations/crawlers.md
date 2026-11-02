@@ -38,6 +38,8 @@ robots.txt and meta tags are statements that crawlers may or may not honor; they
 Operators cannot add rules of their own.
 
 - If `ai_usage` is `deny_training` or `deny`, training crawlers (`GPTBot`, `ClaudeBot`, `CCBot`, `Google-Extended`, `Applebot-Extended` and so on) get `Disallow: /`.
+- If `ai_usage` is `deny_training` or `deny`, a `User-agent: __usage_ai-training` group with `Disallow: /` states a preference against AI training for every path, whichever crawler fetches the content
+  (the `draft-kelley-aipref-training-preference-signal` Internet-Draft). It names a use, not a crawler, so it stops no fetches. With `ai_usage = allow` the group is left out, which states no preference, because its `Allow: /` would state a preference in favor of training for every path, including the pages of people who set `ai_opt_out`.
 - If `ai_usage` is `deny`, the crawlers of AI search, assistants and agents (`OAI-SearchBot`, `ChatGPT-User`, `Claude-User`, `PerplexityBot` and so on) get `Disallow: /` too.
 - All crawlers (`User-agent: *`) are refused only `/api/`, `/oauth/`, `/auth/`, `/ap/` and `/media/proxy/`, and the settings are stated in `Content-Usage` (the IETF AI Preferences draft) and
   `Content-Signal` (Content Signals) lines. Refusing search does not produce `Disallow: /`: blocking fetches would stop crawlers from reading `noindex`,
@@ -97,6 +99,6 @@ curl -sS https://<host>/.well-known/tdmrep.json
 curl -sS https://<host>/.well-known/security.txt
 ```
 
-- On a server with no settings, `/robots.txt` has `User-agent: GPTBot` and `Content-Usage: search=n, train-ai=n, ai-use=n`,
+- On a server with no settings, `/robots.txt` has `User-agent: GPTBot`, `User-agent: __usage_ai-training` and `Content-Usage: search=n, train-ai=n, ai-use=n`,
   and profiles carry `X-Robots-Tag: noindex, noarchive, noai, noimageai`.
 - With `search_indexing = allow` and `ai_usage = allow`, the profile of an account that chose `indexable` carries no `X-Robots-Tag`, and `/.well-known/tdmrep.json` is 404.

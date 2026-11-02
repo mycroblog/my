@@ -37,6 +37,10 @@ const HeaderNoIndex = "noindex"
 // /nodeinfo stay open, for the statistics and server lists that read NodeInfo (FR-402).
 var robotsDisallowed = []string{"/api/", "/oauth/", "/auth/", "/mail/", "/ap/", "/media/proxy/"}
 
+// aiTrainingUsageAgent is the User-agent value, a policy token, of draft-kelley-aipref-training-preference-signal:
+// it names a use rather than a crawler, so its group states a preference and controls no crawling.
+const aiTrainingUsageAgent = "__usage_ai-training"
+
 // crawlerDirectives are the meta tags and headers that state a CrawlerPolicy on a response.
 type crawlerDirectives struct {
 	// Robots is the content of <meta name="robots"> and the X-Robots-Tag; "" for none.
@@ -96,9 +100,11 @@ func (h *Handler) settings(ctx context.Context) (instance.Settings, error) {
 }
 
 // robotsTxt renders /robots.txt for the instance's policy (RFC 9309): the AI crawlers of the
-// bundled list that p reserves against, then the rules for every crawler, with the draft
-// statements of IETF AI Preferences (Content-Usage) and Content Signals, which parsers that do
-// not know them ignore. Search engines are never disallowed the pages: a search engine that may
+// bundled list that p reserves against, the preference against AI training while p denies it,
+// then the rules for every crawler, with the draft statements of IETF AI Preferences
+// (Content-Usage) and Content Signals, which parsers that do not know them ignore. The policy
+// token's group is left out while p allows training: its Allow would state a preference in favor
+// of training for every path, including the pages of people who set ai_opt_out. Search engines are never disallowed the pages: a search engine that may
 // not fetch a page cannot read its noindex, and link preview fetchers follow robots.txt too.
 func robotsTxt(p instance.CrawlerPolicy) []byte {
 	var b bytes.Buffer
@@ -112,6 +118,7 @@ func robotsTxt(p instance.CrawlerPolicy) []byte {
 	}
 	if p.DeniesTraining() {
 		group("Crawlers that collect data to train AI models.", aiTrainingCrawlers)
+		group("A preference against AI training, whichever crawler fetches the content.", []string{aiTrainingUsageAgent})
 	}
 	if p.DeniesAIUse() {
 		group("Crawlers of AI search, assistants, and agents.", aiUseCrawlers)
