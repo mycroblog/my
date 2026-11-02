@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@mycroblog/mykit": "workspace:*",
-    "croner": "10.0.1"
+    "croner": "11.0.0"
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
