@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the server's
-// announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead) and about
-// the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead), the
+// viewer's latest notifications on timeline pages, and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 // Signed out, the navigation is a bar along the top and the pages are one column at every width, with no third
 // column: they end with a footer that links to the server's information and documents instead.
 import { AppShell } from "@my/ui";
@@ -12,6 +12,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { AnnouncementsPanel } from "../../features/announcements";
 import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
+import { NotificationsPanel } from "../../features/notifications";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
 import { VoiceCallBar, VoiceRail, VoiceRoomAside } from "../../features/voice";
@@ -57,6 +58,10 @@ export function AppLayout() {
     select: (matches) => matches.some((match) => match.staticData.composeButton === true),
   });
   const wideMain = useMatches({ select: (matches) => matches.some((match) => match.staticData.wideMain === true) });
+  // The timeline pages have the viewer's latest notifications in the third column (their routes' static data).
+  const onTimelinePage = useMatches({
+    select: (matches) => matches.some((match) => match.staticData.timeline === true),
+  });
   const signedOut = useSignedOut();
   const signedIn = useViewer().status === "signed-in";
   const closure = useClosure();
@@ -117,7 +122,8 @@ export function AppLayout() {
           {...(hasAside && {
             aside: (
               // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The server's
-              // announcements come first, then the open voice chat rooms, while there are any (web-client/09-app-shell.md §9).
+              // announcements come first, then the open voice chat rooms, while there are any, and the latest
+              // notifications, which are the longest, above about the server (web-client/09-app-shell.md §9).
               <>
                 {!onAnnouncementsPage && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
@@ -132,6 +138,11 @@ export function AppLayout() {
                 {voiceRoomId !== undefined && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                     <VoiceRoomAside id={voiceRoomId} />
+                  </ErrorBoundary>
+                )}
+                {onTimelinePage && signedIn && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <NotificationsPanel />
                   </ErrorBoundary>
                 )}
                 <ErrorBoundary fallback={null} onError={reportBoundaryError}>

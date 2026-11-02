@@ -396,6 +396,11 @@ export const Edited: Story = {
   args: { details: <PostCardTimeLink href="#history">Edited</PostCardTimeLink> },
 };
 
+/** A row of a panel that is a card already: the panel's surface, with no card inside the card. */
+export const PlainSurface: Story = {
+  args: { surface: "plain" },
+};
+
 export const WithoutAvatarOrActions: Story = {
   args: { avatar: undefined, actions: undefined },
 };

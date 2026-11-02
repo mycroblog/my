@@ -87,6 +87,11 @@ declare module "@tanstack/react-router" {
      * page belongs to (a list's timeline goes to the lists).
      */
     backTo?: string;
+    /**
+     * The page is a timeline (home, local, federated, a list's, a tag's): the third column has the viewer's latest
+     * notifications while it shows (web-client/09-app-shell.md §9).
+     */
+    timeline?: boolean;
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**

@@ -7,9 +7,13 @@
     "defaultMessage": "Your appeal was not granted, and the action stays.",
     "description": "In an appeal_decided notification: the moderators kept the action that the user appealed."
   },
+  "notifications.all": {
+    "defaultMessage": "All notifications",
+    "description": "Link from the panel of notifications in the side column to the notifications page."
+  },
   "notifications.empty.all": {
     "defaultMessage": "No notifications yet",
-    "description": "Heading shown on the notifications page when the user has no notifications."
+    "description": "Heading shown on the notifications page, and text of the panel of notifications in the side column, when the user has no notifications."
   },
   "notifications.empty.description": {
     "defaultMessage": "When someone follows you, mentions you or reacts to your posts, it shows up here.",
