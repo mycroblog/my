@@ -41,7 +41,8 @@ the web client (type checks, build, dependency licenses).
 
 - The Go tools (go-licenses, sqlc, oapi-codegen) are pinned by the `tool` directives of `tools/go.mod`.
 - Dependabot Alerts on GitHub report known vulnerabilities in dependencies, and Dependabot opens the version update
-  pull requests (`.github/dependabot.yml`).
+  pull requests (`.github/dependabot.yml`). `go.work` at the root exists for its Go updates alone: tasks run with
+  `GOWORK=off`, and a bare `go` command in `pkg/mykit`, `pkg/mybot`, or `tools` needs it too.
 - The Docker Compose smoke test (building the image, applying the schema, creating an administrator, checking
   WebFinger, the actor, and NodeInfo) needs Docker, so `scripts/task.sh check` leaves it out; run it with
   `scripts/task.sh docker:smoke`. CI runs it on pull requests that change the Docker setup, `cmd/`, or

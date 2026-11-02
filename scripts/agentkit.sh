@@ -5,6 +5,9 @@
 # first when it is missing or older than its sources. `scripts/agentkit.sh help` lists the commands.
 set -euo pipefail
 
+# go.work exists for Dependabot alone (scripts/task.sh).
+export GOWORK=off
+
 root="$(cd "$(dirname "$0")/.." && pwd)"
 bin="$root/bin/agentkit"
 src="$root/tools/agentkit"

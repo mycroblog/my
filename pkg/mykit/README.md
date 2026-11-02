@@ -55,7 +55,7 @@ fmt.Println("posted", resp.JSON200.Id)
 ```
 
 Every operation is a method `<Operation>WithResponse` of `*mykit.API`. The runnable versions of the snippets in this
-README are the examples in [`example_test.go`](example_test.go) (`go test -run Example`), and the TypeScript ones are in
+README are the examples in [`example_test.go`](example_test.go) (`GOWORK=off go test -run Example`), and the TypeScript ones are in
 [`ts/examples/`](ts/examples), which the package's type check covers.
 
 ## Getting a token

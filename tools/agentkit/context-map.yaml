@@ -136,7 +136,7 @@ entries:
 
   # --- Server: shared rules ---------------------------------------------------------------------------
   - name: go-server
-    paths: ["internal/**", "cmd/**", "pkg/**", "go.mod", "go.sum", ".golangci.yml"]
+    paths: ["internal/**", "cmd/**", "pkg/**", "go.mod", "go.sum", "go.work", ".golangci.yml"]
     docs: ["AGENTS.md#design-rules", "docs/architecture/overview.md#依存ルール"]
     checks: [go]
     notes:

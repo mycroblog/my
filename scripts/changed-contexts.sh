@@ -87,6 +87,11 @@ classify() {
       select_contexts go mykit
       return
       ;;
+    # The workspace of Dependabot's Go updates: go:mod-check reads it, and it names modules of these contexts.
+    go.work)
+      select_contexts go mykit agentkit
+      return
+      ;;
     # The options and the ignored files of bun fmt, which web:fmt-check reads for every TS package.
     bunfig.toml | .prettierignore | .editorconfig)
       select_contexts web
@@ -153,7 +158,7 @@ classify() {
   esac
   case "$path" in
     # go test fails when the generated configuration reference is stale (go:config-docs).
-    *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-build-tags.sh | \
+    *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-build-tags.sh | scripts/go-work-check.sh | \
       docs/reference/configuration.md)
       select_contexts go
       known=1

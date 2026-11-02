@@ -18,6 +18,8 @@ build/
 /internal/interface/web/dist/*
 !/internal/interface/web/dist/.gitkeep
 bin/
+# What a bare `go` command writes in workspace mode: go.work exists for Dependabot alone, and no check reads this.
+go.work.sum
 # The binary that `go build ./cmd/my` writes to the repository root.
 /my
 coverage/

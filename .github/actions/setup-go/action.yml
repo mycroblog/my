@@ -31,6 +31,10 @@ runs:
     - name: Build without cgo
       shell: bash
       run: echo CGO_ENABLED=0 >> "$GITHUB_ENV"
+    # go.work is for Dependabot alone: every job checks each module as it stands alone. scripts/task.sh sets this too.
+    - name: Leave workspace mode
+      shell: bash
+      run: echo GOWORK=off >> "$GITHUB_ENV"
     # A build cache only serves the same Go, and the module cache the same go.sum files. The date makes main.yml start
     # a new cache each day, so a cache holds one build's worth of entries instead of growing with every push.
     - name: Compute the Go cache key and read the golangci-lint version

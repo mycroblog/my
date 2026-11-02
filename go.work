@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// The workspace exists for Dependabot, which treats the modules listed here as one: it runs `go get` in each,
+// `go work sync`, and `go mod tidy` in each, so that a bump of the root module and the modules that follow it form
+// one tidy pull request. Nothing else builds in workspace mode: scripts/task.sh, scripts/agentkit.sh, and CI set
+// GOWORK=off, so that every module is checked as it stands alone.
+//
+// Three modules stay out, since `go work sync` would raise their requirements to the server's. pkg/mykit and
+// pkg/mybot are published, and their go.mod reaches their users; tools/go.mod pins the tools apart from the product.
+// scripts/go-work-check.sh keeps this list and the go line true.
+go 1.27.3
+
+use (
+	.
+	./pkg/mybot/integration
+	./pkg/mykit/integration
+	./tools/agentkit
+)

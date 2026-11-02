@@ -72,6 +72,8 @@ jobs:
           # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
           GOTOOLCHAIN: local
           CGO_ENABLED: "0"
+          # go.work is for Dependabot alone: build the server module as it stands alone.
+          GOWORK: "off"
           # The extractor is a Go program that reads this too: it collects garbage before its heap passes the limit,
           # which leaves room below the 16 GB of the runner for the build that runs beside it.
           GOMEMLIMIT: 12GiB
