@@ -117,7 +117,7 @@ export const WithIcon: Story = {
 export const InToolbar: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-1 text-fg-muted">
-      <Button variant="ghost" size="toolbar" aria-label="Reply" className="text-fg-muted">
+      <Button variant="ghost" size="toolbar" aria-label="Reply, 3" className="text-fg-muted">
         <ReplyIcon />
         <span className="tabular-nums">3</span>
       </Button>
@@ -132,7 +132,7 @@ export const InToolbar: Story = {
   play: async ({ canvas }) => {
     const boxOf = (name: string) => canvas.getByRole("button", { name }).getBoundingClientRect();
     const iconOf = (name: string) => canvas.getByRole("button", { name }).querySelector("svg")?.getBoundingClientRect();
-    for (const name of ["Reply", "Favourite", "More"]) {
+    for (const name of ["Reply, 3", "Favourite", "More"]) {
       await expect(iconOf(name)?.width, name).toBeCloseTo(spacing(5), 1);
       await expect(iconOf(name)?.height, name).toBeCloseTo(spacing(5), 1);
       await expect(boxOf(name).height, name).toBe(boxOf("Favourite").height);

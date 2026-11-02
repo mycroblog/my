@@ -73,6 +73,7 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
   const [isReporting, setIsReporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isChoosingQuotePolicy, setIsChoosingQuotePolicy] = useState(false);
+  const intl = useIntl();
   if (actions === null) return null;
   const post = status.boost ?? status;
   const remove = actions.delete;
@@ -93,7 +94,11 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
       {repliesHref !== undefined && post.replies_count > 0 && (
         <IconButtonLink
           href={repliesHref}
-          label={t("client:status.action.read_replies", { count: post.replies_count })}
+          // The count it shows is part of its name (Y2), formatted as ActionCount shows it.
+          label={t("client:status.action.read_replies", {
+            count: post.replies_count,
+            shown: intl.formatNumber(post.replies_count, { notation: "compact" }),
+          })}
         >
           <RepliesIcon />
           <ActionCount value={post.replies_count} />

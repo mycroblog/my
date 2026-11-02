@@ -304,7 +304,7 @@
     "description": "Button of another server's custom emoji that opens the dialog copying it into an emoji of this server."
   },
   "admin.custom_emojis.copy_emoji": {
-    "defaultMessage": "{emoji} をこのサーバーに複製",
+    "defaultMessage": "このサーバーに複製: {emoji}",
     "description": "Accessible name of the copy button of another server's custom emoji. {emoji} is the emoji's :shortcode: (with @domain for another server's), not translated."
   },
   "admin.custom_emojis.copy.title": {

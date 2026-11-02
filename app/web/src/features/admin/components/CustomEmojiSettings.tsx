@@ -35,6 +35,7 @@ import {
   Tabs,
   Text,
   TextField,
+  VisuallyHidden,
 } from "@my/ui";
 import { type SubmitEvent, useId, useRef, useState } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -123,16 +124,21 @@ function ScreenTabs({ tab, onTabChange, requestState, onRequestStateChange, ...l
           <Cluster as="span" inline align="center" gap="2" wrap={false}>
             {t("client:admin.custom_emojis.tabs.requests")}
             {pending !== undefined && pending.count > 0 && (
-              <Badge
-                count={pending.more ? pending.count + 1 : pending.count}
-                max={pending.more ? pending.count : 99}
-                label={t(
-                  pending.more
-                    ? "client:admin.custom_emojis.tabs.pending_more"
-                    : "client:admin.custom_emojis.tabs.pending",
-                  { count: pending.count },
-                )}
-              />
+              <>
+                <Badge
+                  count={pending.more ? pending.count + 1 : pending.count}
+                  max={pending.more ? pending.count : 99}
+                  decorative
+                />
+                <VisuallyHidden>
+                  {t(
+                    pending.more
+                      ? "client:admin.custom_emojis.tabs.pending_more"
+                      : "client:admin.custom_emojis.tabs.pending",
+                    { count: pending.count },
+                  )}
+                </VisuallyHidden>
+              </>
             )}
           </Cluster>
         </Tab>

@@ -310,6 +310,17 @@ describe("a post's page", () => {
     });
   });
 
+  test("names the link to the replies with the count as it shows it", async () => {
+    signedIn();
+    server.use(
+      http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([{ ...post, replies_count: 1234 }]))),
+    );
+    await renderApp({ path: "/local" });
+
+    const card = await screen.findByRole("article", { description: "The post" });
+    expect(await within(card).findByRole("link", { name: "Read 1.2K replies" })).toHaveTextContent("1.2K");
+  });
+
   test("goes to the landing page from the back button of a page opened directly while signed out", async () => {
     serveThread();
     const { user, router } = await renderApp({ path: `/@bob/status/${postId}` });

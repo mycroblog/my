@@ -97,11 +97,16 @@ describe("CallDockButton", () => {
     expect(onPress).toHaveBeenCalledOnce();
   });
 
-  it("is described by its count, and keeps its name", () => {
+  it("has the count it shows in its name, and keeps the digits out of its text", () => {
     render(
-      <CallDockButton label="Hands" icon={<RaiseHandIcon />} showLabel count={{ value: 2, label: "2 raised hands" }} />,
+      <CallDockButton
+        label="Hands"
+        icon={<RaiseHandIcon />}
+        showLabel
+        count={{ value: 2, name: "Hands, 2 raised hands" }}
+      />,
     );
-    expect(screen.getByRole("button", { name: "Hands" })).toHaveAccessibleDescription("2 raised hands");
+    expect(screen.getByRole("button", { name: "Hands, 2 raised hands" })).toHaveTextContent(/^Hands$/u);
   });
 
   it("shows its label as text or, for an icon only, as a tooltip on focus", async () => {

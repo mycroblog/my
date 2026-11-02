@@ -245,7 +245,7 @@ describe("the custom emoji screen", () => {
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis?origin=remote" });
     await user.click(
-      await screen.findByRole("button", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" }),
+      await screen.findByRole("button", { name: "Copy to this server: ⁦:party-parrot:@remote.example⁩" }),
     );
     const dialog = await screen.findByRole("dialog", { name: "Copy ⁦:party-parrot:@remote.example⁩ to this server" });
     // The remote shortcode breaks the rules of a local one, so a new one is asked for.

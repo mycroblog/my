@@ -627,8 +627,9 @@ describe("the host in the call", () => {
     await user.click(await screen.findByRole("button", { name: "Join" }));
     await screen.findByText("Connected");
 
-    const hands = within(screen.getByRole("toolbar", { name: "Call controls" })).getByRole("button", { name: "Hands" });
-    expect(hands).toHaveAccessibleDescription("1 raised hand");
+    const hands = within(screen.getByRole("toolbar", { name: "Call controls" })).getByRole("button", {
+      name: "Hands, 1 raised hand",
+    });
     await user.click(hands);
     const list = await screen.findByRole("dialog", { name: "Raised hands · 1" });
     expect(within(list).getByRole("link", { name: /Bob/u })).toBeInTheDocument();

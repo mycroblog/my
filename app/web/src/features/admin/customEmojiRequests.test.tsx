@@ -31,7 +31,7 @@ describe("the requests tab of the custom emoji screen", () => {
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis" });
     const tab = await screen.findByRole("tab", { name: /Requests/ });
-    expect(await within(tab).findByText("2")).toBeInTheDocument();
+    expect(await within(tab).findByText("2 requests await review")).toBeInTheDocument();
     await user.click(tab);
 
     const region = await screen.findByRole("region", { name: "Requests for custom emoji" });

@@ -32,7 +32,7 @@
     "description": "Button on an app that denies the host of its metadata document."
   },
   "admin.oauth_apps.deny_host_of": {
-    "defaultMessage": "Deny the host {host}",
+    "defaultMessage": "Deny host: {host}",
     "description": "Accessible name of the button that denies the host of an app's metadata document. {host} is the host name."
   },
   "admin.oauth_apps.disable": {

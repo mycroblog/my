@@ -29,6 +29,7 @@ import {
   TabPanel,
   Tabs,
   Text,
+  VisuallyHidden,
 } from "@my/ui";
 import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
@@ -154,12 +155,10 @@ function FilterTab({ queue, filter }: { queue: JobQueue; filter: JobFilter }) {
       <Cluster gap="2" align="center" wrap={false}>
         {t(filterLabels[filter])}
         {counted && (
-          <Badge
-            count={count}
-            max={999}
-            tone={filter === "dead" && count > 0 ? "danger" : "neutral"}
-            label={t("client:admin.jobs.filter.count", { count })}
-          />
+          <>
+            <Badge count={count} max={999} tone={filter === "dead" && count > 0 ? "danger" : "neutral"} decorative />
+            <VisuallyHidden>{t("client:admin.jobs.filter.count", { count })}</VisuallyHidden>
+          </>
         )}
       </Cluster>
     </Tab>

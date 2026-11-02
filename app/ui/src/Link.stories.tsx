@@ -54,7 +54,7 @@ export const Navigation: Story = {
           >
             <span className="relative px-2">
               <NotificationsIcon />
-              <Badge count={3} label="3 unread" className="absolute -top-1.5 -inset-e-1" />
+              <Badge count={3} decorative className="absolute -top-1.5 -inset-e-1" />
             </span>
             Notifications
           </Link>

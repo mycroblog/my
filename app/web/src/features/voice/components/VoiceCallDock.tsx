@@ -198,7 +198,7 @@ function HandsButton({
         count={
           hands.length === 0
             ? undefined
-            : { value: hands.length, label: t("client:voice.hands.count", { count: hands.length }) }
+            : { value: hands.length, name: t("client:voice.dock.hands.counted", { count: hands.length }) }
         }
       />
       <Popover title={t("client:voice.hands.heading", { count: hands.length })} placement="top">

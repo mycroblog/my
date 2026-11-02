@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { Badge, Hint, Link, Section, Stack } from "@my/ui";
+import { Badge, Hint, Link, Section, Stack, VisuallyHidden } from "@my/ui";
 import { useId } from "react";
 import { useAdminEntry } from "../../features/admin";
 import { useModerationEntry } from "../../features/moderation";
@@ -31,8 +31,8 @@ export function StaffModeEntry() {
           {t("client:admin.mode.title")}
           {pending > 0 && (
             <>
-              {/* The space keeps the words apart in the link's name. */}{" "}
-              <Badge count={pending} label={t("client:admin.pending_count", { count: pending })} />
+              {/* The space keeps the words apart in the link's name. */} <Badge count={pending} decorative />
+              <VisuallyHidden>{t("client:admin.pending_count", { count: pending })}</VisuallyHidden>
             </>
           )}
         </Link>

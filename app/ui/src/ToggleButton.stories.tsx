@@ -98,8 +98,8 @@ export const Matrix: Story = {
     <div className="flex flex-col gap-3">
       {(["accent", "success", "warning"] as const).map((tone) => (
         <div key={tone} className="flex flex-wrap items-center gap-2">
-          <Controlled {...args} aria-label={`${tone} off`} tone={tone} count={3} />
-          <Controlled {...args} aria-label={`${tone} on`} tone={tone} count={3} defaultSelected />
+          <Controlled {...args} aria-label={`${tone} off, 3`} tone={tone} count={3} />
+          <Controlled {...args} aria-label={`${tone} on, 4`} tone={tone} count={3} defaultSelected />
           <Controlled {...args} aria-label={`${tone} disabled`} tone={tone} isDisabled />
         </div>
       ))}
