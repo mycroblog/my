@@ -31,15 +31,19 @@ import { describeUserAgent } from "../lib/describeUserAgent";
 
 export function BrowserSessions() {
   const t = useT();
+  const intl = useIntl();
   return (
     <Stack container gap="6">
       <p>{t("client:settings.sessions.description")}</p>
       <SessionList />
       <Hint as="p">
-        {t("client:settings.sessions.unknown_sign_in", {
-          password: (chunks) => <Link href="/settings/password">{chunks}</Link>,
-          apps: (chunks) => <Link href="/settings/authorized-apps">{chunks}</Link>,
-        })}
+        {intl.formatMessage(
+          { id: "client:settings.sessions.unknown_sign_in" },
+          {
+            password: <Link href="/settings/password">{t("client:settings.password.title")}</Link>,
+            apps: <Link href="/settings/authorized-apps">{t("client:settings.authorized_apps.title")}</Link>,
+          },
+        )}
       </Hint>
     </Stack>
   );

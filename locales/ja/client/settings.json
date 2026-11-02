@@ -1724,8 +1724,8 @@
     "description": "Explanation at the top of the signed-in browsers settings page."
   },
   "settings.sessions.unknown_sign_in": {
-    "defaultMessage": "心当たりがないものがありますか？ログアウトしてもパスワードと認可したアプリは変わらないので、<password>パスワードを変更</password>し、<apps>認可したアプリ</apps>も確かめてください。",
-    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. <password> and <apps> are links to those settings pages."
+    "defaultMessage": "心当たりがないものがありますか？ログアウトしてもパスワードと認可したアプリは変わらないので、{password}と{apps}も確かめてください。",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. {password} and {apps} are links named after those settings pages."
   },
   "settings.sessions.current": {
     "defaultMessage": "このブラウザ",

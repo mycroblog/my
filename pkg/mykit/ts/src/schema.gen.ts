@@ -12475,6 +12475,34 @@ export interface components {
              */
             expires_at: string;
         };
+        /** @description A browser signed in to the authenticated user's account. */
+        BrowserSession: {
+            /** @description The ID of the browser's session, which `DELETE /sessions/{id}` takes. */
+            id: components["schemas"]["Id"];
+            /** @description Whether this is the browser that asks. */
+            current: boolean;
+            /**
+             * @description The IP address the browser signed in from, not where it is now. Absent when it is unknown
+             *     or was erased after its retention.
+             */
+            ip?: string;
+            /** @description The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention. */
+            user_agent?: string;
+            /**
+             * Format: date-time
+             * @description When the browser signed in.
+             */
+            signed_in_at: string;
+            /**
+             * Format: date-time
+             * @description When the browser was last used, exact to the hour. Absent when no use was recorded.
+             */
+            last_used_at?: string;
+        };
+        /** @description The browsers signed in to the authenticated user's account, the one that asks first. */
+        BrowserSessionList: {
+            items: components["schemas"]["BrowserSession"][];
+        };
         /**
          * @description An app the authenticated user authorized: the user's grants of one OAuth client that still
          *     work. The name, the website and the logo are what the app says about itself; `registration`,
@@ -14512,34 +14540,6 @@ export interface components {
         /** @description The data of a `webhook.test` message. */
         WebhookTest: {
             endpoint_id: components["schemas"]["Id"];
-        };
-        /** @description A browser signed in to the authenticated user's account. */
-        BrowserSession: {
-            /** @description The ID of the browser's session, which `DELETE /sessions/{id}` takes. */
-            id: components["schemas"]["Id"];
-            /** @description Whether this is the browser that asks. */
-            current: boolean;
-            /**
-             * @description The IP address the browser signed in from, not where it is now. Absent when it is unknown
-             *     or was erased after its retention.
-             */
-            ip?: string;
-            /** @description The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention. */
-            user_agent?: string;
-            /**
-             * Format: date-time
-             * @description When the browser signed in.
-             */
-            signed_in_at: string;
-            /**
-             * Format: date-time
-             * @description When the browser was last used, exact to the hour. Absent when no use was recorded.
-             */
-            last_used_at?: string;
-        };
-        /** @description The browsers signed in to the authenticated user's account, the one that asks first. */
-        BrowserSessionList: {
-            items: components["schemas"]["BrowserSession"][];
         };
     };
     responses: {

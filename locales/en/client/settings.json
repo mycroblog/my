@@ -1724,8 +1724,8 @@
     "description": "Explanation at the top of the signed-in browsers settings page."
   },
   "settings.sessions.unknown_sign_in": {
-    "defaultMessage": "Don't recognize one? Signing it out does not change your password or the apps you authorized, so also <password>change your password</password> and check your <apps>authorized apps</apps>.",
-    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. <password> and <apps> are links to those settings pages."
+    "defaultMessage": "Don't recognize one? Signing it out does not change your password or the apps you authorized, so also check {password} and {apps}.",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. {password} and {apps} are links named after those settings pages."
   },
   "settings.sessions.current": {
     "defaultMessage": "This browser",

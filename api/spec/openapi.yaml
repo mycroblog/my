@@ -1640,6 +1640,10 @@ components:
       $ref: ./components/schemas/PasskeyAssertion.yaml
     PasskeyConfirmation:
       $ref: ./components/schemas/PasskeyConfirmation.yaml
+    BrowserSession:
+      $ref: ./components/schemas/BrowserSession.yaml
+    BrowserSessionList:
+      $ref: ./components/schemas/BrowserSessionList.yaml
     AuthorizedApp:
       $ref: ./components/schemas/AuthorizedApp.yaml
     AuthorizedAppList:

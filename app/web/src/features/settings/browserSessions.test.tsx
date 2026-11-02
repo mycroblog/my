@@ -74,9 +74,8 @@ function sessionServer(initial: Schemas["BrowserSession"][], fail = false) {
 }
 
 function row(name: string): HTMLElement {
-  const heading = screen.getByRole("heading", { name });
-  const item = heading.closest("li");
-  if (item === null) throw new Error(`no row of ${name}`);
+  const item = screen.getAllByRole("listitem").find((li) => within(li).queryByRole("heading", { name }) !== null);
+  if (item === undefined) throw new Error(`no row of ${name}`);
   return item;
 }
 

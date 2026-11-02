@@ -188,10 +188,10 @@ func (s *Service) SignIn(ctx context.Context, in SignInInput) (SignedIn, error) 
 // newSession is a session prepared before its transaction: its token and row, and the
 // browser's earlier session that it replaces.
 type newSession struct {
-	token    string
-	session  identity.Session
-	origin   identity.SessionOrigin
-	previous string // ID of the session to revoke as replaced, or ""
+	token          string
+	session        identity.Session
+	origin         identity.SessionOrigin
+	previous       string // ID of the session to revoke as replaced, or ""
 	previousUserID string // the user of that session
 }
 
