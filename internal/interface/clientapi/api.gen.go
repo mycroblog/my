@@ -9531,7 +9531,12 @@ type LoginProvidersOnlyImpact struct {
 	// SettingOn The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
 	SettingOn bool `json:"setting_on"`
 
-	// UsersWithoutProvider How many active local users have no link to one of those providers. It is 0 with no such provider.
+	// StartsLimit Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+	// at once: the setting is on, no provider can be signed in with now, and that one could be.
+	StartsLimit bool `json:"starts_limit"`
+
+	// UsersWithoutProvider How many active local users have no link to one of those providers, or to the provider
+	// `provider_id` named. With no provider at all, it is every active local user.
 	UsersWithoutProvider int `json:"users_without_provider"`
 }
 
@@ -13659,6 +13664,13 @@ type ListInstanceRulesParams struct {
 	IncludeRetired *bool `form:"include_retired,omitempty" json:"include_retired,omitempty"`
 }
 
+// GetLoginProvidersOnlyImpactParams defines parameters for GetLoginProvidersOnlyImpact.
+type GetLoginProvidersOnlyImpactParams struct {
+	// ProviderId A provider to count as if it were enabled, for the question of what enabling it would do.
+	// A new provider needs none: nobody links to it yet.
+	ProviderId *openapi_types.UUID `form:"provider_id,omitempty" json:"provider_id,omitempty"`
+}
+
 // ListSignupBlocksParams defines parameters for ListSignupBlocks.
 type ListSignupBlocksParams struct {
 	// Kind Keep only the blocks of this kind.
@@ -14824,7 +14836,7 @@ type ServerInterface interface {
 	UpdateInstanceSettings(w http.ResponseWriter, r *http.Request)
 	// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
 	// (GET /admin/settings/login_providers_only/impact)
-	GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request)
+	GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request, params GetLoginProvidersOnlyImpactParams)
 	// ListSignupBlocks List the sign-up blocks
 	// (GET /admin/signup_blocks)
 	ListSignupBlocks(w http.ResponseWriter, r *http.Request, params ListSignupBlocksParams)
@@ -20114,8 +20126,27 @@ func (siw *ServerInterfaceWrapper) UpdateInstanceSettings(w http.ResponseWriter,
 // GetLoginProvidersOnlyImpact operation middleware
 func (siw *ServerInterfaceWrapper) GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLoginProvidersOnlyImpactParams
+
+	// ------------- Optional query parameter "provider_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "provider_id", r.URL.Query(), &params.ProviderId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "provider_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "provider_id", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLoginProvidersOnlyImpact(w, r)
+		siw.Handler.GetLoginProvidersOnlyImpact(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -35720,6 +35751,7 @@ func (response UpdateInstanceSettingsdefaultApplicationProblemPlusJSONResponse) 
 }
 
 type GetLoginProvidersOnlyImpactRequestObject struct {
+	Params GetLoginProvidersOnlyImpactParams
 }
 
 type GetLoginProvidersOnlyImpactResponseObject interface {
@@ -52593,8 +52625,10 @@ func (sh *strictHandler) UpdateInstanceSettings(w http.ResponseWriter, r *http.R
 }
 
 // GetLoginProvidersOnlyImpact operation middleware
-func (sh *strictHandler) GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request, params GetLoginProvidersOnlyImpactParams) {
 	var request GetLoginProvidersOnlyImpactRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetLoginProvidersOnlyImpact(ctx, request.(GetLoginProvidersOnlyImpactRequestObject))

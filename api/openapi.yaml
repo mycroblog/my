@@ -8732,12 +8732,24 @@ paths:
         How many active local users have no link to a login provider that users can sign in with
         now, and so could not sign in while the instance setting `login_providers_only` applies, and
         whether the user who asks is one of them. Administrators read it before they turn the setting
-        on. Needs the `manage_settings` permission.
+        on, and before they add or enable a provider, which starts the limit at once when no other can
+        be signed in with (`starts_limit`). Needs the `manage_settings` or the
+        `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
       tags:
         - admin-server
       security:
         - oauth2:
             - admin:read
+      parameters:
+        - name: provider_id
+          in: query
+          required: false
+          description: |
+            A provider to count as if it were enabled, for the question of what enabling it would do.
+            A new provider needs none: nobody links to it yet.
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: The count.
@@ -13483,6 +13495,7 @@ components:
         - enabled_providers
         - users_without_provider
         - includes_viewer
+        - starts_limit
       properties:
         setting_on:
           description: The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
@@ -13492,11 +13505,18 @@ components:
           type: integer
           minimum: 0
         users_without_provider:
-          description: How many active local users have no link to one of those providers. It is 0 with no such provider.
+          description: |
+            How many active local users have no link to one of those providers, or to the provider
+            `provider_id` named. With no provider at all, it is every active local user.
           type: integer
           minimum: 0
         includes_viewer:
           description: Whether the user who asks is one of them.
+          type: boolean
+        starts_limit:
+          description: |
+            Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+            at once: the setting is on, no provider can be signed in with now, and that one could be.
           type: boolean
     AdminQueue:
       description: The state of the job queue (ADR-0064).

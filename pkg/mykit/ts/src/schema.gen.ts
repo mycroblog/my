@@ -6375,7 +6375,9 @@ export interface paths {
          * @description How many active local users have no link to a login provider that users can sign in with
          *     now, and so could not sign in while the instance setting `login_providers_only` applies, and
          *     whether the user who asks is one of them. Administrators read it before they turn the setting
-         *     on. Needs the `manage_settings` permission.
+         *     on, and before they add or enable a provider, which starts the limit at once when no other can
+         *     be signed in with (`starts_limit`). Needs the `manage_settings` or the
+         *     `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
          */
         get: operations["getLoginProvidersOnlyImpact"];
         put?: never;
@@ -8953,10 +8955,18 @@ export interface components {
             setting_on: boolean;
             /** @description How many login providers users can sign in with now. With none, the limit does not apply. */
             enabled_providers: number;
-            /** @description How many active local users have no link to one of those providers. It is 0 with no such provider. */
+            /**
+             * @description How many active local users have no link to one of those providers, or to the provider
+             *     `provider_id` named. With no provider at all, it is every active local user.
+             */
             users_without_provider: number;
             /** @description Whether the user who asks is one of them. */
             includes_viewer: boolean;
+            /**
+             * @description Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+             *     at once: the setting is on, no provider can be signed in with now, and that one could be.
+             */
+            starts_limit: boolean;
         };
         /** @description The state of the job queue (ADR-0064). */
         AdminQueue: {
@@ -21831,7 +21841,13 @@ export interface operations {
     };
     getLoginProvidersOnlyImpact: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description A provider to count as if it were enabled, for the question of what enabling it would do.
+                 *     A new provider needs none: nobody links to it yet.
+                 */
+                provider_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

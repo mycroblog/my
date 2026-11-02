@@ -9533,7 +9533,12 @@ type LoginProvidersOnlyImpact struct {
 	// SettingOn The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
 	SettingOn bool `json:"setting_on"`
 
-	// UsersWithoutProvider How many active local users have no link to one of those providers. It is 0 with no such provider.
+	// StartsLimit Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+	// at once: the setting is on, no provider can be signed in with now, and that one could be.
+	StartsLimit bool `json:"starts_limit"`
+
+	// UsersWithoutProvider How many active local users have no link to one of those providers, or to the provider
+	// `provider_id` named. With no provider at all, it is every active local user.
 	UsersWithoutProvider int `json:"users_without_provider"`
 }
 
@@ -13665,6 +13670,13 @@ type ListReportsParamsOrder string
 type ListInstanceRulesParams struct {
 	// IncludeRetired Also list the retired rules, after the rules in effect.
 	IncludeRetired *bool `form:"include_retired,omitempty" json:"include_retired,omitempty"`
+}
+
+// GetLoginProvidersOnlyImpactParams defines parameters for GetLoginProvidersOnlyImpact.
+type GetLoginProvidersOnlyImpactParams struct {
+	// ProviderId A provider to count as if it were enabled, for the question of what enabling it would do.
+	// A new provider needs none: nobody links to it yet.
+	ProviderId *openapi_types.UUID `form:"provider_id,omitempty" json:"provider_id,omitempty"`
 }
 
 // ListSignupBlocksParams defines parameters for ListSignupBlocks.
@@ -18409,10 +18421,12 @@ type ClientInterface interface {
 	// How many active local users have no link to a login provider that users can sign in with
 	// now, and so could not sign in while the instance setting `login_providers_only` applies, and
 	// whether the user who asks is one of them. Administrators read it before they turn the setting
-	// on. Needs the `manage_settings` permission.
+	// on, and before they add or enable a provider, which starts the limit at once when no other can
+	// be signed in with (`starts_limit`). Needs the `manage_settings` or the
+	// `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
 	//
 	// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
-	GetLoginProvidersOnlyImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetLoginProvidersOnlyImpact(ctx context.Context, params *GetLoginProvidersOnlyImpactParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListSignupBlocks List the sign-up blocks
 	//
@@ -25927,11 +25941,13 @@ func (c *Client) UpdateInstanceSettings(ctx context.Context, body UpdateInstance
 // How many active local users have no link to a login provider that users can sign in with
 // now, and so could not sign in while the instance setting `login_providers_only` applies, and
 // whether the user who asks is one of them. Administrators read it before they turn the setting
-// on. Needs the `manage_settings` permission.
+// on, and before they add or enable a provider, which starts the limit at once when no other can
+// be signed in with (`starts_limit`). Needs the `manage_settings` or the
+// `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
 //
 // Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
-func (c *Client) GetLoginProvidersOnlyImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLoginProvidersOnlyImpactRequest(c.Server)
+func (c *Client) GetLoginProvidersOnlyImpact(ctx context.Context, params *GetLoginProvidersOnlyImpactParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetLoginProvidersOnlyImpactRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -38306,7 +38322,7 @@ func NewUpdateInstanceSettingsRequestWithBody(server string, contentType string,
 }
 
 // NewGetLoginProvidersOnlyImpactRequest constructs an http.Request for the GetLoginProvidersOnlyImpact method
-func NewGetLoginProvidersOnlyImpactRequest(server string) (*http.Request, error) {
+func NewGetLoginProvidersOnlyImpactRequest(server string, params *GetLoginProvidersOnlyImpactParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -38322,6 +38338,33 @@ func NewGetLoginProvidersOnlyImpactRequest(server string) (*http.Request, error)
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.ProviderId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "provider_id", *params.ProviderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -49300,12 +49343,14 @@ type ClientWithResponsesInterface interface {
 	// How many active local users have no link to a login provider that users can sign in with
 	// now, and so could not sign in while the instance setting `login_providers_only` applies, and
 	// whether the user who asks is one of them. Administrators read it before they turn the setting
-	// on. Needs the `manage_settings` permission.
+	// on, and before they add or enable a provider, which starts the limit at once when no other can
+	// be signed in with (`starts_limit`). Needs the `manage_settings` or the
+	// `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
-	GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error)
+	GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, params *GetLoginProvidersOnlyImpactParams, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error)
 
 	// ListSignupBlocksWithResponse List the sign-up blocks
 	//
@@ -78992,13 +79037,15 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithResponse(ctx context.Con
 // How many active local users have no link to a login provider that users can sign in with
 // now, and so could not sign in while the instance setting `login_providers_only` applies, and
 // whether the user who asks is one of them. Administrators read it before they turn the setting
-// on. Needs the `manage_settings` permission.
+// on, and before they add or enable a provider, which starts the limit at once when no other can
+// be signed in with (`starts_limit`). Needs the `manage_settings` or the
+// `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
 //
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
-func (c *ClientWithResponses) GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error) {
-	rsp, err := c.GetLoginProvidersOnlyImpact(ctx, reqEditors...)
+func (c *ClientWithResponses) GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, params *GetLoginProvidersOnlyImpactParams, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error) {
+	rsp, err := c.GetLoginProvidersOnlyImpact(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

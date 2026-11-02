@@ -3,7 +3,7 @@ description: |
   Who the instance setting `login_providers_only` keeps from signing in, whether or not the setting
   is on. Sessions and tokens keep working; these users cannot sign in again once they end.
 type: object
-required: [setting_on, enabled_providers, users_without_provider, includes_viewer]
+required: [setting_on, enabled_providers, users_without_provider, includes_viewer, starts_limit]
 properties:
   setting_on:
     description: The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
@@ -13,9 +13,16 @@ properties:
     type: integer
     minimum: 0
   users_without_provider:
-    description: How many active local users have no link to one of those providers. It is 0 with no such provider.
+    description: |
+      How many active local users have no link to one of those providers, or to the provider
+      `provider_id` named. With no provider at all, it is every active local user.
     type: integer
     minimum: 0
   includes_viewer:
     description: Whether the user who asks is one of them.
+    type: boolean
+  starts_limit:
+    description: |
+      Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+      at once: the setting is on, no provider can be signed in with now, and that one could be.
     type: boolean

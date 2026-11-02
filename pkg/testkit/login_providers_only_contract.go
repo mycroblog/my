@@ -322,8 +322,9 @@ func loginProvidersOnlyCounts(t *testing.T, e *accountEnv) {
 	carol := l.register(t, "carol")
 	gone := l.register(t, "gone")
 
-	none, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID)
-	if err != nil || none.EnabledProviders != 0 || none.UsersWithoutProvider != 0 || none.IncludesViewer || none.Limited() {
+	// With no provider, a new one starts the limit, and nobody can have a link to it.
+	none, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, "")
+	if err != nil || none.EnabledProviders != 0 || none.UsersWithoutProvider != 4 || !none.IncludesViewer || none.Limited() || !none.StartsLimit {
 		t.Errorf("impact without a provider = %+v, %v", none, err)
 	}
 	if _, err := l.accounts.RecordLifecycleEvent(ctx, appaccount.LifecycleInput{
@@ -331,19 +332,39 @@ func loginProvidersOnlyCounts(t *testing.T, e *accountEnv) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	enabled := l.provider(t, identity.LoginProviderEnabled, true)
+	enabled := l.provider(t, identity.LoginProviderDisabled, true)
 	disabled := l.provider(t, identity.LoginProviderDisabled, true)
 	l.link(t, enabled, "bob", bob.User.ID)
 	l.link(t, disabled, "carol", carol.User.ID)
-	got, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID)
-	if err != nil || !got.Limited() || got.EnabledProviders != 1 || got.UsersWithoutProvider != 2 || !got.IncludesViewer {
-		t.Errorf("impact as alice = %+v, %v; want alice and carol without a link", got, err)
+	// Only the disabled provider so far: enabling it starts the limit, and counts its links.
+	if got, err := l.identity.LoginProvidersOnlyImpact(ctx, carol.User.ID, disabled); err != nil || !got.StartsLimit || got.EnabledProviders != 0 || got.UsersWithoutProvider != 2 || got.IncludesViewer {
+		t.Errorf("impact of enabling the disabled provider, as carol = %+v, %v; want alice and bob without a link", got, err)
 	}
-	if got, err = l.identity.LoginProvidersOnlyImpact(ctx, bob.User.ID); err != nil || got.IncludesViewer {
+	if got, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, disabled); err != nil || !got.IncludesViewer {
+		t.Errorf("impact of enabling the disabled provider, as alice = %+v, %v", got, err)
+	}
+	if _, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, l.ids.NewID()); !errors.Is(err, appidentity.ErrNotFound) {
+		t.Errorf("impact of an unknown provider = %v, want ErrNotFound", err)
+	}
+	if _, err := l.identity.EnableLoginProvider(ctx, enabled, ""); err != nil {
+		t.Fatal(err)
+	}
+	got, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, "")
+	if err != nil || !got.Limited() || got.EnabledProviders != 1 || got.UsersWithoutProvider != 2 || !got.IncludesViewer || got.StartsLimit {
+		t.Errorf("impact as alice = %+v, %v; want alice and carol without a link, and the limit in force", got, err)
+	}
+	// With a provider in force, enabling another starts nothing.
+	if got, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, disabled); err != nil || got.StartsLimit {
+		t.Errorf("impact of a second provider = %+v, %v", got, err)
+	}
+	if got, err = l.identity.LoginProvidersOnlyImpact(ctx, bob.User.ID, ""); err != nil || got.IncludesViewer {
 		t.Errorf("impact as bob = %+v, %v", got, err)
 	}
 	l.on = false
-	if got, err = l.identity.LoginProvidersOnlyImpact(ctx, ""); err != nil || got.SettingOn || got.Limited() || got.UsersWithoutProvider != 2 || got.IncludesViewer {
+	if got, err := l.identity.LoginProvidersOnlyImpact(ctx, alice.User.ID, ""); err != nil || got.StartsLimit {
+		t.Errorf("impact with the setting off = %+v, %v", got, err)
+	}
+	if got, err = l.identity.LoginProvidersOnlyImpact(ctx, "", ""); err != nil || got.SettingOn || got.Limited() || got.UsersWithoutProvider != 2 || got.IncludesViewer {
 		t.Errorf("impact with the setting off, for the CLI = %+v, %v", got, err)
 	}
 }

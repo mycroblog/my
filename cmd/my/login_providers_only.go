@@ -14,7 +14,7 @@ import (
 // means now: nothing without an enabled provider or with the setting off, or how many active
 // users could not sign in. It never refuses anything: the administrator decides.
 func printLoginProvidersOnlyImpact(ctx context.Context, app *platform.App, w io.Writer) error {
-	impact, err := app.Identity.LoginProvidersOnlyImpact(ctx, "")
+	impact, err := app.Identity.LoginProvidersOnlyImpact(ctx, "", "")
 	if err != nil {
 		return err
 	}

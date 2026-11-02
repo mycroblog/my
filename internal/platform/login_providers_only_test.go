@@ -410,3 +410,59 @@ func TestLoginProvidersOnlyClientAPI(t *testing.T) {
 		t.Errorf("change the password without the limit = %d %s", code, body)
 	}
 }
+
+// TestLoginProvidersOnlyStartsWithAProvider asks the real server what adding or enabling a provider
+// would do: only the action that starts the limit says so, with the count of that provider.
+func TestLoginProvidersOnlyStartsWithAProvider(t *testing.T) {
+	t.Parallel()
+	e := newExternalEnvWith(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
+	admin, err := e.s.app.Identity.CreateAdmin(t.Context(), identity.CreateAdminInput{Username: "root", Email: "root@example.com", Password: externalTestPassword})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob := e.user("bob", "bob@example.com")
+	token := issueTokens(t, e.s.app, admin.User.ID, "").AccessToken
+	type impact struct {
+		EnabledProviders     int  `json:"enabled_providers"`
+		UsersWithoutProvider int  `json:"users_without_provider"`
+		IncludesViewer       bool `json:"includes_viewer"`
+		StartsLimit          bool `json:"starts_limit"`
+	}
+	read := func(query string) impact {
+		t.Helper()
+		code, body := e.jsonRequest(http.MethodGet, "/api/v1/admin/settings/login_providers_only/impact"+query, token, "")
+		if code != http.StatusOK {
+			t.Fatalf("impact%s = %d %s", query, code, body)
+		}
+		var got impact
+		if err := json.Unmarshal([]byte(body), &got); err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	if got := read(""); got.StartsLimit {
+		t.Errorf("with the setting off = %+v", got)
+	}
+	e.limitToProviders(true)
+	if got := read(""); !got.StartsLimit || got.EnabledProviders != 0 || got.UsersWithoutProvider != 2 || !got.IncludesViewer {
+		t.Errorf("adding the first provider = %+v", got)
+	}
+	settings := domain.NewLoginProviderSettings(domain.LoginProviderGitHub)
+	settings.DisplayName, settings.ClientID = "GitHub", "client"
+	created, err := e.s.app.Identity.CreateLoginProvider(t.Context(), settings, "s3cret", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := created.Provider.ID
+	e.link(id, "subject-bob", bob)
+	e.disable(id)
+	if got := read("?provider_id=" + id); !got.StartsLimit || got.EnabledProviders != 0 || got.UsersWithoutProvider != 1 || !got.IncludesViewer {
+		t.Errorf("enabling the provider bob links = %+v", got)
+	}
+	if _, err := e.s.app.Identity.EnableLoginProvider(t.Context(), id, ""); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(""); got.StartsLimit || got.EnabledProviders != 1 {
+		t.Errorf("with the limit in force = %+v", got)
+	}
+}

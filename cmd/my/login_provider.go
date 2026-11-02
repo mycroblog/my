@@ -201,7 +201,7 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	}
 	if err == nil && printImpact {
 		var impact appidentity.LoginProvidersOnlyImpact
-		if impact, err = app.Identity.LoginProvidersOnlyImpact(ctx, ""); err == nil && impact.SettingOn {
+		if impact, err = app.Identity.LoginProvidersOnlyImpact(ctx, "", ""); err == nil && impact.SettingOn {
 			err = printLoginProvidersOnlyImpact(ctx, app, stdout)
 		}
 	}

@@ -5,7 +5,7 @@
 - 登録の画面は、作ったアカウントがすぐ使える（メールアドレスの確認とモデレーターの承認を待たない）とき、Web クライアントのサインイン（`/login?return_to=%2Fwelcome`、`authpages.PathWelcome`）へ送り、
   サインインの 1 往復で、ようこその画面（[screens/welcome.md](screens/welcome.md)）に着く。待つものがあるときは、ログインの画面（何が足りないかを言う）へ送る。
   メールアドレスの確認を終えた画面の「続ける」も、同じサインインへのリンクにする。
-- ログインと登録が外部 IdP だけに制限されている間（`login_providers_only`、[ADR-0133](../../adr/0133-login-providers-only.md)、Proposed）は、ログインの画面にパスワードとパスキーのフォームとパスワードを忘れたときのリンクを出さず、IdP のボタンだけを出す。登録の画面も、新規登録を許す IdP のボタンだけを出す。パスワードを忘れたときとリセットのリンクの画面は、できないことだけを言う。開いたままの画面からの POST は、入力によらず同じ文で断る。
+- ログインと登録が外部 IdP だけに制限されている間（`login_providers_only`、[ADR-0133](../../adr/0133-login-providers-only.md)）は、ログインの画面にパスワードとパスキーのフォームとパスワードを忘れたときのリンクを出さず、IdP のボタンだけを出す。登録の画面も、新規登録を許す IdP のボタンだけを出す。パスワードを忘れたときとリセットのリンクの画面は、できないことだけを言う。開いたままの画面からの POST は、入力によらず同じ文で断る。
 - スタイルは Vite のビルドの別のエントリ `app/web/src/server-pages.css` にある。Tailwind と `@my/ui/theme.css` を読み込み、テンプレートが使う少数のクラス（`page`・`card`・`field`・`hint`・`field-error`・`alert`・`notice`・`button` など）を
   トークンのユーティリティの `@apply` で定義する。テンプレートからクラスを集めないので、Tailwind はソースを走査しない（`source(none)`）。
 - `my serve` はビルドのマニフェストのキー `src/server-pages.css` からファイル名を引き（`web.Handler.Stylesheet`）、画面の `<link rel="stylesheet">` にする。SPA の外枠はこの CSS を読み込まない。

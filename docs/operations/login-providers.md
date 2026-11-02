@@ -201,8 +201,10 @@ Every refusal reads the same whatever email address, password, or token was sent
 **Users without a link cannot sign in once their sessions end, until you act.** An account is never linked by email
 address, so a provider's sign-in does not find them either. Ask them to link an account while they are signed in. A user who
 lost their session needs you to end the limit for a while, or to keep them out. This includes a user under `disable_login`,
-`suspend`, or `ban`, who has no sign-in page to [appeal](moderation.md) from without a link. Linking also needs the browser to
-be signed in to the sign-in pages: a user whose app is still signed in, but whose browser session ended, cannot link.
+`suspend`, or `ban`, who has no sign-in page to [appeal](moderation.md) from without a link.
+Linking also needs the browser to be signed in to the sign-in pages: a user whose app is still signed in, but whose browser
+session ended, cannot link while the limit applies, and has to wait for you. **Announce the change to your users before you
+turn the limit on,** so that they link an account while their sessions last.
 
 ### End the limit
 
@@ -216,9 +218,11 @@ The limit follows the setting and the providers from one request to the next, wi
 
 - When no provider is enabled, the limit does not apply: disabling or deleting the last provider opens password and passkey
   sign-in again, whatever the setting says. Users with neither a password nor a passkey still need a
-  [reset link](registration.md#password-reset-and-change). Enabling or adding a provider while the setting is on starts the
-  limit at once. `my login-provider add`, `enable`, `disable`, and `delete` print what the limit does now while the setting
-  is on.
+  [reset link](registration.md#password-reset-and-change).
+- With the setting on and no provider enabled, setting up or enabling a provider starts the limit at once; a new provider is
+  enabled as soon as it is set up. The web client warns first, with how many active users have no link to that provider and
+  whether that includes you. It warns only for the action that would start the limit. `my login-provider add`, `enable`,
+  `disable`, and `delete` print what the limit does now while the setting is on.
 - When an outage at the provider keeps everyone out, use the same command.
 
 ## Re-authentication

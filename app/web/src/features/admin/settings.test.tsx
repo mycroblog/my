@@ -447,6 +447,7 @@ describe("the server's policies", () => {
             enabled_providers: 1,
             users_without_provider: 3,
             includes_viewer: false,
+            starts_limit: false,
             ...impact,
           } satisfies Schemas["LoginProvidersOnlyImpact"]),
         ),

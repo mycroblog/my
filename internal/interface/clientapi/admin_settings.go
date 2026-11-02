@@ -30,15 +30,23 @@ type InstanceSettings interface {
 type SignInLimit interface {
 	LoginProvidersOnly(ctx context.Context) (bool, error)
 	RegistrationMode(ctx context.Context) (identity.RegistrationMode, error)
-	LoginProvidersOnlyImpact(ctx context.Context, viewerUserID string) (appidentity.LoginProvidersOnlyImpact, error)
+	LoginProvidersOnlyImpact(ctx context.Context, viewerUserID, withProviderID string) (appidentity.LoginProvidersOnlyImpact, error)
 }
 
-// GetLoginProvidersOnlyImpact serves GET /api/v1/admin/settings/login_providers_only/impact.
-func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, _ GetLoginProvidersOnlyImpactRequestObject) (GetLoginProvidersOnlyImpactResponseObject, error) {
-	if p, err := s.requirePermission(ctx, identity.PermManageSettings); err != nil {
+// GetLoginProvidersOnlyImpact serves GET /api/v1/admin/settings/login_providers_only/impact, for
+// those who change the setting and those who change the providers under it.
+func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, req GetLoginProvidersOnlyImpactRequestObject) (GetLoginProvidersOnlyImpactResponseObject, error) {
+	p, err := s.requirePermission(ctx, identity.PermManageLoginProviders)
+	if err != nil {
 		return nil, err
-	} else if p != nil {
-		return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if p != nil {
+		if p, err = s.requirePermission(ctx, identity.PermManageSettings); err != nil {
+			return nil, err
+		}
+		if p != nil {
+			return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(*p), nil
+		}
 	}
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -47,7 +55,14 @@ func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, _ GetLoginProv
 	if s.o.SignInLimit == nil {
 		return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
-	impact, err := s.o.SignInLimit.LoginProvidersOnlyImpact(ctx, v.UserID)
+	providerID := ""
+	if req.Params.ProviderId != nil {
+		providerID = req.Params.ProviderId.String()
+	}
+	impact, err := s.o.SignInLimit.LoginProvidersOnlyImpact(ctx, v.UserID, providerID)
+	if errors.Is(err, appidentity.ErrNotFound) {
+		return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: count who the limit to login providers affects: %w", err)
 	}
@@ -56,6 +71,7 @@ func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, _ GetLoginProv
 		Body: LoginProvidersOnlyImpact{
 			SettingOn: impact.SettingOn, EnabledProviders: impact.EnabledProviders,
 			UsersWithoutProvider: impact.UsersWithoutProvider, IncludesViewer: impact.IncludesViewer,
+			StartsLimit: impact.StartsLimit,
 		},
 		Headers: GetLoginProvidersOnlyImpact200ResponseHeaders{CacheControl: &cache},
 	}, nil

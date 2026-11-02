@@ -17,6 +17,8 @@ import {
   type LoginProviderChange,
   type LoginProviderClaimCondition,
   type LoginProviderKind,
+  type LoginProvidersOnlyImpact,
+  loginProviderLimitQueryOptions,
   loginProviderProblem,
   loginProvidersQueryOptions,
   type NewLoginProvider,
@@ -169,6 +171,65 @@ function isFieldError(value: LoginProviderChange | LoginProviderFieldError): val
   return "field" in value;
 }
 
+/**
+ * What to warn about before an action starts the limit of sign-in to login providers: the count, or undefined when it
+ * could not be read. A failed read warns too, since the action might lock users out.
+ */
+export type LimitStart = { impact: LoginProvidersOnlyImpact | undefined };
+
+/**
+ * Asks the server, just before adding a provider or enabling `providerId`, whether that starts the limit at once.
+ * Resolves with what to warn about, or null when it starts nothing: the limit is in force already or the setting is off.
+ */
+function useLimitStartCheck() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return async (providerId?: string): Promise<LimitStart | null> => {
+    try {
+      const impact = await queryClient.fetchQuery({ ...loginProviderLimitQueryOptions(api, providerId), staleTime: 0 });
+      return impact.starts_limit ? { impact } : null;
+    } catch {
+      return { impact: undefined };
+    }
+  };
+}
+
+/** Enabling a provider of the list, after the warning when that starts the limit. */
+export function useEnableLoginProvider(provider: LoginProvider, actions: LoginProviderActions) {
+  const check = useLimitStartCheck();
+  const [isChecking, setIsChecking] = useState(false);
+  const [limitStart, setLimitStart] = useState<LimitStart | null>(null);
+  const [isEnabling, setIsEnabling] = useState(false);
+  const [failed, setFailed] = useState(false);
+  return {
+    isChecking,
+    limitStart,
+    isEnabling,
+    failed,
+    press: () => {
+      setIsChecking(true);
+      void check(provider.id).then((start) => {
+        setIsChecking(false);
+        setFailed(false);
+        if (start === null) void actions.setEnabled(provider, true);
+        else setLimitStart(start);
+      });
+    },
+    confirm: (close: () => void) => {
+      setIsEnabling(true);
+      setFailed(false);
+      void actions.setEnabled(provider, true).then((enabled) => {
+        setIsEnabling(false);
+        if (enabled) close();
+        else setFailed(true);
+      });
+    },
+    cancel: () => {
+      setLimitStart(null);
+    },
+  };
+}
+
 /** The form of a new provider. A success empties it and keeps the new provider to show its callback URL. */
 export function useLoginProviderForm() {
   const api = useApi();
@@ -177,6 +238,9 @@ export function useLoginProviderForm() {
   const [draft, setDraft] = useState<LoginProviderDraft>(emptyDraft);
   const [created, setCreated] = useState<LoginProvider | undefined>(undefined);
   const [invalid, setInvalid] = useState<LoginProviderFieldError | undefined>(undefined);
+  const check = useLimitStartCheck();
+  const [isChecking, setIsChecking] = useState(false);
+  const [limitStart, setLimitStart] = useState<(LimitStart & { body: NewLoginProvider }) | null>(null);
   const mutation = useMutation({
     ...createLoginProviderMutation(api),
     onMutate: () => {
@@ -195,7 +259,7 @@ export function useLoginProviderForm() {
     },
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (mutation.isPending) return;
+      if (mutation.isPending || isChecking) return;
       const settings = settingsOf(
         draft,
         t("client:admin.login_providers.conditions.incomplete"),
@@ -216,9 +280,26 @@ export function useLoginProviderForm() {
         display_name: settings.display_name ?? "",
         ...(!registers && { client_id: clientId, client_secret: draft.clientSecret }),
       };
-      mutation.mutate(body);
+      // A provider is enabled as soon as it is set up, so this is what can start the limit.
+      setIsChecking(true);
+      void check().then((start) => {
+        setIsChecking(false);
+        if (start === null) mutation.mutate(body);
+        else setLimitStart({ ...start, body });
+      });
     },
-    isPending: mutation.isPending,
+    isPending: mutation.isPending || isChecking,
+    /** The warning that setting this provider up starts the limit, while it is open. */
+    limitStart,
+    /** Sets the provider up after the warning. A refusal shows on its field, as without one. */
+    confirmLimitStart: () => {
+      if (limitStart !== null) mutation.mutate(limitStart.body);
+      setLimitStart(null);
+    },
+    /** Closes the warning without setting anything up; the draft stays. */
+    cancelLimitStart: () => {
+      setLimitStart(null);
+    },
     /** Why setting it up failed, next to its field; the draft stays. */
     error: invalid ?? (mutation.isError ? fieldError(mutation.error) : undefined),
     /** The new provider, whose callback URL is shown until the next submit. */

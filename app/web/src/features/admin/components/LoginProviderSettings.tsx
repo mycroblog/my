@@ -3,7 +3,8 @@
 // external login provider of a kind, then the providers, newest first. A new provider's callback URL is shown with a
 // copy button to register at the provider. Each provider shows its kind, display name, state, number of linked users
 // and callback URL; it is changed in a dialog, given a new client secret in a dialog, enabled, and disabled or
-// deleted after an alert dialog that says how many linked users can no longer sign in with it. What a change did
+// deleted after an alert dialog that says how many linked users can no longer sign in with it. Setting one up or
+// enabling one asks first when that would start the limit of sign-in to login providers. What a change did
 // stays above the list in a StatusMessage (role="status"), and a failure stays there too (role="alert").
 import {
   Button,
@@ -31,10 +32,12 @@ import { Section, RecordTable, RequirePermission, wholeList } from "../../modera
 import { type LoginProvider, loginProviderKinds } from "../api/loginProviders";
 import {
   draftOf,
+  type LimitStart,
   type LoginProviderActions,
   type LoginProviderDraft,
   type LoginProviderFieldError,
   loginProviderName,
+  useEnableLoginProvider,
   useLoginProviderActions,
   useLoginProviderForm,
   useLoginProviders,
@@ -86,6 +89,19 @@ function NewLoginProviderForm() {
           {t("client:admin.login_providers.submit")}
         </Button>
       </div>
+      <LimitStartDialog
+        limitStart={form.limitStart}
+        confirmLabel={
+          form.limitStart?.impact === undefined
+            ? t("client:admin.login_providers.submit")
+            : t("client:admin.login_providers.limit_start.confirm_add")
+        }
+        onConfirm={(close) => {
+          form.confirmLimitStart();
+          close();
+        }}
+        onCancel={form.cancelLimitStart}
+      />
       <StatusMessage>{form.status}</StatusMessage>
       {form.created !== undefined && (
         <Stack gap="2" border="md" padding="3">
@@ -187,16 +203,7 @@ function LoginProviderRow({ provider, actions }: { provider: LoginProvider; acti
           {enabled ? (
             <DisableLoginProvider provider={provider} actions={actions} isPending={isPending} />
           ) : (
-            <Button
-              size="sm"
-              isPending={isPending}
-              aria-label={t("client:admin.login_providers.enable_provider", { name })}
-              onPress={() => {
-                void actions.setEnabled(provider, true);
-              }}
-            >
-              {t("client:admin.login_providers.enable")}
-            </Button>
+            <EnableLoginProvider provider={provider} actions={actions} isPending={isPending} />
           )}
           <DeleteLoginProvider provider={provider} actions={actions} isPending={isPending} />
         </Cluster>
@@ -335,6 +342,95 @@ function RotateSecretForm({
         </Button>
       </Cluster>
     </Stack>
+  );
+}
+
+/**
+ * The warning before an action starts the limit of sign-in to login providers (an alert dialog, as for disabling): what
+ * stops, how many active users could no longer sign in, whether the administrator is one of them, and how to undo it.
+ * It warns and does not refuse.
+ */
+function LimitStartDialog({
+  limitStart,
+  confirmLabel,
+  isPending = false,
+  errorMessage,
+  onConfirm,
+  onCancel,
+}: {
+  limitStart: LimitStart | null;
+  confirmLabel: string;
+  isPending?: boolean;
+  errorMessage?: string | undefined;
+  onConfirm: (close: () => void) => void;
+  onCancel: () => void;
+}) {
+  const t = useT();
+  const impact = limitStart?.impact;
+  return (
+    <ConfirmDialog
+      isOpen={limitStart !== null}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+      title={t("client:admin.login_providers.limit_start.title")}
+      description={
+        impact === undefined ? (
+          t("client:admin.login_providers.limit_start.failed")
+        ) : (
+          <>
+            {t("client:admin.login_providers.limit_start.lead")}{" "}
+            {t("client:admin.login_providers.limit_start.affected", { count: impact.users_without_provider })}{" "}
+            {impact.includes_viewer && (
+              <>
+                <Text weight="semibold">{t("client:admin.login_providers.limit_start.self")}</Text>{" "}
+              </>
+            )}
+            {t("client:admin.login_providers.limit_start.recovery")}
+          </>
+        )
+      }
+      confirmLabel={confirmLabel}
+      cancelLabel={t("client:admin.login_providers.cancel")}
+      isPending={isPending}
+      {...(errorMessage !== undefined && { errorMessage })}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+/** Enabling a provider: at once, or after the warning when that starts the limit of sign-in to login providers. */
+function EnableLoginProvider({ provider, actions, isPending }: RowActionProps) {
+  const t = useT();
+  const name = loginProviderName(provider);
+  const enable = useEnableLoginProvider(provider, actions);
+  return (
+    <>
+      <Button
+        size="sm"
+        isPending={isPending || enable.isChecking}
+        aria-label={t("client:admin.login_providers.enable_provider", { name })}
+        onPress={enable.press}
+      >
+        {t("client:admin.login_providers.enable")}
+      </Button>
+      <LimitStartDialog
+        limitStart={enable.limitStart}
+        confirmLabel={
+          enable.limitStart?.impact === undefined
+            ? t("client:admin.login_providers.enable")
+            : t("client:admin.login_providers.limit_start.confirm_enable")
+        }
+        isPending={enable.isEnabling}
+        errorMessage={
+          enable.failed && actions.error !== undefined
+            ? t("client:admin.login_providers.change_failed", { reason: actions.error })
+            : undefined
+        }
+        onConfirm={enable.confirm}
+        onCancel={enable.cancel}
+      />
+    </>
   );
 }
 

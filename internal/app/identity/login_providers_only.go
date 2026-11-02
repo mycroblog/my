@@ -72,23 +72,30 @@ func (s *Service) refuseWhileLoginProvidersOnly(ctx context.Context) error {
 type LoginProvidersOnlyImpact struct {
 	// SettingOn is the value of the setting.
 	SettingOn bool
-	// EnabledProviders counts the providers available to sign in with. With none, the limit does
-	// not apply, whatever the setting says.
+	// EnabledProviders counts the providers available to sign in with now. With none, the limit
+	// does not apply, whatever the setting says.
 	EnabledProviders int
-	// UsersWithoutProvider counts the active local users with no link to one of those providers:
-	// those who could not sign in while the limit applies, however they sign in today. Their
-	// sessions and tokens keep working.
+	// UsersWithoutProvider counts the active local users with no link to one of those providers,
+	// or to the provider asked about: those who could not sign in while the limit applies, however
+	// they sign in today. Their sessions and tokens keep working. With no provider at all it is
+	// every active local user.
 	UsersWithoutProvider int
 	// IncludesViewer tells that the administrator who is looking is one of them.
 	IncludesViewer bool
+	// StartsLimit tells that adding a provider, or enabling the provider asked about, would start
+	// the limit at once: the setting is on, no provider is available to sign in with now, and that
+	// one would be.
+	StartsLimit bool
 }
 
 // Limited reports whether the limit applies.
 func (i LoginProvidersOnlyImpact) Limited() bool { return i.SettingOn && i.EnabledProviders > 0 }
 
 // LoginProvidersOnlyImpact counts who the limit would keep from signing in, whether or not the
-// setting is on. viewerUserID is the administrator who is looking, "" for the CLI.
-func (s *Service) LoginProvidersOnlyImpact(ctx context.Context, viewerUserID string) (LoginProvidersOnlyImpact, error) {
+// setting is on. viewerUserID is the administrator who is looking, "" for the CLI. withProviderID
+// is a provider to count as if it were enabled, "" for none; a new provider needs none, since
+// nobody links to it yet. It fails with ErrNotFound for an unknown or deleted provider.
+func (s *Service) LoginProvidersOnlyImpact(ctx context.Context, viewerUserID, withProviderID string) (LoginProvidersOnlyImpact, error) {
 	var out LoginProvidersOnlyImpact
 	if s.d.LoginProvidersOnly != nil {
 		on, err := s.d.LoginProvidersOnly(ctx)
@@ -102,13 +109,28 @@ func (s *Service) LoginProvidersOnlyImpact(ctx context.Context, viewerUserID str
 		return out, err
 	}
 	out.EnabledProviders = len(providers)
-	if len(providers) == 0 {
-		return out, nil
-	}
 	ids := make([]string, len(providers))
 	for i, p := range providers {
 		ids[i] = p.ID
 	}
+	wouldSignIn := s.ExternalLoginsEnabled()
+	if withProviderID != "" {
+		p, err := s.d.Repository.FindLoginProvider(ctx, withProviderID)
+		if err != nil {
+			return out, err
+		}
+		switch err := s.checkLoginProviderServer(ctx, p); {
+		case errors.Is(err, ErrLoginProviderUnavailable):
+			wouldSignIn = false
+		case err != nil:
+			return out, err
+		}
+		wouldSignIn = wouldSignIn && externalLoginKind(p.Settings.Kind)
+		if wouldSignIn && !slices.Contains(ids, p.ID) {
+			ids = append(ids, p.ID)
+		}
+	}
+	out.StartsLimit = out.SettingOn && out.EnabledProviders == 0 && wouldSignIn
 	if out.UsersWithoutProvider, err = s.d.Repository.CountActiveLocalUsersWithoutLoginProvider(ctx, ids); err != nil {
 		return out, err
 	}

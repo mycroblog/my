@@ -6,10 +6,22 @@ get:
     How many active local users have no link to a login provider that users can sign in with
     now, and so could not sign in while the instance setting `login_providers_only` applies, and
     whether the user who asks is one of them. Administrators read it before they turn the setting
-    on. Needs the `manage_settings` permission.
+    on, and before they add or enable a provider, which starts the limit at once when no other can
+    be signed in with (`starts_limit`). Needs the `manage_settings` or the
+    `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
   tags: [admin-server]
   security:
     - oauth2: ["admin:read"]
+  parameters:
+    - name: provider_id
+      in: query
+      required: false
+      description: |
+        A provider to count as if it were enabled, for the question of what enabling it would do.
+        A new provider needs none: nobody links to it yet.
+      schema:
+        type: string
+        format: uuid
   responses:
     "200":
       description: The count.
