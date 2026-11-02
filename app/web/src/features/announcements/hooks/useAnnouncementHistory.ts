@@ -32,7 +32,8 @@ export type AnnouncementHistory =
 export function useAnnouncementHistory(): AnnouncementHistory {
   const api = useApi();
   const mark = useMarkAnnouncementRead();
-  const query = useInfiniteQuery(announcementHistoryQueryOptions(api));
+  // The route's loader has just tried the first page, and "Try again" is the user's own retry: no backoff behind it.
+  const query = useInfiniteQuery({ ...announcementHistoryQueryOptions(api), retry: false, retryOnMount: false });
   const failure = useLoadFailure(query);
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
   if (query.data === undefined) {
