@@ -66,16 +66,33 @@ function parseField(field: string, f: Field): Set<number> {
   return set;
 }
 
-/** The wall-clock hour and minute of at in timeZone. */
-function wallClock(format: Intl.DateTimeFormat, at: number): { hour: number; minute: number } {
-  let hour = -1;
-  let minute = -1;
+/** The wall-clock date and time of an instant in a time zone. */
+type Wall = {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly second: number;
+};
+
+/** The wall-clock date and time of at in the time zone of format. */
+function wallOf(format: Intl.DateTimeFormat, at: number): Wall {
+  const parts = { year: 0, month: 0, day: 0, hour: 0, minute: 0, second: 0 };
   for (const p of format.formatToParts(at)) {
-    if (p.type === "hour") hour = Number(p.value) % 24;
-    else if (p.type === "minute") minute = Number(p.value);
+    if (p.type in parts) parts[p.type as keyof typeof parts] = Number(p.value);
   }
-  return { hour, minute };
+  parts.hour %= 24;
+  return parts;
 }
+
+/** A wall-clock date and time as milliseconds, read as if it were UTC, so that two of them compare. */
+function wallMillis(w: Wall): number {
+  return Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second);
+}
+
+/** How far the offset of a time zone from UTC can be: the offsets around a wall-clock time are those this far from it. */
+const widestOffset = 14 * 3_600_000;
 
 /**
  * A parsed cron expression of five fields, minute hour day-of-month month day-of-week, in a time zone (ADR-0094 §5).
@@ -105,7 +122,16 @@ export class Schedule {
     this.timeZone = timeZone;
     this.#hours = hours;
     this.#minutes = minutes;
-    this.#format = new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+    this.#format = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    });
     // legacyMode: a day matches when the day of the month or the day of the week does, as in cron.
     this.#cron = new Cron(expr, { paused: true, mode: "5-part", timezone: timeZone, legacyMode: true });
   }
@@ -155,10 +181,25 @@ export class Schedule {
     }
   }
 
-  /** Whether at is a wall-clock time of the schedule, and not one that croner moved out of a skipped hour. */
-  #onTime(at: number): boolean {
-    const { hour, minute } = wallClock(this.#format, at);
-    return this.#hours.has(hour) && this.#minutes.has(minute);
+  /**
+   * Whether at is a time of the schedule by the contract above: its wall-clock time is one of the expression, which a
+   * time that croner moved out of a daylight saving gap is not, and it is the first occurrence of that wall-clock time,
+   * where croner runs an interval job on both occurrences of a repeated time.
+   */
+  #isTime(at: number): boolean {
+    const wall = wallOf(this.#format, at);
+    return (
+      this.#hours.has(wall.hour) && this.#minutes.has(wall.minute) && this.#isFirstOccurrence(at, wallMillis(wall))
+    );
+  }
+
+  /** Whether no instant before at has the wall-clock time wall (in milliseconds), as in resolve of the Go library. */
+  #isFirstOccurrence(at: number, wall: number): boolean {
+    for (const probe of [wall - widestOffset, wall, wall + widestOffset]) {
+      const earlier = wall - (wallMillis(wallOf(this.#format, probe)) - probe);
+      if (earlier < at && wallMillis(wallOf(this.#format, earlier)) === wall) return false;
+    }
+    return true;
   }
 
   /** The first time of the schedule after at; null when there is none in the next eight years. */
@@ -169,8 +210,9 @@ export class Schedule {
       const d = this.#cron.nextRun(new Date(from));
       if (d === null || d.getTime() > end) return null;
       const t = d.getTime();
-      if (this.#onTime(t)) return t;
-      from = t;
+      if (t > at && this.#isTime(t)) return t;
+      // A step forward whatever croner answers, so that the search ends.
+      from = Math.max(t, from + 1000);
     }
   }
 
@@ -183,9 +225,9 @@ export class Schedule {
       const d = this.#cron.previousRuns(1, new Date(ref))[0];
       if (d === undefined || d.getTime() < end) return null;
       const t = d.getTime();
-      if (t <= at && this.#onTime(t)) return t;
-      // croner moved a skipped time after the gap, and finds it again from any reference in the gap: step back a
-      // minute at least, which passes over no time of the schedule, whose times are whole minutes.
+      if (t <= at && this.#isTime(t)) return t;
+      // Step back over t, and a minute at least so that the search ends whatever croner answers: that passes over no
+      // time of the schedule, whose times are whole minutes.
       ref = Math.min(ref - 60_000, t);
     }
   }
