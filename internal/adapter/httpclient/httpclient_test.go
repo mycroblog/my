@@ -239,6 +239,33 @@ func TestAgents(t *testing.T) {
 	}
 }
 
+// TestRedirectSendsNoReferer checks that following a redirect does not name the URL it came from.
+func TestRedirectSendsNoReferer(t *testing.T) {
+	var referer []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/from" {
+			http.Redirect(w, r, "/to", http.StatusFound)
+			return
+		}
+		referer = r.Header.Values("Referer")
+	}))
+	t.Cleanup(srv.Close)
+	c := New(Options{
+		AllowHTTP: true, AnyPort: true, ExemptAddrPorts: []netip.AddrPort{netip.MustParseAddrPort(srv.Listener.Addr().String())},
+	})
+	resp, err := c.Do(t.Context(), &kernel.HTTPRequest{URL: srv.URL + "/from", Purpose: kernel.HTTPPurposeHTML, Agent: kernel.HTTPAgentLinkCard})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.URL != srv.URL+"/to" {
+		t.Fatalf("final URL = %q, want the redirect's", resp.URL)
+	}
+	if len(referer) != 0 {
+		t.Errorf("Referer = %q, want none", referer)
+	}
+}
+
 // TestRobotsLimits checks that a robots.txt over the limit is read up to the limit, by its
 // Content-Length as by its length, while another purpose is refused by its Content-Length.
 func TestRobotsLimits(t *testing.T) {
