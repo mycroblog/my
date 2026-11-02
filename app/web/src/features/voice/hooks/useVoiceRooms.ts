@@ -5,6 +5,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
 import { useViewerPermissions } from "../../moderation";
 import { instanceQueryOptions, type VoiceRoom, voiceRailQueryOptions, voiceRoomsQueryOptions } from "../api/voice";
@@ -73,6 +74,7 @@ export function useVoiceRooms({ tag, enabled = true }: { tag?: string; enabled?:
     retry: shellQueryRetry,
     retryOnMount: false,
   });
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     return {
       status: "ready",
@@ -86,13 +88,13 @@ export function useVoiceRooms({ tag, enabled = true }: { tag?: string; enabled?:
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null) {
-    if (query.error instanceof ApiError && query.error.status === 404) return { status: "unavailable" };
+  if (failure.error !== null) {
+    if (failure.error instanceof ApiError && failure.error.status === 404) return { status: "unavailable" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

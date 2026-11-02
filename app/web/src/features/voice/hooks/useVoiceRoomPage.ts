@@ -8,6 +8,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useViewer } from "../../session";
 import {
   type VoiceRoom,
@@ -52,6 +53,8 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
     retry: false,
     retryOnMount: false,
   });
+  const roomFailure = useLoadFailure(room);
+  const summaryFailure = useLoadFailure(summary);
   if (session === "unknown") return { status: "loading" };
   // A refetch that finds the room gone (it ended while the page showed it) keeps the room's last data in the cache; the
   // 404 wins, so that the page says the room ended instead of offering to join it.
@@ -63,18 +66,20 @@ export function useVoiceRoomPage(id: string): VoiceRoomPage {
       isHost: room.data.host.id === viewerId,
     };
   }
-  const failed =
-    signedIn && room.error !== null && !isNotFound(room.error)
-      ? room
-      : summary.error !== null && !isNotFound(summary.error)
-        ? summary
-        : undefined;
-  if (failed !== undefined) {
+  if (signedIn && roomFailure.error !== null && !isNotFound(roomFailure.error)) {
     return {
       status: "error",
-      reason: errorMessage(failed.error),
-      retry: () => void failed.refetch(),
-      isRetrying: failed.isFetching,
+      reason: errorMessage(roomFailure.error),
+      retry: () => void room.refetch(),
+      isRetrying: roomFailure.isRetrying,
+    };
+  }
+  if (summaryFailure.error !== null && !isNotFound(summaryFailure.error)) {
+    return {
+      status: "error",
+      reason: errorMessage(summaryFailure.error),
+      retry: () => void summary.refetch(),
+      isRetrying: summaryFailure.isRetrying,
     };
   }
   if (isNotFound(summary.error)) return { status: "not-found" };

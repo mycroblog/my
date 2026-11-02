@@ -55,6 +55,7 @@ function AddToListChoices({ account }: { account: Account }) {
           reason={state.message}
           retryLabel={t("client:lists.retry")}
           onRetry={state.retry}
+          isRetrying={state.isRetrying}
         />
       );
     case "done":

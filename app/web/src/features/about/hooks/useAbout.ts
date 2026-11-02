@@ -2,6 +2,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
 import {
   type Instance,
@@ -128,6 +129,7 @@ export function useModeratedDomains(): ModeratedDomains {
     retry: shellQueryRetry,
     retryOnMount: false,
   });
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     return {
       status: "ready",
@@ -138,14 +140,14 @@ export function useModeratedDomains(): ModeratedDomains {
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null) {
-    if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
-    if (query.error instanceof ApiError && query.error.status === 401) return { status: "signed-in-only" };
+  if (failure.error !== null) {
+    if (failure.error instanceof ApiError && failure.error.status === 404) return { status: "hidden" };
+    if (failure.error instanceof ApiError && failure.error.status === 401) return { status: "signed-in-only" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

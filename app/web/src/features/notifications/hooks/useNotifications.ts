@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useEffect, useRef, useState } from "react";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import {
   cacheReadMarker,
   type NotificationFilter,
@@ -87,6 +88,7 @@ export function useNotifications(filter: NotificationFilter): NotificationList {
   // The route's loader has just tried the first page; a failure stays until the retry button or the return
   // online (lib/query.ts) instead of being tried again as the list mounts.
   const list = useInfiniteQuery({ ...notificationsQueryOptions(api, filter), enabled: signedIn, retryOnMount: false });
+  const failure = useLoadFailure(list);
   const marker = useQuery({ ...notificationMarkerQueryOptions(api), enabled: signedIn });
   const markerAtOpen = useMarkerAtOpen(marker.data);
   const notifications = list.data?.pages.flatMap((page) => page.items) ?? [];
@@ -94,14 +96,14 @@ export function useNotifications(filter: NotificationFilter): NotificationList {
   useMarkRead(signedIn && filter === "all" ? notifications[0]?.id : undefined, marker.data);
 
   if (session === "signed-out") return { status: "signed-out" };
-  if (list.isError && list.data === undefined) {
+  if (failure.error !== null && list.data === undefined) {
     return {
       status: "error",
-      message: errorMessage(list.error),
+      message: errorMessage(failure.error),
       retry: () => {
         void list.refetch();
       },
-      isRetrying: list.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   if (list.data === undefined) return { status: "loading" };

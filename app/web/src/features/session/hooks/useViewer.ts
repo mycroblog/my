@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryRetry } from "../../../lib/query";
 import { type Account, viewerQueryOptions } from "../api/viewer";
 
@@ -22,17 +23,18 @@ export function useViewer(): Viewer {
   const api = useApi();
   const status = useSessionStatus();
   const account = useQuery({ ...viewerQueryOptions(api), enabled: status === "signed-in", retry: shellQueryRetry });
+  const failure = useLoadFailure(account);
   if (status === "signed-out") return { status: "signed-out" };
   if (status === "unknown") return { status: "loading" };
   if (account.data !== undefined) return { status: "signed-in", account: account.data };
-  if (account.isError) {
+  if (failure.error !== null) {
     return {
       status: "error",
-      message: errorMessage(account.error),
+      message: errorMessage(failure.error),
       retry: () => {
         void account.refetch();
       },
-      isRetrying: account.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

@@ -5,6 +5,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type ClientMessageKey } from "../../../lib/i18n";
 import { shellQueryRetry } from "../../../lib/query";
 import {
@@ -62,6 +63,7 @@ export function useVoiceHistory(): VoiceHistory {
   const api = useApi();
   const intl = useIntl();
   const query = useInfiniteQuery({ ...voiceHistoryQueryOptions(api), retry: shellQueryRetry, retryOnMount: false });
+  const failure = useLoadFailure(query);
   const dateOf = (value: string): DateView => ({
     dateTime: value,
     text: intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" }),
@@ -85,13 +87,13 @@ export function useVoiceHistory(): VoiceHistory {
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null) {
-    if (query.error instanceof ApiError && query.error.status === 404) return { status: "unavailable" };
+  if (failure.error !== null) {
+    if (failure.error instanceof ApiError && failure.error.status === 404) return { status: "unavailable" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

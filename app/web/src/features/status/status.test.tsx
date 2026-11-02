@@ -223,6 +223,35 @@ describe("a post's page", () => {
     expect(await screen.findByRole("article", { description: "The answer" })).toBeInTheDocument();
   });
 
+  test("keeps the thread's failure and the button's focus through a retry, and announces one that fails again", async () => {
+    let answer: () => Promise<Response> = () => Promise.resolve(problem(503, "about:blank", "Service Unavailable"));
+    serveThread();
+    server.use(http.get(`${apiBase}/statuses/:id/context`, () => answer()));
+    const { user } = await renderApp({ path: `/@bob/status/${postId}` });
+    const replies = await screen.findByRole("region", { name: "Replies" });
+    await within(replies).findByText("Service Unavailable");
+
+    const again = deferred();
+    answer = () => again.response;
+    const button = within(replies).getByRole("button", { name: "Try again" });
+    await user.click(button);
+    await waitFor(() => {
+      expect(button).toHaveAttribute("data-pending", "true");
+    });
+    expect(button).toHaveFocus();
+    expect(within(replies).getByText("Service Unavailable")).toBeInTheDocument();
+    expect(within(replies).queryByRole("alert")).not.toBeInTheDocument();
+
+    again.release(problem(503, "about:blank", "Still unavailable"));
+    expect(await within(replies).findByRole("alert")).toHaveTextContent("Still unavailable");
+    expect(button).toHaveFocus();
+
+    answer = () => Promise.resolve(HttpResponse.json({ ancestors: [], descendants: [reply] }));
+    await user.click(button);
+    expect(await screen.findByRole("article", { description: "The answer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+  });
+
   test("shows the post at once and a skeleton in the busy replies section while the thread loads", async () => {
     const context = deferred();
     serveThread();

@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi, useLeaveApp } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type Translate, useT } from "../../../lib/i18n";
 import { isTauriApp } from "../../../lib/platform";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
@@ -79,10 +80,14 @@ export function useSupporterPage(returned: SupporterReturn): SupporterPage {
         ? pendingPollInterval
         : false,
   });
+  const plansFailure = useLoadFailure(plans);
+  const ownFailure = useLoadFailure(own);
   if (inApp) return { status: "app" };
-  const disabled = [plans.error, own.error].some((error) => error instanceof ApiError && error.status === 404);
+  const disabled = [plansFailure.error, ownFailure.error].some(
+    (error) => error instanceof ApiError && error.status === 404,
+  );
   if (disabled) return { status: "disabled" };
-  const failed = plans.error ?? own.error;
+  const failed = plansFailure.error ?? ownFailure.error;
   if (failed !== null) {
     return {
       status: "error",

@@ -5,6 +5,7 @@ import { type ImageSources, useNotice } from "@my/ui";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { handleOf } from "../../../lib/handle";
 import { imageSources } from "../../../lib/images";
 import { useT } from "../../../lib/i18n";
@@ -78,7 +79,7 @@ type Reactor = {
 
 export type ReactorsState =
   | { status: "loading" }
-  | { status: "error"; error: string; retry: () => void }
+  | { status: "error"; error: string; retry: () => void; isRetrying: boolean }
   | {
       status: "loaded";
       items: readonly Reactor[];
@@ -98,15 +99,17 @@ export function useReactors(id: string, enabled: boolean): ReactorsState {
   const t = useT();
   const notice = useNotice();
   const query = useInfiniteQuery({ ...reactorsQueryOptions(api, id), enabled, retry: false });
+  const failure = useLoadFailure(query);
   // A failed next page leaves the query in error with the pages already loaded, which stay shown.
   if (query.data === undefined) {
-    if (!query.isError) return { status: "loading" };
+    if (failure.error === null) return { status: "loading" };
     return {
       status: "error",
-      error: errorMessage(query.error),
+      error: errorMessage(failure.error),
       retry: () => {
         void query.refetch();
       },
+      isRetrying: failure.isRetrying,
     };
   }
   return {

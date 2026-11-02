@@ -99,6 +99,7 @@ function ReactorsDialog({ statusId, isOpen, onOpenChange }: ReactorsDialogProps)
           reason={state.error}
           retryLabel={t("client:reaction.list.retry")}
           onRetry={state.retry}
+          isRetrying={state.isRetrying}
           alert
         />
       ) : (

@@ -14,7 +14,6 @@ import {
   TabPanel,
   Tabs,
 } from "@my/ui";
-import { useState } from "react";
 import { SignInPrompt } from "../../session";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type NotificationFilter, notificationFilters } from "../api/notifications";
@@ -82,25 +81,17 @@ export function NotificationsView({ filter, onFilterChange, headingId }: Notific
 
 type NotificationsErrorProps = { message: string; retry: () => void; isRetrying: boolean };
 
-/**
- * The list's failure in place of the list (web-client/16-look-states-and-wording.md G16). The failure the page opened with is read, not
- * announced; a retry that fails again is the result of the user's action, and interrupts as an alert.
- */
+/** The list's failure in place of the list (web-client/16-look-states-and-wording.md G16). */
 function NotificationsError({ message, retry, isRetrying }: NotificationsErrorProps) {
   const t = useT();
-  const [retried, setRetried] = useState(false);
   return (
     <RegionError
       headingLevel={2}
       heading={t("client:notifications.failed")}
       reason={message}
       retryLabel={t("client:notifications.retry")}
-      onRetry={() => {
-        setRetried(true);
-        retry();
-      }}
+      onRetry={retry}
       isRetrying={isRetrying}
-      alert={retried && !isRetrying}
     />
   );
 }

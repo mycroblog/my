@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useLocale, useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
 import {
@@ -33,7 +34,7 @@ import {
 export type EditSource =
   | { status: "loading" }
   /** `message` is localized. */
-  | { status: "error"; message: string; retry: () => void }
+  | { status: "error"; message: string; retry: () => void; isRetrying: boolean }
   | { status: "ready"; source: StatusSource; maxCharacters: number; isDescriptionRequired: boolean };
 
 /** Reads what the form of post `id` starts from: the author's text, and the instance's character limit. */
@@ -41,14 +42,18 @@ export function useEditSource(id: string): EditSource {
   const api = useApi();
   const source = useQuery(statusSourceQueryOptions(api, id));
   const instance = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
-  if (source.isError || instance.isError) {
+  const sourceFailure = useLoadFailure(source);
+  const instanceFailure = useLoadFailure(instance);
+  const failed = sourceFailure.error ?? instanceFailure.error;
+  if (failed !== null) {
     return {
       status: "error",
-      message: errorMessage(source.error ?? instance.error),
+      message: errorMessage(failed),
       retry: () => {
         if (source.isError) void source.refetch();
         if (instance.isError) void instance.refetch();
       },
+      isRetrying: sourceFailure.isRetrying || instanceFailure.isRetrying,
     };
   }
   if (source.data === undefined || instance.data === undefined) return { status: "loading" };

@@ -2,6 +2,7 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type Status, statusContextQueryOptions, statusQueryOptions } from "../api/status";
 
 /**
@@ -52,16 +53,17 @@ export function useStatusThread(id: string): StatusThread {
     // Shown at once with a button to try again, instead of after seconds of silent retries.
     retry: false,
   });
-  if (context.isError) {
+  const failure = useLoadFailure(context);
+  if (failure.error !== null) {
     return {
       status,
       thread: {
         status: "error",
-        message: errorMessage(context.error),
+        message: errorMessage(failure.error),
         retry: () => {
           void context.refetch();
         },
-        isRetrying: context.isFetching,
+        isRetrying: failure.isRetrying,
       },
     };
   }

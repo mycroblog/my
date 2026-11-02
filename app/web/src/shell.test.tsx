@@ -198,4 +198,36 @@ describe("the account section of the settings page", () => {
     expect(await within(account).findByText("Alice")).toBeInTheDocument();
     expect(within(account).queryByText("Could not load your account")).not.toBeInTheDocument();
   });
+
+  test("keeps the failure and the button's focus while it tries again, and announces a retry that fails again", async () => {
+    let hold = false;
+    let answer = (): void => undefined;
+    server.use(
+      resumableSession(),
+      http.get(`${apiBase}/accounts/verify_credentials`, async () => {
+        if (!hold) return problem(403, "about:blank", "Forbidden");
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        return problem(403, "about:blank", "Still forbidden");
+      }),
+    );
+    const { user } = await renderApp({ path: "/settings" });
+    const account = await screen.findByRole("region", { name: "Account" });
+    await within(account).findByText("Forbidden");
+
+    hold = true;
+    const button = within(account).getByRole("button", { name: "Try again" });
+    await user.click(button);
+    await waitFor(() => {
+      expect(button).toHaveAttribute("data-pending", "true");
+    });
+    expect(within(account).getByText("Forbidden")).toBeInTheDocument();
+    expect(button).toHaveFocus();
+    expect(within(account).queryByRole("alert")).not.toBeInTheDocument();
+
+    answer();
+    expect(await within(account).findByRole("alert")).toHaveTextContent("Still forbidden");
+    expect(button).toHaveFocus();
+  });
 });
