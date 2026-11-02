@@ -104,8 +104,8 @@
     "description": "That each account can narrow the server's statement for its own pages, but never widen it."
   },
   "about.crawlers.legal": {
-    "defaultMessage": "この表明が法的にどう扱われるかは国によって異なります。EU では、デジタル単一市場における著作権指令 4 条 3 項にいうテキストとデータのマイニングに対する機械可読な権利の留保として示しています。日本では、著作権法 30 条の 4 が情報解析のための多くの利用を許諾なしに認めているため、この表明は法的な拒否として扱われない場合があります。それでも多くの事業者は、こうした表明に自主的に従っています。このページは法的な助言ではありません。",
-    "description": "The legal positioning of the server's AI statement: Japan's Copyright Act Article 30-4 and the EU DSM Directive Article 4. Must not promise a legal effect."
+    "defaultMessage": "この表明が法的にどう扱われるかは国によって異なり、多くの事業者はこうした表明に自主的に従っています。この文章は法的な助言ではありません。",
+    "description": "The legal note under the server's AI statement. Must not promise a legal effect."
   },
   "about.costs.title": {
     "defaultMessage": "運営の費用",

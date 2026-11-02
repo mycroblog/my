@@ -195,7 +195,9 @@ describe("the information page", () => {
     expect(
       within(crawlers).getByText(/^This server reserves its pages against the training of AI models\. AI search/u),
     ).toBeInTheDocument();
-    expect(within(crawlers).getByText(/Article 30-4 of the Copyright Act/u)).toBeInTheDocument();
+    expect(
+      within(crawlers).getByText(/^What such a statement means in law depends on the country/u),
+    ).toBeInTheDocument();
   });
 
   test("says when the server denies search engines and every use by AI", async () => {
