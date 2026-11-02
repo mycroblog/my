@@ -70,11 +70,11 @@ describe("reporting from a post", () => {
     const article = await screen.findByRole("article", { description: "The post" });
     const more = await within(article).findByRole("button", { name: "More actions" });
 
-    // The menu button pattern: Enter opens the menu on its first item.
+    // The menu button pattern: Enter opens the menu on its first item, and End moves to the last, the report.
     more.focus();
     await user.keyboard("{Enter}");
     await screen.findByRole("menu", { name: "More actions" });
-    await user.keyboard("{ArrowDown}{Enter}");
+    await user.keyboard("{End}{Enter}");
     const dialog = await screen.findByRole("dialog", { name: "Report \u2068Bob\u2069" });
     await expectStep("Why are you reporting this account?");
     expect(within(dialog).getByText("Step 1 of 3")).toBeInTheDocument();

@@ -599,7 +599,7 @@ entries:
     paths: ["app/web/src/features/compose/**"]
     docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
   - name: web-feature-status
-    paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**"]
+    paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**", "app/web/src/features/relationship/**"]
     docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
   - name: web-feature-onboarding
     paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/welcome.tsx"]

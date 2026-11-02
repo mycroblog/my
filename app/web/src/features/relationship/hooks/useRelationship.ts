@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The viewer's relationship with the account of a profile, and the changes to it (FR-301 to FR-303).
+// The viewer's relationship with an account, and the changes to it (FR-301 to FR-303).
 // The relationship is server data read from the query cache (web-client/README.md S2); a change shows the
 // pending action until the server answers (S8) and then stores the relationship the server returns.
 import { useNotice, useToast } from "@my/ui";
@@ -7,19 +7,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useFederation } from "../../../lib/federation";
-import { isRemoteAcct } from "../../../lib/handle";
+import { isolate, isRemoteAcct, nameOf } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
 import { profilePath, signInPath } from "../../../lib/paths";
 import { useViewer } from "../../session";
+import type { components } from "@mycroblog/mykit";
 import {
-  type Account,
   changeRelationship,
   type Relationship,
   type RelationshipAction,
   relationshipQueryOptions,
   storeRelationship,
-} from "../api/accounts";
-import { isolate, nameOf } from "./useProfile";
+} from "../api/relationship";
+
+type Account = components["schemas"]["Account"];
 
 /** Where the viewer's follow of the account stands; a block replaces the follow, which it ends. */
 type FollowState = "none" | "requested" | "following" | "blocking";
@@ -39,8 +40,10 @@ export type RelationshipState =
   | { kind: "loading" }
   /** The profile is the viewer's own. */
   | { kind: "self" }
-  /** The relationship failed to load; `message` is localized. */
-  | { kind: "error"; message: string }
+  /** The relationship failed to load; `message` is localized, and `retry` reads it again. */
+  | { kind: "error"; message: string; retry: () => void }
+  /** The server left the relationship out: the account is gone or blocks the viewer. */
+  | { kind: "unavailable" }
   | {
       kind: "other";
       relationship: Relationship;
@@ -98,8 +101,24 @@ function subscribeStateOf(follow: FollowState, remote: boolean, canFollow: boole
   return canFollow || follow === "requested" ? "follow-first" : "hidden";
 }
 
+export type UseRelationshipOptions = {
+  /**
+   * Whether to read the relationship; true by default. A menu that shows it passes whether it is open, so that a list of
+   * posts reads nothing until then. What the cache holds is still returned, and turning it back on reads a failed or stale answer again.
+   */
+  enabled?: boolean;
+  /**
+   * Where the result of a change shows: `in-place` (the default) for a button that switches next to the viewer, `toast`
+   * for a menu, which closes and leaves the result no place of its own (web-client/16-look-states-and-wording.md G24).
+   */
+  result?: "in-place" | "toast";
+};
+
 /** Returns the viewer's relationship with `account` and the way to change it. */
-export function useRelationship(account: Account): RelationshipState {
+export function useRelationship(
+  account: Account,
+  { enabled = true, result = "in-place" }: UseRelationshipOptions = {},
+): RelationshipState {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -109,7 +128,7 @@ export function useRelationship(account: Account): RelationshipState {
   const viewer = useViewer();
   const { followsRemote } = useFederation();
   const isOther = viewer.status === "signed-in" && viewer.account.id !== account.id;
-  const query = useQuery({ ...relationshipQueryOptions(api, account.id), enabled: isOther });
+  const query = useQuery({ ...relationshipQueryOptions(api, account.id), enabled: isOther && enabled });
   const mutation = useMutation({
     mutationFn: (action: RelationshipAction) => changeRelationship(api, account.id, action),
     onSuccess: async (relationship, action) => {
@@ -117,7 +136,9 @@ export function useRelationship(account: Account): RelationshipState {
       // a page opened next shows it at once (web-client/README.md S1).
       if (viewer.status === "signed-in")
         await storeRelationship(queryClient, api, relationship, action, viewer.account.id);
-      notice.inPlace(doneMessage(t, action, relationship, nameOf(account)));
+      const message = doneMessage(t, action, relationship, nameOf(account));
+      if (result === "toast") notice.toast({ message, tone: "success" });
+      else notice.inPlace(message);
     },
     onError: (error) => {
       toast.show({ message: t("client:profile.change_failed", { reason: errorMessage(error) }), tone: "danger" });
@@ -130,12 +151,21 @@ export function useRelationship(account: Account): RelationshipState {
       signInHref: signInPath(profilePath(account.acct)),
     };
   }
-  if (viewer.status === "error") return { kind: "error", message: viewer.message };
+  if (viewer.status === "error") return { kind: "error", message: viewer.message, retry: viewer.retry };
   if (viewer.status !== "signed-in") return { kind: "loading" };
   if (!isOther) return { kind: "self" };
-  if (query.isError) return { kind: "error", message: errorMessage(query.error) };
+  if (query.isError) {
+    return {
+      kind: "error",
+      message: errorMessage(query.error),
+      retry: () => {
+        void query.refetch();
+      },
+    };
+  }
+  if (query.data === undefined) return { kind: "loading" };
   // The server leaves out an account that blocks the viewer, whose profile is then not found at all.
-  if (query.data === undefined || query.data === null) return { kind: "loading" };
+  if (query.data === null) return { kind: "unavailable" };
   const follow = followStateOf(query.data);
   const remote = isRemoteAcct(account.acct);
   const canFollow = followsRemote || !remote;

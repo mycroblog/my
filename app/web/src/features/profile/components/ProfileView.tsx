@@ -26,7 +26,7 @@ import { type AccountTimelineFilter, accountTimelineFilters, TimelineFeed, useRe
 import { ProfileVoiceRoom } from "../../voice";
 import { usePinnedStatuses } from "../hooks/usePinnedStatuses";
 import { isolate, type ProfileView as ProfileViewData, useProfile } from "../hooks/useProfile";
-import { useRelationship } from "../hooks/useRelationship";
+import { useRelationship } from "../../relationship";
 import { MovedNote } from "./MovedNote";
 import { RelationshipActions } from "./RelationshipActions";
 import { imageSources } from "../../../lib/images";

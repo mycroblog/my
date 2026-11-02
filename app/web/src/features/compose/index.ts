@@ -14,7 +14,7 @@ export { type LanguageOption, languageOptions } from "./hooks/languages";
 export { countCharacters } from "./hooks/policy";
 export { type AttachmentView } from "./hooks/useAttachments";
 export { quotePolicies, quotePolicyDescription, quotePolicyLabel } from "./hooks/quotePolicyMessages";
-export { useQuote, useReply } from "./hooks/useCompose";
+export { useDirectMessage, useQuote, useReply } from "./hooks/useCompose";
 export { useFormatRemaining } from "./hooks/useFormatRemaining";
 /** The one definition of the visibilities (ADR-0017) that the preferences and the post cards use too. */
 export { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "./hooks/visibilityMessages";

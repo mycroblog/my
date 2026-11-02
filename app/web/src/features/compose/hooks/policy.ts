@@ -42,6 +42,17 @@ export function replyMentions(replyTo: Status, viewerId: string): string {
 }
 
 /**
+ * The text of a direct message to `acct`: the draft's text, which keeps what is written, starting with a mention of
+ * `acct` unless it already mentions them. A direct post reaches only the accounts it mentions.
+ */
+export function directMessageText(text: string, acct: string): string {
+  const mention = `@${acct}`.toLowerCase();
+  const isMentioned = textTokens(text).some((t) => t.kind === "mention" && t.text.toLowerCase() === mention);
+  if (isMentioned) return text;
+  return text.trim() === "" ? `@${acct} ` : `@${acct} ${text}`;
+}
+
+/**
  * The handles (`username@domain`, lowercase, each once) of the mentions in `text` that name a domain:
  * those that can be accounts of other servers. A mention without a domain is a local account. Mentions are
  * found as the server finds them (textTokens), so e-mail addresses and URLs hold none.

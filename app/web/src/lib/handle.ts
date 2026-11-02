@@ -12,3 +12,16 @@ export function isRemoteAcct(acct: string): boolean {
 export function handleOf(acct: string): string {
   return `@${acct}`;
 }
+
+/** The name an account goes by in the UI. */
+export function nameOf(account: { display_name: string; username: string }): string {
+  return account.display_name || account.username;
+}
+
+/**
+ * Unicode directional isolates (FSI … PDI): a right-to-left name does not reorder the sentence around it
+ * (web-client/README.md Y10).
+ */
+export function isolate(name: string): string {
+  return `\u2068${name}\u2069`;
+}
