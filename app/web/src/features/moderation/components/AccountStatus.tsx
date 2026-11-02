@@ -181,7 +181,7 @@ function ActionRow({ action, form }: { action: ModerationAction; form: AppealFor
         ? t("client:account_status.ends_in", { days: daysUntil(now, action.expires_at) })
         : timedKinds.has(action.kind)
           ? t("client:account_status.until_lifted")
-          : undefined;
+          : t("client:account_status.no_end");
   return (
     <Stack as="article" aria-labelledby={`action-${action.id}`} gap="3">
       <Stack gap="1">
