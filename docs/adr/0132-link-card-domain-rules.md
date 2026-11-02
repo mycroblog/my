@@ -1,6 +1,6 @@
 # ADR-0132: リンクのカードの取得をドメインごとに止めるルール
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-02
 - Deciders: @rosylilly
 - Issue: #1951
@@ -25,13 +25,11 @@
 
 ## Considered Options（選択肢）
 
-1. **カードの取得だけに効く、ドメインごとのルールを新しく持つ**（推奨）
+1. **カードの取得だけに効く、ドメインごとのルールを新しく持つ**
 2. ドメインへの処分に新しい種類（`no_link_cards` など）を足す
 3. `link_cards_enabled` と同じインスタンス設定に、ドメインの一覧を文字列で持つ
 
 ## Decision（決定）
-
-> Proposed の間は「推奨案」であり、未確定です。
 
 選択肢 1 を採る。
 
@@ -105,4 +103,4 @@
 
 ## Open Questions / 要検証
 
-- `no_fetch` のドメインの `fediverse:creator` の照会を止めるかは、上の扱いで決定者の確認を待つ。
+- なし
