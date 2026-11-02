@@ -226,4 +226,21 @@ func linkCardCleanup(t *testing.T, h LinkCardHarness) {
 	if _, err := h.Media.FindMediaFile(ctx, used); err != nil {
 		t.Errorf("media file of the used image: %v", err)
 	}
+	// DeleteLinkCard deletes a card that a status refers to, and frees its image for the cleanup.
+	linkCardTx(t, h, func(ctx context.Context, tx uow.Tx) error {
+		if err := h.Cards.DeleteLinkCard(ctx, tx, "https://a.example/"); err != nil {
+			t.Errorf("DeleteLinkCard: %v", err)
+		}
+		if err := h.Cards.DeleteLinkCard(ctx, tx, "https://none.example/"); err != nil {
+			t.Errorf("DeleteLinkCard of a URL without a card: %v", err)
+		}
+		return nil
+	})
+	if _, err := h.Cards.FindLinkCard(ctx, "https://a.example/"); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("card after DeleteLinkCard: %v", err)
+	}
+	ids, err = h.Cards.ListUnreferencedLinkCardMedia(ctx, 10)
+	if err != nil || !slices.Equal(ids, []string{used}) {
+		t.Errorf("ListUnreferencedLinkCardMedia after DeleteLinkCard = %v, %v, want [%s]", ids, err, used)
+	}
 }

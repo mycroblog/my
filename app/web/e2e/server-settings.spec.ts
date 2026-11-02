@@ -68,6 +68,7 @@ function instanceSettings(stored: Readonly<Record<string, string>>) {
     { key: "indexable_default", kind: "bool", default: "false" },
     { key: "security_contact", kind: "uri", default: "" },
     { key: "link_cards_enabled", kind: "bool", default: "true" },
+    { key: "link_cards_ignore_robots_txt", kind: "bool", default: "false" },
     { key: "finance_visibility", kind: "enum", default: "private", choices: ["private", "totals", "breakdown"] },
     { key: "finance_viewer_item_names", kind: "bool", default: "false" },
     { key: "finance_viewer_item_memos", kind: "bool", default: "false" },

@@ -47,8 +47,11 @@ var DefaultPorts = []int{443, 80}
 
 // Options configure a Client. The zero value is the production configuration.
 type Options struct {
-	// UserAgent is sent with every request; the default is "my".
+	// UserAgent is sent with every request of kernel.HTTPAgentServer; the default is "my".
 	UserAgent string
+	// LinkCardUserAgent is sent with every request of kernel.HTTPAgentLinkCard; the default is
+	// kernel.LinkCardAgentToken.
+	LinkCardUserAgent string
 	// Limits overrides kernel.DefaultHTTPLimits for some purposes.
 	Limits map[kernel.HTTPPurpose]kernel.HTTPLimits
 	// AllowHTTP permits the http scheme besides https. A redirect from https to http is still refused.
@@ -154,6 +157,9 @@ var _ kernel.HTTPClient = (*Client)(nil)
 func New(opts Options) *Client {
 	if opts.UserAgent == "" {
 		opts.UserAgent = "my"
+	}
+	if opts.LinkCardUserAgent == "" {
+		opts.LinkCardUserAgent = kernel.LinkCardAgentToken
 	}
 	if opts.Ports == nil {
 		opts.Ports = DefaultPorts
@@ -293,13 +299,14 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 	// The trace context never leaves for a remote server (ADR-0063 §3).
 	req.Header.Del("Traceparent")
 	req.Header.Del("Tracestate")
-	req.Header.Set("User-Agent", c.opts.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent(r.Agent))
 	resp, err := client.Do(req)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
-	if resp.ContentLength > limits.MaxBodyBytes {
+	// A robots.txt over the limit is read up to the limit (RFC 9309 §2.5).
+	if resp.ContentLength > limits.MaxBodyBytes && r.Purpose != kernel.HTTPPurposeRobots {
 		_ = resp.Body.Close()
 		cancel()
 		return nil, fmt.Errorf("%w: Content-Length %d exceeds %d bytes", kernel.ErrResponseTooLarge, resp.ContentLength, limits.MaxBodyBytes)
@@ -310,6 +317,14 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 		URL:        resp.Request.URL.String(),
 		Body:       &limitedBody{r: resp.Body, limit: limits.MaxBodyBytes, remaining: limits.MaxBodyBytes, cancel: cancel},
 	}, nil
+}
+
+// userAgent returns the User-Agent of an agent.
+func (c *Client) userAgent(a kernel.HTTPAgent) string {
+	if a == kernel.HTTPAgentLinkCard {
+		return c.opts.LinkCardUserAgent
+	}
+	return c.opts.UserAgent
 }
 
 func (c *Client) limits(p kernel.HTTPPurpose) (kernel.HTTPLimits, bool) {

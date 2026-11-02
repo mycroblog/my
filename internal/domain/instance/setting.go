@@ -70,6 +70,9 @@ const (
 	// SettingLinkCardsEnabled is whether statuses show the cards of their links, fetched from
 	// the linked pages (FR-117, ADR-0062).
 	SettingLinkCardsEnabled SettingKey = "link_cards_enabled"
+	// SettingLinkCardsIgnoreRobotsTxt is whether the fetches of link cards skip robots.txt
+	// (ADR-0131 §4).
+	SettingLinkCardsIgnoreRobotsTxt SettingKey = "link_cards_ignore_robots_txt"
 	// SettingDynamicClientRegistration is whether OAuth clients may register themselves
 	// without authentication at POST /oauth/register (RFC 7591, ADR-0090 §1).
 	SettingDynamicClientRegistration SettingKey = "dynamic_client_registration"
@@ -490,6 +493,10 @@ var definitions = []Definition{
 	{
 		Key: SettingLinkCardsEnabled, Kind: KindBool, Default: "true",
 		Doc: "Whether statuses show the cards of their links, which the server fetches from the linked pages (FR-117, ADR-0062).",
+	},
+	{
+		Key: SettingLinkCardsIgnoreRobotsTxt, Kind: KindBool, Default: "false",
+		Doc: "Whether the fetches of link cards skip robots.txt, so that the linked sites cannot refuse them with it (ADR-0131).",
 	},
 	{
 		Key: SettingFinanceVisibility, Kind: KindEnum, Default: string(FinancePrivate),
@@ -1048,6 +1055,11 @@ func (s Settings) VoicePublicSummary() bool { return s.boolValue(SettingVoicePub
 
 // LinkCardsEnabled returns the value of SettingLinkCardsEnabled.
 func (s Settings) LinkCardsEnabled() bool { return s.boolValue(SettingLinkCardsEnabled) }
+
+// LinkCardsIgnoreRobotsTxt returns the value of SettingLinkCardsIgnoreRobotsTxt.
+func (s Settings) LinkCardsIgnoreRobotsTxt() bool {
+	return s.boolValue(SettingLinkCardsIgnoreRobotsTxt)
+}
 
 // UserAppRegistration returns the value of SettingUserAppRegistration.
 func (s Settings) UserAppRegistration() bool { return s.boolValue(SettingUserAppRegistration) }

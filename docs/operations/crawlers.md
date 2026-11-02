@@ -62,7 +62,8 @@ It does not guarantee any legal effect.
 
 ## This server's own fetching
 
-These settings are about what crawls this server. What this server fetches for the cards of links in posts is set with `link_cards_enabled` and, per domain, with [link card domains](instance-settings.md#link-card-domains).
+These settings are about what crawls this server. The server also crawls others for the cards of links in posts, as `my-linkcard`: it obeys `robots.txt` and the directives of the linked pages, as [link previews](link-previews.md#cards-of-links-in-posts) describes.
+That crawler is set with `link_cards_enabled`, `link_cards_ignore_robots_txt`, and, per domain, with [link card domains](instance-settings.md#link-card-domains).
 
 ## Limits
 

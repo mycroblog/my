@@ -2265,6 +2265,7 @@ const (
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
 	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
+	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
@@ -2334,6 +2335,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyInviteCreators:
 		return true
 	case InstanceSettingKeyLinkCardsEnabled:
+		return true
+	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
 	case InstanceSettingKeyLocalTimelineAccess:
 		return true

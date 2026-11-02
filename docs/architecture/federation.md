@@ -564,6 +564,12 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   添付か投票のある投稿はカードを持ちません。URL は `content.NormalizeLinkURL`（スキームとホストを小文字に、既定のポート・フラグメント・利用者情報を除く。クエリはそのまま）で正規化し、カードはこの URL ごとに共有します。
 - **取得**: `HTTPClient` に `HTTPPurposeHTML` で `GET` を送ります（`Accept: text/html, application/xhtml+xml`、`Accept-Language` はインスタンスの `default_locale`。Cookie と `Referer` は送りません）。
   SSRF ガード・リダイレクト・本文 1 MiB・30 秒は §1.1 と ADR-0019 §1 のとおりで、`https` 以外の URL は取得しません。状態コード 200 で `text/html` / `application/xhtml+xml` の応答だけを読みます。
+  ページ・画像・`robots.txt` の取得の User-Agent は `my-linkcard/<version> (+https://<host>/)`（`HTTPRequest.Agent`）で、ほかの取得（メディアプロキシと `fediverse:creator` の検証を含む）は `my/<version> (+https://<host>/)` です。
+- **`robots.txt`**（[ADR-0131](../adr/0131-link-card-robots-txt.md)）: トークンは `my-linkcard` で、`HTTPPurposeRobots`（本文 512 KiB・10 秒。超えた分は読まず、読めた分の完全な行を解釈）で `{オリジン}/robots.txt` を取得します。`content.ParseRobotsTxt` が RFC 9309 のとおりに解釈し、当たる規則だけを KV（名前空間 `content.link_card_robots`、キーはオリジン）に保持します。
+  200 は解釈して 24 時間、429 以外の 4xx とリダイレクトの超過はファイルなしとして 24 時間、429・5xx・ネットワークの失敗・拒否したリダイレクトは全面禁止とみなして 1 時間です。
+  ページの URL は取得の前に確かめ、リダイレクトの各段も `HTTPRequest.CheckRedirect` で、その段のオリジンの規則により要求の前に確かめます。最後の段が最終 URL なので、禁止された最終 URL には要求が届きません。画像も同じで、禁止なら画像なしのカードにします。
+  禁止された URL は失敗と同じく 24 時間覚えます。再取得で規則の禁止が分かればカードを消します。全面禁止とみなしただけのときは覚えず、カードも消さず、ジョブが 1 時間後に再試行します。画像では記録済みのものを使い、記録がなければ次の再取得まで画像なしにします。すでにあるカードを確かめるための一斉の取得はしません。
+  インスタンス設定 `link_cards_ignore_robots_txt`（既定 `false`）が真のときは `robots.txt` を取得せず、保持した規則と、`robots.txt` による失敗の記憶も使いません。
 - **解析**: `golang.org/x/net/html` のトークナイザで `<head>` だけを読み（`</head>` か `<body>` で止める）、文字コードは `golang.org/x/net/html/charset` で UTF-8 にします。
   題名は `og:title` → `twitter:title` → JSON-LD の `headline` → `<title>`、説明は `og:description` → `twitter:description` → JSON-LD の `description` → `<meta name="description">`、
   サイト名は `og:site_name` → JSON-LD の `publisher.name` → ホスト、作者は `article:author`（URL でないもの）→ `<meta name="author">` → JSON-LD の `author.name`、
@@ -571,6 +577,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   JSON-LD は `<script type="application/ld+json">`（64 KiB まで）を JSON として読み、最上位か `@graph` の `NewsArticle` / `Article` / `BlogPosting` / `WebPage` の最初のものだけを使います。`@context` は取得しません。
   値はプレーンテキストにして、題名 200・説明 500・サイト名 100・作者 100・画像の代替テキスト 1,500 の書記素で切ります。`og:url` は応答の最終 URL と同じオリジンのときだけカードの URL にします。
   題名のないページはカードにしません。oEmbed・`twitter:player`・`og:video` の埋め込みは扱いません。
+- **ページのロボットの指定**: `<head>` の `<meta name="robots">` と `<meta name="my-linkcard">`、応答の `X-Robots-Tag` のうちボットの名前がないものと `my-linkcard:` が付いたものを読み、厳しいほうを採ります。`nosnippet`・`max-snippet:0` は説明を、`noimageindex`・`max-image-preview:none` は画像を（取得せず）カードから除きます。`noindex`・`nofollow`・`noarchive`・`none` などは何も変えません。`link_cards_ignore_robots_txt` によらず効きます。
 - **失敗と同時取得**: 取得・解釈の失敗は URL の SHA-256 をキーに KV（名前空間 `content.link_card_failure`）へ 24 時間記録し、その間は取りません。
   取得の前に URL ごとのロック（`content.link_card_lock`、60 秒）を取り、取得中なら 60 秒後に再試行します。
 - **画像**: カードのホストと画像のホストのどちらにも `media_fetch` の制限がなければ、画像を `HTTPPurposeImage` で 1 回だけ取得し、中身で形式を判定して（§9 の許可リストのうち画像。SVG は拒否）、
