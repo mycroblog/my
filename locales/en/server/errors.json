@@ -678,5 +678,9 @@
   "errors.login_provider.linked": {
     "defaultMessage": "You have already linked an account at that sign-in service.",
     "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
+  },
+  "errors.login_providers_only": {
+    "defaultMessage": "This server signs in only through its login providers, so passwords and passkeys cannot be set here.",
+    "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
   }
 }

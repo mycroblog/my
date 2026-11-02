@@ -33,9 +33,24 @@ function problem(reason: string, detail: string) {
   );
 }
 
+/** What the server says about the limit of sign-in to login providers: by default, the setting is off. */
+function impactHandler(impact: Partial<Schemas["LoginProvidersOnlyImpact"]>, seen: (string | null)[] = []) {
+  return http.get(`${apiBase}/admin/settings/login_providers_only/impact`, ({ request }) => {
+    seen.push(new URL(request.url).searchParams.get("provider_id"));
+    return HttpResponse.json({
+      setting_on: false,
+      enabled_providers: 0,
+      users_without_provider: 0,
+      includes_viewer: false,
+      starts_limit: false,
+      ...impact,
+    } satisfies Schemas["LoginProvidersOnlyImpact"]);
+  });
+}
+
 describe("the login providers screen", () => {
   beforeEach(() => {
-    server.use(signedInHandler, operatorHandler(["manage_login_providers"]));
+    server.use(signedInHandler, operatorHandler(["manage_login_providers"]), impactHandler({}));
   });
 
   test("tells a viewer without the permission why it is empty", async () => {
@@ -448,6 +463,169 @@ describe("the login providers screen", () => {
     await user.click(await within(list).findByRole("button", { name: `Enable ${name}` }));
     expect(await within(list).findByRole("button", { name: `Disable ${name}` })).toBeInTheDocument();
     expect(within(list).getByRole("status")).toHaveTextContent("is enabled.");
+  });
+
+  describe("when the action would start the limit of sign-in to login providers", () => {
+    const disabledList = () =>
+      http.get(`${apiBase}/admin/login_providers`, () =>
+        HttpResponse.json({ items: [loginProviderFixture(providerId, { state: enabledState, linked_users: 1 })] }),
+      );
+    let enabledState: Schemas["AdminLoginProviderState"] = "disabled";
+    function enableServer() {
+      enabledState = "disabled";
+      const enables: string[] = [];
+      server.use(
+        disabledList(),
+        http.post(`${apiBase}/admin/login_providers/:id/enable`, ({ params }) => {
+          enables.push(String(params["id"]));
+          enabledState = "enabled";
+          return HttpResponse.json(loginProviderFixture(providerId, { state: "enabled", linked_users: 1 }));
+        }),
+      );
+      return enables;
+    }
+    const title = "Start limiting sign-in to login providers?";
+
+    test("warns before enabling, with the count for this provider, and enables once confirmed", async () => {
+      const enables = enableServer();
+      const seen: (string | null)[] = [];
+      server.use(impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 3 }, seen));
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: title });
+      expect(seen).toEqual([providerId]);
+      expect(dialog).toHaveAccessibleDescription(/3 active users have no link to this provider/u);
+      expect(dialog).toHaveAccessibleDescription(/my instance set login_providers_only false/u);
+      expect(dialog).not.toHaveAccessibleDescription(/You are one of them/u);
+      // The least destructive choice has the focus; cancelling enables nothing.
+      expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+      expect(enables).toEqual([]);
+
+      await user.click(screen.getByRole("button", { name: `Enable ${name}` }));
+      const again = await screen.findByRole("alertdialog", { name: title });
+      await user.click(within(again).getByRole("button", { name: "Enable and start the limit" }));
+      await waitFor(() => {
+        expect(enables).toEqual([providerId]);
+      });
+    });
+
+    test("says plainly when the count includes the administrator", async () => {
+      enableServer();
+      server.use(
+        impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 1, includes_viewer: true }),
+      );
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const dialog = await screen.findByRole("alertdialog", { name: title });
+      expect(dialog).toHaveAccessibleDescription(/1 active user has no link to this provider/u);
+      expect(dialog).toHaveAccessibleDescription(/You are one of them/u);
+    });
+
+    test("enables with no dialog when the setting is off or the limit is in force", async () => {
+      const enables = enableServer();
+      // Neither case starts anything: the server says so with starts_limit.
+      server.use(
+        impactHandler({ setting_on: true, enabled_providers: 1, users_without_provider: 3, includes_viewer: true }),
+      );
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      await waitFor(() => {
+        expect(enables).toEqual([providerId]);
+      });
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+
+    test("warns when the server cannot say, rather than start the limit unannounced", async () => {
+      const enables = enableServer();
+      server.use(
+        http.get(`${apiBase}/admin/settings/login_providers_only/impact`, () =>
+          HttpResponse.json(
+            { title: "Failed", status: 500 },
+            { status: 500, headers: { "Content-Type": "application/problem+json" } },
+          ),
+        ),
+      );
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await user.click(await screen.findByRole("button", { name: `Enable ${name}` }));
+      const dialog = await screen.findByRole("alertdialog", { name: title });
+      expect(dialog).toHaveAccessibleDescription(/could not say whether this starts the limit/u);
+      expect(enables).toEqual([]);
+      await user.click(within(dialog).getByRole("button", { name: "Enable" }));
+      await waitFor(() => {
+        expect(enables).toEqual([providerId]);
+      });
+    });
+
+    /** Fills in the form of a GitHub provider. */
+    async function fillGitHub(user: Awaited<ReturnType<typeof renderApp>>["user"]) {
+      const form = await screen.findByRole("region", { name: "Set up a login provider" });
+      await user.click(within(form).getByRole("radio", { name: "GitHub" }));
+      await user.type(within(form).getByRole("textbox", { name: "Display name" }), "GitHub");
+      await user.type(within(form).getByRole("textbox", { name: "Client ID" }), "my-client");
+      await user.type(within(form).getByLabelText(/^Client secret/u), "s3cret");
+      await user.click(within(form).getByRole("button", { name: "Set up" }));
+      return form;
+    }
+
+    function createServer() {
+      const creates: unknown[] = [];
+      server.use(
+        http.get(`${apiBase}/admin/login_providers`, () => HttpResponse.json({ items: [] })),
+        http.post(`${apiBase}/admin/login_providers`, async ({ request }) => {
+          creates.push(await request.json());
+          return HttpResponse.json(loginProviderFixture(providerId));
+        }),
+      );
+      return creates;
+    }
+
+    test("warns before setting up the provider that starts the limit, and keeps the draft on cancel", async () => {
+      const creates = createServer();
+      const seen: (string | null)[] = [];
+      server.use(
+        impactHandler({ setting_on: true, starts_limit: true, users_without_provider: 4, includes_viewer: true }, seen),
+      );
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await fillGitHub(user);
+
+      const dialog = await screen.findByRole("alertdialog", { name: title });
+      expect(seen).toEqual([null]);
+      expect(dialog).toHaveAccessibleDescription(/4 active users have no link to this provider/u);
+      expect(dialog).toHaveAccessibleDescription(/You are one of them/u);
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+      expect(creates).toEqual([]);
+      const form = screen.getByRole("region", { name: "Set up a login provider" });
+      expect(within(form).getByRole("textbox", { name: "Display name" })).toHaveValue("GitHub");
+
+      await user.click(within(form).getByRole("button", { name: "Set up" }));
+      await user.click(
+        within(await screen.findByRole("alertdialog", { name: title })).getByRole("button", {
+          name: "Set up and start the limit",
+        }),
+      );
+      await waitFor(() => {
+        expect(creates).toHaveLength(1);
+      });
+    });
+
+    test("sets up a provider with no dialog when that starts nothing", async () => {
+      const creates = createServer();
+      server.use(impactHandler({ setting_on: true, enabled_providers: 2 }));
+      const { user } = await renderApp({ path: "/admin/login-providers" });
+      await fillGitHub(user);
+      await waitFor(() => {
+        expect(creates).toHaveLength(1);
+      });
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
   });
 
   test("deletes a provider after a warning", async () => {

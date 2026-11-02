@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
-required: [domain, name, version, source_url, registrations, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards_enabled, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters]
+required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards_enabled, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters]
 properties:
   domain:
     description: The domain that serves the instance.
@@ -17,6 +17,12 @@ properties:
     type: string
   registrations:
     $ref: ./InstanceRegistrations.yaml
+  login_providers_only:
+    description: |
+      Whether registration and sign-in are limited to the login providers now: the instance setting
+      is on and at least one provider is enabled. While it is true, a password or a passkey signs
+      nobody in, and neither can be set or added; both still confirm operations of a signed-in user.
+    type: boolean
   version:
     description: The server version.
     type: string

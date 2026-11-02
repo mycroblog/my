@@ -43,6 +43,8 @@ type PasswordReset interface {
 type forgotPasswordView struct {
 	// Unavailable replaces the form with a note when the server sends no email.
 	Unavailable bool
+	// LoginProvidersOnly replaces the form with a note while only the login providers sign in.
+	LoginProvidersOnly bool
 	// Sent replaces the form with the notice after a request.
 	Sent bool
 }
@@ -59,6 +61,11 @@ func (h *Handler) passwordResetEnabled() bool { return h.o.PasswordReset != nil 
 // forgotPasswordPage shows the form that asks for a reset link.
 func (h *Handler) forgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	p := h.newPage(r, (*i18n.Localizer).ServerAuthForgotPasswordTitle)
+	limited, ok := h.loginProvidersOnly(w, r)
+	if !ok {
+		return
+	}
+	p.ForgotPassword = &forgotPasswordView{LoginProvidersOnly: limited}
 	h.renderForgotPassword(w, r, http.StatusOK, p)
 }
 
@@ -67,7 +74,7 @@ func (h *Handler) renderForgotPassword(w http.ResponseWriter, r *http.Request, s
 		p.ForgotPassword = &forgotPasswordView{}
 	}
 	p.ForgotPassword.Unavailable = !h.o.PasswordReset.PasswordResetByEmail()
-	if !p.ForgotPassword.Unavailable && !p.ForgotPassword.Sent {
+	if !p.ForgotPassword.Unavailable && !p.ForgotPassword.Sent && !p.ForgotPassword.LoginProvidersOnly {
 		p.CSRFToken = h.csrfToken(w, r)
 		p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionPasswordReset)
 	}
@@ -94,6 +101,10 @@ func (h *Handler) forgotPassword(w http.ResponseWriter, r *http.Request) {
 	var limited *kernel.RateLimitedError
 	status := http.StatusUnprocessableEntity
 	switch {
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		p.Email = ""
+		p.ForgotPassword = &forgotPasswordView{LoginProvidersOnly: true}
+		status = http.StatusForbidden
 	case err == nil:
 		minutes := int(appidentity.PasswordResetTTL / time.Minute)
 		p.Notice = p.L.ServerAuthForgotPasswordSent(i18n.ServerAuthForgotPasswordSentArgs{Email: p.Email, Minutes: minutes})
@@ -124,6 +135,14 @@ func (h *Handler) forgotPassword(w http.ResponseWriter, r *http.Request) {
 // resetPasswordPage shows the form for the new password of a reset link, or says that the link
 // does not work.
 func (h *Handler) resetPasswordPage(w http.ResponseWriter, r *http.Request) {
+	// The limit comes first, so that the page tells nothing about the token.
+	switch limited, ok := h.loginProvidersOnly(w, r); {
+	case !ok:
+		return
+	case limited:
+		h.renderError(w, r, http.StatusForbidden, (*i18n.Localizer).ServerAuthResetPasswordLoginProvidersOnly)
+		return
+	}
 	token := r.URL.Query().Get("token")
 	if token == "" || len(token) > maxTokenLength {
 		h.renderError(w, r, http.StatusBadRequest, (*i18n.Localizer).ServerAuthResetPasswordInvalid)
@@ -172,6 +191,9 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := h.o.PasswordReset.ResetPassword(r.Context(), token, r.PostForm.Get("password"))
 	switch {
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		h.renderError(w, r, http.StatusForbidden, (*i18n.Localizer).ServerAuthResetPasswordLoginProvidersOnly)
+		return
 	case errors.Is(err, appidentity.ErrInvalidToken):
 		h.renderError(w, r, http.StatusUnprocessableEntity, (*i18n.Localizer).ServerAuthResetPasswordInvalid)
 		return

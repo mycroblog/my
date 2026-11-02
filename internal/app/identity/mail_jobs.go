@@ -170,13 +170,20 @@ func (s *Service) sendVerificationEmail(ctx context.Context, run queue.Job, job 
 }
 
 // sendPasswordResetEmail runs JobPasswordResetEmail: while users can ask for a reset link by
-// email, the user's local account can sign in, the user has a primary address, and the request
-// is not older than PasswordResetEmailDeadline, it issues a reset token and sends its link to
-// that address unless its suppression stops it. The answer to the request is the same either
+// email, registration and sign-in are not limited to the login providers, the user's local account
+// can sign in, the user has a primary address, and the request is not older than
+// PasswordResetEmailDeadline, it issues a reset token and sends its link to that address unless
+// its suppression stops it. The answer to the request is the same either
 // way, so that it does not tell whether an address has an account.
 func (s *Service) sendPasswordResetEmail(ctx context.Context, run queue.Job, job passwordResetEmail) error {
 	if !s.PasswordResetByEmail() || s.d.Clock.Now().Sub(job.RequestedAt) > PasswordResetEmailDeadline {
 		return nil
+	}
+	switch err := s.refuseWhileLoginProvidersOnly(ctx); {
+	case errors.Is(err, ErrLoginProvidersOnly):
+		return nil
+	case err != nil:
+		return err
 	}
 	switch err := s.checkActive(ctx, job.UserID); {
 	case errors.Is(err, ErrInvalidCredentials):

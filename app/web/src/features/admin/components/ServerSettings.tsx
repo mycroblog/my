@@ -514,6 +514,12 @@ function PoliciesForm() {
           label={t("client:admin.settings.registration.mode")}
           description={t("client:admin.settings.registration.description")}
         />
+        <PolicyCheckbox
+          form={form}
+          setting="login_providers_only"
+          label={t("client:admin.settings.login_providers_only.label")}
+          description={t("client:admin.settings.login_providers_only.description")}
+        />
       </Section>
       <Section surface="card" title={t("client:admin.settings.invites.title")}>
         <Hint size="inherit">{t("client:admin.settings.invites.description")}</Hint>
@@ -735,6 +741,7 @@ function PoliciesForm() {
           {t("client:admin.settings.policies.save")}
         </Button>
       </FormActionBar>
+      <LoginProvidersOnlyDialog confirmation={form.limitConfirmation} />
       {form.narrowing !== null && (
         <NarrowingDialog
           narrowing={form.narrowing}
@@ -744,6 +751,70 @@ function PoliciesForm() {
         />
       )}
     </Stack>
+  );
+}
+
+/**
+ * Asks before sign-in is limited to login providers: an alert dialog (WAI-ARIA APG) that says what stops, how many
+ * active users could no longer sign in, whether that includes the administrator, and how to undo it. It warns and
+ * does not refuse. The cancel button has the focus first.
+ */
+function LoginProvidersOnlyDialog({
+  confirmation,
+}: {
+  confirmation: ReturnType<typeof useServerPolicies>["limitConfirmation"];
+}) {
+  const t = useT();
+  const { impact } = confirmation;
+  const applies = impact !== undefined && impact.enabled_providers > 0;
+  return (
+    <Dialog
+      role="alertdialog"
+      closeLabel={null}
+      size="md"
+      title={t("client:admin.settings.login_providers_only.confirm.title")}
+      isOpen={confirmation.isOpen}
+      onOpenChange={(open) => {
+        if (!open) confirmation.cancel();
+      }}
+    >
+      <Stack gap="4">
+        {impact === undefined ? (
+          <p>
+            {confirmation.isFailed
+              ? t("client:admin.settings.login_providers_only.confirm.failed")
+              : t("client:admin.settings.login_providers_only.confirm.loading")}
+          </p>
+        ) : !applies ? (
+          <p>{t("client:admin.settings.login_providers_only.confirm.no_provider")}</p>
+        ) : (
+          <>
+            <p>
+              {t("client:admin.settings.login_providers_only.confirm.affected", {
+                count: impact.users_without_provider,
+              })}
+            </p>
+            {impact.includes_viewer && (
+              <InlineError>{t("client:admin.settings.login_providers_only.confirm.self")}</InlineError>
+            )}
+          </>
+        )}
+        <Stack as="ul" marker="disc" gap="2">
+          <li>{t("client:admin.settings.login_providers_only.confirm.stops")}</li>
+          <li>{t("client:admin.settings.login_providers_only.confirm.sessions")}</li>
+        </Stack>
+        <Hint>{t("client:admin.settings.login_providers_only.confirm.recovery")}</Hint>
+        <DialogActions>
+          {/* The least destructive choice has the focus first (APG, alert dialog pattern). */}
+          <Button autoFocus onPress={confirmation.cancel}>
+            {t("client:admin.settings.login_providers_only.confirm.cancel")}
+          </Button>
+          <Button variant="danger" onPress={confirmation.confirm}>
+            {t("client:admin.settings.login_providers_only.confirm.confirm")}
+          </Button>
+        </DialogActions>
+      </Stack>
+    </Dialog>
   );
 }
 

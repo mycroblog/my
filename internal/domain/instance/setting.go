@@ -122,6 +122,10 @@ const (
 	// SettingFeaturedAccounts are the local accounts that the suggestions of accounts show first,
 	// in this order (FR-308).
 	SettingFeaturedAccounts SettingKey = "featured_accounts"
+	// SettingLoginProvidersOnly limits registration and sign-in to the external login providers
+	// while at least one is enabled: passwords and passkeys no longer sign in. With no enabled
+	// provider it does not apply (identity.Service.LoginProvidersOnly).
+	SettingLoginProvidersOnly SettingKey = "login_providers_only"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -573,6 +577,10 @@ var definitions = []Definition{
 	{
 		Key: SettingFeaturedAccounts, Kind: KindAccounts, Default: "",
 		Doc: "Usernames of up to 20 local accounts, separated by spaces or commas, that the suggestions of accounts show first, in this order; an account that turned off being suggested is left out (FR-308).",
+	},
+	{
+		Key: SettingLoginProvidersOnly, Kind: KindBool, Default: "false",
+		Doc: "Whether registration and sign-in are limited to the external login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply.",
 	},
 }
 
@@ -1040,6 +1048,10 @@ func (s Settings) MemberInviteCaps() MemberInviteCaps {
 		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxExpiresIn)) * time.Second,
 	}
 }
+
+// LoginProvidersOnly returns the value of SettingLoginProvidersOnly: what the administrator chose,
+// which applies only while a login provider is enabled.
+func (s Settings) LoginProvidersOnly() bool { return s.boolValue(SettingLoginProvidersOnly) }
 
 // PublicCounts returns the value of SettingPublicCounts.
 func (s Settings) PublicCounts() bool { return s.boolValue(SettingPublicCounts) }

@@ -48,6 +48,9 @@ func (f *fakePasswordReset) CheckPasswordResetToken(_ context.Context, token str
 }
 
 func (f *fakePasswordReset) ResetPassword(ctx context.Context, token, password string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
 	if err := f.CheckPasswordResetToken(ctx, token); err != nil {
 		return "", err
 	}

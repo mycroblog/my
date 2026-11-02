@@ -44,6 +44,16 @@ export const loginProviderKinds = [
   "mastodon",
 ] as const satisfies readonly LoginProviderKind[];
 
+/** What the limit of sign-in to login providers is now, and what enabling `providerId` would do to it. */
+export type LoginProvidersOnlyImpact = Schemas["LoginProvidersOnlyImpact"];
+
+/** The impact, read just before adding a provider (no `providerId`) or enabling one. */
+export function loginProviderLimitQueryOptions(api: Api, providerId?: string) {
+  return api.query.queryOptions("get", "/admin/settings/login_providers_only/impact", {
+    params: { query: providerId === undefined ? {} : { provider_id: providerId } },
+  });
+}
+
 /** The login providers that are not deleted, newest first. */
 export function loginProvidersQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/login_providers");

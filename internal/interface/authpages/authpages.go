@@ -128,6 +128,9 @@ type Identity interface {
 	SignOut(ctx context.Context, token string) error
 	SignUp(ctx context.Context, in appidentity.SignUpInput) (appidentity.SignedUp, error)
 	RegistrationMode(ctx context.Context) (identity.RegistrationMode, error)
+	// LoginProvidersOnly reports whether registration and sign-in are limited to the login
+	// providers right now, read on every request.
+	LoginProvidersOnly(ctx context.Context) (bool, error)
 	UserAccess(ctx context.Context, userID string) (appidentity.Access, error)
 	VerifyEmail(ctx context.Context, token string) (string, error)
 	ResendVerificationEmail(ctx context.Context, userID string) error
@@ -324,6 +327,9 @@ type page struct {
 	// page that asks for a password reset link.
 	CanSignUp        bool
 	CanResetPassword bool
+	// LoginProvidersOnly leaves the password and passkey forms out of the sign-in page and says
+	// that only the login providers sign in.
+	LoginProvidersOnly bool
 	// SignUp is the registration form.
 	SignUp *signUpForm
 	// Status is the state of an account that cannot be used yet.
@@ -463,19 +469,51 @@ func (h *Handler) renderSignInPage(w http.ResponseWriter, r *http.Request, statu
 	if message != nil {
 		p.Error = message(p.L)
 	}
-	p.Passkey = h.passkeyView(r)
-	if p.Passkey != nil && passkeyMessage != nil {
-		p.Passkey.Error = passkeyMessage(p.L)
+	limited, err := h.o.Identity.LoginProvidersOnly(r.Context())
+	if err != nil {
+		h.internalError(w, r, err)
+		return
+	}
+	p.LoginProvidersOnly = limited
+	if limited {
+		// The page shows no form that the server would refuse, only what signs in.
+		p.Email = ""
+		if p.Error == "" && passkeyMessage != nil {
+			p.Error = passkeyMessage(p.L)
+		}
+	} else {
+		p.Passkey = h.passkeyView(r)
+		if p.Passkey != nil && passkeyMessage != nil {
+			p.Passkey.Error = passkeyMessage(p.L)
+		}
+		p.CanResetPassword = h.passwordResetEnabled()
+		p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignIn)
 	}
 	mode, err := h.o.Identity.RegistrationMode(r.Context())
 	if err != nil {
 		h.o.Logger.WarnContext(r.Context(), "read the registration mode", slog.Any("error", err))
 	}
 	p.CanSignUp = err == nil && mode != identity.RegistrationClosed
-	p.CanResetPassword = h.passwordResetEnabled()
 	p.External = h.externalButtons(r, returnTo, false)
-	p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignIn)
 	h.render(w, r, status, pageSignIn, p)
+}
+
+// refuseLoginProvidersOnly answers a sign-in with a password or a passkey that the limit to the
+// login providers refuses: the sign-in page with the same message whatever the form holds, so
+// that it tells nothing about any account.
+func (h *Handler) refuseLoginProvidersOnly(w http.ResponseWriter, r *http.Request, returnTo string) {
+	h.renderSignIn(w, r, http.StatusForbidden, returnTo, "", (*i18n.Localizer).ServerAuthSignInLoginProvidersOnly)
+}
+
+// loginProvidersOnly reports whether the limit to the login providers applies; it answers the
+// request when the read fails, and then returns false and false.
+func (h *Handler) loginProvidersOnly(w http.ResponseWriter, r *http.Request) (limited, ok bool) {
+	limited, err := h.o.Identity.LoginProvidersOnly(r.Context())
+	if err != nil {
+		h.internalError(w, r, err)
+		return false, false
+	}
+	return limited, true
 }
 
 // signIn handles the sign-in form.
@@ -491,6 +529,15 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		h.renderSignIn(w, r, http.StatusForbidden, returnTo, email, (*i18n.Localizer).ServerAuthFormExpired)
 		return
 	}
+	// The limit comes before anything about the form, so that the answer does not depend on it.
+	limited, ok := h.loginProvidersOnly(w, r)
+	if !ok {
+		return
+	}
+	if limited {
+		h.refuseLoginProvidersOnly(w, r, returnTo)
+		return
+	}
 	password := r.PostForm.Get("password")
 	if email == "" || password == "" {
 		h.renderSignIn(w, r, http.StatusUnprocessableEntity, returnTo, email, (*i18n.Localizer).ServerAuthSignInMissing)
@@ -504,11 +551,14 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		CurrentToken:    cookieValue(r, CookieSession),
 		HumanCheckToken: h.humanCheckToken(r),
 	})
-	var limited *kernel.RateLimitedError
+	var rateLimited *kernel.RateLimitedError
 	var secondFactor *appidentity.SecondFactorRequiredError
 	switch {
-	case errors.As(err, &limited):
-		h.renderSignIn(w, r, http.StatusTooManyRequests, returnTo, email, rateLimitedMessage(w, limited))
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		h.refuseLoginProvidersOnly(w, r, returnTo)
+		return
+	case errors.As(err, &rateLimited):
+		h.renderSignIn(w, r, http.StatusTooManyRequests, returnTo, email, rateLimitedMessage(w, rateLimited))
 		return
 	case errors.As(err, &secondFactor):
 		h.askSecondFactor(w, r, secondFactor.Challenge, returnTo)

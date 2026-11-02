@@ -94,10 +94,16 @@ type SignedIn struct {
 // token (kernel.ErrHumanCheckUnavailable), the sign-in goes on without the check (fail open,
 // ADR-0042 §4), so that an outage of the service or a wrong key does not lock everyone out.
 //
+// While registration and sign-in are limited to the login providers, it fails with
+// ErrLoginProvidersOnly before it looks at anything else.
+//
 // For a user with two-factor authentication, a right password starts no session: SignIn fails
 // with a *SecondFactorRequiredError (ErrSecondFactorRequired) whose challenge CompleteSignIn
 // takes with the code. The CAPTCHA belongs to this first step only.
 func (s *Service) SignIn(ctx context.Context, in SignInInput) (SignedIn, error) {
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+		return SignedIn{}, err
+	}
 	if s.d.RateLimiter == nil {
 		return SignedIn{}, errors.New("identity: SignIn needs a RateLimiter")
 	}
@@ -150,7 +156,7 @@ func (s *Service) SignIn(ctx context.Context, in SignInInput) (SignedIn, error) 
 	switch _, err := s.d.Repository.FindActiveTOTPEnrollment(ctx, cred.cred.UserID); {
 	case err == nil:
 		// The password was right; the session waits for the second factor (CompleteSignIn).
-		challenge, err := s.newChallenge(ctx, cred.cred.UserID)
+		challenge, err := s.newChallenge(ctx, cred.cred.UserID, challengeLocalCredential)
 		if err != nil {
 			return SignedIn{}, err
 		}

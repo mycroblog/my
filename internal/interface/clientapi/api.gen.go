@@ -2269,6 +2269,7 @@ const (
 	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
 	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
@@ -2341,6 +2342,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
 	case InstanceSettingKeyLocalTimelineAccess:
+		return true
+	case InstanceSettingKeyLoginProvidersOnly:
 		return true
 	case InstanceSettingKeyMaxStatusLength:
 		return true
@@ -5597,6 +5600,10 @@ type AdminOAuthClientPage struct {
 type AdminPasswordResetLink struct {
 	// ExpiresAt When the link stops working.
 	ExpiresAt time.Time `json:"expires_at"`
+
+	// LoginProvidersOnly Whether registration and sign-in are limited to the login providers now. While they are, the
+	// link sets no password; it works only if the limit ends before `expires_at`.
+	LoginProvidersOnly bool `json:"login_providers_only"`
 
 	// Url The link that sets a new password; it works once.
 	Url string `json:"url"`
@@ -8866,6 +8873,11 @@ type Instance struct {
 	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
 	LinkCardsIgnoreRobotsTxt bool `json:"link_cards_ignore_robots_txt"`
 
+	// LoginProvidersOnly Whether registration and sign-in are limited to the login providers now: the instance setting
+	// is on and at least one provider is enabled. While it is true, a password or a passkey signs
+	// nobody in, and neither can be set or added; both still confirm operations of a signed-in user.
+	LoginProvidersOnly bool `json:"login_providers_only"`
+
 	// Logo A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
 	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
@@ -9150,14 +9162,16 @@ type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-	// the instance setting says.
+	// the instance setting says, and while registration is limited to the login providers and
+	// none of them lets new users sign up.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 // approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 // sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-// the instance setting says.
+// the instance setting says, and while registration is limited to the login providers and
+// none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
@@ -9512,6 +9526,27 @@ type LoginProviderProblem struct {
 // claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
 // ones that are not valid.
 type LoginProviderProblemReason string
+
+// LoginProvidersOnlyImpact Who the instance setting `login_providers_only` keeps from signing in, whether or not the setting
+// is on. Sessions and tokens keep working; these users cannot sign in again once they end.
+type LoginProvidersOnlyImpact struct {
+	// EnabledProviders How many login providers users can sign in with now. With none, the limit does not apply.
+	EnabledProviders int `json:"enabled_providers"`
+
+	// IncludesViewer Whether the user who asks is one of them.
+	IncludesViewer bool `json:"includes_viewer"`
+
+	// SettingOn The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
+	SettingOn bool `json:"setting_on"`
+
+	// StartsLimit Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+	// at once: the setting is on, no provider can be signed in with now, and that one could be.
+	StartsLimit bool `json:"starts_limit"`
+
+	// UsersWithoutProvider How many active local users have no link to one of those providers, or to the provider
+	// `provider_id` named. With no provider at all, it is every active local user.
+	UsersWithoutProvider int `json:"users_without_provider"`
+}
 
 // MediaAnimatedVariants The moving renditions of an animation, absent for a still image: animated WebP for
 // `small` and `medium`, and a GIF for `large`.
@@ -10888,6 +10923,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
 //     way to sign in: the password, the last passkey, or the last linked account when nothing
 //     else signs the user in.
+//   - `/api/v1/problems/login-providers-only` (403): registration and sign-in are limited to the
+//     login providers, so a password cannot be set and a passkey cannot be added.
 //   - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
 //     login provider is unknown, expired, used, or for another operation. Start a new one.
 //   - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
@@ -13635,6 +13672,13 @@ type ListInstanceRulesParams struct {
 	IncludeRetired *bool `form:"include_retired,omitempty" json:"include_retired,omitempty"`
 }
 
+// GetLoginProvidersOnlyImpactParams defines parameters for GetLoginProvidersOnlyImpact.
+type GetLoginProvidersOnlyImpactParams struct {
+	// ProviderId A provider to count as if it were enabled, for the question of what enabling it would do.
+	// A new provider needs none: nobody links to it yet.
+	ProviderId *openapi_types.UUID `form:"provider_id,omitempty" json:"provider_id,omitempty"`
+}
+
 // ListSignupBlocksParams defines parameters for ListSignupBlocks.
 type ListSignupBlocksParams struct {
 	// Kind Keep only the blocks of this kind.
@@ -14798,6 +14842,9 @@ type ServerInterface interface {
 	// UpdateInstanceSettings Change instance settings
 	// (PATCH /admin/settings)
 	UpdateInstanceSettings(w http.ResponseWriter, r *http.Request)
+	// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
+	// (GET /admin/settings/login_providers_only/impact)
+	GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request, params GetLoginProvidersOnlyImpactParams)
 	// ListSignupBlocks List the sign-up blocks
 	// (GET /admin/signup_blocks)
 	ListSignupBlocks(w http.ResponseWriter, r *http.Request, params ListSignupBlocksParams)
@@ -20075,6 +20122,39 @@ func (siw *ServerInterfaceWrapper) UpdateInstanceSettings(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateInstanceSettings(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLoginProvidersOnlyImpact operation middleware
+func (siw *ServerInterfaceWrapper) GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLoginProvidersOnlyImpactParams
+
+	// ------------- Optional query parameter "provider_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "provider_id", r.URL.Query(), &params.ProviderId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "provider_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "provider_id", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLoginProvidersOnlyImpact(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25775,6 +25855,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/import", wrapper.ImportDomainBlocks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/settings", wrapper.ListInstanceSettings)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/settings", wrapper.UpdateInstanceSettings)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/settings/login_providers_only/impact", wrapper.GetLoginProvidersOnlyImpact)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/invites", wrapper.ListOwnInvites)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invites", wrapper.CreateOwnInvite)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/invites/{id}/revoke", wrapper.RevokeOwnInvite)
@@ -35654,6 +35735,68 @@ type UpdateInstanceSettingsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UpdateInstanceSettingsdefaultApplicationProblemPlusJSONResponse) VisitUpdateInstanceSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLoginProvidersOnlyImpactRequestObject struct {
+	Params GetLoginProvidersOnlyImpactParams
+}
+
+type GetLoginProvidersOnlyImpactResponseObject interface {
+	VisitGetLoginProvidersOnlyImpactResponse(w http.ResponseWriter) error
+}
+
+type GetLoginProvidersOnlyImpact200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetLoginProvidersOnlyImpact200JSONResponse struct {
+	Body    LoginProvidersOnlyImpact
+	Headers GetLoginProvidersOnlyImpact200ResponseHeaders
+}
+
+func (response GetLoginProvidersOnlyImpact200JSONResponse) VisitGetLoginProvidersOnlyImpactResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse) VisitGetLoginProvidersOnlyImpactResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47452,6 +47595,9 @@ type StrictServerInterface interface {
 	// UpdateInstanceSettings Change instance settings
 	// (PATCH /admin/settings)
 	UpdateInstanceSettings(ctx context.Context, request UpdateInstanceSettingsRequestObject) (UpdateInstanceSettingsResponseObject, error)
+	// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
+	// (GET /admin/settings/login_providers_only/impact)
+	GetLoginProvidersOnlyImpact(ctx context.Context, request GetLoginProvidersOnlyImpactRequestObject) (GetLoginProvidersOnlyImpactResponseObject, error)
 	// ListSignupBlocks List the sign-up blocks
 	// (GET /admin/signup_blocks)
 	ListSignupBlocks(ctx context.Context, request ListSignupBlocksRequestObject) (ListSignupBlocksResponseObject, error)
@@ -52479,6 +52625,32 @@ func (sh *strictHandler) UpdateInstanceSettings(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateInstanceSettingsResponseObject); ok {
 		if err := validResponse.VisitUpdateInstanceSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLoginProvidersOnlyImpact operation middleware
+func (sh *strictHandler) GetLoginProvidersOnlyImpact(w http.ResponseWriter, r *http.Request, params GetLoginProvidersOnlyImpactParams) {
+	var request GetLoginProvidersOnlyImpactRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLoginProvidersOnlyImpact(ctx, request.(GetLoginProvidersOnlyImpactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLoginProvidersOnlyImpact")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLoginProvidersOnlyImpactResponseObject); ok {
+		if err := validResponse.VisitGetLoginProvidersOnlyImpactResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -102,6 +102,15 @@ async function administratorServer(page: Page) {
     if (key === "GET /admin/counts")
       return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });
     if (key === "GET /admin/audit_log") return json(route, { items: [] });
+    if (key === "GET /admin/settings/login_providers_only/impact") {
+      return json(route, {
+        setting_on: false,
+        enabled_providers: 0,
+        users_without_provider: 0,
+        includes_viewer: false,
+        starts_limit: false,
+      });
+    }
     if (key === "GET /admin/login_providers") return json(route, { items: providers });
     if (key === "POST /admin/login_providers") {
       const body = request.postDataJSON() as Schemas["CreateLoginProviderRequest"];

@@ -149,6 +149,9 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	var (
 		v   appidentity.LoginProviderView
 		err error
+		// printImpact tells, after a change of the enabled providers, what that does to the limit
+		// of sign-in to login providers.
+		printImpact bool
 	)
 	switch sub {
 	case "list":
@@ -160,6 +163,7 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 		if v, err = app.Identity.CreateLoginProvider(ctx, settings, secret, ""); err == nil {
 			_, _ = fmt.Fprintf(stdout, "added %s login provider %s (%s)\n", v.Provider.Settings.Kind, v.Provider.ID, v.Provider.Settings.DisplayName)
 			_, _ = fmt.Fprintf(stdout, "callback URL: %s\n", loginProviderCallbackURL(app, v.Provider.ID))
+			printImpact = true
 		}
 	case "set":
 		if v, err = app.Identity.LoginProvider(ctx, id); err == nil {
@@ -179,18 +183,27 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	case "enable":
 		if _, err = app.Identity.EnableLoginProvider(ctx, id, ""); err == nil {
 			_, _ = fmt.Fprintf(stdout, "enabled login provider %s\n", id)
+			printImpact = true
 		}
 	case "disable":
 		if v, err = app.Identity.DisableLoginProvider(ctx, id, ""); err == nil {
 			_, _ = fmt.Fprintf(stdout, "disabled login provider %s; %d linked user(s) can no longer sign in with it\n", id, v.LinkedUsers)
+			printImpact = true
 		}
 	case "delete":
 		if v, err = app.Identity.DeleteLoginProvider(ctx, id, ""); err == nil {
 			_, _ = fmt.Fprintf(stdout, "deleted login provider %s; %d linked user(s) can no longer sign in with it\n", id, v.LinkedUsers)
+			printImpact = true
 		}
 	}
 	if errors.Is(err, appidentity.ErrNotFound) {
 		err = fmt.Errorf("no login provider has the ID %q", id)
+	}
+	if err == nil && printImpact {
+		var impact appidentity.LoginProvidersOnlyImpact
+		if impact, err = app.Identity.LoginProvidersOnlyImpact(ctx, "", ""); err == nil && impact.SettingOn {
+			err = printLoginProvidersOnlyImpact(ctx, app, stdout)
+		}
 	}
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)

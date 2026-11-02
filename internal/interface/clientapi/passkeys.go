@@ -34,6 +34,9 @@ const (
 	// ProblemTypeLastSignInMethod is the problem of a removal that would leave the viewer no way
 	// to sign in.
 	ProblemTypeLastSignInMethod = "/api/v1/problems/last-sign-in-method"
+	// ProblemTypeLoginProvidersOnly is the problem of a new password or passkey while registration
+	// and sign-in are limited to the login providers: it could not sign in.
+	ProblemTypeLoginProvidersOnly = "/api/v1/problems/login-providers-only"
 )
 
 // PasskeySettings runs the viewer's passkeys. *appidentity.Service implements it.
@@ -101,6 +104,8 @@ func (s *Server) passkeyProblem(ctx context.Context, err error) *problem {
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypePasskeyConfirmationExpired, l.ServerErrorsPasskeyConfirmationExpired(), "")
 	case errors.Is(err, appidentity.ErrLastSignInMethod):
 		p = s.problem(ctx, http.StatusConflict, ProblemTypeLastSignInMethod, l.ServerErrorsPasskeyLastSignInMethod(), "")
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		p = s.problem(ctx, http.StatusForbidden, ProblemTypeLoginProvidersOnly, l.ServerErrorsLoginProvidersOnly(), "")
 	case errors.Is(err, appidentity.ErrExternalConfirmationExpired):
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeExternalConfirmationExpired, l.ServerErrorsExternalConfirmationExpired(), "")
 	default:

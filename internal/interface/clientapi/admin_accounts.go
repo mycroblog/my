@@ -304,7 +304,7 @@ func (s *Server) IssueAdminAccountPasswordResetLink(ctx context.Context, req Iss
 	}
 	cache := cacheNoStore
 	return IssueAdminAccountPasswordResetLink201JSONResponse{
-		Body:    AdminPasswordResetLink{Url: link.URL, ExpiresAt: link.ExpiresAt.UTC()},
+		Body:    AdminPasswordResetLink{Url: link.URL, ExpiresAt: link.ExpiresAt.UTC(), LoginProvidersOnly: link.LoginProvidersOnly},
 		Headers: IssueAdminAccountPasswordResetLink201ResponseHeaders{CacheControl: &cache},
 	}, nil
 }

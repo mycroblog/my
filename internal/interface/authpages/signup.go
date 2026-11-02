@@ -34,6 +34,9 @@ const (
 // fields the mode asks for, and the error of each field.
 type signUpForm struct {
 	Closed bool
+	// LoginProvidersOnly replaces the password form with the login providers that let new users
+	// sign up.
+	LoginProvidersOnly bool
 	// AskInvite shows the invite code field, which every mode but closed takes (ADR-0108 §4);
 	// NeedInvite makes it required (invite mode).
 	AskInvite  bool
@@ -97,8 +100,13 @@ func (h *Handler) signUpPage(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
+	limited, ok := h.loginProvidersOnly(w, r)
+	if !ok {
+		return
+	}
 	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
 	p.SignUp = newSignUpForm(p.L, mode)
+	p.SignUp.LoginProvidersOnly = limited
 	p.SignUp.InviteCode = r.URL.Query().Get("invite")
 	h.renderSignUp(w, r, http.StatusOK, p)
 }
@@ -109,12 +117,43 @@ func (h *Handler) renderSignUp(w http.ResponseWriter, r *http.Request, status in
 		status = http.StatusForbidden
 	}
 	if !p.SignUp.Closed {
-		p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignUp)
+		providersOnly := p.SignUp.LoginProvidersOnly && p.SignUp.External == nil
+		p.LoginProvidersOnly = providersOnly
+		if !providersOnly {
+			p.HumanCheck = h.humanCheck(w, r, p.L, kernel.HumanCheckActionSignUp)
+		}
 		if p.SignUp.External == nil {
-			p.External = h.externalButtons(r, "", true)
+			p.External = h.externalButtons(r, signUpReturnTo(p.SignUp.InviteCode), true)
 		}
 	}
 	h.render(w, r, status, pageSignUp, p)
+}
+
+// signUpReturnTo is where the sign-up with a login provider comes back to from the registration
+// page, which keeps the invite code of the page's link for the form that follows; "" without one.
+func signUpReturnTo(inviteCode string) string {
+	if inviteCode == "" {
+		return ""
+	}
+	return safeReturnTo(PathSignUp + "?" + url.Values{"invite": {inviteCode}}.Encode())
+}
+
+// inviteCodeOf returns the invite code that signUpReturnTo put into returnTo.
+func inviteCodeOf(returnTo string) string {
+	u, err := url.Parse(returnTo)
+	if err != nil || u.Path != PathSignUp {
+		return ""
+	}
+	return u.Query().Get("invite")
+}
+
+// refuseSignUp answers a registration with a password that the limit to the login providers
+// refuses: the page that offers the providers, with what was typed gone.
+func (h *Handler) refuseSignUp(w http.ResponseWriter, r *http.Request, p page) {
+	p.SignUp.LoginProvidersOnly = true
+	p.SignUp.Username, p.SignUp.Email, p.SignUp.Reason = "", "", ""
+	p.Error = p.L.ServerAuthSignUpLoginProvidersOnly()
+	h.renderSignUp(w, r, http.StatusForbidden, p)
 }
 
 // signUp handles the registration form.
@@ -148,6 +187,15 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		h.renderSignUp(w, r, http.StatusForbidden, p)
 		return
 	}
+	// The limit comes before anything about the form, so that the answer does not depend on it.
+	limited, ok := h.loginProvidersOnly(w, r)
+	if !ok {
+		return
+	}
+	if limited {
+		h.refuseSignUp(w, r, p)
+		return
+	}
 	// Check every field first, so that the form shows all of its errors at once.
 	f.check(p.L, password)
 	if len(f.Errors) > 0 {
@@ -164,6 +212,10 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		IP: kernel.RequestClientIP(r), UserAgent: r.UserAgent(), CurrentToken: cookieValue(r, CookieSession),
 		HumanCheckToken: h.humanCheckToken(r),
 	})
+	if errors.Is(err, appidentity.ErrLoginProvidersOnly) {
+		h.refuseSignUp(w, r, p)
+		return
+	}
 	if err != nil {
 		h.signUpFailed(w, r, p, err)
 		return

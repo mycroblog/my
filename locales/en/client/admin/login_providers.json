@@ -231,6 +231,38 @@
     "defaultMessage": "OpenID Connect",
     "description": "Kind of login provider: an OpenID Connect provider."
   },
+  "admin.login_providers.limit_start.affected": {
+    "defaultMessage": "{count, plural, =0 {Every active user has a link to this provider.} one {# active user has no link to this provider and could not sign in once their sessions end.} other {# active users have no link to this provider and could not sign in once their sessions end.}}",
+    "description": "In the dialog: how many active users would have no link to a login provider once this one starts the limit."
+  },
+  "admin.login_providers.limit_start.confirm_add": {
+    "defaultMessage": "Set up and start the limit",
+    "description": "Button of the dialog: sets up the provider, which starts the limit."
+  },
+  "admin.login_providers.limit_start.confirm_enable": {
+    "defaultMessage": "Enable and start the limit",
+    "description": "Button of the dialog: enables the provider, which starts the limit."
+  },
+  "admin.login_providers.limit_start.failed": {
+    "defaultMessage": "The server could not say whether this starts the limit of sign-in to login providers. If the limit is set and no provider can be used yet, it starts at once, and users without a link cannot sign in once their sessions end.",
+    "description": "In the dialog when the count could not be read before setting up or enabling a login provider."
+  },
+  "admin.login_providers.limit_start.lead": {
+    "defaultMessage": "Sign-in is set to go only through login providers, and none can be used yet, so this provider starts the limit at once: passwords and passkeys stop signing in, and passwords can no longer be used to register or be reset.",
+    "description": "First part of the dialog before a login provider starts the limit of sign-in to login providers."
+  },
+  "admin.login_providers.limit_start.recovery": {
+    "defaultMessage": "To undo this, turn the limit off in the server settings, or run \"my instance set login_providers_only false\" on the server.",
+    "description": "In the dialog: how to undo the limit."
+  },
+  "admin.login_providers.limit_start.self": {
+    "defaultMessage": "You are one of them: link this provider under Linked accounts before your sessions end.",
+    "description": "In the dialog when the administrator who confirms would have no link to a login provider."
+  },
+  "admin.login_providers.limit_start.title": {
+    "defaultMessage": "Start limiting sign-in to login providers?",
+    "description": "Title of the dialog before setting up or enabling a login provider starts the limit of sign-in to login providers."
+  },
   "admin.login_providers.linked_users": {
     "defaultMessage": "Linked users",
     "description": "Column of the list: the number of users linked to a login provider."

@@ -41,6 +41,9 @@ func runAdminAccountPasswordResetLink(args []string, stdout, stderr io.Writer) i
 	}
 	_, _ = fmt.Fprintf(stdout, "%s\n", link.URL)
 	_, _ = fmt.Fprintf(stderr, "the link sets a new password for account %s once, until %s\n", id, link.ExpiresAt.UTC().Format(time.RFC3339))
+	if link.LoginProvidersOnly {
+		_, _ = fmt.Fprintln(stderr, "warning: sign-in is limited to login providers, so the link does not work until the limit ends (my instance set login_providers_only false)")
+	}
 	return 0
 }
 
@@ -53,6 +56,10 @@ and stops working when the password changes in another way. Setting the new
 password signs the user out everywhere; passkeys and two-factor authentication
 stay. Hand the link to the account's owner only, after making sure the request
 comes from them. The audit log records it as password_reset_link_issued.
+
+While sign-in is limited to login providers (the instance setting
+login_providers_only), the link does not work until the limit ends; the command
+still prints it and warns about it.
 <account> is @username or an account ID.
 `)
 }

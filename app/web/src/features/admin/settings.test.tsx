@@ -438,6 +438,87 @@ describe("the server's policies", () => {
     expect(within(direction).getByRole("radio", { name: "Both ways" })).toBeChecked();
   });
 
+  describe("limiting sign-in to login providers", () => {
+    function impactServer(impact: Partial<Schemas["LoginProvidersOnlyImpact"]>) {
+      server.use(
+        http.get(`${apiBase}/admin/settings/login_providers_only/impact`, () =>
+          HttpResponse.json({
+            setting_on: false,
+            enabled_providers: 1,
+            users_without_provider: 3,
+            includes_viewer: false,
+            starts_limit: false,
+            ...impact,
+          } satisfies Schemas["LoginProvidersOnlyImpact"]),
+        ),
+      );
+    }
+    const label = "Allow sign-in and registration only through login providers";
+
+    test("says how many users could not sign in, warns and does not refuse, and saves once confirmed", async () => {
+      const settings = settingsServer();
+      impactServer({ users_without_provider: 3 });
+      const { user } = await renderApp({ path: "/admin/settings" });
+      await user.click(await screen.findByRole("checkbox", { name: label }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "Limit sign-in to login providers?" });
+      expect(await within(dialog).findByText(/^3 active users have no linked login provider/)).toBeInTheDocument();
+      expect(within(dialog).queryByText(/You are one of them/)).not.toBeInTheDocument();
+      expect(within(dialog).getByText(/my instance set login_providers_only false/)).toBeInTheDocument();
+      // The least destructive choice has the focus (APG, alert dialog pattern); cancelling saves nothing.
+      expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+      expect(settings.patches).toEqual([]);
+
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Limit sign-in" }));
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.");
+      expect(settings.patches).toEqual([{ values: { login_providers_only: "true" } }]);
+    });
+
+    test("says plainly when the administrator is one of them", async () => {
+      settingsServer();
+      impactServer({ users_without_provider: 1, includes_viewer: true });
+      const { user } = await renderApp({ path: "/admin/settings" });
+      await user.click(await screen.findByRole("checkbox", { name: label }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      const dialog = await screen.findByRole("alertdialog");
+      expect(await within(dialog).findByText(/^1 active user has no linked login provider/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/You are one of them/)).toBeInTheDocument();
+    });
+
+    test("says that nothing changes while no provider is enabled", async () => {
+      settingsServer();
+      impactServer({ enabled_providers: 0, users_without_provider: 0 });
+      const { user } = await renderApp({ path: "/admin/settings" });
+      await user.click(await screen.findByRole("checkbox", { name: label }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      const dialog = await screen.findByRole("alertdialog");
+      expect(await within(dialog).findByText(/^No login provider is enabled/)).toBeInTheDocument();
+    });
+
+    test("turning it off asks nothing", async () => {
+      const settings = settingsServer();
+      server.use(
+        http.get(`${apiBase}/admin/settings`, () =>
+          HttpResponse.json(instanceSettingsFixture({ login_providers_only: "true" })),
+        ),
+      );
+      const { user } = await renderApp({ path: "/admin/settings" });
+      const box = await screen.findByRole("checkbox", { name: label });
+      expect(box).toBeChecked();
+      await user.click(box);
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change.");
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(settings.patches).toEqual([{ values: { login_providers_only: "false" } }]);
+    });
+  });
+
   test("asks before narrowing the federation direction, saying what stops, and saves once confirmed", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

@@ -6,7 +6,10 @@ delete:
   description: |
     The account no longer signs the user in or confirms the user's operations. An unknown
     or unlinked link is a 404, and the last way to sign in of a user without a password and
-    without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+    without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+    sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+    password and a passkey do not sign in, so the user's last link to a provider that signs in
+    is a 409 too.
   tags: [linked_identities]
   security:
     - oauth2: ["write:accounts"]

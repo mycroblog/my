@@ -133,7 +133,13 @@ type externalEnv struct {
 
 func newExternalEnv(t *testing.T) *externalEnv {
 	t.Helper()
-	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	return newExternalEnvWith(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+}
+
+// newExternalEnvWith is newExternalEnv with the configuration env.
+func newExternalEnvWith(t *testing.T, env map[string]string) *externalEnv {
+	t.Helper()
+	cfg := loadConfig(t, env)
 	idp := newFakeOIDC(t)
 	s := startApp(t, cfg, platform.AppOptions{HTTPClient: idp}, platform.ServeOptions{}, nil)
 	db, err := sqlite.Open(t.Context(), cfg.DatabaseURL, uow.Options{})

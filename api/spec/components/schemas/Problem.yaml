@@ -73,6 +73,8 @@ description: |
   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
     way to sign in: the password, the last passkey, or the last linked account when nothing
     else signs the user in.
+  - `/api/v1/problems/login-providers-only` (403): registration and sign-in are limited to the
+    login providers, so a password cannot be set and a passkey cannot be added.
   - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
     login provider is unknown, expired, used, or for another operation. Start a new one.
   - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or

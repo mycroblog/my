@@ -77,10 +77,14 @@ type PasswordResetRequest struct {
 // identity.ErrInvalidEmail for an address that is not one, a *kernel.RateLimitedError after
 // PasswordResetIPLimit, and, with a HumanVerifier, an error wrapping kernel.ErrHumanCheckFailed
 // or kernel.ErrHumanCheckUnavailable: like a sign-up, a request that the service cannot check
-// is refused (fail closed, ADR-0042 §4), since it sends email.
+// is refused (fail closed, ADR-0042 §4), since it sends email. While registration and sign-in are
+// limited to the login providers, it fails with ErrLoginProvidersOnly whatever the address.
 func (s *Service) RequestPasswordReset(ctx context.Context, in PasswordResetRequest) error {
 	if !s.PasswordResetByEmail() {
 		return ErrPasswordResetByEmailUnavailable
+	}
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+		return err
 	}
 	if err := identity.ValidateEmail(in.Email); err != nil {
 		return err
@@ -158,14 +162,24 @@ func (s *Service) issueResetToken(ctx context.Context, userID string, audit *app
 type PasswordResetLink struct {
 	URL       string
 	ExpiresAt time.Time
+	// LoginProvidersOnly tells that the link does not work as things stand: registration and
+	// sign-in are limited to the login providers, and the link sets a password only if the limit
+	// ends before the link expires.
+	LoginProvidersOnly bool
 }
 
 // IssuePasswordResetLink issues a reset link for the user of a local account for byUserID
 // ("" for the CLI), for an administrator to hand to the user, such as when the Mailer delivers
 // no email, and records it in the audit log (password_reset_link_issued) in the same
 // transaction. It fails with account.ErrNotFound for an unknown account and with
-// ErrNotLocalAccount for an account without a user.
+// ErrNotLocalAccount for an account without a user. While registration and sign-in are limited to
+// the login providers it still issues the link, for an administrator about to end the limit, and
+// says so in the result.
 func (s *Service) IssuePasswordResetLink(ctx context.Context, accountID, byUserID string) (PasswordResetLink, error) {
+	limited, err := s.LoginProvidersOnly(ctx)
+	if err != nil {
+		return PasswordResetLink{}, err
+	}
 	actor, err := s.d.Accounts.FindByID(ctx, accountID)
 	if err != nil {
 		return PasswordResetLink{}, err
@@ -182,7 +196,7 @@ func (s *Service) IssuePasswordResetLink(ctx context.Context, accountID, byUserI
 	if err != nil {
 		return PasswordResetLink{}, err
 	}
-	return PasswordResetLink{URL: s.link(PathResetPassword, secret), ExpiresAt: audit.Entry.OccurredAt.Add(PasswordResetTTL)}, nil
+	return PasswordResetLink{URL: s.link(PathResetPassword, secret), ExpiresAt: audit.Entry.OccurredAt.Add(PasswordResetTTL), LoginProvidersOnly: limited}, nil
 }
 
 // resetToken returns the reset token of secret while it works: issued as a reset token, not
@@ -231,8 +245,13 @@ func (s *Service) CheckPasswordResetToken(ctx context.Context, secret string) er
 // passkeys and the two-factor authentication stay, so a user with two-factor authentication
 // still enters a code to sign in. It fails with ErrInvalidToken for a token that does not work
 // (CheckPasswordResetToken), also when a concurrent reset used it first, and with an error
-// wrapping identity.ErrInvalidPassword for an invalid password.
+// wrapping identity.ErrInvalidPassword for an invalid password. While registration and sign-in are
+// limited to the login providers, it fails with ErrLoginProvidersOnly whatever the token, and
+// the token stays as it is.
 func (s *Service) ResetPassword(ctx context.Context, secret, password string) (userID string, err error) {
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+		return "", err
+	}
 	t, err := s.resetToken(ctx, secret)
 	if err != nil {
 		return "", err
@@ -278,11 +297,17 @@ type ChangePasswordInput struct {
 // grant but in.KeepFamilyID (password_changed); the passkeys and the two-factor authentication
 // stay. It fails with ErrWrongPassword for a wrong current password (also for a user without
 // one), the errors of a confirmation with a passkey (Service.confirm), a *kernel.RateLimitedError
-// after too many wrong confirmations (PasswordChangeLimit), and an error wrapping
-// identity.ErrInvalidPassword for an invalid new password.
+// after too many wrong confirmations (PasswordChangeLimit), an error wrapping
+// identity.ErrInvalidPassword for an invalid new password, and ErrLoginProvidersOnly while
+// registration and sign-in are limited to the login providers: the new password could not sign in,
+// and a change would end the sessions of the user's other devices, which then could not sign in
+// again either. Removing the password stays possible (RemovePassword).
 func (s *Service) ChangePassword(ctx context.Context, in ChangePasswordInput) error {
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: ChangePassword needs a RateLimiter")
+	}
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+		return err
 	}
 	if err := identity.ValidatePassword(in.NewPassword); err != nil {
 		return err

@@ -5,7 +5,7 @@ package platform
 import (
 	"context"
 
-	domaininstance "github.com/mycroblog/my/internal/domain/instance"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/activitypub"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -20,8 +20,10 @@ func (a *App) setUpActivityPub(cfg *config.Config, version string) {
 		Metadata:     a.nodeMetadata,
 		// Sign-ups that wait for a moderator's approval are open, as Mastodon reports them.
 		OpenRegistrations: func(ctx context.Context) (bool, error) {
-			mode, err := a.Instance.RegistrationMode(ctx)
-			return mode == domaininstance.RegistrationOpen || mode == domaininstance.RegistrationApproval, err
+			// The identity module's mode also closes registration when it is limited to login
+			// providers and none of them lets new users sign up.
+			mode, err := a.Identity.RegistrationMode(ctx)
+			return mode == domainidentity.RegistrationOpen || mode == domainidentity.RegistrationApproval, err
 		},
 		Accounts: a.Accounts, Objects: a.newObjects(cfg), Graph: a.Graph, Inbox: a.Inbox,
 		HTML: a.page, Problem: a.writeStatusProblem, Logger: a.Logger, Errors: a.ErrorReporter,

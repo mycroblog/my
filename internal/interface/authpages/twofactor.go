@@ -97,6 +97,10 @@ func (h *Handler) twoFactor(w http.ResponseWriter, r *http.Request) {
 	})
 	var limited *kernel.RateLimitedError
 	switch {
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		clearTwoFactorCookie(w)
+		h.refuseLoginProvidersOnly(w, r, returnTo)
+		return
 	case errors.As(err, &limited):
 		h.renderTwoFactor(w, r, http.StatusTooManyRequests, returnTo, rateLimitedMessage(w, limited))
 		return

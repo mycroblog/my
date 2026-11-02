@@ -491,6 +491,10 @@
     "defaultMessage": "抑止を解除できませんでした: {reason}",
     "description": "Error in the confirmation when the lift failed. {reason} is the server's explanation."
   },
+  "admin.account.password_reset.login_providers_only": {
+    "defaultMessage": "このリンクは今は使えません。このサーバーはログインプロバイダーでのみログインできます。リンクの有効期限までに制限を解除した場合にだけ使えます。",
+    "description": "Under a password reset link issued while the instance limits sign-in to login providers."
+  },
   "admin.account.registration.invited_by": {
     "defaultMessage": "招待した人",
     "description": "Term of a local account that registered with an invite: who created the invite."

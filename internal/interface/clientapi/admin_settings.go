@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"slices"
 
+	appidentity "github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -22,6 +23,58 @@ import (
 type InstanceSettings interface {
 	Settings(ctx context.Context) (instance.Settings, error)
 	SetSettings(ctx context.Context, ins []appinstance.SetSettingInput) ([]instance.SettingRevision, error)
+}
+
+// SignInLimit reads the limit of registration and sign-in to the login providers.
+// *appidentity.Service implements it.
+type SignInLimit interface {
+	LoginProvidersOnly(ctx context.Context) (bool, error)
+	RegistrationMode(ctx context.Context) (identity.RegistrationMode, error)
+	LoginProvidersOnlyImpact(ctx context.Context, viewerUserID, withProviderID string) (appidentity.LoginProvidersOnlyImpact, error)
+}
+
+// GetLoginProvidersOnlyImpact serves GET /api/v1/admin/settings/login_providers_only/impact, for
+// those who change the setting and those who change the providers under it.
+func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, req GetLoginProvidersOnlyImpactRequestObject) (GetLoginProvidersOnlyImpactResponseObject, error) {
+	p, err := s.requirePermission(ctx, identity.PermManageLoginProviders)
+	if err != nil {
+		return nil, err
+	}
+	if p != nil {
+		if p, err = s.requirePermission(ctx, identity.PermManageSettings); err != nil {
+			return nil, err
+		}
+		if p != nil {
+			return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(*p), nil
+		}
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.SignInLimit == nil {
+		return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	providerID := ""
+	if req.Params.ProviderId != nil {
+		providerID = req.Params.ProviderId.String()
+	}
+	impact, err := s.o.SignInLimit.LoginProvidersOnlyImpact(ctx, v.UserID, providerID)
+	if errors.Is(err, appidentity.ErrNotFound) {
+		return GetLoginProvidersOnlyImpactdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: count who the limit to login providers affects: %w", err)
+	}
+	cache := cacheNoStore
+	return GetLoginProvidersOnlyImpact200JSONResponse{
+		Body: LoginProvidersOnlyImpact{
+			SettingOn: impact.SettingOn, EnabledProviders: impact.EnabledProviders,
+			UsersWithoutProvider: impact.UsersWithoutProvider, IncludesViewer: impact.IncludesViewer,
+			StartsLimit: impact.StartsLimit,
+		},
+		Headers: GetLoginProvidersOnlyImpact200ResponseHeaders{CacheControl: &cache},
+	}, nil
 }
 
 // adminSettingList returns every setting of the current settings, in the order of the

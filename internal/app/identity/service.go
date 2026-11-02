@@ -85,6 +85,9 @@ type Deps struct {
 	// the next one. Nil means it does.
 	MetadataDocumentClients func(ctx context.Context) (bool, error)
 
+	// LoginProvidersOnly reads the instance setting that limits registration and sign-in to the
+	// login providers while one is enabled (login_providers_only.go); nil leaves it off.
+	LoginProvidersOnly func(ctx context.Context) (bool, error)
 	// RegistrationMode returns the instance's registration mode (the registration_mode
 	// setting). SignUp calls it once per sign-up, so a change applies to the next one. Nil
 	// means identity.RegistrationClosed.

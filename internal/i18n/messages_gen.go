@@ -461,6 +461,13 @@ func (l *Localizer) ServerAuthExternalHeading() string {
 	return l.format("server:auth.external.heading", nil)
 }
 
+// ServerAuthExternalHeadingOnly formats "server:auth.external.heading_only". Heading above the buttons of the sign-in and registration pages while only those services sign in: there is no form above them, so it has no "or".
+//
+//	en: Sign in with
+func (l *Localizer) ServerAuthExternalHeadingOnly() string {
+	return l.format("server:auth.external.heading_only", nil)
+}
+
 // ServerAuthExternalNotLinked formats "server:auth.external.not_linked". Alert on the sign-in page when no account is linked to the account at the external login provider and new accounts cannot be created with it.
 //
 //	en: No account on this server is linked to that account of the other service. Sign in another way.
@@ -515,6 +522,13 @@ func (l *Localizer) ServerAuthForgotPasswordEmailLabel() string {
 //	en: Enter an email address.
 func (l *Localizer) ServerAuthForgotPasswordInvalidEmail() string {
 	return l.format("server:auth.forgot_password.invalid_email", nil)
+}
+
+// ServerAuthForgotPasswordLoginProvidersOnly formats "server:auth.forgot_password.login_providers_only". Replaces the form that asks for a password reset link, and answers it, while the instance limits sign-in to login providers. It is the same for every address.
+//
+//	en: This server signs in only through the login providers, so passwords cannot be reset here. If your account has none linked, ask the administrators.
+func (l *Localizer) ServerAuthForgotPasswordLoginProvidersOnly() string {
+	return l.format("server:auth.forgot_password.login_providers_only", nil)
 }
 
 // ServerAuthForgotPasswordPrompt formats "server:auth.forgot_password.prompt". Text above the form that asks for a password reset link.
@@ -694,6 +708,13 @@ func (l *Localizer) ServerAuthResetPasswordInvalid() string {
 	return l.format("server:auth.reset_password.invalid", nil)
 }
 
+// ServerAuthResetPasswordLoginProvidersOnly formats "server:auth.reset_password.login_providers_only". Error page of a password reset link while the instance limits sign-in to login providers. It is the same whether or not the link works.
+//
+//	en: This server signs in only through the login providers, so this link cannot set a password now. If your account has none linked, ask the administrators.
+func (l *Localizer) ServerAuthResetPasswordLoginProvidersOnly() string {
+	return l.format("server:auth.reset_password.login_providers_only", nil)
+}
+
 // ServerAuthResetPasswordPasswordLabel formats "server:auth.reset_password.password_label". Label of the new password field of the page that a password reset link opens.
 //
 //	en: New password
@@ -741,6 +762,13 @@ func (l *Localizer) ServerAuthSignInFailed() string {
 //	en: Forgot your password?
 func (l *Localizer) ServerAuthSignInForgotPasswordLink() string {
 	return l.format("server:auth.sign_in.forgot_password_link", nil)
+}
+
+// ServerAuthSignInLoginProvidersOnly formats "server:auth.sign_in.login_providers_only". Note on the sign-in page, and the refusal of a sign-in with a password or a passkey, while the instance limits sign-in to login providers. It is the same for every account.
+//
+//	en: This server signs in only through the login providers. If your account has none linked, ask the administrators.
+func (l *Localizer) ServerAuthSignInLoginProvidersOnly() string {
+	return l.format("server:auth.sign_in.login_providers_only", nil)
 }
 
 // ServerAuthSignInMissing formats "server:auth.sign_in.missing". Error when the sign-in form was submitted with an empty field.
@@ -923,6 +951,13 @@ func (l *Localizer) ServerAuthSignUpInviteLabel() string {
 //	en: Enter your invite code.
 func (l *Localizer) ServerAuthSignUpInviteRequired() string {
 	return l.format("server:auth.sign_up.invite_required", nil)
+}
+
+// ServerAuthSignUpLoginProvidersOnly formats "server:auth.sign_up.login_providers_only". Note on the registration page, and the refusal of a registration with a password, while the instance limits registration to login providers.
+//
+//	en: This server registers new users only through the login providers.
+func (l *Localizer) ServerAuthSignUpLoginProvidersOnly() string {
+	return l.format("server:auth.sign_up.login_providers_only", nil)
 }
 
 // ServerAuthSignUpPasswordHintArgs holds the arguments of ServerAuthSignUpPasswordHint, passed by name.
@@ -1734,6 +1769,13 @@ func (l *Localizer) ServerErrorsLoginProviderLinked() string {
 //	en: That sign-in service is not available.
 func (l *Localizer) ServerErrorsLoginProviderUnavailable() string {
 	return l.format("server:errors.login_provider.unavailable", nil)
+}
+
+// ServerErrorsLoginProvidersOnly formats "server:errors.login_providers_only". Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers.
+//
+//	en: This server signs in only through its login providers, so passwords and passkeys cannot be set here.
+func (l *Localizer) ServerErrorsLoginProvidersOnly() string {
+	return l.format("server:errors.login_providers_only", nil)
 }
 
 // ServerErrorsMediaAttached formats "server:errors.media_attached". API error title for HTTP 409 when the user tries to change the description or focal point of an uploaded media file that a post already attaches.

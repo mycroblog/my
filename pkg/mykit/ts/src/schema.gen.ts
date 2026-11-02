@@ -777,7 +777,10 @@ export interface paths {
         put?: never;
         /**
          * Change or set the authenticated user's password
-         * @description Replaces the user's password with `new_password` after checking `current_password` or
+         * @description While registration and sign-in are limited to the login providers
+         *     (`login_providers_only` of `GET /instance`), it is a 403
+         *     `/api/v1/problems/login-providers-only`: a new password could not sign in.
+         *     Replaces the user's password with `new_password` after checking `current_password` or
          *     a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
          *     Every other session and grant of the user ends: the user is signed out of the server's
          *     sign-in pages and of every app but the one that makes the request, whose tokens keep
@@ -1154,7 +1157,10 @@ export interface paths {
         put?: never;
         /**
          * Start the registration of a passkey
-         * @description Checks the user's current `password` or a `passkey` of the user (a user without a
+         * @description While registration and sign-in are limited to the login providers
+         *     (`login_providers_only` of `GET /instance`), it is a 403
+         *     `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
+         *     Checks the user's current `password` or a `passkey` of the user (a user without a
          *     password confirms with a passkey) and returns the options of a WebAuthn registration (a
          *     discoverable credential with user verification, no attestation) for the browser's
          *     `navigator.credentials.create()`, with a `registration_token` that carries them and
@@ -1306,7 +1312,10 @@ export interface paths {
          * Unlink an account at a login provider
          * @description The account no longer signs the user in or confirms the user's operations. An unknown
          *     or unlinked link is a 404, and the last way to sign in of a user without a password and
-         *     without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+         *     without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+         *     sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+         *     password and a passkey do not sign in, so the user's last link to a provider that signs in
+         *     is a 409 too.
          */
         delete: operations["unlinkIdentity"];
         options?: never;
@@ -6354,6 +6363,31 @@ export interface paths {
         patch: operations["updateInstanceSettings"];
         trace?: never;
     };
+    "/admin/settings/login_providers_only/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count who limiting sign-in to login providers would affect
+         * @description How many active local users have no link to a login provider that users can sign in with
+         *     now, and so could not sign in while the instance setting `login_providers_only` applies, and
+         *     whether the user who asks is one of them. Administrators read it before they turn the setting
+         *     on, and before they add or enable a provider, which starts the limit at once when no other can
+         *     be signed in with (`starts_limit`). Needs the `manage_settings` or the
+         *     `manage_login_providers` permission. An unknown or deleted `provider_id` is a 404.
+         */
+        get: operations["getLoginProvidersOnlyImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invites": {
         parameters: {
             query?: never;
@@ -8906,6 +8940,33 @@ export interface components {
              * @description When the link stops working.
              */
             expires_at: string;
+            /**
+             * @description Whether registration and sign-in are limited to the login providers now. While they are, the
+             *     link sets no password; it works only if the limit ends before `expires_at`.
+             */
+            login_providers_only: boolean;
+        };
+        /**
+         * @description Who the instance setting `login_providers_only` keeps from signing in, whether or not the setting
+         *     is on. Sessions and tokens keep working; these users cannot sign in again once they end.
+         */
+        LoginProvidersOnlyImpact: {
+            /** @description The value of the setting. The limit applies while it is on and `enabled_providers` is not 0. */
+            setting_on: boolean;
+            /** @description How many login providers users can sign in with now. With none, the limit does not apply. */
+            enabled_providers: number;
+            /**
+             * @description How many active local users have no link to one of those providers, or to the provider
+             *     `provider_id` named. With no provider at all, it is every active local user.
+             */
+            users_without_provider: number;
+            /** @description Whether the user who asks is one of them. */
+            includes_viewer: boolean;
+            /**
+             * @description Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
+             *     at once: the setting is on, no provider can be signed in with now, and that one could be.
+             */
+            starts_limit: boolean;
         };
         /** @description The state of the job queue (ADR-0064). */
         AdminQueue: {
@@ -11179,6 +11240,12 @@ export interface components {
             /** @description The full description of the instance, as plain text; omitted when there is none. */
             description?: string;
             registrations: components["schemas"]["InstanceRegistrations"];
+            /**
+             * @description Whether registration and sign-in are limited to the login providers now: the instance setting
+             *     is on and at least one provider is enabled. While it is true, a password or a passkey signs
+             *     nobody in, and neither can be set or added; both still confirm operations of a signed-in user.
+             */
+            login_providers_only: boolean;
             /** @description The server version. */
             version: string;
             /**
@@ -11395,7 +11462,8 @@ export interface components {
              * @description Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
              *     approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
              *     sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-             *     the instance setting says.
+             *     the instance setting says, and while registration is limited to the login providers and
+             *     none of them lets new users sign up.
              * @enum {string}
              */
             mode: "open" | "approval" | "invite" | "closed";
@@ -11452,7 +11520,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "featured_accounts";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "featured_accounts" | "login_providers_only";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -12726,6 +12794,8 @@ export interface components {
          *     - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
          *       way to sign in: the password, the last passkey, or the last linked account when nothing
          *       else signs the user in.
+         *     - `/api/v1/problems/login-providers-only` (403): registration and sign-in are limited to the
+         *       login providers, so a password cannot be set and a passkey cannot be added.
          *     - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
          *       login provider is unknown, expired, used, or for another operation. Start a new one.
          *     - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
@@ -21776,6 +21846,34 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminSettingList"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getLoginProvidersOnlyImpact: {
+        parameters: {
+            query?: {
+                /**
+                 * @description A provider to count as if it were enabled, for the question of what enabling it would do.
+                 *     A new provider needs none: nobody links to it yet.
+                 */
+                provider_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The count. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginProvidersOnlyImpact"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

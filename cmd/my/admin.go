@@ -110,6 +110,13 @@ func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 	_, _ = fmt.Fprintf(stdout, "created admin @%s@%s (user %s, account %s)\n", *username, cfg.AccountDomain, reg.User.ID, reg.AccountID)
+	switch limited, err := app.Identity.LoginProvidersOnly(ctx); {
+	case err != nil:
+		_, _ = fmt.Fprintf(stderr, "my admin create: %v\n", err)
+		return 1
+	case limited:
+		_, _ = fmt.Fprintln(stderr, "warning: sign-in is limited to login providers, so this password cannot sign in until the limit ends (my instance set login_providers_only false)")
+	}
 	return 0
 }
 

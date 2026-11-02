@@ -866,5 +866,57 @@
   "admin.settings.featured.accounts.description": {
     "defaultMessage": "Usernames of up to 20 accounts of this server, separated by spaces.",
     "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {Every active user has a linked login provider.} one {# active user has no linked login provider and could not sign in once their sessions end.} other {# active users have no linked login provider and could not sign in once their sessions end.}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "Limit sign-in",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "The number of users who could no longer sign in could not be read. Users without a linked login provider cannot sign in once their sessions end.",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "Counting the users who could no longer sign in…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "No login provider is enabled, so nothing changes now. The limit starts when one is enabled.",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "To undo this, turn it off here, or run \"my instance set login_providers_only false\" on the server.",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "You are one of them. Link a login provider under Linked accounts before your sessions end.",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "Sessions and apps that are signed in keep working, and users can link a provider during them.",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "Passwords and passkeys stop signing in, and passwords can no longer be used to register or be reset.",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "Limit sign-in to login providers?",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "While at least one login provider is enabled, passwords and passkeys stop signing in, and passwords can no longer be used to register or be reset. With no enabled provider, this does not apply.",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "Allow sign-in and registration only through login providers",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
   }
 }

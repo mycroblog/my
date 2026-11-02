@@ -104,6 +104,7 @@ my admin appeal overturn -reason "Sorry, our mistake." <appeal id>
 
 The user appeals with `POST /api/v1/moderation/actions/{id}/appeal` (scope `write:accounts`, body `{"text": "..."}`).
 A user under `disable_login`, `suspend` or `ban` cannot get an access token and appeals through the per-action form on the sign-in page (`POST /auth/appeal`).
+While [sign-in is limited to login providers](login-providers.md#limit-sign-in-to-login-providers), such a user reaches the form only through a linked provider.
 The page shows the form and the deadline for an action that can be appealed, the content and outcome for an action already appealed, and the reason for an action whose deadline has passed or that cannot be appealed. For a rejected appeal it shows the reason.
 In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{id}`, and `POST .../{id}/uphold` and `POST .../{id}/overturn` (the body `{"public_reason": "..."}` is optional). They need the `manage_accounts` permission.
 
@@ -139,6 +140,7 @@ Searching accounts, viewing their details and revealing IP addresses and email a
   Only users with the same permission as removing two-factor authentication, `manage_login_recovery`, can issue it, and by default only the built-in administrator role has it (whoever holds the link can get into the account, so a moderator's `manage_accounts` is not enough).
   The issued link is shown once on the spot and can be copied. The server stores only a hash of the link, so you cannot see it later; issue it again if you need to.
   When no administrator is available or the admin screens are not, the operator issues it with the CLI command `my admin account password-reset-link @alice` (the audit log actor is the CLI).
+  While [sign-in is limited to login providers](login-providers.md#limit-sign-in-to-login-providers), both still issue the link and say that it does not work until the limit ends.
   The link works for 1 hour and once, and stops working if the password changes by another route afterwards. Either way of issuing records `password_reset_link_issued` in the audit log.
   Anyone who holds the link can set the password, so verify the person by another route such as email and give the link only to them.
   Setting the new password revokes all of the user's sessions and app tokens. Passkeys and two-factor authentication stay.

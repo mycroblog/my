@@ -3,6 +3,10 @@
 {{with .SignUp}}{{if .Closed}}
 <p>{{$.L.ServerAuthSignUpClosed}}</p>
 <p class="links"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
+{{else if and .LoginProvidersOnly (not .External)}}
+{{if $.Error}}<p id="sign-up-error" class="alert" role="alert">{{$.Error}}</p>{{else}}<p>{{$.L.ServerAuthSignUpLoginProvidersOnly}}</p>{{end}}
+{{template "external_logins" $}}<hr class="rule">
+<p class="links links-center"><a href="/auth/sign_in">{{$.L.ServerAuthSignInTitle}}</a></p>
 {{else}}
 {{if $.Error}}<p id="sign-up-error" class="alert" role="alert">{{$.Error}}</p>{{end}}
 <form class="form" method="post" action="{{if .External}}/auth/external/sign_up{{else}}/auth/sign_up{{end}}">

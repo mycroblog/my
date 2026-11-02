@@ -47,6 +47,10 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		},
 		// The effective mode: closed from the announcement of the service closure on (ADR-0088 §2),
 		// which also stops the approval of the pending registrations.
+		LoginProvidersOnly: func(ctx context.Context) (bool, error) {
+			settings, err := a.Instance.Settings(ctx)
+			return settings.LoginProvidersOnly(), err
+		},
 		RegistrationMode: func(ctx context.Context) (domainidentity.RegistrationMode, error) {
 			mode, err := a.Instance.RegistrationMode(ctx)
 			return domainidentity.RegistrationMode(mode), err

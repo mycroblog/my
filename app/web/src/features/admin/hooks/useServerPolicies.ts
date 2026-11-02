@@ -7,7 +7,7 @@
 // room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
 // instance settings that used to change only from the CLI (`my instance set`); the form sends the ones that
 // changed together, all or none, and each change goes to the audit log (FR-704).
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
@@ -17,6 +17,7 @@ import {
   cacheSavedSettings,
   type InstanceSettingKey,
   instanceSettingsQueryOptions,
+  loginProvidersOnlyImpactQueryOptions,
   updateInstanceSettingsMutation,
 } from "../api/settings";
 import { languageName, selectableLocales } from "./languages";
@@ -24,6 +25,7 @@ import { languageName, selectableLocales } from "./languages";
 /** The settings of the form, in the order of its sections. */
 const policyKeys = [
   "registration_mode",
+  "login_providers_only",
   "invite_creators",
   "member_invite_max_active",
   "member_invite_max_uses",
@@ -141,6 +143,7 @@ export function useServerPolicies() {
   const [drafts, setDrafts] = useState<Readonly<Partial<Record<PolicyKey, string>>>>({});
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmingLimit, setIsConfirmingLimit] = useState(false);
 
   const savedValue = (key: PolicyKey) => saved.get(key)?.value ?? "";
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
@@ -206,6 +209,10 @@ export function useServerPolicies() {
     federationModeOf(savedValue("federation_mode")),
     federationModeOf(valueOf("federation_mode")),
   );
+  // Turning on the limit to login providers can keep users from signing in, the administrator too; the count comes
+  // from the server, which never refuses: the administrator decides.
+  const limitTurnsOn = savedValue("login_providers_only") !== "true" && valueOf("login_providers_only") === "true";
+  const impact = useQuery({ ...loginProvidersOnlyImpactQueryOptions(api), enabled: limitTurnsOn });
 
   return {
     /** The value of a setting in the form: the draft, else what is saved. */
@@ -237,6 +244,11 @@ export function useServerPolicies() {
         setStatus(t("client:admin.settings.policies.unchanged"));
         return;
       }
+      if (limitTurnsOn) {
+        void impact.refetch();
+        setIsConfirmingLimit(true);
+        return;
+      }
       // Narrowing the federation mode stops what other servers receive and send; the operator confirms it first.
       if (narrowing !== null) {
         setIsConfirming(true);
@@ -248,6 +260,25 @@ export function useServerPolicies() {
     numberField,
     /** What the chosen federation mode stops compared with the saved one, or null when it stops nothing. */
     narrowing,
+    /** The confirmation of turning on the limit to login providers: whether it is open and what it says. */
+    limitConfirmation: {
+      isOpen: isConfirmingLimit && limitTurnsOn,
+      impact: impact.data,
+      isFailed: impact.isError,
+      /** Goes on to the confirmation of a narrowing, or saves. */
+      confirm: () => {
+        setIsConfirmingLimit(false);
+        if (narrowing !== null) {
+          setIsConfirming(true);
+        } else if (!save.isPending) {
+          save.mutate(changes);
+        }
+      },
+      /** Closes the confirmation without saving; the form keeps the drafts. */
+      cancel: () => {
+        setIsConfirmingLimit(false);
+      },
+    },
     /** Whether the confirmation of `narrowing` is open. */
     isConfirming: isConfirming && narrowing !== null,
     /** Saves the form after the operator confirmed the narrowing. */
