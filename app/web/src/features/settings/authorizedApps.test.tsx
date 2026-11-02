@@ -92,7 +92,8 @@ describe("authorized apps", () => {
     expect(within(webRow).getByText("This server's own app")).toBeInTheDocument();
     expect(within(webRow).queryByText("This server has not verified this app.")).not.toBeInTheDocument();
     expect(within(webRow).getByText("read write follow")).toBeInTheDocument();
-    expect(within(webRow).getByText(/^Oct 21, 2026, 9 AM \(to the hour\)$/)).toBeInTheDocument();
+    // In the user's time zone, once the preferences have loaded; until then in the browser's.
+    expect(await within(webRow).findByText(/^Oct 21, 2026, 9 AM \(to the hour\)$/)).toBeInTheDocument();
 
     expect(within(readerRow).getByText("From reader.example")).toBeInTheDocument();
     expect(within(readerRow).getByText("This server has not verified this app.")).toBeInTheDocument();

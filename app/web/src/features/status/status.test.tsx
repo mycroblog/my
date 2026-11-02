@@ -567,7 +567,14 @@ describe("deleting a post", () => {
 
   test("drops it from the timeline", async () => {
     signedIn();
-    server.use(http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([own, post]))));
+    let deleted = false;
+    server.use(
+      http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage(deleted ? [post] : [own, post]))),
+      http.delete(`${apiBase}/statuses/${own.id}`, () => {
+        deleted = true;
+        return HttpResponse.json(own);
+      }),
+    );
     const { user } = await renderApp({ path: "/local" });
     const feed = await screen.findByRole("feed", { name: "Local timeline" });
     const article = within(feed).getByRole("article", { description: "My post" });
@@ -577,7 +584,9 @@ describe("deleting a post", () => {
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     expect(await findToast("Post deleted")).toBeInTheDocument();
-    expect(within(feed).getAllByRole("article")).toHaveLength(1);
+    await waitFor(() => {
+      expect(within(feed).getAllByRole("article")).toHaveLength(1);
+    });
     expect(within(feed).getByRole("article", { description: "The post" })).toBeInTheDocument();
   });
 });
