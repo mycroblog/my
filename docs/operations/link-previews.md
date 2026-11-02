@@ -8,7 +8,7 @@ are in [Cards of links in posts](#cards-of-links-in-posts) below; how to stop fe
 ## What the server returns
 
 `my serve` returns the HTML of the landing page (`https://<host>/`), the instance information page (`https://<host>/about`),
-the pages of the published documents (`/about/terms`, `/about/privacy`, `/about/commerce`), profiles
+the pages of the published documents (`/about/terms`, `/about/privacy`, `/about/commerce`), the page about the link card crawler (`/about/crawler`), profiles
 (`https://<host>/@alice`), and posts (`https://<host>/@alice/status/<post ID>`) by embedding meta tags into the shell of the
 web client.
 A request for HTML is always treated as signed out, so a preview shows only what a signed-out visitor can see.
@@ -16,6 +16,7 @@ A request for HTML is always treated as signed out, so a preview shows only what
 | Page | Response |
 | --- | --- |
 | The landing page (`/`) and the instance information page (`/about`) | 200. The shell with meta tags that introduce the instance (see "The landing page" below) |
+| The page about the link card crawler (`/about/crawler`) | 200. The shell with meta tags that introduce the instance, titled "Link card crawler \| instance name" |
 | The pages of published documents (`/about/terms`, `/about/privacy`, `/about/commerce`) | 200. The shell with meta tags that introduce the instance, titled "document name \| instance name". The page of a document that is not published gets the generic shell |
 | A `public` post, the profile of an active local account | 200. The shell with meta tags |
 | An `unlisted` post | 200. The shell with meta tags, plus `<meta name="robots" content="noindex, noarchive">` and `X-Robots-Tag: noindex, noarchive` |
@@ -61,6 +62,7 @@ The meta tags of the landing page introduce the instance itself.
 - The pages of published documents (`/about/terms`, `/about/privacy`, `/about/commerce`) have the same meta tags too.
   `og:title` and `<title>` are "{document name} | {instance name}" (`server:preview.document_title`), and `og:url` and
   `<link rel="canonical">` are the address of that page. The page of a document that is not published gets the generic shell.
+- The page about the link card crawler (`/about/crawler`) has the same meta tags, with the same form of title and address.
 
 `og:image` is chosen in this order.
 
@@ -90,7 +92,7 @@ It is served with `Cache-Control: no-cache` and an ETag.
   publishing or unpublishing a document stays in shared caches for at most that long.
 - The ETag is built from the versions of the template, the assets, and the instance settings, the language, the version
   (revision) of the post, the effective visibility, the version of the profile, and the chosen image (for the landing page, the
-  information page, and the document pages: the address of the page, its title, the instance description, and the chosen image).
+  information page, the document pages, and the page about the crawler: the address of the page, its title, the instance description, and the chosen image).
   `If-None-Match` gets `304`.
 - If you put a CDN in front, include `Accept` in the cache key (so that AP JSON and HTML are not mixed up).
 
@@ -175,6 +177,14 @@ On every service, check that the URL of a `private` post and the URL of a nonexi
 
 To show a card for a link in a post, this server's job fetches the linked page and its image, and it obeys what the linked site says about that.
 Its requests are `my-linkcard/<version> (+https://<host>/)` for the page, the image, and `robots.txt`. Every other request of the server, the media proxy's included, stays `my/<version> (+https://<host>/)`.
+The requests send no cookies and no `Referer`, and nothing says which account or post linked the page.
+
+### The page for site operators
+
+`https://<host>/about/crawler` tells the operators of linked sites what the crawler requests, what it sends, how often, and how to opt out, and that they can ask you to stop fetching from their domain. Anyone can read it without an account. The "Search engines and AI" section of the instance information page (`/about`) links to it; the `User-Agent` names only `https://<host>/`.
+
+It says what this server does, from `link_cards_enabled` and `link_cards_ignore_robots_txt`, and it shows the contact of the instance (`contact_account`, `contact_email`). Set a contact, so that a site has somewhere to ask: without one, the page says that this server publishes none.
+With `link_cards_ignore_robots_txt` on, the page says that a site cannot refuse this server in `robots.txt`.
 
 ### robots.txt
 
@@ -194,7 +204,7 @@ The name in `robots.txt` is `my-linkcard`, in any case. Without a group of that 
 - A refetch, which a post can cause 14 days after the last fetch, removes the card when `robots.txt` disallows its URL. When the file only could not be read, the card stays.
 - The server does not go through its cards to recheck them, so a site that changes its rules loses a card at that card's next refetch.
 
-`link_cards_ignore_robots_txt` ([instance settings](instance-settings.md#settings-one-key-one-value)) turns all of this off: the server neither fetches nor uses `robots.txt`. It still names itself `my-linkcard`, and linked sites can then not refuse the fetches with `robots.txt`.
+`link_cards_ignore_robots_txt` ([instance settings](instance-settings.md#settings-one-key-one-value)) turns all of this off: the server neither fetches nor uses `robots.txt`. It still names itself `my-linkcard`, and linked sites can then not refuse the fetches with `robots.txt`: only the directives of their pages and a request to you for a [rule on their domain](instance-settings.md#link-card-domains) remain, as [the page for site operators](#the-page-for-site-operators) tells them.
 
 ### Directives of a page
 

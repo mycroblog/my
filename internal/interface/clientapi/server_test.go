@@ -66,6 +66,8 @@ func TestGetInstance(t *testing.T) {
 		Federation: clientapi.InstanceFederation{Mode: clientapi.InstanceFederationModeBoth},
 		// Unset, the instance denies search engines and AI (ADR-0057).
 		SearchIndexing: clientapi.SearchIndexingDeny, AiUsage: clientapi.AIUsageDeny,
+		// Unset, link cards are fetched and obey robots.txt (ADR-0131).
+		LinkCardsEnabled: true,
 		// Unset, the costs are private (ADR-0067 §8).
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,

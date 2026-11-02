@@ -19,6 +19,10 @@
     "defaultMessage": "特定商取引法に基づく表記",
     "description": "Name of the instance's commerce disclosures of its supporter plans in the link preview of their page (/about/commerce)."
   },
+  "preview.document.link_card_crawler": {
+    "defaultMessage": "リンクのカードのクローラー",
+    "description": "Name of the page that tells site operators about the crawler that fetches the links in posts, in the link preview of that page (/about/crawler)."
+  },
   "preview.avatar_alt": {
     "defaultMessage": "{name} のアバター",
     "description": "Alt text of a profile's avatar in a link preview (og:image:alt) when the avatar is the preview image. {name} is the display name, or the username when there is none."

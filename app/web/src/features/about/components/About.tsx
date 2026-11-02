@@ -19,7 +19,7 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
-import { profilePath, signInPath } from "../../../lib/paths";
+import { aboutCrawlerPath, profilePath, signInPath } from "../../../lib/paths";
 import { useStatusPageUrl } from "../../../lib/statusPage";
 import { DocumentLink, DocumentsSection } from "../../documents";
 import { AboutSupportersSection } from "../../supporters";
@@ -118,53 +118,62 @@ function ServerThumbnail({ thumbnail }: { thumbnail: NonNullable<Instance["thumb
   );
 }
 
-/** How to reach the operators: their account on the server and their email address, as far as the server has them. */
+/** How to reach the operators, in their section of the page. */
 function Contact({ contact }: { contact: NonNullable<Instance["contact"]> }) {
+  const t = useT();
+  return (
+    <Section title={t("client:about.contact.title")}>
+      <ContactDetails contact={contact} />
+    </Section>
+  );
+}
+
+/** The operators' account on the server and their email address, as far as the server has them. */
+export function ContactDetails({ contact }: { contact: NonNullable<Instance["contact"]> }) {
   const t = useT();
   const { account, email } = contact;
   return (
-    <Section title={t("client:about.contact.title")}>
-      <Stack as="dl" gap="3">
-        {account !== undefined && (
-          <Stack gap="1">
-            <Text as="dt" size="sm" tone="muted">
-              {t("client:about.contact.account")}
-            </Text>
-            <dd>
-              <AccountItem
-                name={account.display_name || account.username}
-                handle={handleOf(account.acct)}
-                avatar={imageSources(account.avatar)}
-                avatarSeed={account.id}
-                href={profilePath(account.acct)}
-                layout="inline"
-              />
-            </dd>
-          </Stack>
-        )}
-        {email !== undefined && (
-          <Stack gap="1">
-            <Text as="dt" size="sm" tone="muted">
-              {t("client:about.contact.email")}
-            </Text>
-            <dd>
-              {/* An address reads left to right in every locale. */}
-              <Link href={`mailto:${email}`} variant="standalone">
-                <Text dir="ltr" wrap="anywhere">
-                  {email}
-                </Text>
-              </Link>
-            </dd>
-          </Stack>
-        )}
-      </Stack>
-    </Section>
+    <Stack as="dl" gap="3">
+      {account !== undefined && (
+        <Stack gap="1">
+          <Text as="dt" size="sm" tone="muted">
+            {t("client:about.contact.account")}
+          </Text>
+          <dd>
+            <AccountItem
+              name={account.display_name || account.username}
+              handle={handleOf(account.acct)}
+              avatar={imageSources(account.avatar)}
+              avatarSeed={account.id}
+              href={profilePath(account.acct)}
+              layout="inline"
+            />
+          </dd>
+        </Stack>
+      )}
+      {email !== undefined && (
+        <Stack gap="1">
+          <Text as="dt" size="sm" tone="muted">
+            {t("client:about.contact.email")}
+          </Text>
+          <dd>
+            {/* An address reads left to right in every locale. */}
+            <Link href={`mailto:${email}`} variant="standalone">
+              <Text dir="ltr" wrap="anywhere">
+                {email}
+              </Text>
+            </Link>
+          </dd>
+        </Stack>
+      )}
+    </Stack>
   );
 }
 
 /**
  * What the instance states to search engines and AI crawlers (FR-725, ADR-0057), and what such a statement is: a
- * request that crawlers may or may not follow, with the legal standing it may have, never a promise of one.
+ * request that crawlers may or may not follow, with the legal standing it may have, never a promise of one. Then the
+ * link to the page about the instance's own crawler.
  */
 function Crawlers({
   searchIndexing,
@@ -184,6 +193,13 @@ function Crawlers({
         <Hint>{t("client:about.crawlers.accounts")}</Hint>
         <Hint>{t("client:about.crawlers.legal")}</Hint>
       </Disclosure>
+      {/* The other direction: the crawler of this server, whose page is for the operators of the sites it fetches. */}
+      <p>{t("client:about.crawlers.link_cards")}</p>
+      <p>
+        <Link href={aboutCrawlerPath} variant="standalone">
+          {t("client:about.crawlers.link_cards_link")}
+        </Link>
+      </p>
     </Section>
   );
 }

@@ -26,7 +26,7 @@ robots.txt and meta tags are statements that crawlers may or may not honor; they
 | --- | --- | --- |
 | Pages of profiles and `public` posts | `noindex, noarchive` in `<meta name="robots">` and `X-Robots-Tag` | `noai, noimageai`, `Content-Usage: train-ai=n` (`train-ai=n, ai-use=n` for `deny`), and `tdm-reservation: 1` (header and meta) |
 | `unlisted` posts, 404 pages for hidden or nonexistent pages, pages of remote accounts, app screens (`/home`, `/settings` and so on) | `noindex, noarchive` whatever the setting | Follows the server setting |
-| `/`, `/about` | Follows the server setting | Follows the server setting |
+| `/`, `/about`, `/about/crawler` | Follows the server setting | Follows the server setting |
 | `/media/` (when this server serves it) | Follows the server setting. No per-owner statement | Follows the server setting. No per-owner statement |
 | The client API, ActivityPub documents, `/.well-known/`, `/nodeinfo/`, sign-in and OAuth screens | `X-Robots-Tag: noindex` | Not added (robots.txt is enough) |
 
@@ -64,6 +64,8 @@ It does not guarantee any legal effect.
 
 These settings are about what crawls this server. The server also crawls others for the cards of links in posts, as `my-linkcard`: it obeys `robots.txt` and the directives of the linked pages, as [link previews](link-previews.md#cards-of-links-in-posts) describes.
 That crawler is set with `link_cards_enabled`, `link_cards_ignore_robots_txt`, and, per domain, with [link card domains](instance-settings.md#link-card-domains).
+
+The operators of those sites read about it at `https://<host>/about/crawler`, which `/about` links to ([the page for site operators](link-previews.md#the-page-for-site-operators)). With `link_cards_ignore_robots_txt` on, they cannot opt out with `robots.txt`, and the page says so: they can only limit the card with the directives of their pages, or ask you for a rule on their domain.
 
 ## Limits
 

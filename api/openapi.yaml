@@ -17320,6 +17320,8 @@ components:
         - rules
         - search_indexing
         - ai_usage
+        - link_cards_enabled
+        - link_cards_ignore_robots_txt
         - finance_visibility
         - income_visibility
         - supporters_enabled
@@ -17435,6 +17437,16 @@ components:
           $ref: '#/components/schemas/SearchIndexing'
         ai_usage:
           $ref: '#/components/schemas/AIUsage'
+        link_cards_enabled:
+          description: |
+            Whether the server fetches the pages that posts link to, for their link cards. While it is
+            false, the server fetches nothing for link cards.
+          type: boolean
+        link_cards_ignore_robots_txt:
+          description: |
+            Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
+            link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+          type: boolean
         finance_visibility:
           $ref: '#/components/schemas/FinanceVisibility'
         income_visibility:

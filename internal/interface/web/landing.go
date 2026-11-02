@@ -15,14 +15,15 @@ import (
 // This file serves the shells of the pages about the instance itself, the landing page (/), the
 // information page (/about), and the pages of the instance's published documents, with the meta
 // tags of a link preview of the instance (ADR-0028): its name, its one-paragraph summary, and its
-// preview image. The pages are the same for every visitor; the web client shows the landing page
+// preview image. The page about the link card crawler (/about/crawler) is one of them. The pages are the same for every visitor; the web client shows the landing page
 // to visitors without a session and the home timeline to signed-in users, and the other pages to
 // everyone.
 
 // Paths of the pages about the instance.
 const (
-	pathLanding = "/"
-	pathAbout   = "/about"
+	pathLanding      = "/"
+	pathAbout        = "/about"
+	pathAboutCrawler = "/about/crawler"
 )
 
 // Paths of the web client's pages of the instance's documents, which GET /instance links to.
@@ -84,8 +85,8 @@ func (h *Handler) serveInstancePage(w http.ResponseWriter, r *http.Request, path
 }
 
 // renderInstancePage renders the shell of the page about the instance at path in the instance's
-// default locale, under title. An empty title titles the landing page with the instance's name
-// and the information page "About {name}".
+// default locale, under title. An empty title titles the landing page with the instance's name,
+// the information page "About {name}", and the page about the crawler "{its name} | {name}".
 func (h *Handler) renderInstancePage(ctx context.Context, path, title string) (document, error) {
 	lang := h.instanceLocale(ctx)
 	name := h.instanceName(ctx)
@@ -93,6 +94,9 @@ func (h *Handler) renderInstancePage(ctx context.Context, path, title string) (d
 	case title != "":
 	case path == pathAbout:
 		title = h.o.Messages.Localizer(lang).ServerPreviewAboutTitle(name)
+	case path == pathAboutCrawler:
+		l := h.o.Messages.Localizer(lang)
+		title = l.ServerPreviewDocumentTitle(i18n.ServerPreviewDocumentTitleArgs{Document: l.ServerPreviewDocumentLinkCardCrawler(), Instance: name})
 	default:
 		title = name
 	}
