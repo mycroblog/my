@@ -6,7 +6,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { accountFixture, otherAccountFixture, remoteAccountFixture, type Schemas } from "../../test/fixtures";
+import {
+  accountFixture,
+  otherAccountFixture,
+  remoteAccountFixture,
+  remoteStatusFixture,
+  type Schemas,
+  statusFixture,
+} from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -809,6 +816,86 @@ describe("an account's admin page", () => {
     expect(screen.queryByRole("region", { name: "Password reset" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Issue password reset link" })).not.toBeInTheDocument();
     expect(requests.filter((request) => request.includes("password_reset_link"))).toEqual([]);
+  });
+
+  describe("starting from a post", () => {
+    const post = statusFixture("0192f0c4-7a8e-7000-8000-0000000000a1");
+    const path = `/moderation/accounts/${bobDetail.id}?status=${post.id}`;
+    const servePost = (status: Schemas["Status"]) => {
+      server.use(http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(status)));
+    };
+
+    test("shows the post, and the form chooses it for an action on posts", async () => {
+      const { created } = accountServer(bobDetail);
+      servePost(post);
+      const { user } = await renderApp({ path });
+
+      const action = await screen.findByRole("region", { name: "Take action" });
+      expect(await within(action).findByRole("group", { name: "The post you came from" })).toBeInTheDocument();
+      expect(within(action).getByText("Deleting posts or marking them as sensitive acts on this post.")).toBeVisible();
+
+      await user.click(within(action).getByRole("radio", { name: /Mark posts sensitive/ }));
+      expect(await within(action).findByRole("group", { name: "Posts" })).toBeInTheDocument();
+      expect(within(within(action).getByRole("group", { name: "Posts" })).getByRole("checkbox")).toBeChecked();
+
+      await user.click(within(action).getByRole("button", { name: "Take action" }));
+
+      await waitFor(() => {
+        expect(created).toEqual([expect.objectContaining({ kind: "mark_statuses_sensitive", status_ids: [post.id] })]);
+      });
+    });
+
+    test("an account of another server takes no action on posts, and the page says so", async () => {
+      const carolDetail = adminAccountDetailFixture(remoteAccountFixture);
+      accountServer(carolDetail);
+      servePost(remoteStatusFixture);
+      await renderApp({ path: `/moderation/accounts/${carolDetail.id}?status=${remoteStatusFixture.id}` });
+
+      const action = await screen.findByRole("region", { name: "Take action" });
+      expect(
+        await within(action).findByText("An account of another server takes no action on a single post."),
+      ).toBeInTheDocument();
+      expect(within(action).queryByRole("radio", { name: /Delete posts/ })).not.toBeInTheDocument();
+    });
+
+    test("a post of another account is left out", async () => {
+      accountServer(bobDetail);
+      servePost(remoteStatusFixture);
+      await renderApp({ path });
+
+      const action = await screen.findByRole("region", { name: "Take action" });
+      expect(await within(action).findByText("To act on posts, take the action from a report on them.")).toBeVisible();
+      await waitFor(() => {
+        expect(within(action).queryByRole("radio", { name: /Delete posts/ })).not.toBeInTheDocument();
+      });
+    });
+
+    test("a failure says so and leaves the rest of the page working", async () => {
+      accountServer(bobDetail);
+      server.use(http.get(`${apiBase}/statuses/:id`, () => problem(404, "about:blank", "Not Found")));
+      await renderApp({ path });
+
+      const action = await screen.findByRole("region", { name: "Take action" });
+      expect(await within(action).findByText(/^Could not load the post: Not Found/)).toBeInTheDocument();
+      expect(within(action).getByRole("radio", { name: /Warn/ })).toBeInTheDocument();
+      expect(within(action).queryByRole("radio", { name: /Delete posts/ })).not.toBeInTheDocument();
+    });
+
+    test("a post's menu leads here", async () => {
+      accountServer(bobDetail);
+      servePost(post);
+      server.use(
+        http.get(`${apiBase}/statuses/:id/context`, () => HttpResponse.json({ ancestors: [], descendants: [] })),
+      );
+      const { user, router } = await renderApp({ path: `/@bob/status/${post.id}` });
+
+      await user.click((await screen.findAllByRole("button", { name: "More actions" }))[0] as HTMLElement);
+      await user.click(await screen.findByRole("menuitem", { name: "Open this post in moderation" }));
+
+      expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/moderation/accounts/${bobDetail.id}`);
+      expect(router.state.location.search).toEqual({ status: post.id });
+    });
   });
 
   test("an unknown account says it is not found", async () => {

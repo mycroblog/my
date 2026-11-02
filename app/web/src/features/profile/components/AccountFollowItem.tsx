@@ -8,7 +8,7 @@ import { handleOf } from "../../../lib/handle";
 import { imageSources } from "../../../lib/images";
 import { profilePath } from "../../../lib/paths";
 import type { Account } from "../api/accounts";
-import { useRelationship } from "../hooks/useRelationship";
+import { useRelationship } from "../../relationship";
 import { nameOf } from "../hooks/useProfile";
 import { RelationshipActions } from "./RelationshipActions";
 

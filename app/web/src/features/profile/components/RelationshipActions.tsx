@@ -15,10 +15,7 @@
 // profile.
 import {
   Box,
-  Button,
   Cluster,
-  Dialog,
-  DialogActions,
   FollowButton,
   Hint,
   IconButton,
@@ -28,19 +25,19 @@ import {
   MenuItem,
   MenuTrigger,
   MoreIcon,
-  Stack,
   SubscribeIcon,
 } from "@my/ui";
 import { useId, useState } from "react";
 import { type Translate, useT } from "../../../lib/i18n";
 import { AddToListDialog } from "../../lists";
 import { ReportDialog } from "../../report";
-import type { Account, RelationshipAction } from "../api/accounts";
+import {
+  type ConfirmableRelationshipChange,
+  RelationshipConfirmDialog,
+  type RelationshipState,
+} from "../../relationship";
+import type { Account } from "../api/accounts";
 import { isolate } from "../hooks/useProfile";
-import type { RelationshipState } from "../hooks/useRelationship";
-
-/** The changes that ask the viewer first. */
-type Confirmable = "unfollow" | "withdraw" | "block" | "unblock";
 
 export type RelationshipActionsProps = {
   account: Account;
@@ -69,6 +66,7 @@ export function RelationshipActions({ account, name, state, showMenu = true, siz
         </Link>
       );
     case "loading":
+    case "unavailable":
       // The button's place, so that nothing moves when the relationship arrives.
       return <FollowButton status="loading" label="" size={size} />;
     case "error":
@@ -109,12 +107,15 @@ function followButtonOf(t: Translate, account: Account, state: OtherActionsProps
 function OtherActions({ account, name, state, showMenu, size }: OtherActionsProps) {
   const t = useT();
   // The kind stays while the dialog closes, so that it shows what it asked until it is gone.
-  const [dialog, setDialog] = useState<{ isOpen: boolean; kind: Confirmable }>({ isOpen: false, kind: "unfollow" });
+  const [dialog, setDialog] = useState<{ isOpen: boolean; kind: ConfirmableRelationshipChange }>({
+    isOpen: false,
+    kind: "unfollow",
+  });
   const [isReporting, setIsReporting] = useState(false);
   const [isAddingToList, setIsAddingToList] = useState(false);
   // Only an account the viewer follows, accepted, can be put in a list (ADR-0122 §2).
   const offersLists = state.follow === "following";
-  const confirm = (kind: Confirmable) => {
+  const confirm = (kind: ConfirmableRelationshipChange) => {
     setDialog({ isOpen: true, kind });
   };
   const { relationship, pending, change } = state;
@@ -200,7 +201,7 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
         {showMenu && offersLists && (
           <AddToListDialog account={account} isOpen={isAddingToList} onOpenChange={setIsAddingToList} />
         )}
-        <ConfirmDialog
+        <RelationshipConfirmDialog
           isOpen={dialog.isOpen}
           kind={dialog.kind}
           name={name}
@@ -228,81 +229,5 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
         </Box>
       )}
     </>
-  );
-}
-
-type ConfirmDialogProps = {
-  isOpen: boolean;
-  kind: Confirmable;
-  name: string;
-  onCancel: () => void;
-  onConfirm: (action: RelationshipAction) => void;
-};
-
-/** The texts of the confirmation of `kind`, and the change it confirms. */
-function confirmationOf(t: Translate, kind: Confirmable, name: string) {
-  const values = { name: isolate(name) };
-  switch (kind) {
-    case "unfollow":
-      return {
-        title: t("client:profile.confirm.unfollow.title", values),
-        body: t("client:profile.confirm.unfollow.body"),
-        action: t("client:profile.confirm.unfollow.action"),
-        run: "unfollow",
-      } as const;
-    case "withdraw":
-      return {
-        title: t("client:profile.confirm.withdraw.title", values),
-        body: t("client:profile.confirm.withdraw.body"),
-        action: t("client:profile.confirm.withdraw.action"),
-        run: "unfollow",
-      } as const;
-    case "block":
-      return {
-        title: t("client:profile.confirm.block.title", values),
-        body: t("client:profile.confirm.block.body"),
-        action: t("client:profile.confirm.block.action"),
-        run: "block",
-      } as const;
-    case "unblock":
-      return {
-        title: t("client:profile.confirm.unblock.title", values),
-        body: t("client:profile.confirm.unblock.body"),
-        action: t("client:profile.confirm.unblock.action"),
-        run: "unblock",
-      } as const;
-  }
-}
-
-/** Asks before a change that the viewer may not mean: one alert dialog, whose texts are the change's. */
-function ConfirmDialog({ isOpen, kind, name, onCancel, onConfirm }: ConfirmDialogProps) {
-  const t = useT();
-  const text = confirmationOf(t, kind, name);
-  return (
-    <Dialog
-      role="alertdialog"
-      closeLabel={null}
-      size="sm"
-      title={text.title}
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <Stack gap="4">
-        <p>{text.body}</p>
-        <DialogActions>
-          <Button onPress={onCancel}>{t("client:profile.confirm.cancel")}</Button>
-          <Button
-            variant={text.run === "block" ? "danger" : "primary"}
-            onPress={() => {
-              onConfirm(text.run);
-            }}
-          >
-            {text.action}
-          </Button>
-        </DialogActions>
-      </Stack>
-    </Dialog>
   );
 }

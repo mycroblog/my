@@ -11,10 +11,14 @@ import { PageHeading } from "./-layout/PageHeading";
 /** The `_` keeps the page out of the search's layout at `/moderation/accounts`. */
 const paramsSchema = z.object({ id: z.string().min(1).max(64) });
 
+/** `status`: the post of the account that the page starts from (a post's menu leads here with it). Anything else is dropped. */
+const searchSchema = z.object({ status: z.string().min(1).max(64).optional().catch(undefined) });
+
 /** One account as the moderators see it, and the moderation actions on it (FR-714, FR-703, FR-713), for manage_accounts. */
 export const Route = createFileRoute("/moderation/accounts_/$id")({
   staticData: { title: "client:admin.account.title" },
   params: { parse: (params) => paramsSchema.parse(params) },
+  validateSearch: searchSchema,
   beforeLoad: requireSignIn,
   loader: ({ context, params: { id } }) =>
     loadWithPermission(context, "manage_accounts", () =>
@@ -38,12 +42,13 @@ function AccountHeading() {
 
 function AccountPage() {
   const { id } = Route.useParams();
+  const { status } = Route.useSearch();
   return (
     <>
       <AccountHeading />
       {/* Another account is another page: nothing of the previous one carries over, its private data least of all (web-client/README.md R10). */}
       <Card>
-        <AccountDetailView key={id} id={id} />
+        <AccountDetailView key={id} id={id} statusId={status} />
       </Card>
     </>
   );

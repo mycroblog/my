@@ -11,6 +11,26 @@
     "defaultMessage": "To act on posts, take the action from a report on them.",
     "description": "Help above the form of an action on an account's page."
   },
+  "admin.account.action.post.chosen": {
+    "defaultMessage": "Deleting posts or marking them as sensitive acts on this post.",
+    "description": "Help under the post that an account's moderation page starts from, above the form of an action."
+  },
+  "admin.account.action.post.failed": {
+    "defaultMessage": "Could not load the post: {reason} To act on posts, take the action from a report on them.",
+    "description": "Help above the form of an action when the post that an account's moderation page starts from failed to load or is gone. {reason} is the error message."
+  },
+  "admin.account.action.post.label": {
+    "defaultMessage": "The post you came from",
+    "description": "Accessible name of the post that an account's moderation page starts from."
+  },
+  "admin.account.action.post.loading": {
+    "defaultMessage": "Loading the post…",
+    "description": "Help above the form of an action while the post that an account's moderation page starts from loads."
+  },
+  "admin.account.action.post.remote": {
+    "defaultMessage": "An account of another server takes no action on a single post.",
+    "description": "Help under the post that an account's moderation page starts from, for an account of another server."
+  },
   "admin.account.action.title": {
     "defaultMessage": "Take action",
     "description": "Heading of the region of an account's admin page with the form of a new action."

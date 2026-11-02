@@ -11,7 +11,7 @@ import { profilePath } from "../../../lib/paths";
 import type { FollowList } from "../api/accounts";
 import { type FollowListState, useFollowList } from "../hooks/useFollowList";
 import { isolate, useProfile } from "../hooks/useProfile";
-import { useRelationship } from "../hooks/useRelationship";
+import { useRelationship } from "../../relationship";
 import { RelationshipActions } from "./RelationshipActions";
 
 export type FollowListViewProps = {

@@ -41,6 +41,7 @@ import { useId, useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useFocusHeadingAfterLift } from "../../../lib/useFocusAfterRemoval";
+import { CompactStatus } from "../../status";
 import type { AdminAccountDetail, AdminAccountPrivateData, EmailSuppression } from "../api/accounts";
 import { type AccountAction, accountActionTextLimit, type Report } from "../api/reports";
 import {
@@ -57,6 +58,7 @@ import {
   useRemoveTwoFactor,
 } from "../hooks/useAdminAccounts";
 import { useHasPermission } from "../hooks/usePermissions";
+import { type StartingPost, useStartingPost } from "../hooks/useStartingPost";
 import {
   accountActionKindLabels,
   accountActionStateLabels,
@@ -79,17 +81,44 @@ import { imageSources } from "../../../lib/images";
 /** The restrictions that keep the account from signing in or reaching anyone, in the danger tone; the others warn. */
 const severeRestrictions: ReadonlySet<string> = new Set(["login", "federation", "profile_view"]);
 
-export function AccountDetailView({ id }: { id: string }) {
+export function AccountDetailView({ id, statusId }: { id: string; statusId?: string | undefined }) {
   return (
     <RequirePermission permission="manage_accounts">
-      <AccountPage id={id} />
+      <AccountPage id={id} statusId={statusId} />
     </RequirePermission>
   );
 }
 
-function AccountPage({ id }: { id: string }) {
+/**
+ * Above the form of an action: the post the page starts from when it has one, in full so that the moderator can read
+ * what they came about, with how the form takes it; else where the actions on posts are.
+ */
+function StartingPostNote({ state, remote }: { state: StartingPost; remote: boolean }) {
+  const t = useT();
+  switch (state.kind) {
+    case "none":
+      return <Hint>{t("client:admin.account.action.posts")}</Hint>;
+    case "loading":
+      return <Hint>{t("client:admin.account.action.post.loading")}</Hint>;
+    case "failed":
+      return <Hint>{t("client:admin.account.action.post.failed", { reason: state.message })}</Hint>;
+    case "ready":
+      return (
+        <Stack gap="2">
+          <CompactStatus status={state.post} label={t("client:admin.account.action.post.label")} />
+          <Hint>
+            {remote ? t("client:admin.account.action.post.remote") : t("client:admin.account.action.post.chosen")}
+          </Hint>
+        </Stack>
+      );
+  }
+}
+
+function AccountPage({ id, statusId }: { id: string; statusId: string | undefined }) {
   const t = useT();
   const account = useAdminAccount(id);
+  const startingPost = useStartingPost(id, statusId);
+  const posts = startingPost.kind === "ready" ? [startingPost.post] : [];
   const [issued, setIssued] = useState<string | undefined>(undefined);
   const handle = handleOf(account.account);
   const canManageRoles = useHasPermission("manage_roles");
@@ -133,17 +162,17 @@ function AccountPage({ id }: { id: string }) {
             <p>{t("client:admin.account.action.deleted")}</p>
           ) : (
             <>
-              <Hint>{t("client:admin.account.action.posts")}</Hint>
+              <StartingPostNote state={startingPost} remote={!account.local} />
               <AccountActionForm
                 target={{
                   accountId: account.id,
                   remote: !account.local,
-                  statusIds: [],
+                  statusIds: posts.map((post) => post.id),
                   category: "other",
                   hasEmail: account.email_verified !== undefined,
                 }}
                 handle={handle}
-                posts={[]}
+                posts={posts}
                 onIssued={(action) => {
                   setIssued(t("client:admin.account.action.issued", { kind: t(accountActionKindLabels[action.kind]) }));
                 }}

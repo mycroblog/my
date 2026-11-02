@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { shellQueryRetry } from "../../../lib/query";
-import { type Account, viewerQueryOptions } from "../api/viewer";
+import { type CredentialAccount, viewerQueryOptions } from "../api/viewer";
 
 /** Who is using the app. */
 export type Viewer =
   /** The session is resuming, or the account is loading. */
   | { status: "loading" }
   | { status: "signed-out" }
-  | { status: "signed-in"; account: Account }
+  | { status: "signed-in"; account: CredentialAccount }
   /** Signed in, but the account could not be loaded; `message` is localized. `isRetrying` while `retry` loads it again. */
   | { status: "error"; message: string; retry: () => void; isRetrying: boolean };
 

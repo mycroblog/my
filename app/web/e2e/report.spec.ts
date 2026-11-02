@@ -172,7 +172,8 @@ test("reports a post with the keyboard only, the focus on each step's heading", 
   await more.focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("menuitem", { name: message("report.open") })).toBeVisible();
-  await page.keyboard.press("ArrowDown");
+  // Report is the last item for a user who is not a moderator.
+  await page.keyboard.press("End");
   await expect(page.getByRole("menuitem", { name: message("report.open") })).toBeFocused();
   await page.keyboard.press("Enter");
 

@@ -6,6 +6,7 @@ import { fitWithin } from "./prepareImage";
 import {
   countCharacters,
   defaultVisibility,
+  directMessageText,
   domainMentions,
   narrower,
   postedVisibility,
@@ -65,6 +66,18 @@ describe("postedVisibility", () => {
 
   test("is the ceiling for a wider choice", () => {
     expect(postedVisibility("local", silenced)).toBe("private");
+  });
+});
+
+describe("directMessageText", () => {
+  test.each([
+    ["an empty draft starts with the mention", "", "bob", "@bob "],
+    ["a blank draft too", "  ", "bob@remote.example", "@bob@remote.example "],
+    ["what is written stays after the mention", "hello", "bob", "@bob hello"],
+    ["a draft that mentions the account stays as it is", "hi @Bob there", "bob", "hi @Bob there"],
+    ["a longer handle is another account", "hi @bobby", "bob", "@bob hi @bobby"],
+  ])("%s", (_, text, acct, expected) => {
+    expect(directMessageText(text, acct)).toBe(expected);
   });
 });
 

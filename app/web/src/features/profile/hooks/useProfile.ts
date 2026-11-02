@@ -6,10 +6,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { useContentLinkClick } from "../../../lib/contentLinks";
-import { handleOf, isRemoteAcct } from "../../../lib/handle";
+import { handleOf, isolate, isRemoteAcct, nameOf } from "../../../lib/handle";
 import { hostOf } from "../../../lib/host";
 import { followListPath } from "../../../lib/paths";
 import { type Account, accountQueryOptions } from "../api/accounts";
+
+export { isolate, nameOf };
 
 export type ProfileView = {
   account: Account;
@@ -33,20 +35,6 @@ export type ProfileView = {
   /** For an account of another server, its profile page there and the host of that page; null for a local account. */
   original: { href: string; host: string } | null;
 };
-
-/**
- * A name inside a sentence of the UI's language. It is the user's text in any script, so it is wrapped in
- * Unicode directional isolates (FSI … PDI): a right-to-left name does not reorder the sentence around it
- * (web-client/README.md Y10).
- */
-export function isolate(name: string): string {
-  return `⁨${name}⁩`;
-}
-
-/** The name an account goes by in the UI. */
-export function nameOf(account: Account): string {
-  return account.display_name || account.username;
-}
 
 /** Reads the account whose handle is `acct`; the route loader has fetched it, and a failure goes to its error boundary. */
 export function useProfile(acct: string): ProfileView {

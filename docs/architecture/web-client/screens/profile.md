@@ -1,7 +1,7 @@
 ---
 start: "/@marco"
 persona: "yuki"
-paths: ["app/web/src/features/profile/**", "app/web/src/features/report/**", "app/web/src/features/lists/components/AddToListDialog.tsx", "app/web/src/routes/@{$acct}.tsx"]
+paths: ["app/web/src/features/profile/**", "app/web/src/features/relationship/**", "app/web/src/features/report/**", "app/web/src/features/lists/components/AddToListDialog.tsx", "app/web/src/routes/@{$acct}.tsx"]
 starts: {"フォローをやめる": "/@sam", "フォロー中の人をリストに入れる": "/@sam"}
 ---
 

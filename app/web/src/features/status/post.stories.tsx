@@ -3,9 +3,9 @@
 // a poll, more pictures than a post shows, a content warning, and a link card.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
-import { apiBase, problem } from "../../test/msw/http";
+import { apiBase, operatorHandler, problem } from "../../test/msw/http";
 import {
   abdulrahman,
   bob,
@@ -179,6 +179,26 @@ export const OwnPost: Story = alone(viewerPost);
 export const RemotePost: Story = alone(
   post(66, carol, { content: "<p>Greetings from another server!</p>", boosts_count: 3 }),
 );
+
+/** Opens the menu of the post the page is about, and waits for the viewer's relationship with its author. */
+const openMenu: NonNullable<Story["play"]> = async (context) => {
+  const { canvas, userEvent } = context;
+  await settled(context);
+  const more = await canvas.findAllByRole("button", { name: "More actions" });
+  await userEvent.click(more[more.length > 1 ? 1 : 0] as HTMLElement);
+  await waitFor(async () => {
+    await expect(within(document.body).getByRole("menuitem", { name: /^Mute / })).not.toHaveAttribute("aria-disabled");
+  });
+};
+
+/** The menu of another account's post, with what the viewer can do about its author. */
+export const AuthorMenu: Story = { play: openMenu };
+
+/** The same menu for a moderator, with the links to the moderation page. */
+export const AuthorMenuAsModerator: Story = {
+  parameters: { screen: { handlers: [operatorHandler(["manage_accounts"])] } },
+  play: openMenu,
+};
 
 /** The post does not exist, or the viewer may not see it. */
 export const NotFound: Story = answeringWithErrorPage(
