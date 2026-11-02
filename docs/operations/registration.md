@@ -83,7 +83,6 @@ While the instance setting `login_providers_only` is on and at least one [login 
 
 While the instance setting `login_providers_only` applies, reset links and setting or changing a password are refused ([what the limit does](login-providers.md#limit-sign-in-to-login-providers)).
 
-
 - `mail = smtp`: when a user enters an email address under "Forgot your password?" on the sign-in page, the server sends a link for setting a new password to the user whose primary address it is.
   The page's answer is the same whether or not an account exists. The link is valid for 1 hour and works once, and it stops working if the password changes by another route in the meantime.
   Requests are limited to 5 per 30 minutes per client IP address, and mail to 3 per hour per address (a request over a limit sends nothing and gets the same answer). When CAPTCHA is enabled, this form is verified too.
