@@ -77,6 +77,10 @@ const preview: Preview = {
     a11y: {
       // Every story test fails on an axe violation (web-client/README.md Y1).
       test: "error",
+      // A pending button announces itself through React Aria's live announcer, as an image labelled by the button. When
+      // the button goes with its form (a report that was sent), the announcement names nothing for its last seconds:
+      // screen readers have already read it or read nothing, and the page does not control that element.
+      context: { exclude: ['[data-live-announcer] [role="img"]'] },
       options: { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } },
     },
   },
