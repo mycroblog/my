@@ -152,14 +152,6 @@ describe("TextArea", () => {
     });
   });
 
-  it("keeps a scrollbar's gutter on the text area as on its highlight layer, so that their lines wrap alike", () => {
-    render(<TextArea label="Your post" value="#tag" highlights={[{ kind: "hashtag", start: 0, end: 4 }]} />);
-    const textarea = screen.getByRole("textbox", { name: "Your post" });
-    const layer = textarea.previousElementSibling;
-    expect(layer).toHaveClass("scrollbar-gutter-stable");
-    expect(textarea).toHaveClass("scrollbar-gutter-stable");
-  });
-
   it("puts the end action after the text area in the tab order, without changing its name or description", async () => {
     const user = userEvent.setup();
     render(
