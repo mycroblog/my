@@ -7044,6 +7044,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/link_card_domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the rules of the link card crawler
+         * @description Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+         *     and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+         *     rules. Needs the `manage_settings` permission.
+         */
+        get: operations["listLinkCardDomainRules"];
+        put?: never;
+        /**
+         * Set the rule of a domain for the link card crawler
+         * @description Records the rule of a domain, replacing the rule it has, and records the change in the
+         *     audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+         *     link cards: federation and other remote media follow the domain actions. A domain that is
+         *     not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+         *     the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+         */
+        post: operations["setLinkCardDomainRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/link_card_domains/{domain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove the rule of a domain for the link card crawler
+         * @description Removes the rule of a domain and records it in the audit log. The cards already kept show
+         *     as they did at once; a URL that was not fetched because of the rule gets its card the next
+         *     time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+         *     nothing. Needs the `manage_settings` permission.
+         */
+        delete: operations["removeLinkCardDomainRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/relays": {
         parameters: {
             query?: never;
@@ -8178,7 +8231,9 @@ export interface components {
          *     `user` (a registration):
          *     `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
          *     (an instance setting), `text_changed` (an instance text). On a `rule`:
-         *     `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+         *     `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+         *     `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+         *     card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
          *     `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
          *     `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
          *     an `appeal`:
@@ -8230,7 +8285,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -8287,7 +8342,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -8616,6 +8671,33 @@ export interface components {
             /** @description The height of the SVG's viewBox, rounded. */
             height: number;
             renditions: components["schemas"]["BrandFile"][];
+        };
+        /**
+         * @description What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+         *     neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+         *     but no images, and its cards show without their images.
+         * @enum {string}
+         */
+        LinkCardDomainMode: "no_fetch" | "no_images";
+        /**
+         * @description The rule of the crawler of link cards for a domain and its subdomains. A rule on a subdomain
+         *     never loosens a rule on its parent: every rule that covers a host applies.
+         */
+        LinkCardDomainRule: {
+            /** @description The domain, in canonical form (lower case, IDNA A-labels); the key of the rule. */
+            domain: string;
+            mode: components["schemas"]["LinkCardDomainMode"];
+            /** @description What the administrators keep about the rule; empty for none. */
+            note: string;
+            /**
+             * Format: date-time
+             * @description When the rule was last set.
+             */
+            updated_at: string;
+        };
+        /** @description The rules, by domain. */
+        LinkCardDomainRuleList: {
+            items: components["schemas"]["LinkCardDomainRule"][];
         };
         /**
          * @description A condition of an `oidc` provider: a user signs in only when the claim of the ID token
@@ -11447,13 +11529,14 @@ export interface components {
          * @description The card of the first link in a status (ADR-0062): the title, description, and image
          *     that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
          *     after the status was posted or received. Omitted from a status with attachments or a
-         *     poll, from a status whose link has no card yet, and when the instance setting
+         *     poll, from a status whose link has no card yet, from a status whose link is on a domain
+         *     where a rule of the crawler stops fetching, and when the instance setting
          *     `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
          *     it was posted may have none.
          *
          *     Clients show the card as one link to `url` and, under a content warning, only once the
          *     warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-         *     shows it.
+         *     shows it. A rule of the crawler can leave the card without its image.
          */
         LinkCard: {
             /**
@@ -13130,6 +13213,14 @@ export interface components {
         SetInstanceTextRequest: {
             /** @description The text, in any language; empty clears it. */
             body: string;
+        };
+        /** @description The rule to set on a domain. */
+        SetLinkCardDomainRuleRequest: {
+            /** @description The domain, a host without a scheme, path, or port; it also covers its subdomains. */
+            domain: string;
+            mode: components["schemas"]["LinkCardDomainMode"];
+            /** @description What the administrators keep about the rule; empty when omitted. */
+            note?: string;
         };
         /** @description Who may quote the status from now on. Approvals given before stay. */
         SetQuotePolicyRequest: {
@@ -22382,6 +22473,76 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminWebhookDelivery"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listLinkCardDomainRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rules. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkCardDomainRuleList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    setLinkCardDomainRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLinkCardDomainRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description The rule. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkCardDomainRule"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeLinkCardDomainRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The canonical domain of the rule. */
+                domain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The domain has no rule. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             default: components["responses"]["Problem"];
         };
     };

@@ -57,7 +57,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `indexable_default` | `true` / `false` | `false` | The default of `indexable` for new accounts. Changing it does not change existing accounts |
 | `security_contact` | `https:` or `mailto:` URI (empty = unset) | empty | Where to report security problems of this server: how it is configured and run, and its accounts and data. When set, the server serves `/.well-known/security.txt` (RFC 9116). This is your contact, not the software's: forward a report of a vulnerability in the software itself to the project as its [security policy](../../SECURITY.md) describes |
 | `require_media_description` | `true` / `false` | `false` | Whether every image attached to a local post needs alt text. When `true`, a post or an edit with an image whose alt text is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
-| `link_cards_enabled` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built |
+| `link_cards_enabled` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built. To stop it only on some domains, see [link card domains](#link-card-domains) |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Whether to accept Client ID Metadata Document clients. When `true`, for an authorization request whose `client_id` is an `https` URL, the server fetches the metadata at that URL and treats it as the client (no prior registration). The fetch follows no redirects, reads at most 5 KB, and reuses the response for at most 24 hours following its cache directives. When `false`, it stops fetching and refuses authorization requests, token exchanges, and refreshes of these clients |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | How much of the running costs (recorded on `/admin/finance`) to publish. `private`: nothing is published (`GET /api/v1/instance/cost_totals` is 404). `totals`: only the total per period and currency. `breakdown`: the totals and a breakdown by provider and category, shown to everyone on the information pages (`/about` and `/about/costs`) and in the API. `breakdown` reveals which provider (for example, which cloud) you run on. At every level, item names, memos, and individual payments stay private. Periods up to and including the one containing today (UTC) are published |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Whether users with the permission `view_finance` see cost item names and the service names of imported costs on the finance screen (`/finance`, `GET /api/v1/finance/cost_totals`). Totals and the breakdown by provider and category are always shown, whatever this setting is |
@@ -287,6 +287,28 @@ my instance rule list                                  # active rules (-all incl
   supplement, edit it, reorder it with "Move up" and "Move down", and retire it (after a confirmation dialog). Every change
   is recorded in the audit log (`rule_added`, `rule_revised`, `rule_moved`, `rule_retired`).
 - The exit codes are the same as for settings (0 for success, 1 for a rejected value or a database error, 2 for wrong arguments).
+
+## Link card domains
+
+The link cards of posts (`link_cards_enabled`) come from a crawler: the server fetches the linked page and its image. A rule
+stops that crawler on one domain and its subdomains, and leaves everything else about the domain alone. It has one of two
+modes.
+
+| Mode | What it fetches | Cards it already has |
+| --- | --- | --- |
+| Stop fetching (`no_fetch`) | Nothing from the domain, neither pages nor images, also when a redirect leads there | Hidden |
+| Stop images only (`no_images`) | Pages, but no images from the domain | Shown without their image |
+
+- A rule bears only on link cards. The domain stays federated, and the media of its posts are fetched as usual: to cut a server off, use
+  a [domain action](moderation.md), which also stops its link cards. A rule is not listed with the domain actions or exported with them.
+- A rule covers the domain and its subdomains, and an image is checked against the hosts of the page and of the image. Every rule that covers a host applies, so a rule on a subdomain does
+  not loosen the rule on its parent. A domain is written and normalized as for a domain action: a host name without a scheme or a port, in any spelling of an internationalized domain.
+- A change takes effect at once, also on the cards the server already has, and the proxied images of those cards stop being served while images are stopped.
+- Removing a rule brings the cards the server already has back as they were. A link that was skipped gets its card the next time a post needs it; nothing is fetched again in bulk.
+  A card fetched again while images were stopped stays without an image until its next refetch.
+- On the admin screen of the web client ("Link card domains", `/admin/link-card-domains`, `manage_settings`) you can set a rule with a note, change its mode in the list, and remove it (after a confirmation dialog).
+- The admin API is `/api/v1/admin/link_card_domains` (list, set; a `DELETE` with the domain removes it) and needs the role permission `manage_settings`. A server keeps at most 1,000 rules, each with a note of up to 5,000 characters.
+- Every change is recorded in the audit log (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
 ## Theme
 

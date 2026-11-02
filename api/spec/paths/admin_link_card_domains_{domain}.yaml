@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+delete:
+  operationId: removeLinkCardDomainRule
+  summary: Remove the rule of a domain for the link card crawler
+  description: |
+    Removes the rule of a domain and records it in the audit log. The cards already kept show
+    as they did at once; a URL that was not fetched because of the rule gets its card the next
+    time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+    nothing. Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - name: domain
+      in: path
+      required: true
+      description: The canonical domain of the rule.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 253
+  responses:
+    "204":
+      description: The domain has no rule.
+    default:
+      $ref: ../components/responses/Problem.yaml

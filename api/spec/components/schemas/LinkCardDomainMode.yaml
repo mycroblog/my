@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+  neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+  but no images, and its cards show without their images.
+type: string
+enum: [no_fetch, no_images]

@@ -9,6 +9,7 @@ import {
   DocumentIcon,
   ErrorIcon,
   FinanceIcon,
+  ImageIcon,
   JobIcon,
   LoginProviderIcon,
   RelayIcon,
@@ -75,6 +76,14 @@ export const adminPages: readonly StaffPage[] = [
     label: "client:admin.relays.title",
     description: "client:admin.relays.summary",
     icon: RelayIcon,
+    group: "client:admin.menu.group.connections",
+  },
+  {
+    href: "/admin/link-card-domains",
+    permission: "manage_settings",
+    label: "client:admin.link_card_domains.title",
+    description: "client:admin.link_card_domains.summary",
+    icon: ImageIcon,
     group: "client:admin.menu.group.connections",
   },
   {

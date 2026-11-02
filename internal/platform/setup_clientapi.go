@@ -54,6 +54,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		AccountAdmin: a.AccountAdmin, AccountReports: a.Moderation, PasswordResetLinks: a.Identity,
 		AuditLog: a.Moderation,
 		Rules:    a.Instance,
+		// The rules of the link card crawler.
+		LinkCardDomainRules: a.Instance,
 		// The server-wide announcements (FR-726).
 		Announcements: a.Instance,
 		Roles:         a.Identity,

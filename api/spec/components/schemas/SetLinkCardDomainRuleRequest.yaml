@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: The rule to set on a domain.
+type: object
+required: [domain, mode]
+properties:
+  domain:
+    description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+    type: string
+    minLength: 1
+    maxLength: 253
+  mode:
+    $ref: ./LinkCardDomainMode.yaml
+  note:
+    description: What the administrators keep about the rule; empty when omitted.
+    type: string
+    maxLength: 5000

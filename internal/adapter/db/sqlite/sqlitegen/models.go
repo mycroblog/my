@@ -511,6 +511,13 @@ type LinkCard struct {
 	FetchedAt        int64
 }
 
+type LinkCardDomainRule struct {
+	Domain    string
+	Mode      string
+	Note      string
+	UpdatedAt int64
+}
+
 type LinkCardMedium struct {
 	MediaID     string
 	RemoteUrl   string

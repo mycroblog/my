@@ -100,6 +100,9 @@ const (
 	AuditLoginProviderEnabled            = moderation.AuditLoginProviderEnabled
 	AuditLoginProviderDisabled           = moderation.AuditLoginProviderDisabled
 	AuditLoginProviderSecretRotated      = moderation.AuditLoginProviderSecretRotated
+	AuditLinkCardDomainFetchStopped      = moderation.AuditLinkCardDomainFetchStopped
+	AuditLinkCardDomainImagesStopped     = moderation.AuditLinkCardDomainImagesStopped
+	AuditLinkCardDomainRuleRemoved       = moderation.AuditLinkCardDomainRuleRemoved
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -124,6 +127,7 @@ const (
 	AuditTargetInstance              = moderation.AuditTargetInstance
 	AuditTargetVoiceRoom             = moderation.AuditTargetVoiceRoom
 	AuditTargetLoginProvider         = moderation.AuditTargetLoginProvider
+	AuditTargetLinkCardDomain        = moderation.AuditTargetLinkCardDomain
 )
 
 // AuditActorSystem is moderation.AuditActorSystem, the server itself, and AuditActorRemote
@@ -260,8 +264,8 @@ type AuditTarget struct {
 // GoneAuditTargets returns the targets of entries that no longer exist: accounts, reports,
 // appeals, and sign-up blocks erased (past their retention, ADR-0038), and roles, custom emoji,
 // custom emoji requests, webhooks, and relays deleted (through Deps.AuditTargets). It looks up
-// each kind of target once for all the entries. A domain, a user, a setting, a rule, an announcement, and an invite are never
-// removed, a canceled cost item keeps its rows, and a status has no operation recorded on it;
+// each kind of target once for all the entries. A domain, a user, a setting, a rule, an announcement, an invite, and the domain of a link
+// card rule are never removed, a canceled cost item keeps its rows, and a status has no operation recorded on it;
 // none of these is reported gone.
 func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.AuditEntry) (map[AuditTarget]bool, error) {
 	ids := map[moderation.AuditTargetKind][]string{}

@@ -22,7 +22,7 @@
 | FR-113 ブックマーク | S | `bookmarks` |
 | FR-114 引用投稿 | S | `status_quotes`, `status_quote_events`, `status_quote_states`, `status_quote_policies`, `quote_authorizations`, `quote_authorization_revocations`, `user_preferences`（`default_quote_policy`）, `notifications`（`quote`） |
 | FR-116 絵文字リアクション | M | `reactions`, `status_reaction_counts`, `custom_emojis`, `notifications`（`reaction`） |
-| FR-117 リンクのカード | S | `link_cards`, `link_card_media`, `status_link_cards`, `instance_settings`（`link_cards_enabled`） |
+| FR-117 リンクのカード | S | `link_cards`, `link_card_media`, `status_link_cards`, `instance_settings`（`link_cards_enabled`）, `link_card_domain_rules` |
 | FR-201〜204 タイムライン | M | `feed_entries`, `feed_direct_recipients`, `feed_tag_entries`, `feed_follow_edges`, `feed_exclusions`, `feed_author_restrictions`, `feed_domain_restrictions` |
 | FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers`, `post_subscriptions`, `post_subscription_requests` |
 | FR-206 Web Push | S | `push_subscriptions`, `push_subscription_alerts` |

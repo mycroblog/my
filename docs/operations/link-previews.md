@@ -2,6 +2,9 @@
 
 This page explains link previews to operators and developers and lists the steps to check them by hand.
 
+These are the previews that other services show of this server's pages. The cards this server shows for the links in its own posts,
+and how to stop fetching them from a domain, are in [instance settings](instance-settings.md#link-card-domains).
+
 ## What the server returns
 
 `my serve` returns the HTML of the landing page (`https://<host>/`), the instance information page (`https://<host>/about`),

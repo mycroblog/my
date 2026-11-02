@@ -9591,6 +9591,91 @@ paths:
           $ref: '#/components/responses/AdminWebhookDelivery'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/link_card_domains:
+    get:
+      operationId: listLinkCardDomainRules
+      summary: List the rules of the link card crawler
+      description: |
+        Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+        and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+        rules. Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The rules.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkCardDomainRuleList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: setLinkCardDomainRule
+      summary: Set the rule of a domain for the link card crawler
+      description: |
+        Records the rule of a domain, replacing the rule it has, and records the change in the
+        audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+        link cards: federation and other remote media follow the domain actions. A domain that is
+        not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+        the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLinkCardDomainRuleRequest'
+      responses:
+        '200':
+          description: The rule.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkCardDomainRule'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/link_card_domains/{domain}:
+    delete:
+      operationId: removeLinkCardDomainRule
+      summary: Remove the rule of a domain for the link card crawler
+      description: |
+        Removes the rule of a domain and records it in the audit log. The cards already kept show
+        as they did at once; a URL that was not fetched because of the rule gets its card the next
+        time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+        nothing. Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          description: The canonical domain of the rule.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 253
+      responses:
+        '204':
+          description: The domain has no rule.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/relays:
     get:
       operationId: listAdminRelays
@@ -12106,7 +12191,9 @@ components:
         `user` (a registration):
         `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
         (an instance setting), `text_changed` (an instance text). On a `rule`:
-        `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+        `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+        `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+        card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
         `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
         `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
         an `appeal`:
@@ -12250,6 +12337,9 @@ components:
         - login_provider_enabled
         - login_provider_disabled
         - login_provider_secret_rotated
+        - link_card_domain_fetch_stopped
+        - link_card_domain_images_stopped
+        - link_card_domain_rule_removed
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -12363,6 +12453,7 @@ components:
         - instance
         - voice_room
         - login_provider
+        - link_card_domain
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -12946,6 +13037,48 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BrandFile'
+    LinkCardDomainMode:
+      description: |
+        What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+        neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+        but no images, and its cards show without their images.
+      type: string
+      enum:
+        - no_fetch
+        - no_images
+    LinkCardDomainRule:
+      description: |
+        The rule of the crawler of link cards for a domain and its subdomains. A rule on a subdomain
+        never loosens a rule on its parent: every rule that covers a host applies.
+      type: object
+      required:
+        - domain
+        - mode
+        - note
+        - updated_at
+      properties:
+        domain:
+          description: The domain, in canonical form (lower case, IDNA A-labels); the key of the rule.
+          type: string
+        mode:
+          $ref: '#/components/schemas/LinkCardDomainMode'
+        note:
+          description: What the administrators keep about the rule; empty for none.
+          type: string
+        updated_at:
+          description: When the rule was last set.
+          type: string
+          format: date-time
+    LinkCardDomainRuleList:
+      description: The rules, by domain.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkCardDomainRule'
     LoginProviderClaimCondition:
       description: |
         A condition of an `oidc` provider: a user signs in only when the claim of the ID token
@@ -17762,13 +17895,14 @@ components:
         The card of the first link in a status (ADR-0062): the title, description, and image
         that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
         after the status was posted or received. Omitted from a status with attachments or a
-        poll, from a status whose link has no card yet, and when the instance setting
+        poll, from a status whose link has no card yet, from a status whose link is on a domain
+        where a rule of the crawler stops fetching, and when the instance setting
         `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
         it was posted may have none.
 
         Clients show the card as one link to `url` and, under a content warning, only once the
         warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-        shows it.
+        shows it. A rule of the crawler can leave the card without its image.
       type: object
       required:
         - url
@@ -20315,6 +20449,24 @@ components:
           description: The text, in any language; empty clears it.
           type: string
           maxLength: 100000
+    SetLinkCardDomainRuleRequest:
+      description: The rule to set on a domain.
+      type: object
+      required:
+        - domain
+        - mode
+      properties:
+        domain:
+          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+          type: string
+          minLength: 1
+          maxLength: 253
+        mode:
+          $ref: '#/components/schemas/LinkCardDomainMode'
+        note:
+          description: What the administrators keep about the rule; empty when omitted.
+          type: string
+          maxLength: 5000
     SetQuotePolicyRequest:
       description: Who may quote the status from now on. Approvals given before stay.
       type: object

@@ -92,13 +92,20 @@ type LinkCardRepository interface {
 	DeleteUnreferencedLinkCardMedia(ctx context.Context, tx uow.Tx, mediaID string) (bool, error)
 }
 
-// LinkCardDomains reads the domain actions that bear on link cards (ADR-0062 §7). The platform
-// adapts *moderation.FederationPolicy, canonicalizing the hosts.
+// LinkCardDomains reads what bears on link cards by domain (ADR-0062 §7): the domain actions and
+// the rules of the crawler. The platform adapts *moderation.FederationPolicy and the rules of the
+// instance module, canonicalizing the hosts.
 type LinkCardDomains interface {
 	// FederationSuspended reports whether a host, or one of its parents, is suspended.
 	FederationSuspended(ctx context.Context, host string) (bool, error)
 	// RejectsMedia reports whether the media of a host, or of one of its parents, are rejected.
 	RejectsMedia(ctx context.Context, host string) (bool, error)
+	// FetchStopped reports whether a rule of the crawler on a host, or on one of its parents,
+	// stops fetching from it.
+	FetchStopped(ctx context.Context, host string) (bool, error)
+	// ImagesStopped reports whether a rule of the crawler on a host, or on one of its parents,
+	// stops fetching images from it: either mode of a rule does.
+	ImagesStopped(ctx context.Context, host string) (bool, error)
 }
 
 // LinkCardCreators verifies the fediverse:creator of a page (ADR-0062 §5). The federation
@@ -271,9 +278,47 @@ func linkCardKey(u string) string {
 // remembered as failed.
 var errLinkCardUnusable = errors.New("content: no link card")
 
+// errLinkCardRefused reports a redirect to a host that nothing is fetched from. It is not
+// remembered, so that the URL can be fetched as soon as the rule is gone.
+var errLinkCardRefused = errors.New("content: link card host refused")
+
+// fetchRefused reports whether nothing is fetched from a host and its cards are hidden: it is
+// suspended, or a rule of the crawler stops fetching from it.
+func (l *LinkCards) fetchRefused(ctx context.Context, host string) (bool, error) {
+	if suspended, err := l.d.Domains.FederationSuspended(ctx, host); err != nil || suspended {
+		return suspended, err
+	}
+	return l.d.Domains.FetchStopped(ctx, host)
+}
+
+// imageRefused reports whether no image is fetched from a host and the cards that touch it have
+// no image: its media are rejected, or a rule of the crawler stops fetching images from it.
+func (l *LinkCards) imageRefused(ctx context.Context, host string) (bool, error) {
+	if rejected, err := l.d.Domains.RejectsMedia(ctx, host); err != nil || rejected {
+		return rejected, err
+	}
+	return l.d.Domains.ImagesStopped(ctx, host)
+}
+
+// checkRedirect returns the HTTPRequest.CheckRedirect that ends a fetch at a redirect to a host
+// that refused reports, with an error wrapping errLinkCardRefused.
+func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
+	return func(ctx context.Context, url string) error {
+		switch stop, err := refused(ctx, content.LinkHost(url)); {
+		case err != nil:
+			return err
+		case stop:
+			return fmt.Errorf("%w: %s", errLinkCardRefused, url)
+		}
+		return nil
+	}
+}
+
 // Fetch fetches the card of the URL that a status links, unless the card is fresh, the URL
-// failed within LinkCardFailureTTL, its host is suspended, or link cards are disabled. It
-// reports retry when another job is fetching the URL. Failures of the page are remembered and
+// failed within LinkCardFailureTTL, its host is suspended or a rule of the crawler stops fetching
+// from it, or link cards are disabled. A fetch skipped for its host writes no failure memory, so
+// that the next status that links the URL gets a card as soon as the action or the rule is gone.
+// It reports retry when another job is fetching the URL. Failures of the page are remembered and
 // are not errors; an error is a failure of the stores.
 func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err error) {
 	if on, err := l.enabled(ctx); err != nil || !on {
@@ -299,7 +344,7 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 	case !errors.Is(err, kernel.ErrKeyNotFound):
 		return false, fmt.Errorf("read link card failure memory: %w", err)
 	}
-	if suspended, err := l.d.Domains.FederationSuspended(ctx, content.LinkHost(u)); err != nil || suspended {
+	if refused, err := l.fetchRefused(ctx, content.LinkHost(u)); err != nil || refused {
 		return false, err
 	}
 	n, err := l.d.KV.IncrBy(ctx, LinkCardLockNamespace, key, 1, LinkCardLockTTL)
@@ -315,6 +360,10 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 		}
 	}()
 	card, err := l.fetchCard(ctx, u)
+	if errors.Is(err, errLinkCardRefused) {
+		l.d.Logger.DebugContext(ctx, "link card redirected to a refused host", slog.String("url", u), slog.Any("error", err))
+		return false, nil
+	}
 	if errors.Is(err, errLinkCardUnusable) {
 		l.d.Logger.DebugContext(ctx, "no link card", slog.String("url", u), slog.Any("error", err))
 		if ctx.Err() != nil {
@@ -340,7 +389,12 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 			header.Set("Accept-Language", lang)
 		}
 	}
-	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{URL: u, Purpose: kernel.HTTPPurposeHTML, Header: header})
+	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
+		URL: u, Purpose: kernel.HTTPPurposeHTML, Header: header, CheckRedirect: l.checkRedirect(l.fetchRefused),
+	})
+	if errors.Is(err, errLinkCardRefused) {
+		return content.LinkCard{}, err
+	}
 	if err != nil {
 		return content.LinkCard{}, fmt.Errorf("%w: fetch %s: %w", errLinkCardUnusable, u, err)
 	}
@@ -359,7 +413,8 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 		AuthorName: page.AuthorName, PublishedAt: page.PublishedAt, Language: page.Language, FetchedAt: l.d.Clock.Now(),
 	}
 	if page.ImageURL != "" {
-		if card.ImageMediaID, err = l.image(ctx, card.CardURL, page.ImageURL, page.ImageAlt); err != nil {
+		hosts := uniqueHosts(u, resp.URL, card.CardURL, page.ImageURL)
+		if card.ImageMediaID, err = l.image(ctx, hosts, page.ImageURL, page.ImageAlt); err != nil {
 			return content.LinkCard{}, err
 		}
 	}
@@ -375,13 +430,13 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 	return card, nil
 }
 
-// image returns the media file of the image at imageURL of the card at cardURL: the one
+// image returns the media file of the image at imageURL of a card that touches hosts: the one
 // recorded for the URL before, or the image fetched once, checked, and recorded with its size
-// and blurhash. It returns "" when the media of either host are rejected or the image cannot be
-// used, so that the card has no image (ADR-0062 §3, §7).
-func (l *LinkCards) image(ctx context.Context, cardURL, imageURL, alt string) (string, error) {
-	for _, host := range []string{content.LinkHost(cardURL), content.LinkHost(imageURL)} {
-		if rejected, err := l.d.Domains.RejectsMedia(ctx, host); err != nil || rejected {
+// and blurhash. It returns "" when no image is fetched from one of the hosts or the image cannot
+// be used, so that the card has no image (ADR-0062 §3, §7).
+func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt string) (string, error) {
+	for _, host := range hosts {
+		if refused, err := l.imageRefused(ctx, host); err != nil || refused {
 			return "", err
 		}
 	}
@@ -428,6 +483,7 @@ func (l *LinkCards) probeImage(ctx context.Context, imageURL string) (content.Li
 	}
 	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
 		URL: imageURL, Purpose: kernel.HTTPPurposeImage, Header: http.Header{"Accept": {"image/*"}},
+		CheckRedirect: l.checkRedirect(l.imageRefused),
 	})
 	if err != nil {
 		return fail("fetch", err)
@@ -530,8 +586,9 @@ type LinkCardImage struct {
 
 // View returns the card that rev, the current revision of st, shows, or nil for none: link
 // cards are disabled, the revision has attachments or a poll, the card is not fetched yet, or
-// the card's host is suspended. The image is left out when the media of the card's or the
-// image's host are rejected.
+// nothing is fetched from the card's host. The image is left out when no image is fetched from
+// the card's or the image's host. These apply when reading, so a change of a domain action or a
+// rule of the crawler shows on the cards already kept at once, and is undone when it goes.
 func (l *LinkCards) View(ctx context.Context, st content.Status, rev content.Revision) (*LinkCardView, error) {
 	if len(rev.Attachments) > 0 || rev.Poll != nil {
 		return nil, nil
@@ -554,7 +611,7 @@ func (l *LinkCards) View(ctx context.Context, st content.Status, rev content.Rev
 		return nil, err
 	}
 	for _, host := range uniqueHosts(c.URL, c.CardURL) {
-		if suspended, err := l.d.Domains.FederationSuspended(ctx, host); err != nil || suspended {
+		if refused, err := l.fetchRefused(ctx, host); err != nil || refused {
 			return nil, err
 		}
 	}
@@ -578,8 +635,8 @@ func (l *LinkCards) View(ctx context.Context, st content.Status, rev content.Rev
 	return out, nil
 }
 
-// cardImage returns the image of c through the media proxy, nil when it is missing or the media
-// of a host are rejected.
+// cardImage returns the image of c through the media proxy, nil when it is missing or no image
+// is fetched from one of its hosts.
 func (l *LinkCards) cardImage(ctx context.Context, c content.LinkCard) (*LinkCardImage, error) {
 	m, err := l.d.Repository.FindLinkCardMedia(ctx, c.ImageMediaID)
 	if errors.Is(err, ErrNotFound) {
@@ -589,7 +646,7 @@ func (l *LinkCards) cardImage(ctx context.Context, c content.LinkCard) (*LinkCar
 		return nil, err
 	}
 	for _, host := range uniqueHosts(c.URL, c.CardURL, m.RemoteURL) {
-		if rejected, err := l.d.Domains.RejectsMedia(ctx, host); err != nil || rejected {
+		if refused, err := l.imageRefused(ctx, host); err != nil || refused {
 			return nil, err
 		}
 	}

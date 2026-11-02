@@ -346,6 +346,9 @@ const (
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
+	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
+	AdminAuditActionLinkCardDomainImagesStopped     AdminAuditAction = "link_card_domain_images_stopped"
+	AdminAuditActionLinkCardDomainRuleRemoved       AdminAuditAction = "link_card_domain_rule_removed"
 	AdminAuditActionLoginProviderCreated            AdminAuditAction = "login_provider_created"
 	AdminAuditActionLoginProviderDeleted            AdminAuditAction = "login_provider_deleted"
 	AdminAuditActionLoginProviderDisabled           AdminAuditAction = "login_provider_disabled"
@@ -476,6 +479,12 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
+		return true
+	case AdminAuditActionLinkCardDomainFetchStopped:
+		return true
+	case AdminAuditActionLinkCardDomainImagesStopped:
+		return true
+	case AdminAuditActionLinkCardDomainRuleRemoved:
 		return true
 	case AdminAuditActionLoginProviderCreated:
 		return true
@@ -634,6 +643,7 @@ const (
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
 	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
+	AdminAuditTargetKindLinkCardDomain        AdminAuditTargetKind = "link_card_domain"
 	AdminAuditTargetKindLoginProvider         AdminAuditTargetKind = "login_provider"
 	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
 	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
@@ -675,6 +685,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindInstance:
 		return true
 	case AdminAuditTargetKindInvite:
+		return true
+	case AdminAuditTargetKindLinkCardDomain:
 		return true
 	case AdminAuditTargetKindLoginProvider:
 		return true
@@ -2467,6 +2479,24 @@ func (e InviteCreatorKind) Valid() bool {
 	case InviteCreatorKindMember:
 		return true
 	case InviteCreatorKindStaff:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkCardDomainMode.
+const (
+	LinkCardDomainModeNoFetch  LinkCardDomainMode = "no_fetch"
+	LinkCardDomainModeNoImages LinkCardDomainMode = "no_images"
+)
+
+// Valid indicates whether the value is a known member of the LinkCardDomainMode enum.
+func (e LinkCardDomainMode) Valid() bool {
+	switch e {
+	case LinkCardDomainModeNoFetch:
+		return true
+	case LinkCardDomainModeNoImages:
 		return true
 	default:
 		return false
@@ -4734,7 +4764,9 @@ type AdminAppealPage struct {
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 // (an instance setting), `text_changed` (an instance text). On a `rule`:
-// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+// `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
 // `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
@@ -4806,7 +4838,9 @@ type AdminAuditEntry struct {
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 	// (an instance setting), `text_changed` (an instance text). On a `rule`:
-	// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+	// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+	// `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+	// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
 	// `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
@@ -9215,13 +9249,14 @@ type LiftAccountActionRequest struct {
 // LinkCard The card of the first link in a status (ADR-0062): the title, description, and image
 // that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 // after the status was posted or received. Omitted from a status with attachments or a
-// poll, from a status whose link has no card yet, and when the instance setting
+// poll, from a status whose link has no card yet, from a status whose link is on a domain
+// where a rule of the crawler stops fetching, and when the instance setting
 // `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
 // warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-// shows it.
+// shows it. A rule of the crawler can leave the card without its image.
 type LinkCard struct {
 	// Author The account that the page names as its creator (`fediverse:creator`), given only when
 	// the account's server lists the page's domain among its `attributionDomains`.
@@ -9251,6 +9286,34 @@ type LinkCard struct {
 
 	// Url The page that the card links to, after redirects.
 	Url string `json:"url"`
+}
+
+// LinkCardDomainMode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+// but no images, and its cards show without their images.
+type LinkCardDomainMode string
+
+// LinkCardDomainRule The rule of the crawler of link cards for a domain and its subdomains. A rule on a subdomain
+// never loosens a rule on its parent: every rule that covers a host applies.
+type LinkCardDomainRule struct {
+	// Domain The domain, in canonical form (lower case, IDNA A-labels); the key of the rule.
+	Domain string `json:"domain"`
+
+	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+	// but no images, and its cards show without their images.
+	Mode LinkCardDomainMode `json:"mode"`
+
+	// Note What the administrators keep about the rule; empty for none.
+	Note string `json:"note"`
+
+	// UpdatedAt When the rule was last set.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// LinkCardDomainRuleList The rules, by domain.
+type LinkCardDomainRuleList struct {
+	Items []LinkCardDomainRule `json:"items"`
 }
 
 // LinkCardImage The image of a link card, served by this server's media proxy in the small size of an
@@ -11417,6 +11480,20 @@ type SetInstanceTextRequest struct {
 	Body string `json:"body"`
 }
 
+// SetLinkCardDomainRuleRequest The rule to set on a domain.
+type SetLinkCardDomainRuleRequest struct {
+	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
+	Domain string `json:"domain"`
+
+	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+	// but no images, and its cards show without their images.
+	Mode LinkCardDomainMode `json:"mode"`
+
+	// Note What the administrators keep about the rule; empty when omitted.
+	Note *string `json:"note,omitempty"`
+}
+
 // SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
 type SetQuotePolicyRequest struct {
 	// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
@@ -11499,13 +11576,14 @@ type Status struct {
 	// Card The card of the first link in a status (ADR-0062): the title, description, and image
 	// that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 	// after the status was posted or received. Omitted from a status with attachments or a
-	// poll, from a status whose link has no card yet, and when the instance setting
+	// poll, from a status whose link has no card yet, from a status whose link is on a domain
+	// where a rule of the crawler stops fetching, and when the instance setting
 	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
 	// warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-	// shows it.
+	// shows it. A rule of the crawler can leave the card without its image.
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
@@ -14017,6 +14095,9 @@ type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody = CreateInviteRequest
 
+// SetLinkCardDomainRuleJSONRequestBody defines body for SetLinkCardDomainRule for application/json ContentType.
+type SetLinkCardDomainRuleJSONRequestBody = SetLinkCardDomainRuleRequest
+
 // CreateLoginProviderJSONRequestBody defines body for CreateLoginProvider for application/json ContentType.
 type CreateLoginProviderJSONRequestBody = CreateLoginProviderRequest
 
@@ -14565,6 +14646,15 @@ type ServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(w http.ResponseWriter, r *http.Request, id Id)
+	// ListLinkCardDomainRules List the rules of the link card crawler
+	// (GET /admin/link_card_domains)
+	ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (POST /admin/link_card_domains)
+	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request)
+	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
+	// (DELETE /admin/link_card_domains/{domain})
+	RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(w http.ResponseWriter, r *http.Request)
@@ -18780,6 +18870,60 @@ func (siw *ServerInterfaceWrapper) RetryAdminJob(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RetryAdminJob(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListLinkCardDomainRules operation middleware
+func (siw *ServerInterfaceWrapper) ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLinkCardDomainRules(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetLinkCardDomainRule operation middleware
+func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLinkCardDomainRule(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveLinkCardDomainRule operation middleware
+func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveLinkCardDomainRule(w, r, domain)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25656,6 +25800,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks/{id}/test", wrapper.TestWebhook)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries", wrapper.ListWebhookDeliveries)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver", wrapper.RedeliverWebhookDelivery)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/link_card_domains", wrapper.ListLinkCardDomainRules)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/link_card_domains", wrapper.SetLinkCardDomainRule)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.RemoveLinkCardDomainRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/relays", wrapper.ListAdminRelays)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays", wrapper.CreateRelay)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}", wrapper.DeleteRelay)
@@ -32676,6 +32823,175 @@ type RetryAdminJobdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RetryAdminJobdefaultApplicationProblemPlusJSONResponse) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinkCardDomainRulesRequestObject struct {
+}
+
+type ListLinkCardDomainRulesResponseObject interface {
+	VisitListLinkCardDomainRulesResponse(w http.ResponseWriter) error
+}
+
+type ListLinkCardDomainRules200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListLinkCardDomainRules200JSONResponse struct {
+	Body    LinkCardDomainRuleList
+	Headers ListLinkCardDomainRules200ResponseHeaders
+}
+
+func (response ListLinkCardDomainRules200JSONResponse) VisitListLinkCardDomainRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLinkCardDomainRulesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListLinkCardDomainRulesdefaultApplicationProblemPlusJSONResponse) VisitListLinkCardDomainRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLinkCardDomainRuleRequestObject struct {
+	Body *SetLinkCardDomainRuleJSONRequestBody
+}
+
+type SetLinkCardDomainRuleResponseObject interface {
+	VisitSetLinkCardDomainRuleResponse(w http.ResponseWriter) error
+}
+
+type SetLinkCardDomainRule200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type SetLinkCardDomainRule200JSONResponse struct {
+	Body    LinkCardDomainRule
+	Headers SetLinkCardDomainRule200ResponseHeaders
+}
+
+func (response SetLinkCardDomainRule200JSONResponse) VisitSetLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitSetLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveLinkCardDomainRuleRequestObject struct {
+	Domain string `json:"domain"`
+}
+
+type RemoveLinkCardDomainRuleResponseObject interface {
+	VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error
+}
+
+type RemoveLinkCardDomainRule204Response struct {
+}
+
+func (response RemoveLinkCardDomainRule204Response) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -46984,6 +47300,15 @@ type StrictServerInterface interface {
 	// RetryAdminJob Run a dead job again
 	// (POST /admin/jobs/{id}/retry)
 	RetryAdminJob(ctx context.Context, request RetryAdminJobRequestObject) (RetryAdminJobResponseObject, error)
+	// ListLinkCardDomainRules List the rules of the link card crawler
+	// (GET /admin/link_card_domains)
+	ListLinkCardDomainRules(ctx context.Context, request ListLinkCardDomainRulesRequestObject) (ListLinkCardDomainRulesResponseObject, error)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (POST /admin/link_card_domains)
+	SetLinkCardDomainRule(ctx context.Context, request SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error)
+	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
+	// (DELETE /admin/link_card_domains/{domain})
+	RemoveLinkCardDomainRule(ctx context.Context, request RemoveLinkCardDomainRuleRequestObject) (RemoveLinkCardDomainRuleResponseObject, error)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(ctx context.Context, request ListAdminLoginProvidersRequestObject) (ListAdminLoginProvidersResponseObject, error)
@@ -50833,6 +51158,87 @@ func (sh *strictHandler) RetryAdminJob(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RetryAdminJobResponseObject); ok {
 		if err := validResponse.VisitRetryAdminJobResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListLinkCardDomainRules operation middleware
+func (sh *strictHandler) ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request) {
+	var request ListLinkCardDomainRulesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLinkCardDomainRules(ctx, request.(ListLinkCardDomainRulesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLinkCardDomainRules")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLinkCardDomainRulesResponseObject); ok {
+		if err := validResponse.VisitListLinkCardDomainRulesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetLinkCardDomainRule operation middleware
+func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+	var request SetLinkCardDomainRuleRequestObject
+
+	var body SetLinkCardDomainRuleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetLinkCardDomainRule(ctx, request.(SetLinkCardDomainRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetLinkCardDomainRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetLinkCardDomainRuleResponseObject); ok {
+		if err := validResponse.VisitSetLinkCardDomainRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveLinkCardDomainRule operation middleware
+func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
+	var request RemoveLinkCardDomainRuleRequestObject
+
+	request.Domain = domain
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveLinkCardDomainRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveLinkCardDomainRuleResponseObject); ok {
+		if err := validResponse.VisitRemoveLinkCardDomainRuleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

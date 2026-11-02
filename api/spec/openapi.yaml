@@ -649,6 +649,10 @@ paths:
     $ref: ./paths/admin_webhooks_{id}_deliveries.yaml
   /admin/webhooks/{id}/deliveries/{delivery_id}/redeliver:
     $ref: ./paths/admin_webhooks_{id}_deliveries_{delivery_id}_redeliver.yaml
+  /admin/link_card_domains:
+    $ref: ./paths/admin_link_card_domains.yaml
+  /admin/link_card_domains/{domain}:
+    $ref: ./paths/admin_link_card_domains_{domain}.yaml
   /admin/relays:
     $ref: ./paths/admin_relays.yaml
   /admin/relays/{id}:
@@ -1084,6 +1088,12 @@ components:
       $ref: ./components/schemas/DenyOAuthClientHostRequest.yaml
     InstanceBrandImage:
       $ref: ./components/schemas/InstanceBrandImage.yaml
+    LinkCardDomainMode:
+      $ref: ./components/schemas/LinkCardDomainMode.yaml
+    LinkCardDomainRule:
+      $ref: ./components/schemas/LinkCardDomainRule.yaml
+    LinkCardDomainRuleList:
+      $ref: ./components/schemas/LinkCardDomainRuleList.yaml
     LoginProviderClaimCondition:
       $ref: ./components/schemas/LoginProviderClaimCondition.yaml
     LoginProviderKind:
@@ -1724,6 +1734,8 @@ components:
       $ref: ./components/schemas/SetBrandRequest.yaml
     SetInstanceTextRequest:
       $ref: ./components/schemas/SetInstanceTextRequest.yaml
+    SetLinkCardDomainRuleRequest:
+      $ref: ./components/schemas/SetLinkCardDomainRuleRequest.yaml
     SetQuotePolicyRequest:
       $ref: ./components/schemas/SetQuotePolicyRequest.yaml
     SetThemeRequest:

@@ -52,6 +52,7 @@ type Repository interface {
 	ListTextHistory(ctx context.Context, key instance.TextKey, limit int) ([]instance.TextRevision, error)
 
 	RuleRepository
+	LinkCardDomainRepository
 	ThemeRepository
 	BrandRepository
 	AnnouncementRepository

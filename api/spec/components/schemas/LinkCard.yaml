@@ -3,13 +3,14 @@ description: |
   The card of the first link in a status (ADR-0062): the title, description, and image
   that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
   after the status was posted or received. Omitted from a status with attachments or a
-  poll, from a status whose link has no card yet, and when the instance setting
+  poll, from a status whose link has no card yet, from a status whose link is on a domain
+  where a rule of the crawler stops fetching, and when the instance setting
   `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
   it was posted may have none.
 
   Clients show the card as one link to `url` and, under a content warning, only once the
   warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-  shows it.
+  shows it. A rule of the crawler can leave the card without its image.
 type: object
 required: [url, title, description, site_name]
 properties:

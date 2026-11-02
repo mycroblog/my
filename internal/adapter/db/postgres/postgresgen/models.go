@@ -513,6 +513,13 @@ type LinkCard struct {
 	FetchedAt        time.Time
 }
 
+type LinkCardDomainRule struct {
+	Domain    string
+	Mode      string
+	Note      string
+	UpdatedAt time.Time
+}
+
 type LinkCardMedium struct {
 	MediaID     string
 	RemoteUrl   string

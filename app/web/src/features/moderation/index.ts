@@ -35,6 +35,7 @@ export {
   RequirePermission,
   useFocusAfterChange,
 } from "./components/parts";
+export { domainInText } from "./hooks/useDomainActions";
 export { type StaffPage, type StaffPageBadge, useShownStaffPages } from "./components/StaffPages";
 export { type WaitThresholds, waitLevel, waitUnits } from "./hooks/useWait";
 export { type PagedList, type PagedPages, toPagedList, wholeList } from "./hooks/pagedList";

@@ -193,6 +193,21 @@ CREATE TABLE instance_rule_heads (
 CREATE INDEX instance_rule_heads_position ON instance_rule_heads (position);
 
 -- ---------------------------------------------------------------------------------------------
+-- instance: the rules of the link card crawler (data-model §4.9, FR-117). Owned by
+-- internal/app/instance.
+-- ---------------------------------------------------------------------------------------------
+
+-- Current value: the rule of the link card crawler for a domain and its subdomains, keyed by the
+-- canonical host: fetch nothing (no_fetch) or fetch no images (no_images). note is what the
+-- administrators keep about the rule, '' for none. The audit log keeps the history of the changes.
+CREATE TABLE link_card_domain_rules (
+  domain TEXT NOT NULL PRIMARY KEY,
+  mode TEXT NOT NULL CHECK (mode IN ('no_fetch', 'no_images')),
+  note TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
 -- instance: server-wide announcements (data-model §4.9, FR-726). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
