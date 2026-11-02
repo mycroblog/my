@@ -194,11 +194,11 @@ function Suggestions() {
   return (
     <Section title={t("client:onboarding.suggestions")} headingId={suggestionsHeadingId} surface="rows">
       {content}
-      <p>
+      <Box as="p" paddingX="4" paddingY="3">
         <Link href="/search" variant="standalone">
           {t("client:onboarding.suggestions.more")}
         </Link>
-      </p>
+      </Box>
     </Section>
   );
 }
