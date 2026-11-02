@@ -7,9 +7,13 @@
     "defaultMessage": "異議申し立ては認められず、処分はそのままです。",
     "description": "In an appeal_decided notification: the moderators kept the action that the user appealed."
   },
+  "notifications.all": {
+    "defaultMessage": "すべての通知",
+    "description": "Link from the panel of notifications in the side column to the notifications page."
+  },
   "notifications.empty.all": {
     "defaultMessage": "まだ通知はありません",
-    "description": "Heading shown on the notifications page when the user has no notifications."
+    "description": "Heading shown on the notifications page, and text of the panel of notifications in the side column, when the user has no notifications."
   },
   "notifications.empty.description": {
     "defaultMessage": "フォローされたり、メンションされたり、投稿に反応があったりすると、ここに表示されます。",

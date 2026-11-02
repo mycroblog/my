@@ -65,11 +65,17 @@ const maxOtherAvatars = 6;
 export type NotificationItemProps = {
   /** One notification, or the favourites or the boosts of one post. */
   group: NotificationGroup;
-  /** Whether it was unread when the page opened. */
+  /** Whether it was unread when the page opened, or, in the third column's panel, whether it is unread now. */
   isUnread: boolean;
+  /**
+   * `card` is a row of the notifications page. `plain` is a row of the third column's panel, which is a card already:
+   * it has no buttons (follow back, reply), which the notifications page has, so that the panel stays short to tab
+   * through and reads no relationships. The links to where a notification is followed up stay.
+   */
+  surface?: "card" | "plain";
 };
 
-export function NotificationItem({ group, isUnread }: NotificationItemProps) {
+export function NotificationItem({ group, isUnread, surface = "card" }: NotificationItemProps) {
   const t = useT();
   const intl = useIntl();
   const view = useNotificationView(group);
@@ -77,9 +83,11 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
   const { actor } = view;
   // A row without an actor names the account it is about, without its avatar.
   const named = actor ?? view.subject;
-  const replyTo = view.replyTo;
+  const replyTo = surface === "card" ? view.replyTo : null;
+  const followBack = surface === "card" ? view.followBack : null;
   return (
     <PostCard
+      surface={surface}
       // The kind's mark on the avatar's corner, or alone in its place for a row without an actor (P3).
       avatar={
         <NotificationKindMark kind={view.kind}>
@@ -154,7 +162,7 @@ export function NotificationItem({ group, isUnread }: NotificationItemProps) {
           <MoveOutcome move={view.move} outcome={view.move.outcome} />
         ) : null
       }
-      {...(view.followBack !== null && { actions: <FollowBack account={view.followBack} /> })}
+      {...(followBack !== null && { actions: <FollowBack account={followBack} /> })}
       {...(replyTo !== null &&
         reply !== null && {
           // A mention most often wants an answer: the reply starts here, without opening the post first.
