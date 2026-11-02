@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listSessions
+  x-first-party-only: true
+  summary: List the browsers signed in to the authenticated user's account
+  description: |
+    One entry per browser session that still works or from which a grant of the server's own web
+    client still works, the browser that asks first, then the most recently used first. The apps
+    the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+    may call it (ADR-0090 §4).
+  tags: [sessions]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The signed-in browsers.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/BrowserSessionList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

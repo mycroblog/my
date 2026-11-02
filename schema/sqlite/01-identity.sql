@@ -399,7 +399,7 @@ CREATE INDEX oauth_access_tokens_client_id ON oauth_access_tokens (client_id);
 -- Event: a token row (its access and refresh token) stopped working.
 CREATE TABLE oauth_token_revocations (
   token_id TEXT NOT NULL PRIMARY KEY,
-  reason TEXT NOT NULL CHECK (reason IN ('user', 'rotation', 'refresh_reuse', 'code_reuse', 'password_changed', 'moderation', 'account_deleted', 'client_disabled', 'client_deleted')),
+  reason TEXT NOT NULL CHECK (reason IN ('user', 'rotation', 'refresh_reuse', 'code_reuse', 'password_changed', 'moderation', 'account_deleted', 'client_disabled', 'client_deleted', 'session_replaced')),
   revoked_at INTEGER NOT NULL
 ) STRICT;
 

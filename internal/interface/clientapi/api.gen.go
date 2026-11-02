@@ -7062,6 +7062,35 @@ type BrandSanitized struct {
 	ViewBoxWidth  float32 `json:"view_box_width"`
 }
 
+// BrowserSession A browser signed in to the authenticated user's account.
+type BrowserSession struct {
+	// Current Whether this is the browser that asks.
+	Current bool `json:"current"`
+
+	// Id The ID of the browser's session, which `DELETE /sessions/{id}` takes.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Ip The IP address the browser signed in from, not where it is now. Absent when it is unknown
+	// or was erased after its retention.
+	Ip *string `json:"ip,omitempty"`
+
+	// LastUsedAt When the browser was last used, exact to the hour. Absent when no use was recorded.
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
+
+	// SignedInAt When the browser signed in.
+	SignedInAt time.Time `json:"signed_in_at"`
+
+	// UserAgent The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention.
+	UserAgent *string `json:"user_agent,omitempty"`
+}
+
+// BrowserSessionList The browsers signed in to the authenticated user's account, the one that asks first.
+type BrowserSessionList struct {
+	Items []BrowserSession `json:"items"`
+}
+
 // CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
@@ -10960,7 +10989,7 @@ type PreviewDomainBlockImportRequest struct {
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-//     (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
 //     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
 //     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
 //     this problem; signing in and resetting a password stay available outside the client API.
@@ -11028,6 +11057,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
+//   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
+//     `DELETE /sessions/{id}`; signing out ends it.
 //   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
 //     no move to cancel.
 //   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
@@ -15205,6 +15236,15 @@ type ServerInterface interface {
 	// CreateReport Report an account
 	// (POST /reports)
 	CreateReport(w http.ResponseWriter, r *http.Request)
+	// ListSessions List the browsers signed in to the authenticated user's account
+	// (GET /sessions)
+	ListSessions(w http.ResponseWriter, r *http.Request)
+	// RevokeOtherSessions Sign out every browser but the one that asks
+	// (POST /sessions/revoke_others)
+	RevokeOtherSessions(w http.ResponseWriter, r *http.Request)
+	// RevokeSession Sign out one of the browsers signed in to the account
+	// (DELETE /sessions/{id})
+	RevokeSession(w http.ResponseWriter, r *http.Request, id Id)
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
@@ -23328,6 +23368,60 @@ func (siw *ServerInterfaceWrapper) CreateReport(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ListSessions operation middleware
+func (siw *ServerInterfaceWrapper) ListSessions(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSessions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeOtherSessions operation middleware
+func (siw *ServerInterfaceWrapper) RevokeOtherSessions(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeOtherSessions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeSession operation middleware
+func (siw *ServerInterfaceWrapper) RevokeSession(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeSession(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CreateStatus operation middleware
 func (siw *ServerInterfaceWrapper) CreateStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -25622,6 +25716,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/linked_identities", wrapper.BeginLinkIdentity)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/linked_identities/confirmation", wrapper.BeginExternalConfirmation)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/linked_identities/{id}", wrapper.UnlinkIdentity)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/sessions", wrapper.ListSessions)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/sessions/revoke_others", wrapper.RevokeOtherSessions)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/sessions/{id}", wrapper.RevokeSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/authorized_apps", wrapper.ListAuthorizedApps)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/authorized_apps/{id}", wrapper.RevokeAuthorizedApp)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/oauth_apps", wrapper.ListOAuthApps)
@@ -43003,6 +43100,158 @@ func (response CreateReportdefaultApplicationProblemPlusJSONResponse) VisitCreat
 	return err
 }
 
+type ListSessionsRequestObject struct {
+}
+
+type ListSessionsResponseObject interface {
+	VisitListSessionsResponse(w http.ResponseWriter) error
+}
+
+type ListSessions200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListSessions200JSONResponse struct {
+	Body    BrowserSessionList
+	Headers ListSessions200ResponseHeaders
+}
+
+func (response ListSessions200JSONResponse) VisitListSessionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSessionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListSessionsdefaultApplicationProblemPlusJSONResponse) VisitListSessionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeOtherSessionsRequestObject struct {
+}
+
+type RevokeOtherSessionsResponseObject interface {
+	VisitRevokeOtherSessionsResponse(w http.ResponseWriter) error
+}
+
+type RevokeOtherSessions204Response struct {
+}
+
+func (response RevokeOtherSessions204Response) VisitRevokeOtherSessionsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeOtherSessionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeOtherSessionsdefaultApplicationProblemPlusJSONResponse) VisitRevokeOtherSessionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeSessionRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type RevokeSessionResponseObject interface {
+	VisitRevokeSessionResponse(w http.ResponseWriter) error
+}
+
+type RevokeSession204Response struct {
+}
+
+func (response RevokeSession204Response) VisitRevokeSessionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeSessiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeSessiondefaultApplicationProblemPlusJSONResponse) VisitRevokeSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CreateStatusRequestObject struct {
 	Params CreateStatusParams
 	Body   *CreateStatusJSONRequestBody
@@ -47958,6 +48207,15 @@ type StrictServerInterface interface {
 	// CreateReport Report an account
 	// (POST /reports)
 	CreateReport(ctx context.Context, request CreateReportRequestObject) (CreateReportResponseObject, error)
+	// ListSessions List the browsers signed in to the authenticated user's account
+	// (GET /sessions)
+	ListSessions(ctx context.Context, request ListSessionsRequestObject) (ListSessionsResponseObject, error)
+	// RevokeOtherSessions Sign out every browser but the one that asks
+	// (POST /sessions/revoke_others)
+	RevokeOtherSessions(ctx context.Context, request RevokeOtherSessionsRequestObject) (RevokeOtherSessionsResponseObject, error)
+	// RevokeSession Sign out one of the browsers signed in to the account
+	// (DELETE /sessions/{id})
+	RevokeSession(ctx context.Context, request RevokeSessionRequestObject) (RevokeSessionResponseObject, error)
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(ctx context.Context, request CreateStatusRequestObject) (CreateStatusResponseObject, error)
@@ -55928,6 +56186,80 @@ func (sh *strictHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateReportResponseObject); ok {
 		if err := validResponse.VisitCreateReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSessions operation middleware
+func (sh *strictHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
+	var request ListSessionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSessions(ctx, request.(ListSessionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSessions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSessionsResponseObject); ok {
+		if err := validResponse.VisitListSessionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeOtherSessions operation middleware
+func (sh *strictHandler) RevokeOtherSessions(w http.ResponseWriter, r *http.Request) {
+	var request RevokeOtherSessionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeOtherSessions(ctx, request.(RevokeOtherSessionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeOtherSessions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeOtherSessionsResponseObject); ok {
+		if err := validResponse.VisitRevokeOtherSessionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeSession operation middleware
+func (sh *strictHandler) RevokeSession(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RevokeSessionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeSession(ctx, request.(RevokeSessionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeSession")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeSessionResponseObject); ok {
+		if err := validResponse.VisitRevokeSessionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

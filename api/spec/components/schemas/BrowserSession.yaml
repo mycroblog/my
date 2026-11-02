@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+description: A browser signed in to the authenticated user's account.
+type: object
+required: [id, current, signed_in_at]
+properties:
+  id:
+    description: The ID of the browser's session, which `DELETE /sessions/{id}` takes.
+    $ref: ./Id.yaml
+  current:
+    description: Whether this is the browser that asks.
+    type: boolean
+  ip:
+    description: |
+      The IP address the browser signed in from, not where it is now. Absent when it is unknown
+      or was erased after its retention.
+    type: string
+  user_agent:
+    description: |
+      The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention.
+    type: string
+  signed_in_at:
+    description: When the browser signed in.
+    type: string
+    format: date-time
+  last_used_at:
+    description: When the browser was last used, exact to the hour. Absent when no use was recorded.
+    type: string
+    format: date-time

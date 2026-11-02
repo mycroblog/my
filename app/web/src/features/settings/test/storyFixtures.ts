@@ -55,6 +55,40 @@ export const ownApps: Schemas["OAuthApp"][] = [
   },
 ];
 
+/** The signed-in browsers: this one, a phone, a User-Agent nothing is known of, and one whose origin was erased. */
+export const browserSessions: Schemas["BrowserSession"][] = [
+  {
+    id: "0192f0c4-7a8e-7000-8000-000000000ac1",
+    current: true,
+    ip: "203.0.113.1",
+    user_agent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    signed_in_at: "2026-10-01T00:00:00Z",
+    last_used_at: "2026-10-28T08:00:00Z",
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-000000000ac2",
+    current: false,
+    ip: "2001:db8:ffff:ffff:ffff:ffff:ffff:ffff",
+    user_agent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    signed_in_at: "2026-10-10T00:00:00Z",
+    last_used_at: "2026-10-20T08:00:00Z",
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-000000000ac3",
+    current: false,
+    ip: "198.51.100.2",
+    user_agent: "a-tool-with-a-very-long-name-that-does-not-fit-on-one-line-of-a-phone/1.0 (https://tool.example/)",
+    signed_in_at: "2026-09-20T00:00:00Z",
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-000000000ac4",
+    current: false,
+    signed_in_at: "2026-04-01T00:00:00Z",
+  },
+];
+
 /** The apps the user authorized: this server's app, one registered by a user, and two that registered themselves. */
 export const authorizedApps: Schemas["AuthorizedApp"][] = [
   {

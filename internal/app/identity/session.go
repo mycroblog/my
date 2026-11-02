@@ -188,10 +188,11 @@ func (s *Service) SignIn(ctx context.Context, in SignInInput) (SignedIn, error) 
 // newSession is a session prepared before its transaction: its token and row, and the
 // browser's earlier session that it replaces.
 type newSession struct {
-	token    string
-	session  identity.Session
-	origin   identity.SessionOrigin
-	previous string // ID of the session to revoke as replaced, or ""
+	token          string
+	session        identity.Session
+	origin         identity.SessionOrigin
+	previous       string // ID of the session to revoke as replaced, or ""
+	previousUserID string // the user of that session
 }
 
 func (n newSession) signedIn() SignedIn { return SignedIn{Token: n.token, Session: n.session} }
@@ -218,7 +219,7 @@ func (s *Service) prepareSession(ctx context.Context, userID, ip, userAgent, cur
 	if currentToken != "" {
 		switch old, _, err := s.d.Repository.FindUnrevokedSession(ctx, HashToken(currentToken)); {
 		case err == nil:
-			n.previous = old.ID
+			n.previous, n.previousUserID = old.ID, old.UserID
 		case !errors.Is(err, ErrNotFound):
 			return newSession{}, err
 		}
@@ -230,8 +231,16 @@ func (s *Service) prepareSession(ctx context.Context, userID, ip, userAgent, cur
 func (s *Service) writeSession(ctx context.Context, tx uow.Tx, n newSession) error {
 	now := n.session.CreatedAt
 	if n.previous != "" {
+		// The families of the replaced session end with it: this browser gets a new one, and the
+		// old one would stay usable and show as another browser (ADR-0136 §5).
+		if err := s.d.Repository.LockTokenGrants(ctx, tx, n.previousUserID); err != nil {
+			return err
+		}
 		rev := identity.SessionRevocation{SessionID: n.previous, Reason: identity.RevokedReplaced, RevokedAt: now}
 		if err := s.d.Repository.InsertSessionRevocation(ctx, tx, rev); err != nil {
+			return err
+		}
+		if err := s.d.Repository.RevokeFirstPartyTokensOfSession(ctx, tx, n.previous, identity.TokenRevokedSessionReplaced, now); err != nil {
 			return err
 		}
 	}

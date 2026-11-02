@@ -288,3 +288,53 @@ INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason), sqlc.arg(revoked_at) FROM oauth_access_tokens t
 WHERE t.user_id = sqlc.arg(user_id) AND t.client_id = sqlc.arg(client_id)
 ON CONFLICT (token_id) DO NOTHING;
+
+-- ListBrowserSessions returns the sessions of a user that are a signed-in browser at now
+-- (ADR-0136): the session itself works, or a token family of the first-party client that
+-- started from it does, whatever became of the session. Newest first.
+-- name: ListBrowserSessions :many
+SELECT s.id, s.created_at, o.ip, o.user_agent, a.last_seen_at
+FROM sessions s
+LEFT JOIN session_origins o ON o.session_id = s.id
+LEFT JOIN session_activity a ON a.session_id = s.id
+WHERE s.user_id = sqlc.arg(user_id)
+  AND (
+    (s.expires_at > sqlc.arg(now) AND NOT EXISTS (SELECT 1 FROM session_revocations v WHERE v.session_id = s.id))
+    OR EXISTS (
+      SELECT 1 FROM oauth_authorization_codes c
+      JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
+      JOIN oauth_access_tokens t ON t.family_id = r.token_id
+      JOIN oauth_clients cl ON cl.id = t.client_id
+      WHERE c.session_id = s.id AND cl.registration = 'first_party'
+        AND (t.expires_at > sqlc.arg(now) OR t.refresh_expires_at > sqlc.arg(now))
+        AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)
+    )
+  )
+ORDER BY s.created_at DESC, s.id;
+
+-- ListBrowserSessionFamilies returns the working token families of the first-party client of a
+-- user with the session each started from and when it was last used (NULL when it never was
+-- recorded). A family without a session is not returned.
+-- name: ListBrowserSessionFamilies :many
+SELECT DISTINCT c.session_id, t.family_id, u.last_used_at
+FROM oauth_access_tokens t
+JOIN oauth_clients cl ON cl.id = t.client_id
+JOIN oauth_authorization_code_redemptions r ON r.token_id = t.family_id
+JOIN oauth_authorization_codes c ON c.code_hash = r.code_hash
+LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
+WHERE t.user_id = sqlc.arg(user_id) AND cl.registration = 'first_party' AND c.session_id IS NOT NULL
+  AND (t.expires_at > sqlc.arg(now) OR t.refresh_expires_at > sqlc.arg(now))
+  AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id);
+
+-- RevokeFirstPartyTokensOfSession revokes every token of the first-party client's families that
+-- started from the session and have no revocation yet. Third-party apps authorized in the
+-- session keep theirs.
+-- name: RevokeFirstPartyTokensOfSession :exec
+INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
+SELECT t.id, sqlc.arg(reason), sqlc.arg(revoked_at)
+FROM oauth_authorization_codes c
+JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
+JOIN oauth_access_tokens t ON t.family_id = r.token_id
+JOIN oauth_clients cl ON cl.id = t.client_id
+WHERE c.session_id = sqlc.arg(session_id) AND cl.registration = 'first_party'
+ON CONFLICT (token_id) DO NOTHING;

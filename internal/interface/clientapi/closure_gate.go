@@ -38,6 +38,7 @@ var closureOperations = map[string]bool{
 	"getTwoFactor": true, "listPasskeys": true,
 	"listDataExports": true, "requestDataExport": true, "downloadDataExport": true, "exportCsv": true,
 	"listAuthorizedApps": true, "revokeAuthorizedApp": true,
+	"listSessions": true, "revokeSession": true, "revokeOtherSessions": true,
 	"getInstance": true, "getServerHealth": true, "getInstanceDocument": true, "reportClientError": true,
 	"getAdminServiceClosure": true, "getAdminServiceClosureCheck": true, "closeService": true,
 	"getAdminQueue": true, "listAdminJobs": true, "listAdminJobAttempts": true, "retryAdminJob": true,

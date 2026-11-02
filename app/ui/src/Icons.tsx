@@ -41,6 +41,7 @@ import {
   PiPassword,
   PiLockKey,
   PiFingerprint,
+  PiDevices,
   PiLinkSimple,
   PiPlugsConnected,
   PiCode,
@@ -257,6 +258,7 @@ export const iconTable = {
   TwoFactorIcon: { off: glyph(PiLockKey, "PiLockKey") },
   PasskeyIcon: { off: glyph(PiFingerprint, "PiFingerprint") },
   LinkedAccountIcon: { off: glyph(PiLinkSimple, "PiLinkSimple") },
+  BrowserSessionIcon: { off: glyph(PiDevices, "PiDevices") },
   AuthorizedAppIcon: { off: glyph(PiPlugsConnected, "PiPlugsConnected") },
   DeveloperIcon: { off: glyph(PiCode, "PiCode") },
   ImportExportIcon: { off: glyph(PiArrowsDownUp, "PiArrowsDownUp") },
@@ -692,6 +694,11 @@ export function TwoFactorIcon() {
 /** A fingerprint, for passkeys. */
 export function PasskeyIcon() {
   return renderIcon(iconTable.PasskeyIcon);
+}
+
+/** A phone and a computer, for the browsers signed in to the user's account. */
+export function BrowserSessionIcon() {
+  return renderIcon(iconTable.BrowserSessionIcon);
 }
 
 /** Two links of a chain, for the accounts of other services linked to the user's. */

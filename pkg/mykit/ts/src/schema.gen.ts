@@ -1323,6 +1323,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the browsers signed in to the authenticated user's account
+         * @description One entry per browser session that still works or from which a grant of the server's own web
+         *     client still works, the browser that asks first, then the most recently used first. The apps
+         *     the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+         *     may call it (ADR-0090 §4).
+         */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/revoke_others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign out every browser but the one that asks
+         * @description Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
+         *     succeeds when there is no other browser. Only the server's own clients may call it
+         *     (ADR-0090 §4).
+         */
+        post: operations["revokeOtherSessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Sign out one of the browsers signed in to the account
+         * @description Ends the browser session and the web client's grants that started from it, so that their
+         *     access and refresh tokens stop working at once (the next request with one is a 401). The
+         *     password, two-factor authentication, and the apps the user authorized stay. An ID that is not
+         *     in the user's list is a 404, and the browser that asks is a 409 with the type
+         *     `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
+         *     call it (ADR-0090 §4).
+         */
+        delete: operations["revokeSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authorized_apps": {
         parameters: {
             query?: never;
@@ -12405,6 +12475,34 @@ export interface components {
              */
             expires_at: string;
         };
+        /** @description A browser signed in to the authenticated user's account. */
+        BrowserSession: {
+            /** @description The ID of the browser's session, which `DELETE /sessions/{id}` takes. */
+            id: components["schemas"]["Id"];
+            /** @description Whether this is the browser that asks. */
+            current: boolean;
+            /**
+             * @description The IP address the browser signed in from, not where it is now. Absent when it is unknown
+             *     or was erased after its retention.
+             */
+            ip?: string;
+            /** @description The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention. */
+            user_agent?: string;
+            /**
+             * Format: date-time
+             * @description When the browser signed in.
+             */
+            signed_in_at: string;
+            /**
+             * Format: date-time
+             * @description When the browser was last used, exact to the hour. Absent when no use was recorded.
+             */
+            last_used_at?: string;
+        };
+        /** @description The browsers signed in to the authenticated user's account, the one that asks first. */
+        BrowserSessionList: {
+            items: components["schemas"]["BrowserSession"][];
+        };
         /**
          * @description An app the authenticated user authorized: the user's grants of one OAuth client that still
          *     work. The name, the website and the logo are what the app says about itself; `registration`,
@@ -12831,7 +12929,7 @@ export interface components {
          *       server serves only the operations with which the users take their data away: their own
          *       account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
          *       `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-         *       (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+         *       (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
          *       the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
          *       `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
          *       this problem; signing in and resetting a password stay available outside the client API.
@@ -12899,6 +12997,8 @@ export interface components {
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
          *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`POST /accounts/move/cancel`).
+         *     - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
+         *       `DELETE /sessions/{id}`; signing out ends it.
          *     - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
          *       no move to cancel.
          *     - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
@@ -16476,6 +16576,69 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The account is unlinked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The signed-in browsers. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrowserSessionList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeOtherSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every other browser is signed out. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the session (the `id` of a browser session). */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The browser is signed out. */
             204: {
                 headers: {
                     [name: string]: unknown;

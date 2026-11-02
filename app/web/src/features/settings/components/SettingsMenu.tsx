@@ -7,6 +7,7 @@ import {
   AutoDeleteIcon,
   BadgeIcon,
   BlockIcon,
+  BrowserSessionIcon,
   Box,
   CustomEmojiIcon,
   DeveloperIcon,
@@ -101,6 +102,7 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
       { href: "/settings/two-factor", label: "client:settings.two_factor.title", icon: TwoFactorIcon },
       { href: "/settings/passkeys", label: "client:settings.passkeys.title", icon: PasskeyIcon },
       { href: "/settings/linked-accounts", label: "client:settings.linked_accounts.title", icon: LinkedAccountIcon },
+      { href: "/settings/sessions", label: "client:settings.sessions.title", icon: BrowserSessionIcon },
     ],
   },
   {

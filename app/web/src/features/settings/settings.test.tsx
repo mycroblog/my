@@ -1251,7 +1251,13 @@ describe("the settings page", () => {
       "Profile and community": ["/settings/profile", "/settings/badges"],
       "Display and notifications": ["/settings/preferences", "/settings/notifications"],
       Relationships: ["/settings/follow-requests", "/settings/blocks", "/settings/mutes", "/settings/domain-mutes"],
-      Security: ["/settings/password", "/settings/two-factor", "/settings/passkeys", "/settings/linked-accounts"],
+      Security: [
+        "/settings/password",
+        "/settings/two-factor",
+        "/settings/passkeys",
+        "/settings/linked-accounts",
+        "/settings/sessions",
+      ],
       Apps: ["/settings/authorized-apps", "/settings/apps"],
       "Account and data": [
         "/settings/account-status",

@@ -1540,6 +1540,13 @@ func (l *Localizer) ServerErrorsConflict() string {
 	return l.format("server:errors.conflict", nil)
 }
 
+// ServerErrorsCurrentSession formats "server:errors.current_session". API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it.
+//
+//	en: This is the browser you are using. Sign out instead.
+func (l *Localizer) ServerErrorsCurrentSession() string {
+	return l.format("server:errors.current_session", nil)
+}
+
 // ServerErrorsCustomEmojiRequestConflict formats "server:errors.custom_emoji_request_conflict". API error title for HTTP 409 when an administrator approves or rejects, or the requester withdraws, a custom emoji request that cannot be; the detail and the reason property say why.
 //
 //	en: The custom emoji request cannot be decided as it is.
