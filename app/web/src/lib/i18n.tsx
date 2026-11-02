@@ -25,7 +25,7 @@ declare global {
 }
 
 /** The locale every catalog is written in, and the last fallback (ADR-0009). */
-const sourceLocale = "en";
+export const sourceLocale = "en";
 
 /** A locale's client catalog in the FormatJS JSON catalog shape, merged from its area files (ADR-0082). */
 type Catalog = Record<string, { defaultMessage: string }>;
@@ -79,6 +79,21 @@ function canonicalize(locale: string): string {
 /** The supported locale closest to `requested`: ja-JP → ja, fr → en. */
 export function resolveLocale(requested: string): string {
   return fallbackChain(requested).find((locale) => catalogLoaders.has(locale)) ?? sourceLocale;
+}
+
+/**
+ * The supported locale closest to the first of `tags` that the app has a catalog for, or undefined when it has
+ * none for any of them: the source locale, which every chain ends in, counts only for a tag of its own language.
+ */
+export function firstSupportedLocale(tags: readonly string[]): string | undefined {
+  for (const tag of tags) {
+    if (tag === "") continue;
+    const locale = fallbackChain(tag).find((candidate) => catalogLoaders.has(candidate));
+    if (locale !== undefined && (locale !== sourceLocale || tag.split("-")[0]?.toLowerCase() === sourceLocale)) {
+      return locale;
+    }
+  }
+  return undefined;
 }
 
 /** Languages written right to left (rtlLanguages in internal/i18n). */

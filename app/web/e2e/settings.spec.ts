@@ -77,6 +77,8 @@ async function signedInServer(
     locale,
     time_zone: "UTC",
     time_zone_chosen: timeZoneChosen,
+    locale_follows_browser: false,
+    time_zone_follows_browser: false,
     default_visibility: "public",
     default_post_language: "und",
     require_media_description: false,
@@ -260,6 +262,11 @@ async function signedInServer(
           ...preferences,
           ...change,
           time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
+          locale_follows_browser:
+            change.locale_follows_browser ?? (change.locale === undefined && preferences.locale_follows_browser),
+          time_zone_follows_browser:
+            change.time_zone_follows_browser ??
+            (change.time_zone === undefined && preferences.time_zone_follows_browser),
         };
         return json(route, preferences);
       }

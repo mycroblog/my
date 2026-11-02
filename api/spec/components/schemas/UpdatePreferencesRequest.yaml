@@ -3,11 +3,17 @@ description: A change of the preferences; properties left out keep their current
 type: object
 properties:
   locale:
-    description: The UI locale, a BCP 47 language tag.
+    description: The UI locale, a BCP 47 language tag. Without `locale_follows_browser`, it stops following the browser.
     type: string
+  locale_follows_browser:
+    description: Whether clients with a browser show its language instead of `locale`.
+    type: boolean
   time_zone:
-    description: The time zone, an IANA name.
+    description: The time zone, an IANA name. Without `time_zone_follows_browser`, it stops following the browser.
     type: string
+  time_zone_follows_browser:
+    description: Whether clients with a browser show dates in its time zone instead of `time_zone`.
+    type: boolean
   default_visibility:
     $ref: ./Visibility.yaml
   default_quote_policy:

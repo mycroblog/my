@@ -190,11 +190,16 @@ CREATE TABLE user_preferences (
   require_media_description INTEGER NOT NULL CHECK (require_media_description IN (0, 1)),
   -- Whether the web client inserts new timeline posts without asking (ADR-0077); on by default (ADR-0127 §6).
   timeline_auto_insert INTEGER NOT NULL DEFAULT 1 CHECK (timeline_auto_insert IN (0, 1)),
+  -- Whether the web client follows the browser's language and time zone, keeping locale and the
+  -- time zone at what it last detected for what has no browser (email, push).
+  locale_follows_browser INTEGER NOT NULL DEFAULT 0 CHECK (locale_follows_browser IN (0, 1)),
+  time_zone_follows_browser INTEGER NOT NULL DEFAULT 0 CHECK (time_zone_follows_browser IN (0, 1)),
   updated_at INTEGER NOT NULL
 ) STRICT;
 
--- Current value: the time zone a user chose, an IANA name. No row means the user has not chosen
--- one yet: dates are shown in UTC and the web client offers the browser's zone.
+-- Current value: the time zone a user chose, or the one the web client last detected for a user
+-- who follows the browser, an IANA name. No row means none is known yet: dates are shown in UTC
+-- and the web client saves the browser's zone.
 CREATE TABLE user_time_zones (
   user_id TEXT NOT NULL PRIMARY KEY,
   time_zone TEXT NOT NULL

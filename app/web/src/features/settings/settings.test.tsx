@@ -3,7 +3,7 @@
 // handlers, MSW playing the server with the state each test needs, and the user's own interactions.
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Preferences, PreferencesChange, ProfileChange } from "./api/me";
 import {
   accountFixture,
@@ -63,6 +63,10 @@ function preferencesServer(initial: Partial<Preferences> = {}) {
         ...preferences,
         ...change,
         time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
+        locale_follows_browser:
+          change.locale_follows_browser ?? (change.locale === undefined && preferences.locale_follows_browser),
+        time_zone_follows_browser:
+          change.time_zone_follows_browser ?? (change.time_zone === undefined && preferences.time_zone_follows_browser),
       };
       return HttpResponse.json(preferences);
     }),
@@ -499,6 +503,104 @@ describe("navigation", () => {
     await renderApp({ path: "/settings/preferences", locale: "ja" });
     const section = await screen.findByRole("region", { name: "ナビゲーション" });
     expect(within(section).getByRole("button", { name: "ホームを下へ移動" })).toBeInTheDocument();
+  });
+});
+
+/** Makes `languages` the languages of this browser, until the end of the test. */
+function stubBrowserLanguages(languages: string[]) {
+  vi.spyOn(navigator, "languages", "get").mockReturnValue(languages);
+}
+
+describe("following the browser", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete document.documentElement.dataset["instanceLocale"];
+  });
+
+  test("a user who follows it sees the browser's first supported language, and it is saved", async () => {
+    stubBrowserLanguages(["fr-FR", "ja-JP", "en"]);
+    const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
+    await renderApp({ path: "/settings/preferences" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "表示・投稿・タイムライン" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([{ locale: "ja", locale_follows_browser: true }]);
+    });
+    expect(screen.getByRole("button", { name: /表示言語/ })).toHaveTextContent("このブラウザに従う (日本語)");
+  });
+
+  test("a browser whose languages the app does not have falls back to the server's language", async () => {
+    stubBrowserLanguages(["fr-FR", "de"]);
+    document.documentElement.dataset["instanceLocale"] = "ja";
+    const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
+    await renderApp({ path: "/settings/preferences" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "表示・投稿・タイムライン" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([{ locale: "ja", locale_follows_browser: true }]);
+    });
+  });
+
+  test("a saved language that is the browser's is not saved again", async () => {
+    stubBrowserLanguages(["en-US"]);
+    const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
+    await renderApp({ path: "/settings/preferences" });
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
+    expect(prefs.changes).toEqual([]);
+  });
+
+  test("choosing a language stops following, and following can be chosen again", async () => {
+    stubBrowserLanguages(["en-US"]);
+    const prefs = preferencesServer({ locale: "en", locale_follows_browser: true });
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" });
+
+    await user.click(screen.getByRole("button", { name: /Display language/ }));
+    await user.click(await screen.findByRole("option", { name: "日本語" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "表示・投稿・タイムライン" })).toBeInTheDocument();
+    expect(prefs.changes).toEqual([{ locale: "ja" }]);
+
+    await user.click(screen.getByRole("button", { name: /表示言語/ }));
+    await user.click(await screen.findByRole("option", { name: /このブラウザに従う/ }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Display, posting, and timelines" }),
+    ).toBeInTheDocument();
+    expect(prefs.changes.at(-1)).toEqual({ locale: "en", locale_follows_browser: true });
+  });
+
+  test("a user who follows it sees dates in the browser's zone, and the zone is saved whenever it differs", async () => {
+    stubDeviceTimeZone("Asia/Tokyo");
+    const prefs = preferencesServer({ time_zone: "UTC", time_zone_follows_browser: true });
+    await renderApp({ path: "/settings/preferences" });
+
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([{ time_zone: "Asia/Tokyo", time_zone_follows_browser: true }]);
+    });
+    const timeZone = screen.getByRole("button", { name: /Time zone$/ });
+    expect(timeZone).toHaveTextContent("Follow this browser ((UTC+09:00) Japan Standard Time)");
+    expect(screen.queryByRole("button", { name: "Use this device's time zone" })).not.toBeInTheDocument();
+  });
+
+  test("choosing a zone stops following it, and following can be chosen again", async () => {
+    stubDeviceTimeZone("Asia/Tokyo");
+    const prefs = preferencesServer({ time_zone: "Asia/Tokyo", time_zone_follows_browser: true });
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const timeZone = await screen.findByRole("button", { name: /Time zone$/ });
+
+    await user.click(timeZone);
+    await user.click(await screen.findByRole("option", { name: /^\(UTC\+05:45\) Nepal Time / }));
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([{ time_zone: expect.stringMatching(/^Asia\/Kat(h)?mandu$/) as string }]);
+    });
+
+    await user.click(timeZone);
+    await user.click(await screen.findByRole("option", { name: /Follow this browser/ }));
+    await waitFor(() => {
+      expect(prefs.changes.at(-1)).toEqual({ time_zone: "Asia/Tokyo", time_zone_follows_browser: true });
+    });
   });
 });
 

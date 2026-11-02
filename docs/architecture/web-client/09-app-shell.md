@@ -21,16 +21,19 @@
   次に `<script type="application/json" id="config">` のランタイム設定を Zod で検証して読む（`lib/config`、`useConfig()`）。読めなければアプリの代わりに起動エラーの画面を出す。
   読めたら、表示のロケール・QueryClient・セッション・API クライアント（`lib/services.ts`）を作り、リフレッシュトークンの Cookie からセッションを再開し始める（§10）。
 - **表示のロケールとタイムゾーン**（`lib/locale.tsx`、FR-007）: ページを開いている間に変わるので、React の外のストア（`AppLocale`、`useSyncExternalStore` で読む）に置く。
-  サインインした利用者の設定（`GET /preferences`）を読むと、外枠（`AppLayout` が呼ぶ `features/settings` の `useUserDisplaySettings`）がその `locale` と `time_zone` をストアに渡す。
+  サインインした利用者の設定（`GET /preferences`）を読むと、外枠（`AppLayout` が呼ぶ `features/settings` の `useUserDisplaySettings`）がその `locale` と `time_zone`（ブラウザに従う利用者にはブラウザの値）をストアに渡す。
   ストアはそのロケールのカタログを読み込んでから `<html>` の `lang` / `dir` を変え、i18n のプロバイダを描画し直す。読み込みが前後したときは最後に頼んだロケールが勝つ。
   タイムゾーンは `react-intl` の `timeZone` になる。ロケールが変わると、サーバーが `Accept-Language` で訳した内容を取り直すために、Query をすべて無効にする。
   ストアは決めたロケールを `my:display:locale` に残す。設定を読むまでと、設定が読めないとき（429 を含む）とサインインしていないときは、最後に表示したロケール（初めてのブラウザではサーバーのロケール）のままになり、`<html lang>` も戻さない。
   このキーはこのブラウザでの表示のしかたで、利用者のデータではないので、セッションが終わっても消さない。次の利用者の設定が読めればそれに替わる。タイムゾーンは残さず、設定を読むまではブラウザのものになる。表示言語の選択肢は、カタログのあるロケール（疑似ロケールは、今それで表示しているときだけ）を、それぞれの言語の名前で並べる。
   タイムゾーンの選択肢は、表示中のロケールの CLDR の名前（`Intl.DisplayNames` にタイムゾーンの種類はないので、`Intl.DateTimeFormat` の `timeZoneName: "longGeneric"`。名前のないゾーンは UTC からの差だけ）に、
   画面を開いた時点の UTC からの差を付けて「（UTC+09:00）日本標準時」と出し、その差と名前の順に並べる。IANA の名前（`Asia/Tokyo`）は、同じ名前のゾーンを見分けるために名前の下の行（`SelectItem` の `description`）に出す。選択肢のアクセシブルネームは見えている文字のすべて（名前と IANA の名前。WCAG 2.5.3）で、閉じた選択肢には名前だけを出す。
-- **端末のタイムゾーン**（FR-007）: タイムゾーンをまだ選んでいない利用者（`time_zone_chosen` が偽。新しいアカウント）の日時は端末（ブラウザ）のタイムゾーンで出し、
-  `useUserDisplaySettings` が最初に開いた画面で、そのゾーン（`Intl.DateTimeFormat().resolvedOptions().timeZone`）を `PATCH /preferences` で保存する。
-  外のシステム（ブラウザのゾーンとサーバーの設定）に合わせる処理なので Effect に置き、後始末で要求を中止する。失敗したら選ばないままにして、次に開いたときにまた試す。
+- **ブラウザに従う言語とタイムゾーン**（FR-007）: `locale_follows_browser` / `time_zone_follows_browser` が真の利用者（新しいアカウントの既定）には、設定の値ではなくこのブラウザの値で表示する。
+  言語は `navigator.languages` の順で最初にカタログのあるもの（ロケールの連鎖の末尾の `en` は、`en` の言語のタグにだけ当てる）で、無ければサーバーの既定のロケール（起動時の `<html lang>`）を使う。`languagechange` で変わったときも追う。タイムゾーンは `Intl.DateTimeFormat().resolvedOptions().timeZone` を使う。
+  メールや Push にはブラウザが無いので、保存した値が要る。`useUserDisplaySettings` は、検知した値が保存した値と違うと、`PATCH /preferences` でフラグと一緒に保存する。端末ごとに表示はそのブラウザに従い、保存した値は最後に検知した端末のものになる。
+  タイムゾーンをまだ保存していない利用者（`time_zone_chosen` が偽）も、フラグにかかわらず端末のゾーンで表示して保存する。
+  外のシステム（ブラウザとサーバーの設定）に合わせる処理なので Effect に置き、後始末で要求を中止する。失敗しても表示はブラウザの値のままで、次に開いたときにまた試す。
+  設定の画面で言語やゾーンを選ぶと、値だけを送り、サーバーはそれを利用者の選択として従うのをやめる。
   設定の画面は、選んでいるゾーンが端末のゾーンと違うとき（`Asia/Calcutta` と `Asia/Kolkata` のような別名は同じとみなす）、選択肢の下に端末のゾーンの名前を書いた注記と「この端末のタイムゾーンにする」ボタンを出す。
   ボタンを押すとフォーカスをタイムゾーンの選択肢に移してから保存する（注記はボタンごと消える）。
 - **表示のテーマ**（`lib/theme.ts`）: 「システムに合わせる / ライト / ダーク」から選び、`<html data-theme>`（`light` / `dark`、システムに合わせるときは属性なし）にする。トークンの切り替えは [app/ui/README.md](../../../app/ui/README.md) の「Light and dark」にある。

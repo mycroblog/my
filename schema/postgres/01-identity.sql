@@ -190,6 +190,10 @@ CREATE TABLE user_preferences (
   require_media_description boolean NOT NULL,
   -- Whether the web client inserts new timeline posts without asking (ADR-0077); on by default (ADR-0127 §6).
   timeline_auto_insert boolean NOT NULL DEFAULT true,
+  -- Whether the web client follows the browser's language and time zone, keeping locale and the
+  -- time zone at what it last detected for what has no browser (email, push).
+  locale_follows_browser boolean NOT NULL DEFAULT false,
+  time_zone_follows_browser boolean NOT NULL DEFAULT false,
   updated_at timestamptz NOT NULL
 );
 
