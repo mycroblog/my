@@ -5,16 +5,25 @@
 # (app/bunfig.toml, tools/i18n/bunfig.toml). Cooldown applies to version updates only, so security updates
 # still open immediately.
 #
-# Each ecosystem groups its updates so that one pull request per directory changes go.mod / bun.lock at a time
+# Each ecosystem groups its updates so that one pull request changes go.mod / bun.lock at a time, across its directories,
 # instead of many pull requests conflicting on the same lockfile. Minor and patch updates share one group; a major
 # update opens its own pull request, since it often needs code changes and would hold the rest back. Security
 # updates are grouped separately and are not delayed by the version updates.
 version: 2
 updates:
   - package-ecosystem: gomod
+    # Every Go module. The integration modules join the root by `replace` and their dependencies are mostly indirect, so
+    # indirect updates are allowed too: otherwise a bump of the root leaves them untidy and the merge queue's mykit:warm fails.
     directories:
       - /
       - /tools
+      - /tools/agentkit
+      - /pkg/mykit
+      - /pkg/mykit/integration
+      - /pkg/mybot
+      - /pkg/mybot/integration
+    allow:
+      - dependency-type: all
     schedule:
       interval: weekly
     cooldown:
