@@ -52,7 +52,7 @@ func localHosts(cfg *config.Config) []string {
 }
 
 // linkCardDomains reads the domain actions on the hosts of link cards from the moderation
-// policy, which takes canonical hosts.
+// policy and the rules of the crawler from the instance module, which take canonical hosts.
 type linkCardDomains struct{ a *App }
 
 func (d linkCardDomains) FederationSuspended(ctx context.Context, host string) (bool, error) {
@@ -69,6 +69,24 @@ func (d linkCardDomains) RejectsMedia(ctx context.Context, host string) (bool, e
 		return false, nil
 	}
 	return d.a.ModerationPolicy.RejectsMedia(ctx, h)
+}
+
+func (d linkCardDomains) FetchStopped(ctx context.Context, host string) (bool, error) {
+	h, err := federation.CanonicalHost(host)
+	if err != nil {
+		return false, nil
+	}
+	crawl, err := d.a.Instance.LinkCardCrawl(ctx, h)
+	return crawl.NoFetch, err
+}
+
+func (d linkCardDomains) ImagesStopped(ctx context.Context, host string) (bool, error) {
+	h, err := federation.CanonicalHost(host)
+	if err != nil {
+		return false, nil
+	}
+	crawl, err := d.a.Instance.LinkCardCrawl(ctx, h)
+	return crawl.NoImages, err
 }
 
 // linkCardCreators verifies the fediverse:creator of pages with the remote actors.

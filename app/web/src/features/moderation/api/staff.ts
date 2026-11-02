@@ -365,6 +365,9 @@ export const auditActions = [
   "login_provider_enabled",
   "login_provider_disabled",
   "login_provider_secret_rotated",
+  "link_card_domain_fetch_stopped",
+  "link_card_domain_images_stopped",
+  "link_card_domain_rule_removed",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */
@@ -396,6 +399,7 @@ export const auditTargetKinds = [
   "instance",
   "voice_room",
   "login_provider",
+  "link_card_domain",
 ] as const satisfies readonly AuditTargetKind[];
 
 /**

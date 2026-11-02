@@ -151,6 +151,9 @@ type ProxyDeps struct {
 	// LinkCardMedia reads the images of link cards (ADR-0062 §3), which the proxy serves as the
 	// remote media files; nil serves none.
 	LinkCardMedia LinkCardMediaReader
+	// LinkCardImages says whether the rules of the link card crawler stop the images of a host,
+	// which the proxy then does not fetch or serve as images of link cards; nil means none does.
+	LinkCardImages LinkCardImagePolicy
 	// Federation says whether the federation mode lets the proxy fetch a remote media file
 	// (ADR-0076): not at all when it is off, and only the avatars and headers of the remote
 	// followers of local accounts when it is outbound. nil lets every file through.
@@ -165,6 +168,13 @@ type MediaFederation interface {
 	// ProxiesMedia reports whether a remote media file of the account ownerAccountID ("" for none,
 	// as the images of link cards) may be fetched now; profileImage tells an avatar or a header.
 	ProxiesMedia(ctx context.Context, ownerAccountID string, profileImage bool) (bool, error)
+}
+
+// LinkCardImagePolicy reads the rules of the link card crawler. LinkCardDomains implements it.
+type LinkCardImagePolicy interface {
+	// ImagesStopped reports whether a rule on a host, or on one of its parents, stops fetching
+	// images from it.
+	ImagesStopped(ctx context.Context, host string) (bool, error)
 }
 
 // LinkCardMediaReader reads the images of link cards. LinkCardRepository implements it.
@@ -401,6 +411,14 @@ func (p *MediaProxy) find(ctx context.Context, mediaID string) (content.RemoteMe
 	c, err := p.d.LinkCardMedia.FindLinkCardMedia(ctx, mediaID)
 	if err != nil {
 		return content.RemoteMedia{}, err
+	}
+	if p.d.LinkCardImages != nil {
+		switch stopped, err := p.d.LinkCardImages.ImagesStopped(ctx, content.LinkHost(c.RemoteURL)); {
+		case err != nil:
+			return content.RemoteMedia{}, err
+		case stopped:
+			return content.RemoteMedia{}, fmt.Errorf("image of link cards %s: a rule stops its host: %w", mediaID, ErrNotFound)
+		}
 	}
 	return content.RemoteMedia{
 		MediaID: c.MediaID, RemoteURL: c.RemoteURL, DeclaredContentType: c.ContentType,

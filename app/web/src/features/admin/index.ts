@@ -57,6 +57,8 @@ export { WebhookSettings } from "./components/WebhookSettings";
 // The federation relays: registering, joining, leaving and deleting them (ADR-0061), for manage_settings.
 export { relaysQueryOptions } from "./api/relays";
 export { RelaySettings } from "./components/RelaySettings";
+// The rules of the link card crawler per domain, for manage_settings.
+export { LinkCardDomainSettings } from "./components/LinkCardDomainSettings";
 // The roles: creating them and changing their positions and permissions (FR-720), for manage_roles. Their queries
 // are those of the moderation feature, which shows an account's roles.
 export { RoleSettings } from "./components/RoleSettings";

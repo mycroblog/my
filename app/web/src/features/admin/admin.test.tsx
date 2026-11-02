@@ -132,7 +132,7 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
       ],
       Federation: ["/moderation/domain-actions", "/moderation/instances"],
       Administration: ["/admin", "/admin/settings", "/admin/rules", "/admin/theme", "/admin/documents"],
-      Connections: ["/admin/relays"],
+      Connections: ["/admin/relays", "/admin/link-card-domains"],
       Operations: ["/admin/roles", "/admin/jobs"],
     });
   });

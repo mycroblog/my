@@ -451,6 +451,14 @@ const createdLoginProviderId = "0199f0e0-0000-7000-8000-0000000000c1";
 /** The ID the default POST /admin/webhooks handler gives a new webhook. */
 const createdWebhookId = "0199f0e0-0000-7000-8000-0000000000b1";
 
+/** A rule of the link card crawler that stops images, set at 2026-10-20T00:00:00Z, with `overrides`. */
+export function linkCardDomainRuleFixture(
+  domain: string,
+  overrides: Partial<Schemas["LinkCardDomainRule"]> = {},
+): Schemas["LinkCardDomainRule"] {
+  return { domain, mode: "no_images", note: "", updated_at: "2026-10-20T00:00:00Z", ...overrides };
+}
+
 /** The ID the default POST /admin/relays handler gives a new relay. */
 const createdRelayId = "0199f0e0-0000-7000-8000-0000000000d1";
 
@@ -798,6 +806,20 @@ export const handlers = [
     return withViewer(request, () => HttpResponse.json(left));
   }),
   http.delete(`${apiBase}/admin/relays/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  // operationIds listLinkCardDomainRules, setLinkCardDomainRule, removeLinkCardDomainRule: no rules; a rule is answered
+  // as sent.
+  http.get(`${apiBase}/admin/link_card_domains`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["LinkCardDomainRuleList"])),
+  ),
+  http.post(`${apiBase}/admin/link_card_domains`, async ({ request }) => {
+    const body = (await request.clone().json()) as Schemas["SetLinkCardDomainRuleRequest"];
+    return withViewer(request, () =>
+      HttpResponse.json(linkCardDomainRuleFixture(body.domain, { mode: body.mode, note: body.note ?? "" })),
+    );
+  }),
+  http.delete(`${apiBase}/admin/link_card_domains/:domain`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   // operationIds listAdminOAuthClients, disableOAuthClient, enableOAuthClient, listOAuthClientHostDenials,

@@ -60,6 +60,10 @@ The instance information page (`/about`) shows whether search and AI are allowed
 The explanation places the statements against Article 30-4 of the Japanese Copyright Act (such statements may not be treated as a legal refusal) and Article 4 of the EU DSM Directive (a machine-readable reservation of text and data mining).
 It does not guarantee any legal effect.
 
+## This server's own fetching
+
+These settings are about what crawls this server. What this server fetches for the cards of links in posts is set with `link_cards_enabled` and, per domain, with [link card domains](instance-settings.md#link-card-domains).
+
 ## Limits
 
 - A person's `ai_opt_out` is stated only on pages this server serves. Media has no owner in its key, and some setups let a CDN serve it directly, so media carries only the server-wide statement.

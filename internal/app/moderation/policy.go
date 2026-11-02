@@ -28,6 +28,13 @@ func NewFederationPolicy(repo Repository, clock kernel.Clock) *FederationPolicy 
 	return &FederationPolicy{repo: repo, clock: clock}
 }
 
+// ValidDomain reports whether d looks like a canonical host, as a domain action requires.
+func ValidDomain(d string) bool { return moderation.ValidDomain(d) }
+
+// DomainAndParents returns a canonical host and its parent domains, which the actions on any of
+// them cover.
+func DomainAndParents(domain string) []string { return moderation.DomainAndParents(domain) }
+
 // DomainRestrictions returns the restrictions in effect on a domain and its parents, in
 // restriction order.
 func (p *FederationPolicy) DomainRestrictions(ctx context.Context, domain string) ([]moderation.Restriction, error) {

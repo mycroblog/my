@@ -109,6 +109,9 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   login_provider_enabled: "client:admin.audit_log.action.login_provider_enabled",
   login_provider_disabled: "client:admin.audit_log.action.login_provider_disabled",
   login_provider_secret_rotated: "client:admin.audit_log.action.login_provider_secret_rotated",
+  link_card_domain_fetch_stopped: "client:admin.audit_log.action.link_card_domain_fetch_stopped",
+  link_card_domain_images_stopped: "client:admin.audit_log.action.link_card_domain_images_stopped",
+  link_card_domain_rule_removed: "client:admin.audit_log.action.link_card_domain_rule_removed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -139,6 +142,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   instance: "client:admin.audit_log.target_kind.instance",
   voice_room: "client:admin.audit_log.target_kind.voice_room",
   login_provider: "client:admin.audit_log.target_kind.login_provider",
+  link_card_domain: "client:admin.audit_log.target_kind.link_card_domain",
 };
 
 /** Who performed an operation without a user's account to show. */
@@ -202,6 +206,9 @@ export function auditTargetHref(
     case "login_provider":
       // A provider has no screen of its own: the list of providers shows it.
       return "/admin/login-providers";
+    case "link_card_domain":
+      // A rule has no screen of its own: the list of rules, which a removed rule has left.
+      return "/admin/link-card-domains";
     case "custom_emoji_request":
       // A request has no screen of its own: the requests of the custom emoji screen, in every state.
       return "/admin/custom-emojis?tab=requests";

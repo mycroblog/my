@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The rule of the crawler of link cards for a domain and its subdomains. A rule on a subdomain
+  never loosens a rule on its parent: every rule that covers a host applies.
+type: object
+required: [domain, mode, note, updated_at]
+properties:
+  domain:
+    description: The domain, in canonical form (lower case, IDNA A-labels); the key of the rule.
+    type: string
+  mode:
+    $ref: ./LinkCardDomainMode.yaml
+  note:
+    description: What the administrators keep about the rule; empty for none.
+    type: string
+  updated_at:
+    description: When the rule was last set.
+    type: string
+    format: date-time

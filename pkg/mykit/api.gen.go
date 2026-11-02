@@ -344,6 +344,9 @@ const (
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
+	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
+	AdminAuditActionLinkCardDomainImagesStopped     AdminAuditAction = "link_card_domain_images_stopped"
+	AdminAuditActionLinkCardDomainRuleRemoved       AdminAuditAction = "link_card_domain_rule_removed"
 	AdminAuditActionLoginProviderCreated            AdminAuditAction = "login_provider_created"
 	AdminAuditActionLoginProviderDeleted            AdminAuditAction = "login_provider_deleted"
 	AdminAuditActionLoginProviderDisabled           AdminAuditAction = "login_provider_disabled"
@@ -474,6 +477,12 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionInviteCreated:
 		return true
 	case AdminAuditActionInviteRevoked:
+		return true
+	case AdminAuditActionLinkCardDomainFetchStopped:
+		return true
+	case AdminAuditActionLinkCardDomainImagesStopped:
+		return true
+	case AdminAuditActionLinkCardDomainRuleRemoved:
 		return true
 	case AdminAuditActionLoginProviderCreated:
 		return true
@@ -632,6 +641,7 @@ const (
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
 	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
+	AdminAuditTargetKindLinkCardDomain        AdminAuditTargetKind = "link_card_domain"
 	AdminAuditTargetKindLoginProvider         AdminAuditTargetKind = "login_provider"
 	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
 	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
@@ -673,6 +683,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindInstance:
 		return true
 	case AdminAuditTargetKindInvite:
+		return true
+	case AdminAuditTargetKindLinkCardDomain:
 		return true
 	case AdminAuditTargetKindLoginProvider:
 		return true
@@ -2465,6 +2477,24 @@ func (e InviteCreatorKind) Valid() bool {
 	case InviteCreatorKindMember:
 		return true
 	case InviteCreatorKindStaff:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkCardDomainMode.
+const (
+	LinkCardDomainModeNoFetch  LinkCardDomainMode = "no_fetch"
+	LinkCardDomainModeNoImages LinkCardDomainMode = "no_images"
+)
+
+// Valid indicates whether the value is a known member of the LinkCardDomainMode enum.
+func (e LinkCardDomainMode) Valid() bool {
+	switch e {
+	case LinkCardDomainModeNoFetch:
+		return true
+	case LinkCardDomainModeNoImages:
 		return true
 	default:
 		return false
@@ -4732,7 +4762,9 @@ type AdminAppealPage struct {
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 // (an instance setting), `text_changed` (an instance text). On a `rule`:
-// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+// `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
 // `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
@@ -4804,7 +4836,9 @@ type AdminAuditEntry struct {
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
 	// (an instance setting), `text_changed` (an instance text). On a `rule`:
-	// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `role`: `role_granted`,
+	// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
+	// `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
+	// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
 	// `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
@@ -9216,13 +9250,14 @@ type LiftAccountActionRequest struct {
 // LinkCard The card of the first link in a status (ADR-0062): the title, description, and image
 // that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 // after the status was posted or received. Omitted from a status with attachments or a
-// poll, from a status whose link has no card yet, and when the instance setting
+// poll, from a status whose link has no card yet, from a status whose link is on a domain
+// where a rule of the crawler stops fetching, and when the instance setting
 // `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
 // warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-// shows it.
+// shows it. A rule of the crawler can leave the card without its image.
 type LinkCard struct {
 	// Author The account that the page names as its creator (`fediverse:creator`), given only when
 	// the account's server lists the page's domain among its `attributionDomains`.
@@ -9252,6 +9287,34 @@ type LinkCard struct {
 
 	// Url The page that the card links to, after redirects.
 	Url string `json:"url"`
+}
+
+// LinkCardDomainMode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+// but no images, and its cards show without their images.
+type LinkCardDomainMode string
+
+// LinkCardDomainRule The rule of the crawler of link cards for a domain and its subdomains. A rule on a subdomain
+// never loosens a rule on its parent: every rule that covers a host applies.
+type LinkCardDomainRule struct {
+	// Domain The domain, in canonical form (lower case, IDNA A-labels); the key of the rule.
+	Domain string `json:"domain"`
+
+	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+	// but no images, and its cards show without their images.
+	Mode LinkCardDomainMode `json:"mode"`
+
+	// Note What the administrators keep about the rule; empty for none.
+	Note string `json:"note"`
+
+	// UpdatedAt When the rule was last set.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// LinkCardDomainRuleList The rules, by domain.
+type LinkCardDomainRuleList struct {
+	Items []LinkCardDomainRule `json:"items"`
 }
 
 // LinkCardImage The image of a link card, served by this server's media proxy in the small size of an
@@ -11422,6 +11485,20 @@ type SetInstanceTextRequest struct {
 	Body string `json:"body"`
 }
 
+// SetLinkCardDomainRuleRequest The rule to set on a domain.
+type SetLinkCardDomainRuleRequest struct {
+	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
+	Domain string `json:"domain"`
+
+	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
+	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
+	// but no images, and its cards show without their images.
+	Mode LinkCardDomainMode `json:"mode"`
+
+	// Note What the administrators keep about the rule; empty when omitted.
+	Note *string `json:"note,omitempty"`
+}
+
 // SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
 type SetQuotePolicyRequest struct {
 	// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
@@ -11504,13 +11581,14 @@ type Status struct {
 	// Card The card of the first link in a status (ADR-0062): the title, description, and image
 	// that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 	// after the status was posted or received. Omitted from a status with attachments or a
-	// poll, from a status whose link has no card yet, and when the instance setting
+	// poll, from a status whose link has no card yet, from a status whose link is on a domain
+	// where a rule of the crawler stops fetching, and when the instance setting
 	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
 	// warning is opened. When the status is `sensitive`, the image is hidden until the viewer
-	// shows it.
+	// shows it. A rule of the crawler can leave the card without its image.
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
@@ -14024,6 +14102,9 @@ type SetInstanceTextJSONRequestBody = SetInstanceTextRequest
 
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody = CreateInviteRequest
+
+// SetLinkCardDomainRuleJSONRequestBody defines body for SetLinkCardDomainRule for application/json ContentType.
+type SetLinkCardDomainRuleJSONRequestBody = SetLinkCardDomainRuleRequest
 
 // CreateLoginProviderJSONRequestBody defines body for CreateLoginProvider for application/json ContentType.
 type CreateLoginProviderJSONRequestBody = CreateLoginProviderRequest
@@ -17567,6 +17648,51 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 	RetryAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListLinkCardDomainRules List the rules of the link card crawler
+	//
+	// Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+	// and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+	// rules. Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
+	ListLinkCardDomainRules(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetLinkCardDomainRuleWithBody Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRule(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
+	//
+	// Removes the rule of a domain and records it in the audit log. The cards already kept show
+	// as they did at once; a URL that was not fetched because of the rule gets its card the next
+	// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+	// nothing. Needs the `manage_settings` permission.
+	//
+	// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
+	RemoveLinkCardDomainRule(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAdminLoginProviders List the login providers
 	//
@@ -24376,6 +24502,91 @@ func (c *Client) ListAdminJobAttempts(ctx context.Context, id Id, params *ListAd
 // Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 func (c *Client) RetryAdminJob(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRetryAdminJobRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListLinkCardDomainRules List the rules of the link card crawler
+//
+// Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+// and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+// rules. Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
+func (c *Client) ListLinkCardDomainRules(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListLinkCardDomainRulesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetLinkCardDomainRuleWithBody Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+func (c *Client) SetLinkCardDomainRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetLinkCardDomainRuleRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+func (c *Client) SetLinkCardDomainRule(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetLinkCardDomainRuleRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
+//
+// Removes the rule of a domain and records it in the audit log. The cards already kept show
+// as they did at once; a URL that was not fetched because of the rule gets its card the next
+// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+// nothing. Needs the `manage_settings` permission.
+//
+// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
+func (c *Client) RemoveLinkCardDomainRule(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveLinkCardDomainRuleRequest(c.Server, domain)
 	if err != nil {
 		return nil, err
 	}
@@ -36083,6 +36294,107 @@ func NewRetryAdminJobRequest(server string, id Id) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListLinkCardDomainRulesRequest constructs an http.Request for the ListLinkCardDomainRules method
+func NewListLinkCardDomainRulesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/link_card_domains")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetLinkCardDomainRuleRequest calls the generic SetLinkCardDomainRule builder with application/json body
+func NewSetLinkCardDomainRuleRequest(server string, body SetLinkCardDomainRuleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetLinkCardDomainRuleRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSetLinkCardDomainRuleRequestWithBody constructs an http.Request for the SetLinkCardDomainRule method, with any body, and a specified content type
+func NewSetLinkCardDomainRuleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/link_card_domains")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveLinkCardDomainRuleRequest constructs an http.Request for the RemoveLinkCardDomainRule method
+func NewRemoveLinkCardDomainRuleRequest(server string, domain string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "domain", domain, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/link_card_domains/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -48079,6 +48391,55 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/jobs/{id}/retry (the `RetryAdminJob` operationId).
 	RetryAdminJobWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*RetryAdminJobResponse, error)
 
+	// ListLinkCardDomainRulesWithResponse List the rules of the link card crawler
+	//
+	// Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+	// and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+	// rules. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
+	ListLinkCardDomainRulesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListLinkCardDomainRulesResponse, error)
+
+	// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
+
+	// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithResponse(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
+
+	// RemoveLinkCardDomainRuleWithResponse Remove the rule of a domain for the link card crawler
+	//
+	// Removes the rule of a domain and records it in the audit log. The cards already kept show
+	// as they did at once; a URL that was not fetched because of the rule gets its card the next
+	// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+	// nothing. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
+	RemoveLinkCardDomainRuleWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*RemoveLinkCardDomainRuleResponse, error)
+
 	// ListAdminLoginProvidersWithResponse List the login providers
 	//
 	// The external login providers that are not deleted, enabled or not, newest first.
@@ -59143,6 +59504,187 @@ func (r RetryAdminJobResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RetryAdminJobResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListLinkCardDomainRulesResponse200Headers the declared response headers of an HTTP 200 response for ListLinkCardDomainRules
+type ListLinkCardDomainRulesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListLinkCardDomainRulesResponseDefaultHeaders the declared response headers of an HTTP default response for ListLinkCardDomainRules
+type ListLinkCardDomainRulesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListLinkCardDomainRulesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LinkCardDomainRuleList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListLinkCardDomainRulesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListLinkCardDomainRulesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListLinkCardDomainRulesResponse) GetJSON200() *LinkCardDomainRuleList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListLinkCardDomainRulesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListLinkCardDomainRulesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListLinkCardDomainRulesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListLinkCardDomainRulesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListLinkCardDomainRulesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SetLinkCardDomainRuleResponse200Headers the declared response headers of an HTTP 200 response for SetLinkCardDomainRule
+type SetLinkCardDomainRuleResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetLinkCardDomainRuleResponseDefaultHeaders the declared response headers of an HTTP default response for SetLinkCardDomainRule
+type SetLinkCardDomainRuleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetLinkCardDomainRuleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LinkCardDomainRule
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetLinkCardDomainRuleResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetLinkCardDomainRuleResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetLinkCardDomainRuleResponse) GetJSON200() *LinkCardDomainRule {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetLinkCardDomainRuleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetLinkCardDomainRuleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetLinkCardDomainRuleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetLinkCardDomainRuleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetLinkCardDomainRuleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RemoveLinkCardDomainRuleResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveLinkCardDomainRule
+type RemoveLinkCardDomainRuleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveLinkCardDomainRuleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveLinkCardDomainRuleResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveLinkCardDomainRuleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveLinkCardDomainRuleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveLinkCardDomainRuleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveLinkCardDomainRuleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveLinkCardDomainRuleResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -77071,6 +77613,79 @@ func (c *ClientWithResponses) RetryAdminJobWithResponse(ctx context.Context, id 
 	return ParseRetryAdminJobResponse(rsp)
 }
 
+// ListLinkCardDomainRulesWithResponse List the rules of the link card crawler
+//
+// Every rule by which the crawler of link cards fetches nothing, or no images, from a domain
+// and its subdomains, by domain. The list is not paginated; a server keeps at most 1,000
+// rules. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
+func (c *ClientWithResponses) ListLinkCardDomainRulesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListLinkCardDomainRulesResponse, error) {
+	rsp, err := c.ListLinkCardDomainRules(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListLinkCardDomainRulesResponse(rsp)
+}
+
+// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+func (c *ClientWithResponses) SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
+	rsp, err := c.SetLinkCardDomainRuleWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetLinkCardDomainRuleResponse(rsp)
+}
+
+// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
+// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
+func (c *ClientWithResponses) SetLinkCardDomainRuleWithResponse(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
+	rsp, err := c.SetLinkCardDomainRule(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetLinkCardDomainRuleResponse(rsp)
+}
+
+// RemoveLinkCardDomainRuleWithResponse Remove the rule of a domain for the link card crawler
+//
+// Removes the rule of a domain and records it in the audit log. The cards already kept show
+// as they did at once; a URL that was not fetched because of the rule gets its card the next
+// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+// nothing. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
+func (c *ClientWithResponses) RemoveLinkCardDomainRuleWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*RemoveLinkCardDomainRuleResponse, error) {
+	rsp, err := c.RemoveLinkCardDomainRule(ctx, domain, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveLinkCardDomainRuleResponse(rsp)
+}
+
 // ListAdminLoginProvidersWithResponse List the login providers
 //
 // The external login providers that are not deleted, enabled or not, newest first.
@@ -91367,6 +91982,223 @@ func ParseRetryAdminJobResponse(rsp *http.Response) (*RetryAdminJobResponse, err
 	switch {
 	case true:
 		var headers RetryAdminJobResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListLinkCardDomainRulesResponse parses an HTTP response from a ListLinkCardDomainRulesWithResponse call
+func ParseListLinkCardDomainRulesResponse(rsp *http.Response) (*ListLinkCardDomainRulesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListLinkCardDomainRulesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LinkCardDomainRuleList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListLinkCardDomainRulesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListLinkCardDomainRulesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSetLinkCardDomainRuleResponse parses an HTTP response from a SetLinkCardDomainRuleWithResponse call
+func ParseSetLinkCardDomainRuleResponse(rsp *http.Response) (*SetLinkCardDomainRuleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetLinkCardDomainRuleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LinkCardDomainRule
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetLinkCardDomainRuleResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SetLinkCardDomainRuleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRemoveLinkCardDomainRuleResponse parses an HTTP response from a RemoveLinkCardDomainRuleWithResponse call
+func ParseRemoveLinkCardDomainRuleResponse(rsp *http.Response) (*RemoveLinkCardDomainRuleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveLinkCardDomainRuleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RemoveLinkCardDomainRuleResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

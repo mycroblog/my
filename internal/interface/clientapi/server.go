@@ -211,6 +211,9 @@ type Options struct {
 	// Rules runs the use cases of the instance rules: the admin operations (admin_rules.go)
 	// and the rules of GET /instance, which lists none when it is nil.
 	Rules InstanceRules
+	// LinkCardDomainRules runs the rules of the link card crawler (admin_link_card_domains.go); nil
+	// answers 404.
+	LinkCardDomainRules LinkCardDomainRules
 	// InstanceTexts reads and writes the instance texts for the admin operations
 	// (admin_instance_texts.go).
 	InstanceTexts InstanceTexts

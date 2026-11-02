@@ -92,6 +92,9 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     「編集」（種類を変えずに設定のフォームと同じ項目のダイアログ。シークレットの欄は持たない。保存したら閉じ、拒否はダイアログの項目に出す）・「シークレットを更新」（新しいシークレットを入れるダイアログ）・「無効にする」（`ConfirmDialog`）・「有効にする」・「削除」（元に戻せないので `ConfirmDialog` で確かめ、フォーカスを次の行に移す）を持つ。
     無効にすることと削除の確認には、ひも付けた利用者の数と、その利用者がこのプロバイダーでサインインできなくなり、パスワード・パスキー・ほかのプロバイダーを持たなければまったくサインインできなくなることを出す。
     ボタンのアクセシブルネームは表示名（U+2068 / U+2069 で囲む）を含める。結果は一覧の上の `StatusMessage` に、失敗は同じ場所（`role="alert"`）に出し、どの変更も一覧と監査ログに無効化の印を付ける。監査ログの対象はこの画面へリンクする。
+- **リンクのカードのドメイン**（`/admin/link-card-domains`、`manage_settings`、[ADR-0132](../../adr/0132-link-card-domain-rules.md)、[画面](screens/admin-link-card-domains.md)）: 「ルールを設定」と「ルール」の 2 つの区画（`h2` の `section`）。
+  - **設定**: ドメインとの連合と投稿のメディアには効かないことの説明、ドメイン（必須。空白と `/`・`:`・`@` はネイティブの検証で止める）、止めるもの（`RadioGroup`。「画像だけ止める」が既定、「取得を止める」）、メモ（`ReasonField`、5,000 文字）のフォーム。`POST /admin/link_card_domains` で送る。同じドメインのルールは置き換わる。成功でフォームを空にして結果を `StatusMessage` に出す。サーバーの拒否（422）はドメインの欄に出して入力を残す。
+  - **一覧**: `GET /admin/link_card_domains` を画面の中で `useQuery` で読む（ローダーで待たない）。読み込み中は区画の `Spinner`、最初の読み込みの失敗は区画の `RegionError`（`useLoadFailure`。G16）で、フォームと `h1` は残す。表の列はドメイン（`DomainName` とメモ）・止めるもの（`Select`。選ぶとすぐ保存し、`SaveIndicator` を `display="icon"` で隣に置く。G24）・最後の設定・操作（「削除」。`ConfirmDialog` で確かめ、フォーカスを次の行に移す）。ボタンと `Select` のアクセシブルネームはドメイン（U+2066 / U+2069 で囲む）を含める。どの変更も一覧と監査ログに無効化の印を付ける。
 - **リレー**（`/admin/relays`、`manage_settings`、[ADR-0061](../../adr/0061-federation-relays.md)）: 「リレーに参加する」と「このサーバーのリレー」の 2 つの区画（`h2` の `section`）。
   - **参加**: URL（必須、https、2048 バイトまで）・方式（`Select`。既定の「自動で判定」は `protocol` を送らずサーバーに任せ、ほかに Mastodon 方式・LitePub 方式）・リレーから投稿を受け取るか（`Checkbox`、既定は受け取る）のフォーム。`POST /admin/relays` で送る。
     サーバーの拒否（422 `invalid-relay`）は `reason`（`url`・`exists`・`domain_suspended`・`not_actor`・`state`）をクライアントの文言にし、`state` のほかは URL の欄のエラーに、`state` と理由のない失敗はフォームの下（`role="alert"`）に出して、入力を残す。
@@ -189,7 +192,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     ルートの loader は TanStack Query の `infiniteQuery` の `pages` で、そのページ数を新しい方から順に読む。キャッシュに読み込み済みのページはそのまま使う。絞り込みを変えると 1 ページ目からになる。
     次のページの失敗は、一覧の下に `RegionError` で理由を出し、読み込み済みの行を残す。もう一度「さらに表示」を押すと読み直す。
   - **操作者**: アカウントの表示名（`dir="auto"`）とハンドル。アカウントが消えた利用者は「削除されたアカウント」、CLI・サーバー自身・ほかのサーバーはそれぞれの名前にする。
-  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `target_label`（`:shortcode:` か `:shortcode:@domain`）の shortcode とドメインで検索した `/admin/custom-emojis`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、外部ログインのプロバイダーは `/admin/login-providers`、ドメインは `DomainName` で 2 つの形を出す）。
+  - **対象**: 項目名を対象の種類にし、値は記録時の `target_label` にする。対象の種類に管理画面があるものはそこへリンクする（アカウントは `/moderation/accounts/{id}`、通報は `/moderation/reports/{id}`、ドメインは `/moderation/domain-actions?filter=all&domain=…`、登録の拒否は `/moderation/signup-blocks?filter=all`、カスタム絵文字は `target_label`（`:shortcode:` か `:shortcode:@domain`）の shortcode とドメインで検索した `/admin/custom-emojis`、webhook は `/admin/webhooks`、リレーは `/admin/relays`、リンクのカードのドメインは `/admin/link-card-domains`、外部ログインのプロバイダーは `/admin/login-providers`、ドメインは `DomainName` で 2 つの形を出す）。
     設定・ルール・登録など画面のない種類と、消えた対象（API の `target_exists` が `false`）は、リンクにせず `target_label` だけを出す。
 - **招待**（`/moderation/invites`、`manage_invites`、FR-001）: 「招待を作成する」と「招待の一覧」の区画。登録モードが `invite` でない（`GET /instance` の `registrations.mode`）ときは、招待では誰も登録できず、登録モードは管理者がサーバーの設定で変えることを、区画の前に書く。
   - **作成**: 登録できる人数（`Select`、1・5・10・25・50・100 人と制限なし。既定は 1 人）と有効期間（`DurationSelect`、30 分〜30 日と無期限。既定は 7 日）。CLI の `my invite create` と同じ既定値にする。確かめずに送り、成功したら一覧を取り直してから、
@@ -332,6 +335,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   `features/admin/settings.test.tsx` は、名前の保存と外枠の名前、説明の保存、連絡先とサムネイル（画像のアップロードと説明）の保存とサムネイルを外すこと、設定の表示と変えた設定だけをまとめて送ることと `GET /instance` の取り直し、既定の言語の選択、保存の失敗、権限を、
   `features/admin/rules.test.tsx` は、ルールの一覧と文と補足、追加と入力の検査、下へ動かしたルールの見出しへのフォーカス、ダイアログでの編集、確認を経た廃止、権限を、
   `features/admin/roles.test.tsx` は、ロールの一覧と区分ごとの権限、組み込みのロールと閲覧者より上のロールの操作の出し分け、閲覧者のロールにない権限を選べないこと、作成と入力の検査とキーの拒否、ダイアログでの変更と権限の拒否、バッジの設定と見本と外すこととその拒否、確認を経た削除と持っている人がいるロールの拒否、権限を、
+  `features/admin/linkCardDomains.test.tsx` は、ルールの一覧のモードとメモ、空の一覧、読み込みの失敗の区画の中での表示と再試行、設定、URL を送らないネイティブの検証、拒否の理由のドメインの欄への表示、行でのモードの変更、確認を経た削除、権限を検査する。
   `features/admin/relays.test.tsx` は、リレーの一覧の状態・直近 24 時間の数・Actor・停止されたサーバーの警告、方式を自動で判定する参加と選んだ方式での参加、URL の欄に出す拒否の理由、脱退ともう一度参加すること、もう一度参加することの拒否の理由、確認を経た削除、権限を検査する。
   `features/admin/finance.test.tsx` は、集計の既定（月・按分）と見込みの印・内訳・区切りの規則、週と年のタブ・現金主義への切り替えと URL・送る期間、入力の検査と月ごとの費用の登録と送る内容、ダイアログでの編集と金額の改定と終了日・確認を経た取り消し、ダイアログの中の失敗、取り込みの状態と今すぐ取り込むことと 1 時間以内の 429、収入の総額・手数料・収支・プランごとの人数と同じタブでの切り替え、お金の動きと加入者のユーザー名とリンク・消えたアカウントの行、種類と日付の絞り込みと URL・終わりが始めより前の日付・絞り込みで空のときの解除とフォーカス、収入の公開範囲、権限を検査する。
   `features/admin/errors.test.tsx` は、エラーのグループの一覧と各列、状態と報告元の絞り込みと URL、空の状態、管理のメニューのリンク、詳細の各区画と ID のコピー、時間ごとの件数と履歴の順、解決・ミュート・ミュートを外すことと `role="status"` の結果と見出しへのフォーカス、操作の失敗、ID と発生のないグループ、`admin_error_group` の通知の文とリンク、権限を検査する。

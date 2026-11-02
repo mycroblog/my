@@ -104,6 +104,9 @@ const (
 	// AuditTargetLoginProvider is an external login provider (ADR-0106 §2); its ID is
 	// login_providers.id and its label the provider's display name.
 	AuditTargetLoginProvider AuditTargetKind = "login_provider"
+	// AuditTargetLinkCardDomain is the domain of a rule of the link card crawler; its ID and its
+	// label are the canonical domain.
+	AuditTargetLinkCardDomain AuditTargetKind = "link_card_domain"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -113,7 +116,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
 	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
-	AuditTargetLoginProvider,
+	AuditTargetLoginProvider, AuditTargetLinkCardDomain,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -341,6 +344,13 @@ const (
 	AuditLoginProviderEnabled       AuditAction = "login_provider_enabled"
 	AuditLoginProviderDisabled      AuditAction = "login_provider_disabled"
 	AuditLoginProviderSecretRotated AuditAction = "login_provider_secret_rotated"
+	// AuditLinkCardDomainFetchStopped and AuditLinkCardDomainImagesStopped: the link card crawler
+	// got a rule on a domain, or the rule of the domain changed, to fetch nothing or to fetch no
+	// images. AuditLinkCardDomainRuleRemoved: the rule of the domain was removed. The rows are
+	// current values (link_card_domain_rules), so these entries have no source event.
+	AuditLinkCardDomainFetchStopped  AuditAction = "link_card_domain_fetch_stopped"
+	AuditLinkCardDomainImagesStopped AuditAction = "link_card_domain_images_stopped"
+	AuditLinkCardDomainRuleRemoved   AuditAction = "link_card_domain_rule_removed"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -440,6 +450,9 @@ var auditActions = []struct {
 	{AuditLoginProviderEnabled, AuditTargetLoginProvider},
 	{AuditLoginProviderDisabled, AuditTargetLoginProvider},
 	{AuditLoginProviderSecretRotated, AuditTargetLoginProvider},
+	{AuditLinkCardDomainFetchStopped, AuditTargetLinkCardDomain},
+	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
+	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

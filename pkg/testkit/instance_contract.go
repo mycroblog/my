@@ -35,7 +35,8 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // canonical values, rejection of invalid input without writing, texts (one value for every
 // locale) with their history, cleared texts, the media files that media settings
 // refer to, the property that the synchronous projections equal a rebuild from the
-// revisions, the instance rules (instanceRuleCases), the theme (instanceThemeCases), the brand
+// revisions, the instance rules (instanceRuleCases), the rules of the link card crawler
+// (instanceLinkCardDomainCases), the theme (instanceThemeCases), the brand
 // images (instanceBrandCases), the
 // announcements (instanceAnnouncementCases), the service closure (instanceClosureCases), and the
 // secrets of the instance (instanceSecretCases).
@@ -58,6 +59,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 		{"KeepsTheContactAndTheThumbnail", instanceKeepsContactAndThumbnail},
 	}
 	cases = append(cases, instanceRuleCases...)
+	cases = append(cases, instanceLinkCardDomainCases...)
 	cases = append(cases, instanceThemeCases...)
 	cases = append(cases, instanceBrandCases...)
 	cases = append(cases, instanceAnnouncementCases...)

@@ -117,7 +117,8 @@ password_reset_link_issued, email_suppression_lifted, account_moved (target kind
 report_assigned, report_unassigned, report_resolved, report_reopened,
 report_note_added (report); registration_approved, registration_rejected
 (user); setting_changed, text_changed (setting); rule_added, rule_revised,
-rule_moved, rule_retired (rule); role_granted, role_revoked, role_created,
+rule_moved, rule_retired (rule); link_card_domain_fetch_stopped,
+link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain); role_granted, role_revoked, role_created,
 role_updated, role_deleted (role); appeal_upheld, appeal_overturned (appeal);
 signup_block_added, signup_block_lifted (signup_block);
 custom_emoji_created, custom_emoji_image_replaced, custom_emoji_copied,

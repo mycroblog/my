@@ -129,6 +129,8 @@ func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards conte
 		Federation: a.mediaGate(),
 		// The images of link cards are remote files without an owner (ADR-0062 §3).
 		LinkCardMedia: cards,
+		// The rules of the link card crawler stop those images too, and no other remote media.
+		LinkCardImages: linkCardDomains{a},
 	})
 	if err != nil {
 		return nil, err

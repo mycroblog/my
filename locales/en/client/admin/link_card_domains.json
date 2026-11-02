@@ -1,0 +1,146 @@
+{
+  "admin.link_card_domains.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog of removing a rule of the link card crawler without removing it."
+  },
+  "admin.link_card_domains.change_failed": {
+    "defaultMessage": "Could not change the rule: {reason}",
+    "description": "Error of changing the mode of a rule in its row. {reason} says why."
+  },
+  "admin.link_card_domains.characters_left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "How many characters the note of a rule can still take."
+  },
+  "admin.link_card_domains.characters_over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "How many characters the note of a rule is over its limit."
+  },
+  "admin.link_card_domains.domain": {
+    "defaultMessage": "Domain",
+    "description": "Label of the domain of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.domain.description": {
+    "defaultMessage": "A host name such as example.com. The rule also covers its subdomains. A domain that has a rule gets this one in its place.",
+    "description": "Help under the domain of a new rule of the link card crawler."
+  },
+  "admin.link_card_domains.domain.invalid": {
+    "defaultMessage": "Enter a host name only, without https:// or a path.",
+    "description": "Error of a domain of a rule that holds a space or a part of a URL."
+  },
+  "admin.link_card_domains.empty": {
+    "defaultMessage": "No rules yet",
+    "description": "Heading of the list of the rules of the link card crawler when there are none."
+  },
+  "admin.link_card_domains.empty.description": {
+    "defaultMessage": "The server fetches the cards of links from every domain, except those a domain action suspends.",
+    "description": "What the server does while the list of the rules of the link card crawler is empty."
+  },
+  "admin.link_card_domains.failed": {
+    "defaultMessage": "Could not load the rules",
+    "description": "Heading of the error in place of the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.list.title": {
+    "defaultMessage": "Rules",
+    "description": "Heading of the section with the list of the rules of the link card crawler."
+  },
+  "admin.link_card_domains.loading": {
+    "defaultMessage": "Loading the rules…",
+    "description": "Label of the spinner while the rules of the link card crawler load."
+  },
+  "admin.link_card_domains.mode": {
+    "defaultMessage": "What to stop",
+    "description": "Label of the mode of a rule of the link card crawler, in the form and as the column of the list."
+  },
+  "admin.link_card_domains.mode.no_fetch": {
+    "defaultMessage": "Stop fetching",
+    "description": "Mode of a rule: the link card crawler fetches nothing from the domain."
+  },
+  "admin.link_card_domains.mode.no_fetch.description": {
+    "defaultMessage": "The server fetches neither pages nor images from this domain for link cards. The cards it already has for this domain are hidden.",
+    "description": "What the mode that stops fetching does."
+  },
+  "admin.link_card_domains.mode.no_images": {
+    "defaultMessage": "Stop images only",
+    "description": "Mode of a rule: the link card crawler fetches pages but no images from the domain."
+  },
+  "admin.link_card_domains.mode.no_images.description": {
+    "defaultMessage": "The server still fetches pages from this domain, but no images. Its cards show without an image, also the ones it already has.",
+    "description": "What the mode that stops only images does."
+  },
+  "admin.link_card_domains.mode_of": {
+    "defaultMessage": "What to stop on {domain}",
+    "description": "Accessible name of the select of the mode in the row of a rule. {domain} is the domain of the rule."
+  },
+  "admin.link_card_domains.new.description": {
+    "defaultMessage": "These rules bear only on the cards of links in posts: the domain stays federated, and the media of its posts are fetched as usual. To cut a server off, use a domain action.",
+    "description": "Introduction of the form of a rule of the link card crawler, which sets it apart from a domain action."
+  },
+  "admin.link_card_domains.new.title": {
+    "defaultMessage": "Set a rule",
+    "description": "Heading of the section with the form of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.note": {
+    "defaultMessage": "Note",
+    "description": "Label of the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.note.description": {
+    "defaultMessage": "Why this rule is here. Only people who can open this screen see it.",
+    "description": "Help under the note of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove": {
+    "defaultMessage": "Remove",
+    "description": "Button that removes a rule of the link card crawler, and the confirming button of its dialog."
+  },
+  "admin.link_card_domains.remove.description": {
+    "defaultMessage": "The cards the server already has for this domain show as they did before. A link the server skipped gets its card the next time a post needs it. The note is lost.",
+    "description": "Description of the dialog that confirms removing a rule of the link card crawler."
+  },
+  "admin.link_card_domains.remove.title": {
+    "defaultMessage": "Remove the rule for {domain}?",
+    "description": "Title of the dialog that confirms removing a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.remove_failed": {
+    "defaultMessage": "Could not remove the rule: {reason}",
+    "description": "Error of removing a rule of the link card crawler. {reason} says why."
+  },
+  "admin.link_card_domains.remove_rule": {
+    "defaultMessage": "Remove the rule for {domain}",
+    "description": "Accessible name of the button that removes a rule. {domain} is its domain."
+  },
+  "admin.link_card_domains.removed": {
+    "defaultMessage": "The rule for {domain} is removed.",
+    "description": "Status after removing a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads the rules of the link card crawler again after a failure."
+  },
+  "admin.link_card_domains.save_failed": {
+    "defaultMessage": "Could not save the rule: {reason}",
+    "description": "Error of the form of a rule, for another reason than its values. {reason} says why."
+  },
+  "admin.link_card_domains.saved": {
+    "defaultMessage": "The rule for {domain} is saved.",
+    "description": "Status after saving a rule of the link card crawler. {domain} is its domain."
+  },
+  "admin.link_card_domains.submit": {
+    "defaultMessage": "Save rule",
+    "description": "Button that saves the form of a rule of the link card crawler."
+  },
+  "admin.link_card_domains.summary": {
+    "defaultMessage": "Stop the link card crawler on certain domains, or stop only its images.",
+    "description": "What the link card domains screen is for, in the menu of server administration."
+  },
+  "admin.link_card_domains.title": {
+    "defaultMessage": "Link card domains",
+    "description": "Heading and menu entry of the screen with the rules of the link card crawler per domain."
+  },
+  "admin.link_card_domains.too_long": {
+    "defaultMessage": "A note can have up to {max, number} characters.",
+    "description": "Error of a note of a rule that is too long. {max} is the limit."
+  },
+  "admin.link_card_domains.updated": {
+    "defaultMessage": "Last set",
+    "description": "Column of the list of rules: when the rule was last set."
+  }
+}
