@@ -38,6 +38,8 @@ const postCard = tv({
     line: "pointer-events-none absolute inset-s-[calc(2.25rem-1px)] w-0.5 bg-border-strong",
   },
   variants: {
+    // A row of a panel that is a card already (the third column): the panel's surface, without a card inside a card.
+    surface: { card: {}, plain: { base: "mb-0 rounded-none border-0 bg-transparent p-0 shadow-none" } },
     // Told apart by a thicker border in the accent color, not by a color alone: it is the only card with a 2px border.
     highlighted: { true: { base: "border-2 border-accent" } },
     // Cards of a thread touch: the corners where they meet are square and the rule between them is the line's.
@@ -106,6 +108,8 @@ export type PostCardProps = Omit<FeedArticleProps, "children" | "content" | "ari
   lineAbove?: boolean;
   /** Whether the thread continues in the card below: a line from the avatar to the card's bottom. */
   lineBelow?: boolean;
+  /** `card` is a raised card of a page's list; `plain` is a row of a panel that is a card already. */
+  surface?: "card" | "plain";
 };
 
 /**
@@ -140,11 +144,12 @@ export function PostCard({
   highlighted = false,
   lineAbove = false,
   lineBelow = false,
+  surface = "card",
   className,
   ref,
   ...props
 }: PostCardProps) {
-  const slots = postCard({ highlighted, lineAbove, lineBelow });
+  const slots = postCard({ surface, highlighted, lineAbove, lineBelow });
   const scope = useAnimationScope<HTMLElement>();
   const id = useId();
   const labelId = `${id}-label`;

@@ -324,7 +324,7 @@ The kit gives every region of data the same four states
   A retry from its button that ends with the error still shown makes its heading and reason `role="alert"` without
   anything from the caller, each time, and the button keeps focus; the caller keeps it mounted during the retry
   (`isRetrying`, from `useLoadFailure` in `app/web`). When the retry succeeds and it unmounts with focus on the button,
-  focus moves, without scrolling, to the nearest heading above it that takes focus from script (`focusable`, or a
+  focus moves, without scrolling, to the nearest heading above it that takes focus from script (`focusable`, `AsidePanel`, or a
   screen's `h1`), within its dialog if it is in one, or else to that dialog.
   `alert` makes it `role="alert"`, except during a retry, for the result of another action of the user
   ([APG alert](https://www.w3.org/WAI/ARIA/apg/patterns/alert/)). Without `headingLevel` the message is a paragraph

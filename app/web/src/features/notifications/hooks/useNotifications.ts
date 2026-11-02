@@ -36,7 +36,7 @@ export type NotificationList =
     };
 
 /** Whether `id` comes after the marker: IDs are UUIDv7 strings, which sort in the order they were made. */
-function isAfter(id: string, marker: NotificationMarker): boolean {
+export function isAfter(id: string, marker: NotificationMarker): boolean {
   return marker.last_read_id === undefined || id > marker.last_read_id;
 }
 

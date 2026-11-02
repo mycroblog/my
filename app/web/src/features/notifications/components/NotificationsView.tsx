@@ -3,22 +3,13 @@
 // route (web-client/README.md S3), and the notifications of the selected filter as a feed (Y6). The tabs follow
 // the WAI-ARIA APG tabs pattern with automatic activation (React Aria Tabs); only the selected panel is
 // mounted, and switching tabs keeps focus on the tab (the layout moves focus only when the path changes).
-import {
-  EmptyState,
-  Feed,
-  type NotificationKind,
-  NotificationKindIcon,
-  RegionError,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
-} from "@my/ui";
+import { EmptyState, Feed, type NotificationKind, NotificationKindIcon, Tab, TabList, TabPanel, Tabs } from "@my/ui";
 import { SignInPrompt } from "../../session";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type NotificationFilter, notificationFilters } from "../api/notifications";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationItem } from "./NotificationItem";
+import { NotificationsError } from "./NotificationsError";
 import { NotificationsSkeleton } from "./NotificationsSkeleton";
 
 const filterLabels: Readonly<Record<NotificationFilter, ClientMessageKey>> = {
@@ -79,23 +70,6 @@ export function NotificationsView({ filter, onFilterChange, headingId }: Notific
   );
 }
 
-type NotificationsErrorProps = { message: string; retry: () => void; isRetrying: boolean };
-
-/** The list's failure in place of the list (web-client/16-look-states-and-wording.md G16). */
-function NotificationsError({ message, retry, isRetrying }: NotificationsErrorProps) {
-  const t = useT();
-  return (
-    <RegionError
-      headingLevel={2}
-      heading={t("client:notifications.failed")}
-      reason={message}
-      retryLabel={t("client:notifications.retry")}
-      onRetry={retry}
-      isRetrying={isRetrying}
-    />
-  );
-}
-
 function NotificationList({ filter, headingId }: { filter: NotificationFilter; headingId: string }) {
   const t = useT();
   const list = useNotifications(filter);
@@ -111,7 +85,9 @@ function NotificationList({ filter, headingId }: { filter: NotificationFilter; h
     case "loading":
       return <NotificationsSkeleton />;
     case "error":
-      return <NotificationsError message={list.message} retry={list.retry} isRetrying={list.isRetrying} />;
+      return (
+        <NotificationsError headingLevel={2} message={list.message} retry={list.retry} isRetrying={list.isRetrying} />
+      );
     case "loaded":
       if (list.items.length === 0) {
         return (

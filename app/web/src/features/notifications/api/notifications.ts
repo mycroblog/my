@@ -11,6 +11,7 @@ import type { components } from "@mycroblog/mykit";
 export type Notification = components["schemas"]["Notification"];
 export type NotificationType = components["schemas"]["NotificationType"];
 export type NotificationMarker = components["schemas"]["NotificationMarker"];
+export type NotificationPage = components["schemas"]["NotificationPage"];
 export type NotificationAccount = components["schemas"]["Account"];
 export type NotificationStatus = components["schemas"]["Status"];
 export type ModerationAction = components["schemas"]["ModerationAction"];
@@ -54,6 +55,17 @@ export function notificationsQueryOptions(api: Api, filter: NotificationFilter) 
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.next_cursor,
   });
+}
+
+/** How many notifications, at most, the third column's panel shows. */
+export const panelLimit = 10;
+
+/**
+ * The latest notifications for the third column's panel (GET /notifications): its own query, one short page and no
+ * more, so that it does not refetch the pages the notifications page has loaded. The stream keeps it up to date (./live.ts).
+ */
+export function notificationsPanelQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/notifications", { params: { query: { limit: panelLimit } } });
 }
 
 /** The read marker and the unread count (GET /notifications/marker). */
