@@ -110,6 +110,8 @@ export const Post: Story = {
     ]) {
       await waitFor(() => expect(layerStyle.getPropertyValue(property)).toBe(textareaStyle.getPropertyValue(property)));
     }
+    // The same room for the text, so that their lines wrap alike wherever scrollbars take up room.
+    await expect(layer.clientWidth).toBe(textbox.clientWidth);
     // The textarea draws the text; the layer's text is transparent and only its marks have a background.
     await expect(textareaStyle.backgroundColor).toBe("rgba(0, 0, 0, 0)");
     await expect(layerStyle.color).toBe("rgba(0, 0, 0, 0)");

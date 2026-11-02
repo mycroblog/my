@@ -30,11 +30,13 @@ const textArea = tv({
     // A text area with layers in its box (the highlight layer, or TextAreaAutocomplete's mirror, which is also it): the box
     // paints the field's background, so the layer behind the transparent textarea shows. The textarea is a block, so
     // the box is exactly its size, and its line height is rounded to whole pixels, so the scrolled layer lines up
-    // with it in Chromium and WebKit too (#1152).
+    // with it in Chromium and WebKit too (#1152). The layer keeps a scrollbar's gutter, so the textarea keeps one too:
+    // where scrollbars take up room, the layer's lines would otherwise wrap sooner than the textarea's.
     layered: {
       true: {
         control: "rounded-md bg-surface-sunken",
-        input: "relative block bg-transparent leading-[round(calc(var(--text-base--line-height)*1em),1px)]",
+        input:
+          "relative block scrollbar-gutter-stable bg-transparent leading-[round(calc(var(--text-base--line-height)*1em),1px)]",
       },
     },
   },
