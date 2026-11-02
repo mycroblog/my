@@ -41,8 +41,10 @@ export function createQueryClient(): QueryClient {
 }
 
 /**
- * The `retry` of the queries the app shell reads on every page (the viewer, the preferences, the instance, the
- * notification marker), which show their last value or a default while they fail: another try finds the same
+ * The `retry` of a query whose failure a user sees and tries again by hand (useLoadFailure, RegionError), with `false`
+ * when a route's loader has just tried it, and of the queries the app shell reads on every page (the viewer, the
+ * preferences, the instance, the notification marker), which show their last value or a default while they fail. Not
+ * the default of `createQueryClient`, because the loaders would retry too: another try finds the same
  * answer to a request the server refused (4xx), and a 429 only spends more of the rate limit before Retry-After
  * (lib/rateLimit.ts loads it again then). Anything else is tried once more, so that a failure shows in about a
  * second instead of after the default three tries (about seven seconds).

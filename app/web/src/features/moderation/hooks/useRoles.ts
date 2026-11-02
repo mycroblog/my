@@ -22,6 +22,7 @@ import {
   type RoleChangeKind,
   rolesQueryOptions,
 } from "../api/roles";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** One role of the instance as the account's page shows it. */
 export type RoleRow = {
@@ -55,9 +56,9 @@ function highest(roles: readonly AdminRole[]): AdminRole | undefined {
 export function useAccountRoles(accountId: string): AccountRoles {
   const api = useApi();
   const viewer = useSuspenseQuery(viewerQueryOptions(api)).data;
-  const all = useQuery(rolesQueryOptions(api));
-  const held = useQuery(accountRolesQueryOptions(api, accountId));
-  const own = useQuery(accountRolesQueryOptions(api, viewer.id));
+  const all = useQuery({ ...rolesQueryOptions(api), retry: shellQueryRetry });
+  const held = useQuery({ ...accountRolesQueryOptions(api, accountId), retry: shellQueryRetry });
+  const own = useQuery({ ...accountRolesQueryOptions(api, viewer.id), retry: shellQueryRetry });
   const queries = [all, held, own];
   const allFailure = useLoadFailure(all);
   const heldFailure = useLoadFailure(held);

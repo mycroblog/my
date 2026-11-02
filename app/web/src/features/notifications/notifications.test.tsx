@@ -965,14 +965,17 @@ describe("the notifications page", () => {
       let respond = (): Response => problem(503, "about:blank", "Service Unavailable");
       let release = (): void => undefined;
       let gate: Promise<void> | undefined;
+      const state = { requests: 0 };
       server.use(
         resumableSession(),
         http.get(`${apiBase}/notifications`, async () => {
+          state.requests += 1;
           await gate;
           return respond();
         }),
       );
       return {
+        state,
         /** Holds the next requests until `answer`. */
         hold() {
           gate = new Promise((resolve) => {
@@ -1009,6 +1012,17 @@ describe("the notifications page", () => {
       expect(screen.queryByRole("status", { name: /Loading/ })).not.toBeInTheDocument();
       list.answer(true);
       expect(await screen.findByRole("feed", { name: "Notifications" })).toBeInTheDocument();
+    });
+
+    test("a retry that fails again tries once more, not through the whole backoff", async () => {
+      const list = failingList();
+      const { user } = await renderApp({ path: "/notifications" });
+      await screen.findByText("Service Unavailable");
+
+      const before = list.state.requests;
+      await user.click(screen.getByRole("button", { name: "Try again" }));
+      expect(await within(screen.getByRole("main")).findByRole("alert")).toBeInTheDocument();
+      expect(list.state.requests - before).toBe(2);
     });
 
     test("announces a retry that fails again as an alert, and keeps focus on the button", async () => {

@@ -20,6 +20,7 @@ import {
   removeListMemberMutation,
 } from "../api/lists";
 import { isolate, useLimits } from "./names";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** One list in the dialog. */
 export type ListChoice = {
@@ -45,8 +46,8 @@ export function useAddToList(account: Account): AddToList {
   const limits = useLimits();
   const queryClient = useQueryClient();
   const notice = useNotice();
-  const lists = useQuery(listsQueryOptions(api));
-  const memberOf = useQuery(accountListsQueryOptions(api, account.id));
+  const lists = useQuery({ ...listsQueryOptions(api), retry: shellQueryRetry });
+  const memberOf = useQuery({ ...accountListsQueryOptions(api, account.id), retry: shellQueryRetry });
   const listsFailure = useLoadFailure(lists);
   const memberOfFailure = useLoadFailure(memberOf);
   const failedLoad = listsFailure.error ?? memberOfFailure.error;

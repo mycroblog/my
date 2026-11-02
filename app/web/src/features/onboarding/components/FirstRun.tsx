@@ -31,6 +31,7 @@ import { useOpenCompose } from "../../compose";
 import { AccountFollowItem } from "../../profile";
 import { type AccountSuggestion, suggestionsQueryOptions } from "../api/suggestions";
 import { type FirstRunStep, firstRunSteps, useFirstRun } from "../hooks/useFirstRun";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** The id of the suggestions' heading, which the checklist's follow step links to. */
 const suggestionsHeadingId = "suggested-accounts";
@@ -156,7 +157,7 @@ function Checklist({ run, hasSuggestions, onDismiss }: ChecklistProps) {
 function Suggestions() {
   const t = useT();
   const api = useApi();
-  const query = useQuery(suggestionsQueryOptions(api));
+  const query = useQuery({ ...suggestionsQueryOptions(api), retry: shellQueryRetry });
   const failure = useLoadFailure(query);
   let content: ReactNode;
   if (failure.error !== null) {
