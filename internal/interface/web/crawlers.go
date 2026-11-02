@@ -37,9 +37,9 @@ const HeaderNoIndex = "noindex"
 // /nodeinfo stay open, for the statistics and server lists that read NodeInfo (FR-402).
 var robotsDisallowed = []string{"/api/", "/oauth/", "/auth/", "/mail/", "/ap/", "/media/proxy/"}
 
-// aiTrainingPolicyToken is the robots.txt policy token of draft-kelley-aipref-training-preference-signal:
+// aiTrainingUsageAgent is the User-agent value, a policy token, of draft-kelley-aipref-training-preference-signal:
 // it names a use rather than a crawler, so its group states a preference and controls no crawling.
-const aiTrainingPolicyToken = "__usage_ai-training"
+const aiTrainingUsageAgent = "__usage_ai-training"
 
 // crawlerDirectives are the meta tags and headers that state a CrawlerPolicy on a response.
 type crawlerDirectives struct {
@@ -118,7 +118,7 @@ func robotsTxt(p instance.CrawlerPolicy) []byte {
 	}
 	if p.DeniesTraining() {
 		group("Crawlers that collect data to train AI models.", aiTrainingCrawlers)
-		group("A preference against AI training, whichever crawler fetches the content.", []string{aiTrainingPolicyToken})
+		group("A preference against AI training, whichever crawler fetches the content.", []string{aiTrainingUsageAgent})
 	}
 	if p.DeniesAIUse() {
 		group("Crawlers of AI search, assistants, and agents.", aiUseCrawlers)
