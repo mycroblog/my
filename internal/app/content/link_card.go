@@ -492,7 +492,7 @@ func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt str
 	}
 	unreadable := false
 	switch err := l.checkRobots(ctx, imageURL); {
-	case errors.Is(err, errRobotsDisallowed):
+	case errors.Is(err, errRobotsDisallowed), errors.Is(err, errRobotsForbidden):
 		return "", nil
 	case errors.Is(err, errRobotsAssumed):
 		// A file that cannot be read now takes no image away: one recorded earlier was allowed.

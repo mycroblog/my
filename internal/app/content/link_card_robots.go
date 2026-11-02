@@ -38,10 +38,12 @@ var ErrLinkCardRetryLater = errors.New("content: robots.txt cannot be read now")
 
 // errRobotsDisallowed reports a URL that robots.txt disallows. errRobotsAssumed reports a URL
 // refused only because robots.txt could not be read, which RFC 9309 §2.3.1.4 takes for a
-// complete disallow; for a page it ends with ErrLinkCardRetryLater.
+// complete disallow; for a page it ends with ErrLinkCardRetryLater. errRobotsForbidden is the same
+// for a destination that the HTTPClient refuses, which no retry changes.
 var (
 	errRobotsDisallowed = fmt.Errorf("%w: robots.txt disallows the URL", errLinkCardUnusable)
 	errRobotsAssumed    = fmt.Errorf("%w: robots.txt cannot be read, which disallows the URL", errLinkCardUnusable)
+	errRobotsForbidden  = fmt.Errorf("%w: robots.txt is at a refused destination", errLinkCardUnusable)
 )
 
 // ignoresRobots returns the link_cards_ignore_robots_txt instance setting.
@@ -68,6 +70,8 @@ func (l *LinkCards) checkRobots(ctx context.Context, u string) error {
 	switch {
 	case err != nil:
 		return err
+	case rules.Forbidden:
+		return fmt.Errorf("%w: %s", errRobotsForbidden, u)
 	case rules.Assumed:
 		return fmt.Errorf("%w: %s", errRobotsAssumed, u)
 	case !rules.toRules().Allowed(target):
@@ -80,8 +84,11 @@ func (l *LinkCards) checkRobots(ctx context.Context, u string) error {
 // "+" for allow or "-" for disallow, which is about as large as the lines of the file.
 type cachedRobots struct {
 	// Assumed is a file that could not be read, taken for a complete disallow.
-	Assumed bool     `json:"assumed,omitempty"`
-	Rules   []string `json:"rules,omitempty"`
+	Assumed bool `json:"assumed,omitempty"`
+	// Forbidden is a file at or behind a destination that the HTTPClient refuses. It is a complete
+	// disallow too, but waiting does not change it.
+	Forbidden bool     `json:"forbidden,omitempty"`
+	Rules     []string `json:"rules,omitempty"`
 }
 
 func newCachedRobots(rules content.RobotsRules) cachedRobots {
@@ -153,6 +160,9 @@ func (l *LinkCards) fetchRobots(ctx context.Context, origin string) (cachedRobot
 	})
 	if errors.Is(err, kernel.ErrTooManyRedirects) {
 		return cachedRobots{}, LinkCardRobotsTTL, nil
+	}
+	if errors.Is(err, kernel.ErrForbiddenDestination) {
+		return cachedRobots{Forbidden: true}, LinkCardRobotsUnreachableTTL, nil
 	}
 	if err != nil {
 		return unreachable("fetch", err)

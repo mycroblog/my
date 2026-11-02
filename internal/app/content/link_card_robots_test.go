@@ -144,7 +144,7 @@ func TestLinkCardRobotsResponses(t *testing.T) {
 			}
 			// Only a real disallow is remembered; a file that cannot be read now is tried again.
 			want := time.Duration(0)
-			if !tc.allowed && tc.ttl == day {
+			if !tc.allowed && (tc.ttl == day || tc.name == "a redirect that the guard refuses") {
 				want = content.LinkCardFailureTTL
 			}
 			if got := e.kv.ttl(content.LinkCardFailureNamespace, ""); got != want {
@@ -275,7 +275,7 @@ func TestLinkCardRobotsUnreachableRecovers(t *testing.T) {
 }
 
 // TestLinkCardRobotsUnreadableRetries checks that a file that cannot be read asks the job to try
-// again, and that the URL is not remembered as failed.
+// again, and that the URL is not remembered as failed; a refused destination asks for no retry.
 func TestLinkCardRobotsUnreadableRetries(t *testing.T) {
 	t.Parallel()
 	e := newRobotsCardsEnv(t)
@@ -287,6 +287,13 @@ func TestLinkCardRobotsUnreadableRetries(t *testing.T) {
 	}
 	if got := e.kv.ttl(content.LinkCardFailureNamespace, ""); got != 0 {
 		t.Errorf("failure memory for %v", got)
+	}
+
+	f := newRobotsCardsEnv(t)
+	f.web.pages[robotsFile] = robotsResponse{err: fmt.Errorf("dial: %w", kernel.ErrForbiddenDestination)}
+	f.repo.links["status:a"] = robotsPage
+	if _, err := f.cards.Fetch(t.Context(), "status:a"); err != nil {
+		t.Errorf("Fetch of a refused destination = %v", err)
 	}
 }
 
