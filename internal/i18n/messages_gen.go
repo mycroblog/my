@@ -3833,6 +3833,13 @@ func (l *Localizer) ServerPreviewDocumentCommerceDisclosure() string {
 	return l.format("server:preview.document.commerce_disclosure", nil)
 }
 
+// ServerPreviewDocumentLinkCardCrawler formats "server:preview.document.link_card_crawler". Name of the page that tells site operators about the crawler that fetches the links in posts, in the link preview of that page (/about/crawler).
+//
+//	en: Link card crawler
+func (l *Localizer) ServerPreviewDocumentLinkCardCrawler() string {
+	return l.format("server:preview.document.link_card_crawler", nil)
+}
+
 // ServerPreviewDocumentPrivacyPolicy formats "server:preview.document.privacy_policy". Name of the instance's privacy policy in the link preview of its page (/about/privacy).
 //
 //	en: Privacy policy

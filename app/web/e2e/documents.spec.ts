@@ -130,6 +130,8 @@ async function administratorServer(page: Page, origin: string) {
         sends_email: true,
         search_indexing: "deny",
         ai_usage: "deny",
+        link_cards_enabled: true,
+        link_cards_ignore_robots_txt: false,
         rules: [],
         ...(texts.some((text) => text.key === "terms") && { terms_url: `${origin}/about/terms` }),
         ...(texts.some((text) => text.key === "privacy_policy") && { privacy_policy_url: `${origin}/about/privacy` }),

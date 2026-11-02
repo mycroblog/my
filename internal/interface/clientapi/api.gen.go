@@ -8858,6 +8858,14 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
+	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// false, the server fetches nothing for link cards.
+	LinkCardsEnabled bool `json:"link_cards_enabled"`
+
+	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
+	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+	LinkCardsIgnoreRobotsTxt bool `json:"link_cards_ignore_robots_txt"`
+
 	// Logo A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
 	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),

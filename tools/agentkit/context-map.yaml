@@ -255,8 +255,10 @@ entries:
     notes:
       - "Visibility checks go through the single domain policy function; never re-implement them."
   - name: link-card-crawler
-    paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go"]
-    docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/adr/0131-link-card-robots-txt.md#decision決定"]
+    paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go", "app/web/src/features/about/components/LinkCardCrawler.tsx"]
+    docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/adr/0131-link-card-robots-txt.md#decision決定", "docs/architecture/web-client/screens/about-crawler.md"]
+    notes:
+      - "The page at /about/crawler states what this code does to site operators: a change of what the crawler sends, fetches, or obeys changes the page (locales: about.link_card_crawler.*) too."
     userdocs: ["docs/operations/link-previews.md#cards-of-links-in-posts", "docs/operations/crawlers.md#this-servers-own-fetching"]
   - name: text-tokens
     paths: ["pkg/testkit/fixtures/text/**", "internal/app/content/text.go", "internal/domain/content/custom_emoji.go", "app/web/src/lib/textTokens.ts", "app/web/src/lib/textHighlights.ts"]

@@ -30,6 +30,9 @@ export function signInPath(returnTo: string): string {
 /** The instance's information page (FR-718), which the shell's third column and the landing page link to. */
 export const aboutPath = "/about";
 
+/** The page about the instance's link card crawler, for the operators of the websites it fetches. */
+export const aboutCrawlerPath = "/about/crawler";
+
 /** The moderation page of one appeal of a moderation action, which an `admin_appeal` notification leads to. */
 export function moderationAppealPath(id: string): string {
   return `/moderation/appeals/${id}`;

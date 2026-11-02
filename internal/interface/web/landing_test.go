@@ -116,6 +116,32 @@ func TestAboutPreview(t *testing.T) {
 	}
 }
 
+// TestCrawlerPagePreview checks that the page about the link card crawler is served to everyone,
+// signed out and to crawlers, and previews the instance under its own address and title.
+func TestCrawlerPagePreview(t *testing.T) {
+	_, mux := newHandler(t, web.Options{DefaultLocale: locale("ja"), InstanceName: named("例のサーバー")})
+	rec := get(mux, "/about/crawler", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /about/crawler = %d", rec.Code)
+	}
+	got := metas(t, rec.Body.String())
+	want := map[string]string{
+		"og:type":        "website",
+		"og:site_name":   "例のサーバー",
+		"og:title":       "リンクのカードのクローラー | 例のサーバー",
+		"og:url":         "https://social.example/about/crawler",
+		"link:canonical": "https://social.example/about/crawler",
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %q, want %q", k, got[k], v)
+		}
+	}
+	if rec.Header().Get("ETag") == "" || rec.Header().Get("ETag") == get(mux, "/about", nil).Header().Get("ETag") {
+		t.Errorf("ETag of /about/crawler = %q, want its own", rec.Header().Get("ETag"))
+	}
+}
+
 // documents is a fake web.Documents: the published documents, or err.
 type documents struct {
 	published map[instance.TextKey]bool
