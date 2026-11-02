@@ -132,6 +132,9 @@ type requestRoute struct {
 	surface string
 	// method is the http.request.method of the request, for the place of its error reports.
 	method string
+	// panicked tells that a handler of the request panicked, which is a server error even when
+	// the client has left.
+	panicked bool
 }
 
 type requestRouteKey struct{}

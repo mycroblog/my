@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 )
@@ -12,7 +13,8 @@ import (
 // logged with a request's context carries that request's ID as request_id, and every record
 // carries the severity of Cloud Logging next to its level (logSeverity).
 func NewLogger(w io.Writer, level slog.Leveler) *slog.Logger {
-	return slog.New(requestIDHandler{slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level, ReplaceAttr: logSeverity})})
+	json := slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level, ReplaceAttr: logSeverity})
+	return slog.New(requestIDHandler{clientGoneHandler{json}})
 }
 
 // logSeverity is the ReplaceAttr of the process logger: it writes the record's level as level,
@@ -67,6 +69,39 @@ func (h requestIDHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 func (h requestIDHandler) WithGroup(name string) slog.Handler {
 	return requestIDHandler{h.Handler.WithGroup(name)}
+}
+
+// clientGoneHandler writes the ERROR lines of an HTTP request whose client has left at INFO: the
+// request's context was canceled, so its error is most likely only that, and nothing here needs
+// the operator (see clientGone for the error reports). The other records pass unchanged.
+type clientGoneHandler struct{ slog.Handler }
+
+func (h clientGoneHandler) Handle(ctx context.Context, r slog.Record) error {
+	if r.Level == slog.LevelError && clientLeft(ctx) {
+		r.Level = slog.LevelInfo
+		if !h.Enabled(ctx, r.Level) {
+			return nil
+		}
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+func (h clientGoneHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return clientGoneHandler{h.Handler.WithAttrs(attrs)}
+}
+
+func (h clientGoneHandler) WithGroup(name string) slog.Handler {
+	return clientGoneHandler{h.Handler.WithGroup(name)}
+}
+
+// clientLeft reports whether ctx is the context of an HTTP request whose client has left. The
+// server cancels that context when the connection closes.
+func clientLeft(ctx context.Context) bool {
+	if !errors.Is(ctx.Err(), context.Canceled) {
+		return false
+	}
+	_, ok := ctx.Value(requestRouteKey{}).(*requestRoute)
+	return ok
 }
 
 type requestIDKey struct{}

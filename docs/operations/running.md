@@ -39,7 +39,7 @@ so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-b
 
 | Line (`msg`) | Fields |
 | --- | --- |
-| `http request` (`INFO`; health checks use `DEBUG`) | `http.request.method`, `http.route`, `my.surface` and `http.response.status_code` (a number) have the same values as the labels of `http.server.request.duration`. Also `duration_seconds` (a number of seconds), `url.path` (the path without the query string), `http.response.body.size` and `request_id`. `http.route` and `my.surface` are absent for requests that did not reach a route (health checks, requests refused before routing), and the metric does not count them |
+| `http request` (`INFO`; health checks use `DEBUG`) | `http.request.method`, `http.route`, `my.surface` and `http.response.status_code` (a number) have the same values as the labels of `http.server.request.duration`. Also `duration_seconds` (a number of seconds), `url.path` (the path without the query string), `http.response.body.size` and `request_id`. `http.route` and `my.surface` are absent for requests that did not reach a route (health checks, requests refused before routing), and the metric does not count them. A request whose client left before the server could answer has the status `499` instead of a 5xx, unless a handler panicked; the client received nothing, so it does not count as a server error |
 | `job` (`INFO` on success, `WARN` for `retry`, `ERROR` for `dead`) | `my.job.type` and `my.outcome` have the same values as the labels of `my.job.duration`. Also `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, and `error` on failure |
 | `error report` (`ERROR`; `CRITICAL` for a failure that stops the process) | One line per reported error ([Error reports](#error-reports)) |
 
@@ -55,6 +55,8 @@ The server reports the errors that need the operator's attention as one `error r
 - a failure to start: an invalid configuration, or a database or adapter that cannot be set up.
 
 4xx responses, job retries, the maintenance mode, failed readiness checks, requests whose client went away, and failures caused by other servers are not reported; the metrics and the other log lines cover them.
+
+When a request's client goes away, the server's other error lines for that request are written at `INFO` instead of `ERROR`, since most of them only say that the request was canceled.
 
 The line is in the form Google Cloud Error Reporting reads: on Cloud Run, the reports appear in Error Reporting grouped as errors without any setup. On other platforms it is a plain JSON line:
 
