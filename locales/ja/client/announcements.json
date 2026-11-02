@@ -67,8 +67,16 @@
     "defaultMessage": "{date}まで掲載",
     "description": "When an announcement stops showing. {date} is the date and time, formatted."
   },
-  "announcements.withdrawn": {
-    "defaultMessage": "このお知らせは取り下げられたため、表示されません。",
-    "description": "Note above the list of announcements when the page was opened for one (from a notification) that the administrators withdrew."
+  "announcements.not_found.title": {
+    "defaultMessage": "お知らせが見つかりません",
+    "description": "Heading of the page of an announcement that was withdrawn or does not exist."
+  },
+  "announcements.not_found.body": {
+    "defaultMessage": "このお知らせは取り下げられたか、このアドレスのお知らせはありません。",
+    "description": "Text of the page of an announcement that was withdrawn or does not exist, above the link to the list of announcements."
+  },
+  "announcements.page.failed": {
+    "defaultMessage": "このお知らせを読み込めませんでした",
+    "description": "Heading of the error in place of an announcement on its page when it could not be loaded."
   }
 }

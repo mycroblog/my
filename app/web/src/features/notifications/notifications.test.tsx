@@ -398,8 +398,8 @@ describe("the notifications page", () => {
     const reads: string[] = [];
     server.use(
       http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })),
-      http.get(`${apiBase}/announcements/history`, () =>
-        HttpResponse.json({ items: [{ ...announcement, read: reads.includes(announcement.id) }] }),
+      http.get(`${apiBase}/announcements/${announcement.id}`, () =>
+        HttpResponse.json({ ...announcement, read: reads.includes(announcement.id) }),
       ),
       http.post(`${apiBase}/announcements/:id/read`, ({ params }) => {
         reads.push(String(params["id"]));
@@ -414,12 +414,12 @@ describe("the notifications page", () => {
     // No one sent it: the announcement's mark stands in the avatar's place.
     expect(row.innerHTML).toMatch(/data-notification-kind="announcement"/);
     const link = within(row).getByRole("link", { name: "Maintenance on Sunday" });
-    expect(link).toHaveAttribute("href", `/announcements?id=${announcement.id}`);
+    expect(link).toHaveAttribute("href", `/announcements/${announcement.id}`);
 
     await user.click(link);
 
-    const heading = await screen.findByRole("heading", { level: 2, name: /^Maintenance on Sunday/ });
-    expect(router.state.location.pathname).toBe("/announcements");
+    const heading = await screen.findByRole("heading", { level: 1, name: /^Maintenance on Sunday/ });
+    expect(router.state.location.pathname).toBe(`/announcements/${announcement.id}`);
     await waitFor(() => {
       expect(reads).toEqual([announcement.id]);
     });
