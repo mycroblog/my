@@ -211,6 +211,14 @@
     "defaultMessage": "取得に失敗した URL は、24 時間は要求しません。",
     "description": "That the crawler remembers failures."
   },
+  "about.link_card_crawler.frequency.host": {
+    "defaultMessage": "ホストへの要求は同時に 1 つで、あいだを 1 秒以上空けます。リダイレクトと、その要求に必要な robots.txt だけは続けて送ります。",
+    "description": "The limit of the crawler per host."
+  },
+  "about.link_card_crawler.frequency.throttled": {
+    "defaultMessage": "ホストが 429 か 503 を返すと、Retry-After の時間 (最長 1 時間。なければ 1 分) はそのホストへ要求しません。同じ URL がそう 5 回返したら、取得に失敗したものとして扱います。",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal."
+  },
   "about.link_card_crawler.frequency.robots": {
     "defaultMessage": "robots.txt は、オリジン (スキーム・ホスト・ポート) ごとに 1 日 1 回ほど読みます。読めないとき (429・5xx・ネットワークの失敗) は、そのオリジンからは何も取得せず、1 時間後に試します。",
     "description": "How often the crawler reads robots.txt. Shown only while the server reads it."

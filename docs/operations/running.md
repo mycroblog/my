@@ -40,7 +40,7 @@ so on Cloud Run with `metrics_exporter = none` you can build Cloud Logging log-b
 | Line (`msg`) | Fields |
 | --- | --- |
 | `http request` (`INFO`; health checks use `DEBUG`) | `http.request.method`, `http.route`, `my.surface` and `http.response.status_code` (a number) have the same values as the labels of `http.server.request.duration`. Also `duration_seconds` (a number of seconds), `url.path` (the path without the query string), `http.response.body.size` and `request_id`. `http.route` and `my.surface` are absent for requests that did not reach a route (health checks, requests refused before routing), and the metric does not count them. A request whose client left before the server could answer has the status `499` instead of a 5xx, unless a handler panicked; the client received nothing, so it does not count as a server error |
-| `job` (`INFO` on success, `WARN` for `retry`, `ERROR` for `dead`) | `my.job.type` and `my.outcome` have the same values as the labels of `my.job.duration`. Also `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, and `error` on failure |
+| `job` (`INFO` on success and for `postponed`, `WARN` for `retry`, `ERROR` for `dead`) | `my.job.type` and `my.outcome` have the same values as the labels of `my.job.duration`. Also `duration_seconds` (`my.job.duration`), `wait_seconds` (`my.job.wait`), `job_id`, `attempt`, and `error` on failure |
 | `error report` (`ERROR`; `CRITICAL` for a failure that stops the process) | One line per reported error ([Error reports](#error-reports)) |
 
 ### Error reports
@@ -138,8 +138,9 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.move.activities` | Counter | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: whether a received `Move` was recorded, and why it was dropped) |
 | `my.delivery.attempts` | Counter | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` covers a 410 and deliveries skipped because the server is unavailable or suspended) |
 | `my.delivery.duration` | Histogram, seconds | `my.outcome` |
-| `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead`) |
+| `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` is a run that did no work and uses none of the job's attempts, such as a link card fetch that waits for its host) |
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
+| `my.link_card.host_pauses` | Counter | `http.response.status_code` (`429` / `503`). One per pause of the link card fetches from a host; see [Link previews](link-previews.md#limits-per-host) |
 | `my.timeline.delivery.lag` | Histogram, seconds | None (from the creation of a local post to its write into home timelines and the notification to streams) |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` for the streams of the local and federated timelines, `voice` for the streams of the voice chat rooms) |
 | `my.accounts.registered` | Counter | None |

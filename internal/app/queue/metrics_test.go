@@ -65,18 +65,20 @@ func (s *jobsSource) Claim(_ context.Context, _ string, now time.Time, _ time.Du
 
 func TestRunnerRecordsJobMetrics(t *testing.T) {
 	src := &jobsSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, jobs: []queue.Job{
-		{ID: testID(1), Type: "ok"}, {ID: testID(2), Type: "flaky"}, {ID: testID(3), Type: "bad"}, {ID: testID(4), Type: "unknown.type"},
+		{ID: testID(1), Type: "ok"}, {ID: testID(2), Type: "flaky"}, {ID: testID(3), Type: "bad"}, {ID: testID(4), Type: "unknown.type"}, {ID: testID(5), Type: "later"},
 	}}
 	reg := &queue.JobHandlerRegistry{}
 	reg.Register("ok", func(context.Context, queue.Job) queue.Result { return queue.Done() })
 	reg.Register("flaky", func(context.Context, queue.Job) queue.Result { return queue.Retry(0, errors.New("later")) })
 	reg.Register("bad", func(context.Context, queue.Job) queue.Result { return queue.Fail(errors.New("never")) })
+	reg.Register("later", func(context.Context, queue.Job) queue.Result { return queue.Postpone(time.Second) })
 	m := &recordingMeter{values: map[string][]float64{}}
 	r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Meter: m})
-	if n, err := r.Drain(t.Context()); err != nil || n != 4 {
+	if n, err := r.Drain(t.Context()); err != nil || n != 5 {
 		t.Fatalf("Drain() = %d, %v", n, err)
 	}
 	for _, key := range []string{
+		"my.job.duration my.job.type=later my.outcome=postponed",
 		"my.job.duration my.job.type=ok my.outcome=success",
 		"my.job.duration my.job.type=flaky my.outcome=retry",
 		"my.job.duration my.job.type=bad my.outcome=dead",

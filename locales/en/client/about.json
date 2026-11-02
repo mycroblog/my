@@ -211,6 +211,14 @@
     "defaultMessage": "A URL that fails is not requested again for 24 hours.",
     "description": "That the crawler remembers failures."
   },
+  "about.link_card_crawler.frequency.host": {
+    "defaultMessage": "It makes one request at a time to a host, with at least a second between them. Only the redirects of a request and the robots.txt it needs come with it.",
+    "description": "The limit of the crawler per host."
+  },
+  "about.link_card_crawler.frequency.throttled": {
+    "defaultMessage": "When a host answers 429 or 503, the crawler requests nothing from it for the time in Retry-After, at most an hour, or for a minute without one. After 5 such answers for a URL, it counts the URL as failed.",
+    "description": "That the crawler stops for a host that asks it to. 429, 503 and Retry-After are literal."
+  },
   "about.link_card_crawler.frequency.robots": {
     "defaultMessage": "robots.txt is read about once a day per origin (scheme, host, and port). When it cannot be read (429, 5xx, or a network failure), the crawler fetches nothing from the origin and tries again an hour later.",
     "description": "How often the crawler reads robots.txt. Shown only while the server reads it."

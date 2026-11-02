@@ -35,7 +35,7 @@ func (a *App) setUpLinkCards(cfg *config.Config, repo content.LinkCardRepository
 		},
 		Language:   a.Instance.DefaultLocale,
 		LocalHosts: localHosts(cfg),
-		Clock:      a.Clock, IDs: a.IDs, Logger: a.Logger,
+		Clock:      a.Clock, IDs: a.IDs, Logger: a.Logger, Meter: a.Meter,
 	})
 	a.LinkCards.RegisterProjectors(a.Projectors)
 	a.LinkCards.RegisterJobs(a.Handlers, a.Scheduler)

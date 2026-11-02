@@ -164,6 +164,8 @@ type LinkCardsDeps struct {
 	Clock       kernel.Clock
 	IDs         kernel.IDGenerator
 	Logger      *slog.Logger
+	// Meter records my.link_card.host_pauses; nil records nothing.
+	Meter kernel.Meter
 }
 
 // LinkCards fetches, keeps, and presents the cards of the links in statuses (ADR-0062): a
@@ -172,7 +174,8 @@ type LinkCardsDeps struct {
 // shared by every status that links the URL, with its image checked once; the reader presents
 // the card with its image through the media proxy.
 type LinkCards struct {
-	d LinkCardsDeps
+	d          LinkCardsDeps
+	hostPauses kernel.Counter
 }
 
 // NewLinkCards returns LinkCards on d.
@@ -185,7 +188,7 @@ func NewLinkCards(d LinkCardsDeps) *LinkCards {
 			return rand.N(MaxRemoteLinkCardDelay + time.Second) //nolint:gosec // spreading fetches needs no cryptographic randomness
 		}
 	}
-	return &LinkCards{d: d}
+	return &LinkCards{d: d, hostPauses: kernel.MeterOrNop(d.Meter).Counter(LinkCardHostPauses)}
 }
 
 // fetchLinkCardPayload is the payload of JobFetchLinkCard.
@@ -254,7 +257,10 @@ func (l *LinkCards) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sch
 			return queue.Fail(fmt.Errorf("link card payload: %q", j.Payload))
 		}
 		retry, err := l.Fetch(ctx, p.StatusID)
+		var postponed *LinkCardPostponed
 		switch {
+		case errors.As(err, &postponed):
+			return queue.Postpone(postponed.After)
 		case errors.Is(err, ErrLinkCardRetryLater):
 			return queue.RetryRemote(LinkCardRobotsUnreachableTTL, err)
 		case err != nil:
@@ -312,30 +318,42 @@ func (l *LinkCards) imageRefused(ctx context.Context, host string) (bool, error)
 	return l.d.Domains.ImagesStopped(ctx, host)
 }
 
+// checkHostRefused ends a fetch at a host that refused reports, with an error wrapping
+// errLinkCardRefused.
+func checkHostRefused(ctx context.Context, url string, refused func(ctx context.Context, host string) (bool, error)) error {
+	switch stop, err := refused(ctx, content.LinkHost(url)); {
+	case err != nil:
+		return err
+	case stop:
+		return fmt.Errorf("%w: %s", errLinkCardRefused, url)
+	}
+	return nil
+}
+
 // checkRedirectHost returns the HTTPRequest.CheckRedirect that ends a fetch at a redirect to a
-// host that refused reports, with an error wrapping errLinkCardRefused.
-func (l *LinkCards) checkRedirectHost(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
+// host that refused reports, with an error wrapping errLinkCardRefused, and takes the hop's host
+// into hold, with the error of enter.
+func (l *LinkCards) checkRedirectHost(hold *linkCardHostHold, refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
 	return func(ctx context.Context, url string) error {
-		switch stop, err := refused(ctx, content.LinkHost(url)); {
-		case err != nil:
+		if err := checkHostRefused(ctx, url, refused); err != nil {
 			return err
-		case stop:
-			return fmt.Errorf("%w: %s", errLinkCardRefused, url)
 		}
-		return nil
+		return hold.enter(ctx, content.LinkHost(url))
 	}
 }
 
 // checkRedirect is checkRedirectHost for the fetches of a page and an image, which also stop at
 // a redirect to a URL that its origin's robots.txt refuses, before requesting it, with the error
 // of checkRobots. The last hop is the final URL, so no response comes from a refused URL.
-func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
-	checkHost := l.checkRedirectHost(refused)
+func (l *LinkCards) checkRedirect(hold *linkCardHostHold, refused func(ctx context.Context, host string) (bool, error)) func(ctx context.Context, url string) error {
 	return func(ctx context.Context, url string) error {
-		if err := checkHost(ctx, url); err != nil {
+		if err := checkHostRefused(ctx, url, refused); err != nil {
 			return err
 		}
-		return l.checkRobots(ctx, url)
+		if err := l.checkRobots(ctx, hold, url); err != nil {
+			return err
+		}
+		return hold.enter(ctx, content.LinkHost(url))
 	}
 }
 
@@ -346,8 +364,11 @@ func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string)
 // A robots.txt that cannot be read fails with an error wrapping ErrLinkCardRetryLater and leaves
 // everything as it is. A URL that robots.txt refuses is remembered as a failure, and loses the card it has when the
 // file says so, but not when the file only could not be read (ADR-0131 §4).
+// A fetch that a host's limits hold back, or that the host answered with a 429 or a 503, fails with
+// a *LinkCardPostponed and leaves everything as it is, except that a card that waits for its image
+// keeps the page already read (linkCardPending).
 // It reports retry when another job is fetching the URL. Failures of the page are remembered and
-// are not errors; an error is a failure of the stores.
+// are not errors; any other error is a failure of the stores.
 func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err error) {
 	if on, err := l.enabled(ctx); err != nil || !on {
 		return false, err
@@ -394,6 +415,11 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 		}
 	}()
 	card, err := l.fetchCard(ctx, u)
+	var postponed *LinkCardPostponed
+	if errors.As(err, &postponed) {
+		l.d.Logger.DebugContext(ctx, "link card fetch postponed", slog.String("url", u), slog.String("host", postponed.Host), slog.Duration("after", postponed.After))
+		return false, err
+	}
 	if errors.Is(err, errLinkCardRefused) {
 		l.d.Logger.DebugContext(ctx, "link card redirected to a refused host", slog.String("url", u), slog.Any("error", err))
 		return false, nil
@@ -424,49 +450,33 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 	return false, l.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return l.d.Repository.UpsertLinkCard(ctx, tx, card) })
 }
 
-// fetchCard fetches the page of u and its image, and returns the card. A page that makes no
-// card fails with errLinkCardUnusable, and a URL that robots.txt refuses with the error of
-// checkRobots, which wraps it.
+// fetchCard returns the card of u: it reads the page, or the page that a postponed fetch kept, and
+// fetches its image. A page that makes no card fails with errLinkCardUnusable, and a URL that
+// robots.txt refuses with the error of checkRobots, which wraps it. A fetch postponed for the image
+// keeps the page, so that the job does not request it again.
 func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, error) {
-	if err := l.checkRobots(ctx, u); err != nil {
+	page, kept, err := l.keptPage(ctx, u)
+	if err != nil {
 		return content.LinkCard{}, err
 	}
-	header := http.Header{"Accept": {"text/html, application/xhtml+xml"}}
-	if l.d.Language != nil {
-		if lang, err := l.d.Language(ctx); err == nil && lang != "" {
-			header.Set("Accept-Language", lang)
-		}
-	}
-	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
-		URL: u, Purpose: kernel.HTTPPurposeHTML, Agent: kernel.HTTPAgentLinkCard, Header: header,
-		CheckRedirect: l.checkRedirect(l.fetchRefused),
-	})
-	if errors.Is(err, errLinkCardRefused) {
-		return content.LinkCard{}, err
-	}
-	if err != nil {
-		return content.LinkCard{}, fmt.Errorf("%w: fetch %s: %w", errLinkCardUnusable, u, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	ct := resp.Header.Get("Content-Type")
-	mt, _, _ := mime.ParseMediaType(ct)
-	if resp.StatusCode != http.StatusOK || (mt != "text/html" && mt != "application/xhtml+xml") {
-		return content.LinkCard{}, fmt.Errorf("%w: %s answered %d %q", errLinkCardUnusable, u, resp.StatusCode, ct)
-	}
-	page, err := ParseLinkCardPage(resp.Body, ct, resp.URL)
-	if err != nil {
-		return content.LinkCard{}, fmt.Errorf("%w: %w", errLinkCardUnusable, err)
-	}
-	page.ApplyRobots(resp.Header.Values("X-Robots-Tag"))
-	card := content.LinkCard{
-		URL: u, CardURL: page.URL, Title: page.Title, Description: page.Description, SiteName: page.SiteName,
-		AuthorName: page.AuthorName, PublishedAt: page.PublishedAt, Language: page.Language, FetchedAt: l.d.Clock.Now(),
-	}
-	if page.ImageURL != "" {
-		hosts := uniqueHosts(u, resp.URL, card.CardURL, page.ImageURL)
-		if card.ImageMediaID, err = l.image(ctx, hosts, page.ImageURL, page.ImageAlt); err != nil {
+	if !kept {
+		if page, err = l.fetchPage(ctx, u); err != nil {
 			return content.LinkCard{}, err
 		}
+	}
+	card := page.Card
+	if page.ImageURL != "" {
+		hosts := uniqueHosts(u, page.FinalURL, card.CardURL, page.ImageURL)
+		if card.ImageMediaID, err = l.image(ctx, hosts, page.ImageURL, page.ImageAlt); err != nil {
+			var postponed *LinkCardPostponed
+			if errors.As(err, &postponed) {
+				l.keepPage(ctx, u, page)
+			}
+			return content.LinkCard{}, err
+		}
+	}
+	if kept {
+		l.dropPage(ctx, u)
 	}
 	if page.Creator != "" && l.d.Creators != nil {
 		cctx, cancel := context.WithTimeout(ctx, LinkCardCreatorTimeout)
@@ -480,18 +490,72 @@ func (l *LinkCards) fetchCard(ctx context.Context, u string) (content.LinkCard, 
 	return card, nil
 }
 
+// fetchPage requests the page of u, with its robots.txt when that is not kept, as one fetch of its
+// hosts, and returns what the card takes from it.
+func (l *LinkCards) fetchPage(ctx context.Context, u string) (linkCardPending, error) {
+	hold := l.newHostHold()
+	defer hold.leave(ctx)
+	if err := l.checkRobots(ctx, hold, u); err != nil {
+		return linkCardPending{}, err
+	}
+	if err := hold.enter(ctx, content.LinkHost(u)); err != nil {
+		return linkCardPending{}, err
+	}
+	header := http.Header{"Accept": {"text/html, application/xhtml+xml"}}
+	if l.d.Language != nil {
+		if lang, err := l.d.Language(ctx); err == nil && lang != "" {
+			header.Set("Accept-Language", lang)
+		}
+	}
+	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
+		URL: u, Purpose: kernel.HTTPPurposeHTML, Agent: kernel.HTTPAgentLinkCard, Header: header,
+		CheckRedirect: l.checkRedirect(hold, l.fetchRefused),
+	})
+	var postponed *LinkCardPostponed
+	if errors.Is(err, errLinkCardRefused) || errors.As(err, &postponed) {
+		return linkCardPending{}, err
+	}
+	if err != nil {
+		return linkCardPending{}, fmt.Errorf("%w: fetch %s: %w", errLinkCardUnusable, u, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := hold.throttled(ctx, u, resp); err != nil {
+		return linkCardPending{}, err
+	}
+	ct := resp.Header.Get("Content-Type")
+	mt, _, _ := mime.ParseMediaType(ct)
+	if resp.StatusCode != http.StatusOK || (mt != "text/html" && mt != "application/xhtml+xml") {
+		return linkCardPending{}, fmt.Errorf("%w: %s answered %d %q", errLinkCardUnusable, u, resp.StatusCode, ct)
+	}
+	page, err := ParseLinkCardPage(resp.Body, ct, resp.URL)
+	if err != nil {
+		return linkCardPending{}, fmt.Errorf("%w: %w", errLinkCardUnusable, err)
+	}
+	page.ApplyRobots(resp.Header.Values("X-Robots-Tag"))
+	return linkCardPending{
+		Card: content.LinkCard{
+			URL: u, CardURL: page.URL, Title: page.Title, Description: page.Description, SiteName: page.SiteName,
+			AuthorName: page.AuthorName, PublishedAt: page.PublishedAt, Language: page.Language, FetchedAt: l.d.Clock.Now(),
+		},
+		FinalURL: resp.URL, ImageURL: page.ImageURL, ImageAlt: page.ImageAlt, Creator: page.Creator,
+	}, nil
+}
+
 // image returns the media file of the image at imageURL of a card that touches hosts: the one
 // recorded for the URL before, or the image fetched once, checked, and recorded with its size
 // and blurhash. It returns "" when no image is fetched from one of the hosts, robots.txt refuses
 // its URL, or the image cannot be used, so that the card has no image (ADR-0062 §3, §7, ADR-0131 §4).
+// A fetch that the limits of a host hold back fails with a *LinkCardPostponed.
 func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt string) (string, error) {
 	for _, host := range hosts {
 		if refused, err := l.imageRefused(ctx, host); err != nil || refused {
 			return "", err
 		}
 	}
+	hold := l.newHostHold()
+	defer hold.leave(ctx)
 	unreadable := false
-	switch err := l.checkRobots(ctx, imageURL); {
+	switch err := l.checkRobots(ctx, hold, imageURL); {
 	case errors.Is(err, errRobotsDisallowed), errors.Is(err, errRobotsForbidden):
 		return "", nil
 	case errors.Is(err, errRobotsAssumed):
@@ -516,9 +580,9 @@ func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt str
 	if unreadable {
 		return "", nil
 	}
-	m, ok := l.probeImage(ctx, imageURL)
-	if !ok {
-		return "", nil
+	m, ok, err := l.probeImage(ctx, hold, imageURL)
+	if err != nil || !ok {
+		return "", err
 	}
 	m.MediaID, m.Description = l.d.IDs.NewID(), alt
 	err = l.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -539,24 +603,37 @@ func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt str
 
 // probeImage fetches an image, checks its format against the allow list of ADR-0019 §8 (SVG
 // and anything else is refused) and its size against the limits, and reads its size and
-// blurhash. It reports false for an image that cannot be used.
-func (l *LinkCards) probeImage(ctx context.Context, imageURL string) (content.LinkCardMedia, bool) {
-	fail := func(why string, err error) (content.LinkCardMedia, bool) {
+// blurhash. It reports false for an image that cannot be used. The only errors are a
+// *LinkCardPostponed and a failure of the stores.
+func (l *LinkCards) probeImage(ctx context.Context, hold *linkCardHostHold, imageURL string) (content.LinkCardMedia, bool, error) {
+	fail := func(why string, err error) (content.LinkCardMedia, bool, error) {
 		l.d.Logger.DebugContext(ctx, "link card image not used", slog.String("url", imageURL), slog.String("why", why), slog.Any("error", err))
-		return content.LinkCardMedia{}, false
+		return content.LinkCardMedia{}, false, nil
+	}
+	if err := hold.enter(ctx, content.LinkHost(imageURL)); err != nil {
+		return content.LinkCardMedia{}, false, err
 	}
 	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
 		URL: imageURL, Purpose: kernel.HTTPPurposeImage, Agent: kernel.HTTPAgentLinkCard, Header: http.Header{"Accept": {"image/*"}},
-		CheckRedirect: l.checkRedirect(l.imageRefused),
+		CheckRedirect: l.checkRedirect(hold, l.imageRefused),
 	})
+	var postponed *LinkCardPostponed
+	if errors.As(err, &postponed) {
+		return content.LinkCardMedia{}, false, err
+	}
 	if err != nil {
 		return fail("fetch", err)
+	}
+	if err := hold.throttled(ctx, imageURL, resp); err != nil {
+		_ = resp.Body.Close()
+		return content.LinkCardMedia{}, false, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
 		return fail(fmt.Sprintf("status %d", resp.StatusCode), nil)
 	}
 	data, err := resp.ReadAll()
+	hold.leave(ctx) // the request is over: what follows takes no part of the host's turn
 	if err != nil {
 		return fail("read", err)
 	}
@@ -570,7 +647,7 @@ func (l *LinkCards) probeImage(ctx context.Context, imageURL string) (content.Li
 	}
 	return content.LinkCardMedia{
 		RemoteURL: imageURL, ContentType: contentType, Width: out.Width, Height: out.Height, Blurhash: out.Blurhash,
-	}, true
+	}, true, nil
 }
 
 // CleanupResult counts what one Cleanup deleted.

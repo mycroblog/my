@@ -81,6 +81,7 @@ func QueueContract(t *testing.T, newHarness QueueFactory) {
 		{"DeduplicatesPendingJobsByIdempotencyKey", queueDeduplicates},
 		{"RetriesWithExponentialBackoffAndJitter", queueRetriesWithBackoff},
 		{"RetriesAfterTheRequestedDelay", queueRetriesAfterDelay},
+		{"PostponesWithoutUsingAnAttempt", queuePostponesWithoutAnAttempt},
 		{"RetriesPanickingHandlers", queueRetriesPanics},
 		{"MovesFailedJobsToDeadJobs", queueMovesFailedJobsToDead},
 		{"MovesExhaustedJobsToDeadJobs", queueMovesExhaustedJobsToDead},
@@ -346,6 +347,34 @@ func queueRetriesAfterDelay(t *testing.T, newHarness QueueFactory) {
 	f.drain()
 	if j := f.wantRuns(2)[1]; j.Attempt != 2 {
 		t.Errorf("retry has Attempt %d, want 2", j.Attempt)
+	}
+}
+
+// queuePostponesWithoutAnAttempt postpones a job more times than it has attempts: it never becomes
+// a dead job, its attempt stays what the run before it left, and so does its last error.
+func queuePostponesWithoutAnAttempt(t *testing.T, newHarness QueueFactory) {
+	boom := errors.New("first run")
+	results := []queue.Result{queue.Retry(time.Hour, boom)}
+	for range contractPolicy.MaxAttempts + 2 {
+		results = append(results, queue.Postpone(time.Hour))
+	}
+	f := newQueueFixture(t, newHarness, results...)
+	f.enqueue(probe(`{"N":"x"}`))
+	for i := range len(results) + 1 {
+		f.drain()
+		f.clock.Advance(time.Hour - time.Millisecond)
+		f.drain()
+		f.wantRuns(i + 1) // a postponed job does not run before its time
+		f.clock.Advance(time.Millisecond)
+	}
+	runs := f.wantRuns(len(results) + 1)
+	for i, j := range runs[1:] {
+		if j.Attempt != 2 || j.LastError != boom.Error() {
+			t.Errorf("run %d after the retry has Attempt %d and last error %q", i, j.Attempt, j.LastError)
+		}
+	}
+	if dead := f.dead(); len(dead) != 0 {
+		t.Errorf("dead jobs = %+v", dead)
 	}
 }
 

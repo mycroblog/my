@@ -303,7 +303,7 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 	// The span ends once the result is recorded, so that it covers the result's transaction.
 	defer func() {
 		errorType := ""
-		if !res.IsDone() {
+		if !res.IsDone() && !res.IsPostponed() {
 			if errorType = kernel.ErrorType(res.Err()); errorType == "" {
 				errorType = "_OTHER"
 			}
@@ -314,6 +314,11 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 	case res.IsDone():
 		ran(OutcomeSuccess)
 		return settlement{}, r.src.Complete(recordCtx, r.opts.Worker, j)
+	case res.IsPostponed():
+		// As for a job delivered early: the attempt goes back, and no attempt is on record.
+		ran(OutcomePostponed)
+		runAt := done.Add(max(res.After(), 0))
+		return settlement{released: true, runAt: runAt}, r.src.Release(recordCtx, r.opts.Worker, j, j.Attempt-1, runAt, j.LastError)
 	case res.IsFail():
 		ran(OutcomeDead)
 		lastErr := errorText(res.Err(), "failed")
@@ -367,8 +372,8 @@ const (
 // logRun writes the one line of a job run (ADR-0055 §5): the labels of my.job.duration under
 // the same names and values, its duration and the my.job.wait in seconds, so that a log-based
 // metric counts the runs as the metrics do, and the job's ID and attempt for NFR-OPS-1. With
-// metrics_exporter = emf, the line also carries those two metrics. A success is info, a retry a
-// warning, and a dead job an error.
+// metrics_exporter = emf, the line also carries those two metrics. A success or a postponement is
+// info, a retry a warning, and a dead job an error.
 func (r *PullRunner) logRun(ctx context.Context, j Job, jobType, outcome string, err error, d, wait time.Duration) {
 	level := slog.LevelInfo
 	switch outcome {

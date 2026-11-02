@@ -99,6 +99,8 @@ export function LinkCardCrawler() {
             <Stack as="ul" marker="disc" gap="2">
               <li>{t("client:about.link_card_crawler.frequency.once")}</li>
               <li>{t("client:about.link_card_crawler.frequency.failure")}</li>
+              <li>{t("client:about.link_card_crawler.frequency.host")}</li>
+              <li>{t("client:about.link_card_crawler.frequency.throttled")}</li>
               {!crawler.ignoresRobotsTxt && <li>{t("client:about.link_card_crawler.frequency.robots")}</li>}
             </Stack>
           </Section>

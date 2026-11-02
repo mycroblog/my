@@ -5,6 +5,7 @@ package platform_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -74,6 +75,25 @@ func cardPage(title, image string) []byte {
 </head><body><meta property="og:title" content="ignored"></body></html>`)
 }
 
+// fetchLinkCard runs the fetch that the job of a status would, ending at once what a host's limits
+// hold it back for, which the tests of the limits cover.
+func fetchLinkCard(t *testing.T, app *platform.App, statusID string) {
+	t.Helper()
+	for {
+		_, err := app.LinkCards.Fetch(t.Context(), statusID)
+		var postponed *appcontent.LinkCardPostponed
+		if !errors.As(err, &postponed) {
+			if err != nil {
+				t.Fatalf("Fetch(%s): %v", statusID, err)
+			}
+			return
+		}
+		if err := app.KV.Delete(t.Context(), appcontent.LinkCardHostNotBeforeNamespace, postponed.Host); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 // TestLinkCardsThroughTheAPI posts statuses with links, runs the fetch of their cards, and reads
 // them through the client API (ADR-0062): the card of the first link with its image behind the
 // media proxy, none for a status with attachments, a page without a title, or the disabled
@@ -103,9 +123,7 @@ func TestLinkCardsThroughTheAPI(t *testing.T) {
 	}
 	fetch := func(st clientapi.Status) clientapi.Status {
 		t.Helper()
-		if _, err := c.app.LinkCards.Fetch(ctx, st.Id); err != nil {
-			t.Fatalf("Fetch(%s): %v", st.Id, err)
-		}
+		fetchLinkCard(t, c.app, st.Id)
 		var got clientapi.Status
 		if res := c.do("alice", http.MethodGet, "/statuses/"+st.Id, nil, &got); res.StatusCode != http.StatusOK {
 			t.Fatalf("GET status = %d", res.StatusCode)
@@ -240,9 +258,7 @@ func TestLinkCardsRefuseInternalAddresses(t *testing.T) {
 	c := newStatusesClient(t, "alice")
 	for _, link := range []string{srv.URL + "/admin", "https://localhost" + port + "/admin", "http://127.0.0.1" + port + "/admin", "https://[::1]" + port + "/"} {
 		st := c.post("alice", map[string]any{"text": "see " + link, "visibility": "public"})
-		if _, err := c.app.LinkCards.Fetch(t.Context(), st.Id); err != nil {
-			t.Fatalf("Fetch(%s): %v", link, err)
-		}
+		fetchLinkCard(t, c.app, st.Id)
 		var got clientapi.Status
 		if res := c.do("alice", http.MethodGet, "/statuses/"+st.Id, nil, &got); res.StatusCode != http.StatusOK || got.Card != nil {
 			t.Errorf("status linking %s = %d, card %+v", link, res.StatusCode, got.Card)
@@ -275,9 +291,7 @@ func TestLinkCardCreator(t *testing.T) {
 	c := newStatusesClientWith(t, nil, platform.AppOptions{HTTPClient: web}, "alice")
 	for link, want := range map[string]string{"https://www.blog.example/post": "ann@social.example", "https://other.example/post": ""} {
 		st := c.post("alice", map[string]any{"text": link, "visibility": "public"})
-		if _, err := c.app.LinkCards.Fetch(t.Context(), st.Id); err != nil {
-			t.Fatal(err)
-		}
+		fetchLinkCard(t, c.app, st.Id)
 		var got clientapi.Status
 		if res := c.do("alice", http.MethodGet, "/statuses/"+st.Id, nil, &got); res.StatusCode != http.StatusOK || got.Card == nil {
 			t.Fatalf("status linking %s = %d, card %+v", link, res.StatusCode, got.Card)

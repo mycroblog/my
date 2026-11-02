@@ -59,6 +59,8 @@ describe("the page about the link card crawler", () => {
     const often = screen.getByRole("region", { name: "How often" });
     expect(within(often).getByText(/14 days ago or more/u)).toBeInTheDocument();
     expect(within(often).getByText(/^robots\.txt is read about once a day per origin/u)).toBeInTheDocument();
+    expect(within(often).getByText(/^It makes one request at a time to a host/u)).toBeInTheDocument();
+    expect(within(often).getByText(/^When a host answers 429 or 503/u)).toBeInTheDocument();
 
     const optOut = screen.getByRole("region", { name: "How to opt out" });
     expect(within(optOut).queryByText(robotsIgnored)).not.toBeInTheDocument();
