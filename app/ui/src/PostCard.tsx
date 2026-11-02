@@ -16,21 +16,25 @@ const postCard = tv({
     context:
       "mb-2 flex min-w-0 items-center gap-2 text-sm font-bold wrap-anywhere text-success [&>svg]:size-4 [&>svg]:shrink-0",
     grid: "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2",
-    // Narrow: the avatar sits beside the header and the body spans the card. Wide: the avatar has its own column.
     // Positioned, so that the avatar is drawn over the thread's line.
-    avatar: "relative row-span-1 @md:row-span-5",
+    avatar: "relative",
+    // Everything but the avatar. Narrow: no box of its own, so that the header sits beside the avatar and the rest
+    // spans the card, in rows of the grid. Wide: the avatar's next column, one flex column with the grid's row gap, so
+    // that the grid has one row however few of the slots are filled. A header alone centers on the avatar, as when narrow.
+    column: "contents @md:flex @md:min-w-0 @md:flex-col @md:gap-y-2 @md:self-center",
     // One row: the author takes the room the time leaves. The author fills the row at every width (a
     // PostCardAuthor puts its handle on a second line below `@sm`), so the time stays at the row's end. A long
     // time (a full date) wraps inside at most half of the row instead of pushing the card wider.
-    header: "flex min-w-0 items-baseline gap-x-2 self-center",
+    header: "flex min-w-0 items-baseline gap-x-2 self-center @md:self-stretch",
     author: "min-w-0 flex-1 wrap-anywhere",
     // The time, and under it the visibility, both at the end of the row. It is never narrower than its longest word,
     // so that a date without breaks ("2026/10/16") on a narrow card takes room from the author instead of covering it.
     time: "flex max-w-1/2 min-w-min shrink-0 flex-col items-end text-sm text-fg-muted",
-    body: "col-span-2 min-w-0 @md:col-span-1 @md:col-start-2",
-    details: "col-span-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-sm text-fg-muted @md:col-span-1 @md:col-start-2",
-    reactions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 @md:col-span-1 @md:col-start-2",
-    actions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 @md:col-span-1 @md:col-start-2",
+    // A slot whose content renders nothing (a notification of a follow has no body) takes no row and no gap.
+    body: "col-span-2 min-w-0 empty:hidden",
+    details: "col-span-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-sm text-fg-muted empty:hidden",
+    reactions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 empty:hidden",
+    actions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 empty:hidden",
     // The thread's line, down the middle of the avatar (1rem of padding and half of its 2.5rem), behind it.
     // It reaches from the card's top or from the avatar's middle (2.25rem down) to the card's bottom edge or
     // to the avatar's middle. It is decorative: the order of the posts and the headings around them carry
@@ -181,27 +185,29 @@ export function PostCard({
         )}
         <div className={slots.grid()}>
           <div className={slots.avatar()}>{avatar}</div>
-          <header className={slots.header()}>
-            <div id={authorId} className={slots.author()}>
-              {author}
+          <div className={slots.column()}>
+            <header className={slots.header()}>
+              <div id={authorId} className={slots.author()}>
+                {author}
+              </div>
+              <div id={timeId} className={slots.time()}>
+                {time}
+                {visibility !== null && (
+                  <>
+                    {/* The space keeps the time and the visibility apart in the accessible name. */}{" "}
+                    <VisibilityMark visibility={visibility.level} label={visibility.label} />
+                  </>
+                )}
+              </div>
+            </header>
+            <div id={contentId} className={slots.body()}>
+              {content}
             </div>
-            <div id={timeId} className={slots.time()}>
-              {time}
-              {visibility !== null && (
-                <>
-                  {/* The space keeps the time and the visibility apart in the accessible name. */}{" "}
-                  <VisibilityMark visibility={visibility.level} label={visibility.label} />
-                </>
-              )}
-            </div>
-          </header>
-          <div id={contentId} className={slots.body()}>
-            {content}
+            {media !== undefined && <div className={slots.body()}>{media}</div>}
+            {details !== undefined && <div className={slots.details()}>{details}</div>}
+            {reactions !== undefined && <div className={slots.reactions()}>{reactions}</div>}
+            {actions !== undefined && <div className={slots.actions()}>{actions}</div>}
           </div>
-          {media !== undefined && <div className={slots.body()}>{media}</div>}
-          {details !== undefined && <div className={slots.details()}>{details}</div>}
-          {reactions !== undefined && <div className={slots.reactions()}>{reactions}</div>}
-          {actions !== undefined && <div className={slots.actions()}>{actions}</div>}
         </div>
       </AnimationsPlayContext>
     </FeedArticle>
