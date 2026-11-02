@@ -15,7 +15,9 @@ ADR-0062 はこれらに触れておらず、この ADR がその §2「取得�
 - [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.txt)（2026-11-02 に本文を確認）はクローラーの規則を定める。利用者の要求で動く取得を除外する規定はない。
 - Google は、利用者が起点の取得は `robots.txt` を原則として見ないと説明し、メッセージのリンクのプレビューもそこに入れている（[List of Google user-triggered fetchers](https://developers.google.com/crawling/docs/crawlers-fetchers/google-agent)、2026-11-02 に検索結果で確認）。
 - Mastodon も見ない。これをバグとする [mastodon/mastodon#21738](https://github.com/mastodon/mastodon/issues/21738) は開いたまま（2026-11-02 確認）で、リモートの投稿を受けた各サーバーが誰にも頼まれず取りに行くのは利用者の要求と言いにくい、という[主張](https://jefftk.com/p/mastodons-dubious-crawler-exemption)がある。
-- ほかのリンクのプレビュー（Slack・X・Meta）の扱いは確かめていない（要検証）。
+- Meta の共有リンク用のクローラー `FacebookExternalHit` は、`robots.txt` を迂回し得るのはセキュリティと整合性の確認のときだと説明し、`robots.txt` の内容を最大 24 時間保持する。利用者の要求で取る `Meta-ExternalFetcher` は別の名前で、迂回し得る（[Meta Web Crawlers](https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers.md)、2026-11-02 に本文を確認）。
+- X の `Twitterbot` は、`robots.txt` がカードの情報を妨げ得ること、Google の `robots.txt` の仕様を実装していることを文書で説明している（[Troubleshooting Guide](https://developer.x.com/web/wordpress)。本文は取得できず、2026-11-02 に検索結果の抜粋で確認。要検証）。
+- Slack の `Slackbot-LinkExpanding` は従わない。従う実装を試したが、インターネットの多くがクローラーに閉じているので利用者の苦情が多く、やめたと説明している。断るには Slack への連絡が要る（[Slack Robots](https://api.slack.com/robots)、2026-11-02 に本文を確認）。
 
 ADR-0062 の取得は、ローカルの投稿でもリモートの投稿でもジョブが自動で行う。リモートの投稿では、上の主張がそのまま当てはまる。
 
@@ -113,7 +115,7 @@ ADR-0062 の取得は、ローカルの投稿でもリモートの投稿でも�
 
 ### この決定を見直す条件
 
-- カードの出ないサイトが多く、利用者の不満が実害になった場合（選択肢 3 に寄せる、または「ファイルなし」の扱いなどを緩める）
+- カードの出ないサイトが多く、Slack の報告のように利用者の不満が実害になった場合（選択肢 3 に寄せる、または「ファイルなし」の扱いなどを緩める）
 - 主要なサーバーの実装と大きく食い違い、相手のサイトの多くが `my-linkcard` を名指しして許可する手間を強いられる場合
 - `robots.txt` の取得そのものの量が問題になる場合
 
@@ -122,7 +124,7 @@ ADR-0062 の取得は、ローカルの投稿でもリモートの投稿でも�
 - 相手のサイトは `User-agent: my-linkcard` か `*` で、標準の手段でカードの取得を断れる。説明や画像だけを出さないようにもできる。
 - `none` や `noindex` だけを付けたページのカードは出続ける。意図とずれるサイトがあり得るが、`robots.txt` で断れる。
 - ページの指定は取得した後で分かるので、ページ自体への要求は止まらない。
-- `*` を全面禁止にして特定のボットだけを許すサイトでは、Mastodon では出るカードがここでは出ない。どの程度起きるかは確かめていない（要検証）。
+- `*` を全面禁止にして特定のボットだけを許すサイトでは、Mastodon や Slack では出るカードがここでは出ない。Slack は同じ理由で従うのをやめており、起き得る実害として見込む。どの程度起きるかは確かめていない（要検証）。
 - オリジンごとに 1 日 1 回程度の要求が増える。カードのジョブは遅れるが、投稿の表示は待たない。
 - `robots.txt` が 5xx を返す間、そのサイトの新しいカードは出ない。
 - 許可されていないリダイレクト先には 1 回要求が届く（§4）。ヘッダだけで本文は読まない。
