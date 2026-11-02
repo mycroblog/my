@@ -29,6 +29,10 @@ func (a *App) setUpLinkCards(cfg *config.Config, repo content.LinkCardRepository
 			s, err := a.Instance.Settings(ctx)
 			return s.LinkCardsEnabled(), err
 		},
+		IgnoreRobotsTxt: func(ctx context.Context) (bool, error) {
+			s, err := a.Instance.Settings(ctx)
+			return s.LinkCardsIgnoreRobotsTxt(), err
+		},
 		Language:   a.Instance.DefaultLocale,
 		LocalHosts: localHosts(cfg),
 		Clock:      a.Clock, IDs: a.IDs, Logger: a.Logger,

@@ -3,6 +3,7 @@
 package httpclient
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net/http"
@@ -200,5 +201,68 @@ func TestExemptDestinations(t *testing.T) {
 		if resp.StatusCode != http.StatusFound {
 			t.Errorf("%s: status = %d, want the 302 itself", p.name, resp.StatusCode)
 		}
+	}
+}
+
+// TestAgents checks that a link card's request names the crawler in its User-Agent, and that
+// every other request keeps the server's, whatever its purpose.
+func TestAgents(t *testing.T) {
+	var ua string
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { ua = r.Header.Get("User-Agent") }))
+	t.Cleanup(srv.Close)
+	c := New(Options{
+		UserAgent: "my/1 (+https://social.example/)", LinkCardUserAgent: "my-linkcard/1 (+https://social.example/)",
+		AllowHTTP: true, AnyPort: true, ExemptAddrPorts: []netip.AddrPort{netip.MustParseAddrPort(srv.Listener.Addr().String())},
+	})
+	cases := []struct {
+		purpose kernel.HTTPPurpose
+		agent   kernel.HTTPAgent
+		want    string
+	}{
+		{kernel.HTTPPurposeHTML, kernel.HTTPAgentLinkCard, "my-linkcard/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeImage, kernel.HTTPAgentLinkCard, "my-linkcard/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeRobots, kernel.HTTPAgentLinkCard, "my-linkcard/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeImage, kernel.HTTPAgentServer, "my/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeVideo, kernel.HTTPAgentServer, "my/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeJSON, kernel.HTTPAgentServer, "my/1 (+https://social.example/)"},
+		{kernel.HTTPPurposeHTML, kernel.HTTPAgentServer, "my/1 (+https://social.example/)"},
+	}
+	for _, tc := range cases {
+		resp, err := c.Do(t.Context(), &kernel.HTTPRequest{URL: srv.URL, Purpose: tc.purpose, Agent: tc.agent})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		if ua != tc.want {
+			t.Errorf("purpose %d, agent %d: User-Agent = %q, want %q", tc.purpose, tc.agent, ua, tc.want)
+		}
+	}
+}
+
+// TestRobotsLimits checks that a robots.txt over the limit is read up to the limit, by its
+// Content-Length as by its length, while another purpose is refused by its Content-Length.
+func TestRobotsLimits(t *testing.T) {
+	const limit = 512 << 10
+	if l, ok := kernel.DefaultHTTPLimits(kernel.HTTPPurposeRobots); !ok || l.MaxBodyBytes != limit || l.Timeout != 10*time.Second {
+		t.Errorf("DefaultHTTPLimits(HTTPPurposeRobots) = %+v, %v; want 512 KiB and 10s", l, ok)
+	}
+	body := bytes.Repeat([]byte("a"), limit+10)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(srv.Close)
+	c := New(Options{AllowHTTP: true, AnyPort: true, ExemptAddrPorts: []netip.AddrPort{netip.MustParseAddrPort(srv.Listener.Addr().String())}})
+
+	resp, err := c.Do(t.Context(), &kernel.HTTPRequest{URL: srv.URL, Purpose: kernel.HTTPPurposeRobots})
+	if err != nil {
+		t.Fatalf("Do(robots) = %v", err)
+	}
+	got, err := resp.ReadAll()
+	if !errors.Is(err, kernel.ErrResponseTooLarge) || len(got) != limit {
+		t.Errorf("read %d bytes, %v; want the limit and ErrResponseTooLarge", len(got), err)
+	}
+	if _, err := c.Do(t.Context(), &kernel.HTTPRequest{URL: srv.URL, Purpose: kernel.HTTPPurposeClientMetadata}); !errors.Is(err, kernel.ErrResponseTooLarge) {
+		t.Errorf("Do(another purpose) = %v, want ErrResponseTooLarge", err)
 	}
 }

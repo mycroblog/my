@@ -20,7 +20,7 @@ CREATE TABLE instance_setting_revisions (
     'domain_actions_visibility', 'domain_actions_rationale_visibility', 'appeal_window',
     'retention_session_origins', 'retention_registration_origins', 'retention_reports',
     'retention_moderation_actions', 'retention_audit_log',
-    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards_enabled',
+    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards_enabled', 'link_cards_ignore_robots_txt',
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',

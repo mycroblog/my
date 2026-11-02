@@ -47,6 +47,11 @@ WHERE c.fetched_at < @fetched_before
   AND NOT EXISTS (SELECT 1 FROM status_link_cards s WHERE s.url = c.url)
 ORDER BY c.url LIMIT @batch_limit;
 
+-- DeleteLinkCard deletes the card of @url; the statuses keep their references, and get a card when
+-- one is fetched again.
+-- name: DeleteLinkCard :exec
+DELETE FROM link_cards WHERE url = @url;
+
 -- DeleteUnreferencedLinkCard deletes the card of @url unless it was fetched again after the
 -- cleanup read it or a status refers to it again.
 -- name: DeleteUnreferencedLinkCard :execrows

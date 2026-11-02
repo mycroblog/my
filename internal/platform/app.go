@@ -559,7 +559,9 @@ func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (ke
 // listed destinations with a warning.
 func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, meter kernel.Meter, tracer kernel.Tracer) kernel.HTTPClient {
 	opts := httpclient.Options{
-		UserAgent: fmt.Sprintf("my/%s (+https://%s/)", version, cfg.Host), Meter: meter, Tracer: tracer,
+		UserAgent:         fmt.Sprintf("my/%s (+https://%s/)", version, cfg.Host),
+		LinkCardUserAgent: fmt.Sprintf("%s/%s (+https://%s/)", kernel.LinkCardAgentToken, version, cfg.Host),
+		Meter:             meter, Tracer: tracer,
 		// The webhooks alone may reach the internal destinations that the operator lists (ADR-0060).
 		Webhook: httpclient.Destinations{Hosts: cfg.WebhookAllowedHosts, Prefixes: cfg.WebhookAllowedPrefixes},
 		// So may the requests to the external identity providers (ADR-0106 §5).

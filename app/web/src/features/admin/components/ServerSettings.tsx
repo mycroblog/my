@@ -651,6 +651,12 @@ function PoliciesForm() {
           label={t("client:admin.settings.federation.link_cards")}
           description={t("client:admin.settings.federation.link_cards.description")}
         />
+        <PolicyCheckbox
+          form={form}
+          setting="link_cards_ignore_robots_txt"
+          label={t("client:admin.settings.federation.link_cards_ignore_robots_txt")}
+          description={t("client:admin.settings.federation.link_cards_ignore_robots_txt.description")}
+        />
       </Section>
       <Section surface="card" title={t("client:admin.settings.domain_actions.title")}>
         <Hint size="inherit">{t("client:admin.settings.domain_actions.description")}</Hint>

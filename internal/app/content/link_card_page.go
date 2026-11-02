@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"golang.org/x/net/html/charset"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -49,6 +50,68 @@ type LinkCardPage struct {
 	Creator string
 	// Language is the <html lang> of the page, "" for none.
 	Language string
+}
+
+// metaRobotsNames are the meta tags whose content holds robots directives for a link card: the
+// tag for every robot, and the tag of the crawler itself (ADR-0131 §5).
+var metaRobotsNames = []string{"robots", kernel.LinkCardAgentToken}
+
+// ApplyRobots removes from the card what directives forbid, from its head or the X-Robots-Tag of
+// its response: the description, or the image
+// with its alternative text. The stricter of several directives wins, because any one of them
+// removes the part and none adds it back. The other parts stay whatever the directives say.
+func (p *LinkCardPage) ApplyRobots(values []string) {
+	noSnippet, noImage := parseRobotsDirectives(values)
+	if noSnippet {
+		p.Description = ""
+	}
+	if noImage {
+		p.ImageURL, p.ImageAlt = "", ""
+	}
+}
+
+// parseRobotsDirectives reads robots directives for this crawler from the content of meta tags
+// or the values of X-Robots-Tag. Each value is a comma-separated list; "bot: directive" makes the
+// directive and those after it in the value apply to that bot, so only the directives with no
+// bot name or with this crawler's are read. noindex, nofollow, noarchive, none, and every other
+// directive change nothing in a card.
+func parseRobotsDirectives(values []string) (noSnippet, noImage bool) {
+	for _, value := range values {
+		applies := true
+		for directive := range strings.SplitSeq(value, ",") {
+			directive = strings.ToLower(strings.TrimSpace(directive))
+			name, rest, named := strings.Cut(directive, ":")
+			name, rest = strings.TrimSpace(name), strings.TrimSpace(rest)
+			if named && !slices.Contains(robotsValuedDirectives, name) && isRobotsBotName(name) {
+				applies = name == kernel.LinkCardAgentToken
+				directive = rest
+				name, rest, named = strings.Cut(directive, ":")
+				name, rest = strings.TrimSpace(name), strings.TrimSpace(rest)
+			}
+			if !applies {
+				continue
+			}
+			switch {
+			case !named && name == "nosnippet", named && name == "max-snippet" && rest == "0":
+				noSnippet = true
+			case !named && name == "noimageindex", named && name == "max-image-preview" && rest == "none":
+				noImage = true
+			}
+		}
+	}
+	return noSnippet, noImage
+}
+
+// robotsValuedDirectives are the directives written "name: value", which must not be read as a
+// bot's name.
+var robotsValuedDirectives = []string{"max-snippet", "max-image-preview", "max-video-preview", "unavailable_after"}
+
+// isRobotsBotName reports whether the text before a colon can name a bot, unlike the parts of a
+// date in the value of unavailable_after.
+func isRobotsBotName(s string) bool {
+	return s != "" && strings.IndexFunc(s, func(r rune) bool {
+		return r != '-' && r != '_' && (r < 'a' || r > 'z') && (r < '0' || r > '9')
+	}) < 0
 }
 
 // ParseLinkCardPage reads the card of the page that body holds, served with contentType from
@@ -101,6 +164,7 @@ func ParseLinkCardPage(body io.Reader, contentType, finalURL string) (LinkCardPa
 			break
 		}
 	}
+	p.ApplyRobots(h.robots)
 	return p, nil
 }
 
@@ -111,6 +175,8 @@ type pageHead struct {
 	// metas are the content of the first meta tag of each property or name, lowercase.
 	metas  map[string]string
 	ldJSON []string
+	// robots are the content of every meta tag of metaRobotsNames.
+	robots []string
 }
 
 func (h *pageHead) meta(key string) string { return h.metas[key] }
@@ -180,6 +246,9 @@ func readHead(r io.Reader) (*pageHead, error) {
 			case atom.Script:
 				inLD = tt == html.StartTagToken && strings.EqualFold(strings.TrimSpace(attrs["type"]), "application/ld+json")
 			case atom.Meta:
+				if slices.Contains(metaRobotsNames, strings.ToLower(strings.TrimSpace(attrs["name"]))) {
+					h.robots = append(h.robots, attrs["content"])
+				}
 				key := attrs["property"]
 				if key == "" {
 					key = attrs["name"]

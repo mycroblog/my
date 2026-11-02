@@ -17797,6 +17797,7 @@ components:
         - security_contact
         - require_media_description
         - link_cards_enabled
+        - link_cards_ignore_robots_txt
         - finance_visibility
         - finance_viewer_item_names
         - finance_viewer_item_memos

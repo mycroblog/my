@@ -14,6 +14,13 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
+// TestRobotsPurposeLabel checks the my.http.purpose of the fetches of robots.txt.
+func TestRobotsPurposeLabel(t *testing.T) {
+	if got := purposeLabel(kernel.HTTPPurposeRobots); got != "robots" {
+		t.Errorf("purposeLabel(HTTPPurposeRobots) = %q", got)
+	}
+}
+
 func TestMetrics(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNotFound) }))
 	t.Cleanup(srv.Close)

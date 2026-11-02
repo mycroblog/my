@@ -407,6 +407,14 @@
     "defaultMessage": "サーバーが各投稿の最初のリンクのページを、投稿の公開範囲によらず取得し、題名・説明・画像を投稿の下に表示します。リンク先のサイトには、そのリンクがいつ投稿されたかが伝わりますが、誰が投稿したかは伝わりません。",
     "description": "Description of the link cards checkbox."
   },
+  "admin.settings.federation.link_cards_ignore_robots_txt": {
+    "defaultMessage": "robots.txt を確かめずにリンクのカードを取得する",
+    "description": "Checkbox of the link_cards_ignore_robots_txt setting: whether the fetches of link cards skip the robots.txt of the linked sites."
+  },
+  "admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "defaultMessage": "リンク先のサイトは robots.txt でカードの取得を断れなくなります。サーバーは my-linkcard と名乗ったままです。ページ自身のロボットの指定とリンクカードのドメインのルールは引き続き効きます。カードが多く欠けるときだけオンにしてください。",
+    "description": "Description of the checkbox that makes the fetches of link cards skip robots.txt. my-linkcard is the crawler's name in robots.txt and is not translated."
+  },
   "admin.settings.federation.mode": {
     "defaultMessage": "連合の向き",
     "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0076): which way posts flow between this server and other servers."

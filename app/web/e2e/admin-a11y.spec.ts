@@ -493,6 +493,7 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
     { key: "link_cards_enabled", kind: "bool", value: "true", default: "true", stored: false },
+    { key: "link_cards_ignore_robots_txt", kind: "bool", value: "false", default: "false", stored: false },
     {
       key: "invite_creators",
       kind: "enum",
