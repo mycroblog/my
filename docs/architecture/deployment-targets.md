@@ -195,9 +195,9 @@
 | その他の上限 | 接続は最長 60 分、接続数 10,000・新しい接続は毎秒 100、テーブル 1,000、スキーマ 10、テーブルあたりインデックス 24、索引のキーの列 8、主キー / インデックスのキーサイズ 1 KiB、行サイズ 2 MiB |
 | 料金の単価 | $8 / 100 万 DPU、ストレージ $0.33 / GB-month（US East）。1 トランザクションあたりの DPU は公開されていない |
 
-今の `db = postgres` は DSQL では動かない。受けるかどうかと形は [#1850](https://github.com/mycroblog/my/issues/1850) の ADR で決める（調査は [#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)）。
+今の `db = postgres` は DSQL では動かない。受けるかどうかは [ADR-0128](../adr/0128-aurora-dsql.md)（Proposed）で決める（調査は [#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)）。
 
-- **スキーマ**: `schema/postgres` の大きさは上限に収まる（テーブル 330、テーブルあたりの索引は最大 7）。照合順序・トリガー・ビュー・シーケンス・外部キーの制約にも触れない。
+- **スキーマ**: `schema/postgres` の大きさは上限に収まる（テーブル 334、テーブルあたりの索引は最大 7）。照合順序・トリガー・ビュー・シーケンス・外部キーの制約にも触れない。
   - 収まらないのは `bytea` の索引で、主キー 4 つ（`code_hash`）と索引 6 つ（トークンのハッシュ・passkey の credential ID・鍵の fingerprint）がある。
   - `schema/postgres.bootstrap.sql` の `CREATE EXTENSION pg_trgm` も通らない（今は `pg_trgm` を使う索引・クエリはない）
 - **Atlas**: `my schema apply` が使う Atlas（Community Edition）の PostgreSQL ドライバは `ASYNC` のない `CREATE INDEX` を出し、`my schema apply` は計画を 1 つのトランザクションで流すので、DSQL には適用できない。
@@ -208,7 +208,6 @@
 - **ロック**: `queries/postgres` の advisory lock（8 か所）は DSQL で使えない。
   - 書き込みの競合で直列にするには、両方のトランザクションが同じ行に書く形（キーの行への upsert など）に置き換える。
   - advisory lock を外して読み直すだけにすると、スナップショット分離の write skew で直列にならない。
-  - `FOR SHARE`（2 か所）は削除と並ばせるためだけなので、`FOR KEY SHARE` で足りる（[#1851](https://github.com/mycroblog/my/issues/1851)）
 - **DB キュー**: `PickJob` の `FOR UPDATE SKIP LOCKED` は使えない。`FOR UPDATE` はロックしないので、句を外しても pull の worker は同じ先頭の行を取り合い、1 つ以外が `40001` になる。
   - DSQL では `queue = db` を使わず、`queue = sqs`（ADR-0120 の ID での claim）にする。
   - `ClaimJob` は 1 行の `UPDATE` なので、同じジョブの claim の競合は OCC で 1 つになる。
