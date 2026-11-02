@@ -5,6 +5,7 @@ package platform_test
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -250,5 +251,96 @@ func TestAccessLogMetricLabels(t *testing.T) {
 	}
 	if strings.Contains(s.logs.String(), "secret") {
 		t.Errorf("the access log has the query string:\n%s", s.logs.String())
+	}
+}
+
+// TestClientThatLeftIsNotAServerError checks that a request whose client has left writes neither
+// an ERROR line nor a 5xx in the access log, and that a panic and a client that stayed still do.
+func TestClientThatLeftIsNotAServerError(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "web"})
+	var logger *slog.Logger
+	fail := func(w http.ResponseWriter, r *http.Request) {
+		logger.ErrorContext(r.Context(), "handler failed", slog.String("url.path", r.URL.Path))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) {
+		logger = a.Logger
+		a.Handle("GET /left", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			<-r.Context().Done()
+			fail(w, r)
+		}))
+		a.Handle("GET /left-panic", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			<-r.Context().Done()
+			panic("boom")
+		}))
+		a.Handle("GET /stayed", http.HandlerFunc(fail))
+	})
+
+	for _, path := range []string{"/left", "/left-panic"} {
+		ctx, cancel := context.WithCancel(t.Context())
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.url+path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		time.AfterFunc(50*time.Millisecond, cancel)
+		if resp, err := http.DefaultTransport.RoundTrip(req); err == nil {
+			_ = resp.Body.Close()
+			t.Errorf("GET %s answered %d, want the client to leave first", path, resp.StatusCode)
+		}
+		cancel()
+	}
+	if resp, _ := s.do(t, http.MethodGet, "/stayed", nil); resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("GET /stayed = %d, want 500", resp.StatusCode)
+	}
+
+	type line struct {
+		msg, path, severity string
+		status              float64
+	}
+	var lines []line
+	accessLines := func() int {
+		lines = lines[:0]
+		n := 0
+		for raw := range strings.Lines(s.logs.String()) {
+			var m map[string]any
+			if err := json.Unmarshal([]byte(raw), &m); err != nil {
+				t.Fatalf("line %q: %v", raw, err)
+			}
+			l := line{}
+			l.msg, _ = m["msg"].(string)
+			l.path, _ = m["url.path"].(string)
+			l.severity, _ = m["severity"].(string)
+			l.status, _ = m["http.response.status_code"].(float64)
+			lines = append(lines, l)
+			if l.msg == "http request" && (l.path == "/left" || l.path == "/left-panic" || l.path == "/stayed") {
+				n++
+			}
+		}
+		return n
+	}
+	for deadline := time.Now().Add(10 * time.Second); accessLines() < 3 && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond) // the server finishes the requests of the clients that left on its own
+	}
+	want := map[line]bool{
+		{msg: "handler failed", path: "/left", severity: "INFO"}:                  false,
+		{msg: "http request", path: "/left", severity: "INFO", status: 499}:       false,
+		{msg: "http request", path: "/left-panic", severity: "INFO", status: 500}: false,
+		{msg: "handler failed", path: "/stayed", severity: "ERROR"}:               false,
+		{msg: "http request", path: "/stayed", severity: "INFO", status: 500}:     false,
+	}
+	for _, l := range lines {
+		if _, ok := want[l]; ok {
+			want[l] = true
+		}
+	}
+	for l, found := range want {
+		if !found {
+			t.Errorf("no line %+v in:\n%s", l, s.logs.String())
+		}
+	}
+	reports := errorReportLines(t, s.logs.String())
+	if len(reports) != 1 || reports[0]["my.error.kind"] != "panic" || reports[0]["severity"] != "ERROR" {
+		t.Errorf("reports = %v, want the panic at ERROR", reports)
 	}
 }

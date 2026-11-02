@@ -321,6 +321,9 @@ func (a *App) recoverPanics(next http.Handler) http.Handler {
 				return
 			}
 			kernel.RecoverPanic(r.Context(), a.ErrorReporter, p, "") // the reporter names the route
+			if rr, ok := r.Context().Value(requestRouteKey{}).(*requestRoute); ok {
+				rr.panicked = true
+			}
 			if rw, ok := w.(*responseWriter); ok && rw.wroteHeader {
 				return // too late for an error response
 			}
@@ -403,7 +406,9 @@ func validRequestID(id string) bool {
 // which the metric does not measure either. With the HTTP metrics, it also records the request's
 // http.server.request.duration in a unit of work of the Meter (ADR-0055 §3), which the line
 // carries with metrics_exporter = emf (§5). The request is a span of the Tracer
-// (HTTPServerSpan, ADR-0063 §1), which the line names by trace_id and span_id.
+// (HTTPServerSpan, ADR-0063 §1), which the line names by trace_id and span_id. A server error
+// of a request whose client has left counts as statusClientClosedRequest in all of them, since
+// no one received it and an operator cannot act on it; a panic stays a server error.
 func (a *App) accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -427,6 +432,9 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 		}
 		r = r.WithContext(context.WithValue(ctx, requestRouteKey{}, rr))
 		next.ServeHTTP(rw, r)
+		if rw.status >= http.StatusInternalServerError && !rr.panicked && clientLeft(r.Context()) {
+			rw.status = statusClientClosedRequest
+		}
 		d := time.Since(start)
 		if a.http != nil && rr.route != "" {
 			a.http.record(ctx, r, rr, rw.status, d)
@@ -455,6 +463,11 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 func isHealthCheck(path string) bool {
 	return path == PathLiveness || path == PathReadiness || path == PathInstanceHealth
 }
+
+// statusClientClosedRequest is the status that the access log, the metric, and the span record
+// for a request whose client left before the server could answer: 499, as nginx names it. It is
+// never written to a client.
+const statusClientClosedRequest = 499
 
 // Keys of the access log that are not labels of the HTTP metrics, named after the
 // OpenTelemetry semantic conventions where they have one (ADR-0055 §5).
