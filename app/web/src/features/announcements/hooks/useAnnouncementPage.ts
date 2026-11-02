@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type Announcement, announcementQueryOptions } from "../api/announcements";
 import { useMarkAnnouncementRead } from "./useMarkAnnouncementRead";
 
@@ -27,6 +28,7 @@ export function useAnnouncementPage(id: string): AnnouncementPage {
   const api = useApi();
   // The loader has asked already: a refusal it got (a withdrawn or unknown announcement) is not asked again on mount.
   const query = useQuery({ ...announcementQueryOptions(api, id), retry: false, retryOnMount: false });
+  const failure = useLoadFailure(query);
   const mark = useMarkAnnouncementRead();
   // A refetch that finds it gone keeps its last data in the cache; the 404 wins.
   const notFound = query.error instanceof ApiError && query.error.status === 404;
@@ -51,12 +53,12 @@ export function useAnnouncementPage(id: string): AnnouncementPage {
       markError: mark.error,
     };
   }
-  if (query.error !== null) {
+  if (failure.error !== null) {
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

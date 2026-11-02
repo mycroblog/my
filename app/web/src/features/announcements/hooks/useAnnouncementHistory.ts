@@ -4,6 +4,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type Announcement, announcementHistoryQueryOptions } from "../api/announcements";
 import { useMarkAnnouncementRead } from "./useMarkAnnouncementRead";
 
@@ -32,14 +33,15 @@ export function useAnnouncementHistory(): AnnouncementHistory {
   const api = useApi();
   const mark = useMarkAnnouncementRead();
   const query = useInfiniteQuery(announcementHistoryQueryOptions(api));
+  const failure = useLoadFailure(query);
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
   if (query.data === undefined) {
-    if (query.error !== null) {
+    if (failure.error !== null) {
       return {
         status: "error",
-        reason: errorMessage(query.error),
+        reason: errorMessage(failure.error),
         retry: () => void query.refetch(),
-        isRetrying: query.isFetching,
+        isRetrying: failure.isRetrying,
       };
     }
     return { status: "loading" };

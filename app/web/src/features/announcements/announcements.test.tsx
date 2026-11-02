@@ -451,3 +451,55 @@ describe("the page of one announcement", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Welcome" })).toBeInTheDocument();
   });
 });
+
+/** Answers `path` with a failure while `state.mode` is "fail", waits for `state.release` while "wait", and else `body`. */
+function retriedServer(path: string, body: () => unknown) {
+  const state: { mode: "fail" | "wait" | "pass"; release: () => void } = { mode: "fail", release: () => undefined };
+  server.use(
+    http.get(`${apiBase}${path}`, async () => {
+      if (state.mode === "wait") {
+        await new Promise<void>((resolve) => {
+          state.release = resolve;
+        });
+        return HttpResponse.json({ type: "about:blank", title: "Unavailable", status: 503 }, { status: 503 });
+      }
+      return state.mode === "fail"
+        ? HttpResponse.json({ type: "about:blank", title: "Unavailable", status: 503 }, { status: 503 })
+        : HttpResponse.json(body() as Record<string, unknown>);
+    }),
+  );
+  return state;
+}
+
+describe.each([
+  { name: "the list", route: "/announcements", path: "/announcements/history", body: () => ({ items: [welcome] }) },
+  {
+    name: "the page of one announcement",
+    route: `/announcements/${welcome.id}`,
+    path: `/announcements/${welcome.id}`,
+    body: () => welcome,
+  },
+])("retrying a first load of $name", ({ route, path, body }) => {
+  beforeEach(() => {
+    server.use(signedInHandler);
+  });
+
+  test("keeps the error with a waiting button that has focus, and a failure again is an alert", async () => {
+    const state = retriedServer(path, body);
+    const { user } = await renderApp({ path: route });
+    const button = await screen.findByRole("button", { name: "Try again" });
+
+    state.mode = "wait";
+    await user.click(button);
+    await waitFor(() => {
+      expect(button).toHaveAttribute("data-pending", "true");
+    });
+    expect(button).toHaveFocus();
+    expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
+
+    state.mode = "fail";
+    state.release();
+    expect(await within(screen.getByRole("main")).findByRole("alert")).toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+});
