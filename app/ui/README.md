@@ -167,7 +167,7 @@ When the `dir="auto"` element is a block (a `p`, or a `span` inside a flex or gr
 `align-match-parent` (`text-align: match-parent`, with the `-webkit-` value Chromium needs), so it lines up with the page's
 start like the rows around it and only the text inside it runs right to left
 ([G9](../../docs/architecture/web-client/16-look-states-and-wording.md#162-文字)). Post bodies and content warnings keep their own direction's alignment.
-The utility is not named `text-*` because `tailwind-merge` would read that as a color and drop the element's color class.
+The utility is not named `text-*` because `tailwind-variants` would read that as a color and drop the element's color class.
 
 ## Spacing, radius, shadow
 
@@ -405,7 +405,7 @@ string through props or children.
 | `FileDropZone` | (the browser's drag and drop events) | Wraps an area (a form) that takes dropped files: `onDropFiles`, `label`, `isDisabled`. Only a drag that carries files counts; text and links stay with the fields inside. While files are over it, a dashed outline and `label` cover it (shape and words, not color alone), `aria-hidden` since a button that picks the same files stays (WCAG 2.5.7). Disabled, it refuses the files (`dropEffect="none"`) and shows nothing |
 
 - Each component has one `tailwind-variants` recipe; its variant props are typed from the recipe (`VariantProps`).
-  `className` (a string or RAC's function of the render props) is merged into the root with `tailwind-merge`, so a later class wins.
+  `className` (a string or RAC's function of the render props) is merged into the root by the recipe, so a later class wins.
 - RAC links the label, the description and the error message to the control (`aria-labelledby` / `aria-describedby`).
   The error message shows while the field is invalid: `isInvalid`, a failing `validate`, or a native constraint (`isRequired`).
 - States are styled from RAC's `data-*` attributes (`data-hovered:`, `data-pressed:`, `data-selected:`, `data-invalid:`).

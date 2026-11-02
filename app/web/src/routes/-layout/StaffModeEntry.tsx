@@ -26,7 +26,7 @@ export function StaffModeEntry() {
           href={moderation.available ? "/moderation" : "/admin"}
           variant="standalone"
           aria-describedby={descriptionId}
-          gap={2}
+          gap="2"
         >
           {t("client:admin.mode.title")}
           {pending > 0 && (

@@ -39,7 +39,7 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
             : t("client:profile.following.title", { name: isolated }),
         )}
         <p>
-          <Link href={profilePath(profile.account.acct)} variant="standalone" gap={1}>
+          <Link href={profilePath(profile.account.acct)} variant="standalone" gap="1">
             <BackIcon />
             {t("client:profile.list.back", { name: isolated })}
           </Link>

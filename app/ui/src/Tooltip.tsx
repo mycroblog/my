@@ -30,7 +30,7 @@ const tooltip = tv({
 
 export type TooltipProps = Pick<AriaTooltipProps, "placement" | "offset"> & {
   children: ReactNode;
-  /** Classes merged onto the tooltip with tailwind-merge. */
+  /** Classes merged onto the tooltip with tailwind-variants. */
   className?: string;
   ref?: Ref<HTMLDivElement>;
 };

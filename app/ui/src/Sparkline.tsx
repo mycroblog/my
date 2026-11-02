@@ -17,12 +17,12 @@ const sparkline = tv({
   },
   variants: {
     series: {
-      1: { line: "stroke-data-1", dot: "stroke-data-1" },
-      2: { line: "stroke-data-2", dot: "stroke-data-2" },
-      3: { line: "stroke-data-3", dot: "stroke-data-3" },
+      "1": { line: "stroke-data-1", dot: "stroke-data-1" },
+      "2": { line: "stroke-data-2", dot: "stroke-data-2" },
+      "3": { line: "stroke-data-3", dot: "stroke-data-3" },
     },
   },
-  defaultVariants: { series: 1 },
+  defaultVariants: { series: "1" },
 });
 
 /** Room at the top and the bottom of the box, in percent, so that the round caps and the dot are not cut off. */
@@ -38,7 +38,7 @@ export type SparklineProps = {
 /** A small decorative line of `values`. The caller shows the number it stands for as text in the same row. */
 export function Sparkline({ values, series }: SparklineProps) {
   const { direction } = useLocale();
-  const styles = sparkline({ series });
+  const styles = sparkline({ series: series && `${series}` });
   const present = values.filter((value): value is number => value !== null && Number.isFinite(value));
   const low = Math.min(...present);
   const high = Math.max(...present);

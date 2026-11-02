@@ -23,7 +23,7 @@ const link = tv({
         "inline-flex min-h-6 items-center font-medium text-fg no-underline data-current:rounded-full data-current:bg-soft data-current:text-accent pointer-coarse:min-h-11 [&_svg]:size-6 [&_svg]:shrink-0",
     },
     /** The space between an icon and the text of the link (a step of `Space`). */
-    gap: { 1: "gap-1", 2: "gap-2" },
+    gap: { "1": "gap-1", "2": "gap-2" },
     /** Wraps a long word anywhere (a domain, a handle). */
     wrap: { anywhere: "wrap-anywhere" },
     /** The text size when it differs from the text around the link. */

@@ -797,7 +797,7 @@
           },
           {
             "selector": "ImportDeclaration[source.value=/^(tailwind-variants|tailwind-merge|clsx|classnames|class-variance-authority)(\\/|$)/]",
-            "message": "Do not compose classes in web/src; tailwind-variants, tailwind-merge and clsx belong to @my/ui (web-client/README.md A4)."
+            "message": "Do not compose classes in web/src; composing classes belongs to @my/ui (web-client/README.md A4)."
           }
         ]
       },
@@ -1439,8 +1439,7 @@
                         "react-aria",
                         "react-stately",
                         "@tanstack/react-virtual",
-                        "tailwind-variants",
-                        "tailwind-merge"
+                        "tailwind-variants"
                       ]
                     }
                   }

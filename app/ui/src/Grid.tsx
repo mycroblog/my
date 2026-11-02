@@ -19,20 +19,20 @@ const grid = tv({
   extend: box,
   base: "grid grid-cols-1",
   variants: {
-    columns: { 2: "", 3: "" },
+    columns: { "2": "", "3": "" },
     at: { sm: "", md: "", "2xl": "" },
     gap: columnGaps,
     rowGap: rowGaps,
   },
   compoundVariants: [
-    { columns: 2, at: "sm", class: "@sm:grid-cols-2" },
-    { columns: 3, at: "sm", class: "@sm:grid-cols-3" },
-    { columns: 2, at: "md", class: "@md:grid-cols-2" },
-    { columns: 3, at: "md", class: "@md:grid-cols-3" },
-    { columns: 2, at: "2xl", class: "@2xl:grid-cols-2" },
-    { columns: 3, at: "2xl", class: "@2xl:grid-cols-3" },
+    { columns: "2", at: "sm", class: "@sm:grid-cols-2" },
+    { columns: "3", at: "sm", class: "@sm:grid-cols-3" },
+    { columns: "2", at: "md", class: "@md:grid-cols-2" },
+    { columns: "3", at: "md", class: "@md:grid-cols-3" },
+    { columns: "2", at: "2xl", class: "@2xl:grid-cols-2" },
+    { columns: "3", at: "2xl", class: "@2xl:grid-cols-3" },
   ],
-  defaultVariants: { columns: 2, at: "sm" },
+  defaultVariants: { columns: "2", at: "sm" },
 });
 
 type GridOwnProps = BoxProps & {
@@ -53,6 +53,6 @@ export function Grid<E extends LayoutElement = "div">(props: GridProps<E>) {
   const [boxProps, { as, columns, at, gap, rowGap, ...rest }] = splitBox(props);
   return createElement(as ?? "div", {
     ...rest,
-    className: grid({ ...boxProps, columns, at, gap, rowGap: rowGap ?? gap }),
+    className: grid({ ...boxProps, columns: columns && `${columns}`, at, gap, rowGap: rowGap ?? gap }),
   });
 }
