@@ -3,7 +3,7 @@ module github.com/mycroblog/my/tools/agentkit
 go 1.27.3
 
 require (
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v3 v3.0.6
 	modernc.org/sqlite v1.61.0
 )
 
