@@ -405,6 +405,20 @@ export const WithoutAvatarOrActions: Story = {
   args: { avatar: undefined, actions: undefined },
 };
 
+/** Every slot filled: from the wide layout, the avatar's next column holds them all, with one gap between each two. */
+export const AllSlots: Story = {
+  args: {
+    ...WithMedia.args,
+    ...WithReactions.args,
+    details: (
+      <>
+        <Text numeric>3 boosts</Text>
+        <Text numeric>12 favourites</Text>
+      </>
+    ),
+  },
+};
+
 const levels = [
   { level: "public", label: "Public" },
   { level: "local", label: "This server" },

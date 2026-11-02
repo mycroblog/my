@@ -9,11 +9,14 @@ import { Link } from "./Link";
 
 const accountItem = tv({
   slots: {
+    // The size container of a `below` row, around the row: an element's container query never answers to itself.
+    container: "@container min-w-0",
     root: "flex min-w-0 flex-col gap-3",
     body: "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3",
     avatar: "",
     name: "font-extrabold align-match-parent",
-    handle: "text-start text-sm font-normal text-fg-muted",
+    // Left to right, and lined up with the name at the row's start in either direction (G9).
+    handle: "text-sm font-normal text-fg-muted align-match-parent",
     details: "flex flex-col text-sm text-fg-muted",
     // Under a linked account, outside the link: lined up with the name, past a spacer as wide as the avatar (size-10)
     // and the same gap.
@@ -40,13 +43,24 @@ const accountItem = tv({
     },
     trailing: {
       beside: { root: "flex-row items-center" },
-      // Below the account until the container is wide enough for both on one line.
-      below: { root: "@container @md:flex-row @md:items-center" },
+      // Below the account until the container is wide enough for both on one line, where the slot leaves the account
+      // at least half of the row and its own items wrap.
+      below: {
+        root: "@lg:flex-row @lg:items-center",
+        trailing: "@lg:max-w-1/2 @lg:justify-end",
+      },
       none: {},
     },
   },
+  compoundVariants: [
+    // The account's padding is on its body, inside the row: the row adds no gap, and the slot below it the same padding.
+    { layout: "padded", trailing: "below", class: { root: "gap-0", trailing: "px-4 pb-3 @lg:ps-0 @lg:pb-0" } },
+  ],
   defaultVariants: { layout: "row", link: false, trailing: "none" },
 });
+
+/** The rows the avatar spans, by the lines under the name: only the filled ones, so that no empty row adds height. */
+const avatarRows = ["row-span-1", "row-span-2", "row-span-3"] as const;
 
 export type AccountItemProps = {
   /** The display name as plain text: the avatar's fallback letter and, without `nameContent`, the name shown. */
@@ -109,7 +123,7 @@ export function AccountItem({
         name={name}
         seed={avatarSeed}
         decorative
-        className={slots.avatar({ className: showDetails ? "row-span-3" : "row-span-2" })}
+        className={slots.avatar({ className: avatarRows[(handle === undefined ? 0 : 1) + (showDetails ? 1 : 0)] })}
       />
       <span dir="auto" className={slots.name()}>
         {nameContent ?? name}
@@ -148,10 +162,11 @@ export function AccountItem({
     <div className={slots.body()}>{content}</div>
   );
   if (!hasTrailing) return body;
-  return (
+  const row = (
     <div className={slots.root()}>
       <div className="min-w-0 flex-1">{body}</div>
       <div className={slots.trailing()}>{trailing}</div>
     </div>
   );
+  return trailingPlacement === "below" ? <div className={slots.container()}>{row}</div> : row;
 }

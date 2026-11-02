@@ -32,7 +32,7 @@ export function AccountFollowItem({ account, badge }: AccountFollowItemProps) {
       trailing={
         <>
           {badge}
-          <RelationshipActions account={account} name={name} state={relationship} showMenu={false} />
+          <RelationshipActions account={account} name={name} state={relationship} showMenu={false} size="sm" />
         </>
       }
       trailingPlacement="below"

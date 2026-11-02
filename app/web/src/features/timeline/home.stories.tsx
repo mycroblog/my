@@ -116,6 +116,9 @@ export const FirstRun: Story = {
 /** The first run in Japanese. */
 export const FirstRunJapanese: Story = { ...inLocale("ja"), ...answering(...firstRun) };
 
+/** The first run right to left. */
+export const FirstRunRightToLeft: Story = { ...inLocale("ar-XB"), ...answering(...firstRun) };
+
 /** The first run at 320 CSS px. */
 export const FirstRunNarrow: Story = { ...narrow, ...answering(...firstRun) };
 

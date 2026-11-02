@@ -179,6 +179,24 @@ export const Moderation: Story = {
   ),
 };
 
+/** A row of a panel with nothing under the sentence: it ends at the avatar. */
+export const SentenceOnlyPlain: Story = {
+  render: () => (
+    <PostCard
+      surface="plain"
+      avatar={avatar}
+      author={
+        <NotificationSentence isUnread={false} unreadLabel="Unread">
+          <Name>Alice</Name> followed you
+        </NotificationSentence>
+      }
+      time={time}
+      visibility={null}
+      content={null}
+    />
+  ),
+};
+
 /** Links that lead on, and a follow-back button, in the actions row. */
 export const WithActions: Story = {
   render: () => (
