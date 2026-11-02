@@ -14,8 +14,8 @@
 # mybot-integration-test) live in pkg/mybot/integration, of the same shape: an echo bot against that server, and the
 # fake server of pkg/mybot/mybottest against the spec (ADR-0094 §10). They are part of this check, so they run in
 # `check:changed` and in the merge queue's `check` (the repo job of ci.yml) whenever the mykit context is selected:
-# a change of the root go.mod or go.sum (a bump that leaves the integration modules untidy, which mod-check and
-# mybot-mod-check catch), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
+# a change of the root go.mod or go.sum (a bump by hand that leaves the integration modules untidy, which mod-check and
+# mybot-mod-check catch; Dependabot's bumps tidy them through go.work, ADR-0135), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
 # internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
 # to the slow suite (ADR-0079).
 version: "3"

@@ -88,7 +88,7 @@ state file, `./mybot-state.json` by default) from the environment:
 
 ```sh
 MYBOT_SERVER=https://example.com MYBOT_CLIENT_ID=... MYBOT_CLIENT_SECRET=... MYBOT_REFRESH_TOKEN=... \
-    go run ./examples/echo
+    GOWORK=off go run ./examples/echo
 ```
 
 [`examples/Dockerfile`](examples/Dockerfile) builds any of them into a static, non-root image whose state file lives

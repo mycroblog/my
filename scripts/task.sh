@@ -10,7 +10,13 @@
 # half the CPUs, since several agents run checks on one machine; set it to override. In CI (CI set) the concurrency
 # is unlimited and the output is interleaved, with no `[task]` prefix: each workflow step runs one task and has its own
 # log (ADR-0083), and the problem matchers of the setup actions find `file:line` only at the start of a line.
+#
+# Every task runs with GOWORK=off: go.work exists for Dependabot alone. Each module is checked as it stands alone, the
+# way its users and the image build see it; workspace mode would also refuse `-modfile=tools/go.mod` and the modules
+# that go.work leaves out.
 set -euo pipefail
+
+export GOWORK=off
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 bin="$root/bin/task"

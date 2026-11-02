@@ -1,6 +1,6 @@
 # ADR-0093: API クライアントライブラリ pkg/mykit（Go・TypeScript）
 
-- Status: Accepted
+- Status: Accepted（§1 の「ルートに `go.work` を置かずに」を ADR-0135（Dependabot の Go の更新を go.work でまとめる）が置き換える）
 - Date: 2026-10-23
 - Deciders: @rosylilly
 - Issue: #1065

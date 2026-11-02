@@ -21,10 +21,11 @@ tasks:
     deps: [mod-check, vet, lint, test, build, build-tags, licenses, sqlc-check]
 
   mod-check:
-    desc: Fail if go.mod/go.sum (and tools/go.mod/go.sum) are not tidy
+    desc: Fail if go.mod/go.sum (and tools/go.mod/go.sum) are not tidy, or go.work does not load or lists the wrong modules
     cmds:
       - go mod tidy -diff
       - cd tools && go mod tidy -diff
+      - scripts/go-work-check.sh
 
   fmt-check:
     desc: Fail if a Go file of the server module is not gofmt-formatted

@@ -168,6 +168,9 @@ Use agentkit (`scripts/agentkit.sh <command>`, [tools/agentkit/README.md](tools/
 - When you add a directory, module, adapter, or feature, add or extend its entry in `tools/agentkit/context-map.yaml` in
   the same change; `scripts/task.sh agentkit:check` (every PR) fails otherwise.
 
+`go.work` exists for Dependabot alone: tasks and CI run with `GOWORK=off`, so set it for a bare `go` command outside the root
+(`pkg/mykit`, `pkg/mybot`, `tools`) and for `-modfile`.
+
 Tasks run with go-task through `scripts/task.sh <task>` ([ADR-0080](docs/adr/0080-task-runner-go-task.md)), never a `task` on PATH;
 the task names are `<area>:<task>` from `tasks/<area>.yml`. Every task and the pinned toolchain:
 [docs/reference/commands.md](docs/reference/commands.md). The common ones (each prefixed with `scripts/task.sh`):

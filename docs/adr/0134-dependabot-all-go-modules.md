@@ -1,6 +1,6 @@
 # ADR-0134: Dependabot の Go モジュールの対象を全モジュールに広げる
 
-- Status: Accepted
+- Status: Superseded by ADR-0135（Dependabot の Go の更新を go.work でまとめる）
 - Date: 2026-11-02
 - Deciders: @rosylilly
 - Issue: #1964
