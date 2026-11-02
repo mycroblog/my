@@ -3041,6 +3041,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/announcements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an announcement
+         * @description One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+         *     has passed, one whose window has ended included (`ended`), with whether the user has read
+         *     it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
+         */
+        get: operations["getAnnouncement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/announcements/{id}/read": {
         parameters: {
             query?: never;
@@ -18178,6 +18200,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnnouncementList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the announcement. */
+                id: components["parameters"]["AnnouncementId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The announcement. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
                 };
             };
             default: components["responses"]["Problem"];

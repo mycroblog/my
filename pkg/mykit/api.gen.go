@@ -18707,6 +18707,15 @@ type ClientInterface interface {
 	// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
 	ListAnnouncementHistory(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAnnouncement Get an announcement
+	//
+	// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+	// has passed, one whose window has ended included (`ended`), with whether the user has read
+	// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
+	//
+	// Corresponds with GET /announcements/{id} (the `GetAnnouncement` operationId).
+	GetAnnouncement(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MarkAnnouncementRead Mark an announcement read
 	//
 	// Records that the user read the announcement; marking it again changes nothing. An
@@ -26486,6 +26495,25 @@ func (c *Client) ListAnnouncements(ctx context.Context, reqEditors ...RequestEdi
 // Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
 func (c *Client) ListAnnouncementHistory(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAnnouncementHistoryRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAnnouncement Get an announcement
+//
+// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+// has passed, one whose window has ended included (`ended`), with whether the user has read
+// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
+//
+// Corresponds with GET /announcements/{id} (the `GetAnnouncement` operationId).
+func (c *Client) GetAnnouncement(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAnnouncementRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -39105,6 +39133,40 @@ func NewListAnnouncementHistoryRequest(server string, params *ListAnnouncementHi
 	return req, nil
 }
 
+// NewGetAnnouncementRequest constructs an http.Request for the GetAnnouncement method
+func NewGetAnnouncementRequest(server string, id AnnouncementId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/announcements/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMarkAnnouncementReadRequest constructs an http.Request for the MarkAnnouncementRead method
 func NewMarkAnnouncementReadRequest(server string, id AnnouncementId) (*http.Request, error) {
 	var err error
@@ -49255,6 +49317,17 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /announcements/history (the `ListAnnouncementHistory` operationId).
 	ListAnnouncementHistoryWithResponse(ctx context.Context, params *ListAnnouncementHistoryParams, reqEditors ...RequestEditorFn) (*ListAnnouncementHistoryResponse, error)
+
+	// GetAnnouncementWithResponse Get an announcement
+	//
+	// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+	// has passed, one whose window has ended included (`ended`), with whether the user has read
+	// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /announcements/{id} (the `GetAnnouncement` operationId).
+	GetAnnouncementWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*GetAnnouncementResponse, error)
 
 	// MarkAnnouncementReadWithResponse Mark an announcement read
 	//
@@ -63936,6 +64009,71 @@ func (r ListAnnouncementHistoryResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAnnouncementHistoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAnnouncementResponse200Headers the declared response headers of an HTTP 200 response for GetAnnouncement
+type GetAnnouncementResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAnnouncementResponseDefaultHeaders the declared response headers of an HTTP default response for GetAnnouncement
+type GetAnnouncementResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAnnouncementResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Announcement
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAnnouncementResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAnnouncementResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAnnouncementResponse) GetJSON200() *Announcement {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAnnouncementResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAnnouncementResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAnnouncementResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAnnouncementResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAnnouncementResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -78758,6 +78896,23 @@ func (c *ClientWithResponses) ListAnnouncementHistoryWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseListAnnouncementHistoryResponse(rsp)
+}
+
+// GetAnnouncementWithResponse Get an announcement
+//
+// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+// has passed, one whose window has ended included (`ended`), with whether the user has read
+// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /announcements/{id} (the `GetAnnouncement` operationId).
+func (c *ClientWithResponses) GetAnnouncementWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*GetAnnouncementResponse, error) {
+	rsp, err := c.GetAnnouncement(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAnnouncementResponse(rsp)
 }
 
 // MarkAnnouncementReadWithResponse Mark an announcement read
@@ -97101,6 +97256,83 @@ func ParseListAnnouncementHistoryResponse(rsp *http.Response) (*ListAnnouncement
 		response.Headers200 = &headers
 	case true:
 		var headers ListAnnouncementHistoryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAnnouncementResponse parses an HTTP response from a GetAnnouncementWithResponse call
+func ParseGetAnnouncementResponse(rsp *http.Response) (*GetAnnouncementResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAnnouncementResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Announcement
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAnnouncementResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAnnouncementResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

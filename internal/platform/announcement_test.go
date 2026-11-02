@@ -115,6 +115,9 @@ func TestAnnouncements(t *testing.T) {
 	if got := list(bobToken); len(got) != 0 {
 		t.Errorf("GET /announcements with a draft = %+v, want none", got)
 	}
+	if code := api(bobToken, http.MethodGet, "/announcements/"+draft.Id, nil, nil); code != http.StatusNotFound {
+		t.Errorf("GET /announcements/{id} of a draft = %d, want 404", code)
+	}
 
 	// An open stream of bob's gets the publication.
 	srv := httptest.NewServer(h)
@@ -202,9 +205,20 @@ func TestAnnouncements(t *testing.T) {
 	if page := history(bobToken, ""); len(page.Items) != 1 || page.Items[0].Id != draft.Id || page.NextCursor != nil {
 		t.Errorf("GET /announcements/history = %+v, want the published announcement", page)
 	}
+	var one clientapi.Announcement
+	if code := api(bobToken, http.MethodGet, "/announcements/"+draft.Id, nil, &one); code != http.StatusOK || one.Id != draft.Id || one.Read {
+		t.Errorf("GET /announcements/{id} = %d %+v, want it unread", code, one)
+	}
 	var read clientapi.Announcement
 	if code := api(bobToken, http.MethodPost, "/announcements/"+draft.Id+"/read", nil, &read); code != http.StatusOK || !read.Read {
 		t.Errorf("POST read = %d %+v", code, read)
+	}
+	if code := api(bobToken, http.MethodGet, "/announcements/"+draft.Id, nil, &one); code != http.StatusOK || !one.Read {
+		t.Errorf("GET /announcements/{id} after reading = %d %+v, want it read", code, one)
+	}
+	one = clientapi.Announcement{}
+	if code := api(adminToken, http.MethodGet, "/announcements/"+draft.Id, nil, &one); code != http.StatusOK || one.Read {
+		t.Errorf("GET /announcements/{id} of another user = %d %+v, want it unread", code, one)
 	}
 	if got := list(bobToken); len(got) != 1 || !got[0].Read {
 		t.Errorf("GET /announcements after reading = %+v, want it read", got)
@@ -245,6 +259,14 @@ func TestAnnouncements(t *testing.T) {
 	}
 	if code := api(bobToken, http.MethodPost, "/announcements/"+draft.Id+"/read", nil, nil); code != http.StatusNotFound {
 		t.Errorf("POST read of a withdrawn announcement = %d, want 404", code)
+	}
+	if code := api(bobToken, http.MethodGet, "/announcements/"+draft.Id, nil, nil); code != http.StatusNotFound {
+		t.Errorf("GET /announcements/{id} of a withdrawn announcement = %d, want 404", code)
+	}
+	for _, id := range []string{"0199f0e0-0000-7000-8000-0000000000ff", "not-an-id"} {
+		if code := api(bobToken, http.MethodGet, "/announcements/"+id, nil, nil); code != http.StatusNotFound {
+			t.Errorf("GET /announcements/%s = %d, want 404", id, code)
+		}
 	}
 	if code := api(adminToken, http.MethodPost, "/admin/announcements/"+draft.Id+"/publish", nil, nil); code != http.StatusConflict {
 		t.Errorf("POST publish of a withdrawn announcement = %d, want 409", code)

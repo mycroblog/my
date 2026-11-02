@@ -25,6 +25,7 @@ type Announcements interface {
 	ShownAnnouncements(ctx context.Context, userID string) ([]appinstance.ReaderAnnouncement, error)
 	ShownAnnouncement(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, bool, error)
 	PastAnnouncements(ctx context.Context, userID string, after appinstance.AnnouncementCursor, limit int) ([]appinstance.ReaderAnnouncement, bool, error)
+	PastAnnouncement(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, bool, error)
 	MarkAnnouncementRead(ctx context.Context, userID, id string) (appinstance.ReaderAnnouncement, error)
 
 	Announcements(ctx context.Context) ([]instance.Announcement, error)
@@ -113,6 +114,26 @@ func (s *Server) ListAnnouncementHistory(ctx context.Context, req ListAnnounceme
 	}
 	cache := cacheNoStore
 	return ListAnnouncementHistory200JSONResponse{Body: page, Headers: ListAnnouncementHistory200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// GetAnnouncement serves GET /api/v1/announcements/{id}.
+func (s *Server) GetAnnouncement(ctx context.Context, req GetAnnouncementRequestObject) (GetAnnouncementResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.Announcements == nil {
+		return GetAnnouncementdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	a, ok, err := s.o.Announcements.PastAnnouncement(ctx, v.UserID, req.Id)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: announcement %s: %w", req.Id, err)
+	}
+	if !ok {
+		return GetAnnouncementdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	cache := cacheNoStore
+	return GetAnnouncement200JSONResponse{Body: newAnnouncement(a), Headers: GetAnnouncement200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // MarkAnnouncementRead serves POST /api/v1/announcements/{id}/read.

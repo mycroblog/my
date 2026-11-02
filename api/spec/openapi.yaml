@@ -353,6 +353,8 @@ paths:
     $ref: ./paths/reports.yaml
   /announcements:
     $ref: ./paths/announcements.yaml
+  /announcements/{id}:
+    $ref: ./paths/announcements_{id}.yaml
   /announcements/{id}/read:
     $ref: ./paths/announcements_{id}_read.yaml
   /announcements/history:
