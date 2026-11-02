@@ -1,6 +1,6 @@
 # ADR-0135: Dependabot の Go の更新を go.work でまとめる
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-02
 - Deciders: @rosylilly
 - Issue: #1978
@@ -45,7 +45,7 @@
 
 ## Decision（決定）
 
-推奨案は選択肢 1。決定者の判断を待つ。
+選択肢 1 を採る（決定者の判断: 「go.work 導入で良いのでは」）。
 
 - `go.work` をルートに置き、`use` を `.`・`./pkg/mybot/integration`・`./pkg/mykit/integration`・`./tools/agentkit` にする。`go.work.sum` はコミットせず、無視する。
 - `pkg/mykit`・`pkg/mybot`・`tools` は入れない。`go work sync` はワークスペースの版を各モジュールの `require` に書き戻すので、入れるとサーバーの版が移るため。
