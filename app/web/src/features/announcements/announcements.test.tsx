@@ -2,8 +2,8 @@
 // The server's announcements through the whole app (web-client/README.md T4, FR-726, ADR-0125): above the home
 // timeline below xl, the unread ones say so in words and in the heading's badge, marking one read sends it and moves
 // focus to its heading, and the region goes once none is unread; from xl they are in the third column instead, by their
-// titles; the list page has the ended ones, opens one from its notification and marks it read, and loads more; and the
-// event stream adds, changes and removes announcements; with MSW playing the API.
+// titles; the list page has the ended ones and loads more; the page of one announcement reads it and marks it read, and
+// says when it is not there; and the event stream adds, changes and removes announcements; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -189,7 +189,7 @@ describe("the announcements in the third column", () => {
     ).toEqual(["Maintenance on SundayUnread", "Voice chat is hereUnread", "Spring cleaningUnread"]);
     expect(within(panel).getByRole("link", { name: /^Maintenance on Sunday/u })).toHaveAttribute(
       "href",
-      `/announcements?id=${maintenance.id}`,
+      `/announcements/${maintenance.id}`,
     );
     expect(within(panel).getByRole("link", { name: "All announcements" })).toHaveAttribute("href", "/announcements");
     // From xl the home page has no announcements of its own.
@@ -246,6 +246,10 @@ describe("the list page", () => {
       "New rulesEnded",
     ]);
     const [first, , ended] = articles;
+    expect(within(first ?? document.body).getByRole("link", { name: "Maintenance on Sunday" })).toHaveAttribute(
+      "href",
+      `/announcements/${maintenance.id}`,
+    );
     expect(within(ended ?? document.body).getByText(/^Ended Sep 8, 2026/u)).toBeInTheDocument();
     expect(within(ended ?? document.body).queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
 
@@ -260,34 +264,6 @@ describe("the list page", () => {
       expect(within(first ?? document.body).getByRole("heading", { level: 2 })).toHaveFocus();
     });
     expect(reads).toEqual([maintenance.id]);
-  });
-
-  test("opened for an announcement on a later page, loads until it has it, focuses it, and marks it read", async () => {
-    const older = announcementFixture("0199f0e0-0000-7000-8000-00000000b009", {
-      title: "Older news",
-      published_at: "2026-08-01T00:00:00Z",
-    });
-    const { reads } = historyServer([[welcome], [older]]);
-    await renderApp({ path: `/announcements?id=${older.id}` });
-
-    const heading = await screen.findByRole("heading", { level: 2, name: /^Older news/u });
-    await waitFor(() => {
-      expect(heading).toHaveFocus();
-    });
-    await waitFor(() => {
-      expect(reads).toEqual([older.id]);
-    });
-    await waitFor(() => {
-      expect(heading).toHaveTextContent(/^Older news$/u);
-    });
-  });
-
-  test("opened for a withdrawn announcement, says so above the list", async () => {
-    historyServer([[welcome]]);
-    await renderApp({ path: "/announcements?id=0199f0e0-0000-7000-8000-00000000b0ff" });
-
-    expect(await screen.findByText("That announcement was withdrawn, so it no longer shows.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Welcome" })).toBeInTheDocument();
   });
 
   test("shows more and moves focus to the first one it added", async () => {
@@ -326,5 +302,152 @@ describe("the list page", () => {
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("heading", { level: 2, name: "Welcome" })).toBeInTheDocument();
+  });
+});
+
+describe("the page of one announcement", () => {
+  beforeEach(() => {
+    server.use(signedInHandler);
+  });
+
+  /** GET /announcements/{id} answering `announcement`, or a 404 once `state.gone`; the IDs marked read are in `reads`. */
+  function announcementServer(announcement: Schemas["Announcement"], options: { failMark?: boolean } = {}) {
+    const reads: string[] = [];
+    const state = { gone: false, failMark: options.failMark ?? false };
+    server.use(
+      http.get(`${apiBase}/announcements/${announcement.id}`, () =>
+        state.gone
+          ? HttpResponse.json({ type: "about:blank", title: "Not Found", status: 404 }, { status: 404 })
+          : HttpResponse.json({ ...announcement, read: announcement.read || reads.includes(announcement.id) }),
+      ),
+      http.post(`${apiBase}/announcements/${announcement.id}/read`, () => {
+        if (state.failMark) {
+          return HttpResponse.json({ type: "about:blank", title: "Unavailable", status: 503 }, { status: 503 });
+        }
+        reads.push(announcement.id);
+        return HttpResponse.json({ ...announcement, read: true });
+      }),
+    );
+    return { reads, state };
+  }
+
+  test("is named after the title, shows the body, and opening it marks it read", async () => {
+    const { reads } = announcementServer(maintenance);
+    await renderApp({ path: `/announcements/${maintenance.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Maintenance on Sunday" })).toBeInTheDocument();
+    const article = screen.getByRole("article", { name: "Maintenance on Sunday" });
+    expect(within(article).getByRole("link", { name: /^Status/u })).toHaveAttribute("href", "https://status.example/");
+    await waitFor(() => {
+      expect(reads).toEqual([maintenance.id]);
+    });
+    await waitFor(() => {
+      expect(within(article).queryByText("Unread")).not.toBeInTheDocument();
+    });
+    expect(within(article).queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "All announcements" })).toHaveAttribute("href", "/announcements");
+    await waitFor(() => {
+      expect(document.title).toMatch(/^Maintenance on Sunday/u);
+    });
+  });
+
+  test("leads there from the list's title", async () => {
+    announcementServer(welcome);
+    server.use(http.get(`${apiBase}/announcements/history`, () => HttpResponse.json({ items: [welcome] })));
+    const { user, router } = await renderApp({ path: "/announcements" });
+
+    await user.click(await screen.findByRole("link", { name: "Welcome" }));
+
+    const heading = await screen.findByRole("heading", { level: 1, name: "Welcome" });
+    expect(router.state.location.pathname).toBe(`/announcements/${welcome.id}`);
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+  });
+
+  test("does not mark a read one again", async () => {
+    const { reads } = announcementServer(welcome);
+    await renderApp({ path: `/announcements/${welcome.id}` });
+
+    const article = await screen.findByRole("article", { name: "Welcome" });
+    expect(within(article).queryByText("Unread")).not.toBeInTheDocument();
+    expect(within(article).queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
+    expect(reads).toEqual([]);
+  });
+
+  test("shows an ended one as ended, and cannot mark it read", async () => {
+    const { reads } = announcementServer(rules);
+    await renderApp({ path: `/announcements/${rules.id}` });
+
+    const article = await screen.findByRole("article", { name: "New rules" });
+    expect(within(article).getByText("Ended")).toBeInTheDocument();
+    expect(within(article).getByText(/^Ended Sep 8, 2026/u)).toBeInTheDocument();
+    expect(within(article).queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
+    expect(reads).toEqual([]);
+  });
+
+  test("says why opening it did not mark it read, and marking it again moves focus to the heading", async () => {
+    const { reads, state } = announcementServer(maintenance, { failMark: true });
+    const { user } = await renderApp({ path: `/announcements/${maintenance.id}` });
+
+    expect(await screen.findByText(/could not be marked as read/u)).toBeInTheDocument();
+    state.failMark = false;
+    await user.click(screen.getByRole("button", { name: "Mark as read" }));
+
+    await waitFor(() => {
+      expect(reads).toEqual([maintenance.id]);
+    });
+    const heading = screen.getByRole("heading", { level: 1, name: "Maintenance on Sunday" });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Mark as read" })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText(/could not be marked as read/u)).not.toBeInTheDocument();
+  });
+
+  test("says a withdrawn or unknown one is not there, with the way to the list", async () => {
+    const { state } = announcementServer(maintenance);
+    state.gone = true;
+    await renderApp({ path: `/announcements/${maintenance.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Announcement not found" })).toBeInTheDocument();
+    expect(screen.getByText(/was withdrawn/u)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "All announcements" })).toHaveAttribute("href", "/announcements");
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+  });
+
+  test("says it is gone when the stream removes it while it shows", async () => {
+    const { state } = announcementServer(welcome);
+    const streams = streamingServer();
+    server.use(resumableSession(), streams.handler);
+    await renderApp({ path: `/announcements/${welcome.id}` });
+    await screen.findByRole("heading", { level: 1, name: "Welcome" });
+    await waitFor(() => {
+      expect(streams.connections()).toBe(1);
+    });
+
+    state.gone = true;
+    streams.current().send("announcement_removed", { id: welcome.id });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Announcement not found" })).toBeInTheDocument();
+  });
+
+  test("says why it could not be loaded, and tries again", async () => {
+    let fail = true;
+    server.use(
+      http.get(`${apiBase}/announcements/${welcome.id}`, () =>
+        fail
+          ? HttpResponse.json({ type: "about:blank", title: "Unavailable", status: 503 }, { status: 503 })
+          : HttpResponse.json(welcome),
+      ),
+    );
+    const { user } = await renderApp({ path: `/announcements/${welcome.id}` });
+
+    expect(await screen.findByText("This announcement could not be loaded")).toBeInTheDocument();
+    fail = false;
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Welcome" })).toBeInTheDocument();
   });
 });

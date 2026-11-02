@@ -119,7 +119,7 @@
   - `instance.announcement_scheduled`（公開と、見え始める前に期間の始まりを動かす変更）の projector が、同じトランザクションでジョブ（`instance.notify_announcement`）を `ShowsFrom` の時刻に積みます。冪等キーはお知らせと `ShowsFrom` の組で、始まりを動かすと新しい時刻のジョブが加わります。
   - ジョブは、お知らせが公開中で期間の中にあり `ShowsFrom` を過ぎているときだけ、ローカルの利用者（インスタンスのアクターを除く）を 100 件ずつ、1 回ごとに短いトランザクションで通知します。`ShowsFrom` の前に動いたときはその時刻まで待ち直し、下書き・取り下げ・期間の終わったお知らせでは何もしません。凍結（`moderation` の `SuspendedTx`）と削除済み（`account` の `DeletedTx`）の利用者、アプリ内でオフにした利用者には作りません。公開後の変更では通知し直しません。
   - 一覧・未読数・Web Push の送る前の確認は、今見えているお知らせ（`instance` の `ShownAnnouncementIDs`）の通知だけを残し、取り下げたお知らせと期間の終わったお知らせの通知を読み取り時に隠します（行は消さない）。
-  - 設定のグループ `announcement` はインスタンスからの知らせの 1 行ですが、アプリ内は選べて既定オン、メールの経路を持ちません（`Rule.Absent`）。Web Push は購読の `alerts` に `announcement` があるときに送り、そのときのタイトルを出して、お知らせの一覧のそのお知らせ（`/announcements?id=<id>`）を開きます。
+  - 設定のグループ `announcement` はインスタンスからの知らせの 1 行ですが、アプリ内は選べて既定オン、メールの経路を持ちません（`Rule.Absent`）。Web Push は購読の `alerts` に `announcement` があるときに送り、そのときのタイトルを出して、そのお知らせの画面（`/announcements/<id>`）を開きます。
   - アカウントの消去は、その人の購読と依頼、その人への購読と依頼も消します（§8）。
 - 通知の設定（FR-210、ADR-0109 §2・§3・§6）は、利用者が選んだ（種類のグループ、経路）だけを `notification_settings` に持ち、行が無ければグループの既定に従います。グループと既定、固定の経路はドメインの `notification.Groups` が決めます。
   - グループは、普段の通知が種類ごと（通話の `voice_room_started`・`voice_room_invited` は `voice` にまとめる）、モデレーター向けが種類ごと、インスタンスからの知らせが `moderation`（`moderation_notice`・`report_resolved`・`appeal_decided`・`relationships_severed`・`custom_emoji_request_decided`）・`service_closure`・`supporter`（`supporter_*`）・`announcement` です。

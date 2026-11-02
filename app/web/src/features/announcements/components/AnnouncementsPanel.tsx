@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The panel of the third column from xl (web-client/09-app-shell.md §9, ADR-0125 §4), at its top, on every page but
 // the list page: the announcements that show now, by their titles. Its heading has the unread count beside it; the
-// unread ones come first, each kind the latest first, and the first three show, each a link to it on the list page
-// with "Unread" in words when unread (WCAG 1.4.1). The bodies and "Mark as read" are on the list page only. Absent
-// while there are none, while they load, and when they cannot be loaded.
+// unread ones come first, each kind the latest first, and the first three show, each a link to its page with "Unread"
+// in words when unread (WCAG 1.4.1). The bodies and "Mark as read" are on the pages it leads to. Absent while there
+// are none, while they load, and when they cannot be loaded.
 import { AsidePanel, Badge, Cluster, Link, Stack, Tag, Text } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { useAnnouncements } from "../hooks/useAnnouncements";

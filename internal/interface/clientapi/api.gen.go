@@ -14787,6 +14787,9 @@ type ServerInterface interface {
 	// ListAnnouncementHistory List the announcements, past ones included
 	// (GET /announcements/history)
 	ListAnnouncementHistory(w http.ResponseWriter, r *http.Request, params ListAnnouncementHistoryParams)
+	// GetAnnouncement Get an announcement
+	// (GET /announcements/{id})
+	GetAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId)
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
@@ -20724,6 +20727,32 @@ func (siw *ServerInterfaceWrapper) ListAnnouncementHistory(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetAnnouncement operation middleware
+func (siw *ServerInterfaceWrapper) GetAnnouncement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AnnouncementId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAnnouncement(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MarkAnnouncementRead operation middleware
 func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r *http.Request) {
 
@@ -25446,6 +25475,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports", wrapper.ListOwnReports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reports", wrapper.CreateReport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements", wrapper.ListAnnouncements)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements/{id}", wrapper.GetAnnouncement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/announcements/{id}/read", wrapper.MarkAnnouncementRead)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements/history", wrapper.ListAnnouncementHistory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/finance/cost_totals", wrapper.GetFinanceCostTotals)
@@ -37119,6 +37149,68 @@ func (response ListAnnouncementHistorydefaultApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type GetAnnouncementRequestObject struct {
+	Id AnnouncementId `json:"id"`
+}
+
+type GetAnnouncementResponseObject interface {
+	VisitGetAnnouncementResponse(w http.ResponseWriter) error
+}
+
+type GetAnnouncement200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAnnouncement200JSONResponse struct {
+	Body    Announcement
+	Headers GetAnnouncement200ResponseHeaders
+}
+
+func (response GetAnnouncement200JSONResponse) VisitGetAnnouncementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAnnouncementdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAnnouncementdefaultApplicationProblemPlusJSONResponse) VisitGetAnnouncementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MarkAnnouncementReadRequestObject struct {
 	Id AnnouncementId `json:"id"`
 }
@@ -47114,6 +47206,9 @@ type StrictServerInterface interface {
 	// ListAnnouncementHistory List the announcements, past ones included
 	// (GET /announcements/history)
 	ListAnnouncementHistory(ctx context.Context, request ListAnnouncementHistoryRequestObject) (ListAnnouncementHistoryResponseObject, error)
+	// GetAnnouncement Get an announcement
+	// (GET /announcements/{id})
+	GetAnnouncement(ctx context.Context, request GetAnnouncementRequestObject) (GetAnnouncementResponseObject, error)
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(ctx context.Context, request MarkAnnouncementReadRequestObject) (MarkAnnouncementReadResponseObject, error)
@@ -52793,6 +52888,32 @@ func (sh *strictHandler) ListAnnouncementHistory(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListAnnouncementHistoryResponseObject); ok {
 		if err := validResponse.VisitListAnnouncementHistoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAnnouncement operation middleware
+func (sh *strictHandler) GetAnnouncement(w http.ResponseWriter, r *http.Request, id AnnouncementId) {
+	var request GetAnnouncementRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAnnouncement(ctx, request.(GetAnnouncementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAnnouncement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAnnouncementResponseObject); ok {
+		if err := validResponse.VisitGetAnnouncementResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -101,3 +101,10 @@ func TestPushRechecksAtSend(t *testing.T) {
 		})
 	}
 }
+
+func TestAnnouncementPath(t *testing.T) {
+	const id = "01a18bbc-4663-71ea-a2b8-f3f169979c0a"
+	if got, want := AnnouncementPath(id), "/announcements/"+id; got != want {
+		t.Errorf("AnnouncementPath = %q, want %q", got, want)
+	}
+}

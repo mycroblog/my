@@ -3,18 +3,11 @@
 // viewer has read each, and marking one read, for the top of the home page below xl, the panel of the third column
 // from xl, and the count of the navigation's item. The list loads with the page but is not part of it: while it loads
 // and when it cannot be loaded, the page shows without it.
-import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
-import { errorMessage } from "../../../lib/errors";
 import { shellQueryRetry } from "../../../lib/query";
-import {
-  type Announcement,
-  announcementsQueryOptions,
-  cacheAnnouncement,
-  cachedAnnouncements,
-  markAnnouncementReadMutation,
-} from "../api/announcements";
+import { type Announcement, announcementsQueryOptions, cachedAnnouncements } from "../api/announcements";
+import { useMarkAnnouncementRead } from "./useMarkAnnouncementRead";
 
 export type Announcements = {
   /** The announcements, the latest first; empty while they load or when they cannot be loaded. */
@@ -50,25 +43,8 @@ export function useUnreadAnnouncementCount(): number {
 export function useAnnouncements(): Announcements {
   const api = useApi();
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | undefined>(undefined);
   const items = useAnnouncementList();
-  const options = markAnnouncementReadMutation(api);
-  const mark = useMutation({
-    ...options,
-    onMutate: () => {
-      setError(undefined);
-    },
-    onSuccess: (announcement) => {
-      cacheAnnouncement(queryClient, api, announcement);
-    },
-    onError: (failure) => {
-      setError(errorMessage(failure));
-    },
-  });
-  const markingIds = useMutationState({
-    filters: { mutationKey: options.mutationKey, status: "pending" },
-    select: (pending) => pending.state.variables as string,
-  });
+  const mark = useMarkAnnouncementRead();
   return {
     items,
     unread: unreadOf(items),
@@ -80,7 +56,7 @@ export function useAnnouncements(): Announcements {
         },
       });
     },
-    markingIds,
-    error,
+    markingIds: mark.markingIds,
+    error: mark.error,
   };
 }

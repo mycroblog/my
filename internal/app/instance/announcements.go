@@ -403,7 +403,7 @@ type ReaderAnnouncement struct {
 	// Read reports whether the user has marked it read.
 	Read bool
 	// Ended reports whether its window has ended (only the list with the past announcements
-	// has such).
+	// and PastAnnouncement have such).
 	Ended bool
 }
 
@@ -515,9 +515,22 @@ func (s *Service) PastAnnouncements(ctx context.Context, userID string, after An
 	return page, more, err
 }
 
+// PastAnnouncement returns the announcement id as the user userID reads it in the list of
+// PastAnnouncements, and false when that list does not have it (a draft, a withdrawn one, one
+// that has not started to show, or an unknown ID).
+func (s *Service) PastAnnouncement(ctx context.Context, userID, id string) (ReaderAnnouncement, bool, error) {
+	return s.readerAnnouncement(ctx, userID, id, instance.Announcement.HasShownBy)
+}
+
 // ShownAnnouncement returns the announcement id as the user userID sees it, and false when the
 // users do not see it now (a draft, a withdrawn one, one outside its window, or an unknown ID).
 func (s *Service) ShownAnnouncement(ctx context.Context, userID, id string) (ReaderAnnouncement, bool, error) {
+	return s.readerAnnouncement(ctx, userID, id, instance.Announcement.ShowsAt)
+}
+
+// readerAnnouncement returns the announcement id as the user userID sees it, and false when it
+// is unknown or visible does not hold for it now.
+func (s *Service) readerAnnouncement(ctx context.Context, userID, id string, visible func(instance.Announcement, time.Time) bool) (ReaderAnnouncement, bool, error) {
 	a, err := s.d.Repository.FindAnnouncement(ctx, id)
 	if errors.Is(err, ErrNotFound) {
 		return ReaderAnnouncement{}, false, nil
@@ -525,7 +538,7 @@ func (s *Service) ShownAnnouncement(ctx context.Context, userID, id string) (Rea
 	if err != nil {
 		return ReaderAnnouncement{}, false, err
 	}
-	if !a.ShowsAt(s.d.Clock.Now()) {
+	if !visible(a, s.d.Clock.Now()) {
 		return ReaderAnnouncement{}, false, nil
 	}
 	out, err := s.forReader(ctx, userID, []instance.Announcement{a})
