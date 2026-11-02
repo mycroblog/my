@@ -47,7 +47,7 @@ export type MenuProps<T extends object> = Omit<AriaMenuProps<T>, "className" | "
   Pick<PopoverProps, "placement"> & {
     /** The menu's accessible name; usually the trigger's label. */
     "aria-label": string;
-    /** Classes merged onto the popover with tailwind-merge. */
+    /** Classes merged onto the popover with tailwind-variants. */
     className?: string;
     ref?: Ref<HTMLDivElement>;
   };
@@ -72,7 +72,7 @@ export type MenuItemProps<T extends object = object> = Omit<
   children: ReactNode;
   /** `danger` for destructive actions (delete, block). The label must still say what happens. */
   intent?: "neutral" | "danger";
-  /** Classes merged with tailwind-merge. */
+  /** Classes merged with tailwind-variants. */
   className?: string;
   ref?: Ref<HTMLDivElement>;
 };

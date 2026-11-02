@@ -82,7 +82,7 @@ type ModalDialogProps = {
   isDismissable?: boolean;
   /** Ignore Esc, for a dialog that must be answered. */
   isKeyboardDismissDisabled?: boolean;
-  /** Classes merged onto the panel with tailwind-merge. */
+  /** Classes merged onto the panel with tailwind-variants. */
   className?: string;
   ref?: Ref<HTMLElement>;
   /** `alertdialog` for confirmations that interrupt the user (WAI-ARIA APG, alert dialog pattern). */

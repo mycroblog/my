@@ -100,7 +100,7 @@ const postContent = tv({
   variants: {
     size: { sm: "text-sm", base: "", lg: "text-lg" },
     framed: { true: "rounded-md border border-border p-3" },
-    lineClamp: { 2: "line-clamp-2", 3: "line-clamp-3" },
+    lineClamp: { "2": "line-clamp-2", "3": "line-clamp-3" },
   },
 });
 
@@ -275,7 +275,7 @@ export function PostContent({
       )}
       dir="auto"
       lang={lang}
-      className={postContent({ size, framed, lineClamp, className })}
+      className={postContent({ size, framed, lineClamp: lineClamp && `${lineClamp}`, className })}
       dangerouslySetInnerHTML={{ __html: trustedHtml(html) }}
     />
   );

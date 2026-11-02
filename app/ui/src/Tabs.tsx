@@ -76,7 +76,7 @@ export type TabsProps = Omit<AriaTabsProps, "className" | "style" | "children" |
   /** The selected tab's id, for a selection kept outside (the URL). */
   selectedKey?: Key | null;
   onSelectionChange?: (key: Key) => void;
-  /** Classes merged onto the root with tailwind-merge. */
+  /** Classes merged onto the root with tailwind-variants. */
   className?: string;
   ref?: Ref<HTMLDivElement>;
 };

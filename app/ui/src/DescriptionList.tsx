@@ -15,13 +15,13 @@ const descriptionList = tv({
   variants: {
     /** The most columns, reached in a wide container; a narrow one always has one column. */
     columns: {
-      1: {},
-      2: { list: "@sm:grid-cols-2" },
-      3: { list: "@sm:grid-cols-2 @2xl:grid-cols-3" },
-      4: { list: "@sm:grid-cols-2 @2xl:grid-cols-4" },
+      "1": {},
+      "2": { list: "@sm:grid-cols-2" },
+      "3": { list: "@sm:grid-cols-2 @2xl:grid-cols-3" },
+      "4": { list: "@sm:grid-cols-2 @2xl:grid-cols-4" },
     },
   },
-  defaultVariants: { columns: 1 },
+  defaultVariants: { columns: "1" },
 });
 
 export type DescriptionListProps = {
@@ -29,13 +29,13 @@ export type DescriptionListProps = {
   children: ReactNode;
   /** The most columns (1 to 4). Long values (an error, a payload) belong in a list of one column. */
   columns?: 1 | 2 | 3 | 4;
-  /** Classes merged onto the root with tailwind-merge. */
+  /** Classes merged onto the root with tailwind-variants. */
   className?: string;
 };
 
 /** A `<dl>` that is its own size container, so its columns answer to the space it has. */
 export function DescriptionList({ children, columns, className }: DescriptionListProps) {
-  const styles = descriptionList({ columns });
+  const styles = descriptionList({ columns: columns && `${columns}` });
   return (
     <div className={styles.root({ className })}>
       <dl className={styles.list()}>{children}</dl>

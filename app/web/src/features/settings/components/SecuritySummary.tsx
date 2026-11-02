@@ -93,7 +93,7 @@ function Row({ href, icon, label, badge }: { href: string; icon: ReactNode; labe
   return (
     // A row of a list keeps its own inner space (web-client/16-look-states-and-wording.md G2).
     <Box as="li" paddingX="4" paddingY="3">
-      <Link href={href} variant="standalone" gap={2}>
+      <Link href={href} variant="standalone" gap="2">
         <IconLabel icon={icon}>{label}</IconLabel>
         {badge !== undefined && (
           <>

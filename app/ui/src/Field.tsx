@@ -43,7 +43,7 @@ export interface FieldTextProps {
 
 interface PartProps<T> {
   children: T;
-  /** Merged into the part's classes with tailwind-merge. */
+  /** Merged into the part's classes with tailwind-variants. */
   className?: string;
 }
 

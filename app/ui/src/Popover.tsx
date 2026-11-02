@@ -34,7 +34,7 @@ export type PopoverProps = Labelled &
   Pick<AriaPopoverProps, "placement" | "offset" | "isOpen" | "defaultOpen" | "onOpenChange" | "triggerRef"> & {
     /** The content. A function receives `close` for actions that close the popover. */
     children: ReactNode | ((renderProps: { close: () => void }) => ReactNode);
-    /** Classes merged onto the popover with tailwind-merge. */
+    /** Classes merged onto the popover with tailwind-variants. */
     className?: string;
     ref?: Ref<HTMLElement>;
   };

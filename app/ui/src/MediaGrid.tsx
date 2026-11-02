@@ -52,11 +52,11 @@ const mediaGrid = tv({
   },
   variants: {
     count: {
-      1: {},
-      2: { base: "grid-cols-2" },
+      "1": {},
+      "2": { base: "grid-cols-2" },
       // The first item fills the start column; the other two stack in the end column.
-      3: { base: "grid-cols-2 grid-rows-2 [&>*:first-child]:row-span-2" },
-      4: { base: "grid-cols-2 grid-rows-2" },
+      "3": { base: "grid-cols-2 grid-rows-2 [&>*:first-child]:row-span-2" },
+      "4": { base: "grid-cols-2 grid-rows-2" },
     },
     revealed: {
       // Concealed: one button over the middle of the grid, so it is the obvious thing to press.
@@ -199,7 +199,7 @@ function PlaybackCell({
   const { locale } = useLocale();
   const autoplay = useAnimationsPlay();
   const reducedMotion = usePrefersReducedMotion();
-  const slots = mediaGrid({ count, revealed });
+  const slots = mediaGrid({ count: `${count}`, revealed });
   const name = item.alt ?? noDescriptionLabel;
   const loops = playback.kind === "gifv";
   const playsByItself = loops && autoplay && !reducedMotion;
@@ -303,7 +303,7 @@ function MediaCell({
   const [failed, setFailed] = useState(false);
   // A new attempt is a new element, so the browser asks for the picture again.
   const [attempt, setAttempt] = useState(0);
-  const slots = mediaGrid({ count, revealed });
+  const slots = mediaGrid({ count: `${count}`, revealed });
   const picture = (
     <Picture
       key={attempt}
@@ -408,7 +408,7 @@ export function MediaGrid({
   const revealed = !sensitive || (isRevealed ?? uncontrolled);
   const shown = items.slice(0, 4);
   const count = Math.min(4, Math.max(1, shown.length)) as 1 | 2 | 3 | 4;
-  const slots = mediaGrid({ count, revealed });
+  const slots = mediaGrid({ count: `${count}`, revealed });
   // The viewer steps through the shown pictures that have an original.
   const viewable =
     viewerLabels === undefined
