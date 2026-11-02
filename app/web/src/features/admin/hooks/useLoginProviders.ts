@@ -186,7 +186,7 @@ function useLimitStartCheck() {
   const queryClient = useQueryClient();
   return async (providerId?: string): Promise<LimitStart | null> => {
     try {
-      const impact = await queryClient.fetchQuery({ ...loginProviderLimitQueryOptions(api, providerId), staleTime: 0 });
+      const impact = await queryClient.query({ ...loginProviderLimitQueryOptions(api, providerId), staleTime: 0 });
       return impact.starts_limit ? { impact } : null;
     } catch {
       return { impact: undefined };
