@@ -454,13 +454,16 @@ describe("the page of one announcement", () => {
 
 /** Answers `path` with a failure while `state.mode` is "fail", waits for `state.release` while "wait", and else `body`. */
 function retriedServer(path: string, body: () => unknown) {
-  const state: { mode: "fail" | "wait" | "pass"; release: () => void } = { mode: "fail", release: () => undefined };
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const state: { mode: "fail" | "wait" | "pass"; release: () => void } = { mode: "fail", release };
   server.use(
     http.get(`${apiBase}${path}`, async () => {
       if (state.mode === "wait") {
-        await new Promise<void>((resolve) => {
-          state.release = resolve;
-        });
+        // Released once, whether the request has arrived by then or arrives later.
+        await held;
         return HttpResponse.json({ type: "about:blank", title: "Unavailable", status: 503 }, { status: 503 });
       }
       return state.mode === "fail"
