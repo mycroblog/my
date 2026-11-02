@@ -21,6 +21,7 @@ import {
   reportablePostsQueryOptions,
   type Status,
 } from "../api/reports";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** The steps of the dialog: the four of the draft (`rules` only for a violation), then the confirmation. */
 export type ReportStep = "category" | "rules" | "posts" | "comment" | "sent";
@@ -136,9 +137,13 @@ export function useReportForm(account: Account, status: Status | undefined, room
     forward: false,
   }));
   const [isRuleMissing, setIsRuleMissing] = useState(false);
-  const instance = useQuery(instanceQueryOptions(api));
+  const instance = useQuery({ ...instanceQueryOptions(api), retry: shellQueryRetry });
   // A room's report cites no posts, so it does not load them.
-  const latest = useQuery({ ...reportablePostsQueryOptions(api, account.id), enabled: room === undefined });
+  const latest = useQuery({
+    ...reportablePostsQueryOptions(api, account.id),
+    enabled: room === undefined,
+    retry: shellQueryRetry,
+  });
   const instanceFailure = useLoadFailure(instance);
   const latestFailure = useLoadFailure(latest);
   const file = useMutation({ ...createReportMutation(api), onSuccess: () => cacheFiledReport(queryClient) });

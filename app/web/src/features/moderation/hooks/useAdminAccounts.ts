@@ -41,6 +41,7 @@ import {
 import { refreshAuditLog } from "../api/staff";
 import type { AccountAction } from "../api/reports";
 import { type PagedPages, toPagedList } from "./pagedList";
+import { shellQueryRetry } from "../../../lib/query";
 
 export const adminAccountStateLabels: Readonly<Record<AdminAccountState, ClientMessageKey>> = {
   active: "client:admin.accounts.state.active",
@@ -180,7 +181,11 @@ export type AccountSearchResults =
  */
 export function useAccountSearchResults(search: AdminAccountSearch): AccountSearchResults {
   const api = useApi();
-  const query = useInfiniteQuery({ ...adminAccountsQueryOptions(api, search), retryOnMount: false });
+  const query = useInfiniteQuery({
+    ...adminAccountsQueryOptions(api, search),
+    retryOnMount: false,
+    retry: shellQueryRetry,
+  });
   const failure = useLoadFailure(query);
   if (query.data === undefined) {
     if (failure.error === null) return { status: "loading" };

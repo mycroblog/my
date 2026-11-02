@@ -11,7 +11,7 @@ import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
 import { useInstanceName } from "../../../lib/instanceName";
 import { profilePath } from "../../../lib/paths";
-import { shellQueryReader } from "../../../lib/query";
+import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
 import {
   type Instance,
   instanceQueryOptions,
@@ -125,7 +125,7 @@ export function useLanding(): Landing {
   const { data: instance } = useQuery({ ...instanceQueryOptions(api), ...shellQueryReader });
   const { data: overview } = useQuery(overviewQueryOptions(api));
   const localOn = instance?.timelines.local === "everyone";
-  const posts = useQuery({ ...recentPostsQueryOptions(api), enabled: localOn });
+  const posts = useQuery({ ...recentPostsQueryOptions(api), enabled: localOn, retry: shellQueryRetry });
   const postsFailure = useLoadFailure(posts);
 
   let recentPosts: RecentPosts;

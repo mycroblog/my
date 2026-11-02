@@ -27,6 +27,7 @@ import {
   retryJobMutation,
 } from "../api/jobs";
 import { type PagedList, toPagedList } from "../../moderation";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** The state of the queue. */
 export function useJobQueue(): JobQueue {
@@ -57,7 +58,7 @@ export type JobAttempts =
 /** The records of the runs of the job `id` that did not succeed, the most recently finished first. */
 export function useJobAttempts(id: string): JobAttempts {
   const api = useApi();
-  const query = useInfiniteQuery(jobAttemptsQueryOptions(api, id));
+  const query = useInfiniteQuery({ ...jobAttemptsQueryOptions(api, id), retry: shellQueryRetry });
   const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     return {

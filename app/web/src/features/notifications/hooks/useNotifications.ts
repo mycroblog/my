@@ -13,6 +13,7 @@ import {
   updateNotificationMarker,
 } from "../api/notifications";
 import { groupNotifications, type NotificationGroup } from "./groupNotifications";
+import { shellQueryRetry } from "../../../lib/query";
 
 /** The notifications page's list. */
 export type NotificationList =
@@ -87,7 +88,12 @@ export function useNotifications(filter: NotificationFilter): NotificationList {
   const signedIn = session === "signed-in";
   // The route's loader has just tried the first page; a failure stays until the retry button or the return
   // online (lib/query.ts) instead of being tried again as the list mounts.
-  const list = useInfiniteQuery({ ...notificationsQueryOptions(api, filter), enabled: signedIn, retryOnMount: false });
+  const list = useInfiniteQuery({
+    ...notificationsQueryOptions(api, filter),
+    enabled: signedIn,
+    retryOnMount: false,
+    retry: shellQueryRetry,
+  });
   const failure = useLoadFailure(list);
   const marker = useQuery({ ...notificationMarkerQueryOptions(api), enabled: signedIn });
   const markerAtOpen = useMarkerAtOpen(marker.data);
