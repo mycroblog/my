@@ -19411,8 +19411,10 @@ components:
       type: object
       required:
         - locale
+        - locale_follows_browser
         - time_zone
         - time_zone_chosen
+        - time_zone_follows_browser
         - default_visibility
         - default_quote_policy
         - default_post_language
@@ -19423,6 +19425,12 @@ components:
         locale:
           description: The UI locale, a BCP 47 language tag.
           type: string
+        locale_follows_browser:
+          description: |
+            Whether clients with a browser show its language instead of `locale`, or the server's default
+            language when the browser names none they have. They keep `locale` at what they last detected,
+            for what has no browser (email, push). True for a new user.
+          type: boolean
         time_zone:
           description: The time zone, an IANA name such as `Asia/Tokyo`; `UTC` until one is chosen.
           type: string
@@ -19430,6 +19438,11 @@ components:
           description: |
             Whether a time zone has been chosen: false for a new user until a request sets
             `time_zone`. Clients may then set it to the device's time zone.
+          type: boolean
+        time_zone_follows_browser:
+          description: |
+            Whether clients with a browser show dates in its time zone instead of `time_zone`. They keep
+            `time_zone` at what they last detected, for what has no browser. True for a new user.
           type: boolean
         default_visibility:
           $ref: '#/components/schemas/Visibility'
@@ -21370,11 +21383,17 @@ components:
       type: object
       properties:
         locale:
-          description: The UI locale, a BCP 47 language tag.
+          description: The UI locale, a BCP 47 language tag. Without `locale_follows_browser`, it stops following the browser.
           type: string
+        locale_follows_browser:
+          description: Whether clients with a browser show its language instead of `locale`.
+          type: boolean
         time_zone:
-          description: The time zone, an IANA name.
+          description: The time zone, an IANA name. Without `time_zone_follows_browser`, it stops following the browser.
           type: string
+        time_zone_follows_browser:
+          description: Whether clients with a browser show dates in its time zone instead of `time_zone`.
+          type: boolean
         default_visibility:
           $ref: '#/components/schemas/Visibility'
         default_quote_policy:

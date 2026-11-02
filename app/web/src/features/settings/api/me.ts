@@ -81,11 +81,11 @@ export function cacheSavedProfile(api: Api, queryClient: QueryClient, saved: Cre
 }
 
 /**
- * Chooses `timeZone`, the time zone of the device in use, for a user who has chosen none yet
+ * Saves what was detected in the browser for a user who follows it, for what has no browser (email, push)
  * (PATCH /preferences). `signal` cancels it.
  */
-export async function adoptTimeZone(api: Api, timeZone: string, signal: AbortSignal): Promise<Preferences> {
-  const { data, error } = await api.fetch.PATCH("/preferences", { body: { time_zone: timeZone }, signal });
+export async function saveDetected(api: Api, change: PreferencesChange, signal: AbortSignal): Promise<Preferences> {
+  const { data, error } = await api.fetch.PATCH("/preferences", { body: change, signal });
   // The middleware throws an ApiError for every error status, so this is only for the types.
   if (data === undefined) throw new Error(error.title);
   return data;

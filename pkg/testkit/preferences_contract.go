@@ -66,14 +66,16 @@ func (e *accountEnv) preferences(t *testing.T, userID string) appidentity.UserPr
 func defaultPreferencesOf(userID, locale string, at time.Time) appidentity.UserPreferences {
 	return appidentity.UserPreferences{
 		Preferences: identity.Preferences{
-			UserID:              userID,
-			Locale:              locale,
-			TimeZone:            "UTC",
-			DefaultVisibility:   identity.VisibilityPublic,
-			DefaultQuotePolicy:  identity.QuotePolicyPublic,
-			DefaultPostLanguage: "und",
-			TimelineAutoInsert:  true,
-			UpdatedAt:           at,
+			UserID:                 userID,
+			Locale:                 locale,
+			TimeZone:               "UTC",
+			LocaleFollowsBrowser:   true,
+			TimeZoneFollowsBrowser: true,
+			DefaultVisibility:      identity.VisibilityPublic,
+			DefaultQuotePolicy:     identity.QuotePolicyPublic,
+			DefaultPostLanguage:    "und",
+			TimelineAutoInsert:     true,
+			UpdatedAt:              at,
 		},
 		TimelineLanguages: []string{},
 	}
@@ -195,6 +197,7 @@ func preferencesSet(t *testing.T, e *accountEnv) {
 	// insertion of new posts false, and false is stored rather than the default.
 	back := defaultPreferencesOf(reg.User.ID, "en", e.clock.Now())
 	back.TimeZoneChosen, back.TimelineAutoInsert = true, false
+	back.LocaleFollowsBrowser, back.TimeZoneFollowsBrowser = false, false
 	checkPreferences(t, e.preferences(t, reg.User.ID), back)
 }
 
@@ -325,7 +328,7 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 	}
 	want := defaultPreferencesOf(reg.User.ID, "en", e.clock.Now())
 	want.TimeZone, want.TimeZoneChosen, want.DefaultVisibility, want.TimelineLanguages = tz, true, vis, []string{"en", "ja-JP"}
-	want.DefaultQuotePolicy = quote
+	want.DefaultQuotePolicy, want.TimeZoneFollowsBrowser = quote, false
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 
@@ -337,7 +340,28 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 	}); err != nil {
 		t.Fatalf("UpdatePreferences(locale) = %v", err)
 	}
-	want.Locale, want.RequireMediaDescription, want.UpdatedAt = "ja", true, e.clock.Now()
+	want.Locale, want.LocaleFollowsBrowser, want.RequireMediaDescription, want.UpdatedAt = "ja", false, true, e.clock.Now()
+	checkPreferences(t, got, want)
+	checkPreferences(t, e.preferences(t, reg.User.ID), want)
+
+	// What a client detected in the browser keeps following, and following can be turned on and off.
+	e.clock.Advance(time.Minute)
+	if got, err = e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{
+		Locale: &locale, LocaleFollowsBrowser: &yes, TimeZone: &tz, TimeZoneFollowsBrowser: &yes,
+	}); err != nil {
+		t.Fatalf("UpdatePreferences(follow) = %v", err)
+	}
+	want.LocaleFollowsBrowser, want.TimeZoneFollowsBrowser, want.UpdatedAt = true, true, e.clock.Now()
+	checkPreferences(t, got, want)
+	checkPreferences(t, e.preferences(t, reg.User.ID), want)
+	stop := false
+	e.clock.Advance(time.Minute)
+	if got, err = e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{
+		LocaleFollowsBrowser: &stop, TimeZoneFollowsBrowser: &stop,
+	}); err != nil {
+		t.Fatalf("UpdatePreferences(stop following) = %v", err)
+	}
+	want.LocaleFollowsBrowser, want.TimeZoneFollowsBrowser, want.UpdatedAt = false, false, e.clock.Now()
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 

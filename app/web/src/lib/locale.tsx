@@ -6,7 +6,16 @@
 // It lives outside React, as an external store (react.dev: useSyncExternalStore), because the API client
 // reads it for every request (Accept-Language, localized errors) and the shell renders the providers from it.
 import { createContext, type ReactNode, use, useSyncExternalStore } from "react";
-import { applyDocumentLocale, createTranslate, type I18n, loadI18n, resolveLocale, type Translate } from "./i18n";
+import {
+  applyDocumentLocale,
+  createTranslate,
+  firstSupportedLocale,
+  type I18n,
+  loadI18n,
+  resolveLocale,
+  sourceLocale,
+  type Translate,
+} from "./i18n";
 import { localeKey } from "./storage";
 
 /** What the app is displayed in. Replaced, never changed, so that it can be a useSyncExternalStore snapshot. */
@@ -34,6 +43,8 @@ function startLocale(doc: Document): string {
 
 /** Loads the messages of the supported locale closest to `startLocale(doc)` and sets <html lang dir> to it. */
 export async function loadStartI18n(doc: Document): Promise<I18n> {
+  // The app replaces <html lang>, and following the browser falls back to the instance's locale (AppLocale.browserLocale).
+  doc.documentElement.dataset["instanceLocale"] = doc.documentElement.lang;
   const i18n = await loadI18n(startLocale(doc));
   applyDocumentLocale(doc, i18n.locale);
   return i18n;
@@ -65,6 +76,15 @@ export class AppLocale {
   /** The locale the app is rendered in, for Accept-Language. */
   get locale(): string {
     return this.#settings.i18n.locale;
+  }
+
+  /**
+   * The locale for a user who follows the browser (FR-007): the first of `languages`, the browser's in its order of
+   * preference, that the app has a catalog for, or else the instance's.
+   */
+  browserLocale(languages: readonly string[]): string {
+    const instance = this.#doc?.documentElement.dataset["instanceLocale"] || sourceLocale;
+    return firstSupportedLocale(languages) ?? resolveLocale(instance);
   }
 
   /** Formats the client's messages in the current locale, for code outside React. */

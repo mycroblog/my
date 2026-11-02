@@ -1257,6 +1257,8 @@ type UserPreference struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	TimelineAutoInsert      bool
+	LocaleFollowsBrowser    bool
+	TimeZoneFollowsBrowser  bool
 	UpdatedAt               time.Time
 }
 

@@ -29,11 +29,11 @@ import {
   visibilityLabel,
 } from "../../compose";
 import { useT } from "../../../lib/i18n";
-import { useDisplaySettings } from "../../../lib/locale";
+import { useAppLocale, useDisplaySettings } from "../../../lib/locale";
 import { useSaveLabels } from "../hooks/saveState";
 import { displayLanguageOf, displayLanguageOptions, timelineLanguageOptions } from "../hooks/languages";
 import { deviceTimeZone, sameTimeZone, useTimeZoneOptions } from "../hooks/timeZones";
-import { type PreferenceControl, usePreferences } from "../hooks/usePreferences";
+import { followBrowser, type PreferenceControl, usePreferences } from "../hooks/usePreferences";
 import { AutoplaySwitch } from "./AutoplaySwitch";
 import { NavigationSettings } from "./NavigationSettings";
 import { ThemeRadioGroup } from "./ThemeRadioGroup";
@@ -153,7 +153,11 @@ export function PreferencesForm() {
 function DisplayLanguageSelect({ control }: { control: PreferenceControl<string> }) {
   const t = useT();
   const { i18n } = useDisplaySettings();
-  const value = displayLanguageOf(control.value);
+  const appLocale = useAppLocale();
+  const value = control.value === followBrowser ? followBrowser : displayLanguageOf(control.value);
+  const languages = displayLanguageOptions(i18n.locale);
+  const browserLocale = appLocale.browserLocale(navigator.languages);
+  const browserLanguage = languages.find((language) => language.id === browserLocale)?.name ?? browserLocale;
   return (
     <Autosaved state={control.saveState}>
       <Select
@@ -165,14 +169,27 @@ function DisplayLanguageSelect({ control }: { control: PreferenceControl<string>
         }}
         isInvalid={control.error !== undefined}
         errorMessage={control.error}
-        items={displayLanguageOptions(i18n.locale)}
+        items={[
+          { id: followBrowser, name: t("client:settings.locale.follow_browser", { language: browserLanguage }) },
+          ...languages,
+        ]}
       >
-        {(item) => (
-          // The name is in its own language, so a screen reader reads it in that language.
-          <SelectItem id={item.id} textValue={item.name}>
-            <span lang={item.id}>{item.name}</span>
-          </SelectItem>
-        )}
+        {(item) =>
+          item.id === followBrowser ? (
+            <SelectItem
+              id={item.id}
+              textValue={item.name}
+              description={t("client:settings.locale.follow_browser_description")}
+            >
+              {item.name}
+            </SelectItem>
+          ) : (
+            // The name is in its own language, so a screen reader reads it in that language.
+            <SelectItem id={item.id} textValue={item.name}>
+              <span lang={item.id}>{item.name}</span>
+            </SelectItem>
+          )
+        }
       </Select>
     </Autosaved>
   );
@@ -214,14 +231,15 @@ function DefaultPostLanguageSelect({ control }: { control: PreferenceControl<str
  */
 function TimeZoneSelect({ control }: { control: PreferenceControl<string> }) {
   const t = useT();
-  const options = useTimeZoneOptions(control.value);
-  const groupRef = useRef<HTMLDivElement>(null);
   const device = deviceTimeZone();
-  const differs = !sameTimeZone(control.value, device);
+  const following = control.value === followBrowser;
+  const options = useTimeZoneOptions(following ? device : control.value);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const differs = !following && !sameTimeZone(control.value, device);
   const deviceLabel = options.find((option) => sameTimeZone(option.id, device))?.label ?? device;
   return (
     <Stack ref={groupRef} gap="3">
-      <TimeZoneField control={control} options={options} />
+      <TimeZoneField control={control} options={options} deviceLabel={deviceLabel} />
       {differs && (
         <Callout>
           <Text as="p" size="sm" tone="fg" wrap="anywhere">
@@ -252,11 +270,14 @@ function TimeZoneSelect({ control }: { control: PreferenceControl<string> }) {
 function TimeZoneField({
   control,
   options,
+  deviceLabel,
 }: {
   control: PreferenceControl<string>;
   options: ReturnType<typeof useTimeZoneOptions>;
+  deviceLabel: string;
 }) {
   const t = useT();
+  const followLabel = t("client:settings.time_zone.follow_browser", { zone: deviceLabel });
   return (
     <Autosaved state={control.saveState}>
       <Select
@@ -268,10 +289,18 @@ function TimeZoneField({
         }}
         isInvalid={control.error !== undefined}
         errorMessage={control.error}
-        items={options}
+        items={[
+          {
+            id: followBrowser,
+            label: followLabel,
+            typeahead: followLabel,
+            description: t("client:settings.time_zone.follow_browser_description"),
+          },
+          ...options.map((option) => ({ ...option, description: option.id })),
+        ]}
       >
         {(item) => (
-          <SelectItem id={item.id} textValue={item.typeahead} description={item.id}>
+          <SelectItem id={item.id} textValue={item.typeahead} description={item.description}>
             {item.label}
           </SelectItem>
         )}

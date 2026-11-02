@@ -49,7 +49,9 @@ func newPreferences(p appidentity.UserPreferences) Preferences {
 		langs = []string{}
 	}
 	return Preferences{
-		Locale: p.Locale, TimeZone: p.TimeZone, TimeZoneChosen: p.TimeZoneChosen, DefaultVisibility: Visibility(p.DefaultVisibility),
+		Locale: p.Locale, TimeZone: p.TimeZone, TimeZoneChosen: p.TimeZoneChosen,
+		LocaleFollowsBrowser: p.LocaleFollowsBrowser, TimeZoneFollowsBrowser: p.TimeZoneFollowsBrowser,
+		DefaultVisibility:   Visibility(p.DefaultVisibility),
 		DefaultQuotePolicy:  QuotePolicy(p.DefaultQuotePolicy),
 		DefaultPostLanguage: p.DefaultPostLanguage, RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert: p.TimelineAutoInsert, TimelineLanguages: langs,
@@ -84,6 +86,7 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 	if b := req.Body; b != nil {
 		in = appidentity.PreferencesUpdate{
 			Locale: b.Locale, TimeZone: b.TimeZone, DefaultPostLanguage: b.DefaultPostLanguage,
+			LocaleFollowsBrowser: b.LocaleFollowsBrowser, TimeZoneFollowsBrowser: b.TimeZoneFollowsBrowser,
 			RequireMediaDescription: b.RequireMediaDescription, TimelineLanguages: b.TimelineLanguages,
 			TimelineAutoInsert: b.TimelineAutoInsert,
 		}

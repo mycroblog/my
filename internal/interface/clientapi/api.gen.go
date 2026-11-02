@@ -10708,6 +10708,11 @@ type Preferences struct {
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale string `json:"locale"`
 
+	// LocaleFollowsBrowser Whether clients with a browser show its language instead of `locale`, or the server's default
+	// language when the browser names none they have. They keep `locale` at what they last detected,
+	// for what has no browser (email, push). True for a new user.
+	LocaleFollowsBrowser bool `json:"locale_follows_browser"`
+
 	// RequireMediaDescription Whether clients ask for a description before posting media without one.
 	RequireMediaDescription bool `json:"require_media_description"`
 
@@ -10717,6 +10722,10 @@ type Preferences struct {
 	// TimeZoneChosen Whether a time zone has been chosen: false for a new user until a request sets
 	// `time_zone`. Clients may then set it to the device's time zone.
 	TimeZoneChosen bool `json:"time_zone_chosen"`
+
+	// TimeZoneFollowsBrowser Whether clients with a browser show dates in its time zone instead of `time_zone`. They keep
+	// `time_zone` at what they last detected, for what has no browser. True for a new user.
+	TimeZoneFollowsBrowser bool `json:"time_zone_follows_browser"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking, instead of offering them
 	// behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
@@ -12288,14 +12297,20 @@ type UpdatePreferencesRequest struct {
 	// accounts.
 	DefaultVisibility *Visibility `json:"default_visibility,omitempty"`
 
-	// Locale The UI locale, a BCP 47 language tag.
+	// Locale The UI locale, a BCP 47 language tag. Without `locale_follows_browser`, it stops following the browser.
 	Locale *string `json:"locale,omitempty"`
+
+	// LocaleFollowsBrowser Whether clients with a browser show its language instead of `locale`.
+	LocaleFollowsBrowser *bool `json:"locale_follows_browser,omitempty"`
 
 	// RequireMediaDescription Whether clients ask for a description before posting media without one.
 	RequireMediaDescription *bool `json:"require_media_description,omitempty"`
 
-	// TimeZone The time zone, an IANA name.
+	// TimeZone The time zone, an IANA name. Without `time_zone_follows_browser`, it stops following the browser.
 	TimeZone *string `json:"time_zone,omitempty"`
+
+	// TimeZoneFollowsBrowser Whether clients with a browser show dates in its time zone instead of `time_zone`.
+	TimeZoneFollowsBrowser *bool `json:"time_zone_follows_browser,omitempty"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking.
 	TimelineAutoInsert *bool `json:"timeline_auto_insert,omitempty"`

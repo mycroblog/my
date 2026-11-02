@@ -148,8 +148,12 @@ func (s *Service) SetTimelineLanguages(ctx context.Context, userID string, langu
 
 // PreferencesUpdate is a change of a user's preferences; nil fields keep their current value.
 type PreferencesUpdate struct {
-	Locale                  *string
-	TimeZone                *string
+	Locale   *string
+	TimeZone *string
+	// LocaleFollowsBrowser and TimeZoneFollowsBrowser are the preferences of those names. A
+	// Locale or TimeZone without its field is the user's own choice, which stops following.
+	LocaleFollowsBrowser    *bool
+	TimeZoneFollowsBrowser  *bool
 	DefaultVisibility       *identity.Visibility
 	DefaultQuotePolicy      *identity.QuotePolicy
 	DefaultPostLanguage     *string
@@ -254,10 +258,16 @@ func canonicalPreferencesUpdate(in PreferencesUpdate) (PreferencesUpdate, error)
 func (in PreferencesUpdate) applyTo(cur UserPreferences) UserPreferences {
 	p := cur
 	if in.Locale != nil {
-		p.Locale = *in.Locale
+		p.Locale, p.LocaleFollowsBrowser = *in.Locale, false
 	}
 	if in.TimeZone != nil {
-		p.TimeZone, p.TimeZoneChosen = *in.TimeZone, true
+		p.TimeZone, p.TimeZoneChosen, p.TimeZoneFollowsBrowser = *in.TimeZone, true, false
+	}
+	if in.LocaleFollowsBrowser != nil {
+		p.LocaleFollowsBrowser = *in.LocaleFollowsBrowser
+	}
+	if in.TimeZoneFollowsBrowser != nil {
+		p.TimeZoneFollowsBrowser = *in.TimeZoneFollowsBrowser
 	}
 	if in.DefaultVisibility != nil {
 		p.DefaultVisibility = *in.DefaultVisibility
@@ -348,13 +358,15 @@ func (s *Service) defaultPreferences(ctx context.Context, userID, locale string,
 		return identity.Preferences{}, err
 	}
 	return identity.Preferences{
-		UserID:              userID,
-		Locale:              locale,
-		TimeZone:            identity.DefaultTimeZone,
-		DefaultVisibility:   identity.DefaultPostVisibility,
-		DefaultQuotePolicy:  identity.DefaultPostQuotePolicy,
-		DefaultPostLanguage: identity.UndeterminedLanguage,
-		TimelineAutoInsert:  identity.DefaultTimelineAutoInsert,
-		UpdatedAt:           now,
+		UserID:                 userID,
+		Locale:                 locale,
+		TimeZone:               identity.DefaultTimeZone,
+		LocaleFollowsBrowser:   true,
+		TimeZoneFollowsBrowser: true,
+		DefaultVisibility:      identity.DefaultPostVisibility,
+		DefaultQuotePolicy:     identity.DefaultPostQuotePolicy,
+		DefaultPostLanguage:    identity.UndeterminedLanguage,
+		TimelineAutoInsert:     identity.DefaultTimelineAutoInsert,
+		UpdatedAt:              now,
 	}, nil
 }
