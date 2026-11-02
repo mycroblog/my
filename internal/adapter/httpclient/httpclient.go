@@ -359,6 +359,9 @@ func (c *Client) checkRedirect(req *http.Request, via []*http.Request) error {
 	if policy.none {
 		return http.ErrUseLastResponse
 	}
+	// net/http names the previous hop in a Referer; the server's requests send none, so that a
+	// redirect's destination does not learn the URL that led there.
+	req.Header.Del("Referer")
 	if len(via) > kernel.MaxRedirects {
 		return fmt.Errorf("%w: more than %d", kernel.ErrTooManyRedirects, kernel.MaxRedirects)
 	}

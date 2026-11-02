@@ -107,6 +107,206 @@
     "defaultMessage": "この表明が法的にどう扱われるかは国によって異なり、多くの事業者はこうした表明に自主的に従っています。この文章は法的な助言ではありません。",
     "description": "The legal note under the server's AI statement. Must not promise a legal effect."
   },
+  "about.link_card_crawler.title": {
+    "defaultMessage": "{instance} のリンクのカードのクローラー",
+    "description": "Heading (h1) of the page that tells the operators of other websites about the crawler that fetches the links in posts. {instance} is the server's name."
+  },
+  "about.link_card_crawler.intro": {
+    "defaultMessage": "このサーバーの投稿が Web ページにリンクすると、サーバーがそのページを取得して、題名・説明・画像のカードを出します。このページは、そのサイトを運営している人に向けて、どんな要求が届くかと、断り方を説明します。",
+    "description": "Opening paragraph of the page about the link card crawler."
+  },
+  "about.link_card_crawler.state.obeys": {
+    "defaultMessage": "このサーバーでは、クローラーは動いていて、robots.txt に従います。",
+    "description": "What the crawler does on this server, in its usual settings: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.state.ignores": {
+    "defaultMessage": "このサーバーでは、クローラーは動いていて、運営者の設定により robots.txt を読みません。ここでは robots.txt で断ることはできません。ページの指定は効きます。運営者はドメインごとに取得を止められます。",
+    "description": "What the crawler does on a server whose setting link_cards_ignore_robots_txt is on: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.state.off": {
+    "defaultMessage": "このサーバーでは、リンクのカードはオフで、クローラーは今は何も取得しません。このページの残りは、オンのときの動きです。",
+    "description": "What the crawler does on a server whose setting link_cards_enabled is off: at the top of the page about the crawler."
+  },
+  "about.link_card_crawler.loading": {
+    "defaultMessage": "このサーバーの設定を読み込んでいます",
+    "description": "Label of the spinner while the page about the crawler loads the settings of the server."
+  },
+  "about.link_card_crawler.failed": {
+    "defaultMessage": "このサーバーでのクローラーの動きを読み込めませんでした",
+    "description": "Heading of the error in place of the page about the crawler when the settings of the server cannot be read."
+  },
+  "about.link_card_crawler.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the settings of the server again after a failure, on the page about the crawler."
+  },
+  "about.link_card_crawler.identity.title": {
+    "defaultMessage": "見分け方",
+    "description": "Heading of the section with the User-Agent of the link card crawler."
+  },
+  "about.link_card_crawler.identity.user_agent": {
+    "defaultMessage": "要求には、次の User-Agent が付きます。",
+    "description": "Sentence before the User-Agent of the crawler, shown as code."
+  },
+  "about.link_card_crawler.identity.token": {
+    "defaultMessage": "この中のアドレスが、このサーバーです。robots.txt とページの指定では、クローラーの名前は my-linkcard です。",
+    "description": "Explains the User-Agent of the crawler and the name it goes by. my-linkcard is a literal name: do not translate it."
+  },
+  "about.link_card_crawler.identity.others": {
+    "defaultMessage": "このサーバーは、連合など、このページの対象でない要求を my/ の名前で送ります。カードに続くものが 2 つあります。読む人に見せるためにカードの画像を my/ の名前で取り直すことと、ページが fediverse:creator で示すアカウントを照会することです。",
+    "description": "Other requests of the server that a site operator can see, under the server's general User-Agent. my/ and fediverse:creator are literal: do not translate them."
+  },
+  "about.link_card_crawler.trigger.title": {
+    "defaultMessage": "取得のきっかけ",
+    "description": "Heading of the section that says what makes the crawler fetch a URL."
+  },
+  "about.link_card_crawler.trigger.post": {
+    "defaultMessage": "URL にリンクする投稿です。サーバーは投稿の本文の最初のリンクからカードを作ります。投稿の公開範囲にはよりません。新しいカードがなければ、ページを取得します。",
+    "description": "What makes the crawler fetch a URL."
+  },
+  "about.link_card_crawler.trigger.remote": {
+    "defaultMessage": "これには、ここで書かれた投稿だけでなく、ほかのサーバーから届いた投稿も含まれます。要求が届いても、ここの誰かがページを読んだとは限りません。",
+    "description": "That posts federated from other servers cause fetches too."
+  },
+  "about.link_card_crawler.fetches.title": {
+    "defaultMessage": "取得するもの",
+    "description": "Heading of the section that lists what the crawler requests from a website."
+  },
+  "about.link_card_crawler.fetches.page": {
+    "defaultMessage": "ページ。読むのはページの head だけで、リダイレクトは 5 回まで追い、ページの中のものは何も実行しません。",
+    "description": "What the crawler fetches: the linked page."
+  },
+  "about.link_card_crawler.fetches.image": {
+    "defaultMessage": "画像 1 枚。ページの head が示す画像です。",
+    "description": "What the crawler fetches: the page's image."
+  },
+  "about.link_card_crawler.fetches.robots": {
+    "defaultMessage": "ページと画像のオリジンの robots.txt。ページと画像を要求する前に取得します。",
+    "description": "What the crawler fetches: robots.txt. Shown only while the server reads it."
+  },
+  "about.link_card_crawler.fetches.nothing_else": {
+    "defaultMessage": "リンクはたどらないので、サイトのほかのページは巡回しません。",
+    "description": "That the crawler does not crawl a whole website."
+  },
+  "about.link_card_crawler.sends.title": {
+    "defaultMessage": "送るもの",
+    "description": "Heading of the section that says what the crawler's requests carry."
+  },
+  "about.link_card_crawler.sends.headers": {
+    "defaultMessage": "上の User-Agent、受け取る内容の種類、ページではこのサーバーの既定の言語 (Accept-Language) です。",
+    "description": "What the crawler's requests carry."
+  },
+  "about.link_card_crawler.sends.not": {
+    "defaultMessage": "Cookie も Referer も送りません。どのアカウントやどの投稿がリンクしたかも伝えません。",
+    "description": "What the crawler's requests do not carry."
+  },
+  "about.link_card_crawler.frequency.title": {
+    "defaultMessage": "頻度",
+    "description": "Heading of the section that says how often the crawler requests a URL."
+  },
+  "about.link_card_crawler.frequency.once": {
+    "defaultMessage": "URL ごとに 1 回取得し、リンクする投稿でカードを共有します。もう一度取得するのは、前の取得から 14 日以上たって投稿が必要としたときだけです。サーバーが自分からカードを取り直すことはありません。",
+    "description": "How often the crawler requests a page."
+  },
+  "about.link_card_crawler.frequency.failure": {
+    "defaultMessage": "取得に失敗した URL は、24 時間は要求しません。",
+    "description": "That the crawler remembers failures."
+  },
+  "about.link_card_crawler.frequency.robots": {
+    "defaultMessage": "robots.txt は、オリジン (スキーム・ホスト・ポート) ごとに 1 日 1 回ほど読みます。読めないとき (429・5xx・ネットワークの失敗) は、そのオリジンからは何も取得せず、1 時間後に試します。",
+    "description": "How often the crawler reads robots.txt. Shown only while the server reads it."
+  },
+  "about.link_card_crawler.opt_out.title": {
+    "defaultMessage": "断り方",
+    "description": "Heading of the section that says how a website refuses the crawler."
+  },
+  "about.link_card_crawler.opt_out.robots.title": {
+    "defaultMessage": "取得を断る: robots.txt",
+    "description": "Heading (h3) of the part about refusing the crawler in robots.txt. robots.txt is literal."
+  },
+  "about.link_card_crawler.opt_out.robots.intro": {
+    "defaultMessage": "サイトへの取得をすべて断るには、robots.txt に次のように書きます。",
+    "description": "Sentence before the robots.txt example that refuses the crawler."
+  },
+  "about.link_card_crawler.opt_out.robots.star": {
+    "defaultMessage": "この名前のグループがなければ、* のグループに従います。Allow・Disallow・*・$ を RFC 9309 のとおりに読むので、一部のパスだけを断ることもできます。",
+    "description": "How the crawler reads robots.txt. Allow, Disallow, *, $ and RFC 9309 are literal."
+  },
+  "about.link_card_crawler.opt_out.robots.timing": {
+    "defaultMessage": "新しい規則には 1 日以内に従います。すでにあるカードは、投稿がその URL をもう一度取得するときに消えます。運営者に頼めば、それより早く消せます。",
+    "description": "When a change of robots.txt takes effect."
+  },
+  "about.link_card_crawler.opt_out.robots.ignored": {
+    "defaultMessage": "このサーバーは robots.txt を読まないので、ここではこの規則は効きません。従うサーバーでは効きます。",
+    "description": "Under the robots.txt part, on a server whose setting link_cards_ignore_robots_txt is on."
+  },
+  "about.link_card_crawler.opt_out.directives.title": {
+    "defaultMessage": "カードを減らす: ページの指定",
+    "description": "Heading (h3) of the part about the page directives that change a card."
+  },
+  "about.link_card_crawler.opt_out.directives.intro": {
+    "defaultMessage": "ページは、説明や画像をカードから外せます。指定はページを取得して初めて分かるので、ページへの要求は止まりません。これは、このサーバーの robots.txt の設定によらず効きます。",
+    "description": "Sentence before the table of page directives."
+  },
+  "about.link_card_crawler.opt_out.directives.caption": {
+    "defaultMessage": "指定ごとのカードの変化",
+    "description": "Visually hidden name of the table of page directives."
+  },
+  "about.link_card_crawler.opt_out.directives.directive": {
+    "defaultMessage": "指定",
+    "description": "Column header: a page directive."
+  },
+  "about.link_card_crawler.opt_out.directives.effect": {
+    "defaultMessage": "カード",
+    "description": "Column header: what the directive does to the card."
+  },
+  "about.link_card_crawler.opt_out.directives.nosnippet": {
+    "defaultMessage": "説明を出しません。",
+    "description": "What the directives nosnippet and max-snippet:0 do to a card."
+  },
+  "about.link_card_crawler.opt_out.directives.noimageindex": {
+    "defaultMessage": "画像を出さず、画像を要求しません。",
+    "description": "What the directives noimageindex and max-image-preview:none do to a card."
+  },
+  "about.link_card_crawler.opt_out.directives.noindex": {
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページの多くは共有されることを望んでいます。断るには robots.txt を使ってください。",
+    "description": "What the directives noindex and none do to a card, with the reason in plain words."
+  },
+  "about.link_card_crawler.opt_out.directives.noindex_ignored": {
+    "defaultMessage": "変わりません。これらは検索結果に載せないでほしいという指定で、カードは検索結果ではありません。カードが出るのは誰かがリンクを投稿したからで、検索に載せないページの多くは共有されることを望んでいます。このサーバーで断るには、運営者に頼んでください。",
+    "description": "What the directives noindex and none do to a card, on a server that does not read robots.txt."
+  },
+  "about.link_card_crawler.opt_out.directives.rest": {
+    "defaultMessage": "題名・サイト名・作者は、どの指定でも残ります。",
+    "description": "What no page directive removes from a card."
+  },
+  "about.link_card_crawler.opt_out.directives.where": {
+    "defaultMessage": "head の中の robots か my-linkcard という名前の meta タグ、または X-Robots-Tag ヘッダーに書きます。",
+    "description": "Sentence before the examples of where a directive goes. robots, my-linkcard and X-Robots-Tag are literal."
+  },
+  "about.link_card_crawler.contact.title": {
+    "defaultMessage": "このサーバーの運営者への連絡",
+    "description": "Heading of the section with how to reach the operators of the server that runs the crawler."
+  },
+  "about.link_card_crawler.contact.intro": {
+    "defaultMessage": "運営者は、ドメインとそのサブドメインへの取得を止められます。画像だけを止めることもできます。すぐに効き、すでにあるカードにも及びます。取得を止めたいときやカードを消したいときは、運営者に頼んでください。",
+    "description": "That the operators of the server can stop the crawler per domain, and that a site operator can ask them."
+  },
+  "about.link_card_crawler.contact.none": {
+    "defaultMessage": "このサーバーは連絡先を公開していません。",
+    "description": "In place of the contact details when the server has none."
+  },
+  "about.link_card_crawler.contact.about": {
+    "defaultMessage": "このサーバーについて詳しく",
+    "description": "Link from the page about the crawler to the server's information page."
+  },
+  "about.crawlers.link_cards": {
+    "defaultMessage": "このサーバーも、投稿がリンクするページを、クローラー my-linkcard として取得してカードを出します。",
+    "description": "In the section of the server's information page about crawlers: that the server itself runs a crawler too, for link cards. my-linkcard is a literal name."
+  },
+  "about.crawlers.link_cards_link": {
+    "defaultMessage": "そのクローラーの動きと、サイトからの断り方",
+    "description": "Link to the page about the server's own crawler (/about/crawler) from the server's information page."
+  },
   "about.costs.title": {
     "defaultMessage": "運営の費用",
     "description": "Heading of the section of the server's information page about what running the server costs, shown when the server publishes its costs."

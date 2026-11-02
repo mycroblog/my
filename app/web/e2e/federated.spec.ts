@@ -74,6 +74,8 @@ function instance(federated: Instance["timelines"]["federated"]): Instance {
     sends_email: false,
     search_indexing: "deny",
     ai_usage: "deny",
+    link_cards_enabled: true,
+    link_cards_ignore_robots_txt: false,
     finance_visibility: "private",
     income_visibility: "private",
     supporters_enabled: false,

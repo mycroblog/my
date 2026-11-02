@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
-required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters]
+required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards_enabled, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters]
 properties:
   domain:
     description: The domain that serves the instance.
@@ -115,6 +115,16 @@ properties:
     $ref: ./SearchIndexing.yaml
   ai_usage:
     $ref: ./AIUsage.yaml
+  link_cards_enabled:
+    description: |
+      Whether the server fetches the pages that posts link to, for their link cards. While it is
+      false, the server fetches nothing for link cards.
+    type: boolean
+  link_cards_ignore_robots_txt:
+    description: |
+      Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
+      link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+    type: boolean
   finance_visibility:
     $ref: ./FinanceVisibility.yaml
   income_visibility:

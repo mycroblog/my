@@ -8865,6 +8865,14 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
+	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// false, the server fetches nothing for link cards.
+	LinkCardsEnabled bool `json:"link_cards_enabled"`
+
+	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
+	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+	LinkCardsIgnoreRobotsTxt bool `json:"link_cards_ignore_robots_txt"`
+
 	// LoginProvidersOnly Whether registration and sign-in are limited to the login providers now: the instance setting
 	// is on and at least one provider is enabled. While it is true, a password or a passkey signs
 	// nobody in, and neither can be set or added; both still confirm operations of a signed-in user.

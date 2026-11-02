@@ -129,6 +129,8 @@ async function serveCosts(
     sends_email: true,
     search_indexing: "deny",
     ai_usage: "deny",
+    link_cards_enabled: true,
+    link_cards_ignore_robots_txt: false,
     finance_visibility: visibility,
     income_visibility: income,
     supporters_enabled: false,

@@ -11323,6 +11323,16 @@ export interface components {
             thumbnail?: components["schemas"]["InstanceThumbnail"];
             search_indexing: components["schemas"]["SearchIndexing"];
             ai_usage: components["schemas"]["AIUsage"];
+            /**
+             * @description Whether the server fetches the pages that posts link to, for their link cards. While it is
+             *     false, the server fetches nothing for link cards.
+             */
+            link_cards_enabled: boolean;
+            /**
+             * @description Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
+             *     link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+             */
+            link_cards_ignore_robots_txt: boolean;
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
         };
