@@ -32,18 +32,17 @@ const (
 	LinkCardRobotsUnreachableTTL = time.Hour
 )
 
+// ErrLinkCardRetryLater reports a fetch that waits for a robots.txt that cannot be read now: the
+// job tries again after LinkCardRobotsUnreachableTTL, and nothing is remembered as failed.
+var ErrLinkCardRetryLater = errors.New("content: robots.txt cannot be read now")
+
 // errRobotsDisallowed reports a URL that robots.txt disallows. errRobotsAssumed reports a URL
 // refused only because robots.txt could not be read, which RFC 9309 §2.3.1.4 takes for a
-// complete disallow. Both are failures of the page, remembered as such.
+// complete disallow; for a page it ends with ErrLinkCardRetryLater.
 var (
 	errRobotsDisallowed = fmt.Errorf("%w: robots.txt disallows the URL", errLinkCardUnusable)
 	errRobotsAssumed    = fmt.Errorf("%w: robots.txt cannot be read, which disallows the URL", errLinkCardUnusable)
 )
-
-// isRobotsRefusal reports whether err is either refusal of robots.txt.
-func isRobotsRefusal(err error) bool {
-	return errors.Is(err, errRobotsDisallowed) || errors.Is(err, errRobotsAssumed)
-}
 
 // ignoresRobots returns the link_cards_ignore_robots_txt instance setting.
 func (l *LinkCards) ignoresRobots(ctx context.Context) (bool, error) {

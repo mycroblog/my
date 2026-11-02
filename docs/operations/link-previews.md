@@ -189,8 +189,8 @@ The name in `robots.txt` is `my-linkcard`, in any case. Without a group of that 
 | More than 5 redirects | No file: fetches | 24 hours |
 
 - The URL of the page is checked before it is requested, whatever the visibility of the post. So is each URL it redirects to, against the `robots.txt` of that URL's origin, and a redirect to a refused URL ends there: the server does not request it and makes no card.
-- A refused URL is not fetched again for 24 hours, like any other failure of a page.
-- An image is checked the same way against its own origin. A refused image leaves a card without an image.
+- A URL that `robots.txt` disallows is not fetched again for 24 hours, like any other failure of a page. When the file only could not be read, the server tries the page again an hour later, up to the limit of the job's attempts.
+- An image is checked the same way against its own origin. A disallowed image leaves a card without an image. When the file only could not be read, an image recorded earlier stays, and a new image is left out until the next refetch.
 - A refetch, which a post can cause 14 days after the last fetch, removes the card when `robots.txt` disallows its URL. When the file only could not be read, the card stays.
 - The server does not go through its cards to recheck them, so a site that changes its rules loses a card at that card's next refetch.
 

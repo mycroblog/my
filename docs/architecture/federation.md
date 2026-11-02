@@ -568,7 +568,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - **`robots.txt`**（[ADR-0131](../adr/0131-link-card-robots-txt.md)）: トークンは `my-linkcard` で、`HTTPPurposeRobots`（本文 512 KiB・10 秒。超えた分は読まず、読めた分の完全な行を解釈）で `{オリジン}/robots.txt` を取得します。`content.ParseRobotsTxt` が RFC 9309 のとおりに解釈し、当たる規則だけを KV（名前空間 `content.link_card_robots`、キーはオリジン）に保持します。
   200 は解釈して 24 時間、429 以外の 4xx とリダイレクトの超過はファイルなしとして 24 時間、429・5xx・ネットワークの失敗・拒否したリダイレクトは全面禁止とみなして 1 時間です。
   ページの URL は取得の前に確かめ、リダイレクトの各段も `HTTPRequest.CheckRedirect` で、その段のオリジンの規則により要求の前に確かめます。最後の段が最終 URL なので、禁止された最終 URL には要求が届きません。画像も同じで、禁止なら画像なしのカードにします。
-  禁止された URL は失敗と同じく 24 時間覚えます。再取得で規則の禁止が分かればカードを消し、全面禁止とみなしただけのときは消しません。すでにあるカードを確かめるための一斉の取得はしません。
+  禁止された URL は失敗と同じく 24 時間覚えます。再取得で規則の禁止が分かればカードを消します。全面禁止とみなしただけのときは覚えず、カードも消さず、ジョブが 1 時間後に再試行します。画像では記録済みのものを使い、記録がなければ次の再取得まで画像なしにします。すでにあるカードを確かめるための一斉の取得はしません。
   インスタンス設定 `link_cards_ignore_robots_txt`（既定 `false`）が真のときは `robots.txt` を取得せず、保持した規則と、`robots.txt` による失敗の記憶も使いません。
 - **解析**: `golang.org/x/net/html` のトークナイザで `<head>` だけを読み（`</head>` か `<body>` で止める）、文字コードは `golang.org/x/net/html/charset` で UTF-8 にします。
   題名は `og:title` → `twitter:title` → JSON-LD の `headline` → `<title>`、説明は `og:description` → `twitter:description` → JSON-LD の `description` → `<meta name="description">`、

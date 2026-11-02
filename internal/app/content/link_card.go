@@ -255,6 +255,8 @@ func (l *LinkCards) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sch
 		}
 		retry, err := l.Fetch(ctx, p.StatusID)
 		switch {
+		case errors.Is(err, ErrLinkCardRetryLater):
+			return queue.RetryRemote(LinkCardRobotsUnreachableTTL, err)
 		case err != nil:
 			return queue.Retry(0, err)
 		case retry:
@@ -341,7 +343,8 @@ func (l *LinkCards) checkRedirect(refused func(ctx context.Context, host string)
 // failed within LinkCardFailureTTL, its host is suspended or a rule of the crawler stops fetching
 // from it, or link cards are disabled. A fetch skipped for its host writes no failure memory, so
 // that the next status that links the URL gets a card as soon as the action or the rule is gone.
-// A URL that robots.txt refuses is remembered as a failure, and loses the card it has when the
+// A robots.txt that cannot be read fails with an error wrapping ErrLinkCardRetryLater and leaves
+// everything as it is. A URL that robots.txt refuses is remembered as a failure, and loses the card it has when the
 // file says so, but not when the file only could not be read (ADR-0131 §4).
 // It reports retry when another job is fetching the URL. Failures of the page are remembered and
 // are not errors; an error is a failure of the stores.
@@ -400,11 +403,12 @@ func (l *LinkCards) Fetch(ctx context.Context, statusID string) (retry bool, err
 		if ctx.Err() != nil {
 			return false, ctx.Err()
 		}
-		failure := linkCardFailed
-		if isRobotsRefusal(err) {
-			failure = linkCardFailedRobots
+		if errors.Is(err, errRobotsAssumed) {
+			return false, fmt.Errorf("%w: %s: %w", ErrLinkCardRetryLater, u, err)
 		}
+		failure := linkCardFailed
 		if errors.Is(err, errRobotsDisallowed) {
+			failure = linkCardFailedRobots
 			if err := l.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return l.d.Repository.DeleteLinkCard(ctx, tx, u) }); err != nil {
 				return false, err
 			}
@@ -486,10 +490,15 @@ func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt str
 			return "", err
 		}
 	}
-	if err := l.checkRobots(ctx, imageURL); err != nil {
-		if isRobotsRefusal(err) {
-			return "", nil
-		}
+	unreadable := false
+	switch err := l.checkRobots(ctx, imageURL); {
+	case errors.Is(err, errRobotsDisallowed):
+		return "", nil
+	case errors.Is(err, errRobotsAssumed):
+		// A file that cannot be read now takes no image away: one recorded earlier was allowed.
+		// It only keeps a new one from being requested.
+		unreadable = true
+	case err != nil:
 		return "", err
 	}
 	var existing content.LinkCardMedia
@@ -503,6 +512,9 @@ func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt str
 		return existing.MediaID, nil
 	case !errors.Is(err, ErrNotFound):
 		return "", err
+	}
+	if unreadable {
+		return "", nil
 	}
 	m, ok := l.probeImage(ctx, imageURL)
 	if !ok {

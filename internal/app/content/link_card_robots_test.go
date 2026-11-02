@@ -58,7 +58,7 @@ func (e *robotsCardsEnv) fetch(u string) {
 	e.t.Helper()
 	id := "status:" + u
 	e.repo.links[id] = u
-	if retry, err := e.cards.Fetch(e.t.Context(), id); err != nil || retry {
+	if retry, err := e.cards.Fetch(e.t.Context(), id); (err != nil && !errors.Is(err, content.ErrLinkCardRetryLater)) || retry {
 		e.t.Fatalf("Fetch(%s) = %v, %v", u, retry, err)
 	}
 }
@@ -142,10 +142,13 @@ func TestLinkCardRobotsResponses(t *testing.T) {
 			if got := e.kv.ttl(content.LinkCardRobotsNamespace, robotsOrigin); got != tc.ttl {
 				t.Errorf("kept for %v, want %v", got, tc.ttl)
 			}
-			if got := e.kv.ttl(content.LinkCardFailureNamespace, ""); tc.allowed == (got != 0) {
-				t.Errorf("failure memory for %v, with the page allowed %v", got, tc.allowed)
-			} else if !tc.allowed && got != content.LinkCardFailureTTL {
-				t.Errorf("failure memory for %v, want %v", got, content.LinkCardFailureTTL)
+			// Only a real disallow is remembered; a file that cannot be read now is tried again.
+			want := time.Duration(0)
+			if !tc.allowed && tc.ttl == day {
+				want = content.LinkCardFailureTTL
+			}
+			if got := e.kv.ttl(content.LinkCardFailureNamespace, ""); got != want {
+				t.Errorf("failure memory for %v, want %v", got, want)
 			}
 			req := e.web.request(robotsFile)
 			if req == nil || req.Purpose != kernel.HTTPPurposeRobots || req.Agent != kernel.HTTPAgentLinkCard || req.CheckRedirect == nil {
@@ -266,13 +269,24 @@ func TestLinkCardRobotsUnreachableRecovers(t *testing.T) {
 		t.Error("no card for another URL of the origin once the file is back")
 	}
 	e.fetch(robotsPage)
-	if e.web.count(robotsPage) != 0 {
-		t.Error("a refused URL was fetched within its failure memory")
-	}
-	e.clock.Advance(content.LinkCardFailureTTL)
-	e.fetch(robotsPage)
 	if _, ok := e.repo.cards[robotsPage]; !ok {
-		t.Error("no card once the file and the memory are gone")
+		t.Error("no card for the URL that waited, once the file is back")
+	}
+}
+
+// TestLinkCardRobotsUnreadableRetries checks that a file that cannot be read asks the job to try
+// again, and that the URL is not remembered as failed.
+func TestLinkCardRobotsUnreadableRetries(t *testing.T) {
+	t.Parallel()
+	e := newRobotsCardsEnv(t)
+	e.page(robotsPage, "Page", "")
+	e.web.pages[robotsFile] = robotsResponse{status: http.StatusServiceUnavailable}
+	e.repo.links["status:a"] = robotsPage
+	if _, err := e.cards.Fetch(t.Context(), "status:a"); !errors.Is(err, content.ErrLinkCardRetryLater) {
+		t.Errorf("Fetch = %v, want ErrLinkCardRetryLater", err)
+	}
+	if got := e.kv.ttl(content.LinkCardFailureNamespace, ""); got != 0 {
+		t.Errorf("failure memory for %v", got)
 	}
 }
 
@@ -420,6 +434,17 @@ func TestLinkCardRobotsImage(t *testing.T) {
 		e.fetch(robotsPage)
 		if c, ok := e.repo.cards[robotsPage]; !ok || c.ImageMediaID != "" || e.web.count(image) != 0 {
 			t.Errorf("card = %+v, %v after %d requests", c, ok, e.web.count(image))
+		}
+	})
+	t.Run("an unreachable file of the image's origin keeps a recorded image", func(t *testing.T) {
+		t.Parallel()
+		e := newRobotsCardsEnv(t)
+		e.page(robotsPage, "Page", image)
+		e.web.pages["https://images.example/robots.txt"] = robotsResponse{status: http.StatusServiceUnavailable}
+		e.repo.media[image] = known
+		e.fetch(robotsPage)
+		if c := e.repo.cards[robotsPage]; c.ImageMediaID != "known" || e.web.count(image) != 0 {
+			t.Errorf("card = %+v after %d requests", c, e.web.count(image))
 		}
 	})
 	t.Run("the page's origin does not judge the image", func(t *testing.T) {
