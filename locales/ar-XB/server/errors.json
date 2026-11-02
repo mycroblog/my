@@ -51,6 +51,10 @@
     "defaultMessage": "‮⊥ɥǝ ɹǝbnǝsʇ ɔouɟʅıɔʇs ʍıʇɥ ʇɥǝ ɔnɹɹǝuʇ sʇɐʇǝ oɟ ʇɥǝ ɹǝsonɹɔǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.current_session": {
+    "defaultMessage": "‮⊥ɥıs ıs ʇɥǝ qɹoʍsǝɹ ʎon ɐɹǝ nsıuƃ. Sıƃu onʇ ıusʇǝɐp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.custom_emoji_request_conflict": {
     "defaultMessage": "‮⊥ɥǝ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ ɔɐuuoʇ qǝ pǝɔıpǝp ɐs ıʇ ıs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

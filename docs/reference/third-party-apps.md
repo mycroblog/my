@@ -155,7 +155,7 @@ A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="
   Sending a direct post needs only `write:statuses`.
 - **First-party-only scopes:** `admin`, `admin:read`, `admin:write` and `write:supporters` are never granted to a third-party app,
   not even through `write`. Asking for one at the authorization endpoint is an `invalid_scope` error. Administration is done from the first-party web client.
-- **First-party-only operations:** account security (password, two-factor authentication, passkeys, deleting the account, and the list of authorized apps) is
+- **First-party-only operations:** account security (password, two-factor authentication, passkeys, deleting the account, the list of signed-in browsers, and the list of authorized apps) is
   marked `x-first-party-only` in the OpenAPI document and answers a third-party token with `403` `/api/v1/problems/first-party-only`, whatever its scopes.
 
 ## Rate limits

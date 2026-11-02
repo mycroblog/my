@@ -1715,6 +1715,98 @@
     "defaultMessage": "「{name}」を取り消しました。",
     "description": "Announcement after an authorized app was revoked. {name} is its name."
   },
+  "settings.sessions.title": {
+    "defaultMessage": "ログイン中のブラウザ",
+    "description": "Title of the settings page that lists the browsers signed in to the user's account, and its menu item."
+  },
+  "settings.sessions.description": {
+    "defaultMessage": "あなたのアカウントにログインしているブラウザです。IP アドレスはログインしたときのもので、今の場所ではありません。最後に使った日時は 1 時間単位でしか記録されません。",
+    "description": "Explanation at the top of the signed-in browsers settings page."
+  },
+  "settings.sessions.unknown_sign_in": {
+    "defaultMessage": "心当たりがないものがありますか？ログアウトしてもパスワードと認可したアプリは変わらないので、<password>パスワードを変更</password>し、<apps>認可したアプリ</apps>も確かめてください。",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. <password> and <apps> are links to those settings pages."
+  },
+  "settings.sessions.current": {
+    "defaultMessage": "このブラウザ",
+    "description": "Badge on the row of the browser the user is using, in the list of signed-in browsers."
+  },
+  "settings.sessions.name.browser_on_os": {
+    "defaultMessage": "{browser} ({os})",
+    "description": "Name of a row in the list of signed-in browsers: a browser and an operating system, such as 'Chrome on Windows'."
+  },
+  "settings.sessions.name.unknown": {
+    "defaultMessage": "不明なブラウザ",
+    "description": "Name of a row in the list of signed-in browsers when its User-Agent was not recorded or was erased."
+  },
+  "settings.sessions.ip": {
+    "defaultMessage": "ログイン時の IP アドレス",
+    "description": "Label of the IP address a browser signed in from, in the list of signed-in browsers."
+  },
+  "settings.sessions.ip.unknown": {
+    "defaultMessage": "不明",
+    "description": "Value of the IP address of a browser when it was not recorded or was erased."
+  },
+  "settings.sessions.signed_in_at": {
+    "defaultMessage": "ログインした日時",
+    "description": "Label of when a browser signed in, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used": {
+    "defaultMessage": "最後に使った日時",
+    "description": "Label of when a browser was last used, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used.at": {
+    "defaultMessage": "{date} (1 時間単位)",
+    "description": "When a browser was last used; the date is exact to the hour."
+  },
+  "settings.sessions.last_used.never": {
+    "defaultMessage": "記録なし",
+    "description": "Shown when no use of a browser was recorded."
+  },
+  "settings.sessions.revoke": {
+    "defaultMessage": "ログアウト",
+    "description": "Button that signs out one browser from the list of signed-in browsers, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke.title": {
+    "defaultMessage": "このブラウザをログアウトしますか？",
+    "description": "Title of the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.description": {
+    "defaultMessage": "そのブラウザはすぐに使えなくなり、もう一度ログインが必要になります。パスワードと認可したアプリは変わりません。",
+    "description": "Description in the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes a dialog on the signed-in browsers page without signing out."
+  },
+  "settings.sessions.revoke.failed": {
+    "defaultMessage": "ブラウザをログアウトできませんでした: {reason}",
+    "description": "Error in the dialog when signing out a browser failed. reason is the localized error."
+  },
+  "settings.sessions.revoke_others": {
+    "defaultMessage": "他のブラウザをすべてログアウト",
+    "description": "Button that signs out every browser but the current one, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke_others.title": {
+    "defaultMessage": "他のブラウザをすべてログアウトしますか？",
+    "description": "Title of the dialog that confirms signing out every browser but the current one."
+  },
+  "settings.sessions.revoke_others.description": {
+    "defaultMessage": "それらのブラウザはすぐに使えなくなり、もう一度ログインが必要になります。このブラウザはログインしたままです。パスワードと認可したアプリは変わりません。",
+    "description": "Description in the dialog that confirms signing out every other browser."
+  },
+  "settings.sessions.revoke_others.failed": {
+    "defaultMessage": "他のブラウザをログアウトできませんでした: {reason}",
+    "description": "Error in the dialog when signing out the other browsers failed. reason is the localized error."
+  },
+  "settings.sessions.revoked": {
+    "defaultMessage": "ブラウザをログアウトしました。",
+    "description": "Announcement after a browser was signed out."
+  },
+  "settings.sessions.others_revoked": {
+    "defaultMessage": "他のブラウザをログアウトしました。",
+    "description": "Announcement after every other browser was signed out."
+  },
   "settings.email_suppression.title": {
     "defaultMessage": "メールの配信",
     "description": "Heading of the section of the notification settings that says emails do not reach the user's address; shown only while the address is suppressed."

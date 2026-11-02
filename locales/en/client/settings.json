@@ -1715,6 +1715,98 @@
     "defaultMessage": "“{name}” was revoked.",
     "description": "Announcement after an authorized app was revoked. {name} is its name."
   },
+  "settings.sessions.title": {
+    "defaultMessage": "Signed-in browsers",
+    "description": "Title of the settings page that lists the browsers signed in to the user's account, and its menu item."
+  },
+  "settings.sessions.description": {
+    "defaultMessage": "These browsers are signed in to your account. The IP address is where each signed in, not where it is now, and the last use is recorded only to the hour.",
+    "description": "Explanation at the top of the signed-in browsers settings page."
+  },
+  "settings.sessions.unknown_sign_in": {
+    "defaultMessage": "Don't recognize one? Signing it out does not change your password or the apps you authorized, so also <password>change your password</password> and check your <apps>authorized apps</apps>.",
+    "description": "Advice below the list of signed-in browsers, for a sign-in the user does not recognize. <password> and <apps> are links to those settings pages."
+  },
+  "settings.sessions.current": {
+    "defaultMessage": "This browser",
+    "description": "Badge on the row of the browser the user is using, in the list of signed-in browsers."
+  },
+  "settings.sessions.name.browser_on_os": {
+    "defaultMessage": "{browser} on {os}",
+    "description": "Name of a row in the list of signed-in browsers: a browser and an operating system, such as 'Chrome on Windows'."
+  },
+  "settings.sessions.name.unknown": {
+    "defaultMessage": "Unknown browser",
+    "description": "Name of a row in the list of signed-in browsers when its User-Agent was not recorded or was erased."
+  },
+  "settings.sessions.ip": {
+    "defaultMessage": "IP address at sign-in",
+    "description": "Label of the IP address a browser signed in from, in the list of signed-in browsers."
+  },
+  "settings.sessions.ip.unknown": {
+    "defaultMessage": "Unknown",
+    "description": "Value of the IP address of a browser when it was not recorded or was erased."
+  },
+  "settings.sessions.signed_in_at": {
+    "defaultMessage": "Signed in",
+    "description": "Label of when a browser signed in, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used": {
+    "defaultMessage": "Last used",
+    "description": "Label of when a browser was last used, in the list of signed-in browsers."
+  },
+  "settings.sessions.last_used.at": {
+    "defaultMessage": "{date} (to the hour)",
+    "description": "When a browser was last used; the date is exact to the hour."
+  },
+  "settings.sessions.last_used.never": {
+    "defaultMessage": "No use recorded",
+    "description": "Shown when no use of a browser was recorded."
+  },
+  "settings.sessions.revoke": {
+    "defaultMessage": "Sign out",
+    "description": "Button that signs out one browser from the list of signed-in browsers, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke.title": {
+    "defaultMessage": "Sign out this browser?",
+    "description": "Title of the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.description": {
+    "defaultMessage": "It stops working at once and has to sign in again. Your password and the apps you authorized do not change.",
+    "description": "Description in the dialog that confirms signing out a browser from the list."
+  },
+  "settings.sessions.revoke.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes a dialog on the signed-in browsers page without signing out."
+  },
+  "settings.sessions.revoke.failed": {
+    "defaultMessage": "Could not sign the browser out: {reason}",
+    "description": "Error in the dialog when signing out a browser failed. reason is the localized error."
+  },
+  "settings.sessions.revoke_others": {
+    "defaultMessage": "Sign out all other browsers",
+    "description": "Button that signs out every browser but the current one, and the confirming button of its dialog."
+  },
+  "settings.sessions.revoke_others.title": {
+    "defaultMessage": "Sign out all other browsers?",
+    "description": "Title of the dialog that confirms signing out every browser but the current one."
+  },
+  "settings.sessions.revoke_others.description": {
+    "defaultMessage": "They stop working at once and have to sign in again. This browser stays signed in. Your password and the apps you authorized do not change.",
+    "description": "Description in the dialog that confirms signing out every other browser."
+  },
+  "settings.sessions.revoke_others.failed": {
+    "defaultMessage": "Could not sign the other browsers out: {reason}",
+    "description": "Error in the dialog when signing out the other browsers failed. reason is the localized error."
+  },
+  "settings.sessions.revoked": {
+    "defaultMessage": "The browser is signed out.",
+    "description": "Announcement after a browser was signed out."
+  },
+  "settings.sessions.others_revoked": {
+    "defaultMessage": "The other browsers are signed out.",
+    "description": "Announcement after every other browser was signed out."
+  },
   "settings.email_suppression.title": {
     "defaultMessage": "Email delivery",
     "description": "Heading of the section of the notification settings that says emails do not reach the user's address; shown only while the address is suppressed."

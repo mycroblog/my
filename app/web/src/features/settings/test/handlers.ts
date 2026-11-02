@@ -245,6 +245,14 @@ export const handlers = [
   ),
   // operationId listOAuthApps: no apps; the tests that register, change or delete one play the server themselves.
   http.get(`${apiBase}/oauth_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  // operationId listSessions: only this browser; the tests that sign one out play the server themselves.
+  http.get(`${apiBase}/sessions`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        items: [{ id: "019a0000-0000-7000-8000-0000000000d0", current: true, signed_in_at: "2026-10-01T09:00:00Z" }],
+      }),
+    ),
+  ),
   // operationId listAuthorizedApps: no apps; the tests that revoke one play the server themselves.
   http.get(`${apiBase}/authorized_apps`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationId beginPasskeyConfirmation: the options of a confirmation with a passkey.

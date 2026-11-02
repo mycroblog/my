@@ -4,6 +4,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"slices"
 	"time"
 
@@ -397,4 +398,55 @@ func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx
 	}
 	n, err := q.RevokeTokensOfUserAndClient(ctx, sqlitegen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: toMillis(at), UserID: userID, ClientID: clientID})
 	return n, wrap(err, "revoke the tokens of a user and a client")
+}
+
+// ListBrowserSessions implements identity.Repository.
+func (r *IdentityRepository) ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error) {
+	rows, err := r.db.reader().ListBrowserSessions(ctx, sqlitegen.ListBrowserSessionsParams{UserID: userID, Now: toMillis(now)})
+	if err != nil {
+		return nil, wrap(err, "list browser sessions")
+	}
+	out := make([]identity.BrowserSession, len(rows))
+	for i, row := range rows {
+		s := identity.BrowserSession{ID: row.ID, IP: row.Ip.String, UserAgent: row.UserAgent.String, CreatedAt: fromMillis(row.CreatedAt)}
+		if row.LastSeenAt.Valid {
+			at := fromMillis(row.LastSeenAt.Int64)
+			s.LastSeenAt = &at
+		}
+		out[i] = s
+	}
+	return out, nil
+}
+
+// ListBrowserSessionFamilies implements identity.Repository.
+func (r *IdentityRepository) ListBrowserSessionFamilies(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSessionFamily, error) {
+	rows, err := r.db.reader().ListBrowserSessionFamilies(ctx, sqlitegen.ListBrowserSessionFamiliesParams{UserID: userID, Now: toMillis(now)})
+	if err != nil {
+		return nil, wrap(err, "list browser session families")
+	}
+	out := make([]identity.BrowserSessionFamily, 0, len(rows))
+	for _, row := range rows {
+		if !row.SessionID.Valid {
+			continue
+		}
+		f := identity.BrowserSessionFamily{SessionID: row.SessionID.String, FamilyID: row.FamilyID}
+		if row.LastUsedAt.Valid {
+			at := fromMillis(row.LastUsedAt.Int64)
+			f.LastUsedAt = &at
+		}
+		out = append(out, f)
+	}
+	return out, nil
+}
+
+// RevokeFirstPartyTokensOfSession implements identity.Repository.
+func (r *IdentityRepository) RevokeFirstPartyTokensOfSession(ctx context.Context, tx uow.Tx, sessionID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeFirstPartyTokensOfSession(ctx, sqlitegen.RevokeFirstPartyTokensOfSessionParams{
+		Reason: string(reason), RevokedAt: toMillis(at), SessionID: sql.NullString{String: sessionID, Valid: true},
+	})
+	return wrap(err, "revoke the first-party tokens of a session")
 }

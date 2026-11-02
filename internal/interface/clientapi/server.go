@@ -103,6 +103,9 @@ type Options struct {
 	LinkedIdentities LinkedIdentitySettings
 	// AuthorizedApps runs the viewer's authorized OAuth apps; nil answers their operations 404.
 	AuthorizedApps AuthorizedApps
+	// SignedInBrowsers runs the browsers signed in to the viewer's account; nil answers their
+	// operations 404.
+	SignedInBrowsers SignedInBrowsers
 	// OAuthApps runs the OAuth apps that the viewer registers; nil answers their operations 404.
 	OAuthApps OAuthAppSettings
 	// Media runs the media use cases and presents profile images; nil serves no media

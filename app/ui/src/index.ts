@@ -235,6 +235,7 @@ export {
   TwoFactorIcon,
   PasskeyIcon,
   LinkedAccountIcon,
+  BrowserSessionIcon,
   AuthorizedAppIcon,
   DeveloperIcon,
   ImportExportIcon,

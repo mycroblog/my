@@ -58,6 +58,9 @@ export { OAuthAppSettings } from "./components/OAuthAppSettings";
 // The apps the user authorized, and revoking them (ADR-0090 §5).
 export { authorizedAppsQueryOptions } from "./api/authorizedApps";
 export { AuthorizedApps } from "./components/AuthorizedApps";
+// The browsers signed in to the account, and signing them out (ADR-0136).
+export { browserSessionsQueryOptions } from "./api/browserSessions";
+export { BrowserSessions } from "./components/BrowserSessions";
 // The aliases and moving the account to another account (FR-009, ADR-0089).
 export { aliasesQueryOptions } from "./api/aliases";
 export { AliasSettings } from "./components/AliasSettings";

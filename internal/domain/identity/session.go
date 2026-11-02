@@ -61,6 +61,24 @@ const (
 	RevokedAccountDeleted RevocationReason = "account_deleted"
 )
 
+// BrowserSession is a session that is a signed-in browser at some moment (ADR-0136 §1), with
+// where it signed in from. IP and UserAgent are "" when unknown or erased after their retention.
+type BrowserSession struct {
+	ID         string
+	IP         string
+	UserAgent  string
+	CreatedAt  time.Time
+	LastSeenAt *time.Time
+}
+
+// BrowserSessionFamily is a working token family of the first-party client with the session it
+// started from.
+type BrowserSessionFamily struct {
+	SessionID  string
+	FamilyID   string
+	LastUsedAt *time.Time
+}
+
 // SessionRevocation records that a session ended (data-model §4.1, session_revocations).
 type SessionRevocation struct {
 	SessionID string

@@ -110,7 +110,7 @@ description: |
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-    (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+    (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
     this problem; signing in and resetting a password stay available outside the client API.
@@ -178,6 +178,8 @@ description: |
   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
     (`POST /accounts/move/cancel`).
+  - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
+    `DELETE /sessions/{id}`; signing out ends it.
   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
     no move to cancel.
   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the

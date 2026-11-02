@@ -624,6 +624,121 @@ func (q *Queries) ListAuthorizedAppTokens(ctx context.Context, arg ListAuthorize
 	return items, nil
 }
 
+const listBrowserSessionFamilies = `-- name: ListBrowserSessionFamilies :many
+SELECT DISTINCT c.session_id, t.family_id, u.last_used_at
+FROM oauth_access_tokens t
+JOIN oauth_clients cl ON cl.id = t.client_id
+JOIN oauth_authorization_code_redemptions r ON r.token_id = t.family_id
+JOIN oauth_authorization_codes c ON c.code_hash = r.code_hash
+LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
+WHERE t.user_id = ?1 AND cl.registration = 'first_party' AND c.session_id IS NOT NULL
+  AND (t.expires_at > ?2 OR t.refresh_expires_at > ?2)
+  AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)
+`
+
+type ListBrowserSessionFamiliesParams struct {
+	UserID string
+	Now    int64
+}
+
+type ListBrowserSessionFamiliesRow struct {
+	SessionID  sql.NullString
+	FamilyID   string
+	LastUsedAt sql.NullInt64
+}
+
+// ListBrowserSessionFamilies returns the working token families of the first-party client of a
+// user with the session each started from and when it was last used (NULL when it never was
+// recorded). A family without a session is not returned.
+func (q *Queries) ListBrowserSessionFamilies(ctx context.Context, arg ListBrowserSessionFamiliesParams) ([]ListBrowserSessionFamiliesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listBrowserSessionFamilies, arg.UserID, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBrowserSessionFamiliesRow{}
+	for rows.Next() {
+		var i ListBrowserSessionFamiliesRow
+		if err := rows.Scan(&i.SessionID, &i.FamilyID, &i.LastUsedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBrowserSessions = `-- name: ListBrowserSessions :many
+SELECT s.id, s.created_at, o.ip, o.user_agent, a.last_seen_at
+FROM sessions s
+LEFT JOIN session_origins o ON o.session_id = s.id
+LEFT JOIN session_activity a ON a.session_id = s.id
+WHERE s.user_id = ?1
+  AND (
+    (s.expires_at > ?2 AND NOT EXISTS (SELECT 1 FROM session_revocations v WHERE v.session_id = s.id))
+    OR EXISTS (
+      SELECT 1 FROM oauth_authorization_codes c
+      JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
+      JOIN oauth_access_tokens t ON t.family_id = r.token_id
+      JOIN oauth_clients cl ON cl.id = t.client_id
+      WHERE c.session_id = s.id AND cl.registration = 'first_party'
+        AND (t.expires_at > ?2 OR t.refresh_expires_at > ?2)
+        AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)
+    )
+  )
+ORDER BY s.created_at DESC, s.id
+`
+
+type ListBrowserSessionsParams struct {
+	UserID string
+	Now    int64
+}
+
+type ListBrowserSessionsRow struct {
+	ID         string
+	CreatedAt  int64
+	Ip         sql.NullString
+	UserAgent  sql.NullString
+	LastSeenAt sql.NullInt64
+}
+
+// ListBrowserSessions returns the sessions of a user that are a signed-in browser at now
+// (ADR-0136): the session itself works, or a token family of the first-party client that
+// started from it does, whatever became of the session. Newest first.
+func (q *Queries) ListBrowserSessions(ctx context.Context, arg ListBrowserSessionsParams) ([]ListBrowserSessionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listBrowserSessions, arg.UserID, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBrowserSessionsRow{}
+	for rows.Next() {
+		var i ListBrowserSessionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Ip,
+			&i.UserAgent,
+			&i.LastSeenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMetadataDocumentClientsOfHost = `-- name: ListMetadataDocumentClientsOfHost :many
 SELECT id, client_id FROM oauth_clients
 WHERE registration = 'metadata_document'
@@ -874,6 +989,31 @@ func (q *Queries) OAuthClientHostDenied(ctx context.Context, host string) (bool,
 	var denied bool
 	err := row.Scan(&denied)
 	return denied, err
+}
+
+const revokeFirstPartyTokensOfSession = `-- name: RevokeFirstPartyTokensOfSession :exec
+INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
+SELECT t.id, ?1, ?2
+FROM oauth_authorization_codes c
+JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
+JOIN oauth_access_tokens t ON t.family_id = r.token_id
+JOIN oauth_clients cl ON cl.id = t.client_id
+WHERE c.session_id = ?3 AND cl.registration = 'first_party'
+ON CONFLICT (token_id) DO NOTHING
+`
+
+type RevokeFirstPartyTokensOfSessionParams struct {
+	Reason    string
+	RevokedAt int64
+	SessionID sql.NullString
+}
+
+// RevokeFirstPartyTokensOfSession revokes every token of the first-party client's families that
+// started from the session and have no revocation yet. Third-party apps authorized in the
+// session keep theirs.
+func (q *Queries) RevokeFirstPartyTokensOfSession(ctx context.Context, arg RevokeFirstPartyTokensOfSessionParams) error {
+	_, err := q.db.ExecContext(ctx, revokeFirstPartyTokensOfSession, arg.Reason, arg.RevokedAt, arg.SessionID)
+	return err
 }
 
 const revokeOtherTokensOfUser = `-- name: RevokeOtherTokensOfUser :exec

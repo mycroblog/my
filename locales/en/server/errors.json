@@ -587,6 +587,10 @@
     "defaultMessage": "Your account has not moved.",
     "description": "API error title for HTTP 409 when a user cancels the move of their account, but the account has not moved."
   },
+  "errors.current_session": {
+    "defaultMessage": "This is the browser you are using. Sign out instead.",
+    "description": "API error title for HTTP 409 when the browser the user is using is signed out through the list of signed-in browsers; signing out ends it."
+  },
   "errors.move_alias_missing": {
     "defaultMessage": "The account to move to does not list your account as an alias.",
     "description": "API error title for HTTP 422 when a user moves their account to another account whose aliases (alsoKnownAs) do not include the user's account; the alias must be added on the target first."

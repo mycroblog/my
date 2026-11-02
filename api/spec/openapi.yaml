@@ -51,6 +51,8 @@ tags:
     description: |
       The accounts at external login providers that the authenticated user links, which sign
       in and confirm operations instead of the password.
+  - name: sessions
+    description: The browsers signed in to the authenticated user's account, and signing them out.
   - name: authorized_apps
     description: The apps the authenticated user authorized with OAuth, and revoking them.
   - name: oauth-apps
@@ -217,6 +219,12 @@ paths:
     $ref: ./paths/linked_identities_confirmation.yaml
   /linked_identities/{id}:
     $ref: ./paths/linked_identities_{id}.yaml
+  /sessions:
+    $ref: ./paths/sessions.yaml
+  /sessions/revoke_others:
+    $ref: ./paths/sessions_revoke_others.yaml
+  /sessions/{id}:
+    $ref: ./paths/sessions_{id}.yaml
   /authorized_apps:
     $ref: ./paths/authorized_apps.yaml
   /authorized_apps/{id}:
@@ -704,7 +712,7 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, authorized apps, deleting the account, the user's own
+        (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
         OAuth apps) are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.

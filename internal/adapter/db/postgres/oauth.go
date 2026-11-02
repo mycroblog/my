@@ -412,3 +412,58 @@ func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx
 	n, err := q.RevokeTokensOfUserAndClient(ctx, postgresgen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, ClientID: clientID})
 	return n, wrap(err, "revoke the tokens of a user and a client")
 }
+
+// ListBrowserSessions implements identity.Repository.
+func (r *IdentityRepository) ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error) {
+	rows, err := r.db.reader().ListBrowserSessions(ctx, postgresgen.ListBrowserSessionsParams{UserID: userID, Now: now})
+	if err != nil {
+		return nil, wrap(err, "list browser sessions")
+	}
+	out := make([]identity.BrowserSession, len(rows))
+	for i, row := range rows {
+		s := identity.BrowserSession{ID: row.ID, CreatedAt: utc(row.CreatedAt)}
+		if row.Ip != nil {
+			s.IP = *row.Ip
+		}
+		if row.UserAgent != nil {
+			s.UserAgent = *row.UserAgent
+		}
+		if row.LastSeenAt != nil {
+			at := utc(*row.LastSeenAt)
+			s.LastSeenAt = &at
+		}
+		out[i] = s
+	}
+	return out, nil
+}
+
+// ListBrowserSessionFamilies implements identity.Repository.
+func (r *IdentityRepository) ListBrowserSessionFamilies(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSessionFamily, error) {
+	rows, err := r.db.reader().ListBrowserSessionFamilies(ctx, postgresgen.ListBrowserSessionFamiliesParams{UserID: userID, Now: now})
+	if err != nil {
+		return nil, wrap(err, "list browser session families")
+	}
+	out := make([]identity.BrowserSessionFamily, 0, len(rows))
+	for _, row := range rows {
+		if row.SessionID == nil {
+			continue
+		}
+		f := identity.BrowserSessionFamily{SessionID: *row.SessionID, FamilyID: row.FamilyID}
+		if row.LastUsedAt != nil {
+			at := utc(*row.LastUsedAt)
+			f.LastUsedAt = &at
+		}
+		out = append(out, f)
+	}
+	return out, nil
+}
+
+// RevokeFirstPartyTokensOfSession implements identity.Repository.
+func (r *IdentityRepository) RevokeFirstPartyTokensOfSession(ctx context.Context, tx uow.Tx, sessionID string, reason identity.TokenRevocationReason, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	err = q.RevokeFirstPartyTokensOfSession(ctx, postgresgen.RevokeFirstPartyTokensOfSessionParams{Reason: string(reason), RevokedAt: at, SessionID: &sessionID})
+	return wrap(err, "revoke the first-party tokens of a session")
+}

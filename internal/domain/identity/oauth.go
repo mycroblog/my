@@ -202,6 +202,9 @@ const (
 	TokenRevokedClientDisabled TokenRevocationReason = "client_disabled"
 	// TokenRevokedClientDeleted: the token's client was deleted.
 	TokenRevokedClientDeleted TokenRevocationReason = "client_deleted"
+	// TokenRevokedSessionReplaced: the user signed in again from the same browser, which ended
+	// the session the token's family started from (ADR-0136 §5).
+	TokenRevokedSessionReplaced TokenRevocationReason = "session_replaced"
 )
 
 // TokenState is what the events of a token and of its client say about the token.

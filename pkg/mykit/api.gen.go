@@ -7061,6 +7061,35 @@ type BrandSanitized struct {
 	ViewBoxWidth  float32 `json:"view_box_width"`
 }
 
+// BrowserSession A browser signed in to the authenticated user's account.
+type BrowserSession struct {
+	// Current Whether this is the browser that asks.
+	Current bool `json:"current"`
+
+	// Id The ID of the browser's session, which `DELETE /sessions/{id}` takes.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Ip The IP address the browser signed in from, not where it is now. Absent when it is unknown
+	// or was erased after its retention.
+	Ip *string `json:"ip,omitempty"`
+
+	// LastUsedAt When the browser was last used, exact to the hour. Absent when no use was recorded.
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
+
+	// SignedInAt When the browser signed in.
+	SignedInAt time.Time `json:"signed_in_at"`
+
+	// UserAgent The `User-Agent` of the sign-in. Absent when it is unknown or was erased after its retention.
+	UserAgent *string `json:"user_agent,omitempty"`
+}
+
+// BrowserSessionList The browsers signed in to the authenticated user's account, the one that asks first.
+type BrowserSessionList struct {
+	Items []BrowserSession `json:"items"`
+}
+
 // CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
@@ -10962,7 +10991,7 @@ type PreviewDomainBlockImportRequest struct {
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-//     (`/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
 //     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
 //     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
 //     this problem; signing in and resetting a password stay available outside the client API.
@@ -11030,6 +11059,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
+//   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
+//     `DELETE /sessions/{id}`; signing out ends it.
 //   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
 //     no move to cancel.
 //   - `/api/v1/problems/move-alias-missing` (422): the account to move to does not list the
@@ -20348,6 +20379,37 @@ type ClientInterface interface {
 	// Corresponds with POST /reports (the `CreateReport` operationId).
 	CreateReport(ctx context.Context, body CreateReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListSessions List the browsers signed in to the authenticated user's account
+	//
+	// One entry per browser session that still works or from which a grant of the server's own web
+	// client still works, the browser that asks first, then the most recently used first. The apps
+	// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+	// may call it (ADR-0090 §4).
+	//
+	// Corresponds with GET /sessions (the `ListSessions` operationId).
+	ListSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeOtherSessions Sign out every browser but the one that asks
+	//
+	// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
+	// succeeds when there is no other browser. Only the server's own clients may call it
+	// (ADR-0090 §4).
+	//
+	// Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
+	RevokeOtherSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeSession Sign out one of the browsers signed in to the account
+	//
+	// Ends the browser session and the web client's grants that started from it, so that their
+	// access and refresh tokens stop working at once (the next request with one is a 401). The
+	// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
+	// in the user's list is a 404, and the browser that asks is a 409 with the type
+	// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
+	// call it (ADR-0090 §4).
+	//
+	// Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
+	RevokeSession(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreateStatusWithBody Post a status
 	//
 	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
@@ -29418,6 +29480,67 @@ func (c *Client) CreateReportWithBody(ctx context.Context, contentType string, b
 // Corresponds with POST /reports (the `CreateReport` operationId).
 func (c *Client) CreateReport(ctx context.Context, body CreateReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateReportRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListSessions List the browsers signed in to the authenticated user's account
+//
+// One entry per browser session that still works or from which a grant of the server's own web
+// client still works, the browser that asks first, then the most recently used first. The apps
+// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+// may call it (ADR-0090 §4).
+//
+// Corresponds with GET /sessions (the `ListSessions` operationId).
+func (c *Client) ListSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSessionsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeOtherSessions Sign out every browser but the one that asks
+//
+// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
+// succeeds when there is no other browser. Only the server's own clients may call it
+// (ADR-0090 §4).
+//
+// Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
+func (c *Client) RevokeOtherSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeOtherSessionsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeSession Sign out one of the browsers signed in to the account
+//
+// Ends the browser session and the web client's grants that started from it, so that their
+// access and refresh tokens stop working at once (the next request with one is a 401). The
+// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
+// in the user's list is a 404, and the browser that asks is a 409 with the type
+// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
+// call it (ADR-0090 §4).
+//
+// Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
+func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeSessionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -43420,6 +43543,94 @@ func NewCreateReportRequestWithBody(server string, contentType string, body io.R
 	return req, nil
 }
 
+// NewListSessionsRequest constructs an http.Request for the ListSessions method
+func NewListSessionsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeOtherSessionsRequest constructs an http.Request for the RevokeOtherSessions method
+func NewRevokeOtherSessionsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/revoke_others")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeSessionRequest constructs an http.Request for the RevokeSession method
+func NewRevokeSessionRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/sessions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCreateStatusRequest calls the generic CreateStatus builder with application/json body
 func NewCreateStatusRequest(server string, params *CreateStatusParams, body CreateStatusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -51439,6 +51650,43 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /reports (the `CreateReport` operationId).
 	CreateReportWithResponse(ctx context.Context, body CreateReportJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateReportResponse, error)
+
+	// ListSessionsWithResponse List the browsers signed in to the authenticated user's account
+	//
+	// One entry per browser session that still works or from which a grant of the server's own web
+	// client still works, the browser that asks first, then the most recently used first. The apps
+	// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+	// may call it (ADR-0090 §4).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /sessions (the `ListSessions` operationId).
+	ListSessionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSessionsResponse, error)
+
+	// RevokeOtherSessionsWithResponse Sign out every browser but the one that asks
+	//
+	// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
+	// succeeds when there is no other browser. Only the server's own clients may call it
+	// (ADR-0090 §4).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
+	RevokeOtherSessionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RevokeOtherSessionsResponse, error)
+
+	// RevokeSessionWithResponse Sign out one of the browsers signed in to the account
+	//
+	// Ends the browser session and the web client's grants that started from it, so that their
+	// access and refresh tokens stop working at once (the next request with one is a 401). The
+	// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
+	// in the user's list is a 404, and the browser that asks is a 409 with the type
+	// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
+	// call it (ADR-0090 §4).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
+	RevokeSessionWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*RevokeSessionResponse, error)
 
 	// CreateStatusWithBodyWithResponse Post a status
 	//
@@ -70577,6 +70825,173 @@ func (r CreateReportResponse) ContentType() string {
 	return ""
 }
 
+// ListSessionsResponse200Headers the declared response headers of an HTTP 200 response for ListSessions
+type ListSessionsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListSessionsResponseDefaultHeaders the declared response headers of an HTTP default response for ListSessions
+type ListSessionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListSessionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *BrowserSessionList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListSessionsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListSessionsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListSessionsResponse) GetJSON200() *BrowserSessionList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListSessionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListSessionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSessionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSessionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSessionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RevokeOtherSessionsResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeOtherSessions
+type RevokeOtherSessionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RevokeOtherSessionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RevokeOtherSessionsResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RevokeOtherSessionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeOtherSessionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeOtherSessionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeOtherSessionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeOtherSessionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RevokeSessionResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeSession
+type RevokeSessionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RevokeSessionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RevokeSessionResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RevokeSessionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeSessionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeSessionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeSessionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeSessionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // CreateStatusResponse200Headers the declared response headers of an HTTP 200 response for CreateStatus
 type CreateStatusResponse200Headers struct {
 	CacheControl *string
@@ -82068,6 +82483,61 @@ func (c *ClientWithResponses) CreateReportWithResponse(ctx context.Context, body
 		return nil, err
 	}
 	return ParseCreateReportResponse(rsp)
+}
+
+// ListSessionsWithResponse List the browsers signed in to the authenticated user's account
+//
+// One entry per browser session that still works or from which a grant of the server's own web
+// client still works, the browser that asks first, then the most recently used first. The apps
+// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
+// may call it (ADR-0090 §4).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /sessions (the `ListSessions` operationId).
+func (c *ClientWithResponses) ListSessionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListSessionsResponse, error) {
+	rsp, err := c.ListSessions(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSessionsResponse(rsp)
+}
+
+// RevokeOtherSessionsWithResponse Sign out every browser but the one that asks
+//
+// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
+// succeeds when there is no other browser. Only the server's own clients may call it
+// (ADR-0090 §4).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
+func (c *ClientWithResponses) RevokeOtherSessionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RevokeOtherSessionsResponse, error) {
+	rsp, err := c.RevokeOtherSessions(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeOtherSessionsResponse(rsp)
+}
+
+// RevokeSessionWithResponse Sign out one of the browsers signed in to the account
+//
+// Ends the browser session and the web client's grants that started from it, so that their
+// access and refresh tokens stop working at once (the next request with one is a 401). The
+// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
+// in the user's list is a 404, and the browser that asks is a 409 with the type
+// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
+// call it (ADR-0090 §4).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
+func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*RevokeSessionResponse, error) {
+	rsp, err := c.RevokeSession(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeSessionResponse(rsp)
 }
 
 // CreateStatusWithBodyWithResponse Post a status
@@ -105351,6 +105821,209 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 		response.Headers200 = &headers
 	case true:
 		var headers CreateReportResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListSessionsResponse parses an HTTP response from a ListSessionsWithResponse call
+func ParseListSessionsResponse(rsp *http.Response) (*ListSessionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSessionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BrowserSessionList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListSessionsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListSessionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRevokeOtherSessionsResponse parses an HTTP response from a RevokeOtherSessionsWithResponse call
+func ParseRevokeOtherSessionsResponse(rsp *http.Response) (*RevokeOtherSessionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeOtherSessionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RevokeOtherSessionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRevokeSessionResponse parses an HTTP response from a RevokeSessionWithResponse call
+func ParseRevokeSessionResponse(rsp *http.Response) (*RevokeSessionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeSessionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RevokeSessionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

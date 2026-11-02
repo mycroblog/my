@@ -158,6 +158,15 @@ type OAuthRepository interface {
 	// RevokeSessionOfTokenFamily revokes the browser session that authorized the code a family
 	// started from, unless the session has a revocation already or the code had no session.
 	RevokeSessionOfTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.RevocationReason, at time.Time) error
+	// ListBrowserSessions returns the user's sessions that work at now or that a working token
+	// family of the first-party client started from, newest first (ADR-0136 §1).
+	ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error)
+	// ListBrowserSessionFamilies returns the user's working token families of the first-party
+	// client that started from a session.
+	ListBrowserSessionFamilies(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSessionFamily, error)
+	// RevokeFirstPartyTokensOfSession revokes the tokens of the first-party client's families
+	// that started from the session; other clients' tokens stay.
+	RevokeFirstPartyTokensOfSession(ctx context.Context, tx uow.Tx, sessionID string, reason identity.TokenRevocationReason, at time.Time) error
 
 	// UpsertOAuthClientMetadataDocument stores the last fetch of a client's metadata document.
 	UpsertOAuthClientMetadataDocument(ctx context.Context, tx uow.Tx, d identity.ClientMetadataDocument) error
