@@ -18,6 +18,7 @@
 | FR-009 | アカウントの移転: 移ってくる側で別名（`alsoKnownAs`）を設定でき、移る側で移転先を指定してフォロワーを移転先へ移す（`Move`）。移転のあとはログイン・エクスポート・移転の取り消しだけができ、次の移転までは待ち時間がある（[ADR-0089](../adr/0089-account-migration-move.md)） | S |
 | FR-010 | 管理者が設定する外部 IdP（OpenID Connect の IdP、GitHub、管理者が指定した Mastodon サーバー）でのログイン・登録・既存アカウントへのひも付け。IdP は管理画面・管理 API・CLI から再起動なしに追加・無効化・削除でき、IdP ごとに新規登録の可否と利用者を絞る条件（ID トークンの claim、GitHub の Organization）を設定できる（[ADR-0106](../adr/0106-external-login-providers.md)）。インスタンス設定 `login_providers_only` で、有効な IdP がひとつ以上ある間、ログインと登録を IdP だけに制限できる。有効にするときはログインできなくなる利用者の数を出して警告し、有効な IdP がなければ働かない（[ADR-0133](../adr/0133-login-providers-only.md)） | M |
 | FR-011 | 利用者による招待の作成: 権限 `create_invites`（プランのロールに付けられる）か、インスタンス設定 `invite_creators` が `everyone` のとき、利用者は自分の招待を作り、一覧し、取り消す。同時に持てる数・回数・期間の上限はインスタンス設定で変えられる。作成者が資格を失うと未使用の招待は使えない。モデレーターは招待した人を確かめられ、作成と取り消しは監査ログに残る（[ADR-0108](../adr/0108-member-invites.md)） | S |
+| FR-012 | 利用者は、自分のログイン中のブラウザを一覧し、1 つずつ、または今のブラウザ以外をすべてログアウトできる（[ADR-0136](../adr/0136-signed-in-browsers.md)） | S |
 
 ## 投稿（content）
 
