@@ -104,8 +104,8 @@
     "description": "That each account can narrow the server's statement for its own pages, but never widen it."
   },
   "about.crawlers.legal": {
-    "defaultMessage": "What such a statement means in law depends on the country. In the EU, it is meant as a machine-readable reservation of rights against text and data mining under Article 4(3) of the Directive on Copyright in the Digital Single Market. In Japan, Article 30-4 of the Copyright Act allows many uses for data analysis without permission, so the statement may not bind them legally; many operators still follow such statements voluntarily. This page is not legal advice.",
-    "description": "The legal positioning of the server's AI statement: Japan's Copyright Act Article 30-4 and the EU DSM Directive Article 4. Must not promise a legal effect."
+    "defaultMessage": "What such a statement means in law depends on the country, and many operators follow such statements voluntarily. This text is not legal advice.",
+    "description": "The legal note under the server's AI statement. Must not promise a legal effect."
   },
   "about.costs.title": {
     "defaultMessage": "Running costs",
