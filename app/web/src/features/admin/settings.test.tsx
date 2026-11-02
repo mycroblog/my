@@ -307,7 +307,9 @@ describe("the server's policies", () => {
 
     await user.click(ignore);
     await user.click(screen.getByRole("button", { name: "Save the settings" }));
-    await waitFor(() => expect(settings.patches).toHaveLength(2));
+    await waitFor(() => {
+      expect(settings.patches).toHaveLength(2);
+    });
     expect(settings.patches[1]).toEqual({ values: { link_cards_ignore_robots_txt: "false" } });
   });
 
