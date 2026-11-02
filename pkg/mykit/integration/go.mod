@@ -25,7 +25,7 @@ require (
 	cloud.google.com/go/pubsub/v2 v2.8.0 // indirect
 	cloud.google.com/go/storage v1.70.0 // indirect
 	code.superseriousbusiness.org/httpsig v1.5.0 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.35.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.38.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.57.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.57.0 // indirect
 	github.com/agentable/go-intl v0.2.17 // indirect
