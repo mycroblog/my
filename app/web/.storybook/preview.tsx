@@ -4,6 +4,7 @@
 // the whole app (src/test/stories.tsx), which sets lang and dir of <html> from the locale itself.
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { type ReactNode, useEffect } from "react";
+import { configure } from "storybook/test";
 import "../src/index.css";
 
 /** The locales of the toolbar: the source locale, Japanese and the two pseudo-locales (ADR-0009). */
@@ -41,6 +42,11 @@ const withTheme: Decorator = (Story, { globals }) => (
     <Story />
   </ThemeRoot>
 );
+
+// findBy and waitFor give up after this long, as in the component tests (web-client/README.md T7; src/test/setup.ts): a
+// story test runs on a busy machine, where Testing Library's 1 s default times out. testTimeout in
+// vitest.stories.config.ts leaves room for several such waits.
+configure({ asyncUtilTimeout: 10_000 });
 
 const preview: Preview = {
   decorators: [withTheme],

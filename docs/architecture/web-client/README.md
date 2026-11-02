@@ -253,5 +253,6 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
     ハンドラのない API の要求があれば、ストーリーは失敗する。
   - 画面ごとに、通常（`play` で主な操作）・空・読み込み中・エラー・`ja`・`en-XA`・`ar-XB`・320 px のストーリーを持つ。ロケールはツールバーの `locale` で、ページはそのロケールで始まり、ログインした閲覧者の設定のロケールも同じにする。
   - `scripts/task.sh web:story-test`（`app/web/vitest.stories.config.ts`）で実ブラウザのテストになり、`play` と axe（Y1）を動かす。スクリーンショットは比べない（画面は E2E が受け持つ）。
+    `findBy` / `waitFor` の上限は部品のテストと同じ 10 秒（`.storybook/preview.tsx` の `asyncUtilTimeout`）、1 つのテストの上限は 30 秒にする（T7）。
     メタの `play` は画面が読み込み終わる（`main h1` があり、スピナーがない）まで待つので、axe は読み込み中ではなく画面を検査する。CI の `web-story-test` ジョブが、クライアントを変える PR で `ui-test` と同じイメージの中で動かす。
   - ストーリーは、テストと同じく `src/test` と自分の機能の `test/` を import できる（境界の lint）。
