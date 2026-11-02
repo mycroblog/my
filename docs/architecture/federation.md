@@ -580,6 +580,10 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - **ページのロボットの指定**: `<head>` の `<meta name="robots">` と `<meta name="my-linkcard">`、応答の `X-Robots-Tag` のうちボットの名前がないものと `my-linkcard:` が付いたものを読み、厳しいほうを採ります。`nosnippet`・`max-snippet:0` は説明を、`noimageindex`・`max-image-preview:none` は画像を（取得せず）カードから除きます。`noindex`・`nofollow`・`noarchive`・`none` などは何も変えません。`link_cards_ignore_robots_txt` によらず効きます。
 - **失敗と同時取得**: 取得・解釈の失敗は URL の SHA-256 をキーに KV（名前空間 `content.link_card_failure`）へ 24 時間記録し、その間は取りません。
   取得の前に URL ごとのロック（`content.link_card_lock`、60 秒）を取り、取得中なら 60 秒後に再試行します。
+- **ホストごとの制限**: `robots.txt`・ページ・画像の要求は、ホスト（`content.LinkHost`）ごとに同時に 1 つで、前の取得の終わりから 1 秒空けます。1 つの取得は、1 回の要求とそのリダイレクト、それに要る `robots.txt` です。同じホストのページと画像は別の取得です。`link_card_domain_rules` などによる拒否が先で、`link_cards_ignore_robots_txt` は関係しません。
+  KV のロック（`content.link_card_host_lock`、`CompareAndSwap`、2 分）と開始できる時刻（`content.link_card_host_not_before`）で守り、リダイレクトの各段は `HTTPRequest.CheckRedirect` で確かめます。ワーカーは待ちません。始められない取得はジョブを `queue.Postpone` で戻し、試行の回数を消費しないので、URL が試行回数より多くても dead job になりません。戻す時刻はホストの列（`content.link_card_host_queue`）で 1 秒ずつずらし、起きるジョブを 1 秒に 1 つ程度に抑えます。これは起こす回数を減らすためだけのもので、制限そのものはロックと時刻が守ります。KV のエントリーはすべて TTL を持ち、落ちたワーカーがホストを止め続けることはありません。
+  `429`・`503` はホストを `Retry-After`（秒か日時。下限 1 秒、上限 1 時間）か、読めないときは 1 分止めます（`my.link_card.host_pauses` とログ）。その URL の失敗は覚えず、カードも消さず、止まった後に取り直します。同じ URL が 24 時間のうちに 5 回そう答えたら（`content.link_card_throttle`）、ページは失敗として覚え、画像は画像なしのカードにします。`robots.txt` の `429`・`503` はホストも止めますが、ADR-0131 の表の扱いは変えません。
+  画像を待つカードは読んだページを KV（`content.link_card_pending`、2 時間）に残し、ページを要求し直しません。別のホストへのリダイレクトで止まったときは、最初の URL から取り直します。
 - **画像**: カードのホストと画像のホストのどちらにも `media_fetch` の制限がなければ、画像を `HTTPPurposeImage` で 1 回だけ取得し、中身で形式を判定して（§9 の許可リストのうち画像。SVG は拒否）、
   `media.Processor` で寸法と blurhash を求め、`media_files`（`origin = remote`、所有者なし）と `link_card_media` に記録します。本体は保存しません。同じ URL の画像は最初の記録を使います。
   クライアント API はメディアプロキシの `small`（添付と同じ S の箱の静止画）の URL だけを返し、プロキシは `link_card_media` を添付の画像と同じ規則で中継・キャッシュします。

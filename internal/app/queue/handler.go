@@ -23,9 +23,10 @@ const (
 	outcomeDone outcome = iota + 1
 	outcomeRetry
 	outcomeFail
+	outcomePostpone
 )
 
-// Result is a handler's outcome: Done, Retry, or Fail. The zero Result is not valid; a runner
+// Result is a handler's outcome: Done, Retry, Postpone, or Fail. The zero Result is not valid; a runner
 // treats it like Retry(0, nil).
 type Result struct {
 	outcome outcome
@@ -52,6 +53,14 @@ func RetryRemote(after time.Duration, cause error) Result {
 	return Result{outcome: outcomeRetry, after: after, err: cause, remote: true}
 }
 
+// Postpone runs the job again after the delay, as if this run had not happened: the attempt is
+// given back and the job's last error stays, so it never counts toward becoming a dead job. It is
+// for a job that nothing went wrong with and that did no work, such as one waiting for its turn at
+// a shared limit. Such a job can wait indefinitely, so what it waits for must end by itself.
+func Postpone(after time.Duration) Result {
+	return Result{outcome: outcomePostpone, after: after}
+}
+
 // Fail reports that the job can never succeed; the runner moves it to the dead jobs at once.
 func Fail(cause error) Result { return Result{outcome: outcomeFail, err: cause} }
 
@@ -61,10 +70,14 @@ func (r Result) IsDone() bool { return r.outcome == outcomeDone }
 // IsFail reports whether r is Fail.
 func (r Result) IsFail() bool { return r.outcome == outcomeFail }
 
-// IsRetry reports whether r asks for another attempt (Retry, or the invalid zero Result).
-func (r Result) IsRetry() bool { return !r.IsDone() && !r.IsFail() }
+// IsPostponed reports whether r is a Postpone.
+func (r Result) IsPostponed() bool { return r.outcome == outcomePostpone }
 
-// After returns the delay a Retry asked for; zero or less means the policy's backoff.
+// IsRetry reports whether r asks for another attempt (Retry, or the invalid zero Result).
+func (r Result) IsRetry() bool { return !r.IsDone() && !r.IsFail() && !r.IsPostponed() }
+
+// After returns the delay a Retry or a Postpone asked for; for a Retry, zero or less means the
+// policy's backoff.
 func (r Result) After() time.Duration { return r.after }
 
 // Err returns the cause given to Retry or Fail.

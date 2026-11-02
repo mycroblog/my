@@ -7,17 +7,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	stdiotest "testing/iotest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/content"
 )
@@ -33,6 +38,7 @@ type robotsCardsEnv struct {
 	web    *robotsWeb
 	ignore bool
 	domain *robotsDomains
+	meter  *robotsMeter
 	cards  *content.LinkCards
 }
 
@@ -44,22 +50,32 @@ func newRobotsCardsEnv(t *testing.T) *robotsCardsEnv {
 		repo:   &robotsCardRepo{links: map[string]string{}, cards: map[string]domain.LinkCard{}, media: map[string]domain.LinkCardMedia{}},
 		web:    &robotsWeb{pages: map[string]robotsResponse{}, redirects: map[string]string{}},
 		domain: &robotsDomains{refused: map[string]bool{}},
+		meter:  &robotsMeter{sums: map[string]float64{}},
 	}
 	e.cards = content.NewLinkCards(content.LinkCardsDeps{
 		UnitOfWork: robotsUOW{}, Repository: e.repo, HTTP: e.web, KV: e.kv, Domains: e.domain, Clock: clock,
-		Logger:          slog.New(slog.DiscardHandler),
+		Logger: slog.New(slog.DiscardHandler), Meter: e.meter, Processor: robotsProcessor{}, IDs: &robotsIDs{},
 		IgnoreRobotsTxt: func(context.Context) (bool, error) { return e.ignore, nil },
 	})
 	return e
 }
 
-// fetch runs the job of a status that links u.
+// fetch runs the job of a status that links u, moving the clock past what a host's limits ask.
 func (e *robotsCardsEnv) fetch(u string) {
 	e.t.Helper()
 	id := "status:" + u
-	e.repo.links[id] = u
-	if retry, err := e.cards.Fetch(e.t.Context(), id); (err != nil && !errors.Is(err, content.ErrLinkCardRetryLater)) || retry {
-		e.t.Fatalf("Fetch(%s) = %v, %v", u, retry, err)
+	e.repo.setLink(id, u)
+	for {
+		retry, err := e.cards.Fetch(e.t.Context(), id)
+		var postponed *content.LinkCardPostponed
+		if errors.As(err, &postponed) {
+			e.clock.Advance(postponed.After)
+			continue
+		}
+		if (err != nil && !errors.Is(err, content.ErrLinkCardRetryLater)) || retry {
+			e.t.Fatalf("Fetch(%s) = %v, %v", u, retry, err)
+		}
+		return
 	}
 }
 
@@ -809,6 +825,7 @@ func (w *robotsWeb) hits() map[string]int {
 type robotsKV struct {
 	kernel.KeyValueStore
 	clock   *robotsClock
+	mu      sync.Mutex
 	entries map[string]robotsKVEntry
 	getErr  map[string]error
 }
@@ -819,7 +836,18 @@ type robotsKVEntry struct {
 	expires time.Time
 }
 
+func (k *robotsKV) setGetErr(ns string, err error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if k.getErr == nil {
+		k.getErr = map[string]error{}
+	}
+	k.getErr[ns] = err
+}
+
 func (k *robotsKV) Get(_ context.Context, ns, key string) ([]byte, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
 	if err := k.getErr[ns]; err != nil {
 		return nil, err
 	}
@@ -831,21 +859,55 @@ func (k *robotsKV) Get(_ context.Context, ns, key string) ([]byte, error) {
 }
 
 func (k *robotsKV) Set(_ context.Context, ns, key string, value []byte, ttl time.Duration) error {
+	k.mu.Lock()
+	defer k.mu.Unlock()
 	k.entries[ns+"/"+key] = robotsKVEntry{value: bytes.Clone(value), ttl: ttl, expires: k.clock.Now().Add(ttl)}
 	return nil
 }
 
 func (k *robotsKV) Delete(_ context.Context, ns, key string) error {
+	k.mu.Lock()
+	defer k.mu.Unlock()
 	delete(k.entries, ns+"/"+key)
 	return nil
 }
 
-func (k *robotsKV) IncrBy(context.Context, string, string, int64, time.Duration) (int64, error) {
-	return 1, nil
+func (k *robotsKV) IncrBy(_ context.Context, ns, key string, n int64, ttl time.Duration) (int64, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	cur, expires := int64(0), k.clock.Now().Add(ttl)
+	if e, ok := k.entries[ns+"/"+key]; ok && k.clock.Now().Before(e.expires) {
+		parsed, err := strconv.ParseInt(string(e.value), 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		cur, expires = parsed, e.expires
+	}
+	cur += n
+	k.entries[ns+"/"+key] = robotsKVEntry{value: []byte(strconv.FormatInt(cur, 10)), ttl: ttl, expires: expires}
+	return cur, nil
+}
+
+func (k *robotsKV) CompareAndSwap(_ context.Context, ns, key string, old, value []byte, ttl time.Duration) (bool, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	e, ok := k.entries[ns+"/"+key]
+	ok = ok && k.clock.Now().Before(e.expires)
+	if (old == nil && ok) || (old != nil && (!ok || !bytes.Equal(e.value, old))) {
+		return false, nil
+	}
+	if value == nil {
+		delete(k.entries, ns+"/"+key)
+		return true, nil
+	}
+	k.entries[ns+"/"+key] = robotsKVEntry{value: bytes.Clone(value), ttl: ttl, expires: k.clock.Now().Add(ttl)}
+	return true, nil
 }
 
 // find returns the entry of key in ns, or the only entry of ns for an empty key.
 func (k *robotsKV) find(ns, key string) robotsKVEntry {
+	k.mu.Lock()
+	defer k.mu.Unlock()
 	if key != "" {
 		return k.entries[ns+"/"+key]
 	}
@@ -863,13 +925,29 @@ func (k *robotsKV) value(ns, key string) string      { return string(k.find(ns, 
 // robotsCardRepo keeps the cards in maps.
 type robotsCardRepo struct {
 	content.LinkCardRepository
+	mu      sync.Mutex
 	links   map[string]string
 	cards   map[string]domain.LinkCard
 	media   map[string]domain.LinkCardMedia
 	deleted int
 }
 
+func (r *robotsCardRepo) setLink(id, u string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.links[id] = u
+}
+
+func (r *robotsCardRepo) card(u string) (domain.LinkCard, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	c, ok := r.cards[u]
+	return c, ok
+}
+
 func (r *robotsCardRepo) StatusLinkCardURL(_ context.Context, id string) (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	u, ok := r.links[id]
 	if !ok {
 		return "", content.ErrNotFound
@@ -878,6 +956,8 @@ func (r *robotsCardRepo) StatusLinkCardURL(_ context.Context, id string) (string
 }
 
 func (r *robotsCardRepo) FindLinkCard(_ context.Context, u string) (domain.LinkCard, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	c, ok := r.cards[u]
 	if !ok {
 		return c, content.ErrNotFound
@@ -886,22 +966,93 @@ func (r *robotsCardRepo) FindLinkCard(_ context.Context, u string) (domain.LinkC
 }
 
 func (r *robotsCardRepo) UpsertLinkCard(_ context.Context, _ uow.Tx, c domain.LinkCard) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.cards[c.URL] = c
 	return nil
 }
 
 func (r *robotsCardRepo) DeleteLinkCard(_ context.Context, _ uow.Tx, u string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	delete(r.cards, u)
 	r.deleted++
 	return nil
 }
 
+func (r *robotsCardRepo) InsertLinkCardMedia(_ context.Context, _ uow.Tx, m domain.LinkCardMedia, _ time.Time) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.media[m.RemoteURL]; ok {
+		return false, nil
+	}
+	r.media[m.RemoteURL] = m
+	return true, nil
+}
+
 func (r *robotsCardRepo) LinkCardMediaByURL(_ context.Context, _ uow.Tx, u string) (domain.LinkCardMedia, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	m, ok := r.media[u]
 	if !ok {
 		return m, content.ErrNotFound
 	}
 	return m, nil
+}
+
+// robotsProcessor takes any image for a small one.
+type robotsProcessor struct{ media.Processor }
+
+func (robotsProcessor) Process(context.Context, []byte, media.Limits, media.Sizes, media.Request) (media.Output, error) {
+	return media.Output{Width: 4, Height: 4, Blurhash: "hash"}, nil
+}
+
+// robotsIDs numbers the IDs.
+type robotsIDs struct{ n atomic.Int64 }
+
+func (g *robotsIDs) NewID() string            { return "id-" + strconv.FormatInt(g.n.Add(1), 10) }
+func (g *robotsIDs) NewIDAt(time.Time) string { return g.NewID() }
+
+// robotsMeter sums the counters by their name and labels.
+type robotsMeter struct {
+	kernel.NopMeter
+	mu   sync.Mutex
+	sums map[string]float64
+}
+
+type robotsCounter struct {
+	m    *robotsMeter
+	name string
+}
+
+func (m *robotsMeter) Counter(i kernel.Instrument) kernel.Counter {
+	return robotsCounter{m: m, name: i.Name}
+}
+
+func (c robotsCounter) Add(_ context.Context, v int64, l kernel.Labels) {
+	c.m.mu.Lock()
+	defer c.m.mu.Unlock()
+	key := c.name
+	for k, val := range l.All() {
+		key += " " + k + "=" + val
+	}
+	c.m.sums[key] += float64(v)
+}
+
+func (m *robotsMeter) sum(key string) float64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.sums[key]
+}
+
+// robotsPNG returns a small image.
+func robotsPNG(t *testing.T) string {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 4, 4))); err != nil {
+		t.Fatal(err)
+	}
+	return buf.String()
 }
 
 type robotsUOW struct{ uow.UnitOfWork }

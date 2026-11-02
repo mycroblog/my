@@ -56,9 +56,10 @@ func (l *LinkCards) ignoresRobots(ctx context.Context) (bool, error) {
 
 // checkRobots returns nil when the robots.txt of u's origin lets the crawler fetch u, or the
 // setting ignores it, and otherwise errRobotsDisallowed or errRobotsAssumed. Any other error is a
-// failure of the stores or the end of ctx. A URL without an origin is left to the HTTPClient,
-// which refuses it.
-func (l *LinkCards) checkRobots(ctx context.Context, u string) error {
+// *LinkCardPostponed, a failure of the stores, or the end of ctx. A URL without an origin is left
+// to the HTTPClient, which refuses it. A file that must be requested becomes part of the fetch that
+// hold is for.
+func (l *LinkCards) checkRobots(ctx context.Context, hold *linkCardHostHold, u string) error {
 	if ignore, err := l.ignoresRobots(ctx); err != nil || ignore {
 		return err
 	}
@@ -66,7 +67,7 @@ func (l *LinkCards) checkRobots(ctx context.Context, u string) error {
 	if !ok {
 		return nil
 	}
-	rules, err := l.robotsRules(ctx, origin)
+	rules, err := l.robotsRules(ctx, hold, origin)
 	switch {
 	case err != nil:
 		return err
@@ -115,7 +116,7 @@ func (c cachedRobots) toRules() content.RobotsRules {
 
 // robotsRules returns the kept rules of origin, or fetches its file and keeps what it finds. An
 // entry that cannot be read counts as missing.
-func (l *LinkCards) robotsRules(ctx context.Context, origin string) (cachedRobots, error) {
+func (l *LinkCards) robotsRules(ctx context.Context, hold *linkCardHostHold, origin string) (cachedRobots, error) {
 	raw, err := l.d.KV.Get(ctx, LinkCardRobotsNamespace, origin)
 	switch {
 	case err == nil:
@@ -126,7 +127,7 @@ func (l *LinkCards) robotsRules(ctx context.Context, origin string) (cachedRobot
 	case !errors.Is(err, kernel.ErrKeyNotFound):
 		return cachedRobots{}, fmt.Errorf("read link card robots rules: %w", err)
 	}
-	rules, ttl, err := l.fetchRobots(ctx, origin)
+	rules, ttl, err := l.fetchRobots(ctx, hold, origin)
 	if err != nil {
 		return cachedRobots{}, err
 	}
@@ -143,9 +144,10 @@ func (l *LinkCards) robotsRules(ctx context.Context, origin string) (cachedRobot
 // fetchRobots fetches the robots.txt of origin and returns what it means for the crawler and how
 // long that holds (ADR-0131 §2): the rules of a file that was read, no rules for a file that does
 // not exist or redirects too many times, and an assumed complete disallow for a 429, a failure of
-// the server or the network, or a refused redirect. The only error is the end of ctx, which says
-// nothing about the file.
-func (l *LinkCards) fetchRobots(ctx context.Context, origin string) (cachedRobots, time.Duration, error) {
+// the server or the network, or a refused redirect. A 429 or a 503 also pauses the host, which
+// changes nothing of that: the pause never outlasts the assumed disallow. The errors, which say
+// nothing about the file, are the end of ctx, a *LinkCardPostponed, and a failure of the stores.
+func (l *LinkCards) fetchRobots(ctx context.Context, hold *linkCardHostHold, origin string) (cachedRobots, time.Duration, error) {
 	unreachable := func(why string, err error) (cachedRobots, time.Duration, error) {
 		if ctx.Err() != nil {
 			return cachedRobots{}, 0, ctx.Err()
@@ -153,11 +155,19 @@ func (l *LinkCards) fetchRobots(ctx context.Context, origin string) (cachedRobot
 		l.d.Logger.DebugContext(ctx, "link card robots.txt cannot be read", slog.String("origin", origin), slog.String("why", why), slog.Any("error", err))
 		return cachedRobots{Assumed: true}, LinkCardRobotsUnreachableTTL, nil
 	}
+	file := content.RobotsFileURL(origin)
+	if err := hold.enter(ctx, content.LinkHost(file)); err != nil {
+		return cachedRobots{}, 0, err
+	}
 	resp, err := l.d.HTTP.Do(ctx, &kernel.HTTPRequest{
-		URL: content.RobotsFileURL(origin), Purpose: kernel.HTTPPurposeRobots, Agent: kernel.HTTPAgentLinkCard,
+		URL: file, Purpose: kernel.HTTPPurposeRobots, Agent: kernel.HTTPAgentLinkCard,
 		Header:        http.Header{"Accept": {"text/plain"}},
-		CheckRedirect: l.checkRedirectHost(l.fetchRefused),
+		CheckRedirect: l.checkRedirectHost(hold, l.fetchRefused),
 	})
+	var postponed *LinkCardPostponed
+	if errors.As(err, &postponed) {
+		return cachedRobots{}, 0, err
+	}
 	if errors.Is(err, kernel.ErrTooManyRedirects) {
 		return cachedRobots{}, LinkCardRobotsTTL, nil
 	}
@@ -168,6 +178,9 @@ func (l *LinkCards) fetchRobots(ctx context.Context, origin string) (cachedRobot
 		return unreachable("fetch", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if hostPauseStatus(resp.StatusCode) {
+		hold.pause(ctx, file, resp)
+	}
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests, resp.StatusCode >= http.StatusInternalServerError:
 		return unreachable(fmt.Sprintf("status %d", resp.StatusCode), nil)

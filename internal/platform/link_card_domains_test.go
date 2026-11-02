@@ -55,9 +55,7 @@ func (e *linkCardRulesEnv) post(link string) clientapi.Status {
 // read returns the card of a status after running the fetch that its job would.
 func (e *linkCardRulesEnv) read(st clientapi.Status) *clientapi.LinkCard {
 	e.t.Helper()
-	if _, err := e.c.app.LinkCards.Fetch(e.t.Context(), st.Id); err != nil {
-		e.t.Fatalf("Fetch(%s): %v", st.Id, err)
-	}
+	fetchLinkCard(e.t, e.c.app, st.Id)
 	var got clientapi.Status
 	if res := e.c.do("alice", http.MethodGet, "/statuses/"+st.Id, nil, &got); res.StatusCode != http.StatusOK {
 		e.t.Fatalf("GET status = %d", res.StatusCode)

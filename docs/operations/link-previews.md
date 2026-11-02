@@ -219,3 +219,20 @@ They apply whatever `link_cards_ignore_robots_txt` says.
 
 The title, the site name, and the author stay under every directive; a site that does not want them refuses the fetch in `robots.txt`.
 The directives are known only after the page is fetched, so they do not stop the request for the page. A refetch applies the directives the page has then.
+
+### Limits per host
+
+The crawler is gentle with each host, whatever `link_cards_ignore_robots_txt` says. A host is the name in the URL, without the port, so a linked site and the host of its images have separate limits.
+
+- It makes one fetch at a time from a host, and the next starts at least 1 second after the last one ended. A fetch is one request with its redirects and, when it must be read, the `robots.txt` it needs. A page and its image are two fetches, also on one host.
+- A `429` or a `503` stops the fetches from the host that answered, also when it answered a redirect, an image, or `robots.txt`. They stop for its `Retry-After`, in seconds or as a date, for at least 1 second and at most 1 hour. A missing or unreadable `Retry-After` means 1 minute.
+- A job that has to wait for its turn comes back later. No worker waits, and it uses none of the job's attempts, so even a burst of links to one site ends with every card and no failed job. The jobs of one host wake about one per second.
+- A URL whose host stopped the crawler keeps its card, is not remembered as failed, and is fetched when the pause ends. After 5 such answers for a URL within 24 hours, the page counts as failed like any other that is not a `200`, and an image is left out of the card.
+- A card that waits for its image keeps what it read from the page for up to 2 hours, so that the page is not requested again.
+- [Rules on a domain](instance-settings.md#link-card-domains) and domain actions come first: nothing waits for a host that nothing is fetched from.
+
+The limits live in the key-value store and all expire: a worker that stops in the middle of a fetch frees its host within 2 minutes.
+These numbers are not settings. To see the limits at work:
+
+- `my.link_card.host_pauses` counts the pauses by the status that the host answered, and each pause logs `link card host paused` at `INFO` with `host`, `status`, and `pause_seconds`.
+- `my.job.duration` with `my.job.type="content.fetch_link_card"` and `my.outcome="postponed"` counts the runs that came back later. A large number means many links to few sites or a long pause, not a failure.

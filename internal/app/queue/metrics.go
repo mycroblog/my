@@ -13,7 +13,9 @@ import (
 const (
 	OutcomeSuccess = "success"
 	OutcomeRetry   = "retry"
-	OutcomeDead    = "dead"
+	// OutcomePostponed is a run that gave its attempt back (Postpone).
+	OutcomePostponed = "postponed"
+	OutcomeDead      = "dead"
 )
 
 // Label keys of the job metrics.
