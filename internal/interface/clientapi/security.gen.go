@@ -103,6 +103,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/rules":                                             {Operation: "listInstanceRules", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/rules/{id}":                                        {Operation: "getInstanceRule", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/settings":                                          {Operation: "listInstanceSettings", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/settings/login_providers_only/impact":              {Operation: "getLoginProvidersOnlyImpact", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/signup_blocks":                                     {Operation: "listSignupBlocks", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/signup_blocks/{id}":                                {Operation: "getSignupBlock", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/supporter_plans":                                   {Operation: "listAdminSupporterPlans", Scopes: []string{"admin:read"}},

@@ -71,6 +71,11 @@ export function instanceSettingsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/settings");
 }
 
+/** Who limiting sign-in to login providers keeps from signing in, read before an administrator turns it on. */
+export function loginProvidersOnlyImpactQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/admin/settings/login_providers_only/impact");
+}
+
 /**
  * Sets some instance settings together, all or none (PATCH /admin/settings, one audited change each), as the
  * options of useMutation. Returns every setting as it is now.

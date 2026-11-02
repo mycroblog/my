@@ -67,6 +67,7 @@
   各行はドメインを U ラベルで（A ラベルと違えば A ラベルも、どちらも `dir="ltr"`）出し、「ミュートを解除」（アクセシブルネームにドメインを含める）で `DELETE /domain_mutes/{domain}` を送る。解除した行は一覧から消し、フォーカスを次の行のボタンへ移す（`useFocusAfterRemoval`）。
   ミュートと解除は投稿の一覧と通知（未読数を含む）を古くする（S1）。ミュートは一覧も取り直す（ドメインの順に入る）。
 - **パスワード**（`/settings/password`、設定のメニューの「パスワード」、FR-002・FR-004、`features/settings` の `PasswordSettings`）: loader が、パスワードがあるか（`GET /accounts/password`）とパスキーの一覧を読む。
+  ログインが IdP だけに制限されている間（`GET /instance` の `login_providers_only`、[ADR-0133](../../adr/0133-login-providers-only.md)、Proposed）は、パスワードの変更と設定のフォームの代わりにできない理由を出し、削除だけを残す。
   パスワードがある利用者には 2 つの区画（`h2` の `section`）を出す。「パスワードを変更」は、変更が何をするか（ほかのブラウザーとアプリからログアウトし、パスキーと二要素認証は残る）の説明と、
   現在のパスワードと新しいパスワード（`autocomplete` は `current-password` / `new-password`、長さはブラウザーの制約検証）の `TextField` のフォーム。`POST /accounts/password` を送り、
   間違った現在のパスワードはその欄のエラー、ほかの失敗は `role="alert"` で出す。「パスワードを削除」は、パスキーだけでログインするようになることの説明と、`ConfirmDialog`（`danger`）で確かめるボタン。

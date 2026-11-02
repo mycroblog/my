@@ -319,6 +319,15 @@ func (r *IdentityRepository) CountLoginProviderLinks(ctx context.Context) (map[s
 	return out, nil
 }
 
+// CountActiveLocalUsersWithoutLoginProvider implements appidentity.LoginProviderRepository.
+func (r *IdentityRepository) CountActiveLocalUsersWithoutLoginProvider(ctx context.Context, providerIDs []string) (int, error) {
+	n, err := r.db.reader().CountActiveLocalUsersWithoutLoginProvider(ctx, providerIDs)
+	if err != nil {
+		return 0, wrap(err, "count active local users without a login provider")
+	}
+	return int(n), nil
+}
+
 // RebuildLoginProviderHeads implements appidentity.ProjectionRepository.
 func (r *IdentityRepository) RebuildLoginProviderHeads(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild login provider heads",

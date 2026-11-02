@@ -72,6 +72,14 @@ func (h *Handler) signInWithPasskey(w http.ResponseWriter, r *http.Request) {
 		h.renderSignInPage(w, r, http.StatusForbidden, returnTo, "", nil, (*i18n.Localizer).ServerAuthFormExpired)
 		return
 	}
+	// The limit comes before anything about the form, so that the answer does not depend on it.
+	switch limited, ok := h.loginProvidersOnly(w, r); {
+	case !ok:
+		return
+	case limited:
+		h.refuseLoginProvidersOnly(w, r, returnTo)
+		return
+	}
 	credential := r.PostForm.Get("credential")
 	if credential == "" || len(credential) > maxCredentialBytes {
 		h.renderSignInPage(w, r, http.StatusUnprocessableEntity, returnTo, "", nil, (*i18n.Localizer).ServerAuthSignInPasskeyCancelled)
@@ -87,6 +95,9 @@ func (h *Handler) signInWithPasskey(w http.ResponseWriter, r *http.Request) {
 	var limited *kernel.RateLimitedError
 	var secondFactor *appidentity.SecondFactorRequiredError
 	switch {
+	case errors.Is(err, appidentity.ErrLoginProvidersOnly):
+		h.refuseLoginProvidersOnly(w, r, returnTo)
+		return
 	case errors.As(err, &limited):
 		h.renderSignInPage(w, r, http.StatusTooManyRequests, returnTo, "", nil, rateLimitedMessage(w, limited))
 		return

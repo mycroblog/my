@@ -10,6 +10,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/account"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -139,6 +140,24 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		closure = instance.ClosureState(out.Closure.State)
 	}
 	out.Registrations = InstanceRegistrations{Mode: InstanceRegistrationsMode(instance.EffectiveRegistrationMode(settings.RegistrationMode(), closure))}
+	// While registration and sign-in are limited to the login providers, clients stop offering the
+	// rest, and registration is closed when no provider lets new users sign up.
+	if settings.LoginProvidersOnly() && s.o.SignInLimit != nil {
+		limited, err := s.o.SignInLimit.LoginProvidersOnly(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the limit to login providers: %w", err)
+		}
+		out.LoginProvidersOnly = limited
+		if limited {
+			mode, err := s.o.SignInLimit.RegistrationMode(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("clientapi: the registration mode: %w", err)
+			}
+			if mode == identity.RegistrationClosed {
+				out.Registrations.Mode = InstanceRegistrationsModeClosed
+			}
+		}
+	}
 
 	cache := cachePublic
 	if _, ok := ViewerFrom(ctx); ok {

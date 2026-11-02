@@ -64,4 +64,7 @@ type LoginProviderRepository interface {
 	// CountLoginProviderLinks returns the number of users with a current link to each provider
 	// that has one.
 	CountLoginProviderLinks(ctx context.Context) (map[string]int, error)
+	// CountActiveLocalUsersWithoutLoginProvider returns the number of users whose local account is
+	// active and who have no current link to one of the providers.
+	CountActiveLocalUsersWithoutLoginProvider(ctx context.Context, providerIDs []string) (int, error)
 }

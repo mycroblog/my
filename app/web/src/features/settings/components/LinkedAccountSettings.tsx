@@ -12,6 +12,7 @@ import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
+import { useLoginProvidersOnly } from "../hooks/useLoginProvidersOnly";
 import type { LinkedIdentity } from "../api/linkedIdentities";
 import {
   type LinkAccount,
@@ -35,6 +36,7 @@ export function LinkedAccountSettings() {
     links.map((item) => item.id),
   );
   const [confirming, setConfirming] = useState<LinkedIdentity | null>(null);
+  const limited = useLoginProvidersOnly();
   let result: { tone: "success" | "danger"; message: string } | undefined;
   if (outcome.error !== undefined) result = { tone: "danger", message: outcome.error };
   else if (outcome.status !== undefined) result = { tone: "success", message: outcome.status };
@@ -42,7 +44,11 @@ export function LinkedAccountSettings() {
     <>
       <ListSection
         title={t("client:settings.linked_accounts.list.title")}
-        description={t("client:settings.linked_accounts.description")}
+        description={
+          limited
+            ? t("client:settings.linked_accounts.login_providers_only")
+            : t("client:settings.linked_accounts.description")
+        }
         items={links}
         itemKey={(item) => item.id}
         renderItem={(item) => (

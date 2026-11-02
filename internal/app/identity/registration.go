@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -198,7 +199,8 @@ type SignedUp struct {
 // whose email does not arrive asks for it again (ResendVerificationEmail). The invite's redemption takes the next sequence number, so concurrent sign-ups never
 // redeem an invite more than its maximum uses.
 //
-// It fails with ErrRegistrationClosed, ErrSignUpRefused, ErrInviteRequired, ErrInvalidInvite, ErrEmailTaken,
+// It fails with ErrRegistrationClosed, ErrLoginProvidersOnly while registration and sign-in are
+// limited to the login providers (SignUpExternal stays), ErrSignUpRefused, ErrInviteRequired, ErrInvalidInvite, ErrEmailTaken,
 // account.ErrUsernameTaken, a *kernel.RateLimitedError (SignUpIPLimit), and errors wrapping
 // identity.ErrInvalidEmail, identity.ErrInvalidPassword, identity.ErrInvalidReason, or
 // account.ErrInvalidUsername for invalid input. A failure writes nothing.
@@ -231,6 +233,11 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 	}
 	if mode == identity.RegistrationClosed {
 		return SignedUp{}, ErrRegistrationClosed
+	}
+	if ext == nil {
+		if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+			return SignedUp{}, err
+		}
 	}
 	if err := identity.ValidateEmail(in.Email); err != nil {
 		return SignedUp{}, err
@@ -436,9 +443,19 @@ func (s *Service) registrationMode(ctx context.Context) (identity.RegistrationMo
 	}
 	switch mode {
 	case identity.RegistrationOpen, identity.RegistrationApproval, identity.RegistrationInvite:
-		return mode, nil
+	default:
+		return identity.RegistrationClosed, nil
 	}
-	return identity.RegistrationClosed, nil
+	// While registration is limited to the login providers, and none of them lets new users sign
+	// up, nobody can register.
+	limited, providers, err := s.loginProvidersOnly(ctx)
+	if err != nil {
+		return "", err
+	}
+	if limited && !slices.ContainsFunc(providers, func(p ExternalLoginProvider) bool { return p.AllowSignup }) {
+		return identity.RegistrationClosed, nil
+	}
+	return mode, nil
 }
 
 // RegistrationMode returns the instance's registration mode; an unknown mode reads as closed.

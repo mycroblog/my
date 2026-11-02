@@ -183,6 +183,10 @@
     "defaultMessage": "[Ŧħȧȧŧ şīɠƞ-īƞ şḗḗřṽīƈḗḗ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.login_providers_only": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř şīɠƞş īƞ ǿǿƞŀẏ ŧħřǿǿŭŭɠħ īŧş ŀǿǿɠīƞ ƥřǿǿṽīḓḗḗřş, şǿǿ ƥȧȧşşẇǿǿřḓş ȧȧƞḓ ƥȧȧşşķḗḗẏş ƈȧȧƞƞǿǿŧ ƀḗḗ şḗḗŧ ħḗḗřḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.media_attached": {
     "defaultMessage": "[Ŧħīş ḿḗḗḓīȧȧ īş ȧȧŧŧȧȧƈħḗḗḓ ŧǿǿ ȧȧ ƥǿǿşŧ ȧȧƞḓ ƈȧȧƞ ƞǿǿ ŀǿǿƞɠḗḗř ƀḗḗ ƈħȧȧƞɠḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

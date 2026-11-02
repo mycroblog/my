@@ -70,6 +70,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
 | `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
 | `featured_accounts` | usernames of up to 20 local accounts, separated by spaces or commas (empty = none) | empty | The accounts that the suggestions of people to follow show first, in this order, before the people of this server who posted recently. An account whose owner turned off "Suggest my account and find it by part of its name" is not suggested. See [suggestions](#suggestions-of-accounts) |
+| `login_providers_only` | `true` / `false` | `false` | Whether registration and sign-in are limited to the login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply. `my instance set` prints how many active users have no link to an enabled provider. See [limit sign-in to login providers](login-providers.md#limit-sign-in-to-login-providers). |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | Who can create invites of their own besides the staff with `manage_invites` ([member invites](registration.md#member-invites)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_invites`, which only the built-in `admin` role has by default and which a role of a supporter plan may have. In `approval` mode, a usable invite approves the new user at once, so `everyone` lets every user skip the review |
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
 | `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
@@ -234,7 +235,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 
   | Section | Settings |
   | --- | --- |
-  | Registration | `registration_mode` |
+  | Registration | `registration_mode`, `login_providers_only` |
   | Language | `default_locale` (chosen from the languages the app has) |
   | Timelines | `local_timeline_access`, `federated_timeline_access` |
   | Posts | `require_media_description` |

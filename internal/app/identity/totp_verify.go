@@ -208,12 +208,12 @@ func (s *Service) needTwoFactorDeps() error {
 
 // newChallenge stores a sign-in challenge of userID and returns it. The challenge keeps when it
 // was issued, so that a later change of the password makes it stop working.
-func (s *Service) newChallenge(ctx context.Context, userID string) (string, error) {
+func (s *Service) newChallenge(ctx context.Context, userID string, first challengeFirstStep) (string, error) {
 	if err := s.needTwoFactorDeps(); err != nil {
 		return "", err
 	}
 	token, hash := NewToken(SecondFactorChallengePrefix)
-	v := userID + challengeSeparator + strconv.FormatInt(s.d.Clock.Now().UnixNano(), 10)
+	v := userID + challengeSeparator + strconv.FormatInt(s.d.Clock.Now().UnixNano(), 10) + challengeSeparator + string(first)
 	if err := s.d.KV.Set(ctx, TwoFactorNamespace, challengeKey(hash), []byte(v), SecondFactorChallengeTTL); err != nil {
 		return "", fmt.Errorf("identity: store a sign-in challenge: %w", err)
 	}
@@ -225,18 +225,27 @@ func challengeKey(hash []byte) string { return "challenge:" + hex.EncodeToString
 // challengeSeparator separates the user ID of a stored challenge from when it was issued.
 const challengeSeparator = " "
 
-// parseChallenge returns the user and the time of issue of a stored challenge; ok is false for a
-// malformed value.
-func parseChallenge(v []byte) (userID string, issuedAt time.Time, ok bool) {
-	userID, nanos, found := strings.Cut(string(v), challengeSeparator)
-	if !found || userID == "" {
-		return "", time.Time{}, false
+// challengeFirstStep is what signed the user in before the second factor: a sign-in with a password
+// or a passkey ends, while the limit to login providers applies, at the second factor too.
+type challengeFirstStep string
+
+const (
+	challengeLocalCredential challengeFirstStep = "local"
+	challengeLoginProvider   challengeFirstStep = "provider"
+)
+
+// parseChallenge returns the user, the time of issue, and the first step of a stored challenge;
+// ok is false for a malformed value.
+func parseChallenge(v []byte) (userID string, issuedAt time.Time, first challengeFirstStep, ok bool) {
+	parts := strings.Split(string(v), challengeSeparator)
+	if len(parts) != 3 || parts[0] == "" {
+		return "", time.Time{}, "", false
 	}
-	n, err := strconv.ParseInt(nanos, 10, 64)
+	n, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", time.Time{}, false
+		return "", time.Time{}, "", false
 	}
-	return userID, time.Unix(0, n), true
+	return parts[0], time.Unix(0, n), challengeFirstStep(parts[2]), true
 }
 
 // SecondFactorInput is the second step of a sign-in.
@@ -259,7 +268,9 @@ type SecondFactorInput struct {
 // password of the user changed after it was issued, or the user no longer has TOTP; with ErrInvalidSecondFactor for a wrong code; with
 // ErrInvalidCredentials when the account stopped being active; and with a
 // *kernel.RateLimitedError when too many codes failed for the user (SecondFactorLimit) or
-// sign-ins failed from the client (LoginIPLimit). A wrong code counts against both.
+// sign-ins failed from the client (LoginIPLimit). A wrong code counts against both. A sign-in that
+// began with a password or a passkey fails with ErrLoginProvidersOnly when registration and sign-in
+// became limited to the login providers since; one that began at a provider goes on.
 func (s *Service) CompleteSignIn(ctx context.Context, in SecondFactorInput) (SignedIn, error) {
 	if err := s.needTwoFactorDeps(); err != nil {
 		return SignedIn{}, err
@@ -279,10 +290,18 @@ func (s *Service) CompleteSignIn(ctx context.Context, in SecondFactorInput) (Sig
 	if err != nil {
 		return SignedIn{}, err
 	}
-	userID, issuedAt, ok := parseChallenge(v)
+	userID, issuedAt, first, ok := parseChallenge(v)
 	if !ok {
 		s.dropChallenge(ctx, key)
 		return SignedIn{}, ErrSecondFactorExpired
+	}
+	if first != challengeLoginProvider {
+		if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
+			if errors.Is(err, ErrLoginProvidersOnly) {
+				s.dropChallenge(ctx, key)
+			}
+			return SignedIn{}, err
+		}
 	}
 	if err := s.checkSecondFactorLimit(ctx, userID); err != nil {
 		return SignedIn{}, err

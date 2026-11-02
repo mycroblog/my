@@ -2266,6 +2266,7 @@ const (
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
 	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
 	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
 	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
@@ -2336,6 +2337,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLinkCardsEnabled:
 		return true
 	case InstanceSettingKeyLocalTimelineAccess:
+		return true
+	case InstanceSettingKeyLoginProvidersOnly:
 		return true
 	case InstanceSettingKeyMaxStatusLength:
 		return true
@@ -5592,6 +5595,10 @@ type AdminOAuthClientPage struct {
 type AdminPasswordResetLink struct {
 	// ExpiresAt When the link stops working.
 	ExpiresAt time.Time `json:"expires_at"`
+
+	// LoginProvidersOnly Whether registration and sign-in are limited to the login providers now. While they are, the
+	// link sets no password; it works only if the limit ends before `expires_at`.
+	LoginProvidersOnly bool `json:"login_providers_only"`
 
 	// Url The link that sets a new password; it works once.
 	Url string `json:"url"`
@@ -8856,6 +8863,11 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
+	// LoginProvidersOnly Whether registration and sign-in are limited to the login providers now: the instance setting
+	// is on and at least one provider is enabled. While it is true, a password or a passkey signs
+	// nobody in, and neither can be set or added; both still confirm operations of a signed-in user.
+	LoginProvidersOnly bool `json:"login_providers_only"`
+
 	// Logo A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
 	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
@@ -9140,14 +9152,16 @@ type InstanceRegistrations struct {
 	// Mode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 	// approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 	// sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-	// the instance setting says.
+	// the instance setting says, and while registration is limited to the login providers and
+	// none of them lets new users sign up.
 	Mode InstanceRegistrationsMode `json:"mode"`
 }
 
 // InstanceRegistrationsMode Who may sign up: `open` (anyone), `approval` (sign-ups wait for a moderator's
 // approval), `invite` (only with an invite), or `closed` (nobody). It is the mode that
 // sign-ups follow: `closed` while the closure of the service is announced or done, whatever
-// the instance setting says.
+// the instance setting says, and while registration is limited to the login providers and
+// none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
 // InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
@@ -9503,6 +9517,22 @@ type LoginProviderProblem struct {
 // claims for another kind than `oidc`, Organizations for another kind than `github`, guilds for another kind than `discord`, or
 // ones that are not valid.
 type LoginProviderProblemReason string
+
+// LoginProvidersOnlyImpact Who the instance setting `login_providers_only` keeps from signing in, whether or not the setting
+// is on. Sessions and tokens keep working; these users cannot sign in again once they end.
+type LoginProvidersOnlyImpact struct {
+	// EnabledProviders How many login providers users can sign in with now. With none, the limit does not apply.
+	EnabledProviders int `json:"enabled_providers"`
+
+	// IncludesViewer Whether the user who asks is one of them.
+	IncludesViewer bool `json:"includes_viewer"`
+
+	// SettingOn The value of the setting. The limit applies while it is on and `enabled_providers` is not 0.
+	SettingOn bool `json:"setting_on"`
+
+	// UsersWithoutProvider How many active local users have no link to one of those providers. It is 0 with no such provider.
+	UsersWithoutProvider int `json:"users_without_provider"`
+}
 
 // MediaAnimatedVariants The moving renditions of an animation, absent for a still image: animated WebP for
 // `small` and `medium`, and a GIF for `large`.
@@ -10879,6 +10909,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/last-sign-in-method` (409): the operation would leave the user no
 //     way to sign in: the password, the last passkey, or the last linked account when nothing
 //     else signs the user in.
+//   - `/api/v1/problems/login-providers-only` (403): registration and sign-in are limited to the
+//     login providers, so a password cannot be set and a passkey cannot be added.
 //   - `/api/v1/problems/external-confirmation-expired` (422): the confirmation with a linked
 //     login provider is unknown, expired, used, or for another operation. Start a new one.
 //   - `/api/v1/problems/login-provider-unavailable` (422): the login provider is unknown or
@@ -16009,6 +16041,9 @@ type ClientInterface interface {
 
 	// ChangePasswordWithBody Change or set the authenticated user's password
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
 	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
@@ -16032,6 +16067,9 @@ type ClientInterface interface {
 
 	// ChangePassword Change or set the authenticated user's password
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
 	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
@@ -18363,6 +18401,16 @@ type ClientInterface interface {
 	// Corresponds with PATCH /admin/settings (the `UpdateInstanceSettings` operationId).
 	UpdateInstanceSettings(ctx context.Context, body UpdateInstanceSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
+	//
+	// How many active local users have no link to a login provider that users can sign in with
+	// now, and so could not sign in while the instance setting `login_providers_only` applies, and
+	// whether the user who asks is one of them. Administrators read it before they turn the setting
+	// on. Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
+	GetLoginProvidersOnlyImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListSignupBlocks List the sign-up blocks
 	//
 	// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
@@ -19511,7 +19559,10 @@ type ClientInterface interface {
 	//
 	// The account no longer signs the user in or confirms the user's operations. An unknown
 	// or unlinked link is a 404, and the last way to sign in of a user without a password and
-	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+	// sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+	// password and a passkey do not sign in, so the user's last link to a provider that signs in
+	// is a 409 too.
 	//
 	// Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
 	UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19945,6 +19996,9 @@ type ClientInterface interface {
 
 	// BeginPasskeyRegistrationWithBody Start the registration of a passkey
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 	// Checks the user's current `password` or a `passkey` of the user (a user without a
 	// password confirms with a passkey) and returns the options of a WebAuthn registration (a
 	// discoverable credential with user verification, no attestation) for the browser's
@@ -19967,6 +20021,9 @@ type ClientInterface interface {
 
 	// BeginPasskeyRegistration Start the registration of a passkey
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 	// Checks the user's current `password` or a `passkey` of the user (a user without a
 	// password confirms with a passkey) and returns the options of a WebAuthn registration (a
 	// discoverable credential with user verification, no attestation) for the browser's
@@ -21572,6 +21629,9 @@ func (c *Client) GetPasswordStatus(ctx context.Context, reqEditors ...RequestEdi
 
 // ChangePasswordWithBody Change or set the authenticated user's password
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
 // a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
@@ -21605,6 +21665,9 @@ func (c *Client) ChangePasswordWithBody(ctx context.Context, contentType string,
 
 // ChangePassword Change or set the authenticated user's password
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
 // a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
@@ -25856,6 +25919,26 @@ func (c *Client) UpdateInstanceSettings(ctx context.Context, body UpdateInstance
 	return c.Client.Do(req)
 }
 
+// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
+//
+// How many active local users have no link to a login provider that users can sign in with
+// now, and so could not sign in while the instance setting `login_providers_only` applies, and
+// whether the user who asks is one of them. Administrators read it before they turn the setting
+// on. Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
+func (c *Client) GetLoginProvidersOnlyImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetLoginProvidersOnlyImpactRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListSignupBlocks List the sign-up blocks
 //
 // The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
@@ -27904,7 +27987,10 @@ func (c *Client) BeginExternalConfirmation(ctx context.Context, body BeginExtern
 //
 // The account no longer signs the user in or confirms the user's operations. An unknown
 // or unlinked link is a 404, and the last way to sign in of a user without a password and
-// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+// without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+// sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+// password and a passkey do not sign in, so the user's last link to a provider that signs in
+// is a 409 too.
 //
 // Corresponds with DELETE /linked_identities/{id} (the `UnlinkIdentity` operationId).
 func (c *Client) UnlinkIdentity(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -28718,6 +28804,9 @@ func (c *Client) BeginPasskeyConfirmation(ctx context.Context, reqEditors ...Req
 
 // BeginPasskeyRegistrationWithBody Start the registration of a passkey
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 // Checks the user's current `password` or a `passkey` of the user (a user without a
 // password confirms with a passkey) and returns the options of a WebAuthn registration (a
 // discoverable credential with user verification, no attestation) for the browser's
@@ -28750,6 +28839,9 @@ func (c *Client) BeginPasskeyRegistrationWithBody(ctx context.Context, contentTy
 
 // BeginPasskeyRegistration Start the registration of a passkey
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 // Checks the user's current `password` or a `passkey` of the user (a user without a
 // password confirms with a passkey) and returns the options of a WebAuthn registration (a
 // discoverable credential with user verification, no attestation) for the browser's
@@ -38210,6 +38302,33 @@ func NewUpdateInstanceSettingsRequestWithBody(server string, contentType string,
 	return req, nil
 }
 
+// NewGetLoginProvidersOnlyImpactRequest constructs an http.Request for the GetLoginProvidersOnlyImpact method
+func NewGetLoginProvidersOnlyImpactRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/settings/login_providers_only/impact")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListSignupBlocksRequest constructs an http.Request for the ListSignupBlocks method
 func NewListSignupBlocksRequest(server string, params *ListSignupBlocksParams) (*http.Request, error) {
 	var err error
@@ -46603,6 +46722,9 @@ type ClientWithResponsesInterface interface {
 
 	// ChangePasswordWithBodyWithResponse Change or set the authenticated user's password
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
 	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
@@ -46626,6 +46748,9 @@ type ClientWithResponsesInterface interface {
 
 	// ChangePasswordWithResponse Change or set the authenticated user's password
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
 	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
@@ -49167,6 +49292,18 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /admin/settings (the `UpdateInstanceSettings` operationId).
 	UpdateInstanceSettingsWithResponse(ctx context.Context, body UpdateInstanceSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceSettingsResponse, error)
 
+	// GetLoginProvidersOnlyImpactWithResponse Count who limiting sign-in to login providers would affect
+	//
+	// How many active local users have no link to a login provider that users can sign in with
+	// now, and so could not sign in while the instance setting `login_providers_only` applies, and
+	// whether the user who asks is one of them. Administrators read it before they turn the setting
+	// on. Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
+	GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error)
+
 	// ListSignupBlocksWithResponse List the sign-up blocks
 	//
 	// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
@@ -50427,7 +50564,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// The account no longer signs the user in or confirms the user's operations. An unknown
 	// or unlinked link is a 404, and the last way to sign in of a user without a password and
-	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+	// without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+	// sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+	// password and a passkey do not sign in, so the user's last link to a provider that signs in
+	// is a 409 too.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50899,6 +51039,9 @@ type ClientWithResponsesInterface interface {
 
 	// BeginPasskeyRegistrationWithBodyWithResponse Start the registration of a passkey
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 	// Checks the user's current `password` or a `passkey` of the user (a user without a
 	// password confirms with a passkey) and returns the options of a WebAuthn registration (a
 	// discoverable credential with user verification, no attestation) for the browser's
@@ -50921,6 +51064,9 @@ type ClientWithResponsesInterface interface {
 
 	// BeginPasskeyRegistrationWithResponse Start the registration of a passkey
 	//
+	// While registration and sign-in are limited to the login providers
+	// (`login_providers_only` of `GET /instance`), it is a 403
+	// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 	// Checks the user's current `password` or a `passkey` of the user (a user without a
 	// password confirms with a passkey) and returns the options of a WebAuthn registration (a
 	// discoverable credential with user verification, no attestation) for the browser's
@@ -62611,6 +62757,71 @@ func (r UpdateInstanceSettingsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateInstanceSettingsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetLoginProvidersOnlyImpactResponse200Headers the declared response headers of an HTTP 200 response for GetLoginProvidersOnlyImpact
+type GetLoginProvidersOnlyImpactResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetLoginProvidersOnlyImpactResponseDefaultHeaders the declared response headers of an HTTP default response for GetLoginProvidersOnlyImpact
+type GetLoginProvidersOnlyImpactResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetLoginProvidersOnlyImpactResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LoginProvidersOnlyImpact
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetLoginProvidersOnlyImpactResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetLoginProvidersOnlyImpactResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetLoginProvidersOnlyImpactResponse) GetJSON200() *LoginProvidersOnlyImpact {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetLoginProvidersOnlyImpactResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetLoginProvidersOnlyImpactResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetLoginProvidersOnlyImpactResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetLoginProvidersOnlyImpactResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetLoginProvidersOnlyImpactResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75045,6 +75256,9 @@ func (c *ClientWithResponses) GetPasswordStatusWithResponse(ctx context.Context,
 
 // ChangePasswordWithBodyWithResponse Change or set the authenticated user's password
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
 // a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
@@ -75074,6 +75288,9 @@ func (c *ClientWithResponses) ChangePasswordWithBodyWithResponse(ctx context.Con
 
 // ChangePasswordWithResponse Change or set the authenticated user's password
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
 // a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
@@ -78767,6 +78984,24 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithResponse(ctx context.Con
 	return ParseUpdateInstanceSettingsResponse(rsp)
 }
 
+// GetLoginProvidersOnlyImpactWithResponse Count who limiting sign-in to login providers would affect
+//
+// How many active local users have no link to a login provider that users can sign in with
+// now, and so could not sign in while the instance setting `login_providers_only` applies, and
+// whether the user who asks is one of them. Administrators read it before they turn the setting
+// on. Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/settings/login_providers_only/impact (the `GetLoginProvidersOnlyImpact` operationId).
+func (c *ClientWithResponses) GetLoginProvidersOnlyImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetLoginProvidersOnlyImpactResponse, error) {
+	rsp, err := c.GetLoginProvidersOnlyImpact(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetLoginProvidersOnlyImpactResponse(rsp)
+}
+
 // ListSignupBlocksWithResponse List the sign-up blocks
 //
 // The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
@@ -80567,7 +80802,10 @@ func (c *ClientWithResponses) BeginExternalConfirmationWithResponse(ctx context.
 //
 // The account no longer signs the user in or confirms the user's operations. An unknown
 // or unlinked link is a 404, and the last way to sign in of a user without a password and
-// without a passkey a 409 `/api/v1/problems/last-sign-in-method`.
+// without a passkey a 409 `/api/v1/problems/last-sign-in-method`. While registration and
+// sign-in are limited to the login providers (`login_providers_only` of `GET /instance`), a
+// password and a passkey do not sign in, so the user's last link to a provider that signs in
+// is a 409 too.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -81267,6 +81505,9 @@ func (c *ClientWithResponses) BeginPasskeyConfirmationWithResponse(ctx context.C
 
 // BeginPasskeyRegistrationWithBodyWithResponse Start the registration of a passkey
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 // Checks the user's current `password` or a `passkey` of the user (a user without a
 // password confirms with a passkey) and returns the options of a WebAuthn registration (a
 // discoverable credential with user verification, no attestation) for the browser's
@@ -81295,6 +81536,9 @@ func (c *ClientWithResponses) BeginPasskeyRegistrationWithBodyWithResponse(ctx c
 
 // BeginPasskeyRegistrationWithResponse Start the registration of a passkey
 //
+// While registration and sign-in are limited to the login providers
+// (`login_providers_only` of `GET /instance`), it is a 403
+// `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
 // Checks the user's current `password` or a `passkey` of the user (a user without a
 // password confirms with a passkey) and returns the options of a WebAuthn registration (a
 // discoverable credential with user verification, no attestation) for the browser's
@@ -95743,6 +95987,83 @@ func ParseUpdateInstanceSettingsResponse(rsp *http.Response) (*UpdateInstanceSet
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateInstanceSettingsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetLoginProvidersOnlyImpactResponse parses an HTTP response from a GetLoginProvidersOnlyImpactWithResponse call
+func ParseGetLoginProvidersOnlyImpactResponse(rsp *http.Response) (*GetLoginProvidersOnlyImpactResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetLoginProvidersOnlyImpactResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LoginProvidersOnlyImpact
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetLoginProvidersOnlyImpactResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetLoginProvidersOnlyImpactResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

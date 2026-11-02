@@ -22,6 +22,7 @@ import {
   ConfirmDialog,
   DescriptionItem,
   DescriptionList,
+  InlineError,
   Section,
   EmptyState,
   Heading,
@@ -450,6 +451,9 @@ function PasswordResetSection({ id, handle }: { id: string; handle: string }) {
               expiresAt: intl.formatDate(link.expires_at, { dateStyle: "medium", timeStyle: "short" }),
             })}
           </Hint>
+          {link.login_providers_only && (
+            <InlineError>{t("client:admin.account.password_reset.login_providers_only")}</InlineError>
+          )}
           {/* A URL reads left to right in every locale. */}
           <Text as="p" mono wrap="anywhere" selectAll aria-labelledby={linkLabelId} dir="ltr">
             {link.url}

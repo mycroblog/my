@@ -12,6 +12,25 @@ import (
 	"time"
 )
 
+const countActiveLocalUsersWithoutLoginProvider = `-- name: CountActiveLocalUsersWithoutLoginProvider :one
+SELECT COUNT(*) FROM local_accounts la
+LEFT JOIN account_lifecycle_states s ON s.account_id = la.account_id
+WHERE (s.state IS NULL OR s.state = 'active')
+  AND NOT EXISTS (
+    SELECT 1 FROM user_external_identities u
+    WHERE u.user_id = la.user_id AND u.provider_id = ANY($1::uuid[])
+  )
+`
+
+// CountActiveLocalUsersWithoutLoginProvider counts the users whose local account is active and who
+// have no current link to one of the providers.
+func (q *Queries) CountActiveLocalUsersWithoutLoginProvider(ctx context.Context, providerIds []string) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveLocalUsersWithoutLoginProvider, providerIds)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countLoginProviderLinks = `-- name: CountLoginProviderLinks :many
 SELECT provider_id, COUNT(*) AS users FROM user_external_identities GROUP BY provider_id
 `

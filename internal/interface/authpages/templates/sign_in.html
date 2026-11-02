@@ -1,7 +1,7 @@
 {{define "content"}}
 <h1>{{.L.ServerAuthSignInTitle}}</h1>
-{{if .Error}}<p id="sign-in-error" class="alert" role="alert">{{.Error}}</p>{{end}}
-<form class="form" method="post" action="/auth/sign_in">
+{{if .Error}}<p id="sign-in-error" class="alert" role="alert">{{.Error}}</p>{{else if .LoginProvidersOnly}}<p>{{.L.ServerAuthSignInLoginProvidersOnly}}</p>{{end}}
+{{if not .LoginProvidersOnly}}<form class="form" method="post" action="/auth/sign_in">
 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 {{if .ReturnTo}}<input type="hidden" name="return_to" value="{{.ReturnTo}}">{{end}}
 <div class="field">
@@ -16,7 +16,7 @@
 <button class="button" type="submit">{{.L.ServerAuthSignInSubmit}}</button>
 </div>
 </form>
-{{with .Passkey}}<form class="form" method="post" action="/auth/sign_in/passkey" data-passkey-options="{{.Options}}"{{if not .Error}} hidden{{end}}>
+{{end}}{{with .Passkey}}<form class="form" method="post" action="/auth/sign_in/passkey" data-passkey-options="{{.Options}}"{{if not .Error}} hidden{{end}}>
 <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 {{if $.ReturnTo}}<input type="hidden" name="return_to" value="{{$.ReturnTo}}">{{end}}
 <input type="hidden" name="challenge" value="{{.Challenge}}">

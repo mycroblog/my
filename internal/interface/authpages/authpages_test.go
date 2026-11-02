@@ -33,6 +33,10 @@ type fakeIdentity struct {
 	second        []appidentity.SecondFactorInput
 	challengeUsed bool
 
+	// providersOnly is the answer of LoginProvidersOnly; completeErr fails CompleteSignIn.
+	providersOnly bool
+	completeErr   error
+
 	mode      identity.RegistrationMode
 	owner     map[string]string // token -> user ID
 	access    map[string]appidentity.Access
@@ -119,6 +123,10 @@ func (f *fakeIdentity) SignUp(_ context.Context, in appidentity.SignUpInput) (ap
 
 func (f *fakeIdentity) RegistrationMode(context.Context) (identity.RegistrationMode, error) {
 	return f.mode, nil
+}
+
+func (f *fakeIdentity) LoginProvidersOnly(context.Context) (bool, error) {
+	return f.providersOnly, nil
 }
 
 func (f *fakeIdentity) UserAccess(_ context.Context, userID string) (appidentity.Access, error) {

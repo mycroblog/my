@@ -4,6 +4,9 @@ post:
   x-first-party-only: true
   summary: Start the registration of a passkey
   description: |
+    While registration and sign-in are limited to the login providers
+    (`login_providers_only` of `GET /instance`), it is a 403
+    `/api/v1/problems/login-providers-only`: a new passkey could not sign in.
     Checks the user's current `password` or a `passkey` of the user (a user without a
     password confirms with a passkey) and returns the options of a WebAuthn registration (a
     discoverable credential with user verification, no attestation) for the browser's

@@ -597,6 +597,8 @@ paths:
     $ref: ./paths/admin_domain_actions_import.yaml
   /admin/settings:
     $ref: ./paths/admin_settings.yaml
+  /admin/settings/login_providers_only/impact:
+    $ref: ./paths/admin_settings_login_providers_only_impact.yaml
   /invites:
     $ref: ./paths/invites.yaml
   /invites/{id}/revoke:
@@ -1128,6 +1130,8 @@ components:
       $ref: ./components/schemas/AdminJobState.yaml
     AdminPasswordResetLink:
       $ref: ./components/schemas/AdminPasswordResetLink.yaml
+    LoginProvidersOnlyImpact:
+      $ref: ./components/schemas/LoginProvidersOnlyImpact.yaml
     AdminQueue:
       $ref: ./components/schemas/AdminQueue.yaml
     AdminRegistration:

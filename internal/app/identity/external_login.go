@@ -397,7 +397,7 @@ func (s *Service) FinishExternalLogin(ctx context.Context, in ExternalLoginInput
 	case err == nil:
 		// The second factor follows the account's settings, whatever the provider asked for
 		// (ADR-0106 §3).
-		challenge, err := s.newChallenge(ctx, link.UserID)
+		challenge, err := s.newChallenge(ctx, link.UserID, challengeLoginProvider)
 		if err != nil {
 			return out, err
 		}

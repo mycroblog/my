@@ -229,8 +229,13 @@ func (c instanceCommand) set(ctx context.Context, key instanceKey, owner, value 
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(c.stdout, "set %s = %s (revision %s)\n", rev.Key, rev.Value, rev.ID)
-		return err
+		if _, err = fmt.Fprintf(c.stdout, "set %s = %s (revision %s)\n", rev.Key, rev.Value, rev.ID); err != nil {
+			return err
+		}
+		if rev.Key == instance.SettingLoginProvidersOnly {
+			return printLoginProvidersOnlyImpact(ctx, c.app, c.stdout)
+		}
+		return nil
 	}
 	rev, err := c.svc.SetText(ctx, appinstance.SetTextInput{Key: key.text, Body: value})
 	if err != nil {

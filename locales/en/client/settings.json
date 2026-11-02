@@ -2427,8 +2427,20 @@
     "defaultMessage": "Link one to sign in with that service.",
     "description": "Text of the empty list of linked accounts, above the button that links one."
   },
+  "settings.linked_accounts.login_providers_only": {
+    "defaultMessage": "This server signs in only through its login providers. Without a linked account here, you cannot sign in again once your sessions end.",
+    "description": "On the linked accounts page while the instance limits sign-in to login providers."
+  },
   "settings.notifications.row.no_email": {
     "defaultMessage": "Not sent by email.",
     "description": "Note under the name of a row of the notification settings that has no email cell: the server's announcements are never emailed."
+  },
+  "settings.passkeys.login_providers_only": {
+    "defaultMessage": "This server signs in only through its login providers, so a passkey cannot be added here. The passkeys you have still confirm changes to your account.",
+    "description": "On the passkeys settings page, in place of the add button, while the instance limits sign-in to login providers."
+  },
+  "settings.password.login_providers_only": {
+    "defaultMessage": "This server signs in only through its login providers, so a password cannot be set or changed here. Your password still confirms changes to your account.",
+    "description": "On the password settings page while the instance limits sign-in to login providers."
   }
 }

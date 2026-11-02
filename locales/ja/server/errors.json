@@ -678,5 +678,9 @@
   "errors.login_provider.linked": {
     "defaultMessage": "そのログインサービスのアカウントはすでにひも付けています。",
     "description": "Title of the HTTP 409 API error when the user links an account at an external login provider where they already have a linked account."
+  },
+  "errors.login_providers_only": {
+    "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードやパスキーはここでは設定できません。",
+    "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
   }
 }

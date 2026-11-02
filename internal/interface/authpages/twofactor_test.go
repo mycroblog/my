@@ -21,6 +21,9 @@ const bobChallenge = "my_2fa_bob"
 
 func (f *fakeIdentity) CompleteSignIn(_ context.Context, in appidentity.SecondFactorInput) (appidentity.SignedIn, error) {
 	f.second = append(f.second, in)
+	if f.completeErr != nil {
+		return appidentity.SignedIn{}, f.completeErr
+	}
 	switch {
 	case f.limited:
 		return appidentity.SignedIn{}, &kernel.RateLimitedError{RetryAfter: 61 * time.Second}

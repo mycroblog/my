@@ -2427,8 +2427,20 @@
     "defaultMessage": "連携すると、そのサービスでログインできます。",
     "description": "Text of the empty list of linked accounts, above the button that links one."
   },
+  "settings.linked_accounts.login_providers_only": {
+    "defaultMessage": "このサーバーはログインプロバイダーでのみログインできます。ここでアカウントを連携していないと、セッションが切れたあとログインできなくなります。",
+    "description": "On the linked accounts page while the instance limits sign-in to login providers."
+  },
   "settings.notifications.row.no_email": {
     "defaultMessage": "メールでは送りません。",
     "description": "Note under the name of a row of the notification settings that has no email cell: the server's announcements are never emailed."
+  },
+  "settings.passkeys.login_providers_only": {
+    "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスキーはここでは追加できません。登録済みのパスキーは、アカウントの変更の確認には引き続き使えます。",
+    "description": "On the passkeys settings page, in place of the add button, while the instance limits sign-in to login providers."
+  },
+  "settings.password.login_providers_only": {
+    "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードの設定や変更はここではできません。今のパスワードは、アカウントの変更の確認には引き続き使えます。",
+    "description": "On the password settings page while the instance limits sign-in to login providers."
   }
 }

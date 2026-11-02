@@ -745,6 +745,30 @@ describe("an account's admin page", () => {
     expect(screen.queryByRole("region", { name: "Two-factor authentication" })).not.toBeInTheDocument();
   });
 
+  test("says that a password reset link does not work while sign-in is limited to login providers", async () => {
+    accountServer({ ...bobDetail, two_factor_enabled: false });
+    server.use(
+      operatorHandler(["manage_accounts", "manage_reports", "view_audit", "manage_login_recovery"]),
+      http.post(`${apiBase}/admin/accounts/:id/password_reset_link`, () =>
+        HttpResponse.json(
+          {
+            url: "https://my.example/auth/reset_password?token=rst_secret",
+            expires_at: "2026-10-17T01:00:00Z",
+            login_providers_only: true,
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    const { user } = await renderApp({ path: `/moderation/accounts/${bobDetail.id}` });
+    const reset = await screen.findByRole("region", { name: "Password reset" });
+    await user.click(within(reset).getByRole("button", { name: "Issue password reset link" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Issue password reset link" }),
+    );
+    expect(await within(reset).findByText(/^This link does not work now/)).toBeInTheDocument();
+  });
+
   test("issues a password reset link after its confirmation and shows it once, to copy", async () => {
     const requests = recordAccountRequests();
     const url = "https://my.example/auth/reset_password?token=rst_secret";

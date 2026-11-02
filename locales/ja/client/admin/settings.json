@@ -858,5 +858,57 @@
   "admin.settings.featured.accounts.description": {
     "defaultMessage": "このサーバーのアカウントのユーザー名を、空白で区切って 20 個まで。",
     "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {有効な利用者は全員、ログインプロバイダーを連携しています。} other {有効な利用者のうち # 人はログインプロバイダーを連携しておらず、セッションが切れるとログインできなくなります。}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "ログインを制限する",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "ログインできなくなる利用者の数を読み取れませんでした。ログインプロバイダーを連携していない利用者は、セッションが切れるとログインできなくなります。",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "ログインできなくなる利用者を数えています…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "有効なログインプロバイダーがないため、今は何も変わりません。プロバイダーを有効にすると制限が始まります。",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "元に戻すには、ここでオフにするか、サーバーで「my instance set login_providers_only false」を実行します。",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "あなたもそのひとりです。セッションが切れる前に、連携アカウントの画面でログインプロバイダーを連携してください。",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "ログイン中のセッションとアプリはそのまま使え、その間にプロバイダーを連携できます。",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "ログインをログインプロバイダーだけにしますか？",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "ログインプロバイダーがひとつ以上有効な間は、パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。有効なプロバイダーがないときは、この設定は働きません。",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "ログインと新規登録をログインプロバイダーだけにする",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
   }
 }

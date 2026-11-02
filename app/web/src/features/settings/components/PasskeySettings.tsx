@@ -10,6 +10,7 @@ import { Box, Button, Cluster, ConfirmDialog, FormActionBar, Hint, ListSection, 
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
+import { useLoginProvidersOnly } from "../hooks/useLoginProvidersOnly";
 import { useFocusAfterRemoval } from "../../../lib/useFocusAfterRemoval";
 import { type Passkey, passkeyNameLimit } from "../api/passkeys";
 import {
@@ -33,6 +34,7 @@ export function PasskeySettings() {
   );
   const [confirming, setConfirming] = useState<Passkey | null>(null);
   const label = t("client:settings.passkeys.add.title");
+  const limited = useLoginProvidersOnly();
   return (
     <>
       <ListSection
@@ -57,14 +59,16 @@ export function PasskeySettings() {
           description: t("client:settings.passkeys.empty.description"),
         }}
         add={
-          form.isSupported
-            ? {
-                label,
-                panel: (close) => <AddPasskeyForm form={form} close={close} />,
-                // Back from confirming at a linked provider: the form goes on with that confirmation.
-                defaultOpen: form.external.confirmed !== undefined || form.external.error !== undefined,
-              }
-            : { unavailable: t("client:settings.passkeys.unsupported") }
+          limited
+            ? { unavailable: t("client:settings.passkeys.login_providers_only") }
+            : form.isSupported
+              ? {
+                  label,
+                  panel: (close) => <AddPasskeyForm form={form} close={close} />,
+                  // Back from confirming at a linked provider: the form goes on with that confirmation.
+                  defaultOpen: form.external.confirmed !== undefined || form.external.error !== undefined,
+                }
+              : { unavailable: t("client:settings.passkeys.unsupported") }
         }
         result={form.status === undefined ? undefined : { tone: "success", message: form.status }}
       />

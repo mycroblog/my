@@ -145,13 +145,15 @@ my login-provider delete <id>
 - `rotate-secret` replaces the client secret with the one you enter. Rotate it at the provider first, then here.
 - `disable` keeps the provider and the accounts linked to it, but nobody signs in, signs up, or links with it, and the
   sign-in page does not show it, until you run `enable`. `disable` and `delete` print how many linked users can no longer
-  sign in with the provider.
+  sign in with the provider, and what the [limit to login providers](#limit-sign-in-to-login-providers) does now while its
+  setting is on.
 - `delete` removes the provider for good.
 
 ### Users who sign in only through a provider
 
 Disabling or deleting a provider does not touch the users. A user who has a password or a passkey, or has another linked
-account, signs in that way. A user who has none of these can no longer sign in at all: `disable` and `delete` print how
+account, signs in that way, unless [sign-in is limited to login providers](#limit-sign-in-to-login-providers) and another
+provider stays enabled. A user who has none of these can no longer sign in at all: `disable` and `delete` print how
 many linked users lose the provider, and the web client shows the number in the confirmation. `enable` restores the
 users of a disabled provider; a deleted provider cannot come back.
 
@@ -161,6 +163,63 @@ The user then signs in with the new password.
 
 Every change is recorded in the audit log under the provider's display name, as the CLI or as the administrator who made
 it through the admin API.
+
+## Limit sign-in to login providers
+
+The instance setting `login_providers_only` (off by default) makes the providers the only way to sign in and register,
+while at least one provider is enabled. Turn it on under "Server settings" in the web client, or with the CLI:
+
+```sh
+my instance set login_providers_only true
+```
+
+The confirmation in the web client and the output of the command say how many active local users have no link to an
+enabled provider. The web client also says when that includes you. It warns and does not refuse: you decide.
+
+While the limit applies:
+
+- Passwords and passkeys sign nobody in, and the sign-in page shows only the providers. A sign-in that had started with a
+  password or a passkey and waits for its two-factor code is refused too.
+- Nobody registers with a password. The registration page shows the providers that allow sign-ups (`-allow-signup`), under
+  the [registration mode](registration.md) as usual. With no such provider, registration reads as `closed`, also to clients
+  and in NodeInfo.
+- Nobody asks for or uses a password reset link. Links stay valid until they expire, and work if the limit ends in time.
+- Users cannot set or change a password, or add a passkey, because neither could sign in. They can still remove them.
+- `my admin account password-reset-link` and the admin screens still issue a link, and say that it does not work until the
+  limit ends. `my admin create` still creates an administrator, and warns that the password cannot sign in.
+- A user cannot unlink their last account at an enabled provider.
+
+What keeps working:
+
+- Sessions, app access tokens, and refresh tokens stay valid. The limit ends none of them.
+- A password or a passkey still confirms operations in a session. That is how an existing user moves to a provider: while
+  signed in, they open "Linked accounts" in settings, confirm with the password or passkey, and sign in at the provider.
+- Sign-in, sign-up, and linking at a provider, and the two-factor code after a provider's sign-in.
+
+Every refusal reads the same whatever email address, password, or token was sent, so it says nothing about any account.
+
+**Users without a link cannot sign in once their sessions end, until you act.** An account is never linked by email
+address, so a provider's sign-in does not find them either. Ask them to link an account while they are signed in. A user who
+lost their session needs you to end the limit for a while, or to keep them out. This includes a user under `disable_login`,
+`suspend`, or `ban`, who has no sign-in page to [appeal](moderation.md) from without a link. Linking also needs the browser to
+be signed in to the sign-in pages: a user whose app is still signed in, but whose browser session ended, cannot link.
+
+### End the limit
+
+The limit follows the setting and the providers from one request to the next, without a restart.
+
+- An administrator who is locked out runs this on a host that has the server's configuration:
+
+  ```sh
+  my instance set login_providers_only false
+  ```
+
+- When no provider is enabled, the limit does not apply: disabling or deleting the last provider opens password and passkey
+  sign-in again, whatever the setting says. Users with neither a password nor a passkey still need a
+  [reset link](registration.md#password-reset-and-change). Enabling or adding a provider while the setting is on starts the
+  limit at once. `my login-provider add`, `enable`, `disable`, and `delete` print what the limit does now while the setting
+  is on.
+- When an outage at the provider keeps everyone out, use the same command.
 
 ## Re-authentication
 

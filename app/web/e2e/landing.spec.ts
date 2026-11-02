@@ -70,6 +70,7 @@ async function serveInstance(page: Page, origin: string, overrides: Partial<Inst
     description: "We grow vegetables, herbs and flowers.\n\nEveryone is welcome, whatever the size of their garden.",
     version: "0.0.0-e2e",
     source_url: "https://github.com/mycroblog/my",
+    login_providers_only: false,
     registrations: { mode: "approval" },
     limits: { max_post_characters: 500, require_media_description: false },
     timelines: { local: "everyone", federated: "everyone" },

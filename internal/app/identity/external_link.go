@@ -231,8 +231,14 @@ func (s *Service) signInLinks(ctx context.Context, tx uow.Tx, userID string) ([]
 
 // UnlinkExternalIdentity removes a link of a user. It fails with ErrNotFound for a link that is
 // not the user's current one, and with ErrLastSignInMethod when the user would have no way to
-// sign in: no password, no passkey, and no other link.
+// sign in: no password, no passkey, and no other link. While registration and sign-in are limited
+// to the login providers a password and a passkey do not sign in, so it also fails with
+// ErrLastSignInMethod for the user's last link to a provider that signs in.
 func (s *Service) UnlinkExternalIdentity(ctx context.Context, userID, linkID string) error {
+	limited, providers, err := s.loginProvidersOnly(ctx)
+	if err != nil {
+		return err
+	}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		repo := s.d.Repository
 		if err := repo.LockSignInMethods(ctx, tx, userID); err != nil {
@@ -249,6 +255,9 @@ func (s *Service) UnlinkExternalIdentity(ctx context.Context, userID, linkID str
 		if !slices.ContainsFunc(all, func(l identity.LinkedExternalIdentity) bool { return l.LinkID == linkID }) {
 			return ErrNotFound
 		}
+		if limited && lastLinkThatSignsIn(all, linkID, providers) {
+			return ErrLastSignInMethod
+		}
 		others := slices.DeleteFunc(links, func(l identity.LinkedExternalIdentity) bool { return l.LinkID == linkID })
 		if len(others) == 0 {
 			if err := s.keepsSignInMethod(ctx, tx, userID); err != nil {
@@ -257,6 +266,25 @@ func (s *Service) UnlinkExternalIdentity(ctx context.Context, userID, linkID str
 		}
 		return repo.InsertExternalIdentityUnlink(ctx, tx, identity.ExternalIdentityUnlink{LinkID: linkID, UnlinkedAt: s.d.Clock.Now()})
 	})
+}
+
+// lastLinkThatSignsIn reports whether linkID is the only one of links to a provider that users sign
+// in with. A link to a disabled provider signs nobody in, so removing it takes nothing away.
+func lastLinkThatSignsIn(links []identity.LinkedExternalIdentity, linkID string, providers []ExternalLoginProvider) bool {
+	signsIn := func(l identity.LinkedExternalIdentity) bool {
+		return slices.ContainsFunc(providers, func(p ExternalLoginProvider) bool { return p.ID == l.ProviderID })
+	}
+	removed := false
+	for _, l := range links {
+		switch {
+		case !signsIn(l):
+		case l.LinkID == linkID:
+			removed = true
+		default:
+			return false
+		}
+	}
+	return removed
 }
 
 // keepsSignInMethod fails with ErrLastSignInMethod when the user has neither a password nor a

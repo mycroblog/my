@@ -9,6 +9,7 @@
 import { Box, Button, ConfirmDialog, InlineError, Section, Stack, StatusMessage, TextField } from "@my/ui";
 import { useState } from "react";
 import { useT } from "../../../lib/i18n";
+import { useLoginProvidersOnly } from "../hooks/useLoginProvidersOnly";
 import { passwordMaxLength, passwordMinLength } from "../api/password";
 import {
   type PasswordChangeForm,
@@ -23,6 +24,21 @@ export function PasswordSettings() {
   const [status, setStatus] = useState<string | undefined>(undefined);
   const form = usePasswordChangeForm(setStatus);
   const removal = usePasswordRemoval(setStatus);
+  const limited = useLoginProvidersOnly();
+  if (limited) {
+    // A new password could not sign in, so only removing the current one stays.
+    return (
+      <Stack container gap="8">
+        <StatusMessage>{status}</StatusMessage>
+        <p>{t("client:settings.password.login_providers_only")}</p>
+        {form.hasPassword && (
+          <Section title={t("client:settings.password.remove.title")}>
+            <RemovePassword removal={removal} />
+          </Section>
+        )}
+      </Stack>
+    );
+  }
   return (
     <Stack container gap="8">
       <StatusMessage>{status}</StatusMessage>

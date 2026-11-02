@@ -28,6 +28,8 @@ type fakeOwnAccount struct {
 	changed   []appidentity.ChangePasswordInput
 	removed   []appidentity.RemovePasswordInput
 	noPasskey bool
+	// providersOnly refuses a new password as the limit to login providers does.
+	providersOnly bool
 }
 
 func (f *fakeOwnAccount) confirm(c appidentity.Confirmation) error {
@@ -54,6 +56,9 @@ func (f *fakeOwnAccount) HasPassword(context.Context, string) (bool, error) {
 }
 
 func (f *fakeOwnAccount) ChangePassword(_ context.Context, in appidentity.ChangePasswordInput) error {
+	if f.providersOnly {
+		return appidentity.ErrLoginProvidersOnly
+	}
 	if err := f.confirm(in.Confirmation); err != nil {
 		return err
 	}
@@ -347,5 +352,17 @@ func TestResendVerificationEmail(t *testing.T) {
 	e = newAuthEnv(t, func(o *clientapi.Options) { o.VerificationEmails = emails })
 	if res := e.send(t, http.MethodPost, path, "write", ""); res.StatusCode != http.StatusNotFound || len(emails.sent) != 1 {
 		t.Errorf("without email = %d, sent %v; want 404 and no email", res.StatusCode, emails.sent)
+	}
+}
+
+func TestChangePasswordWhileLimitedToLoginProviders(t *testing.T) {
+	own := &fakeOwnAccount{providersOnly: true}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.OwnAccount = own })
+	res := e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"correct horse","new_password":"another good password"}`)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeLoginProvidersOnly {
+		t.Errorf("change = %d %+v, want 403 login-providers-only", res.StatusCode, p)
+	}
+	if len(own.changed) != 0 {
+		t.Errorf("changed = %+v", own.changed)
 	}
 }

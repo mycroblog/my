@@ -176,9 +176,14 @@ func (s *Service) openCeremony(ctx context.Context, token string, aad []byte) (c
 // identity.ErrInvalidPasskeyName for a bad name, ErrWrongPassword for a wrong password, the
 // errors of a confirmation with a passkey (Service.confirm), a *kernel.RateLimitedError after too
 // many wrong confirmations (PasskeyPasswordLimit), ErrTooManyPasskeys when the user has as many
-// passkeys as allowed, and ErrNotFound when the user has no local account.
+// passkeys as allowed, ErrNotFound when the user has no local account, and ErrLoginProvidersOnly
+// while registration and sign-in are limited to the login providers: a new passkey could not sign
+// in.
 func (s *Service) BeginPasskeyRegistration(ctx context.Context, userID, name string, c Confirmation) (PasskeyRegistration, error) {
 	if err := s.needPasskeyDeps(); err != nil {
+		return PasskeyRegistration{}, err
+	}
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
 		return PasskeyRegistration{}, err
 	}
 	name, err := identity.NormalizePasskeyName(name)
@@ -260,6 +265,9 @@ func (s *Service) passkeyUser(ctx context.Context, userID string) (PasskeyUser, 
 // does not verify or a credential that is registered already, and ErrTooManyPasskeys.
 func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, token string, response []byte) (identity.PasskeyCredential, error) {
 	if err := s.needPasskeyDeps(); err != nil {
+		return identity.PasskeyCredential{}, err
+	}
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
 		return identity.PasskeyCredential{}, err
 	}
 	t, err := s.openCeremony(ctx, token, passkeyRegistrationAAD(userID))
@@ -386,9 +394,14 @@ type PasskeySignInInput struct {
 // with ErrInvalidPasskey when the response does not verify or its passkey is unknown or
 // removed; with ErrInvalidCredentials when the user's account is not active; and with a
 // *kernel.RateLimitedError when too many sign-ins failed from the client (LoginIPLimit). A
-// response that does not verify and an inactive account count against that limit.
+// response that does not verify and an inactive account count against that limit. While
+// registration and sign-in are limited to the login providers, it fails with
+// ErrLoginProvidersOnly before it looks at the response.
 func (s *Service) SignInWithPasskey(ctx context.Context, in PasskeySignInInput) (SignedIn, error) {
 	if err := s.needPasskeyDeps(); err != nil {
+		return SignedIn{}, err
+	}
+	if err := s.refuseWhileLoginProvidersOnly(ctx); err != nil {
 		return SignedIn{}, err
 	}
 	ipKey := kernel.ClientKey(in.IP)
@@ -425,7 +438,7 @@ func (s *Service) SignInWithPasskey(ctx context.Context, in PasskeySignInInput) 
 	}
 	switch _, err := s.d.Repository.FindActiveTOTPEnrollment(ctx, cred.UserID); {
 	case err == nil:
-		challenge, err := s.newChallenge(ctx, cred.UserID)
+		challenge, err := s.newChallenge(ctx, cred.UserID, challengeLocalCredential)
 		if err != nil {
 			return SignedIn{}, err
 		}

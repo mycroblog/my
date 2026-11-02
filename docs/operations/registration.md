@@ -4,7 +4,7 @@ This guide is for operators.
 
 ## The sign-up page
 
-Users register at `https://<host>/auth/sign_up` with a username, an email address and a password.
+Users register at `https://<host>/auth/sign_up` with a username, an email address and a password, unless [registration is limited to login providers](#registration-limited-to-login-providers).
 After registering, that browser is signed in right away.
 The page works without JavaScript and, like the sign-in page, is protected by a CSRF token and by rejecting cross-origin requests.
 When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
@@ -75,7 +75,14 @@ SMTP examples, DNS setup and how to read delivery failures are in [sending email
 
 The confirmation token is recorded nowhere except this log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
 
+## Registration limited to login providers
+
+While the instance setting `login_providers_only` is on and at least one [login provider](login-providers.md#limit-sign-in-to-login-providers) is enabled, the sign-up page has no password form and offers only the providers that allow sign-ups; an invite code in the link carries through to the provider's sign-up form. A registration with a password is refused, whatever the form holds. With no provider that allows sign-ups, registration reads as `closed`. With no enabled provider, the setting does not apply.
+
 ## Password reset and change
+
+While the instance setting `login_providers_only` applies, reset links and setting or changing a password are refused ([what the limit does](login-providers.md#limit-sign-in-to-login-providers)).
+
 
 - `mail = smtp`: when a user enters an email address under "Forgot your password?" on the sign-in page, the server sends a link for setting a new password to the user whose primary address it is.
   The page's answer is the same whether or not an account exists. The link is valid for 1 hour and works once, and it stops working if the password changes by another route in the meantime.

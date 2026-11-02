@@ -261,7 +261,16 @@ func (h *Handler) externalCallback(w http.ResponseWriter, r *http.Request) {
 	case res.SecondFactorChallenge != "":
 		h.askSecondFactor(w, r, res.SecondFactorChallenge, returnTo)
 	case res.SignUp != nil:
-		h.renderExternalSignUp(w, r, http.StatusOK, *res.SignUp, nil)
+		pg := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
+		mode, err := h.o.Identity.RegistrationMode(r.Context())
+		if err != nil {
+			h.internalError(w, r, err)
+			return
+		}
+		pg.SignUp = newSignUpForm(pg.L, mode)
+		pg.SignUp.Username, pg.SignUp.Email = res.SignUp.Username, res.SignUp.Email
+		pg.SignUp.InviteCode = inviteCodeOf(returnTo)
+		h.renderExternalSignUp(w, r, http.StatusOK, *res.SignUp, &pg)
 	case res.SignedIn != nil:
 		h.signedIn(w, r, *res.SignedIn, returnTo)
 	default:
@@ -272,17 +281,6 @@ func (h *Handler) externalCallback(w http.ResponseWriter, r *http.Request) {
 // renderExternalSignUp shows the registration form of an account at a provider; form is what
 // the applicant sent, nil for the first view.
 func (h *Handler) renderExternalSignUp(w http.ResponseWriter, r *http.Request, status int, v appidentity.ExternalSignUpView, p *page) {
-	mode, err := h.o.Identity.RegistrationMode(r.Context())
-	if err != nil {
-		h.internalError(w, r, err)
-		return
-	}
-	if p == nil {
-		pg := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
-		pg.SignUp = newSignUpForm(pg.L, mode)
-		pg.SignUp.Username, pg.SignUp.Email = v.Username, v.Email
-		p = &pg
-	}
 	f := p.SignUp
 	f.External = &externalSignUpForm{Ticket: v.Ticket, Provider: v.ProviderName}
 	p.Title = p.L.ServerAuthExternalSignUpTitle(v.ProviderName)
