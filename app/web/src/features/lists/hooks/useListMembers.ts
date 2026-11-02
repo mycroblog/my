@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useT } from "../../../lib/i18n";
 import {
   type Account,
@@ -46,15 +47,16 @@ export type ListMembers =
 export function useListMembers(list: List): ListMembers {
   const api = useApi();
   const query = useInfiniteQuery(listMembersQueryOptions(api, list.id));
+  const failure = useLoadFailure(query);
   if (query.data === undefined) {
-    if (query.isError)
+    if (failure.error !== null)
       return {
         status: "error",
-        message: errorMessage(query.error),
+        message: errorMessage(failure.error),
         retry: () => {
           void query.refetch();
         },
-        isRetrying: query.isFetching,
+        isRetrying: failure.isRetrying,
       };
     return { status: "loading" };
   }

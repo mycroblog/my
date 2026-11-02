@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
 import { notificationMarkerQueryOptions, notificationsPanelQueryOptions } from "../api/notifications";
 import { groupNotifications, type NotificationGroup } from "./groupNotifications";
@@ -29,16 +30,17 @@ export function useNotificationsPanel(): NotificationsPanelList {
   const api = useApi();
   const enabled = useSessionStatus() === "signed-in";
   const list = useQuery({ ...notificationsPanelQueryOptions(api), enabled, retry: shellQueryRetry });
+  const failure = useLoadFailure(list);
   const marker = useQuery({ ...notificationMarkerQueryOptions(api), ...shellQueryReader, enabled });
   if (list.data === undefined) {
-    if (!list.isError) return { status: "loading" };
+    if (failure.error === null) return { status: "loading" };
     return {
       status: "error",
-      message: errorMessage(list.error),
+      message: errorMessage(failure.error),
       retry: () => {
         void list.refetch();
       },
-      isRetrying: list.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return {

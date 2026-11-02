@@ -174,7 +174,7 @@ export function ShellDock({ children, clearsTabBar = true }: ShellDockProps) {
 const asidePanel = tv({
   slots: {
     base: "flex flex-col gap-2",
-    heading: "text-sm font-bold text-fg-muted",
+    heading: "text-sm font-bold text-fg-muted outline-none",
   },
 });
 
@@ -194,7 +194,8 @@ export function AsidePanel({ heading, children }: AsidePanelProps) {
   return (
     <Card as="aside" padding="4" aria-labelledby={headingId}>
       <div className={slots.base()}>
-        <h2 id={headingId} className={slots.heading()}>
+        {/* Takes focus from script: from a RegionError of the panel whose retry succeeded, say. */}
+        <h2 id={headingId} tabIndex={-1} className={slots.heading()}>
           {heading}
         </h2>
         {children}

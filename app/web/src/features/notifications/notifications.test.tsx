@@ -959,6 +959,102 @@ describe("the notifications page", () => {
     expect(await screen.findByRole("feed", { name: "Notifications" })).toBeInTheDocument();
   });
 
+  describe("while the failed list is tried again", () => {
+    /** A server whose list fails until `answer` is called, which answers the waiting request. */
+    function failingList() {
+      let respond = (): Response => problem(503, "about:blank", "Service Unavailable");
+      let release = (): void => undefined;
+      let gate: Promise<void> | undefined;
+      server.use(
+        resumableSession(),
+        http.get(`${apiBase}/notifications`, async () => {
+          await gate;
+          return respond();
+        }),
+      );
+      return {
+        /** Holds the next requests until `answer`. */
+        hold() {
+          gate = new Promise((resolve) => {
+            release = resolve;
+          });
+        },
+        /**
+         * Answers the held requests: with the list when `ok`, else with a network failure, which the query's
+         * retries try again at once (lib/query.ts), where a 503 would wait for their backoff.
+         */
+        answer(ok: boolean) {
+          respond = ok ? () => HttpResponse.json({ items: notificationsFixture }) : () => HttpResponse.error();
+          gate = undefined;
+          release();
+        },
+      };
+    }
+
+    test("keeps the error with a waiting button that has focus", async () => {
+      const list = failingList();
+      const { user } = await renderApp({ path: "/notifications" });
+      await screen.findByText("Service Unavailable");
+
+      list.hold();
+      const button = screen.getByRole("button", { name: "Try again" });
+      await user.click(button);
+
+      await waitFor(() => {
+        expect(button).toHaveAttribute("data-pending", "true");
+      });
+      expect(button).toHaveFocus();
+      expect(screen.getByText("Service Unavailable")).toBeInTheDocument();
+      expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.queryByRole("status", { name: /Loading/ })).not.toBeInTheDocument();
+      list.answer(true);
+      expect(await screen.findByRole("feed", { name: "Notifications" })).toBeInTheDocument();
+    });
+
+    test("announces a retry that fails again as an alert, and keeps focus on the button", async () => {
+      const list = failingList();
+      const { user } = await renderApp({ path: "/notifications" });
+      await screen.findByText("Service Unavailable");
+
+      list.hold();
+      const button = screen.getByRole("button", { name: "Try again" });
+      await user.click(button);
+      list.answer(false);
+
+      const alert = await within(screen.getByRole("main")).findByRole("alert");
+      expect(alert).toHaveTextContent("Could not load the notifications");
+      expect(alert).not.toHaveTextContent("Service Unavailable");
+      expect(button).toHaveFocus();
+      expect(button).not.toHaveAttribute("data-pending");
+
+      // And again: the alert goes while the retry runs, and comes back with its result.
+      list.hold();
+      await user.click(button);
+      await waitFor(() => {
+        expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
+      });
+      list.answer(false);
+      expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
+        "Could not load the notifications",
+      );
+      expect(button).toHaveFocus();
+    });
+
+    test("shows the list after a retry that succeeds, with focus on the page's heading", async () => {
+      const list = failingList();
+      const { user } = await renderApp({ path: "/notifications" });
+      await screen.findByText("Service Unavailable");
+
+      list.hold();
+      await user.click(screen.getByRole("button", { name: "Try again" }));
+      list.answer(true);
+
+      expect(await screen.findByRole("feed", { name: "Notifications" })).toBeInTheDocument();
+      expect(screen.queryByText("Could not load the notifications")).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: "Notifications" })).toHaveFocus();
+    });
+  });
+
   test("sends to sign in when no session resumes, and back here after it", async () => {
     const { leftTo } = await renderApp({ path: "/notifications" });
 

@@ -5,6 +5,7 @@ import { useNotice } from "@my/ui";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useT } from "../../../lib/i18n";
 import { isTauriApp } from "../../../lib/platform";
 import { shellQueryReader, shellQueryRetry } from "../../../lib/query";
@@ -49,6 +50,7 @@ export type SupporterList =
 export function useSupporterList(): SupporterList {
   const api = useApi();
   const query = useInfiniteQuery({ ...supporterListQueryOptions(api), retry: shellQueryRetry, retryOnMount: false });
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     const plans = query.data.pages[0]?.plans ?? [];
     const members = query.data.pages.flatMap((page) => page.items);
@@ -63,14 +65,14 @@ export function useSupporterList(): SupporterList {
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null) {
-    if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
-    if (query.error instanceof ApiError && query.error.status === 401) return { status: "signed-in-only" };
+  if (failure.error !== null) {
+    if (failure.error instanceof ApiError && failure.error.status === 404) return { status: "hidden" };
+    if (failure.error instanceof ApiError && failure.error.status === 401) return { status: "signed-in-only" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

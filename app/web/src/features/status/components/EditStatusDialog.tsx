@@ -66,6 +66,7 @@ function EditStatusContent({ status, close }: EditStatusContentProps) {
           reason={source.message}
           retryLabel={t("client:status.edit.retry")}
           onRetry={source.retry}
+          isRetrying={source.isRetrying}
         />
       );
     case "ready":

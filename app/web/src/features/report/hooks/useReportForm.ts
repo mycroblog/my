@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { type LoadFailure, useLoadFailure } from "../../../lib/loadFailure";
 import {
   type Account,
   cacheFiledReport,
@@ -63,19 +64,16 @@ export type ReportForm = {
 };
 
 /** What a step shows of a query: `value` is the part of its data that the step needs. */
-function loadable<T>(
-  query: { isError: boolean; error: unknown; refetch: () => unknown; isRefetching: boolean },
-  value: T | undefined,
-): Loadable<T> {
+function loadable<T>(query: { refetch: () => unknown }, failure: LoadFailure, value: T | undefined): Loadable<T> {
   if (value !== undefined) return { status: "ready", value };
-  if (query.isError)
+  if (failure.error !== null)
     return {
       status: "error",
-      message: errorMessage(query.error),
+      message: errorMessage(failure.error),
       retry: () => {
         void query.refetch();
       },
-      isRetrying: query.isRefetching,
+      isRetrying: failure.isRetrying,
     };
   return { status: "loading" };
 }
@@ -141,12 +139,15 @@ export function useReportForm(account: Account, status: Status | undefined, room
   const instance = useQuery(instanceQueryOptions(api));
   // A room's report cites no posts, so it does not load them.
   const latest = useQuery({ ...reportablePostsQueryOptions(api, account.id), enabled: room === undefined });
+  const instanceFailure = useLoadFailure(instance);
+  const latestFailure = useLoadFailure(latest);
   const file = useMutation({ ...createReportMutation(api), onSuccess: () => cacheFiledReport(queryClient) });
 
-  const rules = loadable(instance, instance.data?.rules);
+  const rules = loadable(instance, instanceFailure, instance.data?.rules);
   const latestPosts = latest.data?.items;
   const posts = loadable(
     latest,
+    latestFailure,
     latestPosts &&
       (status === undefined || latestPosts.some((post) => post.id === status.id)
         ? latestPosts

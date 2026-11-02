@@ -9,6 +9,7 @@ import { useInfiniteQuery, useMutation, useQueryClient, useSuspenseQuery } from 
 import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { domainToAscii } from "../../../lib/idn";
 import {
@@ -180,15 +181,16 @@ export type AccountSearchResults =
 export function useAccountSearchResults(search: AdminAccountSearch): AccountSearchResults {
   const api = useApi();
   const query = useInfiniteQuery({ ...adminAccountsQueryOptions(api, search), retryOnMount: false });
+  const failure = useLoadFailure(query);
   if (query.data === undefined) {
-    if (!query.isError) return { status: "loading" };
+    if (failure.error === null) return { status: "loading" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => {
         void query.refetch();
       },
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return {

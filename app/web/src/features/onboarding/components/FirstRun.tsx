@@ -25,6 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { useOpenCompose } from "../../compose";
 import { AccountFollowItem } from "../../profile";
@@ -156,26 +157,27 @@ function Suggestions() {
   const t = useT();
   const api = useApi();
   const query = useQuery(suggestionsQueryOptions(api));
+  const failure = useLoadFailure(query);
   let content: ReactNode;
-  if (query.isPending) {
+  if (failure.error !== null) {
+    content = (
+      <RegionError
+        heading={t("client:onboarding.suggestions.failed")}
+        reason={errorMessage(failure.error)}
+        retryLabel={t("client:onboarding.suggestions.retry")}
+        onRetry={() => {
+          void query.refetch();
+        }}
+        isRetrying={failure.isRetrying}
+      />
+    );
+  } else if (query.data === undefined) {
     content = (
       <Stack gap="2">
         <AccountRowSkeleton />
         <AccountRowSkeleton />
         <AccountRowSkeleton />
       </Stack>
-    );
-  } else if (query.isError) {
-    content = (
-      <RegionError
-        heading={t("client:onboarding.suggestions.failed")}
-        reason={errorMessage(query.error)}
-        retryLabel={t("client:onboarding.suggestions.retry")}
-        onRetry={() => {
-          void query.refetch();
-        }}
-        isRetrying={query.isFetching}
-      />
     );
   } else {
     content =

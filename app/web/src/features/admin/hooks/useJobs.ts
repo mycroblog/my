@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useT } from "../../../lib/i18n";
 import {
   cacheRetriedJob,
@@ -57,6 +58,7 @@ export type JobAttempts =
 export function useJobAttempts(id: string): JobAttempts {
   const api = useApi();
   const query = useInfiniteQuery(jobAttemptsQueryOptions(api, id));
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     return {
       status: "ready",
@@ -69,12 +71,12 @@ export function useJobAttempts(id: string): JobAttempts {
       moreError: query.isFetchNextPageError ? errorMessage(query.error) : undefined,
     };
   }
-  if (query.error !== null)
+  if (failure.error !== null)
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   return { status: "loading" };
 }

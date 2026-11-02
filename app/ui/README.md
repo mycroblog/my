@@ -321,7 +321,12 @@ The kit gives every region of data the same four states
   `PostSkeleton` and `NotificationRowSkeleton` have the padding, bottom border and container layout of `PostCard`;
   `AccountRowSkeleton` has no border, because account lists separate their rows with `divide-y`.
 - `RegionError` is not a live region by default: a failure that came with the page is found by reading.
-  `alert` makes it `role="alert"`, only for the result of the user's own action, such as a retry that failed again
+  A retry from its button that ends with the error still shown makes its heading and reason `role="alert"` without
+  anything from the caller, each time, and the button keeps focus; the caller keeps it mounted during the retry
+  (`isRetrying`, from `useLoadFailure` in `app/web`). When the retry succeeds and it unmounts with focus on the button,
+  focus moves, without scrolling, to the nearest heading above it that takes focus from script (`focusable`, `AsidePanel`, or a
+  screen's `h1`), within its dialog if it is in one, or else to that dialog.
+  `alert` makes it `role="alert"`, except during a retry, for the result of another action of the user
   ([APG alert](https://www.w3.org/WAI/ARIA/apg/patterns/alert/)). Without `headingLevel` the message is a paragraph
   (the failure of the next page of a list); with it, a heading one below the region's heading.
 - `OfflineBanner` is rendered once for the whole session, empty while `isOffline` is false, so that going offline is

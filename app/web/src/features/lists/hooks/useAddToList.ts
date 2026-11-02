@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useT } from "../../../lib/i18n";
 import {
   type Account,
@@ -35,7 +36,7 @@ export type ListChoice = {
 
 export type AddToList =
   | { status: "loading" }
-  | { status: "error"; message: string; retry: () => void }
+  | { status: "error"; message: string; retry: () => void; isRetrying: boolean }
   | { status: "done"; choices: readonly ListChoice[]; toggle: (list: List, checked: boolean) => void };
 
 export function useAddToList(account: Account): AddToList {
@@ -46,6 +47,9 @@ export function useAddToList(account: Account): AddToList {
   const notice = useNotice();
   const lists = useQuery(listsQueryOptions(api));
   const memberOf = useQuery(accountListsQueryOptions(api, account.id));
+  const listsFailure = useLoadFailure(lists);
+  const memberOfFailure = useLoadFailure(memberOf);
+  const failedLoad = listsFailure.error ?? memberOfFailure.error;
   // The last failure, by list, until that list changes again.
   const [failed, setFailed] = useState<{ id: string; message: string } | null>(null);
   // The cache is updated before the mutation settles, so that the check does not go back for a moment.
@@ -57,14 +61,15 @@ export function useAddToList(account: Account): AddToList {
     ...removeListMemberMutation(api),
     onSuccess: (change) => cacheMemberChange(api, queryClient, change, -1),
   });
-  if (lists.isError || memberOf.isError)
+  if (failedLoad !== null)
     return {
       status: "error",
-      message: errorMessage(lists.error ?? memberOf.error),
+      message: errorMessage(failedLoad),
       retry: () => {
         if (lists.isError) void lists.refetch();
         if (memberOf.isError) void memberOf.refetch();
       },
+      isRetrying: listsFailure.isRetrying || memberOfFailure.isRetrying,
     };
   if (lists.data === undefined || memberOf.data === undefined) return { status: "loading" };
   const ids = new Set(memberOf.data.items.map((list) => list.id));

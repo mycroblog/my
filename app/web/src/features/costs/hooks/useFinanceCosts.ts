@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryRetry } from "../../../lib/query";
 import { useViewerPermissions } from "../../moderation";
 import {
@@ -38,16 +39,17 @@ export function useFinanceCosts(granularity: CostGranularity, basis: CostBasis, 
     retry: shellQueryRetry,
     retryOnMount: false,
   });
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) {
     const { viewer } = query.data;
     return { status: "ready", totals: query.data, items: manage || viewer.item_names || viewer.item_memos };
   }
-  if (query.error !== null) {
+  if (failure.error !== null) {
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

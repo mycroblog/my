@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { ApiError, errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { shellQueryRetry } from "../../../lib/query";
 import { type CostBasis, type CostGranularity, type CostTotals, publicCostTotalsQueryOptions } from "../api/costs";
 
@@ -32,14 +33,15 @@ export function usePublicCosts(
     retry: shellQueryRetry,
     retryOnMount: false,
   });
+  const failure = useLoadFailure(query);
   if (query.data !== undefined) return { status: "ready", totals: query.data, breakdown };
-  if (query.error !== null) {
-    if (query.error instanceof ApiError && query.error.status === 404) return { status: "hidden" };
+  if (failure.error !== null) {
+    if (failure.error instanceof ApiError && failure.error.status === 404) return { status: "hidden" };
     return {
       status: "error",
-      reason: errorMessage(query.error),
+      reason: errorMessage(failure.error),
       retry: () => void query.refetch(),
-      isRetrying: query.isFetching,
+      isRetrying: failure.isRetrying,
     };
   }
   return { status: "loading" };

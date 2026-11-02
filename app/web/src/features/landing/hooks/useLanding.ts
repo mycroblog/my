@@ -5,6 +5,7 @@ import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { useConfig } from "../../../lib/config";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { handleOf } from "../../../lib/handle";
 import { domainToUnicode } from "../../../lib/idn";
 import { imageSources } from "../../../lib/images";
@@ -125,16 +126,17 @@ export function useLanding(): Landing {
   const { data: overview } = useQuery(overviewQueryOptions(api));
   const localOn = instance?.timelines.local === "everyone";
   const posts = useQuery({ ...recentPostsQueryOptions(api), enabled: localOn });
+  const postsFailure = useLoadFailure(posts);
 
   let recentPosts: RecentPosts;
   if (!localOn) recentPosts = { status: "off" };
   else if (posts.data !== undefined) recentPosts = { status: "ready", posts: posts.data.items };
-  else if (posts.error !== null)
+  else if (postsFailure.error !== null)
     recentPosts = {
       status: "error",
-      reason: errorMessage(posts.error),
+      reason: errorMessage(postsFailure.error),
       retry: () => void posts.refetch(),
-      isRetrying: posts.isFetching,
+      isRetrying: postsFailure.isRetrying,
     };
   else recentPosts = { status: "loading" };
 

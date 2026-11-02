@@ -252,6 +252,44 @@ describe("the notifications panel", () => {
     expect(await within(panel).findByText("Person 1")).toBeInTheDocument();
   });
 
+  test("keeps the failure and the button's focus through a retry, announces one that fails again, and then focuses its heading", async () => {
+    stubWideScreen();
+    const user = userEvent.setup();
+    let answer = (): Response | Promise<Response> => problem(400, "about:blank", "Bad Request");
+    server.use(
+      signedInHandler,
+      http.get(`${apiBase}/notifications`, () => answer()),
+    );
+    await renderApp({ path: "/home" });
+    const panel = await screen.findByRole("complementary", { name: panelName });
+    await within(panel).findByText("Bad Request");
+
+    let release = (): void => undefined;
+    answer = async () => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return problem(400, "about:blank", "Still bad");
+    };
+    const button = within(panel).getByRole("button", { name: "Try again" });
+    await user.click(button);
+    await waitFor(() => {
+      expect(button).toHaveAttribute("data-pending", "true");
+    });
+    expect(button).toHaveFocus();
+    expect(within(panel).getByText("Bad Request")).toBeInTheDocument();
+    expect(within(panel).queryByRole("alert")).not.toBeInTheDocument();
+
+    release();
+    expect(await within(panel).findByRole("alert")).toHaveTextContent("Still bad");
+    expect(button).toHaveFocus();
+
+    answer = () => HttpResponse.json({ items: [follow(1)] });
+    await user.click(button);
+    expect(await within(panel).findByText("Person 1")).toBeInTheDocument();
+    expect(within(panel).getByRole("heading", { level: 2, name: panelName })).toHaveFocus();
+  });
+
   test.each(["/settings", "/bookmarks", "/notifications", "/@bob"])("is not on %s, and reads nothing", async (path) => {
     stubWideScreen();
     const { handler, requests } = notificationsServer(() => [follow(1)]);

@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tansta
 import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
+import { useLoadFailure } from "../../../lib/loadFailure";
 import { useT } from "../../../lib/i18n";
 import { viewerQueryOptions } from "../../session";
 import {
@@ -58,12 +59,15 @@ export function useAccountRoles(accountId: string): AccountRoles {
   const held = useQuery(accountRolesQueryOptions(api, accountId));
   const own = useQuery(accountRolesQueryOptions(api, viewer.id));
   const queries = [all, held, own];
+  const allFailure = useLoadFailure(all);
+  const heldFailure = useLoadFailure(held);
+  const ownFailure = useLoadFailure(own);
   if (all.data === undefined || held.data === undefined || own.data === undefined) {
-    const failed = queries.find((query) => query.isError);
-    if (failed === undefined) return { status: "loading" };
+    const failed = allFailure.error ?? heldFailure.error ?? ownFailure.error;
+    if (failed === null) return { status: "loading" };
     return {
       status: "error",
-      reason: errorMessage(failed.error),
+      reason: errorMessage(failed),
       retry: () => {
         for (const query of queries) if (query.isError) void query.refetch();
       },
