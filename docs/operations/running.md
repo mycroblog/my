@@ -108,7 +108,7 @@ Where to run it:
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
 - **AWS Lambda**: the image does not run as it is. Lambda needs a single-architecture image in ECR with a runtime interface client.
-- **A smaller image**: `scripts/task.sh docker:build GO_TAGS=...` builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
+- **A smaller image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in a checkout builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
 
 ### Verify an image
 
@@ -573,7 +573,7 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 - Readiness also requires that the database holds the configured `host` and `account_domain`, or that the process could record them.
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
-  Column and index differences are not checked; `scripts/task.sh db:check` detects differences.
+  Column and index differences are not checked; `my schema apply -dry-run` prints what would change.
 
 ## Security headers
 
@@ -602,7 +602,7 @@ A process whose `role` is `web` or `all` serves the web client embedded in the b
 - The shell is served after ActivityPub content negotiation. Requesting a shell path with an ActivityPub `Accept` returns 404 (post pages redirect, as described below).
   The shell always carries `Vary: Accept`. When you put a CDN in front, include the kind of `Accept` (ActivityPub or HTML) in the cache key, or exclude the shell, `/ap/*` and `/@*` from caching.
   Serve only `/assets/*` from the CDN.
-- A binary built without the web client (a plain `go build` that skips `scripts/task.sh go:bin`) logs a warning at start-up and serves a shell without scripts.
+- A binary built without the web client (a plain `go build`, without building the client first) logs a warning at start-up and serves a shell without scripts.
 
 ## Federation endpoints
 

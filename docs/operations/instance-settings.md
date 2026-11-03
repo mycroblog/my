@@ -13,11 +13,9 @@ default locale, who can see the timelines, the instance name, description, terms
 | When unset | The default in the schema (the server does not start if the key is required) | The default defined in the code |
 
 - **No key is in both.** Neither overrides the other. You cannot give an instance setting through an environment variable or
-  the configuration file, and you cannot store a configuration value in the database. A test
-  (`TestConfigAndInstanceSettingsShareNoKey`) guarantees that the two sets of keys do not overlap.
-- To decide where a new value belongs, ask whether an operator changes it without a restart. A value that is fixed per
-  deployment and changes the structure of the process is configuration; a value that changes while the instance is running is
-  an instance setting.
+  the configuration file, and you cannot store a configuration value in the database.
+- A value that is fixed per deployment and changes the structure of the process is configuration; a value that changes while
+  the instance is running is an instance setting.
 
 ## Prerequisites
 

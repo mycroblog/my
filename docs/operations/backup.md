@@ -287,7 +287,3 @@ backups are taken (at least every few months):
 4. Go through [Starting and checking](#starting-and-checking): sign in, posts and media, and the `publicKey` of a few actors compared with the live instance.
 5. Start it once without the KEK and once with a different one, and check that it fails as [Without the right KEK](#without-the-right-kek) describes.
 6. Note how long each step took: that is how long a real restore keeps the instance down.
-
-From the repository, `scripts/task.sh docker:restore-drill` runs the same drill on Docker Compose for SQLite and PostgreSQL:
-it fills an instance, backs it up while it runs, removes every container and volume, restores into new ones,
-and checks the sign-in, the posts and media, the follows, the actors' keys, a signed delivery to another server, and the failures without the KEK.

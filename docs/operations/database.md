@@ -57,7 +57,6 @@ docker compose exec -T my my admin create -username alice -email alice@example.c
 
 - If any of the three fails, `my` does not start. Read its output with `docker compose logs upgrade-check` (or `schema`, `upgrade`).
 - Creating administrators is covered in [Administrators and roles](admin-cli.md).
-- `scripts/task.sh docker:smoke` (`scripts/docker-smoke.sh`) runs this setup on an empty volume and again on the same volume, as an upgrade does.
 
 ### Other platforms
 
@@ -71,11 +70,6 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 # PostgreSQL
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
-
-### From the repository (development)
-
-`scripts/task.sh db:apply` runs `my schema apply` of the working tree; `DB_DIALECT=sqlite|postgres` and `DB_URL` choose the target.
-`scripts/task.sh db:diff` only prints the SQL it would run (`-dry-run`).
 
 ## Upgrading
 
@@ -303,7 +297,3 @@ dropdb --maintenance-db="postgres://postgres:...@db.example/postgres" my
 createdb --maintenance-db="postgres://postgres:...@db.example/postgres" --owner=my my
 my schema apply
 ```
-
-### From the repository (development)
-
-`scripts/task.sh db:reset` empties `DB_URL` without asking and then runs `scripts/task.sh db:apply`: use it on development databases only.

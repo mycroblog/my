@@ -1,6 +1,6 @@
 # Link previews (OGP / X Card / fediverse:creator)
 
-This page explains link previews to operators and developers and lists the steps to check them by hand.
+This page explains link previews to operators and lists the steps to check them by hand.
 
 These are the previews that other services show of this server's pages. The cards this server shows for the links in its own posts
 are in [Cards of links in posts](#cards-of-links-in-posts) below; how to stop fetching them from a domain is in [instance settings](instance-settings.md#link-card-domains).
@@ -82,8 +82,7 @@ If `preview_image` is still processing, failed processing, or is not an image, n
 Instance settings are read on every request, so `my instance set preview_image ...` takes effect without a restart (for the
 procedure, see [instance settings](instance-settings.md)).
 
-The default image is drawn with the standard library on the first request after startup and kept in the process (about 10 KB;
-no binary is kept in the repository, and the dimensions can be written as constants in `og:image:width` / `height`).
+The default image is drawn with the standard library on the first request after startup and kept in the process (about 10 KB).
 It is served with `Cache-Control: no-cache` and an ETag.
 
 ### Caching
@@ -98,7 +97,7 @@ It is served with `Cache-Control: no-cache` and an ETag.
 
 ## Manual check
 
-Check each service on a real device at every release. You need an instance that is reachable from outside over HTTPS (the
+Check each service on a real device after an upgrade or a change to the preview settings. You need an instance that is reachable from outside over HTTPS (the
 preview bots cannot reach `localhost`).
 
 ### Preparation

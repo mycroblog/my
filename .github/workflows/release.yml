@@ -3,7 +3,7 @@ name: Release
 # The only way a release is made (ADR-0079): run by hand with a version on the commit to release
 # (`gh workflow run release.yml --ref main -f version=v0.1.0`). It runs the slow suite (slow-suite.yml) on that commit
 # (github.sha) and, only when every job of the suite passed, tags the commit and creates a draft GitHub Release.
-# The decider reads the draft and publishes it. docs/operations/releasing.md describes the procedure.
+# The decider reads the draft and publishes it. docs/agents/releasing.md describes the procedure.
 #
 # The notes (scripts/release-notes.sh): the release job creates the draft with the facts, derived from the repository.
 # release-notes-prose then asks Claude for the prose and checks it by program, and release-notes-edit puts prose and
@@ -467,7 +467,7 @@ jobs:
   npm:
     # Publishes the npm packages of the libraries once the commit is tagged. npm's trusted publishing authenticates this
     # job by its OIDC token (id-token: write) as the trusted publisher registered on each package (this repository and
-    # release.yml; docs/operations/releasing.md), so no npm token exists, and npm adds the provenance statement.
+    # release.yml; docs/agents/releasing.md), so no npm token exists, and npm adds the provenance statement.
     # Re-running the job after a failure skips a version that is already on the registry.
     needs: [validate, release]
     runs-on: ubuntu-latest

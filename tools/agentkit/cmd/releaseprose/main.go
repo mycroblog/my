@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Command releaseprose writes the prose of a release's notes with Claude, around the facts that
-// tools/agentkit/cmd/releasenotes derived from the repository (docs/operations/releasing.md, "Release notes").
+// tools/agentkit/cmd/releasenotes derived from the repository (docs/agents/releasing.md, "Release notes").
 // scripts/release-notes.sh runs it on the directory that its `facts` and `prs` commands filled.
 //
 // The facts are never left to the model: they go in verbatim as input and verbatim in the body. A machine check of the

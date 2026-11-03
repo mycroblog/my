@@ -103,7 +103,7 @@ M5（エピック #30）には `ghcr.io/mycroblog/my` のイメージが要る�
 
 - `X.Y.Z` は作り直さない。公開時のワークフローは既存のタグを上書きしない。GHCR に不変タグの機能があるとは確認できなかったので（要検証）、ワークフローが守る。
 - 運営者向けの文書は、本番では `0.1.0@sha256:...` の固定を勧める。ノートに digest を書く。
-- **削除しない。** 版を通る規則のため、各マイナー版の最新のパッチは永く要る。digest の固定を壊さないよう古いパッチも残す。rc も残す。`v0.0.0-test.N` のイメージだけ、`docs/operations/releasing.md` の試行の手順で手で消す。
+- **削除しない。** 版を通る規則のため、各マイナー版の最新のパッチは永く要る。digest の固定を壊さないよう古いパッチも残す。rc も残す。`v0.0.0-test.N` のイメージだけ、`docs/agents/releasing.md` の試行の手順で手で消す。
 - 未タグの版の自動削除を入れない。multi-arch のプラットフォームのマニフェストや証明が未タグの版に見えるなら、消すとイメージが壊れる（GHCR の表示の扱いは要検証）。
 - 欠陥のある版は消さず、次のパッチで置き換えてノートに書く。`X.Y` を戻す必要があれば、公開時のワークフローの `workflow_dispatch` で前のパッチの digest に付け替える。
 - 基盤のイメージの修正は、新しいパッチ版として出す。
@@ -186,7 +186,7 @@ M5（エピック #30）には `ghcr.io/mycroblog/my` のイメージが要る�
   - `slow-suite` の `upgrade` ジョブで公開済みのイメージを使う（`MY_PREVIOUS_IMAGE`）
   - `deploy/docker/compose.yaml` と `.env.example` を公開イメージに向ける。README のクイックスタート
   - `source_url` の既定、`docs/reference/configuration.md` の生成
-  - 文書: `docs/operations/releasing.md`（「What a release produces」、下書きでの digest の確認、一度だけの作業、試行で作ったイメージの削除）、運営者向けの確認とホスティングごとの手順、`docs/operations/database.md` のタグの例
+  - 文書: `docs/agents/releasing.md`（「What a release produces」、下書きでの digest の確認、一度だけの作業、試行で作ったイメージの削除）、運営者向けの確認とホスティングごとの手順、`docs/operations/database.md` のタグの例
   - Nightly のイメージの検査
   - `release.yml` の冒頭のコメント
 

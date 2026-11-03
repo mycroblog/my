@@ -3,7 +3,7 @@
 How the decider cuts a release. Only `release.yml` creates releases. It runs the slow suite (`slow-suite.yml`) on the chosen commit and,
 only when every job passes, tags that commit, drafts a GitHub Release, publishes the client libraries under the same version
 ([Libraries](#libraries-mykit-and-mybot)), and pushes the [container image](#the-container-image) by digest. Publishing the draft gives the image its tags. What the slow suite contains, and where else it runs, is in
-[What CI runs where](../agents/workflow.md#what-ci-runs-where).
+[What CI runs where](workflow.md#what-ci-runs-where).
 
 ## Versions
 
@@ -12,11 +12,11 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
 - A version that is already tagged fails in the first job. After the slow suite, the workflow checks again that no release with the tag's name exists.
 - Within a minor version, patch releases only add to the schema (or rebuild projection tables); removing data waits for a minor version.
   Operators can upgrade from the same minor version and from the latest patch release of the previous minor version
-  ([Skipping releases](database.md#skipping-releases)).
+  ([Skipping releases](../operations/database.md#skipping-releases)).
 
 ## Steps
 
-1. Check that the latest Nightly passed. If it failed, fix it first ([Failures on main](../agents/workflow.md#failures-on-main-orchestrator)).
+1. Check that the latest Nightly passed. If it failed, fix it first ([Failures on main](workflow.md#failures-on-main-orchestrator)).
 
    ```sh
    gh run list -R mycroblog/my --workflow nightly.yml --limit 3
@@ -29,7 +29,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    gh run list -R mycroblog/my --workflow release.yml --limit 1
    ```
 
-3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](backup.md#recovery-drill), CodeQL)
+3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](../operations/backup.md#recovery-drill), CodeQL)
    takes a while even with its jobs in parallel.
    The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
    On a failure, fix the cause on `main` and run the workflow again with the same version.
@@ -53,7 +53,7 @@ For each of SQLite and PostgreSQL it:
 2. applies the previous release's schema with that release's own tools, starts its server, and fills the database through it: two local accounts, a public and a
    followers-only post, a local follow, and a follow request to an account on a static ActivityPub server (`remote.test`), which the
    server fetches and stores as a remote account;
-3. stops that server and upgrades in the order of [Upgrading](database.md#upgrading), with the new server image: `my db upgrade -check`,
+3. stops that server and upgrades in the order of [Upgrading](../operations/database.md#upgrading), with the new server image: `my db upgrade -check`,
    `my schema apply`, `my db upgrade`, then the new server;
 4. checks that `/readyz` answers 200, that `my projection verify` finds nothing to correct, and that the data reads back through the
    client API: both accounts sign in with their passwords, and the posts, the follow, the follow request, and the remote account are kept.
@@ -148,7 +148,7 @@ Without these, the call fails and the draft has the facts alone. The job authent
 
 ### Upgrading
 
-What an operator runs to upgrade to this release ([Upgrading](database.md#upgrading)):
+What an operator runs to upgrade to this release ([Upgrading](../operations/database.md#upgrading)):
 
 - The data upgrade steps that this release's `my db upgrade` runs, one line each with what it carries over and roughly how long it takes on a large instance.
   "None" when the release has none; operators still run `my db upgrade -check` and `my db upgrade`, which then do nothing.
@@ -249,7 +249,7 @@ Image tags have no `v`; the Git tag and `my version` do (`v0.1.0`).
 | Not the largest patch of its `X.Y` | Added, once | Left alone |
 | A prerelease (`v0.1.0-rc.1`) | `0.1.0-rc.1` only | Left alone |
 
-There is no `0` and no `latest` during v0, because both would cross a minor version, which can need steps of its own ([Skipping releases](database.md#skipping-releases)).
+There is no `0` and no `latest` during v0, because both would cross a minor version, which can need steps of its own ([Skipping releases](../operations/database.md#skipping-releases)).
 `docker pull ghcr.io/mycroblog/my` without a tag therefore fails with `manifest unknown`, and every example in the documentation names a version.
 
 `scripts/release-image.sh tags` computes the list (tested by `scripts/release-image-test.sh`, run with `scripts/task.sh shell:test`).
@@ -349,7 +349,7 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
   gh api -X DELETE repos/mycroblog/my/git/refs/tags/pkg/mybot/v0.0.0-test.1
   ```
 
-  This also pushes an image by digest and attaches `image-digest.txt` to the draft. Check the digest as [Verifying an image](running.md#verify-an-image) does, and the SBOM's Go modules and npm packages. Trying `release-image.yml` means publishing the `v0.0.0-test.1` Release, which adds the image tag `0.0.0-test.1`. Delete a test version's image on the package's page, or with the REST API:
+  This also pushes an image by digest and attaches `image-digest.txt` to the draft. Check the digest as [Verifying an image](../operations/running.md#verify-an-image) does, and the SBOM's Go modules and npm packages. Trying `release-image.yml` means publishing the `v0.0.0-test.1` Release, which adds the image tag `0.0.0-test.1`. Delete a test version's image on the package's page, or with the REST API:
 
   ```sh
   gh api 'orgs/mycroblog/packages/container/my/versions?per_page=100' --jq '.[] | select(.metadata.container.tags | index("0.0.0-test.1")) | .id'

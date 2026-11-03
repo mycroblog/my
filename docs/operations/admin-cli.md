@@ -79,7 +79,7 @@ my admin closure withdraw                                                 # with
 - The admin API is `GET /api/v1/admin/closure`, `PUT` / `DELETE /api/v1/admin/closure/announcement`, `GET /api/v1/admin/closure/check`, and `POST /api/v1/admin/closure/close`. It needs the permission `manage_service_closure` (among the built-in roles, only `admin` has it).
 - During the announcement, the server accepts no new users and no new payments.
   - The effective registration mode is `closed` (the value of `registration_mode` does not change, and returns to effect when the announcement is withdrawn). Neither sign-ups nor sign-ups with an invitation work, and pending applications cannot be approved (`409`).
-  - Announcing rejects every pending application (the decider is recorded as `service_closure`) and cancels all running supporter subscriptions at the end of their period.
+  - Announcing rejects every pending application (recorded as decided by `service_closure`) and cancels all running supporter subscriptions at the end of their period.
     The subscribers get a notification (`supporter_service_closure`) and an email. New subscriptions return `409`. Withdrawing the announcement does not undo the rejections or the cancellations.
   - Every announcement, change of dates, and withdrawal sends the notification `service_closure` to all local users. All of this runs as jobs, so do not stop the worker.
   - Every user with a confirmed email address gets an email for the announcement, a change of dates, a withdrawal, 7 days and 1 day before the closing date, the closure, and 7 days before the export deadline. Users cannot opt out (see [email.md](email.md)).
