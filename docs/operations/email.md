@@ -334,7 +334,7 @@ Mailpit.
 ```sh
 scripts/mailpit-cert.sh
 cd deploy/docker
-docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
+docker compose -f compose.yaml -f compose.mailpit.yaml up -d
 ```
 
 To send from a `my serve` running on your machine, start only Mailpit (`scripts/task.sh docker:mailpit`; stop it with

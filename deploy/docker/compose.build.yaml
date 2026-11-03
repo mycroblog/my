@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Override of compose.yaml: builds the server image from this checkout instead of pulling the published one, under the
+# local name my:MY_VERSION. MY_VERSION is then what `my version` and NodeInfo report.
+#
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
+
+x-build: &build
+  build:
+    context: ../..
+    target: app
+    args:
+      VERSION: ${MY_VERSION:-dev}
+  image: my:${MY_VERSION:-dev}
+
+services:
+  upgrade-check: *build
+  schema: *build
+  upgrade: *build
+  my: *build

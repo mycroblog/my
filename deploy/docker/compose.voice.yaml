@@ -5,7 +5,7 @@
 # needed; set MY_VOICE_STUN_URLS in .env to reach browsers on other machines. Open the instance at http://localhost
 # (MY_WEB_ORIGIN of .env.example): browsers allow the microphone only on localhost or over HTTPS.
 #
-#   docker compose -f compose.yaml -f compose.voice.yaml up -d --build
+#   docker compose -f compose.yaml -f compose.voice.yaml up -d
 
 services:
   my:
