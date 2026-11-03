@@ -311,7 +311,7 @@ type MoneyMovement struct {
 
 | キー | 秘密 | 内容 |
 | --- | --- | --- |
-| `payments_provider` | | `none`（既定）か `stripe`。1 つだけ |
+| `payments` | | `none`（既定）か `stripe`。1 つだけ |
 | `payments_stripe_secret_key` | ✓ | API の鍵。権限を絞った制限付きの鍵（`rk_`）を勧め、必要な権限を docs に書く（**要検証**）。`sk_` も受ける |
 | `payments_stripe_webhook_secret` | ✓ | webhook のエンドポイントの署名の秘密（`whsec_`） |
 | `payments_reconcile_interval` | | 照合の周期（既定 `6h`、`15m`〜`168h`、§4） |
@@ -339,7 +339,7 @@ type MoneyMovement struct {
 
 ### 8. build tag
 
-- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments_provider = stripe` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。`fake` は test だけで使い、本番の binary に入らない。
+- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments = stripe` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。`fake` は test だけで使い、本番の binary に入らない。
 - 代表の組み合わせのうち、self-hosted の組に `no_payments_stripe` を足す（AWS と Google Cloud の組は含めたまま build を確かめる）。
 
 ### この決定を覆す条件
@@ -347,7 +347,7 @@ type MoneyMovement struct {
 - 見回しの 1 ページに `latest_invoice` を展開できず、支払いの失敗をスナップショットに入れられないと分かったら（#920）、見回しは状態と期間だけを直し、支払いの失敗は 1 の変わったものに任せる。
 - Subscription Schedule で期間の終わりの変更を組めないと分かったら（#920）、P2（顧客ポータルの `subscription_update` の `schedule_at_period_end`）に変え、ポータルの設定をプランに合わせて同期する。
 - 再デプロイなしに管理画面から鍵を設定したいという要望が多ければ、S2（秘密を `Sealer` で暗号化して DB に持つ）を別の ADR で検討する。
-- 2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments_provider` の値と各表の `provider` の enum に足す。
+- 2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments` の値と各表の `provider` の enum に足す。
 
 ## Consequences（影響）
 
@@ -363,7 +363,7 @@ type MoneyMovement struct {
   - 鍵と webhook の秘密をデプロイの設定に置くので、Stripe を有効にするには再デプロイが要る。webhook のエンドポイントの登録は運営者の手作業になる。
   - webhook の受け口が匿名で叩ける経路を 1 つ増やす。署名の検証の前に読む本文を 1 MiB に限り、ADR-0019 §5 のレート制限の対象にする。
 - 後続で必要になる作業（Epic #925）
-  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.payment_event` と `supporters.payment_reconcile`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments_provider` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciles` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
+  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.payment_event` と `supporters.payment_reconcile`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciles` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
   - #920（`stripe` adapter）: §2 の adapter（プランと価格・Checkout・顧客ポータルの設定・プランの変更と Subscription Schedule・解約・balance transaction の写し・`ListSubscriptions`（`latest_invoice` の展開）と `ListChanges`（events）・要求の速さの制御・最低額の表・レポートのタイムゾーン）、§3 の標準ライブラリの検証器、§7 の URL のホストの確かめ、`payments_stripe_secret_key`・`payments_stripe_webhook_secret` の設定と `make config-docs`、`no_payments_stripe` と build-tags.md、`stripe-go` の go.mod と `make go-licenses`、docs（ダッシュボードの設定、制限付きの鍵の権限、登録するイベント、Stripe CLI でのローカルの試し方、テストモード、PCI の範囲）
   - #924（決定者）: §6 の 4 の筋書きをテストモードで確かめ、要検証の項目（Subscription Schedule、アーカイブした Price での更新、`subscription_data.metadata`、Account のタイムゾーン、制限付きの鍵の権限、最低額）の結果を issue に書く
 

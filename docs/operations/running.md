@@ -392,7 +392,7 @@ Raise it for jobs that spend their time waiting on other servers, such as `feder
 
 Keep these limits in mind:
 
-- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `db = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
+- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `database = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
 - **SQLite and libSQL**: they write one transaction at a time. Above 32 the server logs a warning, and in a local test SQLite ran slower at 128 than at 32.
 - **CPU-heavy jobs**: slots share one process's CPU and memory. `media.process` waits for its turn at a limit of half the CPUs by default, and the wait counts against the job's 5-minute lease, so a process full of `media.process` can run past the lease and start over. Give such jobs a process with few slots.
 - **One server at a time**: a process makes at most 8 connections to any one host, so one process delivers to a single server no faster than 8 connections allow, however many slots it has. Where most deliveries go to a few large servers, more processes help where more slots do not.
@@ -406,7 +406,7 @@ While no job is due, one slot polls and the others wait, so an idle process cost
 
 ### Waiting for a database connection
 
-With `db = postgres`, every statement and transaction first waits for a free connection of the process's pool.
+With `database = postgres`, every statement and transaction first waits for a free connection of the process's pool.
 [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (default `60s`) bounds that wait, and nothing else: a long query or
 transaction that already has its connection runs on, however long it takes. `0` waits without a limit. SQLite and libSQL have no limit on connections to wait for, so setting it there fails at startup.
 
@@ -427,7 +427,7 @@ Choose a value from how your instance runs:
 
 ### Cloud Tasks
 
-With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:
+With `queue = cloudtasks` the jobs stay in the database (`database = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:
 
 - For every job it stores, retries, or puts back, the server creates a task in `queue_cloudtasks_queue` once the transaction commits. The task calls
   `POST {queue_cloudtasks_url}/_internal/jobs` at the time the job is due, with the job's ID as its body and an OIDC ID token of
@@ -448,7 +448,7 @@ With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `lib
 
 ### Amazon SQS
 
-With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
+With `queue = sqs` the jobs stay in the database (`database = postgres` or `libsql`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
 
 - For every job it stores, retries, or puts back, the server sends a message to `queue_sqs_queue_url` once the transaction commits, with the job's ID as its body
   and a delay until the job is due. SQS delays a message by at most 15 minutes, so a job due later is signaled at 15 minutes, and again when that message arrives.

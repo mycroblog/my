@@ -17,7 +17,7 @@ import (
 // The maintenance mode passes the middleware that needs no adapter (ADR-0084 §3): the security headers of
 // ADR-0019, the request ID, and the page's own CSP, in the default theme of theme.css.
 func TestMaintenanceApp(t *testing.T) {
-	env := map[string]string{"MY_HOST": "example.test", "MY_DB": "postgres", "MY_DATABASE_URL": "postgres://unreachable.invalid/my"}
+	env := map[string]string{"MY_HOST": "example.test", "MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unreachable.invalid/my"}
 	cfg, _, err := config.LoadMaintenance(config.Source{LookupEnv: func(k string) (string, bool) { v, ok := env[k]; return v, ok }})
 	if err != nil {
 		t.Fatal(err)

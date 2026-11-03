@@ -15,7 +15,7 @@ func TestLoadMaintenance(t *testing.T) {
 		"MY_HOST": "social.example.org", "MY_MAINTENANCE": "true", "MY_STATUS_PAGE_URL": "https://status.example.org",
 		"MY_MAINTENANCE_MESSAGE": "Upgrading the database.", "MY_MAINTENANCE_UNTIL": "2026-10-24T12:00:00+09:00",
 		// Wrong or unreachable adapter settings, and no kek.
-		"MY_DB": "nosuchdb", "MY_DATABASE_URL": "postgres://unreachable.invalid/my", "MY_QUEUE": "nosuchqueue",
+		"MY_DATABASE": "nosuchdb", "MY_DATABASE_URL": "postgres://unreachable.invalid/my", "MY_QUEUE": "nosuchqueue",
 		"MY_BLOB": "nosuchblob", "MY_KV": "valkey", "MY_MAIL": "smtp",
 	}
 	if _, _, err := Load(source(env, nil)); err == nil {
@@ -49,7 +49,8 @@ func TestMaintenanceSettings(t *testing.T) {
 		{"MY_MAINTENANCE_MESSAGE", strings.Repeat("あ", MaxMaintenanceMessage+1), "maintenance_message"},
 		{"MY_MAINTENANCE_UNTIL", "2026-10-24 03:00", "maintenance_until"},
 		{"MY_MAINTENANCE_RETRY_AFTER", "0", "maintenance_retry_after"},
-		{"MY_MAINTENANCE_RETRY_AFTER", "86401", "maintenance_retry_after"},
+		{"MY_MAINTENANCE_RETRY_AFTER", "25h", "maintenance_retry_after"},
+		{"MY_MAINTENANCE_RETRY_AFTER", "600", "maintenance_retry_after"},
 		{"MY_STATUS_PAGE_URL", "http://status.example.org", "status_page_url"},
 	} {
 		for name, load := range map[string]func(Source) (*Config, []Setting, error){"Load": Load, "LoadMaintenance": LoadMaintenance} {
@@ -58,7 +59,7 @@ func TestMaintenanceSettings(t *testing.T) {
 			}
 		}
 	}
-	cfg, _, err := Load(source(with(minimal(), "MY_MAINTENANCE_MESSAGE", strings.Repeat("あ", MaxMaintenanceMessage), "MY_MAINTENANCE_RETRY_AFTER", "86400"), nil))
+	cfg, _, err := Load(source(with(minimal(), "MY_MAINTENANCE_MESSAGE", strings.Repeat("あ", MaxMaintenanceMessage), "MY_MAINTENANCE_RETRY_AFTER", "24h"), nil))
 	if err != nil || cfg.Maintenance || cfg.MaintenanceRetryAfter != 86400*time.Second {
 		t.Errorf("Load = %+v, %v", cfg, err)
 	}
@@ -71,7 +72,7 @@ func TestMaintenanceRequested(t *testing.T) {
 		want  bool
 	}{
 		{map[string]string{}, nil, false},
-		{map[string]string{"MY_MAINTENANCE": "true", "MY_DB": "nosuchdb"}, nil, true},
+		{map[string]string{"MY_MAINTENANCE": "true", "MY_DATABASE": "nosuchdb"}, nil, true},
 		{map[string]string{"MY_CONFIG": "my.toml"}, map[string]string{"my.toml": "maintenance = \"true\"\n"}, true},
 		{map[string]string{"MY_CONFIG": "my.toml", "MY_MAINTENANCE": "false"}, map[string]string{"my.toml": "maintenance = \"true\"\n"}, false},
 	} {
@@ -92,7 +93,7 @@ func TestProfileRequested(t *testing.T) {
 		want  string
 	}{
 		{map[string]string{}, nil, "production"},
-		{map[string]string{"MY_PROFILE": "development", "MY_DB": "nosuchdb"}, nil, "development"},
+		{map[string]string{"MY_PROFILE": "development", "MY_DATABASE": "nosuchdb"}, nil, "development"},
 		{map[string]string{"MY_CONFIG": "my.toml"}, map[string]string{"my.toml": "profile = \"development\"\n"}, "development"},
 		{map[string]string{"MY_CONFIG": "my.toml", "MY_PROFILE": "production"}, map[string]string{"my.toml": "profile = \"development\"\n"}, "production"},
 	} {

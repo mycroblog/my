@@ -1,6 +1,6 @@
 # Supporters (paid plans)
 
-A guide for operators. The deployment key `payments_provider` is described in the [configuration reference](../reference/configuration.md#payments_provider).
+A guide for operators. The deployment key `payments` is described in the [configuration reference](../reference/configuration.md#payments).
 
 Only when an administrator enables it, local users can subscribe to a paid plan on the web and hold the role tied to the plan for as long as they keep paying. The program is off by default, and no plan or subscription entry point appears anywhere until it is enabled.
 
@@ -8,7 +8,7 @@ Only when an administrator enables it, local users can subscribe to a paid plan 
 
 ## Enabling the program
 
-1. Set the deployment key `payments_provider` to your payment provider and pass the provider's keys and webhook secret. Provider-specific steps are in [payments-stripe.md](payments-stripe.md) and [payments-payjp.md](payments-payjp.md). The program cannot be enabled while the key is `none`.
+1. Set the deployment key `payments` to your payment provider and pass the provider's keys and webhook secret. Provider-specific steps are in [payments-stripe.md](payments-stripe.md) and [payments-payjp.md](payments-payjp.md). The program cannot be enabled while the key is `none`.
 2. Configure the server to send email (`mail` other than `none`). Only users with a confirmed email address can subscribe, so a server that sends no email cannot enable the program.
 3. In "Terms and policies" in the administration, write the commerce disclosure (for Japan, the notice required by the Act on Specified Commercial Transactions), the instance text `commerce_disclosure`, in Markdown. It is published at `/about/commerce`, and you can register that URL in the provider's dashboard.
    The program can be enabled with the text empty, but the administration shows a warning.
@@ -78,7 +78,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 ## Disabling the program and changing providers
 
 - The program cannot be disabled while any subscription is running (pending, active, scheduled to cancel, past due, or past the grace period). Retire every plan first and disable the program after the subscriptions have ended.
-- To change providers, disable the program, change `payments_provider`, and enable the program again with the new provider. Existing subscribers subscribe again. While the configured provider differs from the one the program was enabled with, the server refuses new subscriptions and changes, and the administration shows a warning.
+- To change providers, disable the program, change `payments`, and enable the program again with the new provider. Existing subscribers subscribe again. While the configured provider differs from the one the program was enabled with, the server refuses new subscriptions and changes, and the administration shows a warning.
 
 ## What operators must check (not yet verified)
 

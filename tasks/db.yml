@@ -24,7 +24,7 @@ vars:
   # the bootstrap SQL from it.
   MY: bin/my-schema-apply
   MY_ENV: >-
-    MY_CONFIG= MY_DB={{shellQuote .DB_DIALECT}} MY_DATABASE_URL={{shellQuote (trimPrefix "sqlite://" .DB_URL)}}
+    MY_CONFIG= MY_DATABASE={{shellQuote .DB_DIALECT}} MY_DATABASE_URL={{shellQuote (trimPrefix "sqlite://" .DB_URL)}}
   # db:lint's dev database, apart from DB_DEV_URL so that db:lint and db:check can run at once.
   DB_LINT_DEV_URL: >-
     {{if .DB_LINT_DEV_URL}}{{.DB_LINT_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_lint?sslmode=disable&search_path=public{{else}}sqlite://lint?mode=memory{{end}}

@@ -247,7 +247,7 @@
 - 未添付のアップロードを読めるのも、説明（`media_descriptions`）と焦点（`media_focus`）を変えられるのも、アップロードした本人だけです。
   版が添付したあとは説明を版の `status_revision_attachments.description` で持つので、ファイル単体の説明・焦点は変えられません（投稿を編集して直す）。
 - 未添付のアップロード（どの版からも参照されず、`account_profile_revisions` のアバター・ヘッダーにも使われていない `media_files`）は、
-  作成から `media_unattached_ttl`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.cleanup` が行と Blob ごと削除します（FR-803）。
+  作成から `media_unattached_retention`（既定 24 時間）後に、1 時間ごとの消去ジョブ `media.cleanup` が行と Blob ごと削除します（FR-803）。
   アバター・ヘッダーの参照は `account` モジュール、インスタンスのプレビュー画像（`preview_image`、§4.9）の参照は `instance` モジュールの公開 API で問い合わせます。削除は同じトランザクションで添付の有無を再検査します。
   行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録し、そのあと Blob を消すので、Blob の削除に失敗してもキーが残り、次の実行が消し直します。
 - アップロードと `media.process` は、Blob を書く前にキーを `media_blob_deletions` に猶予付きで記録し、`uploaded_media` や処理結果を記録するトランザクションで外します。

@@ -1,8 +1,8 @@
 # Supporter payments with Stripe
 
-A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments_provider). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
+A guide for operators. The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 
-With `payments_provider = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes.
+With `payments = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes.
 An administrator enables the program and creates plans in the administration. This setting only lets the server talk to Stripe.
 
 One server can use only one provider. To switch to another provider later, ask the existing subscribers to subscribe again with the new one.
@@ -90,7 +90,7 @@ The state of the provider (the mode, when the last webhook arrived, and the resu
 ## 4. Configure the server
 
 ```sh
-MY_PAYMENTS_PROVIDER=stripe
+MY_PAYMENTS=stripe
 MY_PAYMENTS_STRIPE_SECRET_KEY=rk_test_...
 MY_PAYMENTS_STRIPE_WEBHOOK_SECRET=whsec_...
 # Optional: the reconciliation interval (15m to 168h, default 6h) and the most requests one reconciliation sends (default 1000)
@@ -98,7 +98,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` verifies the configuration. A binary built with the build tag `no_payments_stripe` refuses `payments_provider = stripe` (see [build-tags.md](../reference/build-tags.md)).
+`my config check` verifies the configuration. A binary built with the build tag `no_payments_stripe` refuses `payments = stripe` (see [build-tags.md](../reference/build-tags.md)).
 
 ## 5. Try it in test mode
 

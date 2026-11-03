@@ -55,8 +55,8 @@ The setting `mail` chooses how email is sent.
 | `smtp` | Sends by SMTP submission. It requires STARTTLS and verifies the certificate before authenticating and sending |
 | `ses` | Sends with the Amazon SES v2 API (`SendEmail` with raw content). It authenticates through the AWS SDK's default credential chain (an IAM role, for example) and holds no SMTP password |
 
-The settings of `smtp` are `mail_from`, `smtp_host`, `smtp_port` (default 587), `smtp_username`, and `smtp_password`. The
-settings of `ses` are `mail_from`, `ses_region`, and `ses_configuration_set`.
+The settings of `smtp` are `mail_from`, `mail_smtp_host`, `mail_smtp_port` (default 587), `mail_smtp_username`, and `mail_smtp_password`. The
+settings of `ses` are `mail_from`, `mail_ses_region`, and `mail_ses_configuration_set`.
 `mail_from` is a bare address such as `noreply@social.example`. `From` becomes `"<server name>" <mail_from>`, and the domain
 of `mail_from` is also the domain of `Message-ID` and the one SPF, DKIM, and DMARC apply to (see below).
 `Reply-To` is the instance setting `contact_email` when it is set ([instance settings](instance-settings.md)).
@@ -66,7 +66,7 @@ converted to Punycode. An address whose local part (before the `@`) is not ASCII
 
 ## Examples by provider
 
-Pass secrets by environment variable or file (`MY_SMTP_PASSWORD` or `MY_SMTP_PASSWORD_FILE`). Do not put them in the
+Pass secrets by environment variable or file (`MY_MAIL_SMTP_PASSWORD` or `MY_MAIL_SMTP_PASSWORD_FILE`). Do not put them in the
 configuration file.
 
 ### Amazon SES (API)
@@ -81,11 +81,11 @@ Lambda or ECS, environment variables, the shared configuration file), so there i
 ```sh
 MY_MAIL=ses
 MY_MAIL_FROM=noreply@social.example
-MY_SES_REGION=ap-northeast-1          # the region where you verified the identity; AWS_REGION when empty
-MY_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
+MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the identity; AWS_REGION when empty
+MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-When `ses_configuration_set` is set, every email uses that configuration set. SES overwrites the `Message-ID` and `Date` of the
+When `mail_ses_configuration_set` is set, every email uses that configuration set. SES overwrites the `Message-ID` and `Date` of the
 email with its own values.
 SES never rejects a recipient synchronously at send time. It accepts a send to an address on the account suppression list and
 then does not deliver it, and the bounce arrives later as a notification (SNS).
@@ -95,7 +95,7 @@ To record bounces and complaints, set up the SES notifications below to arrive t
 
 SES bounces and complaints go to an SNS topic, and an HTTPS subscription on that topic delivers them to the server's
 `POST /mail/events/ses`.
-The endpoint opens only when `ses_sns_topic_arn` is set; otherwise it answers `404`.
+The endpoint opens only when `mail_ses_sns_topic_arn` is set; otherwise it answers `404`.
 
 1. Create a standard SNS topic in the same region as the SES identity.
 2. Set the topic attribute `SignatureVersion` to `2` (SHA256withRSA). A signature with the default `1` is not accepted and the
@@ -104,9 +104,9 @@ The endpoint opens only when `ses_sns_topic_arn` is set; otherwise it answers `4
    when it creates the topic).
 4. Point SES notifications at the topic, in either way (the server reads both `notificationType` and `eventType` in the body).
    - Identity notifications: use this topic for the "Bounce" and "Complaint" feedback notifications of the `mail_from` identity.
-   - Configuration set event destination: add this topic as a destination of the configuration set in `ses_configuration_set`,
+   - Configuration set event destination: add this topic as a destination of the configuration set in `mail_ses_configuration_set`,
      for the event types `BOUNCE` and `COMPLAINT`.
-5. Set `MY_SES_SNS_TOPIC_ARN` to the ARN of the topic, check with `my config check`, and restart.
+5. Set `MY_MAIL_SES_SNS_TOPIC_ARN` to the ARN of the topic, check with `my config check`, and restart.
 6. Create a subscription on the topic with the protocol `https` and the endpoint `https://<server host>/mail/events/ses`.
    **Do not enable raw message delivery** (a body without a signature is rejected).
 
@@ -120,7 +120,7 @@ aws ses set-identity-notification-topic --region ap-northeast-1 --identity socia
 aws ses set-identity-notification-topic --region ap-northeast-1 --identity social.example \
   --notification-type Complaint --sns-topic arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback
 
-MY_SES_SNS_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback   # restart, then create the subscription below
+MY_MAIL_SES_SNS_TOPIC_ARN=arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback   # restart, then create the subscription below
 
 aws sns subscribe --region ap-northeast-1 \
   --topic-arn arn:aws:sns:ap-northeast-1:123456789012:my-ses-feedback \
@@ -133,7 +133,7 @@ Check with `aws sns list-subscriptions-by-topic` that the subscription is no lon
 
 Before it uses a message, the endpoint checks all of the following. If any fails, it answers `400` and records nothing.
 
-- `TopicArn` equals `ses_sns_topic_arn`.
+- `TopicArn` equals `mail_ses_sns_topic_arn`.
 - `SignatureVersion` is `2` and the signature is valid.
 - The certificate URL of the signature (`SigningCertURL`) is `https` and its host is `sns.<region>.amazonaws.com` for the region
   of the topic. The `SubscribeURL` of a subscription confirmation must have the same host.
@@ -167,10 +167,10 @@ setup only a rejection of the recipient at send time is recorded as a suppressio
 ```sh
 MY_MAIL=smtp
 MY_MAIL_FROM=noreply@social.example
-MY_SMTP_HOST=email-smtp.ap-northeast-1.amazonaws.com   # the endpoint of your SES region
-MY_SMTP_PORT=587                                       # STARTTLS
-MY_SMTP_USERNAME=<user name of the SMTP credentials>
-MY_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+MY_MAIL_SMTP_HOST=email-smtp.ap-northeast-1.amazonaws.com   # the endpoint of your SES region
+MY_MAIL_SMTP_PORT=587                                       # STARTTLS
+MY_MAIL_SMTP_USERNAME=<user name of the SMTP credentials>
+MY_MAIL_SMTP_PASSWORD_FILE=/run/secrets/mail_smtp_password
 ```
 
 SES overwrites `Message-ID` and `Date` with its own values.
@@ -182,14 +182,14 @@ Use this for your own SMTP server such as Postfix, or for the submission server 
 ```sh
 MY_MAIL=smtp
 MY_MAIL_FROM=noreply@social.example
-MY_SMTP_HOST=smtp.provider.example     # a STARTTLS server whose certificate is valid for this name
-MY_SMTP_PORT=587
-MY_SMTP_USERNAME=<user name>           # empty for a server without authentication
-MY_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+MY_MAIL_SMTP_HOST=smtp.provider.example     # a STARTTLS server whose certificate is valid for this name
+MY_MAIL_SMTP_PORT=587
+MY_MAIL_SMTP_USERNAME=<user name>           # empty for a server without authentication
+MY_MAIL_SMTP_PASSWORD_FILE=/run/secrets/mail_smtp_password
 ```
 
 The server does not send to a server that offers no STARTTLS, or whose certificate cannot be verified for the name in
-`smtp_host`. Credentials are sent only after STARTTLS.
+`mail_smtp_host`. Credentials are sent only after STARTTLS.
 After you change the settings, check with `my config check` and restart.
 
 ## SPF, DKIM, and DMARC
@@ -221,7 +221,7 @@ The types are in the table above.
 
 - **Temporary failures** (connection errors, timeouts, 4xx answers) are retried. Transactional email is tried 6 times (an
   exponential backoff from 30 seconds, about 15 minutes in total); notification email uses the default policy (10 times, about
-  4 hours). When the attempts are used up, the job becomes a failed job (dead job). A wrong `smtp_host`, a failed
+  4 hours). When the attempts are used up, the job becomes a failed job (dead job). A wrong `mail_smtp_host`, a failed
   authentication, and a blocked network show up here. After you fix the cause, run it again with `my job retry <id>` or on the
   jobs screen.
 - **Permanent rejections** (a 5xx for the recipient or the content) are not retried and fail at once.
@@ -340,7 +340,7 @@ To send from a `my serve` running on your machine, start only Mailpit (`scripts/
 `docker compose -f deploy/docker/mailpit/compose.yaml down`) and start with these settings.
 
 ```sh
-MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_SMTP_HOST=localhost MY_SMTP_PORT=1025 \
+MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025 \
   SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
 ```
 

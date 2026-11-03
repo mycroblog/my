@@ -12,5 +12,5 @@ import (
 
 // backupSQLite reports that the build tag no_sqlite left the SQLite adapter out.
 func backupSQLite(context.Context, string, string) error {
-	return config.ExcludedError("db", "sqlite", "no_sqlite")
+	return config.ExcludedError("database", "sqlite", "no_sqlite")
 }

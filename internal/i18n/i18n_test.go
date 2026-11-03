@@ -30,11 +30,11 @@ func TestAccessors(t *testing.T) {
 		{"en", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "Found 1 configuration error."},
 		{"en", func(l *Localizer) string { return l.ServerConfigErrors(3) }, "Found 3 configuration errors."},
 		{"ja", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "設定エラーが1件あります。"},
-		{"en", func(l *Localizer) string { return l.ServerConfigMissing("MY_DB") }, "The required setting MY_DB is not set."},
+		{"en", func(l *Localizer) string { return l.ServerConfigMissing("MY_DATABASE") }, "The required setting MY_DATABASE is not set."},
 		{"ja", func(l *Localizer) string { return l.ServerErrorsMethodNotAllowed("PUT") }, "このリソースでは PUT メソッドを使用できません。"},
 		{"en-XA", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "[Ŧħḗḗ řḗḗɋŭŭḗḗşŧḗḗḓ řḗḗşǿǿŭŭřƈḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]"},
 		{"en-XA", func(l *Localizer) string { return l.ServerConfigErrors(1) }, "[Ƒǿǿŭŭƞḓ 1 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿř.]"},
-		{"ar-XB", func(l *Localizer) string { return l.ServerConfigInvalid("MY_DB") }, "\u202e⊥ɥǝ sǝʇʇıuƃ MY_DB ɥɐs ɐu ıuʌɐʅıp ʌɐʅnǝ.\u202c"},
+		{"ar-XB", func(l *Localizer) string { return l.ServerConfigInvalid("MY_DATABASE") }, "\u202e⊥ɥǝ sǝʇʇıuƃ MY_DATABASE ɥɐs ɐu ıuʌɐʅıp ʌɐʅnǝ.\u202c"},
 		// Locales without a catalog fall back to en.
 		{"fr", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "The requested resource was not found."},
 		{"ja-JP", func(l *Localizer) string { return l.ServerErrorsNotFound() }, "指定されたリソースが見つかりません。"},

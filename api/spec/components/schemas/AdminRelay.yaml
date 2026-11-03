@@ -31,7 +31,7 @@ properties:
   dropped_last_day:
     description: |
       The activities it brought in during the last 24 hours that were dropped over the
-      hourly limit (`relay_ingest_hourly_limit`).
+      hourly limit (`relay_max_activities_per_hour`).
     type: integer
     minimum: 0
   domain_suspended:

@@ -491,7 +491,7 @@ entries:
     docs: ["docs/adr/0086-email-delivery.md#5-バウンス苦情", "docs/operations/email.md"]
     userdocs: ["docs/operations/email.md#receive-ses-notifications-sns"]
     notes:
-      - "POST /mail/events/ses exists only with ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
+      - "POST /mail/events/ses exists only with mail_ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]

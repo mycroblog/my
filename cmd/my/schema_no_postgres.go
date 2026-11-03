@@ -13,5 +13,5 @@ import (
 
 // applyPostgresSchema reports that the build tag no_postgres left the PostgreSQL adapter out.
 func applyPostgresSchema(context.Context, string, string, schemaapply.Options) (schemaapply.Result, error) {
-	return schemaapply.Result{}, config.ExcludedError("db", "postgres", "no_postgres")
+	return schemaapply.Result{}, config.ExcludedError("database", "postgres", "no_postgres")
 }

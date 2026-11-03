@@ -17,5 +17,5 @@ func init() { paymentProviderAdapters["stripe"] = newStripePaymentProvider }
 // newStripePaymentProvider reports that the build tag no_payments_stripe left the Stripe adapter
 // out.
 func newStripePaymentProvider(context.Context, *config.Config, *slog.Logger) (supporters.PaymentProvider, error) {
-	return nil, config.ExcludedError("payments_provider", "stripe", "no_payments_stripe")
+	return nil, config.ExcludedError("payments", "stripe", "no_payments_stripe")
 }

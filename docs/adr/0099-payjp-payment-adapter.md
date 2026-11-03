@@ -8,7 +8,7 @@
 ## Context（背景・課題）
 
 M4.2（Supporters、Epic #925）の課金は、[ADR-0074](0074-payment-provider-port.md) のポート `PaymentProvider` と `stripe` adapter で動いている（FR-910・FR-911・FR-917）。
-ADR-0074 は「2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments_provider` の値と各表の `provider` の enum に足す」と決めている。
+ADR-0074 は「2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments` の値と各表の `provider` の enum に足す」と決めている。
 日本の運営者が国内の決済代行で課金できるように、2 つめの事業者として PAY.JP を足す。1 つのサーバーで有効な事業者は 1 つで、切り替えるときは既存の加入者に再加入してもらう（ADR-0074、#925 の回答 9）。
 
 PAY.JP には API v1 と v2 がある。v2 は定期課金の API をまだ持たない（v1 は「提供あり」、v2 は「未対応 ※ 2026年対応予定」。[v2 のドキュメント](https://docs.pay.jp/v2/llms-full.txt)の「API v1 からの移行について」、2026-10-25 に確認）。
@@ -190,7 +190,7 @@ ADR-0074 §5 の表に足す（デプロイの設定、秘密は環境変数か 
 
 | キー | 秘密 | 内容 |
 | --- | --- | --- |
-| `payments_provider` | | `none`（既定）・`stripe`・`payjp` |
+| `payments` | | `none`（既定）・`stripe`・`payjp` |
 | `payments_payjp_secret_key` | ✓ | 秘密鍵（`sk_test_`・`sk_live_`） |
 | `payments_payjp_public_key` | | 公開鍵（`pk_test_`・`pk_live_`）。payjp.js と 3D セキュアの開始に使う。秘密鍵とモードが違えば設定の検査で拒む |
 | `payments_payjp_webhook_token` | ✓ | webhook のトークン（`whook_`）。モードごとに違う |
@@ -199,7 +199,7 @@ ADR-0074 §5 の表に足す（デプロイの設定、秘密は環境変数か 
 
 ### 8. build tag とデータモデル
 
-- `no_payments_payjp` は `internal/adapter/payment/payjp` を外し、`payments_provider = payjp` を拒む（[build-tags.md](../reference/build-tags.md)）。依存を増やさないので、代表の組み合わせはどれも含めたまま build を確かめる。
+- `no_payments_payjp` は `internal/adapter/payment/payjp` を外し、`payments = payjp` を拒む（[build-tags.md](../reference/build-tags.md)）。依存を増やさないので、代表の組み合わせはどれも含めたまま build を確かめる。
 - `schema/<dialect>/12-finance.sql`（`income_movements`）と `13-supporters.sql` の `provider` の値に `payjp` を足す（ADR-0074 の「2 つめの事業者」の手順）。表は増えない。FR-910 の「決済の事業者（Stripe）」を「（Stripe か PAY.JP）」にする。
 
 ### 9. テストのしかた
@@ -230,7 +230,7 @@ ADR-0074 §5 の表に足す（デプロイの設定、秘密は環境変数か 
   - チャージバックの取り消しは自動で記録されない。手数料は区間の締めまで charge ごとの計算の額で、締めで補正される。
   - v1 は v2 への移行が求められている API で、いずれ移行の作業が要る。
 - 後続で必要になる作業（Epic #925）
-  - ポートの `PageServer` と `GET`・`POST /payments/pages/{provider}/...` の受け口、契約テストの `TimedSignature` と許可するホスト、`payments_provider = payjp` と §7 の設定、§8 の enum と FR-910
+  - ポートの `PageServer` と `GET`・`POST /payments/pages/{provider}/...` の受け口、契約テストの `TimedSignature` と許可するホスト、`payments = payjp` と §7 の設定、§8 の enum と FR-910
   - `payjp` adapter: §2 の REST の呼び出し・プラン・スナップショット・命令・失敗の種類・要求の速さ、§4 の webhook、§5 のお金の動き、§6 の一覧、契約テスト、`no_payments_payjp` と build-tags.md
   - `payjp` adapter のページ: §3 の申し込みとポータル、署名した状態、トークンの 3D セキュアの確かめ、CSP、`server.payments.*` の文言
   - docs: 運営者の手引き（鍵・webhook の登録と種類・照合の周期・3D セキュアの設定・PCI の範囲・チャージバックの取り消しと PAY.JP の利用料の記録・事業者の切り替えは再加入）

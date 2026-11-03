@@ -93,7 +93,7 @@ for example as a step of the deployment before the new version takes traffic.
 ### Other secrets stay out of the repository and the image
 
 - **Why**: a secret in a repository, a container image, or a config file is copied to every place those go.
-- **Verify**: `database_url`, `smtp_password`, `captcha_secret_key`, the payment provider's keys, `valkey_url`, and every other
+- **Verify**: `database_url`, `mail_smtp_password`, `captcha_secret_key`, the payment provider's keys, `valkey_url`, and every other
   setting marked secret in the configuration reference come from environment variables or `<NAME>_FILE` files that the platform's
   secret store fills (Docker or Kubernetes secrets, Secret Manager, Parameter Store). The config file cannot hold them:
   `my config check` refuses a secret there. Search the repository and the image for the values to make sure no copy is left.

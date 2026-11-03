@@ -49,7 +49,7 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 				dbURL = newPostgresDatabase(t)
 			}
 			cfg := loadConfig(t, map[string]string{
-				"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
+				"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
 			})
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},

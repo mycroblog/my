@@ -258,14 +258,14 @@
 | ターゲット | `stream` | 設定 | 追加の固定費 |
 | --- | --- | --- | --- |
 | Self-hosted（SQLite、または 1 プロセスの `role = all`） | `hub` | なし | なし |
-| Self-hosted（PostgreSQL で複数プロセス・レプリカ） | `postgres`（`db = postgres` のときだけ）。`kv = valkey` で Valkey を動かしているなら `valkey` も可 | `database_url` がトランザクションモードのプーラー（PgBouncer の transaction pooling、Neon のプール接続、Supabase の 6543 番）を通るときは、直接の接続先を `stream_postgres_url` に | なし（`LISTEN` の接続が 1 プロセスに 1 本） |
+| Self-hosted（PostgreSQL で複数プロセス・レプリカ） | `postgres`（`database = postgres` のときだけ）。`kv = valkey` で Valkey を動かしているなら `valkey` も可 | `database_url` がトランザクションモードのプーラー（PgBouncer の transaction pooling、Neon のプール接続、Supabase の 6543 番）を通るときは、直接の接続先を `stream_postgres_url` に | なし（`LISTEN` の接続が 1 プロセスに 1 本） |
 | Google Cloud（Cloud Run） | `pubsub` | `stream_pubsub_topic`（`projects/<p>/topics/<t>`）、`stream_pubsub_subscription_prefix` | なし（無料枠の中なら $0） |
-| AWS（Lambda） | `sns` | `stream_sns_topic_arn`、`stream_sqs_queue_prefix`。認証とリージョン以外の設定は AWS SDK の既定の連鎖（実行ロール） | なし（無料枠の中なら $0） |
+| AWS（Lambda） | `sns` | `stream_sns_topic_arn`、`stream_sns_queue_prefix`。認証とリージョン以外の設定は AWS SDK の既定の連鎖（実行ロール） | なし（無料枠の中なら $0） |
 
 - **トピック** は各ブローカーとも 1 インスタンスに 1 つで、デプロイのテンプレートが作る（標準トピック）。プロセスごとのキュー・subscription はサーバーが作り、消す。
-  消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sqs_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
+  消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sns_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
 - **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないが、scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
-- 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`db = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
+- 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`database = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
 
 ### コスト（2026-10-19 確認）
 
@@ -279,8 +279,8 @@
 ### 権限
 
 - AWS（実行ロール）:
-  - トピックに `sns:Publish`、`sns:Subscribe`（条件 `sns:Protocol` = `sqs`、`sns:Endpoint` をキューの ARN の接頭辞 `arn:aws:sqs:<region>:<account>:<stream_sqs_queue_prefix>-*` に限る）、`sns:Unsubscribe`、`sns:ListSubscriptionsByTopic`（sweep）
-  - キュー `arn:aws:sqs:<region>:<account>:<stream_sqs_queue_prefix>-*` に `sqs:CreateQueue`、`sqs:TagQueue`、`sqs:SetQueueAttributes`、`sqs:GetQueueAttributes`、`sqs:ReceiveMessage`、`sqs:DeleteMessage`、`sqs:DeleteQueue`
+  - トピックに `sns:Publish`、`sns:Subscribe`（条件 `sns:Protocol` = `sqs`、`sns:Endpoint` をキューの ARN の接頭辞 `arn:aws:sqs:<region>:<account>:<stream_sns_queue_prefix>-*` に限る）、`sns:Unsubscribe`、`sns:ListSubscriptionsByTopic`（sweep）
+  - キュー `arn:aws:sqs:<region>:<account>:<stream_sns_queue_prefix>-*` に `sqs:CreateQueue`、`sqs:TagQueue`、`sqs:SetQueueAttributes`、`sqs:GetQueueAttributes`、`sqs:ReceiveMessage`、`sqs:DeleteMessage`、`sqs:DeleteQueue`
   - `*` に `sqs:ListQueues`（sweep）
   - キューはトピックのアカウントとリージョンに作る
 - Google Cloud（サービスアカウントのカスタムロール。`roles/pubsub.editor` は広すぎる）:
