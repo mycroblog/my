@@ -27,8 +27,8 @@ func TestLoadVoice(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.VoiceMaxRoomDuration != 4*time.Hour || cfg.VoiceMaxParticipants != 50 || cfg.VoiceMaxOpenRooms != 10 {
-			t.Errorf("limits = %v, %d, %d; want 4h, 50, 10", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxParticipants, cfg.VoiceMaxOpenRooms)
+		if cfg.VoiceMaxRoomDuration != 4*time.Hour || cfg.VoiceMaxParticipants != 10 || cfg.VoiceMaxOpenRooms != 10 {
+			t.Errorf("limits = %v, %d, %d; want 4h, 10, 10", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxParticipants, cfg.VoiceMaxOpenRooms)
 		}
 	})
 	t.Run("a limit of 0 removes it", func(t *testing.T) {

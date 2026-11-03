@@ -161,7 +161,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
-| [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `50` | no | no |
+| [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `4h` | no | no |
 | [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `10` | no | no |
 | [`voice_stun_urls`](#voice_stun_urls) | `MY_VOICE_STUN_URLS` | none | no | no |
@@ -1231,7 +1231,7 @@ How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused
 How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.
 
 - Environment variable: `MY_VOICE_SFU_MAX_PARTICIPANTS`
-- Default: `50`
+- Default: `10`
 - Required: no
 
 ### `voice_max_room_duration`

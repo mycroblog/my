@@ -30,7 +30,7 @@ The limits keep the cost of a paid media server bounded. `0` removes any of them
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | The longest a room stays open. A room that reaches it is ended. |
 | `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. |
-| `voice_sfu_max_participants` | `50` | The room size for `livekit` and `sora`. |
+| `voice_sfu_max_participants` | `10` | The room size for `livekit` and `sora`. |
 | `voice_p2p_max_participants` | `10` | The room size for `p2p`, from 2 to 50. |
 
 Who may open rooms is the instance setting `voice_room_starters` ([instance settings](instance-settings.md)): by default only holders of the permission `start_voice_rooms` (the built-in `admin` role has it); `everyone` lets every signed-in local user who is not suspended or limited open rooms.
