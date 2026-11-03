@@ -157,7 +157,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 1. `POST /ap/inbox`（shared inbox）または `/ap/actors/{uuid}/inbox`（[ADR-0018](../adr/0018-federated-uris.md)）
 2. 同期処理: サイズ制限 → 署名検証（鍵は KV / DB キャッシュ、未取得なら取得）→ ドメインブロック判定 → `202 Accepted`
-3. `JobQueue.enqueue(ProcessInbox{activity, verifiedActor})`
+3. `JobQueue.enqueue` で `federation.inbox`（活動と検証済みの actor）を積む
 4. ワーカー: Activity 種別ごとのハンドラ（冪等: Activity ID で重複排除）→ 通知生成など
 
 ### 4.3 タイムライン取得
