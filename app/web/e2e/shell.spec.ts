@@ -272,10 +272,10 @@ test.describe("layout", () => {
 
   test("exposes the skip link, the navigation, and the main landmark with one level-one heading", async ({ page }) => {
     // Phones: Home, Local, Notifications, Search and the Menu button. From md: Home, Local, Notifications, Search,
-    // Profile, Bookmarks and Settings (the instance answers nothing here, so no Federated).
+    // Profile, Bookmarks, Settings, Announcements and Lists (the instance answers nothing here, so no Federated).
     const items = hasTabBar(page)
       ? ["link", "link", "link", "link", "button"]
-      : ["link", "link", "link", "link", "link", "link", "link"];
+      : ["link", "link", "link", "link", "link", "link", "link", "link", "link"];
     await expect(page.locator("body")).toMatchAriaSnapshot(`
       - link
       - navigation:
@@ -308,15 +308,16 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
 
   test("shows the icon of every navigation item at one size", async ({ page }) => {
     const icons = shownItems(page).locator("svg");
-    await expect(icons).toHaveCount(hasTabBar(page) ? 5 : 7);
+    await expect(icons).toHaveCount(hasTabBar(page) ? 5 : 9);
     for (const icon of await icons.all()) {
       expect(await icon.boundingBox()).toMatchObject({ width: 24, height: 24 });
     }
   });
 
-  test("shows the column about the server only on wide screens", async ({ page }) => {
+  test("shows the third column only on wide screens", async ({ page }) => {
     const wide = (page.viewportSize()?.width ?? 0) >= 1280;
-    await expect(page.getByRole("complementary")).toHaveCount(wide ? 1 : 0);
+    // On a timeline the column holds the latest notifications and the panel about the server.
+    await expect(page.getByRole("complementary")).toHaveCount(wide ? 2 : 0);
   });
 });
 
@@ -379,7 +380,7 @@ test.describe("the sidebar of desktops", () => {
           - link "${instanceName}"
         - list:
           - /children: equal
-${Array.from({ length: 7 }, () => "          - listitem:\n            - link").join("\n")}
+${Array.from({ length: 9 }, () => "          - listitem:\n            - link").join("\n")}
         - link "${displayName} @alice"
     `);
     await expect(viewer).not.toHaveAttribute("aria-current");

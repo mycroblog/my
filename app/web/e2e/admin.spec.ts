@@ -190,6 +190,7 @@ async function operatorServer(page: Page) {
           { state: "retrying", type: "federation.deliver", count: pending.length },
           ...dead.map((job) => ({ state: "dead", type: job.type, count: 1 })),
         ],
+        waits: [],
         oldest_ready_at: "2026-10-17T09:30:00Z",
       });
     }

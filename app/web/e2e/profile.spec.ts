@@ -120,7 +120,9 @@ async function signedInServer(page: Page) {
   await page.route("**/oauth/token/refresh", (route) =>
     route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
   );
-  await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
+  await page.route("**/api/v1/accounts/verify_credentials", (route) =>
+    route.fulfill(json({ ...alice, permissions: [] })),
+  );
   await page.route("**/api/v1/notifications/marker", (route) => route.fulfill(json({ unread_count: 0 })));
   await page.route("**/api/v1/accounts/lookup*", (route) => {
     const acct = new URL(route.request().url()).searchParams.get("acct");

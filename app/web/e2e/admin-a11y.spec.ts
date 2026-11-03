@@ -348,6 +348,13 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
 };
 
 /** An OIDC login provider with a long name and issuer, as GET /admin/login_providers lists it. */
+const linkCardDomainRule: Schemas["LinkCardDomainRule"] = {
+  domain: "cards.example",
+  mode: "no_images",
+  note: "",
+  updated_at: "2026-10-01T00:00:00Z",
+};
+
 const loginProvider: Schemas["AdminLoginProvider"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000f2",
   kind: "oidc",
@@ -750,6 +757,7 @@ async function moderatorServer(page: Page) {
         adapter: "db",
         pending_listing: true,
         counts: [{ state: "dead", type: deadJob.type, count: 1 }],
+        waits: [],
       });
     if (key === "GET /admin/jobs") return json(route, { items: [deadJob] });
     if (key === "GET /admin/error_groups") return json(route, { items: [errorGroup] });
@@ -772,6 +780,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/relays") return json(route, { items: [relay] });
     if (key === "GET /admin/oauth_clients") return json(route, { items: [oauthClient] });
     if (key === "GET /admin/login_providers") return json(route, { items: [loginProvider] });
+    if (key === "GET /admin/link_card_domains") return json(route, { items: [linkCardDomainRule] });
     if (key === "GET /admin/roles") return json(route, { items: roles });
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
     if (key === "GET /admin/cost_totals") return json(route, costTotals);
@@ -975,6 +984,7 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.relays": { path: "/admin/relays", ready: relay.inbox_url },
   "admin.oauth-apps": { path: "/admin/oauth-apps", ready: oauthClient.name },
   "admin.login-providers": { path: "/admin/login-providers", ready: loginProvider.display_name },
+  "admin.link-card-domains": { path: "/admin/link-card-domains", ready: linkCardDomainRule.domain },
   "admin.documents": { path: "/admin/documents", ready: { value: documentText.body } },
   "admin.settings": { path: "/admin/settings", ready: "my.example" },
   "admin.theme": { path: "/admin/theme", ready: { value: "#fdfdf6" } },
