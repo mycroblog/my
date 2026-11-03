@@ -133,6 +133,14 @@ func TestOneConnectionIsEnough(t *testing.T) {
 	if len(page.Items) == 0 {
 		t.Error("no notification came of the follow, the favourite, the boost, or the mention")
 	}
+	// A deactivation touches many modules in its transaction, and so does the way back.
+	do(http.MethodPost, "/accounts/deactivation", bob.token, map[string]any{"password": "correct horse battery staple"}, nil)
+	if err := app.Identity.ReactivateOwnAccount(t.Context(), member.User.ID); err != nil {
+		t.Fatalf("ReactivateOwnAccount: %v", err)
+	}
+	if _, err := app.Accounts.ExecuteDueDeletions(t.Context()); err != nil {
+		t.Fatalf("ExecuteDueDeletions: %v", err)
+	}
 	do(http.MethodPost, "/admin/accounts/"+bob.id+"/actions", alice.token, map[string]any{"kind": "suspend"}, nil)
 }
 
