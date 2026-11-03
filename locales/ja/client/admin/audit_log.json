@@ -595,6 +595,10 @@
     "defaultMessage": "リンクのカードの画像を停止",
     "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches no images from a domain."
   },
+  "admin.audit_log.action.instance_marked_available": {
+    "defaultMessage": "サーバーを配送可能に変更",
+    "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "リンクのカードのルールを削除",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."

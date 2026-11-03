@@ -241,7 +241,8 @@ type Deps struct {
 type AuditTargets interface {
 	// ExistingAuditTargets returns, in ID order, the targets among ids of kind that exist; kind
 	// is moderation.AuditTargetRole, AuditTargetCustomEmoji, AuditTargetCustomEmojiRequest,
-	// AuditTargetWebhook, or AuditTargetRelay.
+	// AuditTargetWebhook, AuditTargetRelay, AuditTargetLoginProvider, or
+	// AuditTargetLinkCardDomain.
 	ExistingAuditTargets(ctx context.Context, kind moderation.AuditTargetKind, ids []string) ([]string, error)
 }
 

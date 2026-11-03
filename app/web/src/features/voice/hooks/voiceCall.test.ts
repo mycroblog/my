@@ -255,7 +255,7 @@ describe("the room stream's events", () => {
 });
 
 test("a method that this client does not have ends the call at once", () => {
-  const { call } = setup({ session: "s5", grant: grantFixture({ kind: "mystery" }), room: live });
+  const { call } = setup({ session: "s5", grant: grantFixture({ kind: "mystery" as never }), room: live });
   call.start();
   expect(call.getSnapshot()).toMatchObject({ phase: "ended", end: { kind: "unsupported", reason: "mystery" } });
 });

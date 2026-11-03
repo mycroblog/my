@@ -5,6 +5,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -75,6 +76,15 @@ func (r *IdentityRepository) FindRegistrationApplication(ctx context.Context, us
 	return identity.RegistrationApplication{
 		ID: row.ID, UserID: row.UserID, Reason: row.Reason.String, InviteID: row.InviteID.String, SubmittedAt: fromMillis(row.SubmittedAt),
 	}, nil
+}
+
+// RegistrationDecisionNote implements identity.Repository.
+func (r *IdentityRepository) RegistrationDecisionNote(ctx context.Context, applicationID string) (string, error) {
+	note, err := r.db.reader().FindRegistrationDecisionNote(ctx, applicationID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return note.String, wrap(err, "the note of the decision on registration "+applicationID)
 }
 
 // FindRegistrationState implements identity.Repository.

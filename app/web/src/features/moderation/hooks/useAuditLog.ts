@@ -112,6 +112,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   link_card_domain_fetch_stopped: "client:admin.audit_log.action.link_card_domain_fetch_stopped",
   link_card_domain_images_stopped: "client:admin.audit_log.action.link_card_domain_images_stopped",
   link_card_domain_rule_removed: "client:admin.audit_log.action.link_card_domain_rule_removed",
+  instance_marked_available: "client:admin.audit_log.action.instance_marked_available",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {

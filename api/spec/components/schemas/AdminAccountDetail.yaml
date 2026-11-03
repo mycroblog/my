@@ -3,7 +3,7 @@ description: The details of an account (FR-714).
 allOf:
   - $ref: ./AdminAccount.yaml
   - type: object
-    required: [roles, actions, reports]
+    required: [roles, actions]
     properties:
       registration:
         $ref: ./AdminAccountRegistration.yaml
@@ -35,7 +35,9 @@ allOf:
         items:
           $ref: ./AdminAccountAction.yaml
       reports:
-        description: The newest 20 reports of the account, newest first.
+        description: |
+          The newest 20 reports of the account, newest first; omitted unless the viewer also has
+          the `manage_reports` permission.
         type: array
         items:
           $ref: ./AdminReport.yaml

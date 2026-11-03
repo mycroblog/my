@@ -10,7 +10,7 @@ post:
     session is disconnected. Joining leaves the room the user was in; the host of an open room
     leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
     `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-    allows. A 404 while the voice chat is off on the server.
+    allows.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
@@ -34,7 +34,7 @@ delete:
     next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
     409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
     `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-    ends when nobody is left in it. A 404 while the voice chat is off on the server.
+    ends when nobody is left in it.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

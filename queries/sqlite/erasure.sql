@@ -182,6 +182,10 @@ DELETE FROM oauth_authorization_codes WHERE user_id = sqlc.arg(user_id);
 DELETE FROM oauth_token_revocations WHERE token_id IN (
   SELECT t.id FROM oauth_access_tokens t WHERE t.user_id = sqlc.arg(user_id));
 
+-- name: EraseTokenFamilyLastUsed :exec
+DELETE FROM oauth_token_family_last_used WHERE family_id IN (
+  SELECT t.family_id FROM oauth_access_tokens t WHERE t.user_id = sqlc.arg(user_id));
+
 -- name: EraseAccessTokens :exec
 DELETE FROM oauth_access_tokens WHERE user_id = sqlc.arg(user_id);
 

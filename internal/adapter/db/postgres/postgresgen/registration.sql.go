@@ -46,6 +46,17 @@ func (q *Queries) CountUsableMemberInvites(ctx context.Context, arg CountUsableM
 	return count, err
 }
 
+const findRegistrationDecisionNote = `-- name: FindRegistrationDecisionNote :one
+SELECT note FROM registration_decisions WHERE application_id = $1 ORDER BY id DESC LIMIT 1
+`
+
+func (q *Queries) FindRegistrationDecisionNote(ctx context.Context, applicationID string) (*string, error) {
+	row := q.db.QueryRow(ctx, findRegistrationDecisionNote, applicationID)
+	var note *string
+	err := row.Scan(&note)
+	return note, err
+}
+
 const getInviteByCode = `-- name: GetInviteByCode :one
 SELECT id, code, created_by_user_id, creator_kind, max_uses, expires_at, created_at FROM invites WHERE code = $1
 `

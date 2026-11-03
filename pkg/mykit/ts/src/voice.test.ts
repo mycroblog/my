@@ -75,10 +75,10 @@ describe("voice rooms", () => {
 
   test("participant operations and invitations", async () => {
     const { api, last } = setup();
-    await api.POST("/voice/rooms/{id}/participants/{account_id}/grant", member);
-    expect(last()).toMatchObject({ method: "POST", url: "/voice/rooms/r1/participants/a1/grant" });
-    await api.DELETE("/voice/rooms/{id}/participants/{account_id}/grant", member);
-    expect(last()).toMatchObject({ method: "DELETE", url: "/voice/rooms/r1/participants/a1/grant" });
+    await api.POST("/voice/rooms/{id}/participants/{account_id}/speaking_permission", member);
+    expect(last()).toMatchObject({ method: "POST", url: "/voice/rooms/r1/participants/a1/speaking_permission" });
+    await api.DELETE("/voice/rooms/{id}/participants/{account_id}/speaking_permission", member);
+    expect(last()).toMatchObject({ method: "DELETE", url: "/voice/rooms/r1/participants/a1/speaking_permission" });
     await api.DELETE("/voice/rooms/{id}/participants/{account_id}/hand", member);
     expect(last()).toMatchObject({ method: "DELETE", url: "/voice/rooms/r1/participants/a1/hand" });
     await api.POST("/voice/rooms/{id}/participants/{account_id}/mute", member);

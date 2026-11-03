@@ -82,6 +82,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `identity.expire_exports` | Removes expired archives and records, and records as failed an export still without a result after 24 hours. | Schedule | Default | Next run |
 | `identity.delete_unused_oauth_clients` | Deletes the dynamically registered OAuth clients that nothing uses. | Schedule | Default | Next run |
 | `identity.purge_origins` | Deletes the session and registration origins past their retention. | Schedule | Default | Next run |
+| `identity.purge_auth_records` | Deletes the sessions, authorization codes, token families, and one-time tokens that expired over 30 days ago. A token family goes only when its last token did. | Schedule | Default | Next run |
 
 ## Email
 
@@ -191,6 +192,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `identity.delete_unused_oauth_clients` | 1 hour |
 | `identity.expire_exports` | 1 hour |
 | `identity.expire_imports` | 1 hour |
+| `identity.purge_auth_records` | 1 hour |
 | `identity.purge_origins` | 1 hour |
 | `kv.cleanup` | 1 hour |
 | `media.cleanup` | 1 hour |

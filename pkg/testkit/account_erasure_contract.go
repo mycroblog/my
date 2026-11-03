@@ -60,6 +60,9 @@ func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 		{"ErasesDeletedRemoteActors", erasureErasesRemoteActors},
 		{"RemoteActorsWaitForTheDelayAndHolds", erasureRemoteActorsWait},
 		{"ErasedRemoteActorsDoNotComeBack", erasureRemoteActorsStayErased},
+		{"ErasesTheLastUseOfTokenFamilies", erasureErasesTokenFamilyLastUse},
+		{"PurgesExpiredAuthRecords", authRecordsPurged},
+		{"PurgesExpiredUserTokensInBatches", authRecordsPurgedInBatches},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newErasureEnv(t, newHarness)) })

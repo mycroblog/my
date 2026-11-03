@@ -170,12 +170,18 @@ jobs:
             run: scripts/task.sh web:lint-css
           # Each user or operator document that describes the changed paths (the userdocs of
           # tools/agentkit/context-map.yaml) is changed or explained in the description. It reads the description now,
-          # not the event's copy, so rerunning the job after editing the description checks the new text.
+          # not the event's copy, so rerunning the job after editing the description checks the new text. A Dependabot
+          # update bumps a version or digest and writes no Documentation section, so it has nothing to explain.
           - name: docs:pr-impact
             env:
               GH_TOKEN: ${{ github.token }}
               PR: ${{ github.event.pull_request.number }}
+              AUTHOR: ${{ github.event.pull_request.user.login }}
             run: |
+              if [ "$AUTHOR" = "dependabot[bot]" ]; then
+                echo "A Dependabot update: skipped."
+                exit 0
+              fi
               gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/pr-body.md"
               scripts/task.sh docs:pr-impact BASE=HEAD^1 BODY="$RUNNER_TEMP/pr-body.md"
 

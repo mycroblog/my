@@ -30,12 +30,15 @@ function isolated(handle: string): string {
 
 const bob = registrationFixture();
 // A reason in Arabic, which reads right to left whatever the page's direction.
-const carol = registrationFixture({
+// She has no email address, and so neither of its properties.
+const {
+  email: _email,
+  email_verified: _emailVerified,
+  ...carol
+} = registrationFixture({
   user_id: "0192f0c4-7a8e-7000-8000-0000000000b2",
   account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
   username: "carol",
-  email: "",
-  email_verified: false,
   reason: "أريد الانضمام",
   invite_id: "0192f0c4-7a8e-7000-8000-0000000000e1",
   submitted_at: "2026-10-16T10:00:00Z",

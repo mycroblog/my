@@ -97,7 +97,8 @@ type OriginPurgeDeps struct {
 
 // OriginPurger runs JobPurgeOrigins: it deletes the session origins and the registration
 // origins older than their periods, except those of held users (ADR-0038). The sessions and
-// users stay. Each statement deletes a bounded batch in a transaction of its own.
+// users have purges and erasures of their own. Each statement deletes a bounded batch in a
+// transaction of its own.
 type OriginPurger struct{ d OriginPurgeDeps }
 
 // NewOriginPurger returns the origin purge on d.

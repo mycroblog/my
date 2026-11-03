@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -145,6 +146,7 @@ type HealthDeps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
+	IDs        kernel.IDGenerator
 }
 
 // Health records that remote servers are up outside deliveries (federation.md §7.3): the inbox
@@ -225,9 +227,33 @@ func (h *Health) Events(ctx context.Context, domain, before string, limit int) (
 
 // MarkAvailable is an operator's clearing of the server domain (federation.md §7.3): its failure
 // days go back to zero and, when it was unavailable, it is marked available with
-// federation.ReasonOperator. It returns the health afterwards.
-func (h *Health) MarkAvailable(ctx context.Context, domain string) (federation.InstanceHealth, error) {
-	if err := h.Reached(ctx, domain, federation.ReasonOperator); err != nil {
+// federation.ReasonOperator, and the operation is audited in the same transaction. A server without
+// failures has nothing to clear: it writes nothing, not even the audit entry. byUserID is the
+// operator, "" for the CLI. It returns the health afterwards.
+func (h *Health) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error) {
+	now := kernel.Normalize(h.d.Clock.Now())
+	cur, err := h.d.Repository.FindInstanceHealth(ctx, domain)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return h.Find(ctx, domain)
+	case err != nil:
+		return federation.InstanceHealth{}, err
+	}
+	if _, changed, _ := cur.Reached(now); !changed {
+		return h.Find(ctx, domain)
+	}
+	audit := appmoderation.AuditEntry{
+		ID: h.d.IDs.NewID(), Action: appmoderation.AuditInstanceMarkedAvailable, TargetKind: appmoderation.AuditTargetDomain,
+		TargetID: domain, TargetLabel: domain, OccurredAt: now,
+	}
+	audit.ActorKind, audit.ActorUserID = appmoderation.AuditActor(byUserID)
+	err = h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := tx.Emit(ctx, InstanceReached{Domain: domain, Reason: federation.ReasonOperator, At: now}); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, appmoderation.AuditRecorded{Entry: audit})
+	})
+	if err != nil {
 		return federation.InstanceHealth{}, err
 	}
 	return h.Find(ctx, domain)
