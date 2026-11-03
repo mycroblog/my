@@ -9709,7 +9709,7 @@ export interface components {
             message: string;
             /** @description The error's `stack` as the browser formats it. */
             stack: string;
-            /** @description The version of the web client's build. */
+            /** @description The version of the server, from the page that started the web client. */
             release?: string;
             /**
              * @description The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the

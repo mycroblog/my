@@ -255,6 +255,8 @@ jobs:
         run: scripts/task.sh docker:alert-rules
       - name: docker:smoke
         run: scripts/task.sh docker:smoke
+      - name: docker:web-reproducible
+        run: scripts/task.sh docker:web-reproducible
 
   db-lint:
     # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0087 §3): it

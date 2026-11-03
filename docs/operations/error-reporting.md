@@ -86,7 +86,7 @@ The same actions are available as `GET /api/v1/admin/error_groups` and `POST /ap
 
 The web client sends the errors its screens did not handle to `POST /api/v1/client_errors` on your own server, so no third party sees them and no content security setting changes. The server answers `204` to everything and drops what it does not accept: a body over 16 KiB, a stack without a file of your own web client, and more than 10 reports a minute from one IP address. The same error is sent once per page view, and at most 20 per page view.
 A report sent without a signed-in session is counted and logged but does not notify anyone by itself, so an anonymous script cannot fill your inbox. The group notifies when a signed-in person's browser reports it too.
-The stacks are those of the minified build and are not translated back to source, so read the route and the message first. The release is the version of the container image.
+The stacks are those of the minified build and are not translated back to source, so read the route and the message first. The release is the version of the server that served the page. A page that opened offline, or after 3 seconds without an answer, comes from the browser's copy, which names the version from when the browser stored the web client: an older version with the same web client.
 
 ## Sending reports to a service
 

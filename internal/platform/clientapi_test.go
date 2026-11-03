@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
@@ -33,6 +34,17 @@ func newClientAPIApp(t *testing.T) *platform.App {
 	}
 	t.Cleanup(func() { _ = app.Close() })
 	return app
+}
+
+// TestShellNamesTheVersion checks that the server's version reaches the shell, from which the web client's
+// error reports read it.
+func TestShellNamesTheVersion(t *testing.T) {
+	t.Parallel()
+	rec := httptest.NewRecorder()
+	newClientAPIHandler(t).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/home", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"version":"1.2.3"`) {
+		t.Errorf("GET /home = %d, want the version 1.2.3 in its runtime config:\n%s", rec.Code, rec.Body.String())
+	}
 }
 
 // TestClientAPI checks that the composition root serves the client API under /api/v1 with the

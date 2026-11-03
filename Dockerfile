@@ -36,11 +36,16 @@ COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
 COPY app/ app/
 COPY pkg/mykit/ts/ pkg/mykit/ts/
-# The same version as the server's, which the client sends with its error reports.
-ARG VERSION=dev
+# No VERSION here: the server gives the client its version at run time (runtimeConfig in internal/interface/web), so
+# that images of different commits with the same client have the same web assets and sw.js, and browsers see no update
+# (scripts/task.sh docker:web-reproducible).
 RUN cd tools/i18n && bun run src/gen.ts --ts \
     && cd ../../app/ui && bun run scripts/theme-tokens.ts --ts \
-    && cd .. && VITE_MY_RELEASE="$VERSION" bun run build
+    && cd .. && bun run build
+
+# The files of the web build alone, for docker:web-reproducible to compare; the image embeds them in the stage below.
+FROM scratch AS web-dist
+COPY --from=web /src/app/web/dist /
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build

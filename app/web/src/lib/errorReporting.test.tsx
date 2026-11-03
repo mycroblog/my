@@ -21,6 +21,7 @@ import {
 import { loadI18n } from "./i18n";
 import { AppLocale } from "./locale";
 import { Maintenance } from "./maintenance";
+import { createAppServices } from "./services";
 
 const apiOrigin = window.location.origin;
 const cleanups: (() => void)[] = [];
@@ -86,6 +87,42 @@ test("sends an error with its name, message, stack, release, and kind as JSON", 
     release: "v0.1.0",
     kind: "boundary_error",
   });
+});
+
+test("sends no release when the shell names no version", async () => {
+  const received = receiveReports();
+  const { reporter } = await setUp({ release: undefined });
+
+  reporter.report(ownError(), "uncaught");
+
+  await waitFor(() => {
+    expect(received).toHaveLength(1);
+  });
+  expect(received[0]?.body).not.toHaveProperty("release");
+});
+
+test("names the version of the shell's runtime config in the app's reporter", async () => {
+  const received = receiveReports();
+  const config = {
+    apiOrigin,
+    instanceName: "My",
+    accountDomain: "my.example",
+    defaultLocale: "en",
+    version: "v1.2.3-4-gabc",
+  };
+  const { errors, session } = createAppServices(config, await loadI18n("en"));
+  cleanups.push(() => {
+    session.dispose();
+  });
+  const error = ownError();
+  error.stack = `TypeError: boom\n    at render (${new URL(import.meta.url).origin}/assets/StatusPage-Dk2l_9a3.js:1:23)`;
+
+  errors.report(error, "uncaught");
+
+  await waitFor(() => {
+    expect(received).toHaveLength(1);
+  });
+  expect(received[0]?.body).toMatchObject({ release: "v1.2.3-4-gabc" });
 });
 
 test("sends the access token of a signed-in user", async () => {

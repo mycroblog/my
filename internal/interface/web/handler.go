@@ -33,6 +33,9 @@ type Options struct {
 	// Content-Security-Policy is relaxed for that origin. Development only.
 	DevViteOrigin string
 
+	// Version is the server's version, which the shell gives the client for its error reports.
+	Version string
+
 	// Host is the serving domain of the instance (ADR-0018).
 	Host string
 	// WebOrigin is the configured origin of the web client (web_origin). When it is on Host, the
@@ -268,7 +271,7 @@ func New(o Options) (*Handler, error) {
 
 	h.tags, h.apiOrigin = tags, apiOrigin
 	version := []string{
-		shellSource, h.o.DevViteOrigin, h.apiOrigin, h.o.Host, h.o.AccountDomain,
+		shellSource, h.o.Version, h.o.DevViteOrigin, h.apiOrigin, h.o.Host, h.o.AccountDomain,
 		strconv.FormatBool(h.hasIcon), strconv.FormatBool(h.hasAppleTouchIcon), tags.Script,
 	}
 	version = append(append(version, tags.Stylesheet...), tags.Preload...)
@@ -373,7 +376,7 @@ func (h *Handler) render(locale, name string, theme themeState, brand brandState
 func (h *Handler) runtimeConfig(locale, name string, brand brandState) runtimeConfig {
 	return runtimeConfig{
 		APIOrigin: h.apiOrigin, InstanceName: name, AccountDomain: h.o.AccountDomain, DefaultLocale: locale,
-		Icon: brand.IconImage, Logo: brand.Logo, LogoDark: brand.LogoDark,
+		Icon: brand.IconImage, Logo: brand.Logo, LogoDark: brand.LogoDark, Version: h.o.Version,
 	}
 }
 

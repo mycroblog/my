@@ -29,6 +29,12 @@ const runtimeConfigSchema = z.object({
   icon: brandImageSchema.optional(),
   logo: brandImageSchema.optional(),
   logoDark: brandImageSchema.optional(),
+  /**
+   * The server's version, which error reports name. It is not in the build, so that a new version of the server with
+   * the same client changes no file of the build and offers no update. A shell that the Service Worker precached
+   * keeps the version of when it was fetched: the one of a server with the same build.
+   */
+  version: z.string().min(1).optional(),
 });
 
 export type RuntimeConfig = z.infer<typeof runtimeConfigSchema>;

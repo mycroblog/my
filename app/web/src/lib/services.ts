@@ -61,7 +61,7 @@ export function createAppServices(
   const api = createApi({ apiOrigin: config.apiOrigin, session, locale, maintenance });
   // The mode can narrow while a page is open; a refusal for it brings the app's offer up to date.
   refetchInstanceOnFederationRestricted(queryClient, api);
-  const errors = new ErrorReporter({ api, apiOrigin: config.apiOrigin });
+  const errors = new ErrorReporter({ api, apiOrigin: config.apiOrigin, release: config.version });
   return { queryClient, api, session, leaveApp, locale, maintenance, errors };
 }
 
