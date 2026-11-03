@@ -224,7 +224,7 @@ Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it 
 
 ### `source_url`
 
-Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).
+Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. At the default, a release's `GET /instance`, and so the information and landing pages, link to the source at the release's tag (`https://github.com/mycroblog/my/tree/v0.1.0`), and NodeInfo to the repository. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).
 
 - Environment variable: `MY_SOURCE_URL`
 - Default: `https://github.com/mycroblog/my`

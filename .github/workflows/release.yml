@@ -12,10 +12,15 @@ name: Release
 # exactly, as X.Y.Z with npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the
 # dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
-# No release ever publishes a test build (docs/reference/build-tags.md): a job of this workflow that publishes a server
-# binary or image, such as the container image of ghcr.io/mycroblog/my (#30), runs scripts/check-release-build.sh on
-# each binary it publishes, which fails on the test-only build tag e2e_fakes; the Dockerfile refuses that tag and runs
-# the same check on the binary it builds.
+# The container image is built from the same commit (ADR-0142 §6). The image job pushes it to ghcr.io/mycroblog/my by
+# digest, with no tag, so that nothing reaches an operator before the notes. image-check runs its binary on each
+# platform, image-attest signs the provenance of the digest and attaches the digest to the draft as image-digest.txt,
+# and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
+# publishes the release; nothing here tags an image.
+#
+# No release ever publishes a test build (docs/reference/build-tags.md): image-check runs scripts/check-release-build.sh
+# on the binary of each platform, which fails on the test-only build tag e2e_fakes, before the digest is attested or
+# attached; the Dockerfile refuses that tag and runs the same check on the binary it builds.
 #
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
 # gate can be tried on a branch without making a release of it. The suite's upgrade job upgrades from the latest patch
@@ -162,8 +167,167 @@ jobs:
             "${prerelease[@]}" --title "$VERSION"
           echo "Draft release $VERSION created at $SHA." >> "$GITHUB_STEP_SUMMARY"
 
-      # M5 (#30) adds the release artefacts here, after the draft exists and before it is published: publishing the
-      # container images of the tagged commit.
+  image:
+    # Pushes the image of the tested commit by digest. No cache: a release is built from the pinned base images and the
+    # lockfiles alone. Buildx's own provenance is off: it would be an unsigned copy of what image-attest signs. A failed
+    # job can be rerun; a new digest leaves the old one unreferenced.
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the labels and annotations
+        id: metadata
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          meta="$(scripts/release-image.sh metadata "$VERSION" "$SHA" "$(git show -s --format=%cI HEAD)")"
+          {
+            echo "labels<<EOF"
+            echo "$meta"
+            echo "EOF"
+            echo "annotations<<EOF"
+            sed 's/^/index,manifest:/' <<<"$meta"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      # BuildKit is pinned too: the driver's default is a moving tag.
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: image=moby/buildkit:v0.34.1@sha256:99368f3e46177c6405b9740e4461d91cee004128daeecca78d4ceac50ec1da5c
+      - name: Log in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: .
+          target: app
+          platforms: linux/amd64,linux/arm64
+          build-args: VERSION=${{ inputs.version }}
+          no-cache: true
+          sbom: true
+          provenance: false
+          labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+          outputs: type=image,name=ghcr.io/mycroblog/my,push-by-digest=true,name-canonical=true,push=true
+
+  image-check:
+    # On a runner of each platform, so that the binary really runs, and with no write permission.
+    needs: [validate, image]
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # For `go version -m` in scripts/check-release-build.sh.
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .tool-versions
+          cache: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Check the binary of the image
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+          VERSION: ${{ inputs.version }}
+        run: scripts/release-image.sh check "$DIGEST" "$PLATFORM" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  image-attest:
+    # Signs the provenance of the checked digest (keyless, with Sigstore's public instance) and hands the digest to the
+    # draft, where release-image.yml reads it. A rerun adds another attestation of the same commit, which does no harm.
+    needs: [validate, image, image-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+      packages: write
+    steps:
+      - name: Log in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Attest the provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/mycroblog/my
+          subject-digest: ${{ needs.image.outputs.digest }}
+          push-to-registry: true
+          # A storage record needs one more permission (artifact-metadata: write) and nothing here reads it.
+          create-storage-record: false
+      - name: Attach the digest to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "$DIGEST" > "$RUNNER_TEMP/image-digest.txt"
+          gh release upload "$VERSION" "$RUNNER_TEMP/image-digest.txt" --clobber
+          echo "Image: \`ghcr.io/mycroblog/my@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+
+  image-scan:
+    # A report for the decider, in this job's summary. It stops nothing: the tags exist by now, and many findings have no
+    # fix. Grype runs in its own container, pinned by digest, without any credentials (scripts/release-image.sh).
+    # Nightly fails on the fixable findings of the versions already published.
+    needs: [validate, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Scan the image
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: scripts/release-image.sh scan "ghcr.io/mycroblog/my@$DIGEST"
 
   npm:
     # Publishes the npm packages of the libraries once the commit is tagged. npm's trusted publishing authenticates this

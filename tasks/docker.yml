@@ -18,10 +18,10 @@ tasks:
     cmds:
       - |
         status=0
-        for pair in GO_IMAGE:golang:golang NODE_IMAGE:node:nodejs BUN_IMAGE:oven/bun:bun; do
-          arg="${pair%%:*}"; rest="${pair#*:}"; image="${rest%:*}"; tool="${rest##*:}"
+        for pair in golang:golang node:nodejs oven/bun:bun; do
+          image="${pair%:*}"; tool="${pair##*:}"
           want="$image:$(awk -v t="$tool" '$1 == t { print $2 }' .tool-versions)-"
-          grep -q "^ARG $arg=$want" Dockerfile || { echo "Dockerfile: $arg must start with $want" >&2; status=1; }
+          grep -q "^FROM --platform=\$BUILDPLATFORM $want" Dockerfile || { echo "Dockerfile: the FROM line of $image must start with $want" >&2; status=1; }
         done
         exit "$status"
 

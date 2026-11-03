@@ -81,6 +81,43 @@ With `metrics_exporter = emf`, these two lines are the EMF lines themselves. The
 plus the `_aws` directive, `service.name`, `service.version` and `my.role`. These three metrics are not written on any other line. Fields you choose in `metrics_emf_dimensions` are written as strings, as EMF requires (for example the dimension `http.response.status_code` is `"200"`).
 Logs go to standard error and the other EMF lines go to standard output. Lambda sends both to CloudWatch Logs, so metrics are extracted from both.
 
+## Get the image
+
+The server image is `ghcr.io/mycroblog/my`, public, for `linux/amd64` and `linux/arm64`, with every adapter.
+
+| Tag | Points at | Use it for |
+| --- | --- | --- |
+| `0.1.0` | That version, for good | Naming a version |
+| `0.1` | The latest patch of `v0.1` | Docker Compose, which applies the schema on every `up` |
+| `0.1.0-rc.1` | That prerelease | Trying a release before it comes out |
+
+There is no `latest` and no `0`: both would cross a minor version, and each upgrade to a new minor version has to go [through the previous one](database.md#skipping-releases). Name a version in every command; `docker pull ghcr.io/mycroblog/my` alone fails with `manifest unknown`.
+A patch release can need `my schema apply` and `my db upgrade` too, so outside Docker Compose follow [Upgrading](database.md#upgrading) for each version. In production, pin the digest that the release's notes give:
+
+```text
+ghcr.io/mycroblog/my:0.1.0@sha256:...
+```
+
+Where to run it:
+
+- **Docker Compose and Kubernetes**: pull it from `ghcr.io` as it is.
+- **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
+- **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
+- **AWS Lambda**: the image does not run as it is. Lambda needs a single-architecture image in ECR with a runtime interface client.
+- **A smaller image**: `scripts/task.sh docker:build GO_TAGS=...` builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
+
+### Verify an image
+
+Each released image has provenance signed through Sigstore, which ties the digest to the workflow and the commit that built it, and an SBOM. With the [GitHub CLI](https://cli.github.com/), and logged in to `ghcr.io` if the command asks for it:
+
+```sh
+gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
+  --signer-workflow mycroblog/my/.github/workflows/release.yml
+docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
+```
+
+The first command fails unless the image was built by the release workflow of this repository. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
+
 ## Publish the source code (AGPL-3.0)
 
 my is licensed under AGPL-3.0-only. Section 13 of the AGPL-3.0 requires anyone who runs the server and lets users interact with it over a network
@@ -90,7 +127,7 @@ Point to where the source is published with the setting `source_url` (environmen
 
 | Value | Meaning |
 | --- | --- |
-| Not set | The default, `https://github.com/mycroblog/my`. Use it when you run my unmodified |
+| Not set | The default, `https://github.com/mycroblog/my`. Use it when you run my unmodified: a release's `GET /instance` then names the source of that version, `https://github.com/mycroblog/my/tree/v0.1.0`, and NodeInfo the repository |
 | An `https:` URL | A place where the source can be read (the repository of a fork, the tag or archive of a particular version, and so on) |
 | A `mailto:` URI | An email address to request the source from (for example `mailto:source@example.org`; `?subject=...` is allowed) |
 
