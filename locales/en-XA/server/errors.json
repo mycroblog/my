@@ -167,6 +167,10 @@
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧş ḿȧȧƞẏ ŭŭşȧȧƀŀḗḗ īƞṽīŧḗḗş ȧȧş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗṽǿǿķḗḗ ǿǿƞḗḗ, ǿǿř ẇȧȧīŧ ŭŭƞŧīŀ ǿǿƞḗḗ ḗḗẋƥīřḗḗş ǿǿř īş ŭŭşḗḗḓ ŭŭƥ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.last_administrator": {
+    "defaultMessage": "[Ŧħīş īş ŧħḗḗ ǿǿƞŀẏ ȧȧḓḿīƞīşŧřȧȧŧǿǿř ǿǿƒ ŧħīş şḗḗřṽḗḗř. Ḿȧȧķḗḗ ȧȧƞǿǿŧħḗḗř ŭŭşḗḗř ȧȧƞ ȧȧḓḿīƞīşŧřȧȧŧǿǿř ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "[Ǿƞŀẏ ȧȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ƈȧȧƞ ƀḗḗ ȧȧḓḓḗḗḓ ŧǿǿ ȧȧ ŀīşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -573,6 +577,10 @@
   },
   "errors.supporters.unavailable_detail": {
     "defaultMessage": "[{reason,select,no_email{Ŧħḗḗ şḗḗřṽḗḗř ḿŭŭşŧ şḗḗƞḓ ḗḗḿȧȧīŀ, şǿǿ ŧħȧȧŧ şŭŭƀşƈřīƀḗḗřş ƈȧȧƞ ṽḗḗřīƒẏ ŧħḗḗīř ȧȧḓḓřḗḗşş.} no_provider{Ƈǿǿƞƒīɠŭŭřḗḗ ȧȧ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř īƞ ŧħḗḗ şḗḗřṽḗḗř'ş ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ƒīřşŧ.} other{Ŧħḗḗ şŭŭƥƥǿǿřŧḗḗř ƥřǿǿɠřȧȧḿ ƈȧȧƞƞǿǿŧ ƀḗḗ ŭŭşḗḗḓ ƞǿǿẇ.} provider_mismatch{Ŧħḗḗ ƈǿǿƞƒīɠŭŭřḗḗḓ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř īş ƞǿǿŧ ŧħḗḗ ǿǿƞḗḗ ŧħḗḗ ƥřǿǿɠřȧȧḿ ẇȧȧş ḗḗƞȧȧƀŀḗḗḓ ẇīŧħ. Ḓīşȧȧƀŀḗḗ ŧħḗḗ ƥřǿǿɠřȧȧḿ ȧȧƞḓ ḗḗƞȧȧƀŀḗḗ īŧ ȧȧɠȧȧīƞ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ'ş řǿǿŀḗḗ ḓǿǿḗḗş ƞǿǿŧ řȧȧƞķ ƀḗḗŀǿǿẇ ẏǿǿŭŭřş, şǿǿ ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ḓǿǿ ŧħīş ŧǿǿ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.too_long": {

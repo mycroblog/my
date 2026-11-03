@@ -172,7 +172,8 @@ type PasswordResetLink struct {
 // ("" for the CLI), for an administrator to hand to the user, such as when the Mailer delivers
 // no email, and records it in the audit log (password_reset_link_issued) in the same
 // transaction. It fails with account.ErrNotFound for an unknown account and with
-// ErrNotLocalAccount for an account without a user. While registration and sign-in are limited to
+// ErrNotLocalAccount for an account without a user, and with ErrTargetOutranksActor when the
+// user byUserID does not rank above the account's user. While registration and sign-in are limited to
 // the login providers it still issues the link, for an administrator about to end the limit, and
 // says so in the result.
 func (s *Service) IssuePasswordResetLink(ctx context.Context, accountID, byUserID string) (PasswordResetLink, error) {
@@ -186,6 +187,9 @@ func (s *Service) IssuePasswordResetLink(ctx context.Context, accountID, byUserI
 	}
 	if actor.Local == nil || actor.Local.UserID == "" {
 		return PasswordResetLink{}, ErrNotLocalAccount
+	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return PasswordResetLink{}, err
 	}
 	kind, user := appmoderation.AuditActor(byUserID)
 	audit := appmoderation.AuditRecorded{Entry: appmoderation.AuditEntry{

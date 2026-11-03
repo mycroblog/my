@@ -158,11 +158,14 @@ func (s *Service) GrantRole(ctx context.Context, in RoleChangeInput) (bool, erro
 // RevokeRole revokes a role from a user and reports whether it changed anything: revoking a
 // role that the user does not hold does nothing and records nothing. It fails with ErrNotFound
 // for an unknown user or role, with ErrRoleOutranksActor when the role is above every role of
-// in.ByUserID, with ErrLastAdmin when the user is the only holder of the admin role, and with
-// ErrRoleManagedByPlan for the role of a supporter plan.
+// in.ByUserID, with ErrLastAdmin when the user is the last administrator (IsLastAdministrator)
+// or the only holder of the admin role, and with ErrRoleManagedByPlan for the role of a supporter plan.
 func (s *Service) RevokeRole(ctx context.Context, in RoleChangeInput) (bool, error) {
 	c, err := s.prepareRoleChange(ctx, in)
 	if err != nil {
+		return false, err
+	}
+	if err := s.refuseLastAdministrator(ctx, in.RoleKey, in.UserID); err != nil {
 		return false, err
 	}
 	changed := false

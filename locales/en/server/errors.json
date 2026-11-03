@@ -443,6 +443,10 @@
     "defaultMessage": "Real-time updates are unavailable right now. Try again later.",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
   },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "This account's role does not rank below yours, so you cannot do this to it.",
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
+  },
   "errors.too_long": {
     "defaultMessage": "{max, plural, one {{name} can be at most # character long.} other {{name} can be at most # characters long.}}",
     "description": "Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters."
@@ -570,6 +574,10 @@
   "errors.list_members.too_many": {
     "defaultMessage": "This list already has the most members allowed. Remove one first.",
     "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
+  },
+  "errors.last_administrator": {
+    "defaultMessage": "This is the only administrator of this server. Make another user an administrator first.",
+    "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
   "errors.list_members.not_followed": {
     "defaultMessage": "Only accounts you follow can be added to a list.",

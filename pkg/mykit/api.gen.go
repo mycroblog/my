@@ -11267,6 +11267,12 @@ type PreviewDomainBlockImportRequest struct {
 //     expire or be used up.
 //   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
 //     takes no invite.
+//   - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+//     user to rank above the account: the highest `position` among the user's roles must be above
+//     that of every role of the account, so it refuses a higher or equal rank and the user's own
+//     account.
+//   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+//     an administrator. Make another user an administrator first.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
@@ -16164,7 +16170,8 @@ type ClientInterface interface {
 	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-	// undone, and the username is never reused. A wrong password is a 422
+	// undone, and the username is never reused. The only administrator of the instance gets a
+	// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 	// `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -16185,7 +16192,8 @@ type ClientInterface interface {
 	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-	// undone, and the username is never reused. A wrong password is a 422
+	// undone, and the username is never reused. The only administrator of the instance gets a
+	// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 	// `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -16681,7 +16689,8 @@ type ClientInterface interface {
 	// `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 	// they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 	// is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-	// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -16695,7 +16704,8 @@ type ClientInterface interface {
 	// `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 	// they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 	// is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-	// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -16761,8 +16771,11 @@ type ClientInterface interface {
 	// another kind, missing, repeated, or too many on an action on posts, or naming a post
 	// that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 	// `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-	// the `manage_accounts` permission.
+	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+	// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+	// Needs the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -16790,8 +16803,11 @@ type ClientInterface interface {
 	// another kind, missing, repeated, or too many on an action on posts, or naming a post
 	// that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 	// `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-	// the `manage_accounts` permission.
+	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+	// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+	// Needs the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -16819,7 +16835,8 @@ type ClientInterface interface {
 	// only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 	// Whoever holds the link can set the password: confirm who the user is through another
 	// channel first. A remote account or the instance actor is a 422 naming `id`, and an
-	// unknown account a 404. Needs the `manage_login_recovery` permission, which only the
+	// unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_login_recovery` permission, which only the
 	// built-in admin role has by default.
 	//
 	// Corresponds with POST /admin/accounts/{id}/password_reset_link (the `IssueAdminAccountPasswordResetLink` operationId).
@@ -16843,7 +16860,8 @@ type ClientInterface interface {
 	// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
 	// of the sign-in and registration origins only (ADR-0038). A remote account or the
-	// instance actor is a 422 naming `id`. An unknown account is a 404. Needs the
+	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
+	// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Corresponds with POST /admin/accounts/{id}/reveal (the `RevealAdminAccount` operationId).
@@ -16888,7 +16906,8 @@ type ClientInterface interface {
 	// and recovery codes, so that they sign in with the password alone (FR-005). It is
 	// recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 	// actor is a 422 naming `id`, an account without two-factor authentication a 409
-	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_login_recovery` permission, which only the built-in admin role has by default.
 	//
 	// Corresponds with POST /admin/accounts/{id}/two_factor/disable (the `DisableAdminAccountTwoFactor` operationId).
@@ -21715,7 +21734,8 @@ func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAlias
 // or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-// undone, and the username is never reused. A wrong password is a 422
+// undone, and the username is never reused. The only administrator of the instance gets a
+// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 // `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -21746,7 +21766,8 @@ func (c *Client) DeleteOwnAccountWithBody(ctx context.Context, contentType strin
 // or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-// undone, and the username is never reused. A wrong password is a 422
+// undone, and the username is never reused. The only administrator of the instance gets a
+// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 // `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -22582,7 +22603,8 @@ func (c *Client) GetAccountAction(ctx context.Context, id AccountActionId, reqEd
 // `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 // they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 // is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
 //
@@ -22606,7 +22628,8 @@ func (c *Client) LiftAccountActionWithBody(ctx context.Context, id AccountAction
 // `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 // they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 // is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -22712,8 +22735,11 @@ func (c *Client) ListAccountActions(ctx context.Context, id AdminAccountId, para
 // another kind, missing, repeated, or too many on an action on posts, or naming a post
 // that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 // `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-// the `manage_accounts` permission.
+// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+// Needs the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
 //
@@ -22751,8 +22777,11 @@ func (c *Client) CreateAccountActionWithBody(ctx context.Context, id AdminAccoun
 // another kind, missing, repeated, or too many on an action on posts, or naming a post
 // that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 // `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-// the `manage_accounts` permission.
+// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+// Needs the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -22800,7 +22829,8 @@ func (c *Client) LiftAdminAccountEmailSuppression(ctx context.Context, id AdminA
 // only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 // Whoever holds the link can set the password: confirm who the user is through another
 // channel first. A remote account or the instance actor is a 422 naming `id`, and an
-// unknown account a 404. Needs the `manage_login_recovery` permission, which only the
+// unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_login_recovery` permission, which only the
 // built-in admin role has by default.
 //
 // Corresponds with POST /admin/accounts/{id}/password_reset_link (the `IssueAdminAccountPasswordResetLink` operationId).
@@ -22844,7 +22874,8 @@ func (c *Client) RefetchAccountStatuses(ctx context.Context, id Id, reqEditors .
 // (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
 // of the sign-in and registration origins only (ADR-0038). A remote account or the
-// instance actor is a 422 naming `id`. An unknown account is a 404. Needs the
+// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
+// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Corresponds with POST /admin/accounts/{id}/reveal (the `RevealAdminAccount` operationId).
@@ -22929,7 +22960,8 @@ func (c *Client) GrantAccountRole(ctx context.Context, id AdminAccountId, role R
 // and recovery codes, so that they sign in with the password alone (FR-005). It is
 // recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 // actor is a 422 naming `id`, an account without two-factor authentication a 409
-// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_login_recovery` permission, which only the built-in admin role has by default.
 //
 // Corresponds with POST /admin/accounts/{id}/two_factor/disable (the `DisableAdminAccountTwoFactor` operationId).
@@ -47068,7 +47100,8 @@ type ClientWithResponsesInterface interface {
 	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-	// undone, and the username is never reused. A wrong password is a 422
+	// undone, and the username is never reused. The only administrator of the instance gets a
+	// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 	// `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -47089,7 +47122,8 @@ type ClientWithResponsesInterface interface {
 	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-	// undone, and the username is never reused. A wrong password is a 422
+	// undone, and the username is never reused. The only administrator of the instance gets a
+	// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 	// `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 	// `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -47627,7 +47661,8 @@ type ClientWithResponsesInterface interface {
 	// `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 	// they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 	// is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-	// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47641,7 +47676,8 @@ type ClientWithResponsesInterface interface {
 	// `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 	// they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 	// is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-	// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+	// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47713,8 +47749,11 @@ type ClientWithResponsesInterface interface {
 	// another kind, missing, repeated, or too many on an action on posts, or naming a post
 	// that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 	// `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-	// the `manage_accounts` permission.
+	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+	// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+	// Needs the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47742,8 +47781,11 @@ type ClientWithResponsesInterface interface {
 	// another kind, missing, repeated, or too many on an action on posts, or naming a post
 	// that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 	// `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-	// the `manage_accounts` permission.
+	// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+	// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+	// Needs the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47773,7 +47815,8 @@ type ClientWithResponsesInterface interface {
 	// only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 	// Whoever holds the link can set the password: confirm who the user is through another
 	// channel first. A remote account or the instance actor is a 422 naming `id`, and an
-	// unknown account a 404. Needs the `manage_login_recovery` permission, which only the
+	// unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_login_recovery` permission, which only the
 	// built-in admin role has by default.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47801,7 +47844,8 @@ type ClientWithResponsesInterface interface {
 	// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
 	// of the sign-in and registration origins only (ADR-0038). A remote account or the
-	// instance actor is a 422 naming `id`. An unknown account is a 404. Needs the
+	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
+	// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47854,7 +47898,8 @@ type ClientWithResponsesInterface interface {
 	// and recovery codes, so that they sign in with the password alone (FR-005). It is
 	// recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 	// actor is a 422 naming `id`, an account without two-factor authentication a 409
-	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_login_recovery` permission, which only the built-in admin role has by default.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -75784,7 +75829,8 @@ func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context
 // or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-// undone, and the username is never reused. A wrong password is a 422
+// undone, and the username is never reused. The only administrator of the instance gets a
+// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 // `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -75811,7 +75857,8 @@ func (c *ClientWithResponses) DeleteOwnAccountWithBodyWithResponse(ctx context.C
 // or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-// undone, and the username is never reused. A wrong password is a 422
+// undone, and the username is never reused. The only administrator of the instance gets a
+// 409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
 // `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
 // `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -76553,7 +76600,8 @@ func (c *ClientWithResponses) GetAccountActionWithResponse(ctx context.Context, 
 // `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 // they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 // is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -76573,7 +76621,8 @@ func (c *ClientWithResponses) LiftAccountActionWithBodyWithResponse(ctx context.
 // `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
 // they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
 // is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-// 422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+// 422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -76669,8 +76718,11 @@ func (c *ClientWithResponses) ListAccountActionsWithResponse(ctx context.Context
 // another kind, missing, repeated, or too many on an action on posts, or naming a post
 // that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 // `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-// the `manage_accounts` permission.
+// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+// Needs the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -76704,8 +76756,11 @@ func (c *ClientWithResponses) CreateAccountActionWithBodyWithResponse(ctx contex
 // another kind, missing, repeated, or too many on an action on posts, or naming a post
 // that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
 // `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-// the `manage_accounts` permission.
+// is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+// that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+// Needs the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -76747,7 +76802,8 @@ func (c *ClientWithResponses) LiftAdminAccountEmailSuppressionWithResponse(ctx c
 // only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 // Whoever holds the link can set the password: confirm who the user is through another
 // channel first. A remote account or the instance actor is a 422 naming `id`, and an
-// unknown account a 404. Needs the `manage_login_recovery` permission, which only the
+// unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_login_recovery` permission, which only the
 // built-in admin role has by default.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76787,7 +76843,8 @@ func (c *ClientWithResponses) RefetchAccountStatusesWithResponse(ctx context.Con
 // (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
 // of the sign-in and registration origins only (ADR-0038). A remote account or the
-// instance actor is a 422 naming `id`. An unknown account is a 404. Needs the
+// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
+// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76864,7 +76921,8 @@ func (c *ClientWithResponses) GrantAccountRoleWithResponse(ctx context.Context, 
 // and recovery codes, so that they sign in with the password alone (FR-005). It is
 // recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 // actor is a 422 naming `id`, an account without two-factor authentication a 409
-// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_login_recovery` permission, which only the built-in admin role has by default.
 //
 // Returns a wrapper object for the known response body format(s).

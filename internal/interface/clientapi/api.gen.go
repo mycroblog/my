@@ -11265,6 +11265,12 @@ type PreviewDomainBlockImportRequest struct {
 //     expire or be used up.
 //   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
 //     takes no invite.
+//   - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+//     user to rank above the account: the highest `position` among the user's roles must be above
+//     that of every role of the account, so it refuses a higher or equal rank and the user's own
+//     account.
+//   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+//     an administrator. Make another user an administrator first.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).

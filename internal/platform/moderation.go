@@ -34,6 +34,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 	a.Moderation = moderation.NewService(moderation.Deps{
 		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Clock: a.Clock, IDs: a.IDs,
+		Ranks:    moderationRanks{a},
 		Statuses: moderationStatuses{a}, Lifecycles: a.Accounts, AppealWindow: appealWindow{a},
 		Retention: retentionSettings{a},
 		Follows:   moderationFollows{a}, Directory: a.Accounts, Outbox: outbox,
@@ -178,6 +179,17 @@ func (m moderationFollows) SeverByModeration(ctx context.Context, tx uow.Tx, acc
 // moderationEmails gives the moderation module the identity module, which is built after it
 // because it reads the moderation restrictions, for the sign-up block that a ban makes of the
 // banned user's email address.
+// moderationRanks reads the ranks from the identity module, which is built after moderation.
+type moderationRanks struct{ a *App }
+
+func (m moderationRanks) MayActOn(ctx context.Context, byUserID, targetUserID string) (bool, error) {
+	return m.a.Identity.MayActOn(ctx, byUserID, targetUserID)
+}
+
+func (m moderationRanks) IsLastAdministrator(ctx context.Context, userID string) (bool, error) {
+	return m.a.Identity.IsLastAdministrator(ctx, userID)
+}
+
 type moderationEmails struct{ a *App }
 
 func (m moderationEmails) PrimaryEmailAddress(ctx context.Context, userID string) (string, error) {

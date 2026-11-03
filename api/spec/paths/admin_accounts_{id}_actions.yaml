@@ -54,8 +54,11 @@ post:
     another kind, missing, repeated, or too many on an action on posts, or naming a post
     that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
     `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-    is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-    the `manage_accounts` permission.
+    is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+    A local account whose roles do not rank below the user's, the user's own included, is a
+    403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+    that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+    Needs the `manage_accounts` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]
