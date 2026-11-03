@@ -1222,7 +1222,7 @@ var schema = []field{
 	},
 	{
 		key:   "dynamic_client_unredeemed_ttl",
-		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. A Go duration such as `24h`.",
+		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. From 30 days on, `dynamic_client_idle_ttl` decides instead, because exchanged codes are purged by then. A Go duration such as `24h`.",
 		def:   "24h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DynamicClientUnredeemedTTL, _ = time.ParseDuration(v) },

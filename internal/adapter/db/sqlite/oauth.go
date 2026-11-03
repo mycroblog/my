@@ -150,9 +150,9 @@ func (r *IdentityRepository) TokenFamilyActive(ctx context.Context, familyID str
 }
 
 // ListUnusedDynamicOAuthClients implements identity.Repository.
-func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, idleBefore, now time.Time, limit int) ([]string, error) {
+func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, recordsKeptSince, idleBefore, now time.Time, limit int) ([]string, error) {
 	ids, err := r.db.reader().ListUnusedDynamicOAuthClients(ctx, sqlitegen.ListUnusedDynamicOAuthClientsParams{
-		UnredeemedBefore: toMillis(unredeemedBefore), IdleBefore: toMillis(idleBefore), Now: toMillis(now), BatchLimit: int64(limit),
+		UnredeemedBefore: toMillis(unredeemedBefore), RecordsKeptSince: toMillis(recordsKeptSince), IdleBefore: toMillis(idleBefore), Now: toMillis(now), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list unused dynamic oauth clients")
 }
