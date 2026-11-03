@@ -45,7 +45,7 @@ func (f *fakeLocalMoves) Cancel(_ context.Context, accountID string) error {
 	return nil
 }
 
-// TestMoveOwnAccount checks POST /accounts/move and /accounts/move/cancel (ADR-0089): the
+// TestMoveOwnAccount checks POST and DELETE /accounts/move (ADR-0089): the
 // confirmation comes first, so a wrong password moves nothing; the refused targets have their
 // problems; a moved account cannot post, follow, boost, favourite, react, or vote (403
 // account-moved) until it cancels the move, which an account that has not moved cannot.
@@ -94,7 +94,7 @@ func TestMoveOwnAccount(t *testing.T) {
 	if len(moves.moved) != 0 {
 		t.Fatalf("moved = %+v, want none yet", moves.moved)
 	}
-	res = e.sendJSON(t, http.MethodPost, "/accounts/move/cancel", "write", "")
+	res = e.sendJSON(t, http.MethodDelete, "/accounts/move", "write", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeAccountNotMoved {
 		t.Errorf("cancel before a move = %d %+v, want 409 account-not-moved", res.StatusCode, p)
 	}
@@ -119,7 +119,7 @@ func TestMoveOwnAccount(t *testing.T) {
 	refused(http.MethodPut, "/statuses/"+status+"/reaction", `{"emoji":"👍"}`)
 	refused(http.MethodPost, "/statuses/"+status+"/poll/votes", `{"poll_id":"`+testkit.NamedID("poll")+`","choices":[0]}`)
 
-	res = e.sendJSON(t, http.MethodPost, "/accounts/move/cancel", "write", "")
+	res = e.sendJSON(t, http.MethodDelete, "/accounts/move", "write", "")
 	if res.StatusCode != http.StatusNoContent {
 		t.Fatalf("cancel = %d, want 204", res.StatusCode)
 	}

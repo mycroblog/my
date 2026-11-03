@@ -583,7 +583,7 @@ func TestQuoteOperations(t *testing.T) {
 		t.Errorf("quotes = %d %+v, %v", res.StatusCode, page, err)
 	}
 	const quoting = "01890a5d-ac96-774b-bcce-b302099a9004"
-	if res := e.send(t, http.MethodPost, "/statuses/"+sampleStatusID+"/quotes/"+quoting+"/revoke", "write", ""); res.StatusCode != http.StatusNoContent {
+	if res := e.send(t, http.MethodDelete, "/statuses/"+sampleStatusID+"/quotes/"+quoting+"/approval", "write", ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("revoke = %d, want 204", res.StatusCode)
 	}
 	if want := "quote_policy:followers quotes revoke_quote:" + quoting; strings.Join(ops, " ") != want {

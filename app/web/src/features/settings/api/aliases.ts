@@ -33,12 +33,12 @@ export function addAliasMutation(api: Api) {
   };
 }
 
-/** Removes an alias (POST /accounts/aliases/remove), as the options of useMutation. Returns the whole list. */
+/** Removes an alias (DELETE /accounts/aliases), as the options of useMutation. Returns the whole list. */
 export function removeAliasMutation(api: Api) {
   return {
-    mutationKey: ["post", "/accounts/aliases/remove"] as const,
+    mutationKey: ["delete", "/accounts/aliases"] as const,
     mutationFn: async (uri: string): Promise<AccountAliasList> => {
-      const { data, error } = await api.fetch.POST("/accounts/aliases/remove", { body: { uri } });
+      const { data, error } = await api.fetch.DELETE("/accounts/aliases", { params: { query: { uri } } });
       if (data === undefined) throw new ApiError(error);
       return data;
     },

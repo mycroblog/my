@@ -140,7 +140,7 @@ func TestFinanceCostTotals(t *testing.T) {
 		{http.MethodGet, "/admin/cost_totals?granularity=month&from=2026-04-01&to=2026-04-30", ""},
 		{http.MethodGet, "/admin/cost_items", ""},
 		{http.MethodPost, "/admin/cost_items", `{"name":"x","provider":"y","category":"other","schedule":"once","interval":1,"starts_on":"2026-04-01","price":{"amount":"1","currency":"USD"}}`},
-		{http.MethodPost, "/admin/cost_items/" + costs.item.ID + "/cancel", ""},
+		{http.MethodDelete, "/admin/cost_items/" + costs.item.ID, ""},
 		{http.MethodPatch, "/admin/settings", `{"values":{"finance_viewer_item_names":"true"}}`},
 	} {
 		if res := e.send(t, c.method, c.path, "carol-admin", c.body); res.StatusCode != http.StatusForbidden {

@@ -326,7 +326,7 @@ function EmojiRow({ emoji, actions }: { emoji: OwnCustomEmoji; actions: OwnCusto
       </Cluster>
       <DescriptionList columns={2}>
         <DescriptionItem term={t("client:custom_emojis.state")}>
-          {t(emoji.enabled ? "client:custom_emojis.state.enabled" : "client:custom_emojis.state.disabled")}
+          {t(emoji.state === "enabled" ? "client:custom_emojis.state.enabled" : "client:custom_emojis.state.disabled")}
         </DescriptionItem>
         <DescriptionItem term={t("client:custom_emojis.picker")}>
           {t(emoji.visible_in_picker ? "client:custom_emojis.picker.shown" : "client:custom_emojis.picker.hidden")}

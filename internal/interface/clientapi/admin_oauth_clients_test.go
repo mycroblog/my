@@ -185,11 +185,11 @@ func TestListOAuthClients(t *testing.T) {
 func TestDisableAndEnableOAuthClients(t *testing.T) {
 	e, f := newOAuthClientsEnv(t)
 	res := e.send(t, http.MethodPost, "/admin/oauth_clients/"+oauthClientCIMD+"/disable", "admin", "")
-	if c := decodeJSON[clientapi.AdminOAuthClient](t, res); res.StatusCode != http.StatusOK || !c.Disabled || c.Id != oauthClientCIMD {
+	if c := decodeJSON[clientapi.AdminOAuthClient](t, res); res.StatusCode != http.StatusOK || c.State != clientapi.AdminOAuthClientStateDisabled || c.Id != oauthClientCIMD {
 		t.Fatalf("disable = %d %+v, want the disabled client", res.StatusCode, c)
 	}
 	res = e.send(t, http.MethodPost, "/admin/oauth_clients/"+oauthClientCIMD+"/enable", "admin", "")
-	if c := decodeJSON[clientapi.AdminOAuthClient](t, res); res.StatusCode != http.StatusOK || c.Disabled {
+	if c := decodeJSON[clientapi.AdminOAuthClient](t, res); res.StatusCode != http.StatusOK || c.State != clientapi.AdminOAuthClientStateEnabled {
 		t.Fatalf("enable = %d %+v, want the client enabled", res.StatusCode, c)
 	}
 	want := []string{"disable " + oauthClientCIMD + " by " + userOf(aliceAccountID), "enable " + oauthClientCIMD + " by " + userOf(aliceAccountID)}

@@ -50,6 +50,7 @@ type Supporters interface {
 	Subscriptions(ctx context.Context, f appsupporters.SubscriptionFilter) ([]appsupporters.SubscriptionView, error)
 	Subscriber(ctx context.Context, userID string) (appsupporters.User, bool, error)
 	CancelByStaff(ctx context.Context, id, byUserID string) error
+	Subscription(ctx context.Context, id string) (appsupporters.SubscriptionView, error)
 }
 
 // requireSupporters checks the manage_supporters permission and that the use cases are
@@ -469,23 +470,32 @@ func (s *Server) ListSupporterSubscriptions(ctx context.Context, req ListSupport
 	return ListSupporterSubscriptions200JSONResponse{Body: page, Headers: ListSupporterSubscriptions200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
-// CancelSupporterSubscription serves POST /api/v1/admin/supporter_subscriptions/{id}/cancel.
-func (s *Server) CancelSupporterSubscription(ctx context.Context, req CancelSupporterSubscriptionRequestObject) (CancelSupporterSubscriptionResponseObject, error) {
+// EndSupporterSubscription serves POST /api/v1/admin/supporter_subscriptions/{id}/end.
+func (s *Server) EndSupporterSubscription(ctx context.Context, req EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error) {
 	v, p, err := s.requireSupporters(ctx)
 	if err != nil || p != nil {
 		if err != nil {
 			return nil, err
 		}
-		return CancelSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(*p), nil
+		return EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	err = s.o.Supporters.CancelByStaff(ctx, req.Id, v.UserID)
 	if pr, ok := s.supporterProblem(ctx, err); ok {
-		return CancelSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(pr), nil
+		return EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(pr), nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("clientapi: cancel subscription %s: %w", req.Id, err)
+		return nil, fmt.Errorf("clientapi: end subscription %s: %w", req.Id, err)
 	}
-	return CancelSupporterSubscription204Response{}, nil
+	sv, err := s.o.Supporters.Subscription(ctx, req.Id)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: subscription %s: %w", req.Id, err)
+	}
+	out, err := s.newAdminSupporterSubscription(ctx, sv)
+	if err != nil {
+		return nil, err
+	}
+	cache := cacheNoStore
+	return EndSupporterSubscription200JSONResponse{Body: out, Headers: EndSupporterSubscription200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // ListSupporterPlans serves GET /api/v1/instance/supporter_plans: a 404 while the program is

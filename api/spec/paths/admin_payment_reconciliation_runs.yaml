@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 post:
-  operationId: runPaymentReconcile
+  operationId: runPaymentReconciliation
   summary: Reconcile with the payment provider now
   description: |
     Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the

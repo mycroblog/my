@@ -114,7 +114,7 @@ func TestVoiceRooms(t *testing.T) {
 	}
 	page := decode[clientapi.VoiceRoomPage](t, res)
 	if len(page.Items) != 1 || page.NextCursor == nil || page.Items[0].Host.Id != aliceAccountID ||
-		len(page.Items[0].Participants) != 1 || !page.Items[0].Participants[0].Host || page.Items[0].Hashtags[0] != "Go" {
+		len(page.Items[0].Participants) != 1 || !page.Items[0].Participants[0].Hosting || page.Items[0].Hashtags[0] != "Go" {
 		t.Fatalf("list = %+v", page)
 	}
 	res = e.send(t, http.MethodGet, "/voice/rooms?cursor="+*page.NextCursor, "read-voice", "")

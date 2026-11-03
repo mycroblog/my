@@ -49,7 +49,7 @@ const localEmoji: Schemas["AdminCustomEmoji"][] = localShortcodes.map((shortcode
     ...(index >= 7 && index < 10 && { category: "Food and animals" }),
     aliases: index % 3 === 0 ? [shortcode.slice(0, 4), "cute"] : [],
     visible_in_picker: index !== 5,
-    enabled: index !== 6,
+    state: index !== 6 ? "enabled" : "disabled",
   }),
 );
 
@@ -62,7 +62,7 @@ const remoteEmoji: Schemas["AdminCustomEmoji"][] = ["partyparrot", "blobcat", "m
       uri: `https://remote.example/emojis/${String(index)}`,
       url: emojiImage(shortcode, index + 2),
       static_url: emojiImage(shortcode, index + 2),
-      enabled: index !== 3,
+      state: index !== 3 ? "enabled" : "disabled",
     }),
 );
 

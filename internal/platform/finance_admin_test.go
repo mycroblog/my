@@ -87,9 +87,9 @@ func TestCostItemsAdmin(t *testing.T) {
 	if item.EndsOn == nil || *item.EndsOn != "2026-04-30" {
 		t.Errorf("ended = %+v", item)
 	}
-	e.want(e.do(http.MethodPost, "/admin/cost_items/"+once.Id+"/cancel", admin.token, nil, nil), http.StatusNoContent, "POST cancel")
-	e.want(e.do(http.MethodPost, "/admin/cost_items/"+once.Id+"/cancel", admin.token, nil, nil), http.StatusNotFound, "cancel twice")
-	e.want(e.do(http.MethodGet, "/admin/cost_items/"+once.Id, admin.token, nil, nil), http.StatusNotFound, "GET a canceled item")
+	e.want(e.do(http.MethodDelete, "/admin/cost_items/"+once.Id, admin.token, nil, nil), http.StatusNoContent, "DELETE")
+	e.want(e.do(http.MethodDelete, "/admin/cost_items/"+once.Id, admin.token, nil, nil), http.StatusNotFound, "DELETE twice")
+	e.want(e.do(http.MethodGet, "/admin/cost_items/"+once.Id, admin.token, nil, nil), http.StatusNotFound, "GET a deleted item")
 
 	var page clientapi.CostItemPage
 	e.want(e.do(http.MethodGet, "/admin/cost_items?limit=2", admin.token, nil, &page), http.StatusOK, "GET /admin/cost_items")

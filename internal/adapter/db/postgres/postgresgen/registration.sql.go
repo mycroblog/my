@@ -164,6 +164,23 @@ func (q *Queries) GetPrimaryEmail(ctx context.Context, userID string) (GetPrimar
 	return i, err
 }
 
+const getRegistrationApplication = `-- name: GetRegistrationApplication :one
+SELECT id, user_id, reason, invite_id, submitted_at FROM registration_applications WHERE id = $1
+`
+
+func (q *Queries) GetRegistrationApplication(ctx context.Context, id string) (RegistrationApplication, error) {
+	row := q.db.QueryRow(ctx, getRegistrationApplication, id)
+	var i RegistrationApplication
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Reason,
+		&i.InviteID,
+		&i.SubmittedAt,
+	)
+	return i, err
+}
+
 const getRegistrationApplicationByUser = `-- name: GetRegistrationApplicationByUser :one
 SELECT id, user_id, reason, invite_id, submitted_at FROM registration_applications WHERE user_id = $1
 `

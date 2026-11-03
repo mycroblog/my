@@ -21,8 +21,14 @@ import (
 var (
 	userDave   = testkit.OrderedID(1)
 	userErin   = testkit.OrderedID(2)
-	userFern   = testkit.OrderedID(3)
 	userNobody = testkit.OrderedID(9)
+)
+
+// The IDs of the registrations of the users.
+var (
+	registrationDave = testkit.NamedID("app-dave")
+	registrationErin = testkit.NamedID("app-erin")
+	registrationFern = testkit.NamedID("app-fern")
 )
 
 // fakeRegistrations keeps registrations by user with the semantics of the identity use cases:
@@ -53,6 +59,15 @@ func (f *fakeRegistrations) find(userID string) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+func (f *fakeRegistrations) RegistrationUser(_ context.Context, id string) (string, error) {
+	for _, e := range f.entries {
+		if e.Application.ID == id {
+			return e.Application.UserID, nil
+		}
+	}
+	return "", appidentity.ErrNotFound
 }
 
 func (f *fakeRegistrations) Registration(_ context.Context, userID string) (appidentity.RegistrationEntry, error) {
@@ -122,7 +137,7 @@ func TestListPendingRegistrations(t *testing.T) {
 		t.Fatalf("GET /admin/registrations = %d (Cache-Control %q)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
 	page := decodeJSON[clientapi.AdminRegistrationPage](t, res)
-	if len(page.Items) != 2 || page.NextCursor == nil || page.Items[0].UserId != userDave || page.Items[1].UserId != userErin {
+	if len(page.Items) != 2 || page.NextCursor == nil || page.Items[0].Id != registrationDave || page.Items[1].Id != registrationErin {
 		t.Fatalf("first page = %+v", page)
 	}
 	d := page.Items[0]
@@ -132,7 +147,7 @@ func TestListPendingRegistrations(t *testing.T) {
 		t.Errorf("first page = %+v", page.Items)
 	}
 	res = e.admin(t, http.MethodGet, "/admin/registrations?limit=2&cursor="+*page.NextCursor, "admin-read", nil)
-	if rest := decodeJSON[clientapi.AdminRegistrationPage](t, res); len(rest.Items) != 1 || rest.Items[0].UserId != userFern || rest.NextCursor != nil {
+	if rest := decodeJSON[clientapi.AdminRegistrationPage](t, res); len(rest.Items) != 1 || rest.Items[0].Id != registrationFern || rest.NextCursor != nil {
 		t.Errorf("second page = %+v", rest)
 	}
 	// "eA" is base64url for "x": a cursor without a position.
@@ -154,24 +169,24 @@ func TestPendingRegistrationWithoutEmail(t *testing.T) {
 
 func TestDecideRegistration(t *testing.T) {
 	e, regs := newRegistrationsEnv(t, identity.PermManageAccounts)
-	res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userDave+"/approve", "admin-write", `{"note":"welcome"}`)
+	res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationDave+"/approve", "admin-write", `{"note":"welcome"}`)
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("approve = %d", res.StatusCode)
 	}
 	got := decodeJSON[clientapi.AdminRegistration](t, res)
-	if got.State != clientapi.RegistrationStateApproved || got.UserId != userDave || got.DecisionNote == nil || *got.DecisionNote != "welcome" {
+	if got.State != clientapi.RegistrationStateApproved || got.Id != registrationDave || got.DecisionNote == nil || *got.DecisionNote != "welcome" {
 		t.Errorf("approved = %+v", got)
 	}
 	// Only the review of a pending registration shows the address.
 	if got.Email != nil || got.EmailVerified != nil {
 		t.Errorf("the answer on a decided registration carries the email: %+v", got)
 	}
-	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userErin+"/reject", "admin-write", ""); res.StatusCode != http.StatusOK ||
+	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationErin+"/reject", "admin-write", ""); res.StatusCode != http.StatusOK ||
 		decodeJSON[clientapi.AdminRegistration](t, res).State != clientapi.RegistrationStateRejected {
 		t.Errorf("reject without a body = %d", res.StatusCode)
 	}
 	// A decided registration stays as it is.
-	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+userDave+"/reject", "admin-write", "")
+	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationDave+"/reject", "admin-write", "")
 	again := decodeJSON[clientapi.AdminRegistration](t, res)
 	if res.StatusCode != http.StatusOK || again.State != clientapi.RegistrationStateApproved {
 		t.Errorf("deciding again = %d, want 200 approved", res.StatusCode)
@@ -188,10 +203,10 @@ func TestDecideRegistration(t *testing.T) {
 	}
 
 	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userNobody+"/approve", "admin-write", ""); res.StatusCode != http.StatusNotFound {
-		t.Errorf("approving an unknown user = %d, want 404", res.StatusCode)
+		t.Errorf("approving an unknown registration = %d, want 404", res.StatusCode)
 	}
 	long := `{"note":"` + strings.Repeat("a", identity.MaxDecisionNoteLength+1) + `"}`
-	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+userFern+"/approve", "admin-write", long)
+	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationFern+"/approve", "admin-write", long)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "note") {
 		t.Errorf("a too long note = %d %+v, want 422 on note", res.StatusCode, p)
 	}
@@ -206,8 +221,8 @@ func TestRegistrationReviewNeedsManageAccounts(t *testing.T) {
 	e, refused := newRegistrationsEnv(t, identity.PermManageReports)
 	for _, op := range []struct{ method, path, token string }{
 		{http.MethodGet, "/admin/registrations", "admin-read"},
-		{http.MethodPost, "/admin/registrations/" + userDave + "/approve", "admin-write"},
-		{http.MethodPost, "/admin/registrations/" + userDave + "/reject", "admin-write"},
+		{http.MethodPost, "/admin/registrations/" + registrationDave + "/approve", "admin-write"},
+		{http.MethodPost, "/admin/registrations/" + registrationDave + "/reject", "admin-write"},
 	} {
 		res := e.adminBody(t, op.method, op.path, op.token, "")
 		if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeMissingPermission {
@@ -215,7 +230,7 @@ func TestRegistrationReviewNeedsManageAccounts(t *testing.T) {
 		}
 	}
 	e, scoped := newRegistrationsEnv(t, identity.PermManageAccounts)
-	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userDave+"/approve", "admin-read", ""); res.StatusCode != http.StatusForbidden {
+	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationDave+"/approve", "admin-read", ""); res.StatusCode != http.StatusForbidden {
 		t.Errorf("approve with admin:read = %d, want 403", res.StatusCode)
 	}
 	if len(refused.decided)+len(scoped.decided) != 0 {

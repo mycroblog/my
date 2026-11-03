@@ -178,7 +178,7 @@ describe("a quote of the viewer's post", () => {
     serve(quoting);
     const revoked: string[] = [];
     server.use(
-      http.post(`${apiBase}/statuses/:id/quotes/:quoteId/revoke`, ({ params }) => {
+      http.delete(`${apiBase}/statuses/:id/quotes/:quoteId/approval`, ({ params }) => {
         revoked.push(`${String(params["id"])}:${String(params["quoteId"])}`);
         return new HttpResponse(null, { status: 204 });
       }),

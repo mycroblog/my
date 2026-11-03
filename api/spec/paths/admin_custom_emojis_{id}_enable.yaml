@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: enableCustomEmoji
+  summary: Enable a custom emoji
+  description: |
+    Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+    remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/CustomEmojiId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminCustomEmoji.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

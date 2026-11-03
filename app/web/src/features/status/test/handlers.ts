@@ -9,7 +9,7 @@
 // (GET /statuses/{id}/reactions) are Bob with 👍, in one page. A vote in the poll of a post
 // (POST /statuses/{id}/poll/votes) answers the post with `pollFixture` and the vote counted in it. A change of who
 // may quote a post (PUT /statuses/{id}/quote_policy) answers the post with that policy; the posts that quote a post
-// (GET /statuses/{id}/quotes) are none; and the revocation of an approval (POST /statuses/{id}/quotes/{quote_id}/revoke)
+// (GET /statuses/{id}/quotes) are none; and the revocation of an approval (DELETE /statuses/{id}/quotes/{quote_id}/approval)
 // answers 204.
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, type Schemas, statusFixture } from "../../../test/fixtures";

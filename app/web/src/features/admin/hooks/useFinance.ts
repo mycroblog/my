@@ -19,7 +19,7 @@ import {
   adminIncomeTotalsQueryOptions,
   type BillingImport,
   billingImportsQueryOptions,
-  cancelCostItemMutation,
+  deleteCostItemMutation,
   type CostItem,
   costItemsQueryOptions,
   costMemoLimit,
@@ -278,7 +278,7 @@ export function useCostItemActions(
   const update = useMutation({ ...updateCostItemMutation(api) });
   const revise = useMutation({ ...reviseCostItemPriceMutation(api) });
   const end = useMutation({ ...setCostItemEndMutation(api) });
-  const cancel = useMutation({ ...cancelCostItemMutation(api) });
+  const cancel = useMutation({ ...deleteCostItemMutation(api) });
   const run = async (
     item: CostItem,
     work: () => Promise<unknown>,

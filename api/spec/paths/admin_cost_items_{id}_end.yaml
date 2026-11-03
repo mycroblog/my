@@ -5,7 +5,7 @@ put:
   description: |
     Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
     go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-    the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+    the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
     in the audit log. Needs the `manage_finance` permission.
   tags: [admin-server]
   security:

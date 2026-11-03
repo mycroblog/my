@@ -147,7 +147,7 @@ AWS と Google Cloud の利用料金の自動の取り込み（FR-904）の方�
 
 - 管理（タグ `admin-server`、スコープ `admin:read` / `admin:write` と `manage_finance`）:
   - `GET /admin/cost_items`（キーセットページング）・`POST /admin/cost_items`・`GET /admin/cost_items/{id}`
-  - `PATCH /admin/cost_items/{id}`（名前・事業者・区分・メモ）・`POST /admin/cost_items/{id}/price_revisions`（改定日・金額）・`PUT /admin/cost_items/{id}/end`（終了日。`null` で無期限）・`POST /admin/cost_items/{id}/cancel`
+  - `PATCH /admin/cost_items/{id}`（名前・事業者・区分・メモ）・`POST /admin/cost_items/{id}/price_revisions`（改定日・金額）・`PUT /admin/cost_items/{id}/end`（終了日。`null` で無期限）・`DELETE /admin/cost_items/{id}`
   - `GET /admin/cost_totals?granularity=week|month|year&from=YYYY-MM-DD&to=YYYY-MM-DD&basis=amortized|cash`: 期間ごとの通貨ごとの合計と、事業者・区分・通貨ごとの内訳、`rules`（週の始まり、事業者ごとの請求の日付の基準）を返す
 - 公開（タグ `instance`、`security: []`、`Cache-Control: public, max-age=60`）: `GET /instance/cost_totals` は管理と同じ問い合わせを受け、`finance_visibility` で内訳を省く。`private` では `404`。
   `GET /instance` に `finance_visibility` を足し、Web クライアントはそれで `/about` の区画を出し分ける。

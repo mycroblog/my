@@ -328,7 +328,7 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 	e.want(e.do(http.MethodPost, room+"/participation", carol.token, nil, nil), http.StatusOK, "join by carol")
 	e.want(e.do(http.MethodPost, room+"/speaker", carol.token, nil, nil), http.StatusOK, "speak after an invitation as a speaker")
 	e.want(e.do(http.MethodPost, room+"/participants/"+carol.id+"/cohost", alice.token, nil, &got), http.StatusOK, "make a co-host")
-	if !got.Participants[2].Cohost {
+	if !got.Participants[2].Cohosting {
 		t.Errorf("after making a co-host = %+v", got.Participants[2])
 	}
 

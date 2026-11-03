@@ -190,7 +190,7 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 			}
 			host := p.AccountID == v.Head.HostAccountID
 			r.Participants = append(r.Participants, VoiceRoomParticipant{
-				Account: a, Role: VoiceRole(p.Role), Host: host, Cohost: p.Cohost() && !host, HandRaised: p.HandRaised,
+				Account: a, Role: VoiceRole(p.Role), Hosting: host, Cohosting: p.Cohost() && !host, HandRaised: p.HandRaised,
 				Blocked: blocked[p.AccountID],
 			})
 		}

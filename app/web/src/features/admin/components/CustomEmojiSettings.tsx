@@ -2,10 +2,10 @@
 // The custom emoji screen below its heading (ADR-0051, manage_custom_emojis; web-client/screens/admin-custom-emojis.md):
 // the emoji of this server or of other servers (chosen in the list's toolbar and kept in the URL by the route,
 // web-client/README.md S3), newest first, with a search, built from the list-and-add part (`ListSection`): its one
-// primary action opens the form that registers a local emoji with an image file in place. A local emoji's settings
-// change in a dialog, its image is replaced by choosing another file, and deleting it asks first in an alert dialog (it
-// cannot be undone); a remote emoji is enabled or disabled, or copied into one of this server under a shortcode chosen
-// in a dialog. What a change or a registration did, and a failed change, show above the rows. A second tab (kept in the
+// primary action opens the form that registers a local emoji with an image file in place. Any emoji is enabled or
+// disabled with one press. A local emoji's settings change in a dialog, its image is replaced by choosing another file,
+// and deleting it asks first in an alert dialog (it cannot be undone); a remote emoji is copied into one of this server
+// under a shortcode chosen in a dialog. What a change or a registration did, and a failed change, show above the rows. A second tab (kept in the
 // URL too) holds the requests of the holders of create_custom_emojis (ADR-0070 §2), with the number of the pending ones
 // in its name (ADR-0070 §9).
 import {
@@ -461,7 +461,11 @@ function CustomEmojiRow({ emoji, actions }: { emoji: AdminCustomEmoji; actions: 
           </DescriptionItem>
         )}
         <DescriptionItem term={t("client:admin.custom_emojis.state")}>
-          {t(emoji.enabled ? "client:admin.custom_emojis.state.enabled" : "client:admin.custom_emojis.state.disabled")}
+          {t(
+            emoji.state === "enabled"
+              ? "client:admin.custom_emojis.state.enabled"
+              : "client:admin.custom_emojis.state.disabled",
+          )}
         </DescriptionItem>
         {emoji.local && (
           <>
@@ -494,6 +498,21 @@ function CustomEmojiRow({ emoji, actions }: { emoji: AdminCustomEmoji; actions: 
         </DescriptionItem>
       </DescriptionList>
       <Cluster gap="2">
+        <Button
+          size="sm"
+          isPending={isPending}
+          aria-label={t(
+            emoji.state === "enabled"
+              ? "client:admin.custom_emojis.disable_emoji"
+              : "client:admin.custom_emojis.enable_emoji",
+            { emoji: name },
+          )}
+          onPress={() => {
+            actions.setEnabled(emoji, emoji.state !== "enabled");
+          }}
+        >
+          {t(emoji.state === "enabled" ? "client:admin.custom_emojis.disable" : "client:admin.custom_emojis.enable")}
+        </Button>
         {emoji.local ? (
           <>
             <EditCustomEmoji emoji={emoji} actions={actions} isPending={isPending} />
@@ -515,22 +534,7 @@ function CustomEmojiRow({ emoji, actions }: { emoji: AdminCustomEmoji; actions: 
             <DeleteCustomEmoji emoji={emoji} actions={actions} isPending={isPending} />
           </>
         ) : (
-          <>
-            <Button
-              size="sm"
-              isPending={isPending}
-              aria-label={t(
-                emoji.enabled ? "client:admin.custom_emojis.disable_emoji" : "client:admin.custom_emojis.enable_emoji",
-                { emoji: name },
-              )}
-              onPress={() => {
-                actions.setEnabled(emoji, !emoji.enabled);
-              }}
-            >
-              {t(emoji.enabled ? "client:admin.custom_emojis.disable" : "client:admin.custom_emojis.enable")}
-            </Button>
-            <CopyCustomEmoji emoji={emoji} actions={actions} isPending={isPending} />
-          </>
+          <CopyCustomEmoji emoji={emoji} actions={actions} isPending={isPending} />
         )}
       </Cluster>
     </Stack>
@@ -573,7 +577,6 @@ function EditCustomEmojiForm({
   const [category, setCategory] = useState(emoji.category ?? "");
   const [aliases, setAliases] = useState(emoji.aliases.join(" "));
   const [visibleInPicker, setVisibleInPicker] = useState(emoji.visible_in_picker);
-  const [enabled, setEnabled] = useState(emoji.enabled);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(false);
   const aliasCount = parseAliases(aliases).length;
@@ -586,7 +589,6 @@ function EditCustomEmojiForm({
         category: category.trim(),
         aliases: parseAliases(aliases),
         visible_in_picker: visibleInPicker,
-        enabled,
       })
       .then((saved) => {
         setIsSaving(false);
@@ -623,13 +625,6 @@ function EditCustomEmojiForm({
         description={t("client:admin.custom_emojis.visible_in_picker.description")}
       >
         {t("client:admin.custom_emojis.visible_in_picker")}
-      </Checkbox>
-      <Checkbox
-        isSelected={enabled}
-        onChange={setEnabled}
-        description={t("client:admin.custom_emojis.enabled.description")}
-      >
-        {t("client:admin.custom_emojis.enabled")}
       </Checkbox>
       {error && actions.error !== undefined && (
         <InlineError size="inherit" alert>

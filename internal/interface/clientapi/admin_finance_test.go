@@ -120,7 +120,7 @@ func TestCostItems(t *testing.T) {
 		{http.MethodPost, "/admin/cost_items/" + id + "/price_revisions", "admin", `{"effective_on":"2027-04-10","price":{"amount":"1800","currency":"JPY"}}`, http.StatusOK},
 		{http.MethodPut, "/admin/cost_items/" + id + "/end", "admin", `{"ends_on":"2028-04-09"}`, http.StatusOK},
 		{http.MethodPut, "/admin/cost_items/" + id + "/end", "admin", `{}`, http.StatusOK},
-		{http.MethodPost, "/admin/cost_items/" + id + "/cancel", "admin", "", http.StatusNoContent},
+		{http.MethodDelete, "/admin/cost_items/" + id, "admin", "", http.StatusNoContent},
 		{http.MethodGet, "/admin/cost_totals?granularity=year&from=2026-01-01&to=2027-12-31", "admin-read", "", http.StatusOK},
 
 		// The values the server rejects.
@@ -129,7 +129,7 @@ func TestCostItems(t *testing.T) {
 		{http.MethodPost, "/admin/cost_items", "admin", `{"schedule":"once","interval":1,"starts_on":"2026-04-10","name":"x","provider":"y","category":"other","price":{"amount":"1.234","currency":"USD"}}`, http.StatusUnprocessableEntity},
 		{http.MethodPost, "/admin/cost_items", "admin", `{"schedule":"once","interval":1,"starts_on":"2026-04-10","name":"x","provider":"y","category":"other","price":{"amount":"1","currency":"XXX"}}`, http.StatusUnprocessableEntity},
 		{http.MethodPost, "/admin/cost_items/" + id + "/price_revisions", "admin", `{"effective_on":"2027-13-01","price":{"amount":"1","currency":"JPY"}}`, http.StatusUnprocessableEntity},
-		{http.MethodPost, "/admin/cost_items/0199f0e0-0000-7000-8000-0000000000ff/cancel", "admin", "", http.StatusNotFound},
+		{http.MethodDelete, "/admin/cost_items/0199f0e0-0000-7000-8000-0000000000ff", "admin", "", http.StatusNotFound},
 		{http.MethodGet, "/admin/cost_totals?granularity=week&from=2026-01-01&to=2028-01-01", "admin-read", "", http.StatusUnprocessableEntity},
 		{http.MethodGet, "/admin/cost_totals?granularity=day&from=2026-01-01&to=2026-01-02", "admin-read", "", http.StatusBadRequest},
 		{http.MethodGet, "/admin/cost_totals?granularity=month&from=2026-01-01&to=2026-01-02&basis=accrual", "admin-read", "", http.StatusBadRequest},
@@ -138,7 +138,7 @@ func TestCostItems(t *testing.T) {
 		{http.MethodGet, "/admin/cost_items", "bob-admin", "", http.StatusForbidden},
 		{http.MethodPost, "/admin/cost_items", "bob-admin", newItem, http.StatusForbidden},
 		{http.MethodPatch, "/admin/cost_items/" + id, "bob-admin", `{"name":"x"}`, http.StatusForbidden},
-		{http.MethodPost, "/admin/cost_items/" + id + "/cancel", "bob-admin", "", http.StatusForbidden},
+		{http.MethodDelete, "/admin/cost_items/" + id, "bob-admin", "", http.StatusForbidden},
 		{http.MethodGet, "/admin/cost_totals?granularity=month&from=2026-01-01&to=2026-01-02", "bob-admin", "", http.StatusForbidden},
 		{http.MethodPost, "/admin/cost_items", "admin-read", newItem, http.StatusForbidden},
 	} {

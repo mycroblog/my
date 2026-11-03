@@ -136,7 +136,7 @@ function itemsServer(initial: readonly Schemas["CostItem"][]) {
         return ends_on === undefined ? rest : { ...rest, ends_on };
       });
     }),
-    http.post(`${apiBase}/admin/cost_items/:id/cancel`, async ({ request, params }) => {
+    http.delete(`${apiBase}/admin/cost_items/:id`, async ({ request, params }) => {
       await record(request);
       items = items.filter((item) => item.id !== params["id"]);
       return new HttpResponse(null, { status: 204 });
@@ -339,7 +339,7 @@ describe("the costs screen", () => {
       `PATCH /admin/cost_items/${vm.id}`,
       `POST /admin/cost_items/${vm.id}/price_revisions`,
       `PUT /admin/cost_items/${vm.id}/end`,
-      `POST /admin/cost_items/${domain.id}/cancel`,
+      `DELETE /admin/cost_items/${domain.id}`,
     ]);
     expect(items.writes[1]?.body).toEqual({ effective_on: "2026-07-31", price: { amount: "15.00", currency: "USD" } });
     expect(items.writes[2]?.body).toEqual({ ends_on: "2026-12-31" });

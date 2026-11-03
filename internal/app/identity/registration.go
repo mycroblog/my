@@ -30,6 +30,7 @@ type RegistrationRepository interface {
 	// is pending, and reports whether it did.
 	TransitionPendingRegistrationState(ctx context.Context, tx uow.Tx, s identity.UserRegistrationState) (bool, error)
 	FindRegistrationApplication(ctx context.Context, userID string) (identity.RegistrationApplication, error)
+	FindRegistrationApplicationByID(ctx context.Context, id string) (identity.RegistrationApplication, error)
 	// RegistrationDecisionNote returns the note of the decision on an application, "" when it
 	// has no decision or the decision has no note.
 	RegistrationDecisionNote(ctx context.Context, applicationID string) (string, error)
@@ -707,6 +708,16 @@ func (s *Service) ListRegistrationsAfter(ctx context.Context, state identity.Reg
 		}
 	}
 	return entries, nil
+}
+
+// RegistrationUser returns the user of the registration id, the ID the client API names a
+// registration by. It fails with ErrNotFound for an unknown one.
+func (s *Service) RegistrationUser(ctx context.Context, id string) (string, error) {
+	app, err := s.d.Repository.FindRegistrationApplicationByID(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return app.UserID, nil
 }
 
 // Registration returns the registration of a user, in whatever state. It fails with

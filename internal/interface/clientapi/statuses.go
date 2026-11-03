@@ -934,17 +934,17 @@ func (s *Server) ListStatusQuotes(ctx context.Context, req ListStatusQuotesReque
 	return ListStatusQuotes200JSONResponse{StatusPageJSONResponse{Body: out, Headers: StatusPageResponseHeaders{CacheControl: statusCache(ctx)}}}, nil
 }
 
-// RevokeStatusQuote serves POST /api/v1/statuses/{id}/quotes/{quote_id}/revoke.
-func (s *Server) RevokeStatusQuote(ctx context.Context, req RevokeStatusQuoteRequestObject) (RevokeStatusQuoteResponseObject, error) {
+// RevokeStatusQuoteApproval serves DELETE /api/v1/statuses/{id}/quotes/{quote_id}/approval.
+func (s *Server) RevokeStatusQuoteApproval(ctx context.Context, req RevokeStatusQuoteApprovalRequestObject) (RevokeStatusQuoteApprovalResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err := s.o.Interactions.RevokeQuote(ctx, v.AccountID, req.Id, req.QuoteId); err != nil {
 		if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
-			return RevokeStatusQuotedefaultApplicationProblemPlusJSONResponse(p), nil
+			return RevokeStatusQuoteApprovaldefaultApplicationProblemPlusJSONResponse(p), nil
 		}
 		return nil, err
 	}
-	return RevokeStatusQuote204Response{}, nil
+	return RevokeStatusQuoteApproval204Response{}, nil
 }

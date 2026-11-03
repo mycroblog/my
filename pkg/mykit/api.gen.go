@@ -860,6 +860,24 @@ func (e AdminLoginProviderState) Valid() bool {
 	}
 }
 
+// Defines values for AdminOAuthClientState.
+const (
+	AdminOAuthClientStateDisabled AdminOAuthClientState = "disabled"
+	AdminOAuthClientStateEnabled  AdminOAuthClientState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the AdminOAuthClientState enum.
+func (e AdminOAuthClientState) Valid() bool {
+	switch e {
+	case AdminOAuthClientStateDisabled:
+		return true
+	case AdminOAuthClientStateEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminReportOutcome.
 const (
 	AdminReportOutcomeActioned  AdminReportOutcome = "actioned"
@@ -1664,6 +1682,24 @@ func (e CustomEmojiRequestState) Valid() bool {
 	case CustomEmojiRequestStateRejected:
 		return true
 	case CustomEmojiRequestStateWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomEmojiState.
+const (
+	CustomEmojiStateDisabled CustomEmojiState = "disabled"
+	CustomEmojiStateEnabled  CustomEmojiState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the CustomEmojiState enum.
+func (e CustomEmojiState) Valid() bool {
+	switch e {
+	case CustomEmojiStateDisabled:
+		return true
+	case CustomEmojiStateEnabled:
 		return true
 	default:
 		return false
@@ -3008,66 +3044,66 @@ func (e OAuthClientRegistration) Valid() bool {
 	}
 }
 
-// Defines values for PaymentReconcileRunErrorKind.
+// Defines values for PaymentReconciliationRunErrorKind.
 const (
-	PaymentReconcileRunErrorKindInvalidRequest   PaymentReconcileRunErrorKind = "invalid_request"
-	PaymentReconcileRunErrorKindInvalidResponse  PaymentReconcileRunErrorKind = "invalid_response"
-	PaymentReconcileRunErrorKindInvalidSignature PaymentReconcileRunErrorKind = "invalid_signature"
-	PaymentReconcileRunErrorKindModeMismatch     PaymentReconcileRunErrorKind = "mode_mismatch"
-	PaymentReconcileRunErrorKindNone             PaymentReconcileRunErrorKind = "none"
-	PaymentReconcileRunErrorKindNotFound         PaymentReconcileRunErrorKind = "not_found"
-	PaymentReconcileRunErrorKindPermission       PaymentReconcileRunErrorKind = "permission"
-	PaymentReconcileRunErrorKindRequestCap       PaymentReconcileRunErrorKind = "request_cap"
-	PaymentReconcileRunErrorKindStaleSignature   PaymentReconcileRunErrorKind = "stale_signature"
-	PaymentReconcileRunErrorKindThrottled        PaymentReconcileRunErrorKind = "throttled"
-	PaymentReconcileRunErrorKindUnavailable      PaymentReconcileRunErrorKind = "unavailable"
+	PaymentReconciliationRunErrorKindInvalidRequest   PaymentReconciliationRunErrorKind = "invalid_request"
+	PaymentReconciliationRunErrorKindInvalidResponse  PaymentReconciliationRunErrorKind = "invalid_response"
+	PaymentReconciliationRunErrorKindInvalidSignature PaymentReconciliationRunErrorKind = "invalid_signature"
+	PaymentReconciliationRunErrorKindModeMismatch     PaymentReconciliationRunErrorKind = "mode_mismatch"
+	PaymentReconciliationRunErrorKindNone             PaymentReconciliationRunErrorKind = "none"
+	PaymentReconciliationRunErrorKindNotFound         PaymentReconciliationRunErrorKind = "not_found"
+	PaymentReconciliationRunErrorKindPermission       PaymentReconciliationRunErrorKind = "permission"
+	PaymentReconciliationRunErrorKindRequestCap       PaymentReconciliationRunErrorKind = "request_cap"
+	PaymentReconciliationRunErrorKindStaleSignature   PaymentReconciliationRunErrorKind = "stale_signature"
+	PaymentReconciliationRunErrorKindThrottled        PaymentReconciliationRunErrorKind = "throttled"
+	PaymentReconciliationRunErrorKindUnavailable      PaymentReconciliationRunErrorKind = "unavailable"
 )
 
-// Valid indicates whether the value is a known member of the PaymentReconcileRunErrorKind enum.
-func (e PaymentReconcileRunErrorKind) Valid() bool {
+// Valid indicates whether the value is a known member of the PaymentReconciliationRunErrorKind enum.
+func (e PaymentReconciliationRunErrorKind) Valid() bool {
 	switch e {
-	case PaymentReconcileRunErrorKindInvalidRequest:
+	case PaymentReconciliationRunErrorKindInvalidRequest:
 		return true
-	case PaymentReconcileRunErrorKindInvalidResponse:
+	case PaymentReconciliationRunErrorKindInvalidResponse:
 		return true
-	case PaymentReconcileRunErrorKindInvalidSignature:
+	case PaymentReconciliationRunErrorKindInvalidSignature:
 		return true
-	case PaymentReconcileRunErrorKindModeMismatch:
+	case PaymentReconciliationRunErrorKindModeMismatch:
 		return true
-	case PaymentReconcileRunErrorKindNone:
+	case PaymentReconciliationRunErrorKindNone:
 		return true
-	case PaymentReconcileRunErrorKindNotFound:
+	case PaymentReconciliationRunErrorKindNotFound:
 		return true
-	case PaymentReconcileRunErrorKindPermission:
+	case PaymentReconciliationRunErrorKindPermission:
 		return true
-	case PaymentReconcileRunErrorKindRequestCap:
+	case PaymentReconciliationRunErrorKindRequestCap:
 		return true
-	case PaymentReconcileRunErrorKindStaleSignature:
+	case PaymentReconciliationRunErrorKindStaleSignature:
 		return true
-	case PaymentReconcileRunErrorKindThrottled:
+	case PaymentReconciliationRunErrorKindThrottled:
 		return true
-	case PaymentReconcileRunErrorKindUnavailable:
+	case PaymentReconciliationRunErrorKindUnavailable:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for PaymentReconcileRunOutcome.
+// Defines values for PaymentReconciliationRunOutcome.
 const (
-	PaymentReconcileRunOutcomeFailed    PaymentReconcileRunOutcome = "failed"
-	PaymentReconcileRunOutcomePartial   PaymentReconcileRunOutcome = "partial"
-	PaymentReconcileRunOutcomeSucceeded PaymentReconcileRunOutcome = "succeeded"
+	PaymentReconciliationRunOutcomeFailed    PaymentReconciliationRunOutcome = "failed"
+	PaymentReconciliationRunOutcomePartial   PaymentReconciliationRunOutcome = "partial"
+	PaymentReconciliationRunOutcomeSucceeded PaymentReconciliationRunOutcome = "succeeded"
 )
 
-// Valid indicates whether the value is a known member of the PaymentReconcileRunOutcome enum.
-func (e PaymentReconcileRunOutcome) Valid() bool {
+// Valid indicates whether the value is a known member of the PaymentReconciliationRunOutcome enum.
+func (e PaymentReconciliationRunOutcome) Valid() bool {
 	switch e {
-	case PaymentReconcileRunOutcomeFailed:
+	case PaymentReconciliationRunOutcomeFailed:
 		return true
-	case PaymentReconcileRunOutcomePartial:
+	case PaymentReconciliationRunOutcomePartial:
 		return true
-	case PaymentReconcileRunOutcomeSucceeded:
+	case PaymentReconciliationRunOutcomeSucceeded:
 		return true
 	default:
 		return false
@@ -3094,8 +3130,8 @@ func (e PaymentStatusMode) Valid() bool {
 
 // Defines values for PaymentStatusWarnings.
 const (
-	PaymentStatusWarningsNoWebhook          PaymentStatusWarnings = "no_webhook"
-	PaymentStatusWarningsReconcileCorrected PaymentStatusWarnings = "reconcile_corrected"
+	PaymentStatusWarningsNoWebhook               PaymentStatusWarnings = "no_webhook"
+	PaymentStatusWarningsReconciliationCorrected PaymentStatusWarnings = "reconciliation_corrected"
 )
 
 // Valid indicates whether the value is a known member of the PaymentStatusWarnings enum.
@@ -3103,7 +3139,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 	switch e {
 	case PaymentStatusWarningsNoWebhook:
 		return true
-	case PaymentStatusWarningsReconcileCorrected:
+	case PaymentStatusWarningsReconciliationCorrected:
 		return true
 	default:
 		return false
@@ -5178,9 +5214,6 @@ type AdminCustomEmoji struct {
 	// Domain The domain of a remote emoji; absent for a local one.
 	Domain *string `json:"domain,omitempty"`
 
-	// Enabled Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -5191,6 +5224,9 @@ type AdminCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -5656,9 +5692,6 @@ type AdminOAuthClient struct {
 	Confidential bool      `json:"confidential"`
 	CreatedAt    time.Time `json:"created_at"`
 
-	// Disabled Whether an administrator has disabled the client and not lifted it.
-	Disabled bool `json:"disabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -5683,6 +5716,9 @@ type AdminOAuthClient struct {
 
 	// Scopes The most that the client may be granted.
 	Scopes []string `json:"scopes"`
+
+	// State Whether the client is authorized and gets tokens. An administrator disables and enables it.
+	State AdminOAuthClientState `json:"state"`
 
 	// Website The client's home page; omitted when it has none.
 	Website *string `json:"website,omitempty"`
@@ -5723,6 +5759,9 @@ type AdminOAuthClientPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// AdminOAuthClientState Whether the client is authorized and gets tokens. An administrator disables and enables it.
+type AdminOAuthClientState string
 
 // AdminPasswordResetLink A password reset link that an administrator issued for a local account. It is
 // shown once.
@@ -5775,6 +5814,11 @@ type AdminRegistration struct {
 	// EmailVerified Whether the user confirmed the email address; present together with `email`.
 	EmailVerified *bool `json:"email_verified,omitempty"`
 
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
 
@@ -5790,11 +5834,6 @@ type AdminRegistration struct {
 
 	// SubmittedAt When the user signed up.
 	SubmittedAt time.Time `json:"submitted_at"`
-
-	// UserId The ID of a resource, a UUIDv7 in its canonical string form.
-	//
-	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-	UserId Id `json:"user_id"`
 
 	// Username The username of the user's local account; omitted when it is gone.
 	Username *string `json:"username,omitempty"`
@@ -7335,7 +7374,7 @@ type CostCategory string
 // years, cut by date.
 type CostGranularity string
 
-// CostItem A cost of the instance that is not canceled, with its current label and end
+// CostItem A cost of the instance that is not deleted, with its current label and end
 // and every price revision. Never published: the public totals carry no item.
 type CostItem struct {
 	// Category The fixed category of a cost; clients translate its name.
@@ -8135,6 +8174,9 @@ type CustomEmojiRequestProblem struct {
 // `approved` or `rejected`; `withdrawn` by the requester before that; or `lapsed`, a request
 // for a new image of an emoji that was deleted.
 type CustomEmojiRequestState string
+
+// CustomEmojiState Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+type CustomEmojiState string
 
 // DataExport A request for an archive of the user's data.
 type DataExport struct {
@@ -10639,10 +10681,6 @@ type OwnCustomEmoji struct {
 	// CreatedAt When the emoji was made.
 	CreatedAt time.Time `json:"created_at"`
 
-	// Enabled Whether the emoji is shown; an administrator disables and enables it, and a disabled one
-	// stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -10650,6 +10688,9 @@ type OwnCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -10839,8 +10880,8 @@ type PasswordStatus struct {
 	HasPassword bool `json:"has_password"`
 }
 
-// PaymentReconcileRun The last attempt of the reconciliation with the payment provider; omitted before the first.
-type PaymentReconcileRun struct {
+// PaymentReconciliationRun The last attempt of the reconciliation with the payment provider; omitted before the first.
+type PaymentReconciliationRun struct {
 	// CheckedSubscriptions The subscriptions it read again from the provider.
 	CheckedSubscriptions int `json:"checked_subscriptions"`
 
@@ -10852,32 +10893,32 @@ type PaymentReconcileRun struct {
 	// (the provider is busy or down; the next reconciliation tries again),
 	// `invalid_signature`, `stale_signature`, `mode_mismatch` (the key's mode differs from
 	// the account's), `invalid_response`; `none` for a success.
-	ErrorKind  PaymentReconcileRunErrorKind `json:"error_kind"`
-	OccurredAt time.Time                    `json:"occurred_at"`
+	ErrorKind  PaymentReconciliationRunErrorKind `json:"error_kind"`
+	OccurredAt time.Time                         `json:"occurred_at"`
 
 	// Outcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
 	// continuation takes over; `failed` when the provider failed.
-	Outcome PaymentReconcileRunOutcome `json:"outcome"`
+	Outcome PaymentReconciliationRunOutcome `json:"outcome"`
 
 	// Requests The requests it sent to the provider.
 	Requests int `json:"requests"`
 }
 
-// PaymentReconcileRunErrorKind Why it stopped: `request_cap` (a partial attempt), `permission` (the API key is wrong
+// PaymentReconciliationRunErrorKind Why it stopped: `request_cap` (a partial attempt), `permission` (the API key is wrong
 // or lacks permissions), `not_found`, `invalid_request`, `throttled` and `unavailable`
 // (the provider is busy or down; the next reconciliation tries again),
 // `invalid_signature`, `stale_signature`, `mode_mismatch` (the key's mode differs from
 // the account's), `invalid_response`; `none` for a success.
-type PaymentReconcileRunErrorKind string
+type PaymentReconciliationRunErrorKind string
 
-// PaymentReconcileRunOutcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
+// PaymentReconciliationRunOutcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
 // continuation takes over; `failed` when the provider failed.
-type PaymentReconcileRunOutcome string
+type PaymentReconciliationRunOutcome string
 
 // PaymentStatus The state of the payment provider.
 type PaymentStatus struct {
-	// LastReconcile The last attempt of the reconciliation with the payment provider; omitted before the first.
-	LastReconcile *PaymentReconcileRun `json:"last_reconcile,omitempty"`
+	// LastReconciliation The last attempt of the reconciliation with the payment provider; omitted before the first.
+	LastReconciliation *PaymentReconciliationRun `json:"last_reconciliation,omitempty"`
 
 	// LastWebhookAt When the newest webhook delivery was received; omitted when none is recorded (the
 	// deliveries are kept 45 days).
@@ -10894,7 +10935,7 @@ type PaymentStatus struct {
 	TimeZone string `json:"time_zone"`
 
 	// Warnings The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-	// recorded) and `reconcile_corrected` (the last reconciliation corrected subscriptions,
+	// recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
 	// which a webhook delivery should have done).
 	Warnings []PaymentStatusWarnings `json:"warnings"`
 }
@@ -11204,7 +11245,7 @@ type PreviewDomainBlockImportRequest struct {
 //     (`POST /admin/closure/close`).
 //   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
 //     stops new registrations and supporter subscriptions: approving a pending
-//     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+//     registration (`/admin/registrations/{id}/approve`) or starting a supporter checkout
 //     (`POST /supporter/checkout`).
 //   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
 //     server serves only the operations with which the users take their data away: their own
@@ -11282,7 +11323,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
 //     an administrator. Make another user an administrator first.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
-//     (`POST /accounts/move/cancel`).
+//     (`DELETE /accounts/move`).
 //   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
 //     `DELETE /sessions/{id}`; signing out ends it.
 //   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
@@ -11580,12 +11621,6 @@ type RelayProtocol string
 // `rejected`: the relay rejected the `Follow` or ended the membership. `left`: the
 // instance sent the `Undo` of its `Follow`.
 type RelayState string
-
-// RemoveAccountAliasRequest The alias to remove.
-type RemoveAccountAliasRequest struct {
-	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
-	Uri string `json:"uri"`
-}
 
 // RemovePasswordRequest What confirms the removal of the user's password: a `passkey` of the user or an
 // `external_confirmation`.
@@ -12606,9 +12641,6 @@ type UpdateCustomEmojiRequest struct {
 	// Category The category in the picker, up to 64 characters; empty removes it.
 	Category *string `json:"category,omitempty"`
 
-	// Enabled Whether the emoji is shown.
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// VisibleInPicker Whether the picker offers the local emoji.
 	VisibleInPicker *bool `json:"visible_in_picker,omitempty"`
 }
@@ -13000,14 +13032,14 @@ type VoiceRoomParticipant struct {
 	// Blocked Whether the user blocks the participant or the participant blocks the user.
 	Blocked bool `json:"blocked"`
 
-	// Cohost Whether the participant is a co-host. The host is never a co-host.
-	Cohost bool `json:"cohost"`
+	// Cohosting Whether the participant is a co-host. The host is never a co-host.
+	Cohosting bool `json:"cohosting"`
 
 	// HandRaised Whether the participant raised a hand to speak.
 	HandRaised bool `json:"hand_raised"`
 
-	// Host Whether the participant is the host.
-	Host bool `json:"host"`
+	// Hosting Whether the participant is the host.
+	Hosting bool `json:"hosting"`
 
 	// Role Whether a participant speaks or listens.
 	Role VoiceRole `json:"role"`
@@ -13257,9 +13289,6 @@ type WebhookCustomEmoji struct {
 	// Domain The domain of a remote emoji; absent for a local one.
 	Domain *string `json:"domain,omitempty"`
 
-	// Enabled Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -13275,6 +13304,9 @@ type WebhookCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -13502,10 +13534,10 @@ type OAuthClientHost = string
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type OAuthClientId = Id
 
-// RegistrationUserId The ID of a resource, a UUIDv7 in its canonical string form.
+// RegistrationId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-type RegistrationUserId = Id
+type RegistrationId = Id
 
 // RelayId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -13576,6 +13608,12 @@ type AccountProfile = Account
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
 type StatusAfterAction = Status
+
+// RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
+type RemoveAccountAliasParams struct {
+	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
+	Uri string `form:"uri" json:"uri"`
+}
 
 // LookupAccountParams defines parameters for LookupAccount.
 type LookupAccountParams struct {
@@ -14339,9 +14377,6 @@ type LeaveVoiceRoomParams struct {
 
 // AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
 type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
-
-// RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
-type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
 
 // DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
 type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
@@ -16108,6 +16143,14 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	//
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Corresponds with DELETE /accounts/aliases (the `RemoveAccountAlias` operationId).
+	RemoveAccountAlias(ctx context.Context, params *RemoveAccountAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAccountAliases List the authenticated user's aliases
 	//
 	// The accounts that the user moves from, which the user's actor names in
@@ -16157,26 +16200,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
 	AddAccountAlias(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RemoveAccountAliasWithBody Remove an alias of the authenticated user
-	//
-	// Removes an alias; the actor's `Update` goes to the user's followers as a
-	// profile change does. Removing an alias that the user does not have changes nothing.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-	RemoveAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RemoveAccountAlias Remove an alias of the authenticated user
-	//
-	// Removes an alias; the actor's `Update` goes to the user's followers as a
-	// profile change does. Removing an alias that the user does not have changes nothing.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-	RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
 	//
@@ -16322,6 +16345,17 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccount(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account: the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Corresponds with DELETE /accounts/move (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MoveOwnAccountWithBody Move the authenticated user's account to another account
 	//
 	// Moves the user's account to the account `target_account_id`, after
@@ -16344,7 +16378,7 @@ type ClientInterface interface {
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
 	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -16382,7 +16416,7 @@ type ClientInterface interface {
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
 	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -16397,17 +16431,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
 	MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CancelOwnAccountMove Cancel the move of the authenticated user's account
-	//
-	// Cancels the move of the user's account: the account no longer names the target,
-	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
-	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
-	// `/api/v1/problems/account-not-moved`.
-	//
-	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
-	CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPasswordStatus Get whether the authenticated user has a password
 	//
@@ -16656,6 +16679,14 @@ type ClientInterface interface {
 	// Corresponds with POST /accounts/{id}/follow (the `FollowAccount` operationId).
 	FollowAccount(ctx context.Context, id AccountId, body FollowAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RemoveFollower Remove an account from the viewer's followers
+	//
+	// Ends the account's active follow of the viewer. Without one it changes nothing; a
+	// pending request is declined with `rejectFollowRequest` instead.
+	//
+	// Corresponds with DELETE /accounts/{id}/follower (the `RemoveFollower` operationId).
+	RemoveFollower(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAccountFollowers List the followers of an account
 	//
 	// The accounts that actively follow the account, newest follow first. Followers that
@@ -16708,14 +16739,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RemoveAccountFromFollowers Remove an account from the viewer's followers
-	//
-	// Ends the account's active follow of the viewer. Without one it changes nothing; a
-	// pending request is declined with `rejectFollowRequest` instead.
-	//
-	// Corresponds with POST /accounts/{id}/remove_from_followers (the `RemoveAccountFromFollowers` operationId).
-	RemoveAccountFromFollowers(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAccountStatuses List the posts and boosts of an account
 	//
@@ -17309,7 +17332,7 @@ type ClientInterface interface {
 
 	// ListCostItems List the cost items
 	//
-	// The instance's cost items that are not canceled, newest first.
+	// The instance's cost items that are not deleted, newest first.
 	// Needs the `manage_finance` permission.
 	//
 	// Corresponds with GET /admin/cost_items (the `ListCostItems` operationId).
@@ -17343,9 +17366,18 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/cost_items (the `CreateCostItem` operationId).
 	CreateCostItem(ctx context.Context, body CreateCostItemJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteCostItem Delete a cost item
+	//
+	// Removes a cost item recorded by mistake from every period, past ones included. There is
+	// no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+	// the audit log. Needs the `manage_finance` permission.
+	//
+	// Corresponds with DELETE /admin/cost_items/{id} (the `DeleteCostItem` operationId).
+	DeleteCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCostItem Get a cost item
 	//
-	// An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+	// An unknown or deleted item is a 404. Needs the `manage_finance` permission.
 	//
 	// Corresponds with GET /admin/cost_items/{id} (the `GetCostItem` operationId).
 	GetCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -17353,7 +17385,7 @@ type ClientInterface interface {
 	// UpdateCostItemWithBody Change a cost item's label
 	//
 	// Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-	// its value. The values are checked as for a new item (422). An unknown or canceled item is
+	// its value. The values are checked as for a new item (422). An unknown or deleted item is
 	// a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -17364,7 +17396,7 @@ type ClientInterface interface {
 	// UpdateCostItem Change a cost item's label
 	//
 	// Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-	// its value. The values are checked as for a new item (422). An unknown or canceled item is
+	// its value. The values are checked as for a new item (422). An unknown or deleted item is
 	// a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -17372,20 +17404,11 @@ type ClientInterface interface {
 	// Corresponds with PATCH /admin/cost_items/{id} (the `UpdateCostItem` operationId).
 	UpdateCostItem(ctx context.Context, id CostItemId, body UpdateCostItemJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CancelCostItem Cancel a cost item
-	//
-	// Removes a cost item recorded by mistake from every period, past ones included. There is
-	// no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-	// the audit log. Needs the `manage_finance` permission.
-	//
-	// Corresponds with POST /admin/cost_items/{id}/cancel (the `CancelCostItem` operationId).
-	CancelCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// SetCostItemEndWithBody Set a cost item's end
 	//
 	// Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 	// go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-	// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+	// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 	// in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -17397,7 +17420,7 @@ type ClientInterface interface {
 	//
 	// Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 	// go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-	// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+	// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 	// in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -17408,7 +17431,7 @@ type ClientInterface interface {
 	// ReviseCostItemPriceWithBody Revise a cost item's price
 	//
 	// Records the price of the payments on or after `effective_on`. A date before the start
-	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 	// item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -17419,7 +17442,7 @@ type ClientInterface interface {
 	// ReviseCostItemPrice Revise a cost item's price
 	//
 	// Records the price of the payments on or after `effective_on`. A date before the start
-	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 	// item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -17561,9 +17584,8 @@ type ClientInterface interface {
 
 	// UpdateCustomEmojiWithBody Change the settings of a custom emoji
 	//
-	// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-	// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-	// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+	// Changes what the request names and keeps the rest. A remote emoji has none of these
+	// settings: a change of one is a 422 with the reason `remote_emoji`.
 	// `category` is trimmed, and an empty one removes the category; `aliases` replace the
 	// aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -17575,9 +17597,8 @@ type ClientInterface interface {
 
 	// UpdateCustomEmoji Change the settings of a custom emoji
 	//
-	// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-	// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-	// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+	// Changes what the request names and keeps the rest. A remote emoji has none of these
+	// settings: a change of one is a 422 with the reason `remote_emoji`.
 	// `category` is trimmed, and an empty one removes the category; `aliases` replace the
 	// aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -17622,6 +17643,23 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/custom_emojis/{id}/copy (the `CopyCustomEmoji` operationId).
 	CopyCustomEmoji(ctx context.Context, id CustomEmojiId, body CopyCustomEmojiJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisableCustomEmoji Disable a custom emoji
+	//
+	// Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+	// changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+	// An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+	//
+	// Corresponds with POST /admin/custom_emojis/{id}/disable (the `DisableCustomEmoji` operationId).
+	DisableCustomEmoji(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableCustomEmoji Enable a custom emoji
+	//
+	// Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+	// remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+	//
+	// Corresponds with POST /admin/custom_emojis/{id}/enable (the `EnableCustomEmoji` operationId).
+	EnableCustomEmoji(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ReplaceCustomEmojiImageWithBody Replace the image of a local custom emoji
 	//
@@ -18316,33 +18354,33 @@ type ClientInterface interface {
 	// DisableOAuthClient Disable an OAuth client
 	//
 	// Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-	// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-	// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+	// its authorization requests, token exchanges and refreshes until it is enabled again.
+	// Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 	// is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_oauth_apps` permission.
 	//
 	// Corresponds with POST /admin/oauth_clients/{id}/disable (the `DisableOAuthClient` operationId).
 	DisableOAuthClient(ctx context.Context, id OAuthClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// EnableOAuthClient Lift the disablement of an OAuth client
+	// EnableOAuthClient Enable an OAuth client
 	//
-	// The client can be authorized again. The tokens that the disablement revoked stay revoked:
-	// the users authorize the client again. Lifting nothing changes nothing. The lift is
-	// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-	// permission.
+	// The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+	// users authorize the client again. Enabling an enabled client changes nothing. The change is
+	// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+	// naming `id`. Needs the `manage_oauth_apps` permission.
 	//
 	// Corresponds with POST /admin/oauth_clients/{id}/enable (the `EnableOAuthClient` operationId).
 	EnableOAuthClient(ctx context.Context, id OAuthClientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RunPaymentReconcile Reconcile with the payment provider now
+	// RunPaymentReconciliation Reconcile with the payment provider now
 	//
 	// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 	// others. One per UTC hour: another request in the hour after its reconciliation ran is a
 	// 429. A deployment without a payment provider is a 404. The request is recorded in the
 	// audit log. Needs the `manage_supporters` permission.
 	//
-	// Corresponds with POST /admin/payment_reconciles (the `RunPaymentReconcile` operationId).
-	RunPaymentReconcile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/payment_reconciliation/runs (the `RunPaymentReconciliation` operationId).
+	RunPaymentReconciliation(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPaymentStatus Get the state of the payment provider
 	//
@@ -18383,30 +18421,30 @@ type ClientInterface interface {
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
-	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-	ApproveRegistrationWithBody(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+	ApproveRegistrationWithBody(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ApproveRegistration Approve a registration
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
-	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-	ApproveRegistration(ctx context.Context, userId RegistrationUserId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+	ApproveRegistration(ctx context.Context, id RegistrationId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RejectRegistrationWithBody Reject a registration
 	//
@@ -18414,13 +18452,13 @@ type ClientInterface interface {
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-	// A user without a registration is a 404. Needs the
+	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-	RejectRegistrationWithBody(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+	RejectRegistrationWithBody(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RejectRegistration Reject a registration
 	//
@@ -18428,13 +18466,13 @@ type ClientInterface interface {
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-	// A user without a registration is a 404. Needs the
+	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-	RejectRegistration(ctx context.Context, userId RegistrationUserId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+	RejectRegistration(ctx context.Context, id RegistrationId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAdminRelays List the relays
 	//
@@ -19044,15 +19082,15 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptions(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CancelSupporterSubscription Cancel a subscription at once
+	// EndSupporterSubscription End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
 	// payment provider stops billing. A refund is the operator's to make at the provider. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 	//
-	// Corresponds with POST /admin/supporter_subscriptions/{id}/cancel (the `CancelSupporterSubscription` operationId).
-	CancelSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with POST /admin/supporter_subscriptions/{id}/end (the `EndSupporterSubscription` operationId).
+	EndSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAdminTheme Read the instance theme
 	//
@@ -20963,15 +21001,15 @@ type ClientInterface interface {
 	// Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 	ListStatusQuotes(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
+	// RevokeStatusQuoteApproval Revoke the approval of a quote of the authenticated user's status
 	//
 	// Withdraws this server's approval of the quote: the quote shows the quoted
 	// status no more, and the quoting server is told. A quote without this server's approval
 	// (from software without approvals, or of the user's own status) is a 404, as is one revoked
 	// already.
 	//
-	// Corresponds with POST /statuses/{id}/quotes/{quote_id}/revoke (the `RevokeStatusQuote` operationId).
-	RevokeStatusQuote(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with DELETE /statuses/{id}/quotes/{quote_id}/approval (the `RevokeStatusQuoteApproval` operationId).
+	RevokeStatusQuoteApproval(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnreactToStatus Take back the emoji reaction to a status
 	//
@@ -21095,9 +21133,9 @@ type ClientInterface interface {
 	// Corresponds with POST /supporter/subscription/cancel (the `CancelOwnSupporterSubscription` operationId).
 	CancelOwnSupporterSubscription(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
+	// CancelOwnSupporterScheduledChange Cancel the scheduled change of the authenticated user's subscription
 	//
-	// Withdraws the change to a lower plan or to the monthly price that waits for the end of
+	// Cancels the change to a lower plan or to the monthly price that waits for the end of
 	// the period; the subscription renews at its current plan and interval. A 409
 	// `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 	//
@@ -21140,9 +21178,9 @@ type ClientInterface interface {
 	// Corresponds with POST /supporter/subscription/change (the `ChangeOwnSupporterSubscription` operationId).
 	ChangeOwnSupporterSubscription(ctx context.Context, body ChangeOwnSupporterSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ResumeOwnSupporterSubscription Withdraw the cancellation of the authenticated user's subscription
+	// ResumeOwnSupporterSubscription Resume the authenticated user's canceling subscription
 	//
-	// Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+	// Takes back the cancellation of a `canceling` subscription, which then renews as before. A
 	// 409 `/api/v1/problems/supporter-subscription-state` in another state.
 	//
 	// Corresponds with POST /supporter/subscription/resume (the `ResumeOwnSupporterSubscription` operationId).
@@ -21709,6 +21747,24 @@ type ClientInterface interface {
 	GetVoiceRoomSummary(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
+// RemoveAccountAlias Remove an alias of the authenticated user
+//
+// Removes an alias; the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Corresponds with DELETE /accounts/aliases (the `RemoveAccountAlias` operationId).
+func (c *Client) RemoveAccountAlias(ctx context.Context, params *RemoveAccountAliasParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveAccountAliasRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAccountAliases List the authenticated user's aliases
 //
 // The accounts that the user moves from, which the user's actor names in
@@ -21779,46 +21835,6 @@ func (c *Client) AddAccountAliasWithBody(ctx context.Context, contentType string
 // Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
 func (c *Client) AddAccountAlias(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddAccountAliasRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// RemoveAccountAliasWithBody Remove an alias of the authenticated user
-//
-// Removes an alias; the actor's `Update` goes to the user's followers as a
-// profile change does. Removing an alias that the user does not have changes nothing.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-func (c *Client) RemoveAccountAliasWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveAccountAliasRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// RemoveAccountAlias Remove an alias of the authenticated user
-//
-// Removes an alias; the actor's `Update` goes to the user's followers as a
-// profile change does. Removing an alias that the user does not have changes nothing.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveAccountAliasRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -22043,6 +22059,27 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 	return c.Client.Do(req)
 }
 
+// CancelOwnAccountMove Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account: the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Corresponds with DELETE /accounts/move (the `CancelOwnAccountMove` operationId).
+func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelOwnAccountMoveRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // MoveOwnAccountWithBody Move the authenticated user's account to another account
 //
 // Moves the user's account to the account `target_account_id`, after
@@ -22065,7 +22102,7 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
 // (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 // following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 // password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -22113,7 +22150,7 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
 // (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 // following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 // password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -22129,27 +22166,6 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
 func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMoveOwnAccountRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// CancelOwnAccountMove Cancel the move of the authenticated user's account
-//
-// Cancels the move of the user's account: the account no longer names the target,
-// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
-// its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the canceled one. An account that has not moved gets a 409
-// `/api/v1/problems/account-not-moved`.
-//
-// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
-func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCancelOwnAccountMoveRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -22577,6 +22593,24 @@ func (c *Client) FollowAccount(ctx context.Context, id AccountId, body FollowAcc
 	return c.Client.Do(req)
 }
 
+// RemoveFollower Remove an account from the viewer's followers
+//
+// Ends the account's active follow of the viewer. Without one it changes nothing; a
+// pending request is declined with `rejectFollowRequest` instead.
+//
+// Corresponds with DELETE /accounts/{id}/follower (the `RemoveFollower` operationId).
+func (c *Client) RemoveFollower(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveFollowerRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAccountFollowers List the followers of an account
 //
 // The accounts that actively follow the account, newest follow first. Followers that
@@ -22680,24 +22714,6 @@ func (c *Client) MuteAccountWithBody(ctx context.Context, id AccountId, contentT
 // Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 func (c *Client) MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMuteAccountRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// RemoveAccountFromFollowers Remove an account from the viewer's followers
-//
-// Ends the account's active follow of the viewer. Without one it changes nothing; a
-// pending request is declined with `rejectFollowRequest` instead.
-//
-// Corresponds with POST /accounts/{id}/remove_from_followers (the `RemoveAccountFromFollowers` operationId).
-func (c *Client) RemoveAccountFromFollowers(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveAccountFromFollowersRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -23730,7 +23746,7 @@ func (c *Client) CloseService(ctx context.Context, body CloseServiceJSONRequestB
 
 // ListCostItems List the cost items
 //
-// The instance's cost items that are not canceled, newest first.
+// The instance's cost items that are not deleted, newest first.
 // Needs the `manage_finance` permission.
 //
 // Corresponds with GET /admin/cost_items (the `ListCostItems` operationId).
@@ -23794,9 +23810,28 @@ func (c *Client) CreateCostItem(ctx context.Context, body CreateCostItemJSONRequ
 	return c.Client.Do(req)
 }
 
+// DeleteCostItem Delete a cost item
+//
+// Removes a cost item recorded by mistake from every period, past ones included. There is
+// no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+// the audit log. Needs the `manage_finance` permission.
+//
+// Corresponds with DELETE /admin/cost_items/{id} (the `DeleteCostItem` operationId).
+func (c *Client) DeleteCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteCostItemRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetCostItem Get a cost item
 //
-// An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+// An unknown or deleted item is a 404. Needs the `manage_finance` permission.
 //
 // Corresponds with GET /admin/cost_items/{id} (the `GetCostItem` operationId).
 func (c *Client) GetCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -23814,7 +23849,7 @@ func (c *Client) GetCostItem(ctx context.Context, id CostItemId, reqEditors ...R
 // UpdateCostItemWithBody Change a cost item's label
 //
 // Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-// its value. The values are checked as for a new item (422). An unknown or canceled item is
+// its value. The values are checked as for a new item (422). An unknown or deleted item is
 // a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type.
@@ -23835,7 +23870,7 @@ func (c *Client) UpdateCostItemWithBody(ctx context.Context, id CostItemId, cont
 // UpdateCostItem Change a cost item's label
 //
 // Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-// its value. The values are checked as for a new item (422). An unknown or canceled item is
+// its value. The values are checked as for a new item (422). An unknown or deleted item is
 // a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -23853,30 +23888,11 @@ func (c *Client) UpdateCostItem(ctx context.Context, id CostItemId, body UpdateC
 	return c.Client.Do(req)
 }
 
-// CancelCostItem Cancel a cost item
-//
-// Removes a cost item recorded by mistake from every period, past ones included. There is
-// no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-// the audit log. Needs the `manage_finance` permission.
-//
-// Corresponds with POST /admin/cost_items/{id}/cancel (the `CancelCostItem` operationId).
-func (c *Client) CancelCostItem(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCancelCostItemRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 // SetCostItemEndWithBody Set a cost item's end
 //
 // Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 // go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 // in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type.
@@ -23898,7 +23914,7 @@ func (c *Client) SetCostItemEndWithBody(ctx context.Context, id CostItemId, cont
 //
 // Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 // go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 // in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -23919,7 +23935,7 @@ func (c *Client) SetCostItemEnd(ctx context.Context, id CostItemId, body SetCost
 // ReviseCostItemPriceWithBody Revise a cost item's price
 //
 // Records the price of the payments on or after `effective_on`. A date before the start
-// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 // item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type.
@@ -23940,7 +23956,7 @@ func (c *Client) ReviseCostItemPriceWithBody(ctx context.Context, id CostItemId,
 // ReviseCostItemPrice Revise a cost item's price
 //
 // Records the price of the payments on or after `effective_on`. A date before the start
-// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 // item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -24202,9 +24218,8 @@ func (c *Client) GetAdminCustomEmoji(ctx context.Context, id CustomEmojiId, reqE
 
 // UpdateCustomEmojiWithBody Change the settings of a custom emoji
 //
-// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+// Changes what the request names and keeps the rest. A remote emoji has none of these
+// settings: a change of one is a 422 with the reason `remote_emoji`.
 // `category` is trimmed, and an empty one removes the category; `aliases` replace the
 // aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -24226,9 +24241,8 @@ func (c *Client) UpdateCustomEmojiWithBody(ctx context.Context, id CustomEmojiId
 
 // UpdateCustomEmoji Change the settings of a custom emoji
 //
-// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+// Changes what the request names and keeps the rest. A remote emoji has none of these
+// settings: a change of one is a 422 with the reason `remote_emoji`.
 // `category` is trimmed, and an empty one removes the category; `aliases` replace the
 // aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -24294,6 +24308,43 @@ func (c *Client) CopyCustomEmojiWithBody(ctx context.Context, id CustomEmojiId, 
 // Corresponds with POST /admin/custom_emojis/{id}/copy (the `CopyCustomEmoji` operationId).
 func (c *Client) CopyCustomEmoji(ctx context.Context, id CustomEmojiId, body CopyCustomEmojiJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCopyCustomEmojiRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisableCustomEmoji Disable a custom emoji
+//
+// Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+// changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+// An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+//
+// Corresponds with POST /admin/custom_emojis/{id}/disable (the `DisableCustomEmoji` operationId).
+func (c *Client) DisableCustomEmoji(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableCustomEmojiRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableCustomEmoji Enable a custom emoji
+//
+// Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+// remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+//
+// Corresponds with POST /admin/custom_emojis/{id}/enable (the `EnableCustomEmoji` operationId).
+func (c *Client) EnableCustomEmoji(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableCustomEmojiRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -25577,8 +25628,8 @@ func (c *Client) ListAdminOAuthClients(ctx context.Context, params *ListAdminOAu
 // DisableOAuthClient Disable an OAuth client
 //
 // Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+// its authorization requests, token exchanges and refreshes until it is enabled again.
+// Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 // is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_oauth_apps` permission.
 //
@@ -25595,12 +25646,12 @@ func (c *Client) DisableOAuthClient(ctx context.Context, id OAuthClientId, reqEd
 	return c.Client.Do(req)
 }
 
-// EnableOAuthClient Lift the disablement of an OAuth client
+// EnableOAuthClient Enable an OAuth client
 //
-// The client can be authorized again. The tokens that the disablement revoked stay revoked:
-// the users authorize the client again. Lifting nothing changes nothing. The lift is
-// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-// permission.
+// The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+// users authorize the client again. Enabling an enabled client changes nothing. The change is
+// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+// naming `id`. Needs the `manage_oauth_apps` permission.
 //
 // Corresponds with POST /admin/oauth_clients/{id}/enable (the `EnableOAuthClient` operationId).
 func (c *Client) EnableOAuthClient(ctx context.Context, id OAuthClientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -25615,16 +25666,16 @@ func (c *Client) EnableOAuthClient(ctx context.Context, id OAuthClientId, reqEdi
 	return c.Client.Do(req)
 }
 
-// RunPaymentReconcile Reconcile with the payment provider now
+// RunPaymentReconciliation Reconcile with the payment provider now
 //
 // Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 // others. One per UTC hour: another request in the hour after its reconciliation ran is a
 // 429. A deployment without a payment provider is a 404. The request is recorded in the
 // audit log. Needs the `manage_supporters` permission.
 //
-// Corresponds with POST /admin/payment_reconciles (the `RunPaymentReconcile` operationId).
-func (c *Client) RunPaymentReconcile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRunPaymentReconcileRequest(c.Server)
+// Corresponds with POST /admin/payment_reconciliation/runs (the `RunPaymentReconciliation` operationId).
+func (c *Client) RunPaymentReconciliation(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRunPaymentReconciliationRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -25704,16 +25755,16 @@ func (c *Client) ListPendingRegistrations(ctx context.Context, params *ListPendi
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
-// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-func (c *Client) ApproveRegistrationWithBody(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApproveRegistrationRequestWithBody(c.Server, userId, contentType, body)
+// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+func (c *Client) ApproveRegistrationWithBody(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveRegistrationRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -25729,16 +25780,16 @@ func (c *Client) ApproveRegistrationWithBody(ctx context.Context, userId Registr
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
-// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-func (c *Client) ApproveRegistration(ctx context.Context, userId RegistrationUserId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApproveRegistrationRequest(c.Server, userId, body)
+// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+func (c *Client) ApproveRegistration(ctx context.Context, id RegistrationId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveRegistrationRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -25755,14 +25806,14 @@ func (c *Client) ApproveRegistration(ctx context.Context, userId RegistrationUse
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-// A user without a registration is a 404. Needs the
+// An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-func (c *Client) RejectRegistrationWithBody(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRejectRegistrationRequestWithBody(c.Server, userId, contentType, body)
+// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+func (c *Client) RejectRegistrationWithBody(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRejectRegistrationRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -25779,14 +25830,14 @@ func (c *Client) RejectRegistrationWithBody(ctx context.Context, userId Registra
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-// A user without a registration is a 404. Needs the
+// An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-func (c *Client) RejectRegistration(ctx context.Context, userId RegistrationUserId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRejectRegistrationRequest(c.Server, userId, body)
+// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+func (c *Client) RejectRegistration(ctx context.Context, id RegistrationId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRejectRegistrationRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -26925,16 +26976,16 @@ func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSup
 	return c.Client.Do(req)
 }
 
-// CancelSupporterSubscription Cancel a subscription at once
+// EndSupporterSubscription End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
 // payment provider stops billing. A refund is the operator's to make at the provider. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 //
-// Corresponds with POST /admin/supporter_subscriptions/{id}/cancel (the `CancelSupporterSubscription` operationId).
-func (c *Client) CancelSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCancelSupporterSubscriptionRequest(c.Server, id)
+// Corresponds with POST /admin/supporter_subscriptions/{id}/end (the `EndSupporterSubscription` operationId).
+func (c *Client) EndSupporterSubscription(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEndSupporterSubscriptionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -30454,16 +30505,16 @@ func (c *Client) ListStatusQuotes(ctx context.Context, id StatusId, params *List
 	return c.Client.Do(req)
 }
 
-// RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
+// RevokeStatusQuoteApproval Revoke the approval of a quote of the authenticated user's status
 //
 // Withdraws this server's approval of the quote: the quote shows the quoted
 // status no more, and the quoting server is told. A quote without this server's approval
 // (from software without approvals, or of the user's own status) is a 404, as is one revoked
 // already.
 //
-// Corresponds with POST /statuses/{id}/quotes/{quote_id}/revoke (the `RevokeStatusQuote` operationId).
-func (c *Client) RevokeStatusQuote(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRevokeStatusQuoteRequest(c.Server, id, quoteId)
+// Corresponds with DELETE /statuses/{id}/quotes/{quote_id}/approval (the `RevokeStatusQuoteApproval` operationId).
+func (c *Client) RevokeStatusQuoteApproval(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeStatusQuoteApprovalRequest(c.Server, id, quoteId)
 	if err != nil {
 		return nil, err
 	}
@@ -30706,9 +30757,9 @@ func (c *Client) CancelOwnSupporterSubscription(ctx context.Context, reqEditors 
 	return c.Client.Do(req)
 }
 
-// CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
+// CancelOwnSupporterScheduledChange Cancel the scheduled change of the authenticated user's subscription
 //
-// Withdraws the change to a lower plan or to the monthly price that waits for the end of
+// Cancels the change to a lower plan or to the monthly price that waits for the end of
 // the period; the subscription renews at its current plan and interval. A 409
 // `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 //
@@ -30781,9 +30832,9 @@ func (c *Client) ChangeOwnSupporterSubscription(ctx context.Context, body Change
 	return c.Client.Do(req)
 }
 
-// ResumeOwnSupporterSubscription Withdraw the cancellation of the authenticated user's subscription
+// ResumeOwnSupporterSubscription Resume the authenticated user's canceling subscription
 //
-// Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+// Takes back the cancellation of a `canceling` subscription, which then renews as before. A
 // 409 `/api/v1/problems/supporter-subscription-state` in another state.
 //
 // Corresponds with POST /supporter/subscription/resume (the `ResumeOwnSupporterSubscription` operationId).
@@ -31869,6 +31920,56 @@ func (c *Client) GetVoiceRoomSummary(ctx context.Context, id VoiceRoomId, reqEdi
 	return c.Client.Do(req)
 }
 
+// NewRemoveAccountAliasRequest constructs an http.Request for the RemoveAccountAlias method
+func NewRemoveAccountAliasRequest(server string, params *RemoveAccountAliasParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/aliases")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "uri", params.Uri, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAccountAliasesRequest constructs an http.Request for the ListAccountAliases method
 func NewListAccountAliasesRequest(server string) (*http.Request, error) {
 	var err error
@@ -31917,46 +32018,6 @@ func NewAddAccountAliasRequestWithBody(server string, contentType string, body i
 	}
 
 	operationPath := fmt.Sprintf("/accounts/aliases")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewRemoveAccountAliasRequest calls the generic RemoveAccountAlias builder with application/json body
-func NewRemoveAccountAliasRequest(server string, body RemoveAccountAliasJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewRemoveAccountAliasRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewRemoveAccountAliasRequestWithBody constructs an http.Request for the RemoveAccountAlias method, with any body, and a specified content type
-func NewRemoveAccountAliasRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/aliases/remove")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -32172,6 +32233,33 @@ func NewLookupAccountRequest(server string, params *LookupAccountParams) (*http.
 	return req, nil
 }
 
+// NewCancelOwnAccountMoveRequest constructs an http.Request for the CancelOwnAccountMove method
+func NewCancelOwnAccountMoveRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMoveOwnAccountRequest calls the generic MoveOwnAccount builder with application/json body
 func NewMoveOwnAccountRequest(server string, body MoveOwnAccountJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -32208,33 +32296,6 @@ func NewMoveOwnAccountRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewCancelOwnAccountMoveRequest constructs an http.Request for the CancelOwnAccountMove method
-func NewCancelOwnAccountMoveRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/move/cancel")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -32766,6 +32827,40 @@ func NewFollowAccountRequestWithBody(server string, id AccountId, contentType st
 	return req, nil
 }
 
+// NewRemoveFollowerRequest constructs an http.Request for the RemoveFollower method
+func NewRemoveFollowerRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/follower", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAccountFollowersRequest constructs an http.Request for the ListAccountFollowers method
 func NewListAccountFollowersRequest(server string, id AccountId, params *ListAccountFollowersParams) (*http.Request, error) {
 	var err error
@@ -33023,40 +33118,6 @@ func NewMuteAccountRequestWithBody(server string, id AccountId, contentType stri
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewRemoveAccountFromFollowersRequest constructs an http.Request for the RemoveAccountFromFollowers method
-func NewRemoveAccountFromFollowersRequest(server string, id AccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/%s/remove_from_followers", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -34785,6 +34846,40 @@ func NewCreateCostItemRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
+// NewDeleteCostItemRequest constructs an http.Request for the DeleteCostItem method
+func NewDeleteCostItemRequest(server string, id CostItemId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/cost_items/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetCostItemRequest constructs an http.Request for the GetCostItem method
 func NewGetCostItemRequest(server string, id CostItemId) (*http.Request, error) {
 	var err error
@@ -34862,40 +34957,6 @@ func NewUpdateCostItemRequestWithBody(server string, id CostItemId, contentType 
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewCancelCostItemRequest constructs an http.Request for the CancelCostItem method
-func NewCancelCostItemRequest(server string, id CostItemId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/admin/cost_items/%s/cancel", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -35558,6 +35619,74 @@ func NewCopyCustomEmojiRequestWithBody(server string, id CustomEmojiId, contentT
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDisableCustomEmojiRequest constructs an http.Request for the DisableCustomEmoji method
+func NewDisableCustomEmojiRequest(server string, id CustomEmojiId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/custom_emojis/%s/disable", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEnableCustomEmojiRequest constructs an http.Request for the EnableCustomEmoji method
+func NewEnableCustomEmojiRequest(server string, id CustomEmojiId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/custom_emojis/%s/enable", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -37801,8 +37930,8 @@ func NewEnableOAuthClientRequest(server string, id OAuthClientId) (*http.Request
 	return req, nil
 }
 
-// NewRunPaymentReconcileRequest constructs an http.Request for the RunPaymentReconcile method
-func NewRunPaymentReconcileRequest(server string) (*http.Request, error) {
+// NewRunPaymentReconciliationRequest constructs an http.Request for the RunPaymentReconciliation method
+func NewRunPaymentReconciliationRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -37810,7 +37939,7 @@ func NewRunPaymentReconcileRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/admin/payment_reconciles")
+	operationPath := fmt.Sprintf("/admin/payment_reconciliation/runs")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -37949,23 +38078,23 @@ func NewListPendingRegistrationsRequest(server string, params *ListPendingRegist
 }
 
 // NewApproveRegistrationRequest calls the generic ApproveRegistration builder with application/json body
-func NewApproveRegistrationRequest(server string, userId RegistrationUserId, body ApproveRegistrationJSONRequestBody) (*http.Request, error) {
+func NewApproveRegistrationRequest(server string, id RegistrationId, body ApproveRegistrationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewApproveRegistrationRequestWithBody(server, userId, "application/json", bodyReader)
+	return NewApproveRegistrationRequestWithBody(server, id, "application/json", bodyReader)
 }
 
 // NewApproveRegistrationRequestWithBody constructs an http.Request for the ApproveRegistration method, with any body, and a specified content type
-func NewApproveRegistrationRequestWithBody(server string, userId RegistrationUserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewApproveRegistrationRequestWithBody(server string, id RegistrationId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -37996,23 +38125,23 @@ func NewApproveRegistrationRequestWithBody(server string, userId RegistrationUse
 }
 
 // NewRejectRegistrationRequest calls the generic RejectRegistration builder with application/json body
-func NewRejectRegistrationRequest(server string, userId RegistrationUserId, body RejectRegistrationJSONRequestBody) (*http.Request, error) {
+func NewRejectRegistrationRequest(server string, id RegistrationId, body RejectRegistrationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewRejectRegistrationRequestWithBody(server, userId, "application/json", bodyReader)
+	return NewRejectRegistrationRequestWithBody(server, id, "application/json", bodyReader)
 }
 
 // NewRejectRegistrationRequestWithBody constructs an http.Request for the RejectRegistration method, with any body, and a specified content type
-func NewRejectRegistrationRequestWithBody(server string, userId RegistrationUserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewRejectRegistrationRequestWithBody(server string, id RegistrationId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -39657,8 +39786,8 @@ func NewListSupporterSubscriptionsRequest(server string, params *ListSupporterSu
 	return req, nil
 }
 
-// NewCancelSupporterSubscriptionRequest constructs an http.Request for the CancelSupporterSubscription method
-func NewCancelSupporterSubscriptionRequest(server string, id SupporterSubscriptionId) (*http.Request, error) {
+// NewEndSupporterSubscriptionRequest constructs an http.Request for the EndSupporterSubscription method
+func NewEndSupporterSubscriptionRequest(server string, id SupporterSubscriptionId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -39673,7 +39802,7 @@ func NewCancelSupporterSubscriptionRequest(server string, id SupporterSubscripti
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/admin/supporter_subscriptions/%s/cancel", pathParam0)
+	operationPath := fmt.Sprintf("/admin/supporter_subscriptions/%s/end", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -44882,8 +45011,8 @@ func NewListStatusQuotesRequest(server string, id StatusId, params *ListStatusQu
 	return req, nil
 }
 
-// NewRevokeStatusQuoteRequest constructs an http.Request for the RevokeStatusQuote method
-func NewRevokeStatusQuoteRequest(server string, id StatusId, quoteId Id) (*http.Request, error) {
+// NewRevokeStatusQuoteApprovalRequest constructs an http.Request for the RevokeStatusQuoteApproval method
+func NewRevokeStatusQuoteApprovalRequest(server string, id StatusId, quoteId Id) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -44905,7 +45034,7 @@ func NewRevokeStatusQuoteRequest(server string, id StatusId, quoteId Id) (*http.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/statuses/%s/quotes/%s/revoke", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/statuses/%s/quotes/%s/approval", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -44915,7 +45044,7 @@ func NewRevokeStatusQuoteRequest(server string, id StatusId, quoteId Id) (*http.
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -47314,6 +47443,16 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 
+	// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
+	//
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
+	// profile change does. Removing an alias that the user does not have changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/aliases (the `RemoveAccountAlias` operationId).
+	RemoveAccountAliasWithResponse(ctx context.Context, params *RemoveAccountAliasParams, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
+
 	// ListAccountAliasesWithResponse List the authenticated user's aliases
 	//
 	// The accounts that the user moves from, which the user's actor names in
@@ -47365,26 +47504,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/aliases (the `AddAccountAlias` operationId).
 	AddAccountAliasWithResponse(ctx context.Context, body AddAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAccountAliasResponse, error)
-
-	// RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
-	//
-	// Removes an alias; the actor's `Update` goes to the user's followers as a
-	// profile change does. Removing an alias that the user does not have changes nothing.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-	RemoveAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
-
-	// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
-	//
-	// Removes an alias; the actor's `Update` goes to the user's followers as a
-	// profile change does. Removing an alias that the user does not have changes nothing.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-	RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
 
 	// GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
 	//
@@ -47536,6 +47655,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/lookup (the `LookupAccount` operationId).
 	LookupAccountWithResponse(ctx context.Context, params *LookupAccountParams, reqEditors ...RequestEditorFn) (*LookupAccountResponse, error)
 
+	// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+	//
+	// Cancels the move of the user's account: the account no longer names the target,
+	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+	// its actor without `movedTo`. The followers that moved stay with the target, and the next
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
+	// `/api/v1/problems/account-not-moved`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/move (the `CancelOwnAccountMove` operationId).
+	CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error)
+
 	// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
 	//
 	// Moves the user's account to the account `target_account_id`, after
@@ -47558,7 +47690,7 @@ type ClientWithResponsesInterface interface {
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
 	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -47596,7 +47728,7 @@ type ClientWithResponsesInterface interface {
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
 	// (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-	// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+	// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 	// following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 	// password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -47611,19 +47743,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/move (the `MoveOwnAccount` operationId).
 	MoveOwnAccountWithResponse(ctx context.Context, body MoveOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveOwnAccountResponse, error)
-
-	// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
-	//
-	// Cancels the move of the user's account: the account no longer names the target,
-	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
-	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
-	// `/api/v1/problems/account-not-moved`.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
-	CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error)
 
 	// GetPasswordStatusWithResponse Get whether the authenticated user has a password
 	//
@@ -47890,6 +48009,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/{id}/follow (the `FollowAccount` operationId).
 	FollowAccountWithResponse(ctx context.Context, id AccountId, body FollowAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*FollowAccountResponse, error)
 
+	// RemoveFollowerWithResponse Remove an account from the viewer's followers
+	//
+	// Ends the account's active follow of the viewer. Without one it changes nothing; a
+	// pending request is declined with `rejectFollowRequest` instead.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/follower (the `RemoveFollower` operationId).
+	RemoveFollowerWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RemoveFollowerResponse, error)
+
 	// ListAccountFollowersWithResponse List the followers of an account
 	//
 	// The accounts that actively follow the account, newest follow first. Followers that
@@ -47950,16 +48079,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccountWithResponse(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MuteAccountResponse, error)
-
-	// RemoveAccountFromFollowersWithResponse Remove an account from the viewer's followers
-	//
-	// Ends the account's active follow of the viewer. Without one it changes nothing; a
-	// pending request is declined with `rejectFollowRequest` instead.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/{id}/remove_from_followers (the `RemoveAccountFromFollowers` operationId).
-	RemoveAccountFromFollowersWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RemoveAccountFromFollowersResponse, error)
 
 	// ListAccountStatusesWithResponse List the posts and boosts of an account
 	//
@@ -48607,7 +48726,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListCostItemsWithResponse List the cost items
 	//
-	// The instance's cost items that are not canceled, newest first.
+	// The instance's cost items that are not deleted, newest first.
 	// Needs the `manage_finance` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48643,9 +48762,20 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/cost_items (the `CreateCostItem` operationId).
 	CreateCostItemWithResponse(ctx context.Context, body CreateCostItemJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCostItemResponse, error)
 
+	// DeleteCostItemWithResponse Delete a cost item
+	//
+	// Removes a cost item recorded by mistake from every period, past ones included. There is
+	// no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+	// the audit log. Needs the `manage_finance` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/cost_items/{id} (the `DeleteCostItem` operationId).
+	DeleteCostItemWithResponse(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*DeleteCostItemResponse, error)
+
 	// GetCostItemWithResponse Get a cost item
 	//
-	// An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+	// An unknown or deleted item is a 404. Needs the `manage_finance` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -48655,7 +48785,7 @@ type ClientWithResponsesInterface interface {
 	// UpdateCostItemWithBodyWithResponse Change a cost item's label
 	//
 	// Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-	// its value. The values are checked as for a new item (422). An unknown or canceled item is
+	// its value. The values are checked as for a new item (422). An unknown or deleted item is
 	// a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -48666,7 +48796,7 @@ type ClientWithResponsesInterface interface {
 	// UpdateCostItemWithResponse Change a cost item's label
 	//
 	// Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-	// its value. The values are checked as for a new item (422). An unknown or canceled item is
+	// its value. The values are checked as for a new item (422). An unknown or deleted item is
 	// a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -48674,22 +48804,11 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /admin/cost_items/{id} (the `UpdateCostItem` operationId).
 	UpdateCostItemWithResponse(ctx context.Context, id CostItemId, body UpdateCostItemJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCostItemResponse, error)
 
-	// CancelCostItemWithResponse Cancel a cost item
-	//
-	// Removes a cost item recorded by mistake from every period, past ones included. There is
-	// no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-	// the audit log. Needs the `manage_finance` permission.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /admin/cost_items/{id}/cancel (the `CancelCostItem` operationId).
-	CancelCostItemWithResponse(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*CancelCostItemResponse, error)
-
 	// SetCostItemEndWithBodyWithResponse Set a cost item's end
 	//
 	// Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 	// go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-	// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+	// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 	// in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -48701,7 +48820,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 	// go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-	// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+	// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 	// in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -48712,7 +48831,7 @@ type ClientWithResponsesInterface interface {
 	// ReviseCostItemPriceWithBodyWithResponse Revise a cost item's price
 	//
 	// Records the price of the payments on or after `effective_on`. A date before the start
-	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 	// item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -48723,7 +48842,7 @@ type ClientWithResponsesInterface interface {
 	// ReviseCostItemPriceWithResponse Revise a cost item's price
 	//
 	// Records the price of the payments on or after `effective_on`. A date before the start
-	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+	// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 	// item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -48879,9 +48998,8 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateCustomEmojiWithBodyWithResponse Change the settings of a custom emoji
 	//
-	// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-	// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-	// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+	// Changes what the request names and keeps the rest. A remote emoji has none of these
+	// settings: a change of one is a 422 with the reason `remote_emoji`.
 	// `category` is trimmed, and an empty one removes the category; `aliases` replace the
 	// aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -48893,9 +49011,8 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateCustomEmojiWithResponse Change the settings of a custom emoji
 	//
-	// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-	// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-	// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+	// Changes what the request names and keeps the rest. A remote emoji has none of these
+	// settings: a change of one is a 422 with the reason `remote_emoji`.
 	// `category` is trimmed, and an empty one removes the category; `aliases` replace the
 	// aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -48940,6 +49057,27 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/custom_emojis/{id}/copy (the `CopyCustomEmoji` operationId).
 	CopyCustomEmojiWithResponse(ctx context.Context, id CustomEmojiId, body CopyCustomEmojiJSONRequestBody, reqEditors ...RequestEditorFn) (*CopyCustomEmojiResponse, error)
+
+	// DisableCustomEmojiWithResponse Disable a custom emoji
+	//
+	// Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+	// changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+	// An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/custom_emojis/{id}/disable (the `DisableCustomEmoji` operationId).
+	DisableCustomEmojiWithResponse(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*DisableCustomEmojiResponse, error)
+
+	// EnableCustomEmojiWithResponse Enable a custom emoji
+	//
+	// Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+	// remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/custom_emojis/{id}/enable (the `EnableCustomEmoji` operationId).
+	EnableCustomEmojiWithResponse(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*EnableCustomEmojiResponse, error)
 
 	// ReplaceCustomEmojiImageWithBodyWithResponse Replace the image of a local custom emoji
 	//
@@ -49702,8 +49840,8 @@ type ClientWithResponsesInterface interface {
 	// DisableOAuthClientWithResponse Disable an OAuth client
 	//
 	// Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-	// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-	// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+	// its authorization requests, token exchanges and refreshes until it is enabled again.
+	// Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 	// is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_oauth_apps` permission.
 	//
@@ -49712,19 +49850,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/oauth_clients/{id}/disable (the `DisableOAuthClient` operationId).
 	DisableOAuthClientWithResponse(ctx context.Context, id OAuthClientId, reqEditors ...RequestEditorFn) (*DisableOAuthClientResponse, error)
 
-	// EnableOAuthClientWithResponse Lift the disablement of an OAuth client
+	// EnableOAuthClientWithResponse Enable an OAuth client
 	//
-	// The client can be authorized again. The tokens that the disablement revoked stay revoked:
-	// the users authorize the client again. Lifting nothing changes nothing. The lift is
-	// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-	// permission.
+	// The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+	// users authorize the client again. Enabling an enabled client changes nothing. The change is
+	// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+	// naming `id`. Needs the `manage_oauth_apps` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /admin/oauth_clients/{id}/enable (the `EnableOAuthClient` operationId).
 	EnableOAuthClientWithResponse(ctx context.Context, id OAuthClientId, reqEditors ...RequestEditorFn) (*EnableOAuthClientResponse, error)
 
-	// RunPaymentReconcileWithResponse Reconcile with the payment provider now
+	// RunPaymentReconciliationWithResponse Reconcile with the payment provider now
 	//
 	// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 	// others. One per UTC hour: another request in the hour after its reconciliation ran is a
@@ -49733,8 +49871,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/payment_reconciles (the `RunPaymentReconcile` operationId).
-	RunPaymentReconcileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RunPaymentReconcileResponse, error)
+	// Corresponds with POST /admin/payment_reconciliation/runs (the `RunPaymentReconciliation` operationId).
+	RunPaymentReconciliationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RunPaymentReconciliationResponse, error)
 
 	// GetPaymentStatusWithResponse Get the state of the payment provider
 	//
@@ -49781,30 +49919,30 @@ type ClientWithResponsesInterface interface {
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
-	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-	ApproveRegistrationWithBodyWithResponse(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error)
+	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+	ApproveRegistrationWithBodyWithResponse(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error)
 
 	// ApproveRegistrationWithResponse Approve a registration
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
-	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-	ApproveRegistrationWithResponse(ctx context.Context, userId RegistrationUserId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error)
+	// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+	ApproveRegistrationWithResponse(ctx context.Context, id RegistrationId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error)
 
 	// RejectRegistrationWithBodyWithResponse Reject a registration
 	//
@@ -49812,13 +49950,13 @@ type ClientWithResponsesInterface interface {
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-	// A user without a registration is a 404. Needs the
+	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-	RejectRegistrationWithBodyWithResponse(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error)
+	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+	RejectRegistrationWithBodyWithResponse(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error)
 
 	// RejectRegistrationWithResponse Reject a registration
 	//
@@ -49826,13 +49964,13 @@ type ClientWithResponsesInterface interface {
 	// for the moderators; the decision is audited. Deciding a decided registration changes
 	// nothing and keeps its decision. The answer on a decided registration has no email address:
 	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-	// A user without a registration is a 404. Needs the
+	// An unknown ID is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-	RejectRegistrationWithResponse(ctx context.Context, userId RegistrationUserId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error)
+	// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+	RejectRegistrationWithResponse(ctx context.Context, id RegistrationId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error)
 
 	// ListAdminRelaysWithResponse List the relays
 	//
@@ -50490,7 +50628,7 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/supporter_subscriptions (the `ListSupporterSubscriptions` operationId).
 	ListSupporterSubscriptionsWithResponse(ctx context.Context, params *ListSupporterSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListSupporterSubscriptionsResponse, error)
 
-	// CancelSupporterSubscriptionWithResponse Cancel a subscription at once
+	// EndSupporterSubscriptionWithResponse End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
 	// payment provider stops billing. A refund is the operator's to make at the provider. A
@@ -50499,8 +50637,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /admin/supporter_subscriptions/{id}/cancel (the `CancelSupporterSubscription` operationId).
-	CancelSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*CancelSupporterSubscriptionResponse, error)
+	// Corresponds with POST /admin/supporter_subscriptions/{id}/end (the `EndSupporterSubscription` operationId).
+	EndSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*EndSupporterSubscriptionResponse, error)
 
 	// GetAdminThemeWithResponse Read the instance theme
 	//
@@ -52593,7 +52731,7 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 	ListStatusQuotesWithResponse(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*ListStatusQuotesResponse, error)
 
-	// RevokeStatusQuoteWithResponse Revoke the approval of a quote of the authenticated user's status
+	// RevokeStatusQuoteApprovalWithResponse Revoke the approval of a quote of the authenticated user's status
 	//
 	// Withdraws this server's approval of the quote: the quote shows the quoted
 	// status no more, and the quoting server is told. A quote without this server's approval
@@ -52602,8 +52740,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /statuses/{id}/quotes/{quote_id}/revoke (the `RevokeStatusQuote` operationId).
-	RevokeStatusQuoteWithResponse(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*RevokeStatusQuoteResponse, error)
+	// Corresponds with DELETE /statuses/{id}/quotes/{quote_id}/approval (the `RevokeStatusQuoteApproval` operationId).
+	RevokeStatusQuoteApprovalWithResponse(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*RevokeStatusQuoteApprovalResponse, error)
 
 	// UnreactToStatusWithResponse Take back the emoji reaction to a status
 	//
@@ -52741,9 +52879,9 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /supporter/subscription/cancel (the `CancelOwnSupporterSubscription` operationId).
 	CancelOwnSupporterSubscriptionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnSupporterSubscriptionResponse, error)
 
-	// CancelOwnSupporterScheduledChangeWithResponse Withdraw the scheduled change of the authenticated user's subscription
+	// CancelOwnSupporterScheduledChangeWithResponse Cancel the scheduled change of the authenticated user's subscription
 	//
-	// Withdraws the change to a lower plan or to the monthly price that waits for the end of
+	// Cancels the change to a lower plan or to the monthly price that waits for the end of
 	// the period; the subscription renews at its current plan and interval. A 409
 	// `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 	//
@@ -52788,9 +52926,9 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /supporter/subscription/change (the `ChangeOwnSupporterSubscription` operationId).
 	ChangeOwnSupporterSubscriptionWithResponse(ctx context.Context, body ChangeOwnSupporterSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*ChangeOwnSupporterSubscriptionResponse, error)
 
-	// ResumeOwnSupporterSubscriptionWithResponse Withdraw the cancellation of the authenticated user's subscription
+	// ResumeOwnSupporterSubscriptionWithResponse Resume the authenticated user's canceling subscription
 	//
-	// Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+	// Takes back the cancellation of a `canceling` subscription, which then renews as before. A
 	// 409 `/api/v1/problems/supporter-subscription-state` in another state.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -53417,6 +53555,71 @@ type ClientWithResponsesInterface interface {
 	GetVoiceRoomSummaryWithResponse(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*GetVoiceRoomSummaryResponse, error)
 }
 
+// RemoveAccountAliasResponse200Headers the declared response headers of an HTTP 200 response for RemoveAccountAlias
+type RemoveAccountAliasResponse200Headers struct {
+	CacheControl *string
+}
+
+// RemoveAccountAliasResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveAccountAlias
+type RemoveAccountAliasResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveAccountAliasResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AccountAliasList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RemoveAccountAliasResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveAccountAliasResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveAccountAliasResponse) GetJSON200() *AccountAliasList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveAccountAliasResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveAccountAliasResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveAccountAliasResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveAccountAliasResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveAccountAliasResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListAccountAliasesResponse200Headers the declared response headers of an HTTP 200 response for ListAccountAliases
 type ListAccountAliasesResponse200Headers struct {
 	CacheControl *string
@@ -53541,71 +53744,6 @@ func (r AddAccountAliasResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AddAccountAliasResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// RemoveAccountAliasResponse200Headers the declared response headers of an HTTP 200 response for RemoveAccountAlias
-type RemoveAccountAliasResponse200Headers struct {
-	CacheControl *string
-}
-
-// RemoveAccountAliasResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveAccountAlias
-type RemoveAccountAliasResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type RemoveAccountAliasResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AccountAliasList
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *RemoveAccountAliasResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *RemoveAccountAliasResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r RemoveAccountAliasResponse) GetJSON200() *AccountAliasList {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r RemoveAccountAliasResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r RemoveAccountAliasResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r RemoveAccountAliasResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RemoveAccountAliasResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RemoveAccountAliasResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -53902,57 +54040,6 @@ func (r LookupAccountResponse) ContentType() string {
 	return ""
 }
 
-// MoveOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for MoveOwnAccount
-type MoveOwnAccountResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type MoveOwnAccountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *MoveOwnAccountResponseDefaultHeaders
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r MoveOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r MoveOwnAccountResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r MoveOwnAccountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r MoveOwnAccountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r MoveOwnAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 // CancelOwnAccountMoveResponseDefaultHeaders the declared response headers of an HTTP default response for CancelOwnAccountMove
 type CancelOwnAccountMoveResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -53998,6 +54085,57 @@ func (r CancelOwnAccountMoveResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CancelOwnAccountMoveResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// MoveOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for MoveOwnAccount
+type MoveOwnAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MoveOwnAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MoveOwnAccountResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MoveOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MoveOwnAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MoveOwnAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MoveOwnAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MoveOwnAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -54821,6 +54959,71 @@ func (r FollowAccountResponse) ContentType() string {
 	return ""
 }
 
+// RemoveFollowerResponse200Headers the declared response headers of an HTTP 200 response for RemoveFollower
+type RemoveFollowerResponse200Headers struct {
+	CacheControl *string
+}
+
+// RemoveFollowerResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveFollower
+type RemoveFollowerResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveFollowerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RemoveFollowerResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveFollowerResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveFollowerResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveFollowerResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveFollowerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveFollowerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveFollowerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveFollowerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListAccountFollowersResponse200Headers the declared response headers of an HTTP 200 response for ListAccountFollowers
 type ListAccountFollowersResponse200Headers struct {
 	CacheControl *string
@@ -55140,71 +55343,6 @@ func (r MuteAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MuteAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// RemoveAccountFromFollowersResponse200Headers the declared response headers of an HTTP 200 response for RemoveAccountFromFollowers
-type RemoveAccountFromFollowersResponse200Headers struct {
-	CacheControl *string
-}
-
-// RemoveAccountFromFollowersResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveAccountFromFollowers
-type RemoveAccountFromFollowersResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type RemoveAccountFromFollowersResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Relationship
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *RemoveAccountFromFollowersResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *RemoveAccountFromFollowersResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r RemoveAccountFromFollowersResponse) GetJSON200() *Relationship {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r RemoveAccountFromFollowersResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r RemoveAccountFromFollowersResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r RemoveAccountFromFollowersResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RemoveAccountFromFollowersResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RemoveAccountFromFollowersResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -57560,6 +57698,57 @@ func (r CreateCostItemResponse) ContentType() string {
 	return ""
 }
 
+// DeleteCostItemResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteCostItem
+type DeleteCostItemResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteCostItemResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteCostItemResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteCostItemResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteCostItemResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteCostItemResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteCostItemResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteCostItemResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetCostItemResponse200Headers the declared response headers of an HTTP 200 response for GetCostItem
 type GetCostItemResponse200Headers struct {
 	CacheControl *string
@@ -57684,57 +57873,6 @@ func (r UpdateCostItemResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateCostItemResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// CancelCostItemResponseDefaultHeaders the declared response headers of an HTTP default response for CancelCostItem
-type CancelCostItemResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type CancelCostItemResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *CancelCostItemResponseDefaultHeaders
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r CancelCostItemResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r CancelCostItemResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r CancelCostItemResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CancelCostItemResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r CancelCostItemResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58686,6 +58824,136 @@ func (r CopyCustomEmojiResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CopyCustomEmojiResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DisableCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for DisableCustomEmoji
+type DisableCustomEmojiResponse200Headers struct {
+	CacheControl *string
+}
+
+// DisableCustomEmojiResponseDefaultHeaders the declared response headers of an HTTP default response for DisableCustomEmoji
+type DisableCustomEmojiResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DisableCustomEmojiResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminCustomEmoji
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DisableCustomEmojiResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DisableCustomEmojiResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DisableCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DisableCustomEmojiResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DisableCustomEmojiResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisableCustomEmojiResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisableCustomEmojiResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisableCustomEmojiResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// EnableCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for EnableCustomEmoji
+type EnableCustomEmojiResponse200Headers struct {
+	CacheControl *string
+}
+
+// EnableCustomEmojiResponseDefaultHeaders the declared response headers of an HTTP default response for EnableCustomEmoji
+type EnableCustomEmojiResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type EnableCustomEmojiResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminCustomEmoji
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *EnableCustomEmojiResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *EnableCustomEmojiResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EnableCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r EnableCustomEmojiResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r EnableCustomEmojiResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableCustomEmojiResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableCustomEmojiResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EnableCustomEmojiResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -61863,35 +62131,35 @@ func (r EnableOAuthClientResponse) ContentType() string {
 	return ""
 }
 
-// RunPaymentReconcileResponseDefaultHeaders the declared response headers of an HTTP default response for RunPaymentReconcile
-type RunPaymentReconcileResponseDefaultHeaders struct {
+// RunPaymentReconciliationResponseDefaultHeaders the declared response headers of an HTTP default response for RunPaymentReconciliation
+type RunPaymentReconciliationResponseDefaultHeaders struct {
 	CacheControl    *string
 	ContentLanguage *string
 	RetryAfter      *int
 	WWWAuthenticate *string
 }
 
-type RunPaymentReconcileResponse struct {
+type RunPaymentReconciliationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *RunPaymentReconcileResponseDefaultHeaders
+	HeadersDefault *RunPaymentReconciliationResponseDefaultHeaders
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r RunPaymentReconcileResponse) GetApplicationproblemJSONDefault() *Problem {
+func (r RunPaymentReconciliationResponse) GetApplicationproblemJSONDefault() *Problem {
 	return r.ApplicationproblemJSONDefault
 }
 
 // GetBody returns the raw response body bytes
-func (r RunPaymentReconcileResponse) GetBody() []byte {
+func (r RunPaymentReconciliationResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r RunPaymentReconcileResponse) Status() string {
+func (r RunPaymentReconciliationResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -61899,7 +62167,7 @@ func (r RunPaymentReconcileResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r RunPaymentReconcileResponse) StatusCode() int {
+func (r RunPaymentReconciliationResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -61907,7 +62175,7 @@ func (r RunPaymentReconcileResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RunPaymentReconcileResponse) ContentType() string {
+func (r RunPaymentReconciliationResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64802,35 +65070,49 @@ func (r ListSupporterSubscriptionsResponse) ContentType() string {
 	return ""
 }
 
-// CancelSupporterSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for CancelSupporterSubscription
-type CancelSupporterSubscriptionResponseDefaultHeaders struct {
+// EndSupporterSubscriptionResponse200Headers the declared response headers of an HTTP 200 response for EndSupporterSubscription
+type EndSupporterSubscriptionResponse200Headers struct {
+	CacheControl *string
+}
+
+// EndSupporterSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for EndSupporterSubscription
+type EndSupporterSubscriptionResponseDefaultHeaders struct {
 	CacheControl    *string
 	ContentLanguage *string
 	RetryAfter      *int
 	WWWAuthenticate *string
 }
 
-type CancelSupporterSubscriptionResponse struct {
+type EndSupporterSubscriptionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminSupporterSubscription
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *EndSupporterSubscriptionResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *CancelSupporterSubscriptionResponseDefaultHeaders
+	HeadersDefault *EndSupporterSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EndSupporterSubscriptionResponse) GetJSON200() *AdminSupporterSubscription {
+	return r.JSON200
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r CancelSupporterSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+func (r EndSupporterSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
 	return r.ApplicationproblemJSONDefault
 }
 
 // GetBody returns the raw response body bytes
-func (r CancelSupporterSubscriptionResponse) GetBody() []byte {
+func (r EndSupporterSubscriptionResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r CancelSupporterSubscriptionResponse) Status() string {
+func (r EndSupporterSubscriptionResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -64838,7 +65120,7 @@ func (r CancelSupporterSubscriptionResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CancelSupporterSubscriptionResponse) StatusCode() int {
+func (r EndSupporterSubscriptionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -64846,7 +65128,7 @@ func (r CancelSupporterSubscriptionResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r CancelSupporterSubscriptionResponse) ContentType() string {
+func (r EndSupporterSubscriptionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -72913,35 +73195,35 @@ func (r ListStatusQuotesResponse) ContentType() string {
 	return ""
 }
 
-// RevokeStatusQuoteResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeStatusQuote
-type RevokeStatusQuoteResponseDefaultHeaders struct {
+// RevokeStatusQuoteApprovalResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeStatusQuoteApproval
+type RevokeStatusQuoteApprovalResponseDefaultHeaders struct {
 	CacheControl    *string
 	ContentLanguage *string
 	RetryAfter      *int
 	WWWAuthenticate *string
 }
 
-type RevokeStatusQuoteResponse struct {
+type RevokeStatusQuoteApprovalResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *RevokeStatusQuoteResponseDefaultHeaders
+	HeadersDefault *RevokeStatusQuoteApprovalResponseDefaultHeaders
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r RevokeStatusQuoteResponse) GetApplicationproblemJSONDefault() *Problem {
+func (r RevokeStatusQuoteApprovalResponse) GetApplicationproblemJSONDefault() *Problem {
 	return r.ApplicationproblemJSONDefault
 }
 
 // GetBody returns the raw response body bytes
-func (r RevokeStatusQuoteResponse) GetBody() []byte {
+func (r RevokeStatusQuoteApprovalResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r RevokeStatusQuoteResponse) Status() string {
+func (r RevokeStatusQuoteApprovalResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -72949,7 +73231,7 @@ func (r RevokeStatusQuoteResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r RevokeStatusQuoteResponse) StatusCode() int {
+func (r RevokeStatusQuoteApprovalResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -72957,7 +73239,7 @@ func (r RevokeStatusQuoteResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RevokeStatusQuoteResponse) ContentType() string {
+func (r RevokeStatusQuoteApprovalResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76246,6 +76528,22 @@ func (r GetVoiceRoomSummaryResponse) ContentType() string {
 	return ""
 }
 
+// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
+//
+// Removes an alias; the actor's `Update` goes to the user's followers as a
+// profile change does. Removing an alias that the user does not have changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/aliases (the `RemoveAccountAlias` operationId).
+func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context, params *RemoveAccountAliasParams, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error) {
+	rsp, err := c.RemoveAccountAlias(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveAccountAliasResponse(rsp)
+}
+
 // ListAccountAliasesWithResponse List the authenticated user's aliases
 //
 // The accounts that the user moves from, which the user's actor names in
@@ -76314,38 +76612,6 @@ func (c *ClientWithResponses) AddAccountAliasWithResponse(ctx context.Context, b
 		return nil, err
 	}
 	return ParseAddAccountAliasResponse(rsp)
-}
-
-// RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
-//
-// Removes an alias; the actor's `Update` goes to the user's followers as a
-// profile change does. Removing an alias that the user does not have changes nothing.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-func (c *ClientWithResponses) RemoveAccountAliasWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error) {
-	rsp, err := c.RemoveAccountAliasWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRemoveAccountAliasResponse(rsp)
-}
-
-// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
-//
-// Removes an alias; the actor's `Update` goes to the user's followers as a
-// profile change does. Removing an alias that the user does not have changes nothing.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
-func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error) {
-	rsp, err := c.RemoveAccountAlias(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRemoveAccountAliasResponse(rsp)
 }
 
 // GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
@@ -76540,6 +76806,25 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 	return ParseLookupAccountResponse(rsp)
 }
 
+// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
+//
+// Cancels the move of the user's account: the account no longer names the target,
+// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
+// its actor without `movedTo`. The followers that moved stay with the target, and the next
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
+// `/api/v1/problems/account-not-moved`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/move (the `CancelOwnAccountMove` operationId).
+func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error) {
+	rsp, err := c.CancelOwnAccountMove(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelOwnAccountMoveResponse(rsp)
+}
+
 // MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
 //
 // Moves the user's account to the account `target_account_id`, after
@@ -76562,7 +76847,7 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
 // (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 // following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 // password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -76606,7 +76891,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
 // (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-// aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+// aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
 // following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
 // password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
 // `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -76626,25 +76911,6 @@ func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, bo
 		return nil, err
 	}
 	return ParseMoveOwnAccountResponse(rsp)
-}
-
-// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
-//
-// Cancels the move of the user's account: the account no longer names the target,
-// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
-// its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the canceled one. An account that has not moved gets a 409
-// `/api/v1/problems/account-not-moved`.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
-func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CancelOwnAccountMoveResponse, error) {
-	rsp, err := c.CancelOwnAccountMove(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCancelOwnAccountMoveResponse(rsp)
 }
 
 // GetPasswordStatusWithResponse Get whether the authenticated user has a password
@@ -77014,6 +77280,22 @@ func (c *ClientWithResponses) FollowAccountWithResponse(ctx context.Context, id 
 	return ParseFollowAccountResponse(rsp)
 }
 
+// RemoveFollowerWithResponse Remove an account from the viewer's followers
+//
+// Ends the account's active follow of the viewer. Without one it changes nothing; a
+// pending request is declined with `rejectFollowRequest` instead.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/follower (the `RemoveFollower` operationId).
+func (c *ClientWithResponses) RemoveFollowerWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RemoveFollowerResponse, error) {
+	rsp, err := c.RemoveFollower(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveFollowerResponse(rsp)
+}
+
 // ListAccountFollowersWithResponse List the followers of an account
 //
 // The accounts that actively follow the account, newest follow first. Followers that
@@ -77109,22 +77391,6 @@ func (c *ClientWithResponses) MuteAccountWithResponse(ctx context.Context, id Ac
 		return nil, err
 	}
 	return ParseMuteAccountResponse(rsp)
-}
-
-// RemoveAccountFromFollowersWithResponse Remove an account from the viewer's followers
-//
-// Ends the account's active follow of the viewer. Without one it changes nothing; a
-// pending request is declined with `rejectFollowRequest` instead.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/{id}/remove_from_followers (the `RemoveAccountFromFollowers` operationId).
-func (c *ClientWithResponses) RemoveAccountFromFollowersWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RemoveAccountFromFollowersResponse, error) {
-	rsp, err := c.RemoveAccountFromFollowers(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRemoveAccountFromFollowersResponse(rsp)
 }
 
 // ListAccountStatusesWithResponse List the posts and boosts of an account
@@ -78031,7 +78297,7 @@ func (c *ClientWithResponses) CloseServiceWithResponse(ctx context.Context, body
 
 // ListCostItemsWithResponse List the cost items
 //
-// The instance's cost items that are not canceled, newest first.
+// The instance's cost items that are not deleted, newest first.
 // Needs the `manage_finance` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78085,9 +78351,26 @@ func (c *ClientWithResponses) CreateCostItemWithResponse(ctx context.Context, bo
 	return ParseCreateCostItemResponse(rsp)
 }
 
+// DeleteCostItemWithResponse Delete a cost item
+//
+// Removes a cost item recorded by mistake from every period, past ones included. There is
+// no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+// the audit log. Needs the `manage_finance` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/cost_items/{id} (the `DeleteCostItem` operationId).
+func (c *ClientWithResponses) DeleteCostItemWithResponse(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*DeleteCostItemResponse, error) {
+	rsp, err := c.DeleteCostItem(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteCostItemResponse(rsp)
+}
+
 // GetCostItemWithResponse Get a cost item
 //
-// An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+// An unknown or deleted item is a 404. Needs the `manage_finance` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -78103,7 +78386,7 @@ func (c *ClientWithResponses) GetCostItemWithResponse(ctx context.Context, id Co
 // UpdateCostItemWithBodyWithResponse Change a cost item's label
 //
 // Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-// its value. The values are checked as for a new item (422). An unknown or canceled item is
+// its value. The values are checked as for a new item (422). An unknown or deleted item is
 // a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -78120,7 +78403,7 @@ func (c *ClientWithResponses) UpdateCostItemWithBodyWithResponse(ctx context.Con
 // UpdateCostItemWithResponse Change a cost item's label
 //
 // Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-// its value. The values are checked as for a new item (422). An unknown or canceled item is
+// its value. The values are checked as for a new item (422). An unknown or deleted item is
 // a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -78134,28 +78417,11 @@ func (c *ClientWithResponses) UpdateCostItemWithResponse(ctx context.Context, id
 	return ParseUpdateCostItemResponse(rsp)
 }
 
-// CancelCostItemWithResponse Cancel a cost item
-//
-// Removes a cost item recorded by mistake from every period, past ones included. There is
-// no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-// the audit log. Needs the `manage_finance` permission.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /admin/cost_items/{id}/cancel (the `CancelCostItem` operationId).
-func (c *ClientWithResponses) CancelCostItemWithResponse(ctx context.Context, id CostItemId, reqEditors ...RequestEditorFn) (*CancelCostItemResponse, error) {
-	rsp, err := c.CancelCostItem(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCancelCostItemResponse(rsp)
-}
-
 // SetCostItemEndWithBodyWithResponse Set a cost item's end
 //
 // Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 // go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 // in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -78173,7 +78439,7 @@ func (c *ClientWithResponses) SetCostItemEndWithBodyWithResponse(ctx context.Con
 //
 // Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
 // go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-// the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+// the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
 // in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -78190,7 +78456,7 @@ func (c *ClientWithResponses) SetCostItemEndWithResponse(ctx context.Context, id
 // ReviseCostItemPriceWithBodyWithResponse Revise a cost item's price
 //
 // Records the price of the payments on or after `effective_on`. A date before the start
-// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 // item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -78207,7 +78473,7 @@ func (c *ClientWithResponses) ReviseCostItemPriceWithBodyWithResponse(ctx contex
 // ReviseCostItemPriceWithResponse Revise a cost item's price
 //
 // Records the price of the payments on or after `effective_on`. A date before the start
-// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+// date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
 // item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -78435,9 +78701,8 @@ func (c *ClientWithResponses) GetAdminCustomEmojiWithResponse(ctx context.Contex
 
 // UpdateCustomEmojiWithBodyWithResponse Change the settings of a custom emoji
 //
-// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+// Changes what the request names and keeps the rest. A remote emoji has none of these
+// settings: a change of one is a 422 with the reason `remote_emoji`.
 // `category` is trimmed, and an empty one removes the category; `aliases` replace the
 // aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -78455,9 +78720,8 @@ func (c *ClientWithResponses) UpdateCustomEmojiWithBodyWithResponse(ctx context.
 
 // UpdateCustomEmojiWithResponse Change the settings of a custom emoji
 //
-// Changes what the request names and keeps the rest. A remote emoji can only be enabled
-// and disabled (`enabled`); a change of its other settings is a 422 with the reason
-// `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+// Changes what the request names and keeps the rest. A remote emoji has none of these
+// settings: a change of one is a 422 with the reason `remote_emoji`.
 // `category` is trimmed, and an empty one removes the category; `aliases` replace the
 // aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -78519,6 +78783,39 @@ func (c *ClientWithResponses) CopyCustomEmojiWithResponse(ctx context.Context, i
 		return nil, err
 	}
 	return ParseCopyCustomEmojiResponse(rsp)
+}
+
+// DisableCustomEmojiWithResponse Disable a custom emoji
+//
+// Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+// changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+// An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/custom_emojis/{id}/disable (the `DisableCustomEmoji` operationId).
+func (c *ClientWithResponses) DisableCustomEmojiWithResponse(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*DisableCustomEmojiResponse, error) {
+	rsp, err := c.DisableCustomEmoji(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableCustomEmojiResponse(rsp)
+}
+
+// EnableCustomEmojiWithResponse Enable a custom emoji
+//
+// Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+// remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/custom_emojis/{id}/enable (the `EnableCustomEmoji` operationId).
+func (c *ClientWithResponses) EnableCustomEmojiWithResponse(ctx context.Context, id CustomEmojiId, reqEditors ...RequestEditorFn) (*EnableCustomEmojiResponse, error) {
+	rsp, err := c.EnableCustomEmoji(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableCustomEmojiResponse(rsp)
 }
 
 // ReplaceCustomEmojiImageWithBodyWithResponse Replace the image of a local custom emoji
@@ -79630,8 +79927,8 @@ func (c *ClientWithResponses) ListAdminOAuthClientsWithResponse(ctx context.Cont
 // DisableOAuthClientWithResponse Disable an OAuth client
 //
 // Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+// its authorization requests, token exchanges and refreshes until it is enabled again.
+// Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 // is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_oauth_apps` permission.
 //
@@ -79646,12 +79943,12 @@ func (c *ClientWithResponses) DisableOAuthClientWithResponse(ctx context.Context
 	return ParseDisableOAuthClientResponse(rsp)
 }
 
-// EnableOAuthClientWithResponse Lift the disablement of an OAuth client
+// EnableOAuthClientWithResponse Enable an OAuth client
 //
-// The client can be authorized again. The tokens that the disablement revoked stay revoked:
-// the users authorize the client again. Lifting nothing changes nothing. The lift is
-// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-// permission.
+// The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+// users authorize the client again. Enabling an enabled client changes nothing. The change is
+// recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+// naming `id`. Needs the `manage_oauth_apps` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -79664,7 +79961,7 @@ func (c *ClientWithResponses) EnableOAuthClientWithResponse(ctx context.Context,
 	return ParseEnableOAuthClientResponse(rsp)
 }
 
-// RunPaymentReconcileWithResponse Reconcile with the payment provider now
+// RunPaymentReconciliationWithResponse Reconcile with the payment provider now
 //
 // Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 // others. One per UTC hour: another request in the hour after its reconciliation ran is a
@@ -79673,13 +79970,13 @@ func (c *ClientWithResponses) EnableOAuthClientWithResponse(ctx context.Context,
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/payment_reconciles (the `RunPaymentReconcile` operationId).
-func (c *ClientWithResponses) RunPaymentReconcileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RunPaymentReconcileResponse, error) {
-	rsp, err := c.RunPaymentReconcile(ctx, reqEditors...)
+// Corresponds with POST /admin/payment_reconciliation/runs (the `RunPaymentReconciliation` operationId).
+func (c *ClientWithResponses) RunPaymentReconciliationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RunPaymentReconciliationResponse, error) {
+	rsp, err := c.RunPaymentReconciliation(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRunPaymentReconcileResponse(rsp)
+	return ParseRunPaymentReconciliationResponse(rsp)
 }
 
 // GetPaymentStatusWithResponse Get the state of the payment provider
@@ -79745,16 +80042,16 @@ func (c *ClientWithResponses) ListPendingRegistrationsWithResponse(ctx context.C
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
-// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error) {
-	rsp, err := c.ApproveRegistrationWithBody(ctx, userId, contentType, body, reqEditors...)
+// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error) {
+	rsp, err := c.ApproveRegistrationWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -79766,16 +80063,16 @@ func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx contex
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
-// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/registrations/{user_id}/approve (the `ApproveRegistration` operationId).
-func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Context, userId RegistrationUserId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error) {
-	rsp, err := c.ApproveRegistration(ctx, userId, body, reqEditors...)
+// Corresponds with POST /admin/registrations/{id}/approve (the `ApproveRegistration` operationId).
+func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Context, id RegistrationId, body ApproveRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveRegistrationResponse, error) {
+	rsp, err := c.ApproveRegistration(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -79788,14 +80085,14 @@ func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Contex
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-// A user without a registration is a 404. Needs the
+// An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context.Context, userId RegistrationUserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error) {
-	rsp, err := c.RejectRegistrationWithBody(ctx, userId, contentType, body, reqEditors...)
+// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context.Context, id RegistrationId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error) {
+	rsp, err := c.RejectRegistrationWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -79808,14 +80105,14 @@ func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context
 // for the moderators; the decision is audited. Deciding a decided registration changes
 // nothing and keeps its decision. The answer on a decided registration has no email address:
 // only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-// A user without a registration is a 404. Needs the
+// An unknown ID is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/registrations/{user_id}/reject (the `RejectRegistration` operationId).
-func (c *ClientWithResponses) RejectRegistrationWithResponse(ctx context.Context, userId RegistrationUserId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error) {
-	rsp, err := c.RejectRegistration(ctx, userId, body, reqEditors...)
+// Corresponds with POST /admin/registrations/{id}/reject (the `RejectRegistration` operationId).
+func (c *ClientWithResponses) RejectRegistrationWithResponse(ctx context.Context, id RegistrationId, body RejectRegistrationJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectRegistrationResponse, error) {
+	rsp, err := c.RejectRegistration(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -80790,7 +81087,7 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 	return ParseListSupporterSubscriptionsResponse(rsp)
 }
 
-// CancelSupporterSubscriptionWithResponse Cancel a subscription at once
+// EndSupporterSubscriptionWithResponse End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
 // payment provider stops billing. A refund is the operator's to make at the provider. A
@@ -80799,13 +81096,13 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /admin/supporter_subscriptions/{id}/cancel (the `CancelSupporterSubscription` operationId).
-func (c *ClientWithResponses) CancelSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*CancelSupporterSubscriptionResponse, error) {
-	rsp, err := c.CancelSupporterSubscription(ctx, id, reqEditors...)
+// Corresponds with POST /admin/supporter_subscriptions/{id}/end (the `EndSupporterSubscription` operationId).
+func (c *ClientWithResponses) EndSupporterSubscriptionWithResponse(ctx context.Context, id SupporterSubscriptionId, reqEditors ...RequestEditorFn) (*EndSupporterSubscriptionResponse, error) {
+	rsp, err := c.EndSupporterSubscription(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCancelSupporterSubscriptionResponse(rsp)
+	return ParseEndSupporterSubscriptionResponse(rsp)
 }
 
 // GetAdminThemeWithResponse Read the instance theme
@@ -83859,7 +84156,7 @@ func (c *ClientWithResponses) ListStatusQuotesWithResponse(ctx context.Context, 
 	return ParseListStatusQuotesResponse(rsp)
 }
 
-// RevokeStatusQuoteWithResponse Revoke the approval of a quote of the authenticated user's status
+// RevokeStatusQuoteApprovalWithResponse Revoke the approval of a quote of the authenticated user's status
 //
 // Withdraws this server's approval of the quote: the quote shows the quoted
 // status no more, and the quoting server is told. A quote without this server's approval
@@ -83868,13 +84165,13 @@ func (c *ClientWithResponses) ListStatusQuotesWithResponse(ctx context.Context, 
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /statuses/{id}/quotes/{quote_id}/revoke (the `RevokeStatusQuote` operationId).
-func (c *ClientWithResponses) RevokeStatusQuoteWithResponse(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*RevokeStatusQuoteResponse, error) {
-	rsp, err := c.RevokeStatusQuote(ctx, id, quoteId, reqEditors...)
+// Corresponds with DELETE /statuses/{id}/quotes/{quote_id}/approval (the `RevokeStatusQuoteApproval` operationId).
+func (c *ClientWithResponses) RevokeStatusQuoteApprovalWithResponse(ctx context.Context, id StatusId, quoteId Id, reqEditors ...RequestEditorFn) (*RevokeStatusQuoteApprovalResponse, error) {
+	rsp, err := c.RevokeStatusQuoteApproval(ctx, id, quoteId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRevokeStatusQuoteResponse(rsp)
+	return ParseRevokeStatusQuoteApprovalResponse(rsp)
 }
 
 // UnreactToStatusWithResponse Take back the emoji reaction to a status
@@ -84079,9 +84376,9 @@ func (c *ClientWithResponses) CancelOwnSupporterSubscriptionWithResponse(ctx con
 	return ParseCancelOwnSupporterSubscriptionResponse(rsp)
 }
 
-// CancelOwnSupporterScheduledChangeWithResponse Withdraw the scheduled change of the authenticated user's subscription
+// CancelOwnSupporterScheduledChangeWithResponse Cancel the scheduled change of the authenticated user's subscription
 //
-// Withdraws the change to a lower plan or to the monthly price that waits for the end of
+// Cancels the change to a lower plan or to the monthly price that waits for the end of
 // the period; the subscription renews at its current plan and interval. A 409
 // `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 //
@@ -84144,9 +84441,9 @@ func (c *ClientWithResponses) ChangeOwnSupporterSubscriptionWithResponse(ctx con
 	return ParseChangeOwnSupporterSubscriptionResponse(rsp)
 }
 
-// ResumeOwnSupporterSubscriptionWithResponse Withdraw the cancellation of the authenticated user's subscription
+// ResumeOwnSupporterSubscriptionWithResponse Resume the authenticated user's canceling subscription
 //
-// Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+// Takes back the cancellation of a `canceling` subscription, which then renews as before. A
 // 409 `/api/v1/problems/supporter-subscription-state` in another state.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -85084,6 +85381,83 @@ func (c *ClientWithResponses) GetVoiceRoomSummaryWithResponse(ctx context.Contex
 	return ParseGetVoiceRoomSummaryResponse(rsp)
 }
 
+// ParseRemoveAccountAliasResponse parses an HTTP response from a RemoveAccountAliasWithResponse call
+func ParseRemoveAccountAliasResponse(rsp *http.Response) (*RemoveAccountAliasResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveAccountAliasResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AccountAliasList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RemoveAccountAliasResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RemoveAccountAliasResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListAccountAliasesResponse parses an HTTP response from a ListAccountAliasesWithResponse call
 func ParseListAccountAliasesResponse(rsp *http.Response) (*ListAccountAliasesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -85204,83 +85578,6 @@ func ParseAddAccountAliasResponse(rsp *http.Response) (*AddAccountAliasResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers AddAccountAliasResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseRemoveAccountAliasResponse parses an HTTP response from a RemoveAccountAliasWithResponse call
-func ParseRemoveAccountAliasResponse(rsp *http.Response) (*RemoveAccountAliasResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RemoveAccountAliasResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AccountAliasList
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers RemoveAccountAliasResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers RemoveAccountAliasResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -85662,15 +85959,15 @@ func ParseLookupAccountResponse(rsp *http.Response) (*LookupAccountResponse, err
 	return response, nil
 }
 
-// ParseMoveOwnAccountResponse parses an HTTP response from a MoveOwnAccountWithResponse call
-func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, error) {
+// ParseCancelOwnAccountMoveResponse parses an HTTP response from a CancelOwnAccountMoveWithResponse call
+func ParseCancelOwnAccountMoveResponse(rsp *http.Response) (*CancelOwnAccountMoveResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &MoveOwnAccountResponse{
+	response := &CancelOwnAccountMoveResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -85690,7 +85987,7 @@ func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, e
 
 	switch {
 	case true:
-		var headers MoveOwnAccountResponseDefaultHeaders
+		var headers CancelOwnAccountMoveResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -85725,15 +86022,15 @@ func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, e
 	return response, nil
 }
 
-// ParseCancelOwnAccountMoveResponse parses an HTTP response from a CancelOwnAccountMoveWithResponse call
-func ParseCancelOwnAccountMoveResponse(rsp *http.Response) (*CancelOwnAccountMoveResponse, error) {
+// ParseMoveOwnAccountResponse parses an HTTP response from a MoveOwnAccountWithResponse call
+func ParseMoveOwnAccountResponse(rsp *http.Response) (*MoveOwnAccountResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CancelOwnAccountMoveResponse{
+	response := &MoveOwnAccountResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -85753,7 +86050,7 @@ func ParseCancelOwnAccountMoveResponse(rsp *http.Response) (*CancelOwnAccountMov
 
 	switch {
 	case true:
-		var headers CancelOwnAccountMoveResponseDefaultHeaders
+		var headers MoveOwnAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -86761,6 +87058,83 @@ func ParseFollowAccountResponse(rsp *http.Response) (*FollowAccountResponse, err
 	return response, nil
 }
 
+// ParseRemoveFollowerResponse parses an HTTP response from a RemoveFollowerWithResponse call
+func ParseRemoveFollowerResponse(rsp *http.Response) (*RemoveFollowerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveFollowerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RemoveFollowerResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RemoveFollowerResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListAccountFollowersResponse parses an HTTP response from a ListAccountFollowersWithResponse call
 func ParseListAccountFollowersResponse(rsp *http.Response) (*ListAccountFollowersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -87112,83 +87486,6 @@ func ParseMuteAccountResponse(rsp *http.Response) (*MuteAccountResponse, error) 
 		response.Headers200 = &headers
 	case true:
 		var headers MuteAccountResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseRemoveAccountFromFollowersResponse parses an HTTP response from a RemoveAccountFromFollowersWithResponse call
-func ParseRemoveAccountFromFollowersResponse(rsp *http.Response) (*RemoveAccountFromFollowersResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RemoveAccountFromFollowersResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Relationship
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers RemoveAccountFromFollowersResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers RemoveAccountFromFollowersResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -90016,6 +90313,69 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 	return response, nil
 }
 
+// ParseDeleteCostItemResponse parses an HTTP response from a DeleteCostItemWithResponse call
+func ParseDeleteCostItemResponse(rsp *http.Response) (*DeleteCostItemResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteCostItemResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteCostItemResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetCostItemResponse parses an HTTP response from a GetCostItemWithResponse call
 func ParseGetCostItemResponse(rsp *http.Response) (*GetCostItemResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -90136,69 +90496,6 @@ func ParseUpdateCostItemResponse(rsp *http.Response) (*UpdateCostItemResponse, e
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateCostItemResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseCancelCostItemResponse parses an HTTP response from a CancelCostItemWithResponse call
-func ParseCancelCostItemResponse(rsp *http.Response) (*CancelCostItemResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CancelCostItemResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case true:
-		var headers CancelCostItemResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -91378,6 +91675,160 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 		response.Headers422 = &headers
 	case true:
 		var headers CopyCustomEmojiResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDisableCustomEmojiResponse parses an HTTP response from a DisableCustomEmojiWithResponse call
+func ParseDisableCustomEmojiResponse(rsp *http.Response) (*DisableCustomEmojiResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisableCustomEmojiResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminCustomEmoji
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DisableCustomEmojiResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers DisableCustomEmojiResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseEnableCustomEmojiResponse parses an HTTP response from a EnableCustomEmojiWithResponse call
+func ParseEnableCustomEmojiResponse(rsp *http.Response) (*EnableCustomEmojiResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableCustomEmojiResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminCustomEmoji
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers EnableCustomEmojiResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers EnableCustomEmojiResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -95231,15 +95682,15 @@ func ParseEnableOAuthClientResponse(rsp *http.Response) (*EnableOAuthClientRespo
 	return response, nil
 }
 
-// ParseRunPaymentReconcileResponse parses an HTTP response from a RunPaymentReconcileWithResponse call
-func ParseRunPaymentReconcileResponse(rsp *http.Response) (*RunPaymentReconcileResponse, error) {
+// ParseRunPaymentReconciliationResponse parses an HTTP response from a RunPaymentReconciliationWithResponse call
+func ParseRunPaymentReconciliationResponse(rsp *http.Response) (*RunPaymentReconciliationResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RunPaymentReconcileResponse{
+	response := &RunPaymentReconciliationResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -95259,7 +95710,7 @@ func ParseRunPaymentReconcileResponse(rsp *http.Response) (*RunPaymentReconcileR
 
 	switch {
 	case true:
-		var headers RunPaymentReconcileResponseDefaultHeaders
+		var headers RunPaymentReconciliationResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -98779,22 +99230,26 @@ func ParseListSupporterSubscriptionsResponse(rsp *http.Response) (*ListSupporter
 	return response, nil
 }
 
-// ParseCancelSupporterSubscriptionResponse parses an HTTP response from a CancelSupporterSubscriptionWithResponse call
-func ParseCancelSupporterSubscriptionResponse(rsp *http.Response) (*CancelSupporterSubscriptionResponse, error) {
+// ParseEndSupporterSubscriptionResponse parses an HTTP response from a EndSupporterSubscriptionWithResponse call
+func ParseEndSupporterSubscriptionResponse(rsp *http.Response) (*EndSupporterSubscriptionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CancelSupporterSubscriptionResponse{
+	response := &EndSupporterSubscriptionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminSupporterSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -98806,8 +99261,18 @@ func ParseCancelSupporterSubscriptionResponse(rsp *http.Response) (*CancelSuppor
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers EndSupporterSubscriptionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
-		var headers CancelSupporterSubscriptionResponseDefaultHeaders
+		var headers EndSupporterSubscriptionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -108495,15 +108960,15 @@ func ParseListStatusQuotesResponse(rsp *http.Response) (*ListStatusQuotesRespons
 	return response, nil
 }
 
-// ParseRevokeStatusQuoteResponse parses an HTTP response from a RevokeStatusQuoteWithResponse call
-func ParseRevokeStatusQuoteResponse(rsp *http.Response) (*RevokeStatusQuoteResponse, error) {
+// ParseRevokeStatusQuoteApprovalResponse parses an HTTP response from a RevokeStatusQuoteApprovalWithResponse call
+func ParseRevokeStatusQuoteApprovalResponse(rsp *http.Response) (*RevokeStatusQuoteApprovalResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RevokeStatusQuoteResponse{
+	response := &RevokeStatusQuoteApprovalResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -108523,7 +108988,7 @@ func ParseRevokeStatusQuoteResponse(rsp *http.Response) (*RevokeStatusQuoteRespo
 
 	switch {
 	case true:
-		var headers RevokeStatusQuoteResponseDefaultHeaders
+		var headers RevokeStatusQuoteApprovalResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

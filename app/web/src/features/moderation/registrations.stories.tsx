@@ -25,7 +25,7 @@ function withoutReason(overrides: Parameters<typeof registrationFixture>[0]) {
 const registrations = listing("/admin/registrations", [
   registrationFixture({ state_changed_at: hoursAgo(2), submitted_at: hoursAgo(2) }),
   registrationFixture({
-    user_id: storyId("b1", 2),
+    id: storyId("b1", 2),
     account_id: storyId("c1", 2),
     username: "maximiliana_theodora_wolfharte",
     email: "maximiliana.theodora.wolfharte@a-very-long-mail-provider.example",
@@ -35,7 +35,7 @@ const registrations = listing("/admin/registrations", [
     submitted_at: hoursAgo(20),
   }),
   withoutReason({
-    user_id: storyId("b1", 3),
+    id: storyId("b1", 3),
     account_id: storyId("c1", 3),
     username: "dana",
     email: "dana@example.org",
@@ -44,7 +44,7 @@ const registrations = listing("/admin/registrations", [
     submitted_at: hoursAgo(50),
   }),
   registrationFixture({
-    user_id: storyId("b1", 4),
+    id: storyId("b1", 4),
     account_id: storyId("c1", 4),
     username: "kenji",
     email: "kenji@example.jp",

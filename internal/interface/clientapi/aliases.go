@@ -104,7 +104,7 @@ func (s *Server) AddAccountAlias(ctx context.Context, req AddAccountAliasRequest
 	return AddAccountAlias200JSONResponse{list}, nil
 }
 
-// RemoveAccountAlias serves POST /api/v1/accounts/aliases/remove.
+// RemoveAccountAlias serves DELETE /api/v1/accounts/aliases.
 func (s *Server) RemoveAccountAlias(ctx context.Context, req RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -113,10 +113,8 @@ func (s *Server) RemoveAccountAlias(ctx context.Context, req RemoveAccountAliasR
 	if s.o.Aliases == nil {
 		return RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
-	if req.Body != nil {
-		if _, err := s.o.Aliases.RemoveAlias(ctx, v.AccountID, req.Body.Uri); err != nil {
-			return nil, err
-		}
+	if _, err := s.o.Aliases.RemoveAlias(ctx, v.AccountID, req.Params.Uri); err != nil {
+		return nil, err
 	}
 	list, err := s.aliasList(ctx, v.AccountID)
 	if err != nil {

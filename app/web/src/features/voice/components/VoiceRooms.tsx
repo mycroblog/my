@@ -52,8 +52,8 @@ function speakerStack(room: VoiceRoom): AvatarStackItem[] {
     (participant) => participant.role === "speaker" && participant.account.id !== room.host.id,
   );
   const ordered = [
-    ...others.filter((participant) => participant.cohost),
-    ...others.filter((participant) => !participant.cohost),
+    ...others.filter((participant) => participant.cohosting),
+    ...others.filter((participant) => !participant.cohosting),
   ];
   return [stackItem(room.host), ...ordered.map((participant) => stackItem(participant.account))];
 }

@@ -169,9 +169,9 @@ The same decisions can be made from the admin screens (the client API). All of t
 
 | Operation | What it does |
 | --- | --- |
-| `GET /api/v1/admin/registrations` | Registrations waiting for approval (longest wait first). Returns the reason for joining, the email address and whether it is confirmed, and the local account |
-| `POST /api/v1/admin/registrations/{user_id}/approve` | Approves. The body `{"note": "..."}` is optional. The answer shows the note as `decision_note`, and an answer on a decided registration has no email address |
-| `POST /api/v1/admin/registrations/{user_id}/reject` | Rejects. The body is the same as for `approve` |
+| `GET /api/v1/admin/registrations` | Registrations waiting for approval (longest wait first). Returns the ID of the registration, the reason for joining, the email address and whether it is confirmed, and the local account |
+| `POST /api/v1/admin/registrations/{id}/approve` | Approves. The body `{"note": "..."}` is optional. The answer shows the note as `decision_note`, and an answer on a decided registration has no email address |
+| `POST /api/v1/admin/registrations/{id}/reject` | Rejects. The body is the same as for `approve` |
 
 - This is the same use case as the CLI, and it records the decision in `registration_decisions` and the audit log (`registration_approved`, `registration_rejected`). The actor of a CLI decision is `cli`; the actor of an API decision is the moderator who decided.
 - Deciding an already decided registration changes nothing and returns the current state (if two people decide at once, only one decision is recorded). A user created without the sign-up page gives 404.

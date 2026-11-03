@@ -117,7 +117,7 @@ describe("an approved registration", () => {
       http.get(`${apiBase}/admin/registrations`, () =>
         HttpResponse.json({ items: approved ? [] : [registrationFixture()] }),
       ),
-      http.post(`${apiBase}/admin/registrations/:userId/approve`, () => {
+      http.post(`${apiBase}/admin/registrations/:id/approve`, () => {
         approved = true;
         return HttpResponse.json(registrationFixture({ state: "approved" }));
       }),

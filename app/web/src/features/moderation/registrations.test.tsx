@@ -36,7 +36,7 @@ const {
   email_verified: _emailVerified,
   ...carol
 } = registrationFixture({
-  user_id: "0192f0c4-7a8e-7000-8000-0000000000b2",
+  id: "0192f0c4-7a8e-7000-8000-0000000000b2",
   account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
   username: "carol",
   reason: "أريد الانضمام",
@@ -44,14 +44,14 @@ const {
   submitted_at: "2026-10-16T10:00:00Z",
 });
 const gone = registrationFixture({
-  user_id: "0192f0c4-7a8e-7000-8000-0000000000b3",
+  id: "0192f0c4-7a8e-7000-8000-0000000000b3",
   submitted_at: "2026-10-16T11:00:00Z",
 });
 delete gone.username;
 delete gone.account_id;
 delete gone.reason;
 
-type Decision = { userId: string; decision: string; body: Schemas["RegistrationDecisionRequest"] };
+type Decision = { id: string; decision: string; body: Schemas["RegistrationDecisionRequest"] };
 
 /**
  * Plays the registrations of the server: the pending ones, which decisions take off; records the decisions.
@@ -64,15 +64,15 @@ function registrationsServer(
   let pending = initial;
   const decisions: Decision[] = [];
   const answer = (decision: "approve" | "reject") =>
-    http.post(`${apiBase}/admin/registrations/:userId/${decision}`, async ({ request, params }) => {
-      const userId = String(params["userId"]);
-      decisions.push({ userId, decision, body: (await request.json()) as Schemas["RegistrationDecisionRequest"] });
-      const registration = initial.find((item) => item.user_id === userId);
+    http.post(`${apiBase}/admin/registrations/:id/${decision}`, async ({ request, params }) => {
+      const id = String(params["id"]);
+      decisions.push({ id, decision, body: (await request.json()) as Schemas["RegistrationDecisionRequest"] });
+      const registration = initial.find((item) => item.id === id);
       if (registration === undefined) return problem(404, "about:blank", "Not Found");
-      pending = pending.filter((item) => item.user_id !== userId);
+      pending = pending.filter((item) => item.id !== id);
       return HttpResponse.json({
         ...registration,
-        state: decided[userId] ?? (decision === "approve" ? "approved" : "rejected"),
+        state: decided[id] ?? (decision === "approve" ? "approved" : "rejected"),
         state_changed_at: "2026-10-17T00:00:00Z",
       });
     });
@@ -179,7 +179,7 @@ describe("deciding a registration", () => {
       `${isolated("@bob")} is approved and can sign in.`,
     );
     expect(api.decisions).toEqual([
-      { userId: bob.user_id, decision: "approve", body: { note: "Known from the birding club." } },
+      { id: bob.id, decision: "approve", body: { note: "Known from the birding club." } },
     ]);
   });
 
@@ -200,7 +200,7 @@ describe("deciding a registration", () => {
     expect(screen.getAllByRole("status").map((status) => status.textContent)).toContain(
       `${isolated("@carol")} is rejected.`,
     );
-    expect(api.decisions).toEqual([{ userId: carol.user_id, decision: "reject", body: {} }]);
+    expect(api.decisions).toEqual([{ id: carol.id, decision: "reject", body: {} }]);
   });
 
   test("cancel and Esc close the confirmation without deciding, and focus returns to its button", async () => {
@@ -249,7 +249,7 @@ describe("deciding a registration", () => {
   test("a failure stays in the confirmation with the reason, and the registration stays", async () => {
     registrationsServer([bob]);
     server.use(
-      http.post(`${apiBase}/admin/registrations/:userId/approve`, () =>
+      http.post(`${apiBase}/admin/registrations/:id/approve`, () =>
         problem(500, "about:blank", "Internal Server Error"),
       ),
     );
@@ -267,7 +267,7 @@ describe("deciding a registration", () => {
   });
 
   test("a registration another moderator decided first leaves the list, and the status says which decision stands", async () => {
-    registrationsServer([bob], { [bob.user_id]: "rejected" });
+    registrationsServer([bob], { [bob.id]: "rejected" });
     const { user } = await renderApp({ path: "/moderation/registrations" });
 
     await user.click(await screen.findByRole("button", { name: `Approve ${isolated("@bob")}` }));

@@ -17,6 +17,9 @@ INSERT INTO registration_applications (id, user_id, reason, invite_id, submitted
 -- name: GetRegistrationApplicationByUser :one
 SELECT id, user_id, reason, invite_id, submitted_at FROM registration_applications WHERE user_id = ?;
 
+-- name: GetRegistrationApplication :one
+SELECT id, user_id, reason, invite_id, submitted_at FROM registration_applications WHERE id = ?;
+
 -- name: InsertRegistrationDecision :exec
 INSERT INTO registration_decisions (id, application_id, decision, decided_by, decided_by_user_id, note, decided_at)
 VALUES (?, ?, ?, ?, ?, ?, ?);

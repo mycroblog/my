@@ -97,7 +97,7 @@ export function adminCustomEmojiFixture(
     uri: `https://my.example/ap/emojis/${id}`,
     url: `https://my.example/media/${id}/r/medium.webp`,
     static_url: `https://my.example/media/${id}/r/medium.webp`,
-    enabled: true,
+    state: "enabled",
     visible_in_picker: true,
     aliases: [],
     created_by_deleted: false,
@@ -217,7 +217,7 @@ export function oauthClientFixture(
     confidential: false,
     scopes: ["read", "write"],
     owner_deleted: false,
-    disabled: false,
+    state: "enabled",
     created_at: "2026-10-22T00:00:00Z",
     ...overrides,
   };
@@ -667,7 +667,7 @@ export const handlers = [
       } satisfies Schemas["AdminTheme"]),
     );
   }),
-  // operationIds listAdminCustomEmojis, createCustomEmoji, getAdminCustomEmoji, updateCustomEmoji, deleteCustomEmoji,
+  // operationIds listAdminCustomEmojis, createCustomEmoji, getAdminCustomEmoji, updateCustomEmoji, enableCustomEmoji, disableCustomEmoji, deleteCustomEmoji,
   // replaceCustomEmojiImage: no emoji; a new or changed emoji is answered as sent.
   http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminCustomEmojiPage"])),
@@ -685,6 +685,14 @@ export const handlers = [
     const body = (await request.clone().json()) as Schemas["UpdateCustomEmojiRequest"];
     return withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat", body)));
   }),
+  http.post(`${apiBase}/admin/custom_emojis/:id/enable`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat"))),
+  ),
+  http.post(`${apiBase}/admin/custom_emojis/:id/disable`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(adminCustomEmojiFixture(String(params["id"]), "blobcat", { state: "disabled" })),
+    ),
+  ),
   http.delete(`${apiBase}/admin/custom_emojis/:id`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
@@ -843,7 +851,7 @@ export const handlers = [
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientPage"])),
   ),
   http.post(`${apiBase}/admin/oauth_clients/:id/disable`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"]), { disabled: true }))),
+    withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"]), { state: "disabled" }))),
   ),
   http.post(`${apiBase}/admin/oauth_clients/:id/enable`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(oauthClientFixture(String(params["id"])))),
@@ -890,7 +898,7 @@ export const handlers = [
     ),
   ),
   // operationIds listCostItems, createCostItem, getCostItem, updateCostItem, reviseCostItemPrice, setCostItemEnd,
-  // cancelCostItem, getCostTotals, listBillingImports, runBillingImport: no items, no costs in the periods asked for,
+  // deleteCostItem, getCostTotals, listBillingImports, runBillingImport: no items, no costs in the periods asked for,
   // and no billing sources; a new or changed item is answered as sent.
   http.get(`${apiBase}/admin/cost_items`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["CostItemPage"])),
@@ -926,7 +934,7 @@ export const handlers = [
     const body = (await request.clone().json()) as Schemas["CostItemEndRequest"];
     return withViewer(request, () => HttpResponse.json(costItemFixture(String(params["id"]), body)));
   }),
-  http.post(`${apiBase}/admin/cost_items/:id/cancel`, ({ request }) =>
+  http.delete(`${apiBase}/admin/cost_items/:id`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   http.get(`${apiBase}/admin/cost_totals`, ({ request }) =>
@@ -945,8 +953,8 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   // operationIds getSupporterProgram, setSupporterProgram, listAdminSupporterPlans, createSupporterPlan,
-  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, cancelSupporterSubscription, getPaymentStatus,
-  // runPaymentReconcile: a disabled program without plans or subscriptions, and Stripe in test mode; a change is
+  // updateSupporterPlan, retireSupporterPlan, listSupporterSubscriptions, endSupporterSubscription, getPaymentStatus,
+  // runPaymentReconciliation: a disabled program without plans or subscriptions, and Stripe in test mode; a change is
   // answered as sent.
   http.get(`${apiBase}/admin/supporter_program`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(supporterProgramFixture())),
@@ -982,13 +990,15 @@ export const handlers = [
   http.get(`${apiBase}/admin/supporter_subscriptions`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminSupporterSubscriptionPage"])),
   ),
-  http.post(`${apiBase}/admin/supporter_subscriptions/:id/cancel`, ({ request }) =>
-    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(supporterSubscriptionFixture(String(params["id"]), { state: "expired" })),
+    ),
   ),
   http.get(`${apiBase}/admin/payment_status`, ({ request }) =>
     withViewer(request, () => HttpResponse.json(paymentStatusFixture())),
   ),
-  http.post(`${apiBase}/admin/payment_reconciles`, ({ request }) =>
-    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  http.post(`${apiBase}/admin/payment_reconciliation/runs`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 202 })),
   ),
 ];

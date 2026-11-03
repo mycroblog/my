@@ -76,11 +76,11 @@ export type RegistrationReview = {
 };
 
 /**
- * Deciding registrations. `onDecided(userId)` is called, once the audit log is fetched again, just before the
+ * Deciding registrations. `onDecided(id)` is called, once the audit log is fetched again, just before the
  * registration leaves the list (to keep focus, lib/useFocusAfterRemoval). A registration that another moderator
  * decided first keeps that decision; it leaves the list too, and the status says which decision stands.
  */
-export function useRegistrationReview(onDecided: (userId: string) => void): RegistrationReview {
+export function useRegistrationReview(onDecided: (id: string) => void): RegistrationReview {
   const api = useApi();
   const t = useT();
   const queryClient = useQueryClient();
@@ -88,13 +88,13 @@ export function useRegistrationReview(onDecided: (userId: string) => void): Regi
   const [status, setStatus] = useState<string | undefined>(undefined);
   const mutation = useMutation({
     ...decideRegistrationMutation(api),
-    onSuccess: async (registration, { userId, decision }) => {
+    onSuccess: async (registration, { id, decision }) => {
       // The decision is done once the audit log and the account searches are fetched again (the confirmation
       // stays pending until then), so that going back to them shows it at once (refreshDecidedRegistration).
       await refreshDecidedRegistration(queryClient);
       setDialog((current) => current && { ...current, isOpen: false });
-      onDecided(userId);
-      cacheDecidedRegistration(api, queryClient, userId);
+      onDecided(id);
+      cacheDecidedRegistration(api, queryClient, id);
       setStatus(resultMessage(t, registration, decision));
     },
   });
@@ -112,7 +112,7 @@ export function useRegistrationReview(onDecided: (userId: string) => void): Regi
     confirm: () => {
       if (dialog === null || !dialog.isOpen || mutation.isPending) return;
       const { registration, decision, note } = dialog.confirmation;
-      mutation.mutate({ userId: registration.user_id, decision, note: note.trim() });
+      mutation.mutate({ id: registration.id, decision, note: note.trim() });
     },
     cancel: () => {
       if (dialog !== null) setDialog({ ...dialog, isOpen: false });

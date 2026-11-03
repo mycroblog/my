@@ -63,7 +63,7 @@ func (s *Server) ListCustomEmojis(ctx context.Context, _ ListCustomEmojisRequest
 // (withCreators adds it).
 func (s *Server) newAdminCustomEmoji(e appcontent.AdminCustomEmoji) AdminCustomEmoji {
 	out := AdminCustomEmoji{
-		Id: e.Emoji.ID, Shortcode: e.Emoji.Shortcode, Local: e.Emoji.Local(), Enabled: e.Settings.Enabled,
+		Id: e.Emoji.ID, Shortcode: e.Emoji.Shortcode, Local: e.Emoji.Local(), State: customEmojiState(e.Settings.Enabled),
 		VisibleInPicker: e.Settings.VisibleInPicker || !e.Emoji.Local(), Aliases: e.Aliases,
 		CreatedAt: e.Emoji.CreatedAt.UTC(), UpdatedAt: e.Image.RevisedAt.UTC(),
 	}
@@ -291,7 +291,7 @@ func (s *Server) UpdateCustomEmoji(ctx context.Context, req UpdateCustomEmojiReq
 		return UpdateCustomEmojidefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	e, err := s.o.CustomEmojis.Update(ctx, req.Id, appcontent.CustomEmojiUpdate{
-		Enabled: req.Body.Enabled, VisibleInPicker: req.Body.VisibleInPicker, Category: req.Body.Category, Aliases: req.Body.Aliases,
+		VisibleInPicker: req.Body.VisibleInPicker, Category: req.Body.Category, Aliases: req.Body.Aliases,
 		ByUserID: v.UserID,
 	})
 	if p, ok := s.customEmojiProblem(ctx, err); ok {
@@ -308,6 +308,63 @@ func (s *Server) UpdateCustomEmoji(ctx context.Context, req UpdateCustomEmojiReq
 		return nil, err
 	}
 	return UpdateCustomEmoji200JSONResponse{adminCustomEmojiResponse(out)}, nil
+}
+
+// customEmojiState presents whether a custom emoji is shown.
+func customEmojiState(enabled bool) CustomEmojiState {
+	if enabled {
+		return CustomEmojiStateEnabled
+	}
+	return CustomEmojiStateDisabled
+}
+
+// setCustomEmojiEnabled shows a custom emoji or stops showing it, which works on a local and a
+// remote one alike, and answers with the emoji.
+func (s *Server) setCustomEmojiEnabled(ctx context.Context, id string, enabled bool) (AdminCustomEmojiJSONResponse, *problem, error) {
+	if p, err := s.requireCustomEmojis(ctx); err != nil || p != nil {
+		return AdminCustomEmojiJSONResponse{}, p, err
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return AdminCustomEmojiJSONResponse{}, nil, err
+	}
+	e, err := s.o.CustomEmojis.Update(ctx, id, appcontent.CustomEmojiUpdate{Enabled: &enabled, ByUserID: v.UserID})
+	switch {
+	case customEmojiNotFound(err):
+		p := s.notFoundResponse(ctx)
+		return AdminCustomEmojiJSONResponse{}, &p, nil
+	case err != nil:
+		return AdminCustomEmojiJSONResponse{}, nil, fmt.Errorf("clientapi: set whether custom emoji %s is enabled: %w", id, err)
+	}
+	out, err := s.withCreator(ctx, e)
+	if err != nil {
+		return AdminCustomEmojiJSONResponse{}, nil, err
+	}
+	return adminCustomEmojiResponse(out), nil, nil
+}
+
+// EnableCustomEmoji serves POST /api/v1/admin/custom_emojis/{id}/enable.
+func (s *Server) EnableCustomEmoji(ctx context.Context, req EnableCustomEmojiRequestObject) (EnableCustomEmojiResponseObject, error) {
+	res, p, err := s.setCustomEmojiEnabled(ctx, req.Id, true)
+	switch {
+	case err != nil:
+		return nil, err
+	case p != nil:
+		return EnableCustomEmojidefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	return EnableCustomEmoji200JSONResponse{res}, nil
+}
+
+// DisableCustomEmoji serves POST /api/v1/admin/custom_emojis/{id}/disable.
+func (s *Server) DisableCustomEmoji(ctx context.Context, req DisableCustomEmojiRequestObject) (DisableCustomEmojiResponseObject, error) {
+	res, p, err := s.setCustomEmojiEnabled(ctx, req.Id, false)
+	switch {
+	case err != nil:
+		return nil, err
+	case p != nil:
+		return DisableCustomEmojidefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	return DisableCustomEmoji200JSONResponse{res}, nil
 }
 
 // ReplaceCustomEmojiImage serves PUT /api/v1/admin/custom_emojis/{id}/image.

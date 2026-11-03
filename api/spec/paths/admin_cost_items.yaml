@@ -3,7 +3,7 @@ get:
   operationId: listCostItems
   summary: List the cost items
   description: |
-    The instance's cost items that are not canceled, newest first.
+    The instance's cost items that are not deleted, newest first.
     Needs the `manage_finance` permission.
   tags: [admin-server]
   security:

@@ -201,7 +201,7 @@ const writes: Write[] = [
   {
     action: "registration_approved",
     method: "post",
-    path: "/admin/registrations/:userId/approve",
+    path: "/admin/registrations/:id/approve",
     page: "/moderation/registrations",
     setup: () => {
       server.use(
@@ -214,7 +214,7 @@ const writes: Write[] = [
   {
     action: "registration_rejected",
     method: "post",
-    path: "/admin/registrations/:userId/reject",
+    path: "/admin/registrations/:id/reject",
     page: "/moderation/registrations",
     setup: () => {
       server.use(

@@ -275,8 +275,8 @@ func (s *Server) UnfollowAccount(ctx context.Context, req UnfollowAccountRequest
 	return UnfollowAccount200JSONResponse{*res}, nil
 }
 
-// RemoveAccountFromFollowers serves POST /api/v1/accounts/{id}/remove_from_followers.
-func (s *Server) RemoveAccountFromFollowers(ctx context.Context, req RemoveAccountFromFollowersRequestObject) (RemoveAccountFromFollowersResponseObject, error) {
+// RemoveFollower serves DELETE /api/v1/accounts/{id}/follower.
+func (s *Server) RemoveFollower(ctx context.Context, req RemoveFollowerRequestObject) (RemoveFollowerResponseObject, error) {
 	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.RemoveFollower(ctx, v.AccountID, req.Id)
 	})
@@ -284,9 +284,9 @@ func (s *Server) RemoveAccountFromFollowers(ctx context.Context, req RemoveAccou
 	case err != nil:
 		return nil, err
 	case p != nil:
-		return RemoveAccountFromFollowersdefaultApplicationProblemPlusJSONResponse(*p), nil
+		return RemoveFollowerdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	return RemoveAccountFromFollowers200JSONResponse{*res}, nil
+	return RemoveFollower200JSONResponse{*res}, nil
 }
 
 // AcceptFollowRequest serves POST /api/v1/follow_requests/{id}/accept.

@@ -3,7 +3,7 @@
 `features/settings` が、別名と移転の画面を受け持つ（FR-009、[ADR-0089](../../adr/0089-account-migration-move.md)）。移転済みの表示は `features/profile` と `features/notifications` が受け持つ。
 
 - **別名**（`/settings/aliases`、設定のメニューの「別名」）: 「登録した別名」と「別名を追加」の 2 つの区画（`h2` の `section`）を並べる。ルートの loader が別名の一覧（`GET /accounts/aliases`）を読む。
-  各行はハンドル（読めなければ URI）と追加日時で、ボタン「削除」（アクセシブルネームは別名を含める）が `POST /accounts/aliases/remove` を送る。足すのも消すのも簡単に元へ戻せるので、確認は挟まない。削除は読み上げで知らせ、フォーカスは次の行へ移す。
+  各行はハンドル（読めなければ URI）と追加日時で、ボタン「削除」（アクセシブルネームは別名を含める）が `DELETE /accounts/aliases?uri=...` を送る。足すのも消すのも簡単に元へ戻せるので、確認は挟まない。削除は読み上げで知らせ、フォーカスは次の行へ移す。
   追加はハンドルか URL を 1 つの欄で受け、サーバーが返す一覧でキャッシュを置き換える。結果は `StatusMessage`、失敗（`invalid-alias`・`too-many-aliases` など）は欄の下の `role="alert"` にサーバーの説明を出す。上限（5 件）に達したら欄を出さず、その旨の文に換える。
 - **移転**（`/settings/move`、設定のメニューの「アカウントの移転」）: ルートの loader が自分のアカウント（`GET /accounts/verify_credentials`）とパスワードの有無を読む。移転済みかどうかは自分のアカウントの `moved` で決まり、移転・取り消しの後はこの query を読み直す。
   - 移転前: 移転の説明、先に移転先でこのアカウントを別名に足すこと（このアカウントのアドレスを `dir="ltr"` で添える）、移転先の欄と「続ける」。「続ける」は `GET /accounts/lookup?resolve=true` で移転先を引き、見つかったら確認のダイアログを開く。見つからなければ欄の下の `role="alert"` に理由を出す。

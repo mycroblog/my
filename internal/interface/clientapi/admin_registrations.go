@@ -26,6 +26,7 @@ import (
 // implements it.
 type Registrations interface {
 	ListRegistrationsAfter(ctx context.Context, state identity.RegistrationState, after appidentity.RegistrationPosition, limit int) ([]appidentity.RegistrationEntry, error)
+	RegistrationUser(ctx context.Context, id string) (string, error)
 	Registration(ctx context.Context, userID string) (appidentity.RegistrationEntry, error)
 	DecideRegistration(ctx context.Context, in appidentity.DecideInput) (identity.RegistrationDecision, error)
 }
@@ -52,7 +53,7 @@ func decodeRegistrationCursor(position string) (appidentity.RegistrationPosition
 func newAdminRegistration(e appidentity.RegistrationEntry) AdminRegistration {
 	a := e.Application
 	out := AdminRegistration{
-		UserId: a.UserID, State: RegistrationState(e.State.State), StateChangedAt: e.State.Since.UTC(), SubmittedAt: a.SubmittedAt.UTC(),
+		Id: a.ID, State: RegistrationState(e.State.State), StateChangedAt: e.State.Since.UTC(), SubmittedAt: a.SubmittedAt.UTC(),
 	}
 	// Only the review of a pending registration needs the address; after it, only the audited
 	// reveal of the account shows it.
@@ -113,9 +114,9 @@ func (s *Server) ListPendingRegistrations(ctx context.Context, req ListPendingRe
 	return ListPendingRegistrations200JSONResponse{Body: page, Headers: ListPendingRegistrations200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
-// ApproveRegistration serves POST /api/v1/admin/registrations/{user_id}/approve.
+// ApproveRegistration serves POST /api/v1/admin/registrations/{id}/approve.
 func (s *Server) ApproveRegistration(ctx context.Context, req ApproveRegistrationRequestObject) (ApproveRegistrationResponseObject, error) {
-	res, p, err := s.decideRegistration(ctx, req.UserId, identity.DecisionApproved, req.Body)
+	res, p, err := s.decideRegistration(ctx, req.Id, identity.DecisionApproved, req.Body)
 	switch {
 	case err != nil:
 		return nil, err
@@ -125,9 +126,9 @@ func (s *Server) ApproveRegistration(ctx context.Context, req ApproveRegistratio
 	return ApproveRegistration200JSONResponse{res}, nil
 }
 
-// RejectRegistration serves POST /api/v1/admin/registrations/{user_id}/reject.
+// RejectRegistration serves POST /api/v1/admin/registrations/{id}/reject.
 func (s *Server) RejectRegistration(ctx context.Context, req RejectRegistrationRequestObject) (RejectRegistrationResponseObject, error) {
-	res, p, err := s.decideRegistration(ctx, req.UserId, identity.DecisionRejected, req.Body)
+	res, p, err := s.decideRegistration(ctx, req.Id, identity.DecisionRejected, req.Body)
 	switch {
 	case err != nil:
 		return nil, err
@@ -137,15 +138,22 @@ func (s *Server) RejectRegistration(ctx context.Context, req RejectRegistrationR
 	return RejectRegistration200JSONResponse{res}, nil
 }
 
-// decideRegistration decides on the registration of a user and answers with the registration
-// as it is then. A registration that is already decided stays as it is and is answered alike.
-func (s *Server) decideRegistration(ctx context.Context, userID string, d identity.Decision, body *RegistrationDecisionRequest) (AdminRegistrationJSONResponse, *problem, error) {
+// decideRegistration decides on a registration and answers with it as it is then. A
+// registration that is already decided stays as it is and is answered alike.
+func (s *Server) decideRegistration(ctx context.Context, id string, d identity.Decision, body *RegistrationDecisionRequest) (AdminRegistrationJSONResponse, *problem, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageAccounts); err != nil || p != nil {
 		return AdminRegistrationJSONResponse{}, p, err
 	}
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return AdminRegistrationJSONResponse{}, nil, err
+	}
+	userID, err := s.o.Registrations.RegistrationUser(ctx, id)
+	if errors.Is(err, appidentity.ErrNotFound) {
+		p := s.notFoundResponse(ctx)
+		return AdminRegistrationJSONResponse{}, &p, nil
+	} else if err != nil {
+		return AdminRegistrationJSONResponse{}, nil, fmt.Errorf("clientapi: the user of registration %s: %w", id, err)
 	}
 	in := appidentity.DecideInput{UserID: userID, Decision: d, DecidedByUserID: v.UserID}
 	if body != nil && body.Note != nil {

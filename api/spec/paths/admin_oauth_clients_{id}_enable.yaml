@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: enableOAuthClient
-  summary: Lift the disablement of an OAuth client
+  summary: Enable an OAuth client
   description: |
-    The client can be authorized again. The tokens that the disablement revoked stay revoked:
-    the users authorize the client again. Lifting nothing changes nothing. The lift is
-    recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-    permission.
+    The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+    users authorize the client again. Enabling an enabled client changes nothing. The change is
+    recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+    naming `id`. Needs the `manage_oauth_apps` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]

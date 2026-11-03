@@ -167,13 +167,13 @@ function bobsRoom() {
   const room = voiceRoomFixture();
   const joined = voiceRoomFixture({
     participants: [
-      participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+      participantFixture(otherAccountFixture, { role: "speaker", hosting: true }),
       participantFixture(viewerFixture),
     ],
   });
   const live = voiceRoomFixture({
     participants: [
-      participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }),
+      participantFixture(otherAccountFixture, { role: "speaker", hosting: true, session: "s9" }),
       participantFixture(viewerFixture, { session: "s1" }),
     ],
   });
@@ -558,7 +558,7 @@ describe("the host in the call", () => {
     const bob = participantFixture(otherAccountFixture, { hand_raised: true });
     const room = voiceRoomFixture({
       host: viewerFixture,
-      participants: [participantFixture(viewerFixture, { role: "speaker", host: true }), bob],
+      participants: [participantFixture(viewerFixture, { role: "speaker", hosting: true }), bob],
     });
     return room;
   }
@@ -566,7 +566,7 @@ describe("the host in the call", () => {
   test("is in the call of the room they start, without joining it again", async () => {
     const room = voiceRoomFixture({
       host: viewerFixture,
-      participants: [participantFixture(viewerFixture, { role: "speaker", host: true })],
+      participants: [participantFixture(viewerFixture, { role: "speaker", hosting: true })],
     });
     const srv = serve(room, room);
     server.use(

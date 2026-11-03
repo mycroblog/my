@@ -140,6 +140,9 @@ func registrationOpen(t *testing.T, e *accountEnv) {
 	if err != nil || app.Reason != "" || app.InviteID != "" || !app.SubmittedAt.Equal(got.User.CreatedAt) {
 		t.Errorf("application = %+v, %v; want one without reason or invite", app, err)
 	}
+	if byID, err := e.h.Identity.FindRegistrationApplicationByID(t.Context(), app.ID); err != nil || byID.UserID != got.User.ID {
+		t.Errorf("FindRegistrationApplicationByID = %+v, %v; want the application of %s", byID, err, got.User.ID)
+	}
 	a := r.access(t, got.User.ID)
 	if a.Registration != identity.RegistrationApproved || a.EmailVerified || a.Email != in.Email || a.Allowed() || !a.AwaitingVerification() {
 		t.Errorf("access before verification = %+v; want approved, unverified, not allowed", a)

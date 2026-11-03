@@ -3,7 +3,7 @@ description: |
   A custom emoji as the administrators manage it: a local one, or a remote
   one recorded from the posts and profiles of another server.
 type: object
-required: [id, shortcode, local, enabled, visible_in_picker, aliases, created_by_deleted, created_at, updated_at]
+required: [id, shortcode, local, state, visible_in_picker, aliases, created_by_deleted, created_at, updated_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -32,9 +32,8 @@ properties:
     description: The URL of a still image of the emoji; absent with `url`.
     type: string
     format: uri
-  enabled:
-    description: Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-    type: boolean
+  state:
+    $ref: ./CustomEmojiState.yaml
   visible_in_picker:
     description: Whether the picker offers the local emoji; always `true` for a remote one.
     type: boolean

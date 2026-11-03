@@ -45,3 +45,27 @@ post:
       $ref: ../components/responses/AccountAliasList.yaml
     default:
       $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: removeAccountAlias
+  x-first-party-only: true
+  summary: Remove an alias of the authenticated user
+  description: |
+    Removes an alias; the actor's `Update` goes to the user's followers as a
+    profile change does. Removing an alias that the user does not have changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - name: uri
+      in: query
+      required: true
+      description: The `uri` of the alias, as `GET /accounts/aliases` lists it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 2048
+  responses:
+    "200":
+      $ref: ../components/responses/AccountAliasList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

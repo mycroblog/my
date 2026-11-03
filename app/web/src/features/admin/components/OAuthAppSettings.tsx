@@ -198,7 +198,7 @@ function ClientRow({ client, actions }: { client: OAuthClient; actions: OAuthApp
             <Text weight="semibold" wrap="anywhere" dir="auto">
               {client.name}
             </Text>
-            {client.disabled && (
+            {client.state === "disabled" && (
               <Text size="sm" tone="danger" weight="semibold">
                 {t("client:admin.oauth_apps.disabled")}
               </Text>
@@ -246,7 +246,7 @@ function ClientRow({ client, actions }: { client: OAuthClient; actions: OAuthApp
             <Text size="sm" tone="muted">
               {t("client:admin.oauth_apps.first_party_note")}
             </Text>
-          ) : client.disabled ? (
+          ) : client.state === "disabled" ? (
             <Button
               size="sm"
               isPending={isPending}

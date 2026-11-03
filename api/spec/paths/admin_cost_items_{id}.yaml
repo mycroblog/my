@@ -2,7 +2,7 @@
 get:
   operationId: getCostItem
   summary: Get a cost item
-  description: An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+  description: An unknown or deleted item is a 404. Needs the `manage_finance` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:read"]
@@ -18,7 +18,7 @@ patch:
   summary: Change a cost item's label
   description: |
     Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-    its value. The values are checked as for a new item (422). An unknown or canceled item is
+    its value. The values are checked as for a new item (422). An unknown or deleted item is
     a 404. Recorded in the audit log. Needs the `manage_finance` permission.
   tags: [admin-server]
   security:
@@ -34,5 +34,22 @@ patch:
   responses:
     "200":
       $ref: ../components/responses/CostItem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteCostItem
+  summary: Delete a cost item
+  description: |
+    Removes a cost item recorded by mistake from every period, past ones included. There is
+    no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+    the audit log. Needs the `manage_finance` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/CostItemId.yaml
+  responses:
+    "204":
+      description: The item is deleted.
     default:
       $ref: ../components/responses/Problem.yaml

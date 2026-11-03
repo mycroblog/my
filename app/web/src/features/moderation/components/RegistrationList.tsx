@@ -77,7 +77,7 @@ function Registrations() {
   const list = useRegistrations();
   const removed = useFocusAfterRemoval(
     listRef,
-    list.items.map((registration) => registration.user_id),
+    list.items.map((registration) => registration.id),
   );
   const review = useRegistrationReview(removed);
   return (
@@ -87,7 +87,7 @@ function Registrations() {
         <RecordTable
           list={list}
           caption={t("client:admin.registrations.title")}
-          getId={(registration) => registration.user_id}
+          getId={(registration) => registration.id}
           empty={
             <EmptyState
               headingLevel={2}
@@ -121,7 +121,7 @@ function RegistrationRow({ registration, review }: { registration: Registration;
   const applicant = applicantInText(t, registration);
   const handle = registration.username === undefined ? undefined : `@${registration.username}`;
   return (
-    <TableRow data-row-id={registration.user_id}>
+    <TableRow data-row-id={registration.id}>
       <TableRowHeader wrap="anywhere">
         <Stack gap="1">
           <Text weight="semibold" wrap="anywhere">

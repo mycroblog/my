@@ -24,16 +24,16 @@ export function participantOperations(
   self: VoiceRoomParticipant | undefined,
   participant: VoiceRoomParticipant,
 ): VoiceParticipantOperation[] {
-  if (self === undefined || participant.account.id === self.account.id || participant.host) return [];
-  if (!self.host && !self.cohost) return [];
+  if (self === undefined || participant.account.id === self.account.id || participant.hosting) return [];
+  if (!self.hosting && !self.cohosting) return [];
   // A co-host does not operate on another co-host.
-  if (!self.host && participant.cohost) return [];
+  if (!self.hosting && participant.cohosting) return [];
   const ops: VoiceParticipantOperation[] = [];
   if (participant.role === "listener") ops.push("grant");
   if (participant.hand_raised) ops.push("dismiss");
   if (participant.role === "speaker") ops.push("revoke", "mute");
-  if (!participant.cohost) ops.push("remove");
-  if (self.host) ops.push(participant.cohost ? "uncohost" : "cohost", "hand-over");
+  if (!participant.cohosting) ops.push("remove");
+  if (self.hosting) ops.push(participant.cohosting ? "uncohost" : "cohost", "hand-over");
   return ops;
 }
 

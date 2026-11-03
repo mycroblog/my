@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: A local custom emoji that the user made.
 type: object
-required: [id, shortcode, enabled, visible_in_picker, aliases, created_at, updated_at]
+required: [id, shortcode, state, visible_in_picker, aliases, created_at, updated_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -16,11 +16,8 @@ properties:
     description: The URL of a still image of the emoji; absent with `url`.
     type: string
     format: uri
-  enabled:
-    description: |
-      Whether the emoji is shown; an administrator disables and enables it, and a disabled one
-      stays `:shortcode:` text.
-    type: boolean
+  state:
+    $ref: ./CustomEmojiState.yaml
   visible_in_picker:
     description: Whether the picker offers the emoji.
     type: boolean

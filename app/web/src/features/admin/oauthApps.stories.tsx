@@ -35,7 +35,7 @@ const clients: Schemas["AdminOAuthClient"][] = [
   oauthClientFixture("0199f0e0-0000-7000-8000-0000000000a4", {
     registration: "dynamic",
     name: "Spammy bot",
-    disabled: true,
+    state: "disabled",
   }),
 ];
 
