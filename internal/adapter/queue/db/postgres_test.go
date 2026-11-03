@@ -66,6 +66,13 @@ func TestPostgresWakeContract(t *testing.T) {
 	})
 }
 
+func TestPostgresTypesContract(t *testing.T) {
+	testkit.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (testkit.QueueHarness, testkit.QueueTypesSource) {
+		h := postgresHarness(t, clock, newDatabase(t))
+		return h, h.Queue.(*queuedb.Queue).OnlyTypes
+	})
+}
+
 func TestPostgresBacklogContract(t *testing.T) {
 	testkit.QueueBacklogContract(t, func(t *testing.T, clock *testkit.Clock) testkit.QueueHarness {
 		return postgresHarness(t, clock, newDatabase(t))

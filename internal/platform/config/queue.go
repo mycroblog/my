@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -95,4 +96,50 @@ func checkEventsBudget(v string) error {
 		return fmt.Errorf("must be a Go duration longer than the %s lease of a job run and at most 15m, for example 10m", queue.DefaultLease)
 	}
 	return nil
+}
+
+// splitJobTypePatterns returns the job types of worker_job_types and worker_job_types_except.
+func splitJobTypePatterns(v string) []string {
+	var patterns []string
+	for p := range strings.SplitSeq(v, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			patterns = append(patterns, p)
+		}
+	}
+	return patterns
+}
+
+// jobTypePattern is a job type (federation.deliver) or a prefix of one (federation.*).
+var jobTypePattern = regexp.MustCompile(`^[a-z0-9_]+(\.[a-z0-9_]+)*(\.\*)?$`)
+
+// checkJobTypePatterns checks the form of the patterns. Whether they match a job type is known
+// once the handlers are registered (queue.SelectJobTypes).
+func checkJobTypePatterns(v string) error {
+	for _, p := range splitJobTypePatterns(v) {
+		if !jobTypePattern.MatchString(p) {
+			return fmt.Errorf("%q must be a job type such as federation.deliver or a prefix such as federation.*", p)
+		}
+	}
+	return nil
+}
+
+// workerJobTypeChecks are the rules of worker_job_types and worker_job_types_except (ADR-0138):
+// a wake-up signal names one job, so only a worker that polls the table can choose.
+func workerJobTypeChecks(vals map[string]string) []Issue {
+	var issues []Issue
+	for _, key := range []string{"worker_job_types", "worker_job_types_except"} {
+		if len(splitJobTypePatterns(vals[key])) == 0 {
+			continue
+		}
+		if vals["role"] == string(RoleWeb) {
+			issues = append(issues, Issue{Key: key, Message: "needs a process that runs jobs, role = all or worker, not web"})
+		}
+		if q := vals["queue"]; q != "" && q != "db" {
+			issues = append(issues, Issue{Key: key, Message: fmt.Sprintf("works only with queue = db, not %s", q)})
+		}
+	}
+	if len(splitJobTypePatterns(vals["worker_job_types"])) > 0 && len(splitJobTypePatterns(vals["worker_job_types_except"])) > 0 {
+		issues = append(issues, Issue{Key: "worker_job_types_except", Message: "cannot be set together with worker_job_types"})
+	}
+	return issues
 }

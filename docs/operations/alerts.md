@@ -82,7 +82,7 @@ Severity: **page** = act now, **ticket** = during working hours. "–" in the ru
 | Area | Alert | Signal | Threshold | Severity | Likely causes |
 | --- | --- | --- | --- | --- | --- |
 | Queue | [`MyQueueBacklog`](#myqueuebacklog) | `my_queue_oldest_ready_age_seconds` | over 5 min for 10 min | ticket | Too few workers for a burst (a popular post, a relay), slow jobs, a worker that stopped |
-| Queue | [`MyQueueStalled`](#myqueuestalled) | `my_queue_oldest_ready_age_seconds` | over 30 min for 5 min | page | No worker runs (crashed, not deployed, `role = web` only), workers stuck on the database |
+| Queue | [`MyQueueStalled`](#myqueuestalled) | `my_queue_oldest_ready_age_seconds` | over 30 min for 5 min | page | No worker runs (crashed, not deployed, `role = web` only), no worker runs one job type, workers stuck on the database |
 | Queue | [`MyDeadJobsIncreasing`](#mydeadjobsincreasing) | `delta(my_queue_dead[1h])` | over 10 an hour for 15 min | ticket | A bug in a job, a misconfigured adapter (mail, blob, billing), a remote service that refuses |
 | Queue | [`MyMetricsSnapshotStale`](#mymetricssnapshotstale) | `my_metrics_snapshot_age_seconds` | queue part over 5 min, totals part over 1 h, for 15 min | ticket | The KV store is out of reach, the database queries of the snapshot fail or time out |
 | Federation | [`MyDeliveryFailuresHigh`](#mydeliveryfailureshigh) | `my_delivery_attempts_total` with `my_outcome` `retry` or `failed` | over 50% of attempts for 30 min | ticket | Many followers on servers that are down, a large server is down, outbound network trouble |
@@ -161,6 +161,7 @@ Check:
 - That at least one process runs with `role = all` or `role = worker`, and that it is not crash-looping (`MyProcessRestarting`).
 - The worker's logs for errors that repeat on every job (database, KV, a panic).
 - `MyNotReady`: a worker that cannot reach the database cannot take jobs.
+- `max by (my_job_type) (my_queue_oldest_ready_age_seconds)`: if one type waits and the others do not, check that some worker runs it ([Splitting workers by job type](running.md#splitting-workers-by-job-type)).
 
 Fix:
 

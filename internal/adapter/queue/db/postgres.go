@@ -86,25 +86,44 @@ func (s postgresStore) claim(ctx context.Context, tx uow.Tx, worker string, now,
 	if err != nil {
 		return queue.Job{}, false, err
 	}
+	return claimPicked(ctx, q, worker, now, until, func() (string, *string, error) {
+		c, err := q.PickJob(ctx, now)
+		return c.ID, c.OrderingKey, err
+	})
+}
+
+func (s postgresStore) claimOfTypes(ctx context.Context, tx uow.Tx, types []string, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	return claimPicked(ctx, q, worker, now, until, func() (string, *string, error) {
+		c, err := q.PickJobOfTypes(ctx, postgresqueue.PickJobOfTypesParams{Types: types, Now: now})
+		return c.ID, c.OrderingKey, err
+	})
+}
+
+// claimPicked runs the claim of the candidates that pick finds (queries/postgres/queue/queue.sql).
+func claimPicked(ctx context.Context, q *postgresqueue.Queries, worker string, now, until time.Time, pick func() (id string, orderingKey *string, err error)) (queue.Job, bool, error) {
 	// A candidate fails the second check only when a claim of its ordering key committed in
 	// between, which the next pick sees; the bound keeps a claim short under contention.
 	for range maxClaimPicks {
-		c, err := q.PickJob(ctx, now)
+		id, orderingKey, err := pick()
 		if errors.Is(err, pgx.ErrNoRows) {
 			return queue.Job{}, false, nil
 		}
 		if err != nil {
 			return queue.Job{}, false, err
 		}
-		if c.OrderingKey != nil {
-			if err := q.LockOrderingKey(ctx, orderingLockPrefix+*c.OrderingKey); err != nil {
+		if orderingKey != nil {
+			if err := q.LockOrderingKey(ctx, orderingLockPrefix+*orderingKey); err != nil {
 				return queue.Job{}, false, err
 			}
 		}
 		r, err := q.ClaimJob(ctx, postgresqueue.ClaimJobParams{
 			Worker:      &worker,
 			LockedUntil: pgtype.Timestamptz{Time: until, Valid: true},
-			ID:          c.ID,
+			ID:          id,
 			Now:         now,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -238,11 +257,13 @@ func (s postgresStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (q
 	if err != nil {
 		return queue.Backlog{}, err
 	}
-	b := queue.Backlog{Ready: make(map[string]int64, len(rows))}
+	b := queue.Backlog{Ready: make(map[string]int64, len(rows)), OldestReadyByType: make(map[string]time.Time, len(rows))}
 	for _, r := range rows {
 		b.Ready[r.Type] = r.Ready
-		if b.OldestReadyAt.IsZero() || r.OldestRunAt.Before(b.OldestReadyAt) {
-			b.OldestReadyAt = r.OldestRunAt.UTC()
+		at := kernel.Normalize(r.OldestRunAt)
+		b.OldestReadyByType[r.Type] = at
+		if b.OldestReadyAt.IsZero() || at.Before(b.OldestReadyAt) {
+			b.OldestReadyAt = at
 		}
 	}
 	b.Dead, err = q.CountDeadJobs(ctx)
@@ -307,7 +328,7 @@ func (s postgresStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) 
 	for _, r := range dead {
 		counts = append(counts, queue.JobCount{State: queue.JobStateDead, Type: r.Type, Count: r.Jobs})
 	}
-	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: kernel.Normalize(b.OldestReadyAt)}, nil
+	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: b.OldestReadyAt, OldestReadyByType: b.OldestReadyByType}, nil
 }
 
 func (s postgresStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {

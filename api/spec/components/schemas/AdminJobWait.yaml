@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: How long a job type has kept a job waiting.
+type: object
+required: [type, oldest_ready_at]
+properties:
+  type:
+    type: string
+  oldest_ready_at:
+    description: The earliest `run_at` among the due jobs of the type that no worker holds.
+    type: string
+    format: date-time

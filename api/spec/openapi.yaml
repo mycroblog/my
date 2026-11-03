@@ -1132,6 +1132,8 @@ components:
       $ref: ./components/schemas/AdminJobAttemptPage.yaml
     AdminJobCount:
       $ref: ./components/schemas/AdminJobCount.yaml
+    AdminJobWait:
+      $ref: ./components/schemas/AdminJobWait.yaml
     AdminJobPage:
       $ref: ./components/schemas/AdminJobPage.yaml
     AdminJobState:

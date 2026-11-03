@@ -5456,6 +5456,13 @@ type AdminJobPage struct {
 // failed for good (its handler gave up, or it used up its attempts).
 type AdminJobState string
 
+// AdminJobWait How long a job type has kept a job waiting.
+type AdminJobWait struct {
+	// OldestReadyAt The earliest `run_at` among the due jobs of the type that no worker holds.
+	OldestReadyAt time.Time `json:"oldest_ready_at"`
+	Type          string    `json:"type"`
+}
+
 // AdminLoginProvider An external login provider that users sign in, sign up, and link their accounts with.
 // Its client secret is never shown.
 type AdminLoginProvider struct {
@@ -5622,6 +5629,10 @@ type AdminQueue struct {
 
 	// PendingListing Whether the queue lists its pending jobs (`queued`, `running`, `retrying`).
 	PendingListing bool `json:"pending_listing"`
+
+	// Waits How long each type with due jobs that no worker holds has kept a job waiting, by type.
+	// Empty without `pending_listing`.
+	Waits []AdminJobWait `json:"waits"`
 }
 
 // AdminRegistration A user's registration as the moderators review it (FR-721).

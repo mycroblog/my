@@ -8984,6 +8984,15 @@ export interface components {
             /** Format: int64 */
             count: number;
         };
+        /** @description How long a job type has kept a job waiting. */
+        AdminJobWait: {
+            type: string;
+            /**
+             * Format: date-time
+             * @description The earliest `run_at` among the due jobs of the type that no worker holds.
+             */
+            oldest_ready_at: string;
+        };
         /** @description A page of jobs. */
         AdminJobPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminJob"][];
@@ -9049,6 +9058,11 @@ export interface components {
              *     types without jobs are left out. Empty without `pending_listing`.
              */
             counts: components["schemas"]["AdminJobCount"][];
+            /**
+             * @description How long each type with due jobs that no worker holds has kept a job waiting, by type.
+             *     Empty without `pending_listing`.
+             */
+            waits: components["schemas"]["AdminJobWait"][];
             /**
              * Format: date-time
              * @description The earliest `run_at` among the due jobs that no worker holds: how long the queue

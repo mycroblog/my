@@ -131,6 +131,78 @@ func (q *Queries) ClaimJobByID(ctx context.Context, arg ClaimJobByIDParams) (Cla
 	return i, err
 }
 
+const claimJobOfTypes = `-- name: ClaimJobOfTypes :one
+UPDATE jobs
+SET locked_by = ?1, locked_until = ?2, attempt = attempt + 1
+WHERE id = (
+  SELECT c.id FROM jobs AS c
+  WHERE c.id IN (
+    SELECT (
+      SELECT j.id FROM jobs AS j
+      WHERE j.type = t.value AND j.run_at <= ?3 AND (j.locked_until IS NULL OR j.locked_until <= ?3)
+        AND NOT EXISTS (
+          SELECT 1 FROM jobs AS k
+          WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+            AND (k.locked_until > ?3 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+        )
+      ORDER BY j.run_at, j.id
+      LIMIT 1
+    )
+    FROM json_each(?4) AS t
+  )
+  ORDER BY c.run_at, c.id
+  LIMIT 1
+)
+RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at
+`
+
+type ClaimJobOfTypesParams struct {
+	Worker      sql.NullString
+	LockedUntil sql.NullInt64
+	Now         int64
+	Types       interface{}
+}
+
+type ClaimJobOfTypesRow struct {
+	ID             string
+	Type           string
+	Payload        []byte
+	IdempotencyKey sql.NullString
+	OrderingKey    sql.NullString
+	TraceParent    sql.NullString
+	Attempt        int64
+	RunAt          int64
+	LastError      sql.NullString
+	CreatedAt      int64
+}
+
+// ClaimJobOfTypes is ClaimJob for a worker that runs only some job types, the JSON array @types
+// (ADR-0138 section 2): it takes each type's candidate from jobs_type_run_at_id and leases the
+// earliest of them, so that a backlog of the other types costs nothing. A condition on ClaimJob
+// would walk that backlog while holding the write lock.
+func (q *Queries) ClaimJobOfTypes(ctx context.Context, arg ClaimJobOfTypesParams) (ClaimJobOfTypesRow, error) {
+	row := q.db.QueryRowContext(ctx, claimJobOfTypes,
+		arg.Worker,
+		arg.LockedUntil,
+		arg.Now,
+		arg.Types,
+	)
+	var i ClaimJobOfTypesRow
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.Payload,
+		&i.IdempotencyKey,
+		&i.OrderingKey,
+		&i.TraceParent,
+		&i.Attempt,
+		&i.RunAt,
+		&i.LastError,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const countDeadJobs = `-- name: CountDeadJobs :one
 SELECT COUNT(*) FROM dead_jobs
 `

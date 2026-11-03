@@ -77,6 +77,10 @@ type Config struct {
 	// QueueSQSQueueURL is the URL of the SQS standard queue of queue = sqs, QueueSQSEventsPath
 	// the path of its events from the Lambda Web Adapter, and QueueSQSEventsBudget how long an
 	// event may run when its request carries no deadline of the invocation.
+	// WorkerJobTypes and WorkerJobTypesExcept are the job types this process runs or skips, at
+	// most one of them set (ADR-0138).
+	WorkerJobTypes       []string
+	WorkerJobTypesExcept []string
 	QueueSQSQueueURL     string
 	QueueSQSEventsPath   string
 	QueueSQSEventsBudget time.Duration
@@ -329,6 +333,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("database_url", redact(c.DatabaseURL != "")),
 		slog.String("database_dev_url", redact(c.DatabaseDevURL != "")),
 		slog.String("queue", c.Queue),
+		slog.String("worker_job_types", strings.Join(c.WorkerJobTypes, ",")),
+		slog.String("worker_job_types_except", strings.Join(c.WorkerJobTypesExcept, ",")),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
