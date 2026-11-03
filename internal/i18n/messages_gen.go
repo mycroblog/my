@@ -433,7 +433,7 @@ func (l *Localizer) ServerAuthExternalExpired() string {
 	return l.format("server:auth.external.expired", nil)
 }
 
-// ServerAuthExternalFailed formats "server:auth.external.failed". Alert on the sign-in page when the external login provider did not complete the sign-in: the user canceled it, or the service answered an error.
+// ServerAuthExternalFailed formats "server:auth.external.failed". Alert on the sign-in page when the external login provider did not complete the sign-in: the user cancelled it, or the service answered an error.
 //
 //	en: The sign-in with the other service did not complete. Try again, or sign in another way.
 func (l *Localizer) ServerAuthExternalFailed() string {
@@ -2058,7 +2058,7 @@ func (l *Localizer) ServerErrorsMoveTargetUnavailable() string {
 	return l.format("server:errors.move_target_unavailable", nil)
 }
 
-// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a canceled one), or to an account it moved to before.
+// ServerErrorsMoveTooSoon formats "server:errors.move_too_soon". API error title for HTTP 422 when a user moves their account within 30 days of its last move (also a cancelled one), or to an account it moved to before.
 //
 //	en: Your account moved too recently.
 func (l *Localizer) ServerErrorsMoveTooSoon() string {
