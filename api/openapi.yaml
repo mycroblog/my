@@ -19828,6 +19828,7 @@ components:
         - default_post_language
         - require_media_description
         - timeline_auto_insert
+        - link_card_size
         - timeline_languages
       properties:
         locale:
@@ -19877,6 +19878,12 @@ components:
             Whether the web client inserts new timeline posts without asking, instead of offering them
             behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
           type: boolean
+        link_card_size:
+          description: |
+            How the web client shows link cards: `large`, with the image above the text, or `small`, with
+            a square image beside it. `large` for a new user; the same on every device.
+          allOf:
+            - $ref: '#/components/schemas/LinkCardSize'
         timeline_languages:
           description: The languages that timelines show, sorted; empty shows every language.
           type: array
@@ -20203,6 +20210,12 @@ components:
         path:
           description: The path data (`d`) of the dark modules, one unit per module.
           type: string
+    LinkCardSize:
+      description: How a client shows link cards.
+      type: string
+      enum:
+        - large
+        - small
     QuotePolicy:
       description: |
         Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
@@ -21837,6 +21850,8 @@ components:
         timeline_auto_insert:
           description: Whether the web client inserts new timeline posts without asking.
           type: boolean
+        link_card_size:
+          $ref: '#/components/schemas/LinkCardSize'
         timeline_languages:
           description: The languages that timelines show, at most 64; empty shows every language.
           type: array

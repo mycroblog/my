@@ -6,6 +6,11 @@ import { LinkCard } from "./LinkCard";
 
 const image = { src: "/card.png", width: 1200, height: 630, alt: "A sunrise" };
 
+/** The layout of the card of its link; the layout has no role. */
+function sizeOf(link: HTMLElement): string | null | undefined {
+  return link.closest("[data-size]")?.getAttribute("data-size");
+}
+
 describe("LinkCard", () => {
   it("is one link to the page that opens in a new tab without a referrer", () => {
     render(
@@ -62,6 +67,45 @@ describe("LinkCard", () => {
     const toggle = screen.getByRole("button", { name: "Show sensitive media" });
     await user.click(toggle);
     expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("img", { name: "A sunrise" })).toBeInTheDocument();
+  });
+
+  it("is large by default and small when asked, with the same one link and image", () => {
+    const { rerender } = render(
+      <LinkCard href="https://a.example/" title="A" siteName="a.example" image={image} revealLabel="Show" />,
+    );
+    expect(sizeOf(screen.getByRole("link", { name: "A" }))).toBe("large");
+    rerender(
+      <LinkCard
+        href="https://a.example/"
+        size="small"
+        title="A"
+        siteName="a.example"
+        image={image}
+        revealLabel="Show"
+      />,
+    );
+    expect(sizeOf(screen.getByRole("link", { name: "A" }))).toBe("small");
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "A" })).toHaveAttribute("href", "https://a.example/");
+    expect(screen.getByRole("img", { name: "A sunrise" })).toBeInTheDocument();
+  });
+
+  it("keeps the name of the toggle of a concealed image in the small layout", async () => {
+    const user = userEvent.setup();
+    render(
+      <LinkCard
+        href="https://a.example/"
+        size="small"
+        title="A"
+        siteName="a.example"
+        image={image}
+        sensitive
+        revealLabel="Show sensitive media"
+      />,
+    );
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show sensitive media" }));
     expect(screen.getByRole("img", { name: "A sunrise" })).toBeInTheDocument();
   });
 });

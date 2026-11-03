@@ -55,6 +55,7 @@ export function PreferencesForm() {
     requireMediaDescription,
     timelineLanguages,
     timelineAutoInsert,
+    linkCardSize,
   } = usePreferences();
   return (
     <Stack gap="8">
@@ -68,6 +69,24 @@ export function PreferencesForm() {
           <TimeZoneSelect control={timeZone} />
           <ThemeRadioGroup />
           <AutoplaySwitch />
+          <Autosaved state={linkCardSize.saveState}>
+            <RadioGroup
+              label={t("client:settings.link_card_size.label")}
+              value={linkCardSize.value}
+              onChange={(value) => {
+                if (value === "large" || value === "small") linkCardSize.onChange(value);
+              }}
+              isInvalid={linkCardSize.error !== undefined}
+              errorMessage={linkCardSize.error}
+            >
+              <Radio value="large" description={t("client:settings.link_card_size.large.description")}>
+                {t("client:settings.link_card_size.large")}
+              </Radio>
+              <Radio value="small" description={t("client:settings.link_card_size.small.description")}>
+                {t("client:settings.link_card_size.small")}
+              </Radio>
+            </RadioGroup>
+          </Autosaved>
         </Stack>
       </Section>
       <NavigationSettings />

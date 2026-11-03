@@ -152,6 +152,7 @@ export const preferencesFixture: Schemas["Preferences"] = {
   default_post_language: "en",
   require_media_description: false,
   timeline_auto_insert: true,
+  link_card_size: "large",
   timeline_languages: [],
 };
 

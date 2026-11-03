@@ -442,6 +442,18 @@ export const firstRunDismissedKey = declareKeyFamily<boolean>("my:user:first-run
 });
 
 /**
+ * The last link card size of the signed-in user's preferences (useLinkCardSize), so that a card does not change its
+ * layout when the preferences load after it first shows. Removed at the end of the session: it is that user's.
+ */
+export const linkCardSizeKey = declareKey<"large" | "small">("my:user:link-card-size", {
+  area: "local",
+  version: 1,
+  defaultValue: "large",
+  parse: schemaParser(z.enum(["large", "small"])),
+  userData: true,
+});
+
+/**
  * The accounts (by their IDs) that closed the prompt to turn on Web Push, or turned Web Push off, on this browser
  * (ADR-0137 §4). It stays after the session, so that signing in again does not ask again whoever said no.
  */

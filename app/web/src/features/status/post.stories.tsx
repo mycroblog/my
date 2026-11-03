@@ -4,7 +4,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, waitFor, within } from "storybook/test";
-import type { Schemas } from "../../test/fixtures";
+import { preferencesFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem } from "../../test/msw/http";
 import {
   abdulrahman,
@@ -171,6 +171,21 @@ export const ContentWarning: Story = {
 
 /** A post with a link card. */
 export const LinkCard: Story = alone(cardPost);
+
+/** A post with a link card, for a viewer who chose small ones. */
+export const SmallLinkCard: Story = {
+  parameters: {
+    screen: {
+      path: `/@${cardPost.account.acct}/status/${cardPost.id}`,
+      handlers: [
+        http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, link_card_size: "small" })),
+        ...pictureHandlers,
+        statuses(cardPost),
+        thread({ ancestors: [], descendants: [] }),
+      ],
+    },
+  },
+};
 
 /** The viewer's own post, with its pictures. */
 export const OwnPost: Story = alone(viewerPost);

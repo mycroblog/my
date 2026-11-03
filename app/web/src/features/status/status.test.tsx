@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, oauthPaths, problem, tokenResponse } from "../../test/msw/http";
 import {
+  preferencesFixture,
   remoteStatusFixture,
   statusFixture,
   statusPage,
@@ -14,6 +15,7 @@ import {
   viewerFixture,
   viewerStatusFixture,
 } from "../../test/fixtures";
+import { linkCardSizeKey } from "../../lib/storage";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
@@ -699,5 +701,64 @@ describe("a post of another server", () => {
     expect(
       within(article).getByRole("link", { name: "Open the original post on remote.example (opens in a new tab)" }),
     ).toHaveAttribute("href", remote.uri);
+  });
+});
+
+describe("link cards", () => {
+  const withCard: Status = {
+    ...post,
+    card: {
+      url: "https://weather.example/today",
+      title: "Today's forecast",
+      description: "Rain.",
+      site_name: "Weather",
+    },
+  };
+  const cardLink = { name: newTabName("Today's forecast") };
+
+  function cardOf(link: HTMLElement): Element | null {
+    // eslint-disable-next-line testing-library/no-node-access -- the card's layout has no role; its size is the point
+    return link.closest("[data-size]");
+  }
+
+  test("are large by default", async () => {
+    signedIn();
+    serveThread(withCard);
+    server.use(http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(withCard)));
+    await renderApp({ path: `/@${post.account.acct}/status/${postId}` });
+
+    expect(cardOf(await screen.findByRole("link", cardLink))).toHaveAttribute("data-size", "large");
+  });
+
+  test("are small for a viewer who chose so, and keep that size for the next start", async () => {
+    signedIn();
+    serveThread(withCard);
+    server.use(
+      http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(withCard)),
+      http.get(`${apiBase}/preferences`, () => HttpResponse.json({ ...preferencesFixture, link_card_size: "small" })),
+    );
+    await renderApp({ path: `/@${post.account.acct}/status/${postId}` });
+
+    const link = await screen.findByRole("link", cardLink);
+    await waitFor(() => {
+      expect(cardOf(link)).toHaveAttribute("data-size", "small");
+    });
+    await waitFor(() => {
+      expect(linkCardSizeKey.getSnapshot()).toBe("small");
+    });
+  });
+
+  test("show the size of the last start until the preferences load", async () => {
+    linkCardSizeKey.write("small");
+    signedIn();
+    serveThread(withCard);
+    server.use(
+      http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json(withCard)),
+      // The preferences do not answer during this test.
+      http.get(`${apiBase}/preferences`, () => new Promise<never>(() => undefined)),
+    );
+    await renderApp({ path: `/@${post.account.acct}/status/${postId}` });
+
+    expect(cardOf(await screen.findByRole("link", cardLink))).toHaveAttribute("data-size", "small");
   });
 });

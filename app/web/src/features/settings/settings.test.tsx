@@ -19,7 +19,7 @@ import {
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { nodeUploadFile } from "../../test/multipart";
-import { autoplayKey, navigationKey, themeKey } from "../../lib/storage";
+import { autoplayKey, linkCardSizeKey, navigationKey, themeKey } from "../../lib/storage";
 import { newTabName } from "../../test/links";
 import { renderApp } from "../../test/render";
 import { sectionHeadings } from "../../test/sections";
@@ -100,7 +100,7 @@ describe("preferences", () => {
     // docs/architecture/web-client/screens/settings-preferences.md §3
     expect(sectionHeadings()).toEqual(["Display", "Navigation", "New posts", "Timelines"]);
     expect(screen.getByRole("region", { name: "Display" })).toHaveAccessibleDescription(
-      "The language and the time zone are saved to your account; the theme and animations are kept on this browser.",
+      "The language, the time zone, and link cards are saved to your account; the theme and animations are kept on this browser.",
     );
     expect(
       within(screen.getByRole("region", { name: "New posts" })).getByRole("radiogroup", {
@@ -255,6 +255,23 @@ describe("preferences", () => {
       expect(prefs.current.timeline_auto_insert).toBe(true);
     });
     expect(auto).toBeChecked();
+  });
+
+  test("link cards are large by default, and the choice is saved to the account", async () => {
+    const prefs = preferencesServer();
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const group = await screen.findByRole("radiogroup", { name: "Link cards" });
+    expect(within(group).getByRole("radio", { name: /Large/ })).toBeChecked();
+
+    await user.click(within(group).getByRole("radio", { name: /Small/ }));
+
+    await waitFor(() => {
+      expect(prefs.current.link_card_size).toBe("small");
+    });
+    expect(within(group).getByRole("radio", { name: /Small/ })).toBeChecked();
+    await waitFor(() => {
+      expect(linkCardSizeKey.getSnapshot()).toBe("small");
+    });
   });
 
   test("the request for a description of every attachment is switched on and off", async () => {

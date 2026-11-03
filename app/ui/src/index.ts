@@ -300,7 +300,7 @@ export {
   type SkinTone,
 } from "./EmojiPicker";
 export { Feed, FeedArticle, type FeedArticleProps, type FeedProps } from "./Feed";
-export { LinkCard, type LinkCardImage, type LinkCardProps } from "./LinkCard";
+export { LinkCard, type LinkCardImage, type LinkCardProps, type LinkCardSize } from "./LinkCard";
 export { AudioPlayer, type AudioPlayerLabels, type AudioPlayerProps } from "./AudioPlayer";
 export { MediaGrid, type MediaGridProps, type MediaItem, type MediaPlayback } from "./MediaGrid";
 export type { MediaViewerLabels } from "./MediaViewer";

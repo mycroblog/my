@@ -351,6 +351,26 @@
     "defaultMessage": "Import and export",
     "description": "Heading and document title of the settings page for exporting and importing the user's follows, blocks, mutes, and bookmarks as CSV files."
   },
+  "settings.link_card_size.label": {
+    "defaultMessage": "Link cards",
+    "description": "Label of the radio group that chooses the size of the cards of the links in posts."
+  },
+  "settings.link_card_size.large": {
+    "defaultMessage": "Large",
+    "description": "Option of the link card size: the image is above the text."
+  },
+  "settings.link_card_size.large.description": {
+    "defaultMessage": "The image goes above the text.",
+    "description": "Help text of the large option of the link card size."
+  },
+  "settings.link_card_size.small": {
+    "defaultMessage": "Small",
+    "description": "Option of the link card size: a square image is beside the text."
+  },
+  "settings.link_card_size.small.description": {
+    "defaultMessage": "A square image goes beside the text, so that posts take less room.",
+    "description": "Help text of the small option of the link card size."
+  },
   "settings.list.action": {
     "defaultMessage": "{action}: {name}",
     "description": "Accessible name of a button in a list of accounts. {action} is the button's visible text (for example 'Unblock'), {name} the account's display name."
@@ -468,7 +488,7 @@
     "description": "Heading of the section of the preferences page with the display language, the time zone, the color theme and the autoplay of animations."
   },
   "settings.preferences.display.description": {
-    "defaultMessage": "The language and the time zone are saved to your account; the theme and animations are kept on this browser.",
+    "defaultMessage": "The language, the time zone, and link cards are saved to your account; the theme and animations are kept on this browser.",
     "description": "Description under the display section of the preferences page: where each of its settings is saved."
   },
   "settings.preferences.posting.title": {

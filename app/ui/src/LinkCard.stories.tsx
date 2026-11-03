@@ -80,3 +80,48 @@ export const RightToLeft: Story = {
     lang: "ar",
   },
 };
+
+/** The small layout: a square image at the end of the row. */
+export const Small: Story = {
+  args: { size: "small", image, byline: "By Alice Example · Jan 2, 2026" },
+  play: async ({ canvas }) => {
+    const picture = canvas.getByRole("img", { name: "A yellow sun over a blue sky" });
+    await expect(picture).toBeVisible();
+    // The title's link stays the hit area of the whole card, beside the image too.
+    const link = canvas.getByRole("link", { name: "The sun rose again this morning" });
+    const box = link.closest("[data-size]")?.getBoundingClientRect();
+    if (box === undefined) throw new Error("the card is not there");
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4);
+    await expect(hit === link || link.contains(hit)).toBe(true);
+    const shown = picture.getBoundingClientRect();
+    await expect(Math.round(shown.width)).toBe(Math.round(shown.height));
+  },
+};
+
+/** The small layout of a page without an image: only the text. */
+export const SmallTextOnly: Story = {
+  args: { size: "small" },
+};
+
+/** The small layout with long texts, cut short beside the image. */
+export const SmallLongText: Story = {
+  args: {
+    size: "small",
+    image,
+    title:
+      "A very long title that goes on and on about the sun rising again this morning, as it has every day, over and over",
+    description:
+      "Observers around the world report that the sun rose in the east, as it has every day, and that it will most likely do so tomorrow, and on the day after that.",
+    byline: "By Alice Example, Bob Example, Carol Example, and many other people · Jan 2, 2026",
+  },
+};
+
+/** A concealed sensitive image in the small layout: only the icon fits, and the button keeps its name. */
+export const SmallSensitive: Story = {
+  args: { size: "small", image, sensitive: true },
+  play: async ({ canvas, userEvent }) => {
+    await expect(canvas.queryByRole("img")).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "Show sensitive media" }));
+    await expect(canvas.getByRole("img", { name: "A yellow sun over a blue sky" })).toBeVisible();
+  },
+};

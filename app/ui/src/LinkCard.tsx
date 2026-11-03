@@ -10,12 +10,12 @@ import { VisuallyHidden } from "./VisuallyHidden";
 const linkCard = tv({
   slots: {
     // Positioned, so that the link's stretched hit area covers the whole card.
-    base: "relative flex w-full flex-col overflow-hidden rounded-lg border border-border bg-surface-raised",
-    media: "relative aspect-video w-full overflow-hidden border-b border-border bg-surface-sunken",
+    base: "relative flex w-full overflow-hidden rounded-lg border border-border bg-surface-raised",
+    media: "relative overflow-hidden bg-surface-sunken",
     // Above the blur, which is positioned: the image covers it as it loads.
     image: "relative size-full object-cover",
     blur: "absolute inset-0",
-    text: "flex min-w-0 flex-col gap-0.5 px-3 py-2",
+    text: "flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2",
     site: "min-w-0 truncate text-xs font-bold text-fg-muted",
     // The link's ::after covers the card, so that the whole card is one link without nesting the toggle in it.
     link: [
@@ -29,12 +29,31 @@ const linkCard = tv({
       "absolute z-10 cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
   },
   variants: {
-    revealed: {
-      false: {
+    size: {
+      large: {
+        base: "flex-col",
+        media: "aspect-video w-full border-b border-border",
+      },
+      // The image is square and at the end of the row, on the right in a left-to-right language, whatever the length
+      // of the text: the title and the byline are cut short, so that a card stays about the height of its image.
+      small: {
+        base: "@container flex-row",
+        media: "order-last m-2 aspect-square w-20 shrink-0 self-start rounded-md @sm:w-28",
+        link: "line-clamp-2",
+        byline: "truncate",
+      },
+    },
+    toggle: {
+      // Concealed, in the middle of the image with its name; in a small image only the icon fits.
+      label: {
         toggle:
           "inset-0 m-auto size-fit min-h-10 max-w-[calc(100%-1rem)] px-4 py-2 text-sm shadow-md pointer-coarse:min-h-11",
       },
-      true: {
+      icon: {
+        toggle: "inset-0 m-auto grid size-8 place-items-center shadow-md pointer-coarse:size-11 [&>svg]:size-5",
+      },
+      // Shown, in the corner of the image.
+      corner: {
         toggle: "inset-s-1.5 top-1.5 grid size-8 place-items-center shadow-sm pointer-coarse:size-11 [&>svg]:size-5",
       },
     },
@@ -54,9 +73,14 @@ export type LinkCardImage = {
   alt?: string | undefined;
 };
 
+/** How a link card is laid out: the image above the text, or a square image beside it. */
+export type LinkCardSize = "large" | "small";
+
 export type LinkCardProps = Omit<ComponentPropsWithRef<"div">, "children" | "title"> & {
   /** The page the card links to. It opens in a new tab, without a referrer. */
   href: string;
+  /** The layout of the card. */
+  size?: LinkCardSize;
   /** The title of the page. */
   title: string;
   /** The description of the page; nothing is shown when it is empty. */
@@ -82,10 +106,12 @@ export type LinkCardProps = Omit<ComponentPropsWithRef<"div">, "children" | "tit
  * card is one link to the page (the title's link stretches over the card), an ExternalLink that opens in a new tab
  * with `rel="noopener noreferrer nofollow"`. The page's texts are user content, shown with `dir="auto"` and the
  * page's language (web-client/README.md Y10). A sensitive image is concealed behind a toggle button above the link's area, as in
- * MediaGrid: while concealed, the image is not loaded and its blur stands in for it.
+ * MediaGrid: while concealed, the image is not loaded and its blur stands in for it. The small layout puts a square
+ * image at the end of the row and cuts long texts short; without an image it is the same text alone.
  */
 export function LinkCard({
   href,
+  size = "large",
   title,
   description,
   siteName,
@@ -101,9 +127,9 @@ export function LinkCard({
   const [shown, setShown] = useState(defaultRevealed);
   const [loaded, setLoaded] = useState(false);
   const revealed = !sensitive || shown;
-  const slots = linkCard({ revealed });
+  const slots = linkCard({ size, toggle: revealed ? "corner" : size === "small" ? "icon" : "label" });
   return (
-    <div {...props} className={slots.base({ className })}>
+    <div {...props} data-size={size} className={slots.base({ className })}>
       {image !== undefined && (
         <div className={slots.media()}>
           {image.blurhash !== undefined && !(revealed && loaded) && (
@@ -126,7 +152,7 @@ export function LinkCard({
           )}
           {sensitive && (
             <ToggleButton isSelected={revealed} onChange={setShown} className={slots.toggle()}>
-              {revealed ? (
+              {revealed || size === "small" ? (
                 <>
                   <HideMediaIcon />
                   <VisuallyHidden>{revealLabel}</VisuallyHidden>

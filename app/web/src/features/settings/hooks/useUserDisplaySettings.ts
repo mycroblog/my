@@ -2,6 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
 import { useApi, useSessionStatus } from "../../../lib/auth/SessionProvider";
+import { linkCardSizeKey } from "../../../lib/storage";
 import { resolveLocale } from "../../../lib/i18n";
 import { shellQueryRetry } from "../../../lib/query";
 import { useAppLocale } from "../../../lib/locale";
@@ -57,6 +58,12 @@ export function useUserDisplaySettings(): void {
   useEffect(() => {
     appLocale.setTimeZone(timeZone);
   }, [appLocale, timeZone]);
+
+  // The next start shows link cards in this size before the preferences load (useLinkCardSize).
+  const linkCardSize = data?.link_card_size;
+  useEffect(() => {
+    if (linkCardSize !== undefined) linkCardSizeKey.write(linkCardSize);
+  }, [linkCardSize]);
 
   // Saves what this browser says (a browser API) when it differs from what is saved. It is not the user's action, so
   // it is not in an event handler. A failure leaves the saved values as they are; the next page load tries again.

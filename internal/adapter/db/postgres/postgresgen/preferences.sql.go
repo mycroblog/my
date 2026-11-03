@@ -23,7 +23,7 @@ func (q *Queries) DeleteUserTimelineLanguages(ctx context.Context, userID string
 
 const getUserPreferences = `-- name: GetUserPreferences :one
 SELECT user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
-  timeline_auto_insert, locale_follows_browser, time_zone_follows_browser, updated_at
+  timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
 FROM user_preferences WHERE user_id = $1
 `
 
@@ -38,6 +38,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID string) (UserPr
 		&i.DefaultPostLanguage,
 		&i.RequireMediaDescription,
 		&i.TimelineAutoInsert,
+		&i.LinkCardSize,
 		&i.LocaleFollowsBrowser,
 		&i.TimeZoneFollowsBrowser,
 		&i.UpdatedAt,
@@ -47,7 +48,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID string) (UserPr
 
 const getUserPreferencesForUpdate = `-- name: GetUserPreferencesForUpdate :one
 SELECT user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
-  timeline_auto_insert, locale_follows_browser, time_zone_follows_browser, updated_at
+  timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
 FROM user_preferences WHERE user_id = $1
 FOR UPDATE
 `
@@ -64,6 +65,7 @@ func (q *Queries) GetUserPreferencesForUpdate(ctx context.Context, userID string
 		&i.DefaultPostLanguage,
 		&i.RequireMediaDescription,
 		&i.TimelineAutoInsert,
+		&i.LinkCardSize,
 		&i.LocaleFollowsBrowser,
 		&i.TimeZoneFollowsBrowser,
 		&i.UpdatedAt,
@@ -86,8 +88,8 @@ const insertUserPreferences = `-- name: InsertUserPreferences :exec
 
 INSERT INTO user_preferences (
   user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
-  timeline_auto_insert, locale_follows_browser, time_zone_follows_browser, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+  timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
 
 type InsertUserPreferencesParams struct {
@@ -98,6 +100,7 @@ type InsertUserPreferencesParams struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	TimelineAutoInsert      bool
+	LinkCardSize            string
 	LocaleFollowsBrowser    bool
 	TimeZoneFollowsBrowser  bool
 	UpdatedAt               time.Time
@@ -113,6 +116,7 @@ func (q *Queries) InsertUserPreferences(ctx context.Context, arg InsertUserPrefe
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,
+		arg.LinkCardSize,
 		arg.LocaleFollowsBrowser,
 		arg.TimeZoneFollowsBrowser,
 		arg.UpdatedAt,
@@ -161,8 +165,8 @@ func (q *Queries) ListUserTimelineLanguages(ctx context.Context, userID string) 
 const updateUserPreferences = `-- name: UpdateUserPreferences :execrows
 UPDATE user_preferences SET
   locale = $2, default_visibility = $3, default_quote_policy = $4, default_post_language = $5,
-  require_media_description = $6, timeline_auto_insert = $7,
-  locale_follows_browser = $8, time_zone_follows_browser = $9, updated_at = $10
+  require_media_description = $6, timeline_auto_insert = $7, link_card_size = $8,
+  locale_follows_browser = $9, time_zone_follows_browser = $10, updated_at = $11
 WHERE user_id = $1
 `
 
@@ -174,6 +178,7 @@ type UpdateUserPreferencesParams struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	TimelineAutoInsert      bool
+	LinkCardSize            string
 	LocaleFollowsBrowser    bool
 	TimeZoneFollowsBrowser  bool
 	UpdatedAt               time.Time
@@ -188,6 +193,7 @@ func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPrefe
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,
+		arg.LinkCardSize,
 		arg.LocaleFollowsBrowser,
 		arg.TimeZoneFollowsBrowser,
 		arg.UpdatedAt,

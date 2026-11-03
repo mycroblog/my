@@ -143,6 +143,7 @@ async function serveApi(page: Page, limited: () => boolean) {
       default_post_language: "en",
       require_media_description: false,
       timeline_auto_insert: false,
+      link_card_size: "large",
       timeline_languages: [],
     };
     return json(route, preferences);

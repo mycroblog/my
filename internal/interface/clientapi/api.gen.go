@@ -2509,6 +2509,24 @@ func (e LinkCardDomainMode) Valid() bool {
 	}
 }
 
+// Defines values for LinkCardSize.
+const (
+	LinkCardSizeLarge LinkCardSize = "large"
+	LinkCardSizeSmall LinkCardSize = "small"
+)
+
+// Valid indicates whether the value is a known member of the LinkCardSize enum.
+func (e LinkCardSize) Valid() bool {
+	switch e {
+	case LinkCardSizeLarge:
+		return true
+	case LinkCardSizeSmall:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LoginProviderKind.
 const (
 	LoginProviderKindDiscord  LoginProviderKind = "discord"
@@ -9400,6 +9418,9 @@ type LinkCardImage struct {
 	Width int `json:"width"`
 }
 
+// LinkCardSize How a client shows link cards.
+type LinkCardSize string
+
 // LinkIdentityRequest The login provider to link an account at, and what confirms it: the user's `password`, a
 // `passkey` of the user, or an `external_confirmation`.
 type LinkIdentityRequest struct {
@@ -10853,6 +10874,10 @@ type Preferences struct {
 	// After a `hard_bounce`, the user asks for the verification email again
 	// (`POST /accounts/email/verification`) to show that the address works.
 	EmailSuppression *EmailSuppression `json:"email_suppression,omitempty"`
+
+	// LinkCardSize How the web client shows link cards: `large`, with the image above the text, or `small`, with
+	// a square image beside it. `large` for a new user; the same on every device.
+	LinkCardSize LinkCardSize `json:"link_card_size"`
 
 	// Locale The UI locale, a BCP 47 language tag.
 	Locale string `json:"locale"`
@@ -12464,6 +12489,9 @@ type UpdatePreferencesRequest struct {
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
 	DefaultVisibility *Visibility `json:"default_visibility,omitempty"`
+
+	// LinkCardSize How a client shows link cards.
+	LinkCardSize *LinkCardSize `json:"link_card_size,omitempty"`
 
 	// Locale The UI locale, a BCP 47 language tag. Without `locale_follows_browser`, it stops following the browser.
 	Locale *string `json:"locale,omitempty"`
