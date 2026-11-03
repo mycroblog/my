@@ -113,7 +113,10 @@ replaces it with its own: from then on the user cannot reactivate. A suspension 
 account is deactivated, and it stays in effect after the user reactivates. A user cannot deactivate an account while
 moderation keeps it from signing in, while its deletion is scheduled, after it moved, while its registration waits
 for review, while a paid subscription is still running (including one set to end at the end of its period), or when
-it is the only administrator who can sign in. A deactivated administrator does not count as one who can.
+it is the only administrator who can sign in. A deactivated administrator does not count as one who can. If a
+deactivated administrator's date passes while no other administrator can sign in, the hourly job does not delete the
+account and logs a warning. That administrator can no longer sign in either, so create another administrator with
+`my admin create`; the next run then deletes the account.
 
 ## Appeals
 

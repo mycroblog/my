@@ -84,6 +84,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"DeactivationConfirmedByACode", deactivationConfirmedByACode},
 		{"DeactivationConfirmedByAPasskey", deactivationConfirmedByAPasskey},
 		{"DeactivationRefusals", deactivationRefusals},
+		{"DeactivationProtectsTheLastAdministrator", deactivationProtectsTheLastAdministrator},
 		{"DeactivationDeletesAfterThePeriod", deactivationDeletesAfterThePeriod},
 		{"DeactivationYieldsToABan", deactivationYieldsToABan},
 		{"DeactivationSendsOneEmail", deactivationSendsOneEmail},

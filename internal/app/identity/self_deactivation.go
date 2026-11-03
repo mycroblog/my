@@ -87,10 +87,15 @@ func (s *Service) deactivationRefused(ctx context.Context, userID string, access
 	if err := s.d.Accounts.DeactivationRefused(ctx, access.AccountID); err != nil {
 		return err
 	}
-	switch last, err := s.IsLastAdministrator(ctx, userID); {
-	case err != nil:
+	var last bool
+	if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		last, err = s.IsLastAdministratorTx(ctx, tx, userID)
 		return err
-	case last:
+	}); err != nil {
+		return err
+	}
+	if last {
 		return &account.DeactivationRefusedError{Reason: account.DeactivationRefusedLastAdministrator}
 	}
 	if s.d.Subscriptions != nil {
@@ -132,20 +137,15 @@ func (s *Service) DeactivateOwnAccount(ctx context.Context, userID string, c Con
 	} else if err := s.confirm(ctx, OperationAccountDeactivation, userID, c); err != nil {
 		return time.Time{}, err
 	}
-	guard, err := s.guardLastAdministrator(ctx, userID)
-	if err != nil {
-		return time.Time{}, err
-	}
 	id := s.d.IDs.NewID()
 	var at time.Time
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if guard != nil {
-			// Two administrators who deactivate at once take turns, and the second one is refused.
-			if err := guard(tx); errors.Is(err, ErrLastAdmin) {
-				return &account.DeactivationRefusedError{Reason: account.DeactivationRefusedLastAdministrator}
-			} else if err != nil {
-				return err
-			}
+		// Two administrators who deactivate at once take turns, and the second one is refused.
+		switch last, err := s.IsLastAdministratorTx(ctx, tx, userID); {
+		case err != nil:
+			return err
+		case last:
+			return &account.DeactivationRefusedError{Reason: account.DeactivationRefusedLastAdministrator}
 		}
 		// Two deactivations at once: the first one locks, and the second finds it done.
 		if err := s.d.Repository.LockSignInMethods(ctx, tx, userID); err != nil {
@@ -198,15 +198,30 @@ func (s *Service) DeleteDeactivatedAccount(ctx context.Context, session identity
 	if s.d.Clock.Now().Sub(session.CreatedAt) > DeleteConfirmationFreshness {
 		return ErrSignInAgain
 	}
-	guard, err := s.guardLastAdministrator(ctx, session.UserID)
-	if err != nil {
-		return err
-	}
 	st, err := s.d.Accounts.UserLifecycle(ctx, session.UserID)
 	if err != nil {
 		return err
 	}
-	return s.d.Accounts.DeleteBySelfGuarded(ctx, st.AccountID, guard)
+	return s.d.Accounts.DeleteBySelfGuarded(ctx, st.AccountID, func(tx uow.Tx) error {
+		return s.refuseLastAdministratorTx(ctx, tx, session.UserID)
+	})
+}
+
+// LastAdministratorAccountTx reports, in tx and under the lock of the admin role, whether the local
+// account is the one of the last administrator who could sign in. The deletion at the end of a
+// deactivation holds back on it (account.Service.SetDeletionHold): a deactivated administrator does
+// not count as one who can sign in, so this is reached only when the others went some other way.
+func (s *Service) LastAdministratorAccountTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	a, err := s.d.Accounts.FindByIDTx(ctx, tx, accountID)
+	switch {
+	case errors.Is(err, account.ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	case a.Local == nil || a.Local.UserID == "":
+		return false, nil
+	}
+	return s.IsLastAdministratorTx(ctx, tx, a.Local.UserID)
 }
 
 // deactivationEmail is the payload of JobDeactivationEmail.

@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -22,6 +23,10 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		return err
 	}
 	identity.RegisterModerationProjectors(a.Projectors, repo, a.Accounts, a.Clock)
+	// The deletion at the end of a deactivation never takes the last administrator.
+	a.Accounts.SetDeletionHold(func(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+		return a.Identity.LastAdministratorAccountTx(ctx, tx, accountID)
+	})
 	identity.RegisterLifecycleProjectors(a.Projectors, repo, a.Accounts, a.Clock)
 	outbox := a.Outbox
 	if outbox == nil {

@@ -864,3 +864,42 @@ func TestSelfDeactivationHidesQuotedPosts(t *testing.T) {
 		t.Errorf("the quoted post after the reactivation = %+v, want it shown", q)
 	}
 }
+
+// TestSelfDeactivationKeepsTheLastAdministrator checks the protection through the composition
+// root: the API refuses the last administrator who can sign in, and the deletion at the date waits
+// while it would take the last one.
+func TestSelfDeactivationKeepsTheLastAdministrator(t *testing.T) {
+	t.Parallel()
+	e := newDeactivationEnv(t)
+	ctx := t.Context()
+	_, aliceID := e.userOf("alice")
+	_, bobID := e.userOf("bob")
+	_, modID := e.userOf("mod")
+	e.deactivate("alice")
+	e.deactivate("bob")
+	if p := e.problemOf("mod", http.MethodPost, "/accounts/deactivation", map[string]any{"password": deactivationPassword}, http.StatusConflict); p != clientapi.ProblemTypeDeactivationRefused {
+		t.Errorf("deactivate the last administrator: %s", p)
+	}
+	var preview clientapi.DeactivationPreview
+	e.do("mod", http.MethodGet, "/accounts/deactivation", nil, &preview)
+	if preview.Refusal == nil || *preview.Refusal != clientapi.DeactivationPreviewRefusalLastAdministrator {
+		t.Errorf("preview = %+v, want the refusal", preview)
+	}
+
+	// mod goes some other way, and neither alice nor bob can sign in, so both deletions wait.
+	if _, err := e.app.Accounts.RecordLifecycleEvent(ctx, appaccount.LifecycleInput{
+		AccountID: modID, Kind: account.LifecycleDeleted, InitiatedBy: account.InitiatedBySystem,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	e.clock.Advance(account.DeactivationPeriod)
+	if n, err := e.app.Accounts.ExecuteDueDeletions(ctx); err != nil || n != 0 {
+		t.Errorf("ExecuteDueDeletions = %d, %v; want none", n, err)
+	}
+	for _, id := range []string{aliceID, bobID} {
+		a, err := e.app.Accounts.FindByID(ctx, id)
+		if err != nil || !a.Lifecycle.Deactivated() {
+			t.Errorf("account %s = %+v, %v; want deactivated", id, a.Lifecycle, err)
+		}
+	}
+}

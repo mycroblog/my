@@ -487,3 +487,57 @@ func deactivationConfirmedByAPasskey(t *testing.T, e *accountEnv) {
 		t.Fatalf("DeactivateOwnAccount(a passkey, without a password) = %v", err)
 	}
 }
+
+// deactivationProtectsTheLastAdministrator checks that a deactivated administrator does not count
+// as one who can sign in, and that the deletion at the end of the period waits while it would take
+// the last administrator, until there is another one.
+func deactivationProtectsTheLastAdministrator(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	e.accounts.SetDeletionHold(e.identity.LastAdministratorAccountTx)
+	alice := e.sessionUser(t)
+	bob, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: "bob", Email: "bob@example.com", Password: sessionPassword})
+	if err != nil {
+		t.Fatalf("CreateAdmin = %v", err)
+	}
+	if _, err := e.identity.DeactivateOwnAccount(ctx, alice.User.ID, deactivationConfirmed); err != nil {
+		t.Fatalf("DeactivateOwnAccount(alice) = %v", err)
+	}
+
+	// alice is deactivated, so bob is the last one who can sign in.
+	wantRefused(t, errorOf(e.identity.DeactivateOwnAccount(ctx, bob.User.ID, deactivationConfirmed)), appaccount.DeactivationRefusedLastAdministrator)
+	p, err := e.identity.PreviewDeactivation(ctx, bob.User.ID)
+	if err != nil || p.Refused == nil || p.Refused.Reason != appaccount.DeactivationRefusedLastAdministrator {
+		t.Errorf("PreviewDeactivation(bob) = %+v, %v; want the refusal", p, err)
+	}
+	if err := e.identity.DeleteOwnAccount(ctx, bob.User.ID, deactivationConfirmed); !errors.Is(err, appidentity.ErrLastAdmin) {
+		t.Errorf("DeleteOwnAccount(bob) = %v, want ErrLastAdmin", err)
+	}
+
+	// bob goes some other way: at the date, the job holds back and leaves alice as she is, however
+	// often it runs.
+	if _, err := e.accounts.RecordLifecycleEvent(ctx, appaccount.LifecycleInput{
+		AccountID: bob.AccountID, Kind: account.LifecycleDeleted, InitiatedBy: account.InitiatedBySystem,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	e.clock.Advance(account.DeactivationPeriod)
+	for range 2 {
+		if n, err := e.accounts.ExecuteDueDeletions(ctx); err != nil || n != 0 {
+			t.Fatalf("ExecuteDueDeletions of the last administrator = %d, %v; want none", n, err)
+		}
+	}
+	if s := e.lifecycleOf(t, alice.AccountID); !s.Deactivated() {
+		t.Fatalf("state of the last administrator = %+v, want deactivated", s)
+	}
+
+	// With another administrator, the next run deletes her.
+	if _, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: "carol", Email: "carol@example.com", Password: sessionPassword}); err != nil {
+		t.Fatalf("CreateAdmin = %v", err)
+	}
+	if n, err := e.accounts.ExecuteDueDeletions(ctx); err != nil || n != 1 {
+		t.Fatalf("ExecuteDueDeletions with another administrator = %d, %v; want 1", n, err)
+	}
+	if s := e.lifecycleOf(t, alice.AccountID); s.State != account.StateDeleted {
+		t.Errorf("state = %+v, want deleted", s)
+	}
+}

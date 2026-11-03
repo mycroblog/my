@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -149,13 +150,23 @@ func (s *Service) RegisterDeletionJobs(reg *queue.JobHandlerRegistry, sched *que
 	sched.Add(queue.Schedule{Name: JobExecuteDeletions, Every: DeletionInterval, Job: queue.NewJob{Type: JobExecuteDeletions}})
 }
 
+// DeletionHold reports, in tx, whether the deletion of a deactivated account must wait: it would
+// leave the instance without an administrator who can sign in. It takes the lock of the admin role.
+type DeletionHold func(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
+
+// SetDeletionHold sets the hold of ExecuteDueDeletions. The identity module, which knows the
+// administrators, is built after this one, so the composition root sets it then; without a hold,
+// nothing waits. It is not safe to call once the jobs run.
+func (s *Service) SetDeletionHold(hold DeletionHold) { s.deletionHold = hold }
+
 // ExecuteDueDeletions deletes up to deletionBatch accounts of each kind that are due: those whose
 // scheduled deletion is due, and those deactivated for account.DeactivationPeriod (ADR-0145 §2).
 // Each gets a deleted lifecycle event initiated by the system, in a short transaction of its own,
 // which hides it and its statuses at once and sends the Delete of the actor (federation.md §7.1).
 // The state is read again under its lock, and an account that was reactivated, or whose deletion
-// was cancelled or rescheduled meanwhile, is left as it is, so running it again is safe. It
-// returns how many accounts it deleted.
+// was cancelled or rescheduled meanwhile, is left as it is, so running it again is safe. A
+// deactivated account that DeletionHold holds back stays as it is and is logged, and the next run
+// tries again. It returns how many accounts it deleted.
 func (s *Service) ExecuteDueDeletions(ctx context.Context) (int, error) {
 	now := kernel.Normalize(s.d.Clock.Now())
 	due, err := s.d.Repository.ListDueDeletions(ctx, now, deletionBatch)
@@ -172,6 +183,17 @@ func (s *Service) ExecuteDueDeletions(ctx context.Context) (int, error) {
 		var done bool
 		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 			done = false
+			// The lock of the admin role comes before that of the state, as in the other paths
+			// that remove an administrator.
+			if d.Deactivated() && s.deletionHold != nil {
+				switch held, err := s.deletionHold(ctx, tx, d.AccountID); {
+				case err != nil:
+					return err
+				case held:
+					slog.WarnContext(ctx, "account: the deletion of a deactivated account waits: it is the last administrator", slog.String("account", d.AccountID))
+					return nil
+				}
+			}
 			st, err := s.d.Repository.LifecycleState(ctx, tx, d.AccountID)
 			if err != nil {
 				return err
