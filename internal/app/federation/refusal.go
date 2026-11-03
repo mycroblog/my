@@ -63,6 +63,10 @@ func (r *FollowRefusals) Refuse(ctx context.Context, in *InboxActivity, followee
 	}
 	now := kernel.Normalize(r.d.Clock.Now())
 	return r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		first, err := r.rec.firstAnswer(ctx, tx, in.Received.ActivityURI, now)
+		if err != nil || !first {
+			return err
+		}
 		act, err := r.rec.insert(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityReject, ActorAccountID: followee.Account.ID,
 			ObjectKind: federation.OutboundRefusal, ObjectID: in.Actor.Account.ID, CreatedAt: now,

@@ -28,6 +28,15 @@ CREATE TABLE received_activity_documents (
   document BLOB NOT NULL
 ) STRICT;
 
+-- Event: this server answered a received activity with an activity of its own (a Reject of a
+-- refused Follow, an answer to a relay's Follow or to a QuoteRequest), so that processing the
+-- received activity again does not send the answer twice.
+CREATE TABLE received_activity_answers (
+  activity_uri TEXT NOT NULL PRIMARY KEY,
+  answered_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX received_activity_answers_answered_at ON received_activity_answers (answered_at);
+
 -- Event: a Delete of an unknown object or an Undo of an unknown target, by the actor that sent
 -- it. A Create, Update, or Follow of the uri by the same actor that arrives later is dropped;
 -- another actor's tombstone of the uri holds back nothing of that actor's.

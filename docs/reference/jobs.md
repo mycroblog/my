@@ -28,8 +28,7 @@ For every type that has a payload, a payload that cannot be read makes the job d
 | --- | --- |
 | Safe | Work that is already done is not done again. |
 | Next run | Safe, and rarely needed: the next scheduled run does the same work. Delete the dead job once you have fixed the cause. |
-| Sends again | Safe for this server, but a message that already went out can go out again. |
-| Unconfirmed | The job is meant to be repeatable, but this page does not vouch for every path through it. Read the last error first. |
+| Sends again | Safe for this server, but a message that already went out can go out again. A mail server or push service offers no way to send a message only once, so a run that stops after the server took the message and before the job finished sends it a second time. |
 
 A job type can also be registered or do its work only with some settings; **Needs** in the tables and [Jobs that depend on settings](#jobs-that-depend-on-settings) say which.
 
@@ -37,7 +36,7 @@ A job type can also be registered or do its work only with some settings; **Need
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `federation.inbox` | Processes one activity received from another server. Activities of one actor run in order. | The inbox accepting an activity | Default. An activity that can never be processed is dead at once. | Unconfirmed |
+| `federation.inbox` | Processes one activity received from another server. Activities of one actor run in order. | The inbox accepting an activity | Default. An activity that can never be processed is dead at once. | Safe. What it already recorded stays as it is, and an answer this server sends, such as the Reject of a refused Follow, goes out once. An Accept or Reject that does not name a known follow applies to the follow between the two accounts now. After 7 days the activity's document is gone and the job is dead at once. |
 | `federation.fanout` | Works out the inboxes of one outgoing activity, one batch at a time, and queues a `federation.deliver` for each new delivery. Activities whose object is gone or that the federation mode restricts end without error. | A local post, boost, follow, profile change, or other activity being recorded | Default. An unknown activity is dead at once. | Safe |
 | `federation.deliver` | Signs and sends one delivery. Skips a suspended or unavailable server. A server behind an open circuit breaker counts as a failed attempt. | `federation.fanout` | Up to 9 runs over about 4 days: 1 minute, 5 minutes, 30 minutes, 2 hours, 12 hours, then 24 hours. A missing delivery, activity, or signing key is dead at once. | Sends again. Inboxes ignore an activity they have seen. |
 | `federation.poll_update` | Sends the current counts of a local poll to other servers. Votes that arrive while it waits share one job. | A vote in a local poll, after a short delay, or the end of the poll | Default | Safe |
@@ -76,7 +75,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `account.erase_deleted` | Erases the data of deleted local accounts, in bounded batches. | Schedule, then itself | Default | Next run |
 | `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches. | Schedule, then itself | Default | Next run |
 | `graph.cleanup_mutes` | Deletes the mutes that have expired. | Schedule | Default | Next run |
-| `graph.migrate_follows` | Moves one page of the relationships of a moved account, waiting 10 seconds between pages to spread its deliveries. | An account move being recorded | Default. A step whose data is gone is dead at once. | Unconfirmed |
+| `graph.migrate_follows` | Moves one page of the relationships of a moved account, waiting 10 seconds between pages to spread its deliveries. | An account move being recorded | Default. A step whose data is gone is dead at once. | Safe. It does nothing once the move is cancelled or replaced. While the move is in force, a run much later also moves the accounts that follow, block, or mute the account by then. |
 | `identity.process_import` | Carries out one batch of a user's data import and records each item's result. An item that keeps failing is recorded as failed after 5 tries, and the import goes on. | A user's import, then itself | Default | Safe |
 | `identity.expire_imports` | Removes the imports past their lifetime. | Schedule | Default | Next run |
 | `identity.build_export` | Builds the archive of a user's data export. | A user's export request | Up to 8 runs: 5 that build, 3 that only record the failure, with the default waits. A failed export is recorded for the user, not left as a dead job. | Safe. An export with a result stays as it is. |
@@ -140,12 +139,12 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `voice.apply` | Applies one change of a room to its media transport: open, allow or stop audio, mute, remove, or close. Changes of one room run in order. | A committed change of a room | Default. Once it is dead, `voice.sweep` reconciles the room. | Unconfirmed |
-| `voice.media_event` | Applies one verified event from a media server to its room. | A webhook from a media server | Default | Unconfirmed |
+| `voice.apply` | Applies one change of a room to its media transport: open, allow or stop audio, mute, remove, or close. Changes of one room run in order. | A committed change of a room | Default. Once it is dead, `voice.sweep` reconciles the room. | Safe. Opening does nothing for a room that ended, and allowing or stopping audio applies the participant's role now. A mute mutes the session again, and a removal or close that is done stays done. |
+| `voice.media_event` | Applies one verified event from a media server to its room. | A webhook from a media server | Default | Safe. It compares the event with the room and the media server as they are now. |
 | `voice.sweep` | Evaluates every open room: participants' expiry, hosts' grace, rooms of a voice chat turned off, and rooms over the time limit. | Schedule | Default | Next run |
-| `voice.check_account` | Applies a change of an account to its participation: a suspended or deleted account leaves, and a host who is no longer eligible hands over. | A suspension, deletion, or restriction of an account in a room | Default | Unconfirmed |
-| `voice.check_block` | Applies a block between two participants of a room: the one who is not a host or co-host leaves. | A block | Default | Unconfirmed |
-| `voice.check_hosts` | Checks the eligibility of every open room's host. | A change of roles or of `voice_room_starters` while rooms are open | Default | Unconfirmed |
+| `voice.check_account` | Applies a change of an account to its participation: a suspended or deleted account leaves, and a host who is no longer eligible hands over. | A suspension, deletion, or restriction of an account in a room | Default | Safe. It reads the account and the room as they are now. |
+| `voice.check_block` | Applies a block between two participants of a room: the one who is not a host or co-host leaves. | A block | Default | Safe. A block that was lifted makes nobody leave. |
+| `voice.check_hosts` | Checks the eligibility of every open room's host. | A change of roles or of `voice_room_starters` while rooms are open | Default | Safe. It reads the hosts and the roles as they are now. |
 | `voice.notify_started` | Tells the local followers of a host who can see a room that it opened. | A room opening | Default | Safe. Each notification is created once. |
 | `voice.purge_records` | Erases the participants' records of rooms that ended past their retention, except those a report or a hold preserves. | Schedule | Default | Next run |
 

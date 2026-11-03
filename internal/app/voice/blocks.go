@@ -73,6 +73,13 @@ func blockLeaver(host string, blocker, blocked Participant) (Participant, bool) 
 
 // CheckBlock applies a block of blocked by blocker to their room, as JobCheckBlock does.
 func (s *Service) CheckBlock(ctx context.Context, blocker, blocked string) error {
+	// A block lifted meanwhile makes nobody leave, when a dead job runs again.
+	switch inForce, err := s.d.Relations.Blocked(ctx, blocker, blocked); {
+	case err != nil:
+		return err
+	case !inForce:
+		return nil
+	}
 	a, err := s.d.Repository.FindParticipant(ctx, nil, blocker)
 	if errors.Is(err, ErrNotFound) {
 		return nil

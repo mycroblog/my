@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -322,6 +323,17 @@ func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundAc
 		return federation.OutboundActivity{}, fmt.Errorf("record %s %s: %w", a.Type, a.ObjectID, err)
 	}
 	return a, nil
+}
+
+// firstAnswer records in tx that this server answers the received activity activityURI, and
+// reports whether this is the first answer. A job that processes the activity again, after the
+// answer committed, sends nothing more.
+func (r recorder) firstAnswer(ctx context.Context, tx uow.Tx, activityURI federation.IRI, at time.Time) (bool, error) {
+	first, err := r.d.Repository.InsertReceivedActivityAnswer(ctx, tx, activityURI, kernel.Normalize(at))
+	if err != nil {
+		return false, fmt.Errorf("record the answer to %s: %w", activityURI, err)
+	}
+	return first, nil
 }
 
 // enqueue enqueues the first fan-out batch of a in tx, with the payload p of a.

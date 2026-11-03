@@ -461,6 +461,12 @@ func retentionFederationRecords(t *testing.T, e *retentionEnv) {
 			}); err != nil {
 				return err
 			}
+			switch first, err := e.rh.Federation.InsertReceivedActivityAnswer(ctx, tx, r.received, at); {
+			case err != nil:
+				return err
+			case !first:
+				t.Errorf("InsertReceivedActivityAnswer(%s) = false, want the first answer", r.received)
+			}
 			if err := e.rh.Federation.InsertOutboundActivity(ctx, tx, act); err != nil {
 				return err
 			}
@@ -532,6 +538,21 @@ func retentionFederationRecords(t *testing.T, e *retentionEnv) {
 				t.Errorf("kept %+v, want %+v", got, tc.want)
 			}
 		})
+	}
+	// The record of an answer stays as long as the activity's: an answer within it is not the first.
+	for _, tc := range []struct {
+		r     record
+		first bool
+	}{{fresh, false}, {week, false}, {month, true}} {
+		if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			first, err := e.rh.Federation.InsertReceivedActivityAnswer(ctx, tx, tc.r.received, e.clock.Now())
+			if err == nil && first != tc.first {
+				t.Errorf("InsertReceivedActivityAnswer(%s) after the purge = %t, want %t", tc.r.received, first, tc.first)
+			}
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if ok, err := e.rh.Inbox.RemoteObjectTombstoned(ctx, fresh.received+"/object", "https://remote.example/users/bob"); err != nil || ok {
 		t.Errorf("RemoteObjectTombstoned(another actor's stale tombstone) = %t, %v; want false", ok, err)
