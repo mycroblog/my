@@ -20641,7 +20641,8 @@ type ClientInterface interface {
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
 	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
-	// status is a 404.
+	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+	// also leaves out the `direct` statuses that quote one.
 	//
 	// Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 	ListStatusQuotes(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20702,7 +20703,8 @@ type ClientInterface interface {
 
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	//
-	// Another account's status is a 404, the same as a missing one.
+	// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+	// without `read:direct`.
 	//
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -29982,7 +29984,8 @@ func (c *Client) SetStatusQuotePolicy(ctx context.Context, id StatusId, body Set
 // The statuses that quote a status of the user, newest first, each with its `quote` and
 // its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
-// status is a 404.
+// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+// also leaves out the `direct` statuses that quote one.
 //
 // Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 func (c *Client) ListStatusQuotes(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30103,7 +30106,8 @@ func (c *Client) ListStatusReactions(ctx context.Context, id StatusId, params *L
 
 // GetStatusSource Get the source of the authenticated user's status, for editing it
 //
-// Another account's status is a 404, the same as a missing one.
+// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+// without `read:direct`.
 //
 // Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -51943,7 +51947,8 @@ type ClientWithResponsesInterface interface {
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
 	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
-	// status is a 404.
+	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+	// also leaves out the `direct` statuses that quote one.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52012,7 +52017,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetStatusSourceWithResponse Get the source of the authenticated user's status, for editing it
 	//
-	// Another account's status is a 404, the same as a missing one.
+	// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+	// without `read:direct`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -82915,7 +82921,8 @@ func (c *ClientWithResponses) SetStatusQuotePolicyWithResponse(ctx context.Conte
 // The statuses that quote a status of the user, newest first, each with its `quote` and
 // its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
-// status is a 404.
+// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+// also leaves out the `direct` statuses that quote one.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83020,7 +83027,8 @@ func (c *ClientWithResponses) ListStatusReactionsWithResponse(ctx context.Contex
 
 // GetStatusSourceWithResponse Get the source of the authenticated user's status, for editing it
 //
-// Another account's status is a 404, the same as a missing one.
+// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+// without `read:direct`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
