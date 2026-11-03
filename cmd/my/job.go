@@ -111,12 +111,12 @@ func jobUsage(w io.Writer) {
   my job delete [-config <file>] <id>...
 
 Dead jobs are the jobs of the database queue (queue = db) that failed for good or
-used up their attempts (ADR-0004). list shows them, most recently failed first,
+used up their attempts. list shows them, most recently failed first,
 with their type, number of runs, failure time, and last error. retry enqueues
 each named dead job again with a fresh attempt count, to run now; when a job
 with the same idempotency key is pending, that job stands in for it. delete
 removes each named dead job without running it. Dead jobs that nobody retries
-are deleted after dead_job_retention (FR-803). The exit code is 1 when any ID
+are deleted after dead_job_retention. The exit code is 1 when any ID
 names no dead job; the other IDs are still handled.
 `)
 }

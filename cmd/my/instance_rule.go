@@ -31,7 +31,7 @@ func runInstanceRule(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "list":
 		nargs = 0
-	case "add", "retire":
+	case "create", "retire":
 		nargs = 1
 	case "edit", "move":
 		nargs = 2
@@ -50,7 +50,7 @@ func runInstanceRule(args []string, stdout, stderr io.Writer) int {
 	switch sub {
 	case "list":
 		fs.BoolVar(&all, "all", false, "also list the retired rules")
-	case "add", "edit":
+	case "create", "edit":
 		fs.StringVar(&hint, "hint", "", "explanation of the rule (edit keeps the current one unless given)")
 	}
 	if err := fs.Parse(args[1:]); err != nil {
@@ -93,7 +93,7 @@ func runInstanceRule(args []string, stdout, stderr io.Writer) int {
 	switch sub {
 	case "list":
 		err = cmd.listRules(ctx, all)
-	case "add":
+	case "create":
 		rule, err = cmd.svc.AddRule(ctx, appinstance.AddRuleInput{Text: pos[0], Hint: hint})
 	case "edit":
 		rule, err = cmd.svc.ReviseRule(ctx, appinstance.ReviseRuleInput{RuleID: pos[0], Text: pos[1], Hint: hint, KeepHint: !hintSet})
@@ -113,7 +113,7 @@ func runInstanceRule(args []string, stdout, stderr io.Writer) int {
 }
 
 func (c instanceCommand) printRule(sub string, r instance.Rule) error {
-	verb := map[string]string{"add": "added", "edit": "revised", "move": "moved", "retire": "retired"}[sub]
+	verb := map[string]string{"create": "created", "edit": "revised", "move": "moved", "retire": "retired"}[sub]
 	_, err := fmt.Fprintf(c.stdout, "%s rule %s at position %d (revision %s)\n", verb, r.ID, r.Revision.Position, r.Revision.ID)
 	return err
 }
@@ -138,7 +138,7 @@ func (c instanceCommand) listRules(ctx context.Context, all bool) error {
 func instanceRuleUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my instance rule list [-all] [-config <file>]
-  my instance rule add [-hint <text>] [-config <file>] <text>
+  my instance rule create [-hint <text>] [-config <file>] <text>
   my instance rule edit [-hint <text>] [-config <file>] <rule> <text>
   my instance rule move [-config <file>] <rule> <position>
   my instance rule retire [-config <file>] <rule>
@@ -148,7 +148,7 @@ GET /api/v1/instance lists and reports cite. A rule has one line of text and an
 optional hint, written in any language and shown as they are in every locale.
 Every change is kept as a revision, and a rule keeps its ID for life.
 
-add appends a rule after the rules in effect. edit changes the text of a rule;
+create appends a rule after the rules in effect. edit changes the text of a rule;
 the hint stays unless -hint is given. move puts a rule at a position among the
 rules in effect, from 1, and numbers them again. retire removes a rule from the
 rules in effect for good; reports that cite it still refer to it. list shows

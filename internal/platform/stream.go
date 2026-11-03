@@ -44,7 +44,7 @@ func (a *App) setUpStreams(ctx context.Context, cfg *config.Config, bus stream.B
 		a.closeStreams = func(context.Context) error { hub.Close(); return nil }
 		if cfg.Role != config.RoleAll {
 			a.Logger.WarnContext(ctx, "stream = hub delivers to the streams of this process only: with role "+string(cfg.Role)+
-				", the changes made in the other processes do not reach its streams; choose a broker across processes (ADR-0050)",
+				", the changes made in the other processes do not reach its streams; choose a broker across processes",
 				slog.String("role", string(cfg.Role)))
 		}
 		return nil

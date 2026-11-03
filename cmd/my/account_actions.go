@@ -208,7 +208,7 @@ func adminAccountActionUsage(w io.Writer) {
                                 [-config <file>] <account>
   my admin account action lift [-reason <text>] [-config <file>] <action id>
 
-Moderation actions on accounts (FR-703), in effect at once. <account> is
+Moderation actions on accounts, in effect at once. <account> is
 @username for a local account, @username@domain for a remote one, or an account
 ID. Several actions on one account add up. On a local account:
 

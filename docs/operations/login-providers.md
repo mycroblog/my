@@ -44,7 +44,7 @@ organization), and also add the `hd` condition: the user type restricts who Goog
 server check the `hd` claim of every ID token.
 
 ```sh
-printf '%s\n' "$CLIENT_SECRET" | my login-provider add -kind oidc -name Google \
+printf '%s\n' "$CLIENT_SECRET" | my login-provider create -kind oidc -name Google \
   -issuer https://accounts.google.com -client-id 123.apps.googleusercontent.com -claim hd=example.com
 ```
 
@@ -69,7 +69,7 @@ Discord, turn on "Developer Mode" (User Settings, Advanced), then right-click th
 ID".
 
 ```sh
-printf '%s\n' "$DISCORD_SECRET" | my login-provider add -kind discord -name Discord \
+printf '%s\n' "$DISCORD_SECRET" | my login-provider create -kind discord -name Discord \
   -client-id 123456789012345678 -guild 987654321098765432
 ```
 
@@ -88,14 +88,14 @@ which contains the ID that the server gives the provider. So:
 
 1. Register an OAuth client at the provider (an "OAuth App" on GitHub) with any redirect URI for now, and note the
    client ID and the client secret it gives.
-2. Run `my login-provider add` with them. It prints the callback URL.
+2. Run `my login-provider create` with them. It prints the callback URL.
 3. Change the redirect URI of the client at the provider to that callback URL.
 
 ```sh
 # The client secret is read from standard input, or prompted for in a terminal.
-printf '%s\n' "$CLIENT_SECRET" | my login-provider add -kind oidc -name "Example SSO" \
+printf '%s\n' "$CLIENT_SECRET" | my login-provider create -kind oidc -name "Example SSO" \
   -issuer https://sso.example.com -client-id my-client-id -claim hd=example.com
-printf '%s\n' "$GITHUB_SECRET" | my login-provider add -kind github -name GitHub \
+printf '%s\n' "$GITHUB_SECRET" | my login-provider create -kind github -name GitHub \
   -client-id Iv1.0123456789abcdef -org example-org -scope read:org
 ```
 
@@ -108,7 +108,7 @@ at the server itself, with the callback URL and the `profile` scope, and stores 
 there is nothing to do at the server:
 
 ```sh
-my login-provider add -kind mastodon -name mastodon.example -issuer mastodon.example
+my login-provider create -kind mastodon -name mastodon.example -issuer mastodon.example
 ```
 
 If the server does not let others register clients, `add` fails. Create an application with the `profile` scope and the
@@ -221,7 +221,7 @@ The limit follows the setting and the providers from one request to the next, wi
   [reset link](registration.md#password-reset-and-change).
 - With the setting on and no provider enabled, setting up or enabling a provider starts the limit at once; a new provider is
   enabled as soon as it is set up. The web client warns first, with how many active users have no link to that provider and
-  whether that includes you. It warns only for the action that would start the limit. `my login-provider add`, `enable`,
+  whether that includes you. It warns only for the action that would start the limit. `my login-provider create`, `enable`,
   `disable`, and `delete` print what the limit does now while the setting is on.
 - When an outage at the provider keeps everyone out, use the same command.
 

@@ -16,12 +16,12 @@ func runLoginProviderCmd(t *testing.T, stdin string, args ...string) (code int, 
 	return code, out.String(), errOut.String()
 }
 
-var addedLoginProvider = regexp.MustCompile(`^added oidc login provider (\S+) \(Example SSO\)\ncallback URL: https://social\.example/auth/external/(\S+)/callback\n$`)
+var addedLoginProvider = regexp.MustCompile(`^created oidc login provider (\S+) \(Example SSO\)\ncallback URL: https://social\.example/auth/external/(\S+)/callback\n$`)
 
 func TestLoginProviderCommands(t *testing.T) {
 	newAdminEnv(t)
 	const secret = "s3cret-client-secret"
-	code, stdout, stderr := runLoginProviderCmd(t, secret+"\n", "add", "-kind", "oidc", "-name", "Example SSO",
+	code, stdout, stderr := runLoginProviderCmd(t, secret+"\n", "create", "-kind", "oidc", "-name", "Example SSO",
 		"-issuer", "https://sso.example", "-client-id", "my-client", "-scope", "groups", "-claim", "hd=example.com",
 		"-claim", "hd=example.org", "-allow-signup")
 	m := addedLoginProvider.FindStringSubmatch(stdout)
@@ -29,7 +29,7 @@ func TestLoginProviderCommands(t *testing.T) {
 		t.Fatalf("login-provider add = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
-	if code, stdout, _ = runLoginProviderCmd(t, "", "add", "-kind", "github", "-name", "GitHub", "-client-id", "gh"); code != 1 ||
+	if code, stdout, _ = runLoginProviderCmd(t, "", "create", "-kind", "github", "-name", "GitHub", "-client-id", "gh"); code != 1 ||
 		stdout != "" {
 		t.Errorf("login-provider add without a secret = %d %q", code, stdout)
 	}
@@ -82,10 +82,10 @@ func TestLoginProviderCommands(t *testing.T) {
 		code  int
 		want  string
 	}{
-		{secret, []string{"add", "-kind", "oidc", "-name", "X", "-issuer", "http://sso.example", "-client-id", "c"}, 1, "invalid login provider URL"},
-		{secret, []string{"add", "-kind", "github", "-name", "X", "-client-id", "c", "-claim", "hd=example.com"}, 1, "invalid login provider conditions"},
-		{secret, []string{"add", "-kind", "oidc", "-name", "X", "-issuer", "https://sso.example", "-client-id", "c", "-claim", "hd"}, 2, "is not <claim>=<value>"},
-		{secret, []string{"add", "-kind", "oidc", "-name", "X"}, 2, "-client-id is required"},
+		{secret, []string{"create", "-kind", "oidc", "-name", "X", "-issuer", "http://sso.example", "-client-id", "c"}, 1, "invalid login provider URL"},
+		{secret, []string{"create", "-kind", "github", "-name", "X", "-client-id", "c", "-claim", "hd=example.com"}, 1, "invalid login provider conditions"},
+		{secret, []string{"create", "-kind", "oidc", "-name", "X", "-issuer", "https://sso.example", "-client-id", "c", "-claim", "hd"}, 2, "is not <claim>=<value>"},
+		{secret, []string{"create", "-kind", "oidc", "-name", "X"}, 2, "-client-id is required"},
 		{"", []string{"set", id}, 2, "name at least one setting"},
 		{"", []string{"set", "-name", "Y", id}, 1, "no login provider has the ID"},
 		{secret, []string{"rotate-secret", id}, 1, "no login provider has the ID"},

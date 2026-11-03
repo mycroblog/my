@@ -140,8 +140,8 @@ func instanceThemeUsage(w io.Writer) {
   my instance theme get [-config <file>]
   my instance theme set [-config <file>] < theme.json
 
-Reads and replaces the theme of the web client (ADR-0059,
-docs/operations/instance-settings.md): overrides of the design tokens and a
+Reads and replaces the theme of the web client
+(docs/operations/instance-settings.md): overrides of the design tokens and a
 custom CSS, as JSON of the admin API's PUT /api/v1/admin/theme:
 
   {"tokens": [{"token": "color-accent", "light": "#1447e6", "dark": "#92c5fe"},

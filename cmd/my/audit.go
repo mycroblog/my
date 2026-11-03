@@ -105,7 +105,7 @@ func adminAuditUsage(w io.Writer) {
   my admin audit list [-actor <username>] [-action <action>] [-target-kind <kind>]
                       [-target-id <id>] [-before <id>] [-limit <n>] [-config <file>]
 
-The audit log (FR-704): the operations of the moderators and administrators,
+The audit log: the operations of the moderators and administrators,
 newest first, with who performed them (a user, or cli for this command line),
 the target, and the ID of the operation's own record, which holds its reasons
 and notes. The target's name is the one it had at the time, so entries stay
