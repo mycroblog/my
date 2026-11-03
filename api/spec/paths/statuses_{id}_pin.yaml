@@ -5,8 +5,8 @@ post:
   operationId: pinStatus
   summary: Pin the authenticated user's status to the profile
   description: |
-    Pinning a status that is already pinned changes nothing. Another account's status, a
-    direct status, or a pin beyond the limit is a 422.
+    Pinning a status that is already pinned changes nothing. Another account's status is a
+    403, as for editing it, and a direct status or a pin beyond the limit a 422.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

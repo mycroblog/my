@@ -30,7 +30,7 @@ post:
     `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
     activities), `moderation.json` (the moderation actions on the account, its appeals, and
     the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
-    `blocked_accounts.csv`, `muted_accounts.csv`, `bookmarks.csv`). The export is
+    `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
     `pending` until the archive is built. While
     another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
     at most 3 requests per account are accepted every day.

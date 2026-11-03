@@ -140,6 +140,9 @@ func TestPasskeyRegistration(t *testing.T) {
 		}
 	}
 	res = e.send(t, http.MethodPost, "/passkeys", "write", `{"registration_token":"reg-1","credential":{"id":"ok","response":{"clientDataJSON":"e30"}}}`)
+	if got := res.Header.Get("Cache-Control"); got != "no-store" {
+		t.Errorf("Cache-Control of the new passkey = %q, want no-store", got)
+	}
 	if p := decodeJSON[clientapi.Passkey](t, res); res.StatusCode != http.StatusCreated || p.Name != "phone" || !p.CreatedAt.Equal(passkeyCreatedAt) {
 		t.Errorf("create = %d %+v", res.StatusCode, p)
 	}

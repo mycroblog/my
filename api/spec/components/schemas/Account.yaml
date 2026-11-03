@@ -6,10 +6,12 @@ properties:
   id:
     $ref: ./Id.yaml
   username:
-    description: The username, without the domain.
+    description: The username, without the domain; empty for a remote account without a confirmed handle.
     type: string
   acct:
-    description: The username for local accounts, `username@domain` for remote ones.
+    description: |
+      The username for local accounts, `username@domain` for remote ones; empty for a remote
+      account without a confirmed handle.
     type: string
   domain:
     description: |

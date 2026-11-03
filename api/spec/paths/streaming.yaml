@@ -32,9 +32,10 @@ get:
     again after that many seconds. The server may also end an open stream when it may have
     missed updates; reconnect and read again, as after any other end.
 
-    Each server process delivers only the updates that it produced itself, so a deployment
-    that runs several web processes, or separate web and worker processes, misses updates
-    on some streams.
+    With the `stream = hub` setting, each server process delivers only the updates that it
+    produced itself, so a deployment that runs several web processes, or separate web and
+    worker processes, misses updates on some streams. A deployment with a shared stream broker
+    does not.
   tags: [streaming]
   security:
     - oauth2: ["read:statuses", "read:notifications"]

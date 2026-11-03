@@ -237,14 +237,17 @@ func (s *Interactions) Unbookmark(ctx context.Context, accountID, statusID strin
 }
 
 // Pin pins accountID's own statusID to its profile. Pinning a status that is already pinned
-// changes nothing. Someone else's status or a direct one fails with content.ErrNotPinnable,
-// and a pin beyond content.MaxPins with content.ErrPinLimit.
+// changes nothing. Someone else's status fails with ErrNotAuthor, a direct one with
+// content.ErrNotPinnable, and a pin beyond content.MaxPins with content.ErrPinLimit.
 func (s *Interactions) Pin(ctx context.Context, accountID, statusID string) error {
 	st, err := s.visibleStatus(ctx, accountID, statusID)
 	if err != nil {
 		return err
 	}
-	if st.AuthorAccountID != accountID || !st.Visibility.Pinnable() {
+	if st.AuthorAccountID != accountID {
+		return fmt.Errorf("pin %s: %w", statusID, ErrNotAuthor)
+	}
+	if !st.Visibility.Pinnable() {
 		return fmt.Errorf("pin %s: %w", statusID, content.ErrNotPinnable)
 	}
 	p := content.Pin{ID: s.d.IDs.NewID(), AccountID: accountID, StatusID: st.ID, CreatedAt: s.d.Clock.Now()}

@@ -62,7 +62,7 @@ description: |
   the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
   `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
   the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-  `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+  `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
   (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
   and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
   name.
