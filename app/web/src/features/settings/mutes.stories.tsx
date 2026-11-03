@@ -19,7 +19,7 @@ import { listedAccounts } from "./test/storyFixtures";
 /** GET /mutes answering `mutes`, with a next page when `more`. */
 function muting(mutes: Schemas["MutedAccount"][], more = false) {
   return http.get(`${apiBase}/mutes`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(more ? { mutes, next_cursor: "next" } : { items: mutes })),
+    withViewer(request, () => HttpResponse.json(more ? { items: mutes, next_cursor: "next" } : { items: mutes })),
   );
 }
 
