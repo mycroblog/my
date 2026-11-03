@@ -152,7 +152,7 @@ describe("the queue dashboard", () => {
   };
   const cleanup: Schemas["AdminJob"] = {
     id: "0192f0c4-7a8e-7000-8000-0000000000d0",
-    type: "kv.cleanup",
+    type: "kv.purge_expired",
     state: "dead",
     payload: "null",
     attempts: 3,
@@ -189,7 +189,7 @@ describe("the queue dashboard", () => {
       { state: "running", type: "media.process", count: 1 },
       { state: "retrying", type: "federation.deliver", count: 1 },
       { state: "dead", type: "federation.deliver", count: 1 },
-      { state: "dead", type: "kv.cleanup", count: 1 },
+      { state: "dead", type: "kv.purge_expired", count: 1 },
     ],
     waits: [{ type: "federation.deliver", oldest_ready_at: "2026-10-17T09:30:00Z" }],
     oldest_ready_at: "2026-10-17T09:30:00Z",
@@ -259,7 +259,7 @@ describe("the queue dashboard", () => {
       within(types)
         .getAllByRole("heading", { level: 3 })
         .map((heading) => heading.textContent),
-    ).toEqual(["media.process", "federation.deliver", "kv.cleanup"]);
+    ).toEqual(["media.process", "federation.deliver", "kv.purge_expired"]);
     // Each tab says how many jobs it lists.
     expect(screen.getByRole("tab", { name: "Pending, 2 jobs", selected: true })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Failed, 2 jobs" })).toBeInTheDocument();

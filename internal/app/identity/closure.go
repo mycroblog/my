@@ -32,7 +32,7 @@ type ServiceClosure interface {
 
 // JobClosureRejections is the job that rejects the pending applications when the notice period
 // of the service closure starts.
-const JobClosureRejections = "identity.closure_rejections"
+const JobClosureRejections = "identity.reject_for_closure"
 
 // closureRejectionBatch is how many applications one page of JobClosureRejections rejects.
 const closureRejectionBatch = 100

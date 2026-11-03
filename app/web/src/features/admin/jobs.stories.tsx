@@ -55,7 +55,7 @@ function jobsFixture(): Record<"pending" | "dead", Schemas["AdminJob"][]> {
     },
     {
       id: "0192f0c4-7a8e-7000-8000-0000000000d0",
-      type: "kv.cleanup",
+      type: "kv.purge_expired",
       state: "dead",
       payload: "null",
       attempts: 3,
@@ -76,7 +76,7 @@ const queue: Schemas["AdminQueue"] = {
     { state: "running", type: "media.process", count: 1 },
     { state: "retrying", type: "federation.deliver", count: 3 },
     { state: "dead", type: "federation.deliver", count: 1 },
-    { state: "dead", type: "kv.cleanup", count: 1 },
+    { state: "dead", type: "kv.purge_expired", count: 1 },
   ],
   waits: [{ type: "federation.deliver", oldest_ready_at: ago(40 / 60) }],
 };

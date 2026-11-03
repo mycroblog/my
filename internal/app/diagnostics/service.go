@@ -16,7 +16,7 @@ import (
 
 const (
 	// JobPruneCounts deletes the hourly counts older than diagnostics.CountRetention.
-	JobPruneCounts = "diagnostics.prune_error_counts"
+	JobPruneCounts = "diagnostics.purge_error_counts"
 	// PruneInterval is the period of the prune's schedule.
 	PruneInterval = 24 * time.Hour
 )

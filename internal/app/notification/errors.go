@@ -90,7 +90,7 @@ func (s *Service) ErrorGroupOthers(ctx context.Context, n notification.Notificat
 const (
 	// JobPruneErrorGroupNotices deletes the hourly notices older than
 	// notification.ErrorGroupNoticeRetention.
-	JobPruneErrorGroupNotices = "notification.prune_error_group_notices"
+	JobPruneErrorGroupNotices = "notification.purge_error_group_notices"
 	// PruneErrorGroupNoticesInterval is the period of the prune's schedule.
 	PruneErrorGroupNoticesInterval = 24 * time.Hour
 )

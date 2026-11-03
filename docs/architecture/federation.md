@@ -292,7 +292,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 項目の順に、埋め込みなら `attributedTo` がそのアカウントで宛先に `as:Public` を含む投稿、IRI ならアカウントと同じオリジンの投稿を 5 件（`FeaturedMaxPosts`）まで選び、保存済みでなければ §6.3 の outbox と同じく取得した投稿として取り込みます（返信先は取得しない）。1 回の文書はコレクション・ページ・投稿の合わせて 7 件（`FeaturedMaxDocuments`）までです。
   - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと `featured` を宣言しなくなった文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
   - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
-- 取得から 24 時間を過ぎた Actor は、次に使われたとき（署名の検証・表示・配送）に非同期で取り直します（ジョブ `federation.refresh_actor`、冪等キー `refresh_actor:<account_id>`）。ローカルのアカウントがフォローしている Actor は、定期ジョブ `federation.refresh_actors`（1 時間ごと）が `remote_account_heads (last_fetched_at)` の古い順に 200 件ずつ読み、フォローされているものを取り直します（ADR-0034）。カーソル（`last_fetched_at` と `account_id`）を持った次のジョブが続きを読みます。
+- 取得から 24 時間を過ぎた Actor は、次に使われたとき（署名の検証・表示・配送）に非同期で取り直します（ジョブ `federation.refresh_actor`、冪等キー `refresh_actor:<account_id>`）。ローカルのアカウントがフォローしている Actor は、定期ジョブ `federation.refresh_stale_actors`（1 時間ごと）が `remote_account_heads (last_fetched_at)` の古い順に 200 件ずつ読み、フォローされているものを取り直します（ADR-0034）。カーソル（`last_fetched_at` と `account_id`）を持った次のジョブが続きを読みます。
 
 ### 6.3 投稿
 
@@ -335,7 +335,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 取り込んだ投稿は、ほかの取得した投稿と同じく保持期間（ADR-0034、`content.purge_remote_statuses`）の対象で、プロフィールのタイムラインに出ます。新しいテーブルは使いません。
   - コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の outbox のフィクスチャ（`outbox.json`・`outbox-page.json`）を取り込みます。
 - 投稿の ID は `published` から作った UUIDv7 です（[data-model §1.3](data-model/01-conventions.md#13-id-とキーセットページング)、#71）。
-- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0034、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
+- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge_records` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0034、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
   保持期間で消えた投稿（`origin = retention`）は tombstone にならないので、同じ URI の `Create` や取得でまた取り込めます。コントラクトテストは `testkit.RetentionContract` です。
 
 ### 6.4 投稿の取り直し
@@ -346,7 +346,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 文書が投稿で `id` が投稿の URI と同じで、`attributedTo` が投稿の作者なら、受け取った `Update` と同じく `content.ReviseRemoteStatus` で記録します（メンションの解決を含む）。版の時刻が新しければ版を足し、そうでなければ投票の票数だけを記録します。
   - 410 Gone と、投稿の URI の `Tombstone` は、作者の `Delete` と同じく `content.DeleteRemoteStatus` で削除します（tombstone が残る）。404 は削除しません。フォロワー限定の投稿などはインスタンス Actor の取得に 404 を返すことがあるためです。
   - 取得できない・ほかの作者の・投稿でない文書は `info` のログを残してジョブを完了にし、投稿をそのまま残します。ローカル・削除済み・未知の投稿は何もしません。ストアの失敗は `Retry` です。
-- ジョブ `federation.refetch_statuses` は、アカウントかドメインの投稿をたどって `federation.refetch_status` を投入します。ペイロードは頼んだ監査ログの ID（`request`）、`account_id` か `domain`、カーソル（`before`・`before_account`）、残りの件数（`remaining`）で、冪等キーは `refetch_statuses:<request>:<before_account>:<before>` です。
+- ジョブ `federation.refetch_walk` は、アカウントかドメインの投稿をたどって `federation.refetch_status` を投入します。ペイロードは頼んだ監査ログの ID（`request`）、`account_id` か `domain`、カーソル（`before`・`before_account`）、残りの件数（`remaining`）で、冪等キーは `refetch_statuses:<request>:<before_account>:<before>` です。
   - アカウントは、削除されていないリモートの投稿を新しい順（`content.LiveRemoteStatusIDs`）に 100 件（`RefetchBatch`）ずつ、合わせて 1,000 件（`RefetchMaxStatuses`）までたどります。
   - ドメインは、そのドメインのリモートのアカウントを新しい順（`account.Search`）に 5 件（`RefetchAccountsBatch`）ずつ読み、アカウントごとに新しい投稿 20 件（`RefetchStatusesPerAccount`）まで、合わせて 1,000 件までたどります。
   - 続きのジョブは 1 分後（`RefetchBatchInterval`）に実行し、1 つのサーバーへの取得が一度に集まらないようにします。
@@ -368,7 +368,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `content.favourited` / `content.unfavourited`（リモートの投稿だけ） | `Like` / `Undo Like`（本文は projector がイベントから組み立てて保存する。Mastodon と同じく宛先を持たない） | 投稿の作者の inbox |
 | `content.reacted` / `content.unreacted`（ローカルの人のリモートの投稿へのものだけ） | `content` と `_misskey_reaction`（同じ文字列。Unicode 絵文字か `:shortcode:`）を付けた `Like`、カスタム絵文字なら `tag` に `Emoji` を 1 つ（ADR-0051 の形）。`@context` に `misskey` と `_misskey_reaction` を足す。`Undo Like` はその `Like` を埋め込む（ADR-0052 §3。お気に入りと同じ `Like` の枠の活動） | 投稿の作者の inbox |
 | `content.poll_voted`（リモートの投票だけ） | 選んだ選択肢ごとに `Create`。`object` は `Note`（`id` は回答の `uri`、`name` は選択肢の題、`inReplyTo` は `Question`、`attributedTo` は回答した人、`to` は投票の作者）で、`Create` の `id` は `{Note}/activity`。Mastodon が送る形で、Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial は回答として数える（FR-112）。本文は projector がイベントから組み立てて保存する | 投稿の作者の inbox |
-| `content.poll_voted`（ローカルの投票。ローカルとリモートのアカウントの回答）、`content.poll_closed`（ローカルの投票） | ジョブ `federation.poll_update` を、回答なら 3 分後（`PollUpdateDelay`。冪等キーは投票ごとで、その間の回答は 1 つの `Update` にまとまる）に、締め切りならすぐに（冪等キーは回答のジョブと別で、待っている回答のジョブの後ろに並ばない）動かす。ジョブは投票が投稿の現在版のものなら、その版の `Update` をジョブの ID を活動の ID として記録し、やり直しで別の `Update` を作らない。`Question` の票数は展開がその時点の集計から組み立てる | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー）+ 回答したリモートのアカウント |
+| `content.poll_voted`（ローカルの投票。ローカルとリモートのアカウントの回答）、`content.poll_closed`（ローカルの投票） | ジョブ `federation.update_poll` を、回答なら 3 分後（`PollUpdateDelay`。冪等キーは投票ごとで、その間の回答は 1 つの `Update` にまとまる）に、締め切りならすぐに（冪等キーは回答のジョブと別で、待っている回答のジョブの後ろに並ばない）動かす。ジョブは投票が投稿の現在版のものなら、その版の `Update` をジョブの ID を活動の ID として記録し、やり直しで別の `Update` を作らない。`Question` の票数は展開がその時点の集計から組み立てる | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー）+ 回答したリモートのアカウント |
 | `graph.follow_requested` / `graph.followed`（相手がリモート） | `Follow` | 相手の inbox |
 | `graph.follow_terminated`（`unfollowed` / `blocked` / `moderation` / `moved`、自分がフォローした相手がリモート） | `Undo Follow` | 相手の inbox |
 | `graph.followed` / `graph.follow_accepted` / `graph.follow_rejected`（フォローした人がリモート。相手の `Accept` / `Reject` によるものを除く） | `Accept` / `Reject` | フォローした人の inbox |
@@ -542,7 +542,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
     期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
     取得したファイルは中身で判定した形式とサイズの上限の検査を通したうえで Blob に最後まで書いてから返すので、上限を超えるもの・途中で切れたものは残りも返りもしません。
   - 返した時刻（`last_accessed_at`）は 1 時間より細かくは書きません。返すたびにデータベースへ書かないためです。
-  - 1 時間ごとのジョブ `media.cleanup_remote` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
+  - 1 時間ごとのジョブ `media.purge_remote_cache` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
     容量の上限は Blob の費用に効くので、インスタンス設定ではなく運用者の設定です。1 回の実行で見る行数には上限があり、残りは次の実行が消します。
     行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録してから Blob を消すので、Blob の削除に失敗してもキーが残って次の実行が消し直し、どこからも指されない Blob は残りません。
     行は読んだときの `fetched_at` のままのときだけ消すので、その間に取得し直したものは行も Blob も残ります。
@@ -594,7 +594,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   カードは連合しません。
 - **クローラーのルール**: 管理者がドメインごとに置くルール（`link_card_domain_rules`、[ADR-0132](../adr/0132-link-card-domain-rules.md)）は、処分と同じホストに当たり、親ドメインにも効きます。`no_fetch` は `suspend` と同じく取得せず既存のカードを出さず、`no_images` は `reject_media` と同じく画像を取得せず既存の画像を出しません。
   リダイレクトの各段にも当て、飛ばした取得は失敗の記憶に書きません。メディアプロキシは止めたホストのカードの画像を配りません。ルールは連合とカード以外のメディアに効きません。
-- **保持**: 1 日 1 回のジョブ `content.cleanup_link_cards` が、どの投稿からも参照されず取得から 14 日を過ぎたカードと、どのカードも使わない画像（`link_card_media` と `media_files`）を消します（FR-803）。
+- **保持**: 1 日 1 回のジョブ `content.purge_link_cards` が、どの投稿からも参照されず取得から 14 日を過ぎたカードと、どのカードも使わない画像（`link_card_media` と `media_files`）を消します（FR-803）。
 - インスタンス設定 `link_cards_enabled`（既定 `true`）が偽のとき、ジョブは何もせず、API はカードを返しません。
 
 ## 10. コレクションとオブジェクトの GET
@@ -831,7 +831,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 
 ### 15.2 クローズの配送
 
-- `closed` を記録したトランザクションで、projector がジョブ `instance.closure_fanout` を outbox に積みます（`appfederation.ClosureDeletes`）。
+- `closed` を記録したトランザクションで、projector がジョブ `instance.closure_delete_actors` を outbox に積みます（`appfederation.ClosureDeletes`）。
 - ジョブはローカルのアカウントを ID 順に 100 件ずつ読み、インスタンス Actor と削除済みを除いて（凍結中は含む）、1 つのトランザクションで、アカウントごとに `closure_deletes` の行と `Delete`（Actor）の `outbound_activities` を記録し、その展開（§7.2）と次のページを積みます。ライフサイクル（`account_lifecycle_events`）は変えず、投稿ごとの `Delete` は送りません。
 - 1 巡目は移転していないアカウント、2 巡目は移転済みのアカウント（`account_move_states` に行がある。ADR-0089）です。移転済みの `Delete` は最後のフェーズにまとまり、それまでの間、移転済みの Actor の GET は `movedTo` を返し続けます。
 - 次のページは、前のページまでの `Delete` の展開がすべて終わり（`outbound_fanout_completions`）、終わっていない配送が 10,000 件以下になってから進みます。条件を満たさないページは、1 分後の同じページのジョブを積み直して待ちます。
@@ -840,7 +840,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 
 ### 15.3 完了と進捗
 
-- 10 分ごとの定期ジョブ `instance.closure_completion` が、クローズの配送中に次をすべて確かめたら、`delivery_completed` を記録します（監査ログの `service_closure_delivery_completed`、操作した人はサーバー自身）。
+- 10 分ごとの定期ジョブ `instance.check_closure_delivery` が、クローズの配送中に次をすべて確かめたら、`delivery_completed` を記録します（監査ログの `service_closure_delivery_completed`、操作した人はサーバー自身）。
   - 対象のローカルのアカウントすべてに `closure_deletes` がある
   - どの `Delete` も展開が終わっている
   - どの配送も終わっている: 最後の試行が `succeeded` / `permanent_failure` / `skipped`、または `retryable_failure` で試行を使い切った（dead job。9 回）

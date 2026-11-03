@@ -23,7 +23,7 @@ const (
 	// fan-out pages, the delivery, and the peer's deletion job.
 	closureDeleteTimeout = 3 * time.Minute
 	// closureCompletionTimeout bounds the wait for delivery_completed: the completion check runs
-	// every 10 minutes (instance.closure_completion) once every delivery has ended.
+	// every 10 minutes (instance.check_closure_delivery) once every delivery has ended.
 	closureCompletionTimeout = 15 * time.Minute
 	// closureQuiet is how long a peer must send this server nothing, after it took the Delete and
 	// its user posted again, for its deliveries to count as stopped: it covers the first retry of

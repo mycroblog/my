@@ -559,7 +559,7 @@ func paymentRuns(t *testing.T, newHarness PaymentFactory) {
 		t.Errorf("LastReconcileRun of none = %v, want ErrNotFound", err)
 	}
 	partial := supporters.ReconcileRun{
-		ID: ids.NewID(), Provider: paymentProvider, RunKey: "schedule:supporters.payment_reconcile:1", Outcome: supporters.ReconcilePartial,
+		ID: ids.NewID(), Provider: paymentProvider, RunKey: "schedule:supporters.reconcile_payments:1", Outcome: supporters.ReconcilePartial,
 		ErrorKind: supporters.ErrorRequestCap, ChangesUntil: paymentNow.Add(-time.Hour), ChangesCursor: "chg:100", MoneyCursor: "txn:5",
 		SweepCursor: "sub:200", Requests: 1000, CheckedSubscriptions: 950, CorrectedSubscriptions: 3, OccurredAt: paymentNow,
 	}

@@ -62,7 +62,7 @@ CREATE TABLE outbound_activities (
 );
 CREATE UNIQUE INDEX outbound_activities_activity_uri ON outbound_activities (activity_uri);
 CREATE INDEX outbound_activities_object_type_object_id_id ON outbound_activities (object_type, object_id, id);
--- The retention purge (federation.purge): every activity but a status's Create goes after 30 days,
+-- The retention purge (federation.purge_records): every activity but a status's Create goes after 30 days,
 -- and a Create when its status or actor is deleted.
 CREATE INDEX outbound_activities_retention ON outbound_activities (created_at, id) WHERE NOT (object_type = 'status' AND type = 'Create');
 CREATE INDEX outbound_activities_deletes ON outbound_activities (created_at) WHERE type = 'Delete';

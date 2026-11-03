@@ -32,7 +32,7 @@ const (
 	JobFetchLinkCard = "content.fetch_link_card"
 	// JobCleanupLinkCards deletes the cards that no status refers to and the images that no card
 	// uses (FR-803); no payload.
-	JobCleanupLinkCards = "content.cleanup_link_cards"
+	JobCleanupLinkCards = "content.purge_link_cards"
 	// LinkCardCleanupInterval is the period of JobCleanupLinkCards.
 	LinkCardCleanupInterval = 24 * time.Hour
 	// LinkCardFailureTTL is how long a failed fetch of a URL is remembered, so that the URL is

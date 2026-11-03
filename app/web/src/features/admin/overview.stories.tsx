@@ -19,7 +19,7 @@ const troubled = [
           { state: "queued", type: "federation.deliver", count: 1284 },
           { state: "running", type: "media.process", count: 3 },
           { state: "dead", type: "federation.deliver", count: 41 },
-          { state: "dead", type: "kv.cleanup", count: 2 },
+          { state: "dead", type: "kv.purge_expired", count: 2 },
         ],
         waits: [
           { type: "federation.deliver", oldest_ready_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
