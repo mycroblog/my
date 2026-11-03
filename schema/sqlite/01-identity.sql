@@ -368,6 +368,8 @@ CREATE TABLE oauth_authorization_codes (
   issued_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL
 ) STRICT;
+CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
+CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
 
 -- Event: a code was exchanged; the primary key makes it one-time. token_id is the first token
 -- of the family it started.
@@ -724,9 +726,7 @@ CREATE TABLE login_provider_revision_guilds (
   revision_id TEXT NOT NULL,
   guild_id TEXT NOT NULL CHECK (length(guild_id) BETWEEN 1 AND 20),
   PRIMARY KEY (revision_id, guild_id)
-);
-CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
-CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
+) STRICT;
 
 -- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds
 -- a row; the newest one is current. created_by_user_id is NULL for the CLI.
