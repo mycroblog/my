@@ -50,7 +50,7 @@ post:
     from reaching users who do not follow them; `reject_media` stops fetching its media;
     `reject_reports` drops the reports it sends; `force_sensitive` marks its media
     sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-    dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+    dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
     `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
     `manage_domains` permission.
   tags: [admin-moderation]

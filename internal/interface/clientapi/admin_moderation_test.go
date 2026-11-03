@@ -75,6 +75,9 @@ func (f *fakeModeration) DomainAction(_ context.Context, id string) (appmoderati
 }
 
 func (f *fakeModeration) IssueDomainAction(_ context.Context, in appmoderation.DomainActionInput) (moderation.DomainAction, error) {
+	if in.Domain == "self.example" {
+		return moderation.DomainAction{}, moderation.ErrOwnDomain
+	}
 	f.issued = append(f.issued, in)
 	a := moderation.DomainAction{
 		ID: f.id(), Domain: in.Domain, Kind: in.Kind, PublicComment: in.PublicComment, PrivateNote: in.PrivateNote,
@@ -303,6 +306,7 @@ func TestCreateDomainActionRejectsInvalidInput(t *testing.T) {
 	for body, want := range map[string]string{
 		`{"domain":"https://bad.example/","kind":"suspend"}`:                                                                                          "domain",
 		`{"domain":"bad..example","kind":"suspend"}`:                                                                                                  "domain",
+		`{"domain":"self.example","kind":"suspend"}`:                                                                                                  "domain",
 		`{"domain":"bad.example","kind":"silence","x":"invalid-on-purpose"}`:                                                                          "kind",
 		`{"domain":"bad.example","kind":"suspend","expires_in":0,"x":"invalid-on-purpose"}`:                                                           "expires_in",
 		`{"domain":"bad.example","kind":"suspend","expires_in":315360001,"x":"invalid-on-purpose"}`:                                                   "expires_in",

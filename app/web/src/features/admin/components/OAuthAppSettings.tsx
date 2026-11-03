@@ -212,9 +212,14 @@ function ClientRow({ client, actions }: { client: OAuthClient; actions: OAuthApp
               {client.website}
             </Text>
           )}
-          {client.owner_id !== undefined && (
+          {client.owner !== undefined && (
             <Text size="sm" tone="muted" wrap="anywhere">
-              {t("client:admin.oauth_apps.owner", { id: client.owner_id })}
+              {t("client:admin.oauth_apps.owner", { handle: `\u2068@${client.owner.acct}\u2069` })}
+            </Text>
+          )}
+          {client.owner_deleted && (
+            <Text size="sm" tone="muted" wrap="anywhere">
+              {t("client:admin.oauth_apps.owner.deleted")}
             </Text>
           )}
         </Stack>

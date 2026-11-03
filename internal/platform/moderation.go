@@ -39,7 +39,8 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 		Retention: retentionSettings{a},
 		Follows:   moderationFollows{a}, Directory: a.Accounts, Outbox: outbox,
 		Emails: moderationEmails{a}, CanonicalDomain: federation.CanonicalHost,
-		Evidence: moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
+		LocalDomains: []string{a.Config.Host, a.Config.AccountDomain},
+		Evidence:     moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
 	})
 	a.ModerationPolicy = moderation.NewFederationPolicy(repo, a.Clock)
 	a.AccountPolicy = moderation.NewAccountPolicy(repo, a.Accounts, a.Clock)

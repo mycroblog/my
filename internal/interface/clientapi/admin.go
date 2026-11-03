@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -82,8 +81,16 @@ func (s *Server) requirePermission(ctx context.Context, p identity.Permission) (
 	return &pr, nil
 }
 
-// normalizeDomain returns the form in which the federation module keys a server's domain.
-func normalizeDomain(d string) string { return strings.ToLower(d) }
+// instanceDomain returns the canonical host of the domain of a path, the form in which the
+// federation module keys a server, or the 400 of a value that is not a host.
+func (s *Server) instanceDomain(ctx context.Context, raw string) (string, *problem) {
+	domain, err := appfederation.CanonicalHost(raw)
+	if err != nil {
+		p := s.invalidParameterResponse(ctx, "domain")
+		return "", &p
+	}
+	return domain, nil
+}
 
 func newAdminInstanceHealth(h federation.InstanceHealth) AdminInstanceHealth {
 	out := AdminInstanceHealth{Domain: h.Domain, State: AdminInstanceState(h.State), FailureDays: h.FailureDays}
@@ -140,7 +147,11 @@ func (s *Server) GetInstanceHealth(ctx context.Context, req GetInstanceHealthReq
 	} else if p != nil {
 		return GetInstanceHealthdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	h, err := s.o.InstanceHealth.Find(ctx, normalizeDomain(req.Domain))
+	domain, p := s.instanceDomain(ctx, req.Domain)
+	if p != nil {
+		return GetInstanceHealthdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	h, err := s.o.InstanceHealth.Find(ctx, domain)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: health of %s: %w", req.Domain, err)
 	}
@@ -162,7 +173,11 @@ func (s *Server) ListInstanceAvailabilityEvents(ctx context.Context, req ListIns
 	if q.problem != nil {
 		return ListInstanceAvailabilityEventsdefaultApplicationProblemPlusJSONResponse(*q.problem), nil
 	}
-	evs, err := s.o.InstanceHealth.Events(ctx, normalizeDomain(req.Domain), q.before, q.limit+1)
+	domain, p := s.instanceDomain(ctx, req.Domain)
+	if p != nil {
+		return ListInstanceAvailabilityEventsdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	evs, err := s.o.InstanceHealth.Events(ctx, domain, q.before, q.limit+1)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: availability events of %s: %w", req.Domain, err)
 	}
@@ -192,7 +207,11 @@ func (s *Server) MarkInstanceAvailable(ctx context.Context, req MarkInstanceAvai
 	if err != nil {
 		return nil, err
 	}
-	h, err := s.o.InstanceHealth.MarkAvailable(ctx, normalizeDomain(req.Domain), v.UserID)
+	domain, p := s.instanceDomain(ctx, req.Domain)
+	if p != nil {
+		return MarkInstanceAvailabledefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	h, err := s.o.InstanceHealth.MarkAvailable(ctx, domain, v.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: mark %s available: %w", req.Domain, err)
 	}

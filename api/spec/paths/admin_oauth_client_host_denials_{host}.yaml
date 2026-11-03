@@ -6,9 +6,9 @@ delete:
   summary: Lift the denial of a host
   description: |
     The Client ID Metadata Documents on the host are accepted again. The tokens that the
-    denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-    is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-    permission.
+    denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+    cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+    log. Needs the `manage_oauth_apps` permission.
   tags: [admin-server]
   security:
     - oauth2: ["admin:write"]

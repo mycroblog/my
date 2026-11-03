@@ -101,6 +101,17 @@ func (s *Server) ListBillingImports(ctx context.Context, _ ListBillingImportsReq
 	return ListBillingImports200JSONResponse{Body: out, Headers: ListBillingImports200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
+// nextHourProblem is the 429 of an operation that runs once an hour, with the seconds until the
+// next hour in Retry-After.
+func (s *Server) nextHourProblem(ctx context.Context) problem {
+	l := s.Localizer(ctx)
+	now := time.Now().UTC()
+	wait := int(now.Truncate(time.Hour).Add(time.Hour).Sub(now).Seconds()) + 1
+	p := s.problem(ctx, http.StatusTooManyRequests, ProblemTypeBlank, l.ServerErrorsRateLimited(), l.ServerErrorsRateLimitedDetail(wait))
+	p.Headers.RetryAfter = &wait
+	return p
+}
+
 // RunBillingImport serves POST /api/v1/admin/billing_imports/{source}/runs.
 func (s *Server) RunBillingImport(ctx context.Context, req RunBillingImportRequestObject) (RunBillingImportResponseObject, error) {
 	v, p, err := s.requireBillingImports(ctx)
@@ -115,11 +126,7 @@ func (s *Server) RunBillingImport(ctx context.Context, req RunBillingImportReque
 	case errors.Is(err, appfinance.ErrUnknownSource):
 		return RunBillingImportdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appfinance.ErrImportTooSoon):
-		l := s.Localizer(ctx)
-		now := time.Now().UTC()
-		wait := int(now.Truncate(time.Hour).Add(time.Hour).Sub(now).Seconds()) + 1
-		return RunBillingImportdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusTooManyRequests, ProblemTypeBlank, l.ServerErrorsRateLimited(), l.ServerErrorsRateLimitedDetail(wait))), nil
+		return RunBillingImportdefaultApplicationProblemPlusJSONResponse(s.nextHourProblem(ctx)), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: run billing import of %s: %w", req.Source, err)
 	}

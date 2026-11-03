@@ -32,6 +32,8 @@ const (
 	DomainBlockNoAction DomainBlockImportStatus = "no_action"
 	// DomainBlockDuplicate: an earlier row has the same domain in canonical form.
 	DomainBlockDuplicate DomainBlockImportStatus = "duplicate"
+	// DomainBlockOwnDomain: the domain is this instance's, which takes no domain action.
+	DomainBlockOwnDomain DomainBlockImportStatus = "own_domain"
 	// DomainBlockInvalid: the domain, the severity, or the comment is not valid.
 	DomainBlockInvalid DomainBlockImportStatus = "invalid"
 )
@@ -132,6 +134,9 @@ func (s *Service) planDomainBlock(b moderation.DomainBlock, invalid bool, seen m
 	b.Domain = domain
 	if moderation.CheckDomainActionTexts(b.PublicComment, "") != nil {
 		return b, DomainBlockInvalid, nil
+	}
+	if s.ownDomain(domain) {
+		return b, DomainBlockOwnDomain, nil
 	}
 	if seen[domain] {
 		return b, DomainBlockDuplicate, nil

@@ -95,8 +95,12 @@ func TestBillingImports(t *testing.T) {
 		{http.MethodPost, "/admin/billing_imports/aws/runs", "bob-admin", http.StatusForbidden},
 		{http.MethodGet, "/admin/billing_imports", "bob-admin", http.StatusForbidden},
 	} {
-		if res := e.admin(t, tc.method, tc.path, tc.token, nil); res.StatusCode != tc.status {
+		res := e.admin(t, tc.method, tc.path, tc.token, nil)
+		if res.StatusCode != tc.status {
 			t.Errorf("%s %s with %s = %d, want %d", tc.method, tc.path, tc.token, res.StatusCode, tc.status)
+		}
+		if got := res.Header.Get("Retry-After"); tc.status == http.StatusTooManyRequests && (got == "" || got == "0") {
+			t.Errorf("%s %s = 429 with Retry-After %q", tc.method, tc.path, got)
 		}
 	}
 	if want := "aws by " + userOf(aliceAccountID); len(imports.requested) != 1 || imports.requested[0] != want {

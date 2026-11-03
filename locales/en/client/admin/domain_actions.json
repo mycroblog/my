@@ -347,6 +347,10 @@
     "defaultMessage": "Line {line, number}. {reason}",
     "description": "A row of a domain block CSV that takes no action. {line} is its line; {reason} why, such as Already in effect."
   },
+  "admin.domain_actions.csv.status.own_domain": {
+    "defaultMessage": "This server's domain",
+    "description": "Why a row of a domain block CSV takes no action: the domain is the domain of this server."
+  },
   "admin.domain_actions.csv.status.already_applied": {
     "defaultMessage": "Already in effect",
     "description": "Why a row of a domain block CSV takes no action: actions in effect on the domain or a parent domain cover it."
