@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -38,7 +39,29 @@ var gen = system.IDGenerator{}
 var (
 	useDispatch bool
 	useShared   bool
+
+	flagTxSecond bool
+	flagHold     time.Duration
+	flagLease    time.Duration
+	flagTypes    int
 )
+
+// typeName is one of the skipped-first backlog's other types.
+func typeName(i int) string { return fmt.Sprintf("t%02d", i) }
+
+// timedSource measures the claim.
+type timedSource struct {
+	queue.Source
+	n, sum atomic.Int64
+}
+
+func (t *timedSource) Claim(ctx context.Context, worker string, now time.Time, lease time.Duration) (queue.Job, bool, error) {
+	start := time.Now()
+	j, ok, err := t.Source.Claim(ctx, worker, now, lease)
+	t.n.Add(1)
+	t.sum.Add(int64(time.Since(start)))
+	return j, ok, err
+}
 
 // pollGate lets one slot poll while no job is due; the others wait until it finds one. Claims stay
 // parallel while there is work.
@@ -130,8 +153,13 @@ func main() {
 	perHost := flag.Int("per-host", 0, "MaxConnsPerHost of the HTTP client; 0 is none")
 	dispatch := flag.Bool("dispatch", false, "one claim loop hands jobs to the slots, instead of a runner per slot")
 	shared := flag.Bool("shared-poll", false, "a runner per slot, but one slot polls while the queue is empty")
+	txSecond := flag.Bool("tx-second", false, "the handler reads on a second connection while it holds a transaction")
+	hold := flag.Duration("hold", 0, "how long the handler holds the transaction before that read")
+	lease := flag.Duration("lease", 0, "the lease, and so the handler's deadline; 0 is the default")
+	types := flag.Int("types", 0, "claim only the first N of t01..t82 with the real OnlyTypes; 0 claims any")
 	flag.Parse()
 	useShared = *shared
+	flagTxSecond, flagHold, flagLease, flagTypes = *txSecond, *hold, *lease, *types
 	useDispatch = *dispatch
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -141,6 +169,8 @@ func main() {
 		err = remote(ctx, *addr)
 	case "schema":
 		err = applySchema(ctx, *dialect, *dsn)
+	case "backlog":
+		err = backlog(ctx, *dsn, *delay)
 	case "load":
 		err = load(ctx, *dialect, *dsn, *jobs, *delay)
 	case "worker":
@@ -220,6 +250,43 @@ func load(ctx context.Context, dialect, dsn string, n int, delay time.Duration) 
 	return err
 }
 
+// backlog loads ADR-0138's distribution: 900,000 jobs of the dominant type, due first, and 100,000
+// of 82 others: 20,000 each of t01..t03, so that a worker of 1 or 3 types does not run out, and the
+// rest over t04..t82.
+func backlog(ctx context.Context, dsn string, delay time.Duration) error {
+	payload, _ := json.Marshal(map[string]string{"d": delay.String()})
+	d, err := postgres.Open(ctx, dsn, uow.Options{})
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	oldest := time.Now().Add(-2 * time.Hour).UTC()
+	newer := time.Now().Add(-time.Minute).UTC()
+	if _, err := d.Pool().Exec(ctx, `INSERT INTO jobs (id, type, payload, attempt, run_at, created_at)
+		SELECT gen_random_uuid(), 'federation.deliver', $1::bytea, 0, $2::timestamptz + (n * interval '1 millisecond'), $2::timestamptz
+		FROM generate_series(1, 900000) AS n`, payload, oldest); err != nil {
+		return err
+	}
+	add := func(typ string, n int) error {
+		_, err := d.Pool().Exec(ctx, `INSERT INTO jobs (id, type, payload, attempt, run_at, created_at)
+			SELECT gen_random_uuid(), $1, $2::bytea, 0, $3::timestamptz + (n * interval '1 millisecond'), $3::timestamptz
+			FROM generate_series(1, $4::int) AS n`, typ, payload, newer, n)
+		return err
+	}
+	for i := 1; i <= 3; i++ {
+		if err := add(typeName(i), 20000); err != nil {
+			return err
+		}
+	}
+	for i := 4; i <= 82; i++ {
+		if err := add(typeName(i), 40000/79+1); err != nil {
+			return err
+		}
+	}
+	_, err = d.Pool().Exec(ctx, `ANALYZE jobs`)
+	return err
+}
+
 func worker(ctx context.Context, dialect, dsn, addr string, slots, perHost int) error {
 	var (
 		src  queue.Source
@@ -243,15 +310,30 @@ func worker(ctx context.Context, dialect, dsn, addr string, slots, perHost int) 
 			return err
 		}
 		defer d.Close()
-		src = queuedb.NewPostgres(d, opts)
+		q := queuedb.NewPostgres(d, opts)
+		src = q
+		if flagTypes > 0 {
+			names := make([]string, 0, flagTypes)
+			for i := 1; i <= flagTypes; i++ {
+				names = append(names, typeName(i))
+			}
+			src = q.OnlyTypes(names)
+		}
 		read = func(ctx context.Context) error {
 			var one int
-			return d.Pool().QueryRow(ctx, `SELECT 1`).Scan(&one)
+			if !flagTxSecond {
+				return d.Pool().QueryRow(ctx, `SELECT 1`).Scan(&one)
+			}
+			// The shape of content/remote_reaction.go:108: a read on another connection inside Tx.
+			return d.Tx(ctx, func(uow.Tx) error {
+				time.Sleep(flagHold)
+				return d.Pool().QueryRow(ctx, `SELECT 1`).Scan(&one)
+			})
 		}
 	}
 	client := &http.Client{Transport: &http.Transport{MaxConnsPerHost: perHost, MaxIdleConns: 1000, MaxIdleConnsPerHost: 1000}}
 	reg := &queue.JobHandlerRegistry{}
-	reg.Register("spike.slow", func(ctx context.Context, j queue.Job) queue.Result {
+	handle := func(ctx context.Context, j queue.Job) queue.Result {
 		var p struct{ D string }
 		if err := json.Unmarshal(j.Payload, &p); err != nil {
 			return queue.Fail(err)
@@ -267,7 +349,19 @@ func worker(ctx context.Context, dialect, dsn, addr string, slots, perHost int) 
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 		return queue.Done()
-	})
+	}
+	reg.Register("spike.slow", handle)
+	reg.Register("federation.deliver", handle)
+	for i := 1; i <= 82; i++ {
+		reg.Register(typeName(i), handle)
+	}
+	timed := &timedSource{Source: src}
+	src = timed
+	defer func() {
+		if n := timed.n.Load(); n > 0 {
+			fmt.Fprintf(os.Stderr, "claims=%d claim_avg_ms=%.2f\n", n, float64(timed.sum.Load())/float64(n)/1e6)
+		}
+	}()
 	// Errors go to stderr, for the driver to count; a run's line is info.
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	if useDispatch {
@@ -278,7 +372,7 @@ func worker(ctx context.Context, dialect, dsn, addr string, slots, perHost int) 
 	gate := &pollGate{wake: make(chan struct{})}
 	for range slots {
 		wg.Add(1)
-		r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Logger: logger})
+		r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Logger: logger, Lease: flagLease})
 		go func() {
 			defer wg.Done()
 			if useShared {
