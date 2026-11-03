@@ -547,6 +547,7 @@ CREATE TABLE custom_emojis (
   created_at INTEGER NOT NULL
 ) STRICT;
 CREATE UNIQUE INDEX custom_emojis_shortcode_domain ON custom_emojis (shortcode, domain);
+CREATE INDEX custom_emojis_domain_shortcode ON custom_emojis (domain, shortcode);
 CREATE UNIQUE INDEX custom_emojis_uri ON custom_emojis (uri);
 -- The creators' own emoji (/custom_emojis/mine).
 CREATE INDEX custom_emojis_created_by_user_id_id ON custom_emojis (created_by_user_id, id);
