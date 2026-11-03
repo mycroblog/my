@@ -19,6 +19,9 @@ It does not apply the schema: apply it with `my schema apply` before starting (s
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503.
 
+The first `my serve` or `my` command that uses the database records `host` and `account_domain` in it. When the configuration differs from the recorded values, `my serve` logs `start failed` with both pairs of values and exits with code 1, and the commands print the same error. The exceptions are `my schema apply` and `my db backup`, which do not check, and the maintenance mode, which does not read the database. `my config check -instance` and `my db upgrade -check` check but record nothing.
+A process that could not read the database when it started is not ready until it can. If it then finds different values, it stops with the same error.
+
 In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
 `my serve` logs both as warnings when it starts but starts anyway, so run `my config check` as a step of the deployment.
 The [production checklist](production-checklist.md) lists the checks and what to verify by hand before going live.
@@ -527,6 +530,7 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 - When readiness is not met, the response is 503 with an RFC 9457 `application/problem+json` body.
   Its `title` is translated according to `Accept-Language` and contains no internal detail. The cause (a connection error, or the names of missing tables) goes to the log.
 - One readiness check is cut off after 3 seconds.
+- Readiness also requires that the database holds the configured `host` and `account_domain`, or that the process could record them.
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
   Column and index differences are not checked; `scripts/task.sh db:check` detects differences.

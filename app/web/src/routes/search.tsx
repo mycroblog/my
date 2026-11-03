@@ -13,7 +13,7 @@ const searchSchema = z.object({
 
 /** Finds an account by its handle or URL and opens its profile (FR-305). */
 export const Route = createFileRoute("/search")({
-  staticData: { title: "client:search.title", hideHeading: true },
+  staticData: { reloadSafe: true, title: "client:search.title", hideHeading: true },
   validateSearch: searchSchema,
   component: SearchPage,
 });

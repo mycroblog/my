@@ -1083,6 +1083,11 @@ func remoteReceivesActorDeletes(t *testing.T, e *remoteEnv) {
 		t.Errorf("after the Update: profile %+v, lifecycle %+v; want revision 1, deleted", got.Profile, got.Lifecycle)
 	}
 
+	// Nor does a fetch of its document, which its server still serves.
+	if got, err := e.actors.Refresh(ctx, a.Account.URI); err != nil || !got.Deleted() || got.Profile == nil || got.Profile.Seq != 1 {
+		t.Errorf("Refresh after the Delete = %+v, %v; want the deleted actor as it was", got, err)
+	}
+
 	// The Delete of an actor this server never knew is a no-op.
 	unknown := bytes.ReplaceAll(fixtureActor(t, "mastodon/circa-2018/delete-person"), []byte("http://mastodon.example.org"), []byte("https://mastodon.example.org"))
 	if err := e.actors.ReceiveActorDelete(ctx, e.receivedActivity(t, unknown)); err != nil {

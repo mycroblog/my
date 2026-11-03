@@ -16,7 +16,7 @@ const paramsSchema = z.object({ id: z.string().min(1).max(64) });
  * so it needs a session. The `_` keeps the page out of the list's layout at `/announcements`.
  */
 export const Route = createFileRoute("/announcements_/$id")({
-  staticData: { title: "client:announcements.title", back: true, backTo: "/announcements" },
+  staticData: { reloadSafe: true, title: "client:announcements.title", back: true, backTo: "/announcements" },
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: async ({ context: { queryClient, api }, params: { id } }) => {

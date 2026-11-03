@@ -39,7 +39,7 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // (instanceLinkCardDomainCases), the theme (instanceThemeCases), the brand
 // images (instanceBrandCases), the
 // announcements (instanceAnnouncementCases), the service closure (instanceClosureCases), and the
-// secrets of the instance (instanceSecretCases).
+// secrets of the instance (instanceSecretCases), and its domains (instanceDomainCases).
 func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -65,6 +65,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	cases = append(cases, instanceAnnouncementCases...)
 	cases = append(cases, instanceClosureCases...)
 	cases = append(cases, instanceSecretCases...)
+	cases = append(cases, instanceDomainCases...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newInstanceEnv(t, newHarness)) })
 	}

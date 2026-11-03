@@ -97,7 +97,7 @@ func Keys() []string {
 var schema = []field{
 	{
 		key:      "host",
-		doc:      "Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards.",
+		doc:      "Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards: the server and the `my` commands refuse to run when the configuration differs from the recorded value.",
 		required: true,
 		check:    checkDomain,
 		set:      func(c *Config, v string) { c.Host = v },
@@ -105,7 +105,7 @@ var schema = []field{
 	{
 		key:    "account_domain",
 		defDoc: "value of `host`",
-		doc:    "Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards.",
+		doc:    "Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards: the server and the `my` commands refuse to run when the configuration differs from the recorded value.",
 		check:  checkDomain,
 		set:    func(c *Config, v string) { c.AccountDomain = v },
 	},

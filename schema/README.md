@@ -33,8 +33,9 @@ SQLite:
 PostgreSQL:
 
 - id is uuid (ADR-0078; its byte order is time order for UUIDv7, and Go sees it as a string), except in the columns that
-  hold a value which is not always a UUID the server generated (provider and webhook identifiers, client_id, audit
-  target_id, emoji_key, run keys, cursors), which stay text COLLATE "C"; string, text, iri, lang, and enum are text;
+  hold a value which is not always a UUID the server generated (provider and webhook identifiers, the public
+  client_id of oauth_clients and login_provider_revisions, audit target_id, emoji_key, run keys, cursors), which stay text
+  COLLATE "C"; string, text, iri, lang, and enum are text;
   timestamp is timestamptz; bool is boolean; bytes is bytea.
 - Atlas Community Edition does not manage extensions, sequences, views, or triggers; keep them out of the schema.
   Extensions go in `postgres.bootstrap.sql`.

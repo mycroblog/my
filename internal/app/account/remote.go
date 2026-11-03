@@ -146,7 +146,8 @@ func ActorTypeOf(as2Type string) account.ActorType {
 // and its remote subtype the first time, a snapshot when the document changed, its head, a
 // profile revision when the sanitized profile changed, its keys (a key whose fingerprint changed
 // under the same key ID replaces the old one, which is revoked, and so is a key the document no
-// longer declares), and the handle check when its result changed. It fails with ErrNotRemote
+// longer declares), and the handle check when its result changed. It fails with ErrActorDeleted
+// for an actor that is deleted, whose data the erasure removes for good, and with ErrNotRemote
 // when the URI is a local account's.
 func (s *Service) UpsertRemoteActor(ctx context.Context, tx uow.Tx, in RemoteActorInput) (account.Account, error) {
 	if s.d.Sanitizer == nil {
@@ -174,6 +175,14 @@ func (s *Service) UpsertRemoteActor(ctx context.Context, tx uow.Tx, in RemoteAct
 		return account.Account{}, err
 	case a.IsLocal():
 		return account.Account{}, fmt.Errorf("%s: %w", in.URI, ErrNotRemote)
+	default:
+		switch st, err := repo.LifecycleState(ctx, tx, a.ID); {
+		case errors.Is(err, ErrNotFound):
+		case err != nil:
+			return account.Account{}, err
+		case st.State == account.StateDeleted:
+			return account.Account{}, fmt.Errorf("%s: %w", in.URI, ErrActorDeleted)
+		}
 	}
 
 	snap, err := s.recordSnapshot(ctx, tx, a.ID, in, now)

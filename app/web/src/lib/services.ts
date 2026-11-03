@@ -37,7 +37,7 @@ function assignLocation(url: URL): void {
 export type PageNavigation = {
   /** Leaves the app for a URL outside it; `location.assign` by default. */
   leaveApp?: LeaveApp | undefined;
-  /** Loads the page again (the end of a maintenance); `location.reload` by default. */
+  /** Loads the page again (the end of a maintenance, a required update); `location.reload` by default. */
   reload?: (() => void) | undefined;
 };
 
@@ -58,7 +58,7 @@ export function createAppServices(
   const session = new Session({ apiOrigin: config.apiOrigin, maintenance });
   forgetUserDataOnUserChange(session, queryClient);
   refetchOnLocaleChange(locale, queryClient);
-  const api = createApi({ apiOrigin: config.apiOrigin, session, locale, maintenance });
+  const api = createApi({ apiOrigin: config.apiOrigin, session, locale, maintenance, reload });
   // The mode can narrow while a page is open; a refusal for it brings the app's offer up to date.
   refetchInstanceOnFederationRestricted(queryClient, api);
   const errors = new ErrorReporter({ api, apiOrigin: config.apiOrigin, release: config.version });

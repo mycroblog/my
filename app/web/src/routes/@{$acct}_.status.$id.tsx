@@ -17,7 +17,7 @@ const paramsSchema = z.object({ acct: z.string().min(1), id: z.string().min(1) }
 
 /** A post and the thread around it (FR-113). */
 export const Route = createFileRoute("/@{$acct}_/status/$id")({
-  staticData: { title: "client:status.title", back: true },
+  staticData: { reloadSafe: true, title: "client:status.title", back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   loader: async ({ context: { queryClient, api }, params: { id } }) => {
     // The thread starts loading with the post but does not hold the page back; its failure shows in its

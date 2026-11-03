@@ -208,7 +208,7 @@ An instance setting that has never been set reads as its default, which is defin
 
 ### `host`
 
-Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards.
+Domain that serves the instance. Every ActivityPub `id` is under `https://{host}/`. A port is allowed for local development. Recorded in the database on first start and must not change afterwards: the server and the `my` commands refuse to run when the configuration differs from the recorded value.
 
 - Environment variable: `MY_HOST`
 - Default: none
@@ -216,7 +216,7 @@ Domain that serves the instance. Every ActivityPub `id` is under `https://{host}
 
 ### `account_domain`
 
-Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards.
+Domain of user handles (`@alice@{account_domain}`). Defaults to `host`. When it differs, `account_domain` must redirect `/.well-known/webfinger`, `/.well-known/host-meta`, and `/.well-known/nodeinfo` to `host`. Recorded in the database on first start and must not change afterwards: the server and the `my` commands refuse to run when the configuration differs from the recorded value.
 
 - Environment variable: `MY_ACCOUNT_DOMAIN`
 - Default: value of `host`

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -70,7 +71,8 @@ func TestClientAPI(t *testing.T) {
 	}
 	for k, want := range map[string]string{
 		"Access-Control-Allow-Origin":   webOrigin,
-		"Access-Control-Expose-Headers": "Content-Language, X-Request-Id, WWW-Authenticate, Retry-After, RateLimit, RateLimit-Policy",
+		"Access-Control-Expose-Headers": "Content-Language, X-Request-Id, WWW-Authenticate, Retry-After, RateLimit, RateLimit-Policy, X-Web-Client-Epoch",
+		"X-Web-Client-Epoch":            strconv.Itoa(clientapi.WebClientEpoch),
 		"Vary":                          "Origin",
 		"X-Content-Type-Options":        "nosniff",
 		"Cross-Origin-Resource-Policy":  "same-site",

@@ -23,7 +23,7 @@ func currentOAuthClient(ctx context.Context, q *sqlitegen.Queries, c identity.OA
 	switch {
 	case err == nil:
 		c = c.Revised(identity.OAuthClientRevision{
-			ID: rev.ID, ClientID: rev.ClientID, Name: rev.Name, Website: rev.Website.String, Scope: identity.Scope(rev.Scope),
+			ID: rev.ID, ClientID: rev.OauthClientID, Name: rev.Name, Website: rev.Website.String, Scope: identity.Scope(rev.Scope),
 			RevisedAt: fromMillis(rev.RevisedAt),
 		})
 	case !errors.Is(err, sql.ErrNoRows):
@@ -33,7 +33,7 @@ func currentOAuthClient(ctx context.Context, q *sqlitegen.Queries, c identity.OA
 	switch {
 	case err == nil:
 		c = c.WithSecret(identity.OAuthClientSecretRotation{
-			ID: rot.ID, ClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: fromMillis(rot.RotatedAt),
+			ID: rot.ID, ClientID: rot.OauthClientID, SecretHash: rot.SecretHash, RotatedAt: fromMillis(rot.RotatedAt),
 		})
 	case !errors.Is(err, sql.ErrNoRows):
 		return identity.OAuthClient{}, wrap(err, "get oauth client secret rotation")
@@ -88,7 +88,7 @@ func (r *IdentityRepository) InsertOAuthClientRevision(ctx context.Context, tx u
 		return err
 	}
 	err = q.InsertOAuthClientRevision(ctx, sqlitegen.InsertOAuthClientRevisionParams{
-		ID: rev.ID, ClientID: rev.ClientID, Name: rev.Name, Website: toNullString(rev.Website), Scope: string(rev.Scope),
+		ID: rev.ID, OauthClientID: rev.ClientID, Name: rev.Name, Website: toNullString(rev.Website), Scope: string(rev.Scope),
 		RevisedAt: toMillis(rev.RevisedAt),
 	})
 	return wrap(err, "insert oauth client revision")
@@ -101,7 +101,7 @@ func (r *IdentityRepository) InsertOAuthClientSecretRotation(ctx context.Context
 		return err
 	}
 	err = q.InsertOAuthClientSecretRotation(ctx, sqlitegen.InsertOAuthClientSecretRotationParams{
-		ID: rot.ID, ClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: toMillis(rot.RotatedAt),
+		ID: rot.ID, OauthClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: toMillis(rot.RotatedAt),
 	})
 	return wrap(err, "insert oauth client secret rotation")
 }

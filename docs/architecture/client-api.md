@@ -142,7 +142,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - ADR-0019 §9 のセキュリティヘッダは `platform` が全応答に付けます。
 - CORS は `platform` が `/api/v1` 以下に適用し、設定 `web_origin` のオリジンだけを `Access-Control-Allow-Origin` に返します。
   `Access-Control-Allow-Credentials` は付けません（API は `Authorization: Bearer` だけで認証する）。
-  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy` を `Access-Control-Expose-Headers` で公開します。
+  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy`・`X-Web-Client-Epoch`（すべての応答に付く、Web クライアントの必要な更新の番号。ADR-0141 §4）を `Access-Control-Expose-Headers` で公開します。
 
 ### 2.5 使える OpenAPI 3.1 の部分集合
 
@@ -231,6 +231,9 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
   `push` は Web Push だけです。
 - ダイレクトメッセージ（公開範囲 `direct`）の読み取りは `read:direct`（`read` が許す）に分け、`read:statuses` だけのトークンには、タイムライン・投稿・スレッド・通知の投稿のどれにも `direct` の投稿を出しません
   （作者自身の投稿も同じ。可視性の判定は `content.CanView` のまま、`Viewer.DirectDenied` で絞ります）。送信は `write:statuses` のままです（[ADR-0090](../adr/0090-third-party-oauth-apps.md) §4）。
+  ブックマーク・投稿のソース・引用の一覧も同じです。
+- 書き込みのスコープは、作用する投稿を読めます（投稿への操作の応答は投稿の全体です）。投稿への操作は、トークンの `Viewer` で見えない投稿（消えた投稿を含む）には何も変えずに 404 を返します。
+  取り消しは、消えた投稿には何も変えずに 404 を返し、まだある投稿には見えなくても効きます。利用者の名前が消せないまま投稿に残らないようにするためです。見えない投稿の応答は同じ 404 で、投稿の内容を出しません（`Status` を返すと内容が見えてしまいます）。
 - 一次のクライアントだけのスコープ（`admin`・`admin:read`・`admin:write`・`write:supporters`、`identity.FirstPartyOnlyScope`）は、一次でないクライアントの認可要求に含まれたら `invalid_scope` にし、
   広いスコープ（`write`）経由でも一次でないクライアントのトークンには許しません。
   アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。

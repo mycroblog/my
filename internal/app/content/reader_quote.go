@@ -219,25 +219,29 @@ type QuotesPage struct {
 	Next string
 }
 
-// Quotes returns a page of the statuses that quote the local status statusID of the viewer
-// accountID, newest first (ADR-0069 §5): up to limit quotes older than the cursor before ("" for
-// the newest), with the state of each quote. Only the author lists them; another account's
-// status fails with ErrNotFound, like a missing one. Statuses the author may not see are left
-// out, so a page may be shorter than limit and still have a next page.
-func (r *Reader) Quotes(ctx context.Context, accountID, statusID, before string, limit int) (QuotesPage, error) {
-	viewer := Viewer{Kind: ViewerLocal, AccountID: accountID}
+// Quotes returns a page of the statuses that quote the local status statusID of the local
+// account viewer, newest first (ADR-0069 §5): up to limit quotes older than the cursor before
+// ("" for the newest), with the state of each quote. Only the author lists them; another
+// account's status, or one hidden from viewer, fails with ErrNotFound, like a missing one.
+// Statuses that viewer may not see are left out, so a page may be shorter than limit and still
+// have a next page; the last page has none.
+func (r *Reader) Quotes(ctx context.Context, viewer Viewer, statusID, before string, limit int) (QuotesPage, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return QuotesPage{}, err
 	}
-	if r.d.Quotes == nil || !st.IsLocal || st.AuthorAccountID != accountID {
+	if r.d.Quotes == nil || !st.IsLocal || st.AuthorAccountID != viewer.AccountID {
 		return QuotesPage{}, fmt.Errorf("quotes of %s: %w", statusID, ErrNotFound)
 	}
-	quotes, err := r.d.Quotes.ListQuotesOf(ctx, st.URI, before, limit)
+	quotes, err := r.d.Quotes.ListQuotesOf(ctx, st.URI, before, limit+1)
 	if err != nil {
 		return QuotesPage{}, err
 	}
 	var out QuotesPage
+	if len(quotes) > limit {
+		quotes = quotes[:limit]
+		out.Next = quotes[limit-1].StatusID
+	}
 	for _, q := range quotes {
 		view, err := r.View(ctx, viewer, q.StatusID)
 		if errors.Is(err, ErrNotFound) {
@@ -250,9 +254,6 @@ func (r *Reader) Quotes(ctx context.Context, accountID, statusID, before string,
 			continue // taken away
 		}
 		out.Statuses = append(out.Statuses, view)
-	}
-	if len(quotes) == limit && limit > 0 {
-		out.Next = quotes[len(quotes)-1].StatusID
 	}
 	return out, nil
 }

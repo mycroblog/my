@@ -175,6 +175,13 @@ func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (c
 	return st, err
 }
 
+// Live fails with ErrNotFound when statusID is missing or deleted, whoever asks. It tells only
+// that the status exists, so the caller shows nothing of it on the strength of this check.
+func (r *Reader) Live(ctx context.Context, statusID string) error {
+	_, err := r.aud.live(ctx, statusID)
+	return err
+}
+
 // Thread returns the ancestors and descendants of a status that viewer may see (FR-106).
 func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Thread, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
@@ -282,29 +289,33 @@ func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([
 }
 
 // Source returns the current revision of a local account's own status, whose Source holds
-// what the author typed. Another account's status fails with ErrNotFound, like a missing one.
-func (r *Reader) Source(ctx context.Context, accountID, statusID string) (content.Revision, error) {
-	view, err := r.View(ctx, Viewer{Kind: ViewerLocal, AccountID: accountID}, statusID)
+// what the author typed. Another account's status, or one hidden from viewer, fails with
+// ErrNotFound, like a missing one.
+func (r *Reader) Source(ctx context.Context, viewer Viewer, statusID string) (content.Revision, error) {
+	view, err := r.View(ctx, viewer, statusID)
 	if err != nil {
 		return content.Revision{}, err
 	}
-	if view.Status.AuthorAccountID != accountID || view.Revision.Source == nil {
+	if view.Status.AuthorAccountID != viewer.AccountID || view.Revision.Source == nil {
 		return content.Revision{}, fmt.Errorf("source of %s: %w", statusID, ErrNotFound)
 	}
 	return view.Revision, nil
 }
 
-// Bookmarks returns a page of a local account's bookmarked statuses, newest bookmark first
-// (FR-113): up to limit bookmarks older than the cursor before ("" for the newest). Statuses
-// that the account may no longer see are left out, so a page may be shorter than limit and
-// still have a next page.
-func (r *Reader) Bookmarks(ctx context.Context, accountID, before string, limit int) (BookmarkPage, error) {
-	marks, err := r.d.Interactions.ListBookmarks(ctx, accountID, before, limit)
+// Bookmarks returns a page of the bookmarked statuses of the local account viewer, newest
+// bookmark first (FR-113): up to limit bookmarks older than the cursor before ("" for the
+// newest). Statuses that viewer may not see are left out, so a page may be shorter than limit
+// and still have a next page; the last page has none.
+func (r *Reader) Bookmarks(ctx context.Context, viewer Viewer, before string, limit int) (BookmarkPage, error) {
+	marks, err := r.d.Interactions.ListBookmarks(ctx, viewer.AccountID, before, limit+1)
 	if err != nil {
 		return BookmarkPage{}, err
 	}
-	viewer := Viewer{Kind: ViewerLocal, AccountID: accountID}
 	var out BookmarkPage
+	if len(marks) > limit {
+		marks = marks[:limit]
+		out.Next = marks[limit-1].ID
+	}
 	for _, b := range marks {
 		view, err := r.View(ctx, viewer, b.StatusID)
 		if errors.Is(err, ErrNotFound) {
@@ -314,9 +325,6 @@ func (r *Reader) Bookmarks(ctx context.Context, accountID, before string, limit 
 			return BookmarkPage{}, err
 		}
 		out.Statuses = append(out.Statuses, view)
-	}
-	if len(marks) == limit && limit > 0 {
-		out.Next = marks[len(marks)-1].ID
 	}
 	return out, nil
 }

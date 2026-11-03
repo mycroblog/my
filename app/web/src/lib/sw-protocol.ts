@@ -30,6 +30,21 @@ export const clearCachesMessage = { type: "CLEAR_CACHES" } as const;
 /** The worker's reply to clearCachesMessage. */
 export const cachesClearedMessage = { type: "CACHES_CLEARED" } as const;
 
+/** Asks a worker whether it precached the file at `url`; it replies on the port (ADR-0141 §2). */
+export function hasPrecachedMessage(url: string) {
+  return { type: "HAS_PRECACHED", url } as const;
+}
+
+/** The type of the worker's reply to hasPrecachedMessage, which also has a boolean `has`. */
+export const precachedMessageType = "PRECACHED";
+
+/** The URL of a hasPrecachedMessage, or null when `data` is not one. */
+export function hasPrecachedURL(data: unknown): string | null {
+  if (!isMessage(data, "HAS_PRECACHED")) return null;
+  const { url } = data as { url?: unknown };
+  return typeof url === "string" ? url : null;
+}
+
 /** Whether `data` is a message of type `type`. */
 export function isMessage(data: unknown, type: string): boolean {
   return typeof data === "object" && data !== null && "type" in data && data.type === type;

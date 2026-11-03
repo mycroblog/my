@@ -415,7 +415,7 @@ my admin retention release <hold id>
   A sign-up block created from that account's ban is also kept past 30 days after lifting or expiry.
 - You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
 - Holds and their release are done only with the CLI, and the actor in the record is the CLI.
-- The data of a deleted account (one whose `ban` reached its date, or one the user deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`.
+- The data of a deleted account (one whose `ban` reached its date, one the user deleted, or a remote account that its server deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`. A remote account's posts go too, including those that local users bookmarked or replied to.
   An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
   The names and descriptions that the account gave its voice chat rooms are emptied; the rooms stay.
 

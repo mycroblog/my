@@ -2,7 +2,7 @@
 post:
   operationId: unmuteAccount
   summary: Unmute an account
-  description: Without a mute it changes nothing.
+  description: Without a mute it changes nothing. It also works on an account that blocks the user.
   tags: [accounts]
   security:
     - oauth2: ["write:mutes"]
