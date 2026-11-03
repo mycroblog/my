@@ -13,6 +13,7 @@ import { RouteError } from "./-layout/RouteStates";
  * preview (ADR-0028).
  */
 export const Route = createFileRoute("/about")({
+  staticData: { reloadSafe: true },
   loader: async ({ context: { queryClient, api } }) => {
     // Neither failure fails the page: the shell reads the instance too and handles its failure, and the moderated
     // domains show their own failure, or the setting that hides them, in their section. Cached data is shown at

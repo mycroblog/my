@@ -211,6 +211,10 @@
     "defaultMessage": "A new version of the app is available.",
     "description": "Message shown when a new version of the web app has been downloaded and waits until the user applies it."
   },
+  "shell.update.required": {
+    "defaultMessage": "The app has changed and needs an update to keep working.",
+    "description": "Message shown when the running version of the web app no longer works with the server; its button reloads the page. The page also reloads by itself as soon as the user would lose nothing."
+  },
   "shell.save.saving": {
     "defaultMessage": "Saving…",
     "description": "Shown next to a setting that saves as soon as it changes, while its change is being saved."

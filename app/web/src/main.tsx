@@ -59,9 +59,13 @@ if (config === undefined) {
   // The built app only: the Vite dev server builds no worker, and under `my serve -dev-vite-origin` the
   // scripts come from another origin. Without the worker the app works the same, only not offline.
   if (import.meta.env.PROD && "serviceWorker" in navigator) {
-    registerServiceWorker(navigator.serviceWorker, () => {
-      window.location.reload();
-    }).catch((error: unknown) => {
+    registerServiceWorker(
+      navigator.serviceWorker,
+      () => {
+        window.location.reload();
+      },
+      { build: import.meta.url, locks: navigator.locks },
+    ).catch((error: unknown) => {
       console.error("the Service Worker could not be registered", error);
     });
   }
