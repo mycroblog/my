@@ -365,6 +365,10 @@ async function signedInServer(
         return json(route, { enabled: false });
       case "GET /accounts/password":
         return json(route, { has_password: true });
+      case "GET /accounts/deactivation":
+        return json(route, { deletion_due_at: "2031-03-14T09:00:00Z" });
+      case "POST /accounts/deactivation":
+        return json(route, { deletion_due_at: "2031-03-14T09:00:00Z" });
       case "GET /passkeys":
         return json(route, {
           items: [
@@ -679,6 +683,27 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   await expect(
     main.getByRole("status").getByText(message("settings.auto_delete.saved_on").replace(/\{.*$/s, "").trim()),
   ).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+});
+
+// Deactivating states the date before and after it (ADR-0145 §3), and the page after it stands without a session.
+test("deactivating the account states the date and ends on its own page", async ({ page, makeAxeBuilder }) => {
+  await signedInServer(page, projectLocale());
+  await page.goto("/settings/account");
+  const main = page.getByRole("main");
+  await main.getByRole("button", { name: message("settings.account.deactivate.open") }).click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(
+    dialog.getByRole("heading", { name: message("settings.account.deactivate.confirm.title") }),
+  ).toBeVisible();
+  await expect(dialog.getByText("2031")).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await dialog.locator('input[autocomplete="current-password"]').fill("correct horse battery staple");
+  await dialog.getByRole("button", { name: message("settings.account.deactivate.confirm"), exact: true }).click();
+  await expect(page).toHaveURL(/\/deactivated\?/u);
+  await expect(page.getByRole("heading", { name: message("deactivated.title") })).toBeVisible();
+  await expect(page.getByText("2031")).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });

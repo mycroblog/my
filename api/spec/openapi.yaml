@@ -178,6 +178,8 @@ paths:
     $ref: ./paths/preferences_notifications.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
+  /accounts/deactivation:
+    $ref: ./paths/accounts_deactivation.yaml
   /accounts/delete:
     $ref: ./paths/accounts_delete.yaml
   /accounts/move:
@@ -1417,6 +1419,12 @@ components:
       $ref: ./components/schemas/DataImportSkipped.yaml
     DecideAppealRequest:
       $ref: ./components/schemas/DecideAppealRequest.yaml
+    Deactivation:
+      $ref: ./components/schemas/Deactivation.yaml
+    DeactivationPreview:
+      $ref: ./components/schemas/DeactivationPreview.yaml
+    DeactivateOwnAccountRequest:
+      $ref: ./components/schemas/DeactivateOwnAccountRequest.yaml
     DeleteOwnAccountRequest:
       $ref: ./components/schemas/DeleteOwnAccountRequest.yaml
     MoveOwnAccountRequest:

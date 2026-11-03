@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -176,13 +177,14 @@ func TestClientAPIAuthentication(t *testing.T) {
 	}
 
 	// A valid token stops working as soon as its account cannot be used.
+	due := time.Now().Add(time.Hour)
 	if _, err := app.Accounts.RecordLifecycleEvent(ctx, account.LifecycleInput{
-		AccountID: alice.AccountID, Kind: domainaccount.LifecycleDeactivated, InitiatedBy: domainaccount.InitiatedBySelf,
+		AccountID: alice.AccountID, Kind: domainaccount.LifecycleDeletionScheduled, InitiatedBy: domainaccount.InitiatedByModerator, DeletionDueAt: &due,
 	}); err != nil {
 		t.Fatal(err)
 	}
 	res, p = get(map[string]string{"Authorization": "Bearer " + full.AccessToken})
 	if res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeAccountUnavailable {
-		t.Errorf("deactivated account = %d %s, want 403 account-unavailable", res.StatusCode, p.Type)
+		t.Errorf("account waiting for its deletion = %d %s, want 403 account-unavailable", res.StatusCode, p.Type)
 	}
 }

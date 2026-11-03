@@ -347,6 +347,9 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 		}
 	}
 	in := h.input(a, obj, followers, mentions)
+	if in.Visibility == appcontent.VisibilityDirect && len(mentions.accountIDs) == 0 && mentions.deactivated {
+		return fmt.Errorf("%w: %s is addressed to deactivated accounts only (ADR-0145)", ErrDropActivity, obj.ID)
+	}
 	if relayed && in.Visibility != appcontent.VisibilityPublic {
 		return fmt.Errorf("%w: the relayed %s is not public", ErrDropActivity, obj.ID)
 	}
@@ -463,6 +466,9 @@ type postMentions struct {
 	accountIDs []string
 	unknown    []federation.IRI
 	local      bool
+	// deactivated is true when the post names a local account that its owner deactivated, which
+	// is left out of accountIDs.
+	deactivated bool
 }
 
 // mentions looks up the actors a post mentions (its Mention tags, and the local actors it
@@ -485,6 +491,9 @@ func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, f
 		}
 		if a.Account.IsLocal() {
 			if !a.Lifecycle.Active() {
+				// Nothing reaches a deactivated account, and it does not read this later
+				// (ADR-0145 §6).
+				m.deactivated = m.deactivated || a.Lifecycle.Deactivated()
 				continue
 			}
 			m.local = true

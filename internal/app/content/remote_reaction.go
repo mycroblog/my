@@ -86,7 +86,7 @@ func (s *Interactions) RecordRemoteReaction(ctx context.Context, in RemoteReacti
 	if err := s.checkRestrictions(ctx, in.AccountID, false); err != nil {
 		return content.Reaction{}, err
 	}
-	st, err := s.remoteVisibleStatus(ctx, in.AccountID, in.StatusID)
+	st, err := s.remoteCountedStatus(ctx, in.AccountID, in.StatusID)
 	if err != nil {
 		return content.Reaction{}, err
 	}

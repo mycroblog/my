@@ -30,6 +30,9 @@ type Deps struct {
 	// Logins keeps the accounts that moderation forbids to log in from signing in and from
 	// using their tokens; nil forbids nobody.
 	Logins LoginPolicy
+	// Subscriptions tells the users with a live subscription to a supporter plan, who cannot
+	// deactivate their accounts (ADR-0145 §1); nil means that none has one.
+	Subscriptions LiveSubscriptions
 	// LoginsTx reads inside a transaction whom moderation forbids to log in, for the guard of the
 	// last administrator; nil forbids nobody.
 	LoginsTx LoginPolicyTx

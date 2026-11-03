@@ -3,7 +3,7 @@
 // authentication, the automatic deletion of old posts, the lists of blocked and muted accounts and of follow requests, the archives of the user's data and deleting
 // the account, the follows, blocks, mutes, and bookmarks as Mastodon's CSV files, the aliases and moving the account, displaying the app in the user's locale
 // and time zone, the color theme of this browser, and the arrangement of the navigation's items on this browser. Routes and other features use it through this file only (web-client/README.md A3).
-export { dataExportsQueryOptions } from "./api/account";
+export { dataExportsQueryOptions, deactivationPreviewQueryOptions } from "./api/account";
 export { dataImportsQueryOptions } from "./api/importExport";
 export { credentialsQueryOptions, preferencesQueryOptions } from "./api/me";
 // The badges of the user's roles on their profile (ADR-0071).
