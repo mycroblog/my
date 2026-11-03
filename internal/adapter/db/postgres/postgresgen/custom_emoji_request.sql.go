@@ -12,6 +12,16 @@ import (
 	"time"
 )
 
+const blankCustomEmojiRequester = `-- name: BlankCustomEmojiRequester :exec
+UPDATE custom_emoji_requests SET requester_user_id = NULL WHERE requester_user_id = $1::uuid
+`
+
+// BlankCustomEmojiRequester takes an erased user out of its requests, which stay for the audit log.
+func (q *Queries) BlankCustomEmojiRequester(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, blankCustomEmojiRequester, userID)
+	return err
+}
+
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
 SELECT COUNT(*) FILTER (WHERE o.outcome = 'approved')::bigint AS approved,
   COUNT(*) FILTER (WHERE o.request_id IS NULL)::bigint AS pending
@@ -81,7 +91,7 @@ WHERE r.id = $1::uuid
 type GetCustomEmojiRequestRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID *string
 	EmojiID         *string
 	Shortcode       string
 	MediaID         string
@@ -157,7 +167,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 type InsertCustomEmojiRequestParams struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID *string
 	EmojiID         *string
 	Shortcode       string
 	MediaID         string
@@ -247,7 +257,7 @@ type ListCustomEmojiRequestsParams struct {
 type ListCustomEmojiRequestsRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID *string
 	EmojiID         *string
 	Shortcode       string
 	MediaID         string
@@ -316,7 +326,7 @@ ORDER BY r.id
 type ListCustomEmojiRequestsByIDRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID *string
 	EmojiID         *string
 	Shortcode       string
 	MediaID         string
@@ -357,6 +367,32 @@ func (q *Queries) ListCustomEmojiRequestsByID(ctx context.Context, ids []string)
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPendingCustomEmojiRequestsOfUser = `-- name: ListPendingCustomEmojiRequestsOfUser :many
+SELECT request_id FROM custom_emoji_pending_requests
+WHERE requester_user_id = $1::uuid ORDER BY request_id
+`
+
+// ListPendingCustomEmojiRequestsOfUser returns the pending requests of a user, for its erasure.
+func (q *Queries) ListPendingCustomEmojiRequestsOfUser(ctx context.Context, userID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listPendingCustomEmojiRequestsOfUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var request_id string
+		if err := rows.Scan(&request_id); err != nil {
+			return nil, err
+		}
+		items = append(items, request_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

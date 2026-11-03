@@ -23,6 +23,27 @@ func (q *Queries) AccountErased(ctx context.Context, accountID string) (bool, er
 	return exists, err
 }
 
+const blankOAuthClientDetailsOf = `-- name: BlankOAuthClientDetailsOf :exec
+UPDATE oauth_clients SET name = '', website = NULL WHERE owner_user_id = ?1
+`
+
+// BlankOAuthClientDetailsOf removes the name and website of the clients of an erased owner.
+func (q *Queries) BlankOAuthClientDetailsOf(ctx context.Context, userID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, blankOAuthClientDetailsOf, userID)
+	return err
+}
+
+const blankOAuthClientRevisionDetailsOf = `-- name: BlankOAuthClientRevisionDetailsOf :exec
+UPDATE oauth_client_revisions SET name = '', website = NULL WHERE oauth_client_id IN (
+  SELECT c.id FROM oauth_clients c WHERE c.owner_user_id = ?1)
+`
+
+// BlankOAuthClientRevisionDetailsOf removes the same from the revisions of those clients.
+func (q *Queries) BlankOAuthClientRevisionDetailsOf(ctx context.Context, userID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, blankOAuthClientRevisionDetailsOf, userID)
+	return err
+}
+
 const countUsedFeedTagsOfEntries = `-- name: CountUsedFeedTagsOfEntries :many
 SELECT tag_id, count(*) AS n FROM feed_tag_entries
 WHERE entry_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND visibility IN ('public', 'local', 'unlisted')
@@ -1692,6 +1713,33 @@ type ListNotificationIDsToEraseParams struct {
 // its user.
 func (q *Queries) ListNotificationIDsToErase(ctx context.Context, arg ListNotificationIDsToEraseParams) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, listNotificationIDsToErase, arg.AccountID, arg.UserID, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOAuthClientIDsOwnedBy = `-- name: ListOAuthClientIDsOwnedBy :many
+SELECT id FROM oauth_clients WHERE owner_user_id = ?1 ORDER BY id
+`
+
+func (q *Queries) ListOAuthClientIDsOwnedBy(ctx context.Context, userID sql.NullString) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listOAuthClientIDsOwnedBy, userID)
 	if err != nil {
 		return nil, err
 	}

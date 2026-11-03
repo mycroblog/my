@@ -102,7 +102,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 	// Children before their parents: the revisions' rows, the polls', then the boosts, the
 	// quotes, and the statuses.
 	steps := []func(context.Context, []string) error{
-		q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
+		q.PurgeStatusSensitivityOverrides, q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
 		q.PurgeRemoteStatusRevisions, q.PurgePollTallyObservationCounts, q.PurgePollTallyObservations,
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,

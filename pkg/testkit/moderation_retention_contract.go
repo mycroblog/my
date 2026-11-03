@@ -40,6 +40,8 @@ func ModerationRetentionContract(t *testing.T, newHarness ModerationFactory) {
 		run  func(t *testing.T, e *retentionModEnv)
 	}{
 		{"HoldsAreReleasedOnce", retentionHolds},
+		{"PurgesReleasedHolds", retentionPurgesReleasedHolds},
+		{"ErasesSeverances", retentionErasesSeverances},
 		{"PurgesActionsAfterTheyEnd", retentionPurgesActions},
 		{"PurgesReportsAfterTheirResolution", retentionPurgesReports},
 		{"HoldKeepsTheRecordsAndTheAuditLog", retentionHoldKeepsRecords},
@@ -503,5 +505,72 @@ func retentionExports(t *testing.T, e *retentionModEnv) {
 		if strings.Contains(own.String(), secret) {
 			t.Errorf("own export contains %q: %s", secret, own.String())
 		}
+	}
+}
+
+// retentionPurgesReleasedHolds checks that a released hold goes with the actions' records, and that
+// a hold in effect never does.
+func retentionPurgesReleasedHolds(t *testing.T, e *retentionModEnv) {
+	ctx := t.Context()
+	released, err := e.svc.PlaceRetentionHold(ctx, e.local, "court order", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.PlaceRetentionHold(ctx, e.other, "disclosure request", ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := e.svc.ReleaseRetentionHold(ctx, released.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	wantHolds := func(accountID string, want int, when string) {
+		t.Helper()
+		got, err := e.svc.RetentionHolds(ctx, accountID)
+		if err != nil || len(got) != want {
+			t.Errorf("%s: holds of %s = %+v, %v; want %d", when, accountID, got, err, want)
+		}
+	}
+	if _, err := e.svc.PurgeRecords(ctx); err != nil {
+		t.Fatal(err)
+	}
+	wantHolds(e.local, 1, "right after the release")
+
+	e.clock.Advance(appmoderation.DefaultRetentionPeriods.Actions + time.Hour)
+	out, err := e.svc.PurgeRecords(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.RetentionHolds != 1 {
+		t.Errorf("PurgeRecords = %+v, want one retention hold", out)
+	}
+	wantHolds(e.local, 0, "past the retention")
+	wantHolds(e.other, 1, "a hold in effect")
+}
+
+// retentionErasesSeverances checks that the erasure of an account deletes its severances only.
+func retentionErasesSeverances(t *testing.T, e *retentionModEnv) {
+	ctx := t.Context()
+	severance := func(accountID string) string {
+		t.Helper()
+		sv := moderation.Severance{ID: e.ids.NewID(), ActionID: e.ids.NewID(), AccountID: accountID, FollowersLost: 1, OccurredAt: e.clock.Now()}
+		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			_, err := e.h.Moderation.InsertSeverance(ctx, tx, sv)
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return sv.ID
+	}
+	erased, kept := severance(e.local), severance(e.other)
+	for range 2 { // safe to repeat
+		if _, err := e.svc.EraseAccountData(ctx, appaccount.ErasureTarget{AccountID: e.local}, "", 0); err != nil {
+			t.Fatalf("EraseAccountData = %v", err)
+		}
+	}
+	if _, err := e.svc.SeveranceOf(ctx, e.local, erased); !errors.Is(err, appmoderation.ErrNotFound) {
+		t.Errorf("SeveranceOf(erased) = %v, want ErrNotFound", err)
+	}
+	if _, err := e.svc.SeveranceOf(ctx, e.other, kept); err != nil {
+		t.Errorf("SeveranceOf(another account's) = %v", err)
 	}
 }
