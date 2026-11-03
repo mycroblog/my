@@ -228,7 +228,7 @@ type QuoteFacts struct {
 }
 
 // QuotesRemotePosts reports whether a local status of visibility v may quote a remote status
-// (ADR-0146): a quote names the quoting status's IRI to the quoted author's server, which is
+// (ADR-0144 §4): a quote names the quoting status's IRI to the quoted author's server, which is
 // outside the audience of a local, private, or direct status.
 func QuotesRemotePosts(v Visibility) bool {
 	return v == VisibilityPublic || v == VisibilityUnlisted

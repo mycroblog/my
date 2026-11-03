@@ -84,7 +84,7 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 }
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or
-// the quoted status is local-visibility (ADR-0146), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
+// the quoted status is local-visibility (ADR-0144 §4), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
 // the author alone for the others, which remote servers see as followers-only.
 func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
 	switch q, state, err := n.quotes.FindQuote(ctx, st.ID); {

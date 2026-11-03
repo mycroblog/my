@@ -229,7 +229,7 @@ func (s *Service) FindQuotePolicy(ctx context.Context, statusID string) (content
 // FederatedQuotePage returns the HTML page of the quoted status uri, which the fallback of a quote
 // links (ADR-0069 §3): the page of a stored status, or uri itself for one not stored or without
 // a page. It reports false when a federated Note must not name the quoted status at all: a
-// local-visibility status, whose IRI and author stay within its audience (ADR-0146), and a status
+// local-visibility status, whose IRI and author stay within its audience (ADR-0144 §4), and a status
 // of this server that is gone, whose visibility is not known any more.
 func (s *Service) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
 	st, err := s.d.Repository.FindStatusByURI(ctx, uri)
