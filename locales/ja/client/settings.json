@@ -675,6 +675,30 @@
     "defaultMessage": "このブラウザはプッシュ通知を受け取れません。iPhone と iPad では、このサイトをホーム画面に追加して、そこから開いてください。",
     "description": "Shown in the push notification settings when the browser has no Push API."
   },
+  "settings.push_prompt.choose_types": {
+    "defaultMessage": "種類を選ぶ",
+    "description": "Action of the toast after the prompt on the notifications page turned on push notifications: opens the notification settings, where the types pushed are chosen."
+  },
+  "settings.push_prompt.close": {
+    "defaultMessage": "閉じる",
+    "description": "Button of the prompt at the top of the notifications page: closes it without turning on push notifications. It does not come back."
+  },
+  "settings.push_prompt.description": {
+    "defaultMessage": "アプリを閉じていても、この端末に通知が届きます。あとから通知の設定でオンにすることもできます。",
+    "description": "Text of the prompt at the top of the notifications page, offering to turn on push notifications. Says where to do it after closing the prompt."
+  },
+  "settings.push_prompt.enable": {
+    "defaultMessage": "オンにする",
+    "description": "Button of the prompt at the top of the notifications page: turns on push notifications on this device. The browser may ask for permission."
+  },
+  "settings.push_prompt.enabled": {
+    "defaultMessage": "この端末のプッシュ通知をオンにしました。",
+    "description": "Toast after the prompt on the notifications page turned on push notifications."
+  },
+  "settings.push_prompt.title": {
+    "defaultMessage": "この端末で通知を受け取る",
+    "description": "Heading of the prompt at the top of the notifications page, offering to turn on push notifications on this device."
+  },
   "settings.require_media_description.description": {
     "defaultMessage": "投稿する前に、説明 (代替テキスト) のない画像・動画・音声に説明を付けるよう求めます。見られない人・聞こえない人もあなたの投稿を追えるようにするためです。",
     "description": "Help text of the switch that asks for a description of every attachment."

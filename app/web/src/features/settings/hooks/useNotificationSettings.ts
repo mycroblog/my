@@ -12,7 +12,6 @@ import {
   tryNotificationSound,
   useNotificationSound,
 } from "../../../lib/notificationSound";
-import { isTauriApp } from "../../../lib/platform";
 import { saveStateOf } from "./saveState";
 import { shellQueryReader } from "../../../lib/query";
 import { instanceQueryOptions, type Preferences, preferencesQueryOptions } from "../api/me";
@@ -22,6 +21,7 @@ import {
   type NotificationSettingChange,
   type NotificationSettingRow,
   notificationSettingsQueryOptions,
+  shownNotificationRows,
   updateNotificationSettingMutation,
 } from "../api/notificationSettings";
 import { type PushNotifications, usePushNotifications } from "./usePushNotifications";
@@ -186,7 +186,7 @@ export function useNotificationSettings(): NotificationSettingsView {
     });
   };
 
-  const rows = settings.rows.filter((row) => row.group !== "supporter" || !isTauriApp());
+  const rows = shownNotificationRows(settings.rows);
   const push = usePushNotifications(rows.flatMap((row) => row.types));
   const sendsEmail = instance.data?.sends_email === true;
   const pushShown = push.status === "available" && push.enabled;

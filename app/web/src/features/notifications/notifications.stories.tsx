@@ -3,7 +3,8 @@
 // other people, from the server to the user, and from the server to its staff.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import type { Schemas } from "../../test/fixtures";
+import { expect, within } from "storybook/test";
+import { instanceFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import {
   abdulrahman,
@@ -329,3 +330,39 @@ export const Narrow: Story = narrow;
 
 /** The notices of the server at 320 CSS px. */
 export const FromTheServerNarrow: Story = { ...narrow, ...answering(...notifications(fromServer, 2)) };
+
+/** A server key of Web Push, for the instance of the stories of the prompt. */
+const pushServerKey = "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8";
+
+/** A browser that has not been asked about notifications, and a server that sends Web Push (ADR-0137). */
+const pushPrompt: Story = {
+  beforeEach: () => {
+    const permission = Object.getOwnPropertyDescriptor(Notification, "permission");
+    Object.defineProperty(Notification, "permission", { configurable: true, get: () => "default" });
+    return () => {
+      if (permission === undefined) Reflect.deleteProperty(Notification, "permission");
+      else Object.defineProperty(Notification, "permission", permission);
+    };
+  },
+  ...answering(
+    ...notifications(social),
+    http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, push_server_key: pushServerKey })),
+  ),
+};
+
+/** The page shows the prompt's button named `name`, so that the story does show the prompt. */
+function promptShown(name: string) {
+  return async (context: Parameters<typeof settled>[0]) => {
+    await settled(context);
+    await expect(await within(context.canvasElement).findByRole("button", { name })).toBeEnabled();
+  };
+}
+
+/** The prompt to turn on Web Push above the tabs. */
+export const PushPrompt: Story = { ...pushPrompt, play: promptShown("Turn on") };
+
+/** The prompt to turn on Web Push in Japanese. */
+export const PushPromptJapanese: Story = { ...pushPrompt, ...inLocale("ja"), play: promptShown("オンにする") };
+
+/** The prompt to turn on Web Push at 320 CSS px. */
+export const PushPromptNarrow: Story = { ...pushPrompt, ...narrow, play: promptShown("Turn on") };

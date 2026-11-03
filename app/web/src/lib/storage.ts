@@ -440,3 +440,15 @@ export const firstRunDismissedKey = declareKeyFamily<boolean>("my:user:first-run
   parse: schemaParser(z.boolean()),
   userData: false,
 });
+
+/**
+ * The accounts (by their IDs) that closed the prompt to turn on Web Push, or turned Web Push off, on this browser
+ * (ADR-0137 §4). It stays after the session, so that signing in again does not ask again whoever said no.
+ */
+export const pushPromptDismissedKey = declareKey<readonly string[]>("my:notifications:push-prompt-dismissed", {
+  area: "local",
+  version: 1,
+  defaultValue: [],
+  parse: schemaParser(z.array(z.string())),
+  userData: false,
+});

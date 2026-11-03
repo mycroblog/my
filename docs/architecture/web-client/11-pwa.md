@@ -35,6 +35,7 @@ Web App Manifest と HTML は Go が返すので、プラグインはどちら�
   - 有効にするとき（スイッチの操作の中）だけ `Notification.requestPermission()` で許可を求め、Service Worker の登録の `PushManager.subscribe`（`userVisibleOnly`、`applicationServerKey` はサーバーの鍵）で購読し、`PUT /push/subscription` で表のすべての行の種類と一緒に登録する。
     別の鍵で作った購読が残っていれば解除してから購読し直す。表の行のセルを変えると、その行の種類（`NotificationSettingRow` の `types`）を足すか除いて登録し直し、無効にすると `DELETE /push/subscription` とブラウザの購読の解除を行う。
   - Push API のないブラウザ（iOS / iPadOS ではホーム画面に追加していない Safari を含む）と、サイトの通知をブロックしたブラウザでは、スイッチの代わりに理由を出す。
+  - 購読はトークンの系列に属するので、ログインし直すと新しい系列には購読がない。自動では登録し直さず（共有のブラウザで別の利用者の通知を届けないため）、[通知の画面](screens/notifications.md)の案内（`features/settings` の `PushPrompt`、[ADR-0137](../../adr/0137-web-push-prompt.md)）が、押したときにスイッチと同じ処理で許可を求め、表のすべての行の種類で登録する。閉じたかどうかは localStorage の `my:notifications:push-prompt-dismissed` に残す。
   - Service Worker（`sw/push.ts`）は、サーバーが利用者の言語で書いた題を、通知の ID を `tag` にして表示する（同じ通知の再送は表示を置き換える）。押すと、開いているアプリの窓（フォーカスのある窓、なければどれか）をメッセージのパスに移し、窓がなければ新しく開く。
     パスは同じオリジンのものだけを開き、それ以外と読めないメッセージは通知の画面を開く。
 - **`my serve` の配信**: `sw.js` は長期キャッシュせず（`no-cache`）、Service Worker 自身に効く CSP（`default-src 'none'; connect-src 'self'`）で返す。既定の `default-src 'none'` のままだと Service Worker の `fetch` が止まる。

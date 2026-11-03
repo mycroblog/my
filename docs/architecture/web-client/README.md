@@ -88,6 +88,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:display:autoplay` | localStorage | アニメーションの自動再生（§13） | いいえ |
 | `my:display:chart-view` | localStorage | 推移のグラフ（`TrendChart`）をグラフで出すか表で出すか。すべてのグラフで共通（§14、ADR-0113） | いいえ |
 | `my:display:navigation` | localStorage | ナビゲーションの項目の順番と隠した項目（§9） | いいえ |
+| `my:notifications:push-prompt-dismissed` | localStorage | プッシュ通知の案内を閉じたか、スイッチをオフにしたアカウントの ID の一覧（§11、ADR-0137 §4） | いいえ |
 | `my:notifications:sound` | localStorage | 通知音を鳴らすか（全体のスイッチ。既定はオフ）と、鳴らす通知の種類（§9、ADR-0109 §5） | いいえ |
 | `my:instance:timelines` | localStorage | インスタンスが提供する公開タイムライン（§9） | いいえ |
 | `my:instance:status-page` | localStorage | 最後に読んだ `GET /instance` の `status_page_url`（§11、ADR-0085 §6） | いいえ |

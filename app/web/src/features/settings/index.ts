@@ -23,6 +23,8 @@ export { saveStateOf, useSaveLabels } from "./hooks/saveState";
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
 export { instanceQueryOptions } from "./api/me";
 export { NotificationSettings } from "./components/NotificationSettings";
+// The prompt to turn on Web Push at the top of the notifications page (ADR-0137).
+export { PushPrompt } from "./components/PushPrompt";
 export { ProfileForm } from "./components/ProfileForm";
 // The welcome step after sign-up: the avatar and the display name (web-client/screens/welcome.md).
 export { WelcomeForm } from "./components/WelcomeForm";
