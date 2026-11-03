@@ -135,7 +135,7 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
   const showSubscribe = showMenu && state.subscribe !== "hidden";
   const followFirst = showSubscribe && state.subscribe === "follow-first";
   const subscribed =
-    pending === "subscribe" ? true : pending === "unsubscribe" ? false : relationship.notify && !followFirst;
+    pending === "subscribe" ? true : pending === "unsubscribe" ? false : relationship.notify === true && !followFirst;
 
   return (
     <>

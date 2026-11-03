@@ -713,6 +713,7 @@ paths:
           $ref: '#/components/responses/Problem'
     post:
       operationId: addAccountAlias
+      x-first-party-only: true
       summary: Add an alias to the authenticated user
       description: |
         Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
@@ -747,6 +748,7 @@ paths:
   /accounts/aliases/remove:
     post:
       operationId: removeAccountAlias
+      x-first-party-only: true
       summary: Remove an alias of the authenticated user
       description: |
         Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
@@ -844,6 +846,7 @@ paths:
           $ref: '#/components/responses/Problem'
     put:
       operationId: updateAutoDeletePolicy
+      x-first-party-only: true
       summary: Replace the authenticated user's automatic deletion of old posts
       description: |
         Replaces the whole policy. Once it is enabled, an hourly job deletes the user's posts
@@ -878,6 +881,7 @@ paths:
   /preferences/auto_delete/preview:
     post:
       operationId: previewAutoDeletePolicy
+      x-first-party-only: true
       summary: Estimate what a draft automatic deletion of old posts would delete
       description: |
         Counts the user's posts that the given policy, which is not saved, would delete now,
@@ -1310,6 +1314,7 @@ paths:
   /exports:
     get:
       operationId: listDataExports
+      x-first-party-only: true
       summary: List the authenticated user's data exports
       description: |
         Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -1333,6 +1338,7 @@ paths:
           $ref: '#/components/responses/Problem'
     post:
       operationId: requestDataExport
+      x-first-party-only: true
       summary: Request an archive of the authenticated user's data
       description: |
         Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
@@ -1363,6 +1369,7 @@ paths:
   /exports/{id}/archive:
     get:
       operationId: downloadDataExport
+      x-first-party-only: true
       summary: Download the archive of a data export
       description: |
         Returns the ZIP archive of one of the user's exports. An export that is not `ready` is
@@ -1399,6 +1406,7 @@ paths:
   /csv_exports/{kind}:
     get:
       operationId: exportCsv
+      x-first-party-only: true
       summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
       description: |
         Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
@@ -1443,6 +1451,7 @@ paths:
   /imports:
     get:
       operationId: listDataImports
+      x-first-party-only: true
       summary: List the authenticated user's imports
       description: |
         Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -1466,6 +1475,7 @@ paths:
           $ref: '#/components/responses/Problem'
     post:
       operationId: startDataImport
+      x-first-party-only: true
       summary: Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
       description: |
         Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
@@ -1503,6 +1513,7 @@ paths:
   /imports/preview:
     post:
       operationId: previewDataImport
+      x-first-party-only: true
       summary: Preview an import of a CSV file
       description: |
         Reads a CSV file as `startDataImport` would and tells what importing it would do,
@@ -2346,7 +2357,9 @@ paths:
       summary: Get the viewer's relationships with accounts
       description: |
         Returns one relationship per requested account, in the order of the request. Accounts
-        that do not exist, are not active, or block the viewer are left out.
+        that do not exist, are not active, or block the viewer are left out. `blocking` needs
+        `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+        them the fields are absent.
       tags:
         - accounts
       security:
@@ -3237,6 +3250,7 @@ paths:
   /moderation/actions:
     get:
       operationId: listOwnModerationActions
+      x-first-party-only: true
       summary: List the moderation actions on the authenticated user's account
       description: |
         The actions that moderators took on the user's own account (FR-715), newest first,
@@ -3273,6 +3287,7 @@ paths:
   /moderation/actions/{id}/appeal:
     post:
       operationId: appealModerationAction
+      x-first-party-only: true
       summary: Appeal a moderation action on the authenticated user's account
       description: |
         Asks the moderators to reconsider an action on the user's own account (FR-707), once
@@ -8854,6 +8869,7 @@ paths:
   /invites:
     get:
       operationId: listOwnInvites
+      x-first-party-only: true
       summary: List the user's own invites
       description: |
         The invites that the user created as a member (ADR-0108 §5), newest first, with how they
@@ -8884,6 +8900,7 @@ paths:
           $ref: '#/components/responses/Problem'
     post:
       operationId: createOwnInvite
+      x-first-party-only: true
       summary: Create an invite of the user's own
       description: |
         Creates an invite with a new random code that people use to sign up while the
@@ -8918,6 +8935,7 @@ paths:
   /invites/{id}/revoke:
     post:
       operationId: revokeOwnInvite
+      x-first-party-only: true
       summary: Revoke an invite of the user's own
       description: |
         The invite stops working at once; the people who signed up with it keep their accounts.
@@ -10290,9 +10308,17 @@ components:
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
         (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
-        OAuth apps) are marked
+        OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
+        imports, changing and previewing the automatic deletion of posts, adding and removing
+        aliases, invites, the user's moderation actions and appeals), are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
+
+        The moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`,
+        `admin_error_group`, and the other types that need a role's permission) reach first-party
+        clients only: another client's token, whatever the user's roles, does not get them in the
+        notification list, the stream, or the unread count, and they are dropped from the alerts of
+        its Web Push subscription.
       flows:
         authorizationCode:
           authorizationUrl: /oauth/authorize
@@ -10306,10 +10332,9 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            read:accounts: Read accounts, including the user's own.
+            read:accounts: Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
             read:blocks: Read the accounts the user blocks.
             read:bookmarks: Read the user's bookmarks.
-            read:favourites: Read the user's favourites.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives (`read:statuses` does not show them).
             read:finance: Read the totals of the instance's costs, as far as the user's roles allow.
@@ -10320,7 +10345,7 @@ components:
             read:statuses: Read posts and timelines.
             read:supporters: Read the user's own supporter subscription.
             read:voice: Read the voice chat rooms the user sees.
-            write:accounts: Change the user's profile and preferences.
+            write:accounts: Change the user's profile, preferences, notification settings, badges, and supporter listing.
             write:blocks: Block and unblock accounts.
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
@@ -20217,7 +20242,9 @@ components:
         keys:
           $ref: '#/components/schemas/PushSubscriptionKeys'
         alerts:
-          description: The notification types to push, each at most once; empty pushes none.
+          description: |
+            The notification types to push, each at most once; empty pushes none. A third-party
+            client's subscription leaves out the moderator notification types.
           type: array
           maxItems: 32
           items:
@@ -20363,18 +20390,15 @@ components:
       description: |
         The viewer's relationship with an account. It never says whether the account blocks
         the viewer: such an account is not found at all.
+
+        A token sees the fields its scopes cover, wherever the relationship comes from, and the
+        rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+        `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+        `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+        `read:mutes` or `write:mutes`.
       type: object
       required:
         - id
-        - following
-        - requested
-        - followed_by
-        - requested_by
-        - show_boosts
-        - notify
-        - blocking
-        - muting
-        - muting_notifications
       properties:
         id:
           $ref: '#/components/schemas/Id'

@@ -66,7 +66,7 @@ func TestNotificationsAreWired(t *testing.T) {
 		if got, want := types(bob), []notification.Type{notification.TypeMention}; !reflect.DeepEqual(got, want) {
 			t.Errorf("notifications of bob = %v, want %v", got, want)
 		}
-		if n, err := a.Notifications.UnreadCount(ctx, alice); err != nil || n != 2 {
+		if n, err := a.Notifications.UnreadCount(ctx, alice, false); err != nil || n != 2 {
 			t.Errorf("UnreadCount = %d, %v; want 2", n, err)
 		}
 	})

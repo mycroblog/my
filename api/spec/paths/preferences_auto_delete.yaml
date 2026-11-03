@@ -22,6 +22,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 put:
   operationId: updateAutoDeletePolicy
+  x-first-party-only: true
   summary: Replace the authenticated user's automatic deletion of old posts
   description: |
     Replaces the whole policy. Once it is enabled, an hourly job deletes the user's posts

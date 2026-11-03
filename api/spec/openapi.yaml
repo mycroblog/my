@@ -720,9 +720,17 @@ components:
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
         (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
-        OAuth apps) are marked
+        OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
+        imports, changing and previewing the automatic deletion of posts, adding and removing
+        aliases, invites, the user's moderation actions and appeals), are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
+
+        The moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`,
+        `admin_error_group`, and the other types that need a role's permission) reach first-party
+        clients only: another client's token, whatever the user's roles, does not get them in the
+        notification list, the stream, or the unread count, and they are dropped from the alerts of
+        its Web Push subscription.
       flows:
         authorizationCode:
           authorizationUrl: /oauth/authorize
@@ -736,10 +744,9 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts, including the user's own.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
-            "read:favourites": Read the user's favourites.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives (`read:statuses` does not show them).
             "read:finance": Read the totals of the instance's costs, as far as the user's roles allow.
@@ -750,7 +757,7 @@ components:
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile and preferences.
+            "write:accounts": Change the user's profile, preferences, notification settings, badges, and supporter listing.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.

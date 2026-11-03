@@ -1605,7 +1605,9 @@ export interface paths {
         /**
          * Get the viewer's relationships with accounts
          * @description Returns one relationship per requested account, in the order of the request. Accounts
-         *     that do not exist, are not active, or block the viewer are left out.
+         *     that do not exist, are not active, or block the viewer are left out. `blocking` needs
+         *     `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+         *     them the fields are absent.
          */
         get: operations["getRelationships"];
         put?: never;
@@ -13099,7 +13101,10 @@ export interface components {
             /** @description The push service URL (`PushSubscription.endpoint`), an `https` URL. */
             endpoint: string;
             keys: components["schemas"]["PushSubscriptionKeys"];
-            /** @description The notification types to push, each at most once; empty pushes none. */
+            /**
+             * @description The notification types to push, each at most once; empty pushes none. A third-party
+             *     client's subscription leaves out the moderator notification types.
+             */
             alerts: components["schemas"]["NotificationType"][];
         };
         /**
@@ -13199,31 +13204,37 @@ export interface components {
         /**
          * @description The viewer's relationship with an account. It never says whether the account blocks
          *     the viewer: such an account is not found at all.
+         *
+         *     A token sees the fields its scopes cover, wherever the relationship comes from, and the
+         *     rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+         *     `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+         *     `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+         *     `read:mutes` or `write:mutes`.
          */
         Relationship: {
             id: components["schemas"]["Id"];
             /** @description Whether the viewer actively follows the account. */
-            following: boolean;
+            following?: boolean;
             /** @description Whether the viewer's follow request awaits the account's approval. */
-            requested: boolean;
+            requested?: boolean;
             /** @description Whether the account actively follows the viewer. */
-            followed_by: boolean;
+            followed_by?: boolean;
             /** @description Whether the account's follow request awaits the viewer's approval. */
-            requested_by: boolean;
+            requested_by?: boolean;
             /** @description Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow). */
-            show_boosts: boolean;
+            show_boosts?: boolean;
             /**
              * @description Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
              *     without a follow. A subscription asked for with a follow request to an account on another
              *     server is false until that server accepts the follow.
              */
-            notify: boolean;
+            notify?: boolean;
             /** @description Whether the viewer blocks the account. */
-            blocking: boolean;
+            blocking?: boolean;
             /** @description Whether the viewer mutes the account (a mute that has not expired). */
-            muting: boolean;
+            muting?: boolean;
             /** @description Whether the viewer's mute also hides the account's notifications. */
-            muting_notifications: boolean;
+            muting_notifications?: boolean;
         };
         /**
          * @description The follows that a `relationships_severed` tells of: the user lost them when the

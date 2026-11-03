@@ -71,7 +71,7 @@ func TestPostSubscriptionsThroughAPI(t *testing.T) {
 	}
 
 	// Bob and carol subscribe to alice without following her; bob also follows her.
-	if r := e.relate("subscribe", bob, alice, nil); !r.Notify || r.Following {
+	if r := e.relate("subscribe", bob, alice, nil); !set(r.Notify) || set(r.Following) {
 		t.Errorf("subscribe = %+v, want notify without a follow", r)
 	}
 	e.relate("subscribe", carol, alice, nil)
@@ -91,10 +91,10 @@ func TestPostSubscriptionsThroughAPI(t *testing.T) {
 
 	// Unfollowing a local account keeps the subscription; unsubscribing ends it.
 	e.relate("unfollow", bob, alice, nil)
-	if rs := e.relationships(bob, alice.id); len(rs) != 1 || !rs[0].Notify {
+	if rs := e.relationships(bob, alice.id); len(rs) != 1 || !set(rs[0].Notify) {
 		t.Errorf("relationship after unfollowing = %+v, want notify kept", rs)
 	}
-	if r := e.relate("unsubscribe", carol, alice, nil); r.Notify {
+	if r := e.relate("unsubscribe", carol, alice, nil); set(r.Notify) {
 		t.Errorf("unsubscribe = %+v, want notify off", r)
 	}
 	var subs clientapi.AccountPage
@@ -121,18 +121,18 @@ func TestPostSubscriptionsThroughAPI(t *testing.T) {
 	}
 	dave := testUser{id: remote.ID}
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/subscribe", carol.token, nil, nil), http.StatusUnprocessableEntity, "subscribe to a remote account")
-	if r := e.relate("follow", carol, dave, map[string]bool{"notify": true}); !r.Requested || r.Notify {
+	if r := e.relate("follow", carol, dave, map[string]bool{"notify": true}); !set(r.Requested) || set(r.Notify) {
 		t.Errorf("follow with notify = %+v, want requested without notify yet", r)
 	}
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/subscribe", carol.token, nil, nil), http.StatusUnprocessableEntity, "subscribe while requested")
 	if err := app.Graph.AcceptRemote(ctx, appgraph.RemoteResponse{FollowURI: "https://remote.example/unknown", FolloweeID: dave.id, FollowerID: carol.id}); err != nil {
 		t.Fatalf("AcceptRemote: %v", err)
 	}
-	if rs := e.relationships(carol, dave.id); len(rs) != 1 || !rs[0].Following || !rs[0].Notify {
+	if rs := e.relationships(carol, dave.id); len(rs) != 1 || !set(rs[0].Following) || !set(rs[0].Notify) {
 		t.Errorf("relationship after the acceptance = %+v, want following with notify", rs)
 	}
 	e.relate("unfollow", carol, dave, nil)
-	if rs := e.relationships(carol, dave.id); len(rs) != 1 || rs[0].Notify {
+	if rs := e.relationships(carol, dave.id); len(rs) != 1 || set(rs[0].Notify) {
 		t.Errorf("relationship after unfollowing a remote account = %+v, want notify off", rs)
 	}
 }
