@@ -233,6 +233,11 @@ func (r *PullRunner) Drain(ctx context.Context) (int, error) {
 // claimed a job. When the lease ran out while the handler ran and another worker claimed the
 // job, the result is dropped and the error matches ErrLeaseLost.
 func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
+	return r.runOnce(ctx, func() {})
+}
+
+// runOnce is RunOnce with claimed called once a job is claimed, before the job runs.
+func (r *PullRunner) runOnce(ctx context.Context, claimed func()) (bool, error) {
 	// The lease runs from now, before the claim: the handler's deadline is taken from the
 	// monotonic clock first, so that it never ends after the lease the Source records.
 	leaseEnd := time.Now().Add(r.opts.Lease)
@@ -241,6 +246,7 @@ func (r *PullRunner) RunOnce(ctx context.Context) (bool, error) {
 	if err != nil || !ok {
 		return false, err
 	}
+	claimed()
 	_, err = r.runClaimed(ctx, j, now, leaseEnd)
 	return true, err
 }

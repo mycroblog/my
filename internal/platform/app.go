@@ -245,6 +245,10 @@ type App struct {
 	source queue.Source
 	// dbQueue is the database queue, when the server has one.
 	dbQueue *queuedb.Queue
+	// runnerSource is the source of the worker role's runner, when it polls the database queue.
+	runnerSource queue.Source
+	// dbPoolMax is the maximum of the database's connection pool; 0 for a database without one.
+	dbPoolMax int
 	// skippedJobTypes are the job types that worker_job_types leaves to other workers (ADR-0138).
 	skippedJobTypes []string
 	// wakeFinder finds the jobs of the database queue that need a wake-up signal.
@@ -548,6 +552,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
 	if err := a.setUpWorkerJobTypes(cfg); err != nil {
+		return nil, err
+	}
+	if err := a.setUpWorkerJobConcurrency(cfg); err != nil {
 		return nil, err
 	}
 	if err := a.setUpWakeRoutes(); err != nil {

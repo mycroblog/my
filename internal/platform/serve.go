@@ -140,6 +140,10 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		if len(a.skippedJobTypes) > 0 {
 			a.Logger.InfoContext(ctx, "this worker skips these job types; another worker has to run them", slog.Any("job_types", a.skippedJobTypes))
 		}
+		if a.dbPoolMax == 0 && a.Config.WorkerJobConcurrency > sqliteJobConcurrencyWarning {
+			a.Logger.WarnContext(ctx, "this database writes one transaction at a time, and many jobs at once can run slower than a few",
+				slog.Int("worker_job_concurrency", a.Config.WorkerJobConcurrency), slog.Int("above", sqliteJobConcurrencyWarning))
+		}
 		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) { _ = a.runJobs(ctx, stopJobs) })
 		if a.Scheduler != nil {
 			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })

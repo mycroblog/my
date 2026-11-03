@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -143,6 +144,37 @@ func workerJobTypeChecks(vals map[string]string) []Issue {
 	}
 	if len(splitJobTypePatterns(vals["worker_job_types"])) > 0 && len(splitJobTypePatterns(vals["worker_job_types_except"])) > 0 {
 		issues = append(issues, Issue{Key: "worker_job_types_except", Message: "cannot be set together with worker_job_types"})
+	}
+	return issues
+}
+
+// maxWorkerJobConcurrency is the most jobs a process can run at once, the range that was measured
+// (ADR-0140 §1).
+const maxWorkerJobConcurrency = 128
+
+// checkWorkerJobConcurrency accepts the number of jobs a process runs at once.
+func checkWorkerJobConcurrency(v string) error {
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 1 || n > maxWorkerJobConcurrency {
+		return fmt.Errorf("must be a whole number from 1 to %d", maxWorkerJobConcurrency)
+	}
+	return nil
+}
+
+// workerJobConcurrencyChecks are the rules of worker_job_concurrency that the settings alone
+// decide (ADR-0140 §1, §6): only a worker that polls the table runs several jobs. Its check against
+// the database's pool needs the pool, so the server makes it when it opens the database.
+func workerJobConcurrencyChecks(vals map[string]string) []Issue {
+	n, err := strconv.Atoi(vals["worker_job_concurrency"])
+	if err != nil || n < 2 {
+		return nil
+	}
+	var issues []Issue
+	if vals["role"] == string(RoleWeb) {
+		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: "above 1 needs a process that runs jobs, role = all or worker, not web"})
+	}
+	if q := vals["queue"]; q != "" && q != "db" {
+		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: fmt.Sprintf("above 1 works only with queue = db, not %s", q)})
 	}
 	return issues
 }
