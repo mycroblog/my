@@ -44,6 +44,9 @@ const (
 type PurgeRepository interface {
 	// DeleteReceivedDocumentsBefore deletes the documents of activities received before t.
 	DeleteReceivedDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	// DeleteReceivedActivityAnswersBefore deletes the records of answers made before t, at most
+	// limit, and returns how many.
+	DeleteReceivedActivityAnswersBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 	// DeleteReceivedActivitiesBefore deletes the records of activities received before t whose
 	// documents are gone.
 	DeleteReceivedActivitiesBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
@@ -107,6 +110,7 @@ func (p *Purger) Run(ctx context.Context) (int64, error) {
 	}{
 		{"received documents", now.Add(-ReceivedDocumentRetention), r.DeleteReceivedDocumentsBefore},
 		{"received activities", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivitiesBefore},
+		{"received activity answers", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivityAnswersBefore},
 		{"remote follow tombstones", now.Add(-RemoteFollowTombstoneRetention), r.DeleteRemoteFollowTombstonesBefore},
 		{"remote object tombstones", now.Add(-RemoteObjectTombstoneRetention), r.DeleteRemoteObjectTombstonesBefore},
 		{"outbound documents", now.Add(-OutboundDocumentRetention), r.DeleteOutboundDocumentsBefore},

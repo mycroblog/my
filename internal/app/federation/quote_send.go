@@ -304,6 +304,10 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 		typ, result = federation.ActivityAccept, federation.IRI(appcontent.QuoteAuthorizationURI(h.d.Recorder.Host, auth.ID))
 	}
 	err = h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		first, err := h.rec.firstAnswer(ctx, tx, in.Received.ActivityURI, h.d.Clock.Now())
+		if err != nil || !first {
+			return err
+		}
 		out, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
 			Type: typ, ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundQuote, ObjectID: st.ID, CreatedAt: h.d.Clock.Now(),
 		})

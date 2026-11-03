@@ -160,7 +160,8 @@ func (s *Service) migrateFrom(ctx context.Context, st MigrationStep) error {
 }
 
 // MigrateStep migrates one page of st and returns the next step, done after the last one. A
-// target that is not active (deleted meanwhile) ends the migration with nothing done.
+// target that is not active (deleted meanwhile), or a move no longer in force, ends the migration
+// with nothing done.
 func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next MigrationStep, done bool, err error) {
 	if st.MoveID == "" || st.SourceAccountID == "" || st.TargetAccountID == "" || st.SourceAccountID == st.TargetAccountID {
 		return MigrationStep{}, false, fmt.Errorf("graph: migration step %+v: %w", st, ErrNotFound)
@@ -171,6 +172,15 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 	}
 	if err != nil {
 		return MigrationStep{}, false, err
+	}
+	// A move that was cancelled or replaced moves nobody more, when a dead job runs again.
+	switch state, err := s.d.Accounts.MoveState(ctx, st.SourceAccountID); {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return MigrationStep{}, true, nil
+	case err != nil:
+		return MigrationStep{}, false, err
+	case state.MoveID != st.MoveID:
+		return MigrationStep{}, true, nil
 	}
 	next = st
 	next.Phase = st.phase()

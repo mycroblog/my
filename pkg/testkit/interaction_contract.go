@@ -1045,6 +1045,11 @@ func snapshotInteractionProjections(t *testing.T, h InteractionHarness) interact
 	return p
 }
 
+// MoveState implements the graph module's Accounts: no stub account has moved.
+func (s *stubActors) MoveState(context.Context, string) (appaccount.MoveState, error) {
+	return appaccount.MoveState{}, appaccount.ErrNotFound
+}
+
 func (s *stubActors) FindByIDTx(ctx context.Context, _ uow.Tx, id string) (appaccount.Actor, error) {
 	return s.FindByID(ctx, id)
 }

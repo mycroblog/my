@@ -209,6 +209,29 @@ func (q *Queries) DeleteReceivedActivitiesBefore(ctx context.Context, arg Delete
 	return result.RowsAffected(), nil
 }
 
+const deleteReceivedActivityAnswersBefore = `-- name: DeleteReceivedActivityAnswersBefore :execrows
+DELETE FROM received_activity_answers
+WHERE activity_uri IN (
+  SELECT a.activity_uri FROM received_activity_answers a
+  WHERE a.answered_at < $1 ORDER BY a.answered_at LIMIT $2
+)
+`
+
+type DeleteReceivedActivityAnswersBeforeParams struct {
+	AnsweredBefore time.Time
+	BatchLimit     int32
+}
+
+// DeleteReceivedActivityAnswersBefore removes at most @batch_limit records of answers made before
+// @answered_before.
+func (q *Queries) DeleteReceivedActivityAnswersBefore(ctx context.Context, arg DeleteReceivedActivityAnswersBeforeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteReceivedActivityAnswersBefore, arg.AnsweredBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteReceivedActivityDocument = `-- name: DeleteReceivedActivityDocument :exec
 DELETE FROM received_activity_documents WHERE activity_uri = $1
 `
@@ -679,6 +702,26 @@ func (q *Queries) InsertReceivedActivity(ctx context.Context, arg InsertReceived
 		arg.Trust,
 		arg.ReceivedAt,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertReceivedActivityAnswer = `-- name: InsertReceivedActivityAnswer :execrows
+INSERT INTO received_activity_answers (activity_uri, answered_at)
+VALUES ($1, $2)
+ON CONFLICT (activity_uri) DO NOTHING
+`
+
+type InsertReceivedActivityAnswerParams struct {
+	ActivityUri string
+	AnsweredAt  time.Time
+}
+
+// InsertReceivedActivityAnswer inserts nothing when the activity has been answered.
+func (q *Queries) InsertReceivedActivityAnswer(ctx context.Context, arg InsertReceivedActivityAnswerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertReceivedActivityAnswer, arg.ActivityUri, arg.AnsweredAt)
 	if err != nil {
 		return 0, err
 	}
