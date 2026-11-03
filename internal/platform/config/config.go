@@ -84,6 +84,9 @@ type Config struct {
 	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0140); 0 when the
 	// setting is not given, which runs one and checks nothing against the database's pool.
 	WorkerJobConcurrency int
+	// DatabaseAcquireTimeout bounds the wait for a connection of the pool of db = postgres; 0
+	// waits without a limit.
+	DatabaseAcquireTimeout time.Duration
 	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
 	// own queue (ADR-0139); read them with QueueRoutes.
 	QueueSQSRoutes        []QueueRoute
@@ -351,6 +354,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue_sqs_queue_url", c.QueueSQSQueueURL),
 		slog.String("queue_sqs_events_path", c.QueueSQSEventsPath),
 		slog.Duration("queue_sqs_events_budget", c.QueueSQSEventsBudget),
+		slog.Duration("database_acquire_timeout", c.DatabaseAcquireTimeout),
 		slog.String("blob", c.Blob),
 		slog.String("media", c.Media),
 		slog.String("blob_fs_dir", c.BlobFSDir),
@@ -714,6 +718,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	}
 	if cfg.WebOrigin == "" {
 		cfg.WebOrigin = "https://" + cfg.Host
+	}
+	if cfg.DB == "postgres" && !present["database_acquire_timeout"] {
+		cfg.DatabaseAcquireTimeout = DefaultDatabaseAcquireTimeout
 	}
 	if cfg.Queue == "cloudtasks" {
 		cfg.QueueCloudTasksURL = cmp.Or(cfg.QueueCloudTasksURL, "https://"+cfg.Host)

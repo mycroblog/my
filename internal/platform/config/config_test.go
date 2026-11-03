@@ -98,7 +98,7 @@ listen = "127.0.0.1:9000"
 `},
 			want: Config{
 				Host: "social.example.org", AccountDomain: "example.org", SourceURL: "https://git.example.org/fork/my", WebOrigin: "http://localhost:5173", Role: RoleWeb, Listen: "127.0.0.1:9000", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "file:my.db", Queue: "sqs", QueueSQSQueueURL: "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs", QueueSQSEventsPath: "/events", QueueSQSEventsBudget: 10 * time.Minute, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
+				DB: "postgres", DatabaseURL: "file:my.db", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "sqs", QueueSQSQueueURL: "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs", QueueSQSEventsPath: "/events", QueueSQSEventsBudget: 10 * time.Minute, Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
 				KeyManager: "local", KEK: kek, DEKCacheTTL: 10 * time.Minute, DEKCacheEntries: 1024, Mail: "none", SMTPPort: 587, Captcha: "none", Profile: "production", TrustedProxyHeader: "x-forwarded-for",
@@ -367,7 +367,7 @@ listen = "127.0.0.1:9000"
 				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "my-tasks@my-project.iam.gserviceaccount.com"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "postgres://db:5432/my", Queue: "cloudtasks", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "postgres", DatabaseURL: "postgres://db:5432/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "cloudtasks", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				QueueCloudTasksQueue: "projects/my-project/locations/asia-northeast1/queues/my-jobs", QueueCloudTasksURL: "https://social.example.org",
 				QueueCloudTasksServiceAccount: "my-tasks@my-project.iam.gserviceaccount.com", QueueCloudTasksDispatchDeadline: 10 * time.Minute,
 				Stream:    "hub",
@@ -385,7 +385,7 @@ listen = "127.0.0.1:9000"
 				"MY_STREAM_POSTGRES_URL", "postgres://db:5432/my"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
-				DB: "postgres", DatabaseURL: "postgres://pooler:6543/my", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
+				DB: "postgres", DatabaseURL: "postgres://pooler:6543/my", DatabaseAcquireTimeout: DefaultDatabaseAcquireTimeout, Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
 				Stream: "postgres", StreamPostgresURL: "postgres://db:5432/my",
 				BlobFSDir: "blobs", MediaMaxImageBytes: 16 << 20, MediaMaxImageSide: 8192, MediaMaxImagePixels: 7680 * 4320, MediaUnattachedTTL: 24 * time.Hour,
 				MediaMaxAVBytes: 100 << 20, MediaMaxVideoDuration: 5 * time.Minute, MediaMaxAudioDuration: 10 * time.Minute, CustomEmojiMaxBytes: 256 << 10, RemoteCustomEmojiMaxBytes: 1 << 20, RemoteMediaCacheMaxBytes: 1 << 30, RemoteStatusRetention: 90 * 24 * time.Hour, RelayStatusRetention: 7 * 24 * time.Hour, RelayIngestHourlyLimit: 1000, BillingAWSMaxRequestsPerDay: 4, BillingAWSMaxRequestsPerMonth: 120, BillingAWSMetric: "NetUnblendedCost", BillingAWSFilter: "none", BillingGCPMethod: "bigquery", BillingGCPMaxBytesBilled: 1 << 30, PaymentsProvider: "none", PaymentsReconcileInterval: 6 * time.Hour, PaymentsReconcileMaxRequests: 1000, Voice: "off", VoiceP2PMaxParticipants: 10, VoiceTURN: "none", VoiceTURNCredentialTTL: 6 * time.Hour, VoiceICETransportPolicy: "all", DeadJobRetention: 30 * 24 * time.Hour, JobAttemptRetention: 30 * 24 * time.Hour, DynamicClientUnredeemedTTL: 24 * time.Hour, DynamicClientIdleTTL: 90 * 24 * time.Hour,
@@ -879,6 +879,21 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): must be a whole number from 1 to 128"},
 		},
 		{
+			name: "database acquire timeout that is not a duration",
+			env:  with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "soon"),
+			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): must be a Go duration of 0 or more, for example 60s; 0 waits without a limit"},
+		},
+		{
+			name: "negative database acquire timeout",
+			env:  with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "-1s"),
+			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): must be a Go duration of 0 or more, for example 60s; 0 waits without a limit"},
+		},
+		{
+			name: "database acquire timeout on SQLite",
+			env:  with(minimal(), "MY_DATABASE_ACQUIRE_TIMEOUT", "5s"),
+			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): works only with db = postgres, not sqlite, which has no limit on connections to wait for"},
+		},
+		{
 			name: "worker job concurrency of zero",
 			env:  with(minimal(), "MY_WORKER_JOB_CONCURRENCY", "0"),
 			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): must be a whole number from 1 to 128"},
@@ -1282,5 +1297,28 @@ func TestQueueRoutes(t *testing.T) {
 	// Routes of another queue are not used.
 	if got := (&Config{Queue: "db", QueueSQSRoutes: []QueueRoute{{Pattern: "a"}}}).QueueRoutes(); len(got) != 0 {
 		t.Errorf("QueueRoutes with queue = db = %+v", got)
+	}
+}
+
+func TestDatabaseAcquireTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		env  map[string]string
+		want time.Duration
+	}{
+		{"nothing to wait for on SQLite", minimal(), 0},
+		{"default on PostgreSQL", with(minimal(), "MY_DB", "postgres"), 60 * time.Second},
+		{"set", with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "5s"), 5 * time.Second},
+		{"zero waits without a limit", with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "0s"), 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, _, err := Load(source(tc.env, nil))
+			if err != nil {
+				t.Fatalf("Load: %v", err)
+			}
+			if cfg.DatabaseAcquireTimeout != tc.want {
+				t.Errorf("DatabaseAcquireTimeout = %s, want %s", cfg.DatabaseAcquireTimeout, tc.want)
+			}
+		})
 	}
 }

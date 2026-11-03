@@ -23,11 +23,12 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 	if err != nil {
 		return nil, err
 	}
+	d.SetAcquireTimeout(cfg.DatabaseAcquireTimeout)
 	a.UnitOfWork, a.ready, a.closer = d, d.Ready, func() error { d.Close(); return nil }
 	pool := d.Pool()
 	a.dbPoolMax = int(pool.Config().MaxConns)
 	a.newPostgresBus = func(listenURL string) (stream.Bus, error) {
-		return pgstream.New(pgstream.Options{Pool: pool, ListenURL: listenURL, Reporter: a.ErrorReporter})
+		return pgstream.New(pgstream.Options{Pool: pool, Exec: d.Exec, ListenURL: listenURL, Reporter: a.ErrorReporter})
 	}
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d

@@ -242,6 +242,13 @@ var schema = []field{
 		set:      func(c *Config, v string) { c.DatabaseURL = v },
 	},
 	{
+		key:    "database_acquire_timeout",
+		defDoc: "`60s`",
+		doc:    "How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `db = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.",
+		check:  checkAcquireTimeout,
+		set:    func(c *Config, v string) { c.DatabaseAcquireTimeout, _ = time.ParseDuration(v) },
+	},
+	{
 		key:    "database_dev_url",
 		defDoc: "a temporary schema in the database of `database_url`",
 		doc:    "Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege, and the bootstrap SQL (the `pg_trgm` extension) runs in this database too. The server itself never uses it.",
@@ -1463,6 +1470,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}
+	issues = append(issues, databaseAcquireTimeoutChecks(vals, present)...)
 	issues = append(issues, wakerQueueChecks(vals, present)...)
 	issues = append(issues, workerJobTypeChecks(vals)...)
 	issues = append(issues, workerJobConcurrencyChecks(vals)...)
@@ -1601,6 +1609,28 @@ func checkReconcileInterval(v string) error {
 	d, err := time.ParseDuration(v)
 	if err != nil || d < supporters.MinReconcileInterval || d > supporters.MaxReconcileInterval {
 		return fmt.Errorf("must be a Go duration from %s to %s", supporters.MinReconcileInterval, supporters.MaxReconcileInterval)
+	}
+	return nil
+}
+
+// DefaultDatabaseAcquireTimeout is the default of database_acquire_timeout: the server's write
+// timeout, after which a request that waited could not answer anyway. A job gives up no attempt
+// for it, so the bound fails nothing that could still have succeeded.
+const DefaultDatabaseAcquireTimeout = 60 * time.Second
+
+// checkAcquireTimeout accepts a duration of 0 or more: 0 waits without a limit.
+func checkAcquireTimeout(v string) error {
+	if d, err := time.ParseDuration(v); err != nil || d < 0 {
+		return errors.New("must be a Go duration of 0 or more, for example 60s; 0 waits without a limit")
+	}
+	return nil
+}
+
+// databaseAcquireTimeoutChecks refuses database_acquire_timeout where nothing can wait for a
+// connection: only the pool of db = postgres has a limit that a process reaches.
+func databaseAcquireTimeoutChecks(vals map[string]string, present map[string]bool) []Issue {
+	if db := cmp.Or(vals["db"], "sqlite"); present["database_acquire_timeout"] && db != "postgres" {
+		return []Issue{{Key: "database_acquire_timeout", Message: "works only with db = postgres, not " + db + ", which has no limit on connections to wait for"}}
 	}
 	return nil
 }

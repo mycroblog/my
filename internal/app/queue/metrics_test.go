@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -147,5 +148,30 @@ func TestRunnerLogsJobRuns(t *testing.T) {
 	}
 	if lines != len(want) {
 		t.Errorf("%d job lines, want %d:\n%s", lines, len(want), buf.String())
+	}
+}
+
+// A job that found the database busy waits for it without using an attempt, however its handler
+// reported the error.
+func TestRunnerPostponesAJobThatFoundTheDatabaseBusy(t *testing.T) {
+	busy := fmt.Errorf("read: %w", kernel.ErrDatabaseBusy)
+	for name, result := range map[string]queue.Result{
+		"retry":        queue.Retry(0, busy),
+		"retry remote": queue.RetryRemote(0, busy),
+		"fail":         queue.Fail(busy),
+	} {
+		t.Run(name, func(t *testing.T) {
+			src := &jobsSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, jobs: []queue.Job{{ID: testID(1), Type: "busy"}}}
+			reg := &queue.JobHandlerRegistry{}
+			reg.Register("busy", func(context.Context, queue.Job) queue.Result { return result })
+			m := &recordingMeter{values: map[string][]float64{}}
+			r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Meter: m})
+			if n, err := r.Drain(t.Context()); err != nil || n != 1 {
+				t.Fatalf("Drain() = %d, %v", n, err)
+			}
+			if key := "my.job.duration my.job.type=busy my.outcome=postponed"; len(m.values[key]) != 1 {
+				t.Errorf("%s: %v, want one value", key, m.values[key])
+			}
+		})
 	}
 }
