@@ -158,3 +158,30 @@ func TestPaymentErrorKindCheckMatchesTheModule(t *testing.T) {
 		}
 	}
 }
+
+// TestSQLiteTablesAreStrict checks that every SQLite table declares STRICT, which a table cannot
+// gain later without being rebuilt.
+func TestSQLiteTablesAreStrict(t *testing.T) {
+	var sql strings.Builder
+	files, err := fs.Glob(os.DirFS("sqlite"), "*.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range files {
+		b, err := fs.ReadFile(os.DirFS("sqlite"), name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sql.Write(b)
+	}
+	table := regexp.MustCompile(`(?ms)^CREATE TABLE (\w+) \(.*?^\)([^;]*);`)
+	matches := table.FindAllStringSubmatch(sql.String(), -1)
+	if len(matches) == 0 {
+		t.Fatal("found no tables")
+	}
+	for _, m := range matches {
+		if strings.TrimSpace(m[2]) != "STRICT" {
+			t.Errorf("the table %s is not STRICT", m[1])
+		}
+	}
+}

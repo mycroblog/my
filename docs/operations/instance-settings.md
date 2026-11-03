@@ -34,7 +34,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `max_status_length` | integer 1-100000 | `500` | The maximum length of a post, in characters |
 | `default_locale` | BCP 47 language tag | `en` | The default locale. It is the initial UI locale of new users, and the fallback when no catalog matches a user's preference |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | Who can see the local timeline (`GET /api/v1/timelines/local`): nobody, signed-in users, or everyone. `off` answers 404 and `signed_in` answers visitors who are not signed in with 401; in both cases the navigation hides it. Unless the value is `everyone`, the landing page shows no sample posts |
-| `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Who can see the federated timeline (`GET /api/v1/timelines/public`). The values mean the same as for the local timeline |
+| `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Who can see the federated timeline (`GET /api/v1/timelines/federated`). The values mean the same as for the local timeline |
 | `preview_image` | media ID (empty = unset) | empty | The link preview image (`og:image`) for posts and profiles without an image. When unset, the bundled default image is used ([link previews](link-previews.md)) |
 | `contact_account` | username of a local account (empty = unset) | empty | The account to contact the operators. See [contact and thumbnail](#contact-and-thumbnail) |
 | `contact_email` | email address (empty = unset) | empty | The email address to contact the operators. It is also the `Reply-To` and the signature of the emails the server sends |

@@ -38,11 +38,11 @@
 - `delivery_attempts.signature_scheme` が NULL の行は、応答を得ていない試行です（送らなかった `skipped` とサーキットブレーカーが開いていた `retryable_failure`、接続・TLS・タイムアウトの失敗、`HTTPClient` が拒否した宛先）。
 - `trust = refetch` の受信の記録は、オリジンで確かめられずに捨てたとき、原本とともに消します（[federation §3.2](../../federation.md#32-非同期の部分)）。同じアクティビティが後から届けば、もう一度記録します。
 - 受信の記録（`received_activities`）は 30 日、原本は 7 日で削除します（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)、FR-803）。
-  1 時間ごとの消去ジョブ `federation.purge` が、原本、受信の記録、`received_activity_answers`（30 日）、`remote_follow_tombstones`（30 日）、`remote_object_tombstones`（30 日）、`outbound_activity_documents`（30 日）、`delivery_attempts`（30 日）の順に、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。続きは次の回が消します。
+  1 時間ごとの消去ジョブ `federation.purge_records` が、原本、受信の記録、`received_activity_answers`（30 日）、`remote_follow_tombstones`（30 日）、`remote_object_tombstones`（30 日）、`outbound_activity_documents`（30 日）、`delivery_attempts`（30 日）の順に、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。続きは次の回が消します。
   受信の記録は原本が消えたものだけを消すので、原本が受信の記録より長く残ることはありません。`outbound_activity_documents` と `delivery_attempts` の走査は、主キーの UUIDv7 の範囲（期限の下限より前）で止まります。
-- 送信のアクティビティ（`outbound_activities`）は配送（`deliveries`）・試行・本文・`outbound_fanout_completions` とともに、`federation.purge` が 1 トランザクションあたり 100 件・20 回まで消します。
+- 送信のアクティビティ（`outbound_activities`）は配送（`deliveries`）・試行・本文・`outbound_fanout_completions` とともに、`federation.purge_records` が 1 トランザクションあたり 100 件・20 回まで消します。
   - 記録から 30 日で消します。読み返すのは投稿の `Create` の配送先だけで（投稿の `Update` と `Delete` の宛先）、`Like`・`Follow`・`Undo` などを読み返す処理はありません。
   - 投稿の `Create` は、その投稿の `Delete` か Actor の `Delete` の記録から 30 日で消します。その `Delete` の展開が配送先を読み終えるまで残すためです。`Delete` は、頼っている `Create` が残るあいだ残します。
   - アカウントの消去は投稿ごとの `Delete` を送らないので、Actor の `Delete` が目印です。サービスのクローズの `Delete`（`closure_deletes`）は何も消さないので目印にならず、クローズが数えるので自分も消しません。
-- サーバーの観測（`instance_nodeinfo_observations`、`instance_availability_events`）は、`federation.purge` が 90 日で消します。サーバーごとの最新の行は、変化の検出と履歴の表示のため、古くても残します。
+- サーバーの観測（`instance_nodeinfo_observations`、`instance_availability_events`）は、`federation.purge_records` が 90 日で消します。サーバーごとの最新の行は、変化の検出と履歴の表示のため、古くても残します。
   `remote_follow_tombstones` を `remote_object_tombstones` より先に消すので、使い終えた tombstone が、使い終えた印（同じ `activity_uri` の `remote_object_tombstones`。tombstone より新しい）より長く残って `Follow` をもう一度捨てることはありません。

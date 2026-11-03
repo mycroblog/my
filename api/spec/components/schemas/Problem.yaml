@@ -112,7 +112,7 @@ description: |
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-    (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+    (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
     this problem; signing in and resetting a password stay available outside the client API.

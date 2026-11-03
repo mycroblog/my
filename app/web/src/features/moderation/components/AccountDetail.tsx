@@ -353,7 +353,7 @@ function EmailSuppressionSection({
           </p>
           <p>
             {t("client:admin.account.email_suppression.since", {
-              since: intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" }),
+              since: intl.formatDate(suppression.state_changed_at, { dateStyle: "medium", timeStyle: "short" }),
             })}
           </p>
           {canLift && (

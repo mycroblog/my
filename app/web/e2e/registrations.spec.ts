@@ -52,7 +52,7 @@ async function moderatorServer(page: Page) {
       account_id: "0192f0c4-7a8e-7000-8000-0000000000c1",
       username: "bob",
       state: "pending",
-      since: "2026-10-16T09:00:00Z",
+      state_changed_at: "2026-10-16T09:00:00Z",
       email: "bob.with.a.long.address@birds.example",
       email_verified: true,
       reason: longReason,
@@ -63,7 +63,7 @@ async function moderatorServer(page: Page) {
       account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
       username: "carol",
       state: "pending",
-      since: "2026-10-16T10:00:00Z",
+      state_changed_at: "2026-10-16T10:00:00Z",
       email: "carol@example.com",
       email_verified: false,
       reason: arabicReason,
@@ -122,7 +122,7 @@ async function moderatorServer(page: Page) {
       return json(route, {
         ...registration,
         state: decision === "approve" ? "approved" : "rejected",
-        since: "2026-10-17T00:00:00Z",
+        state_changed_at: "2026-10-17T00:00:00Z",
       });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);

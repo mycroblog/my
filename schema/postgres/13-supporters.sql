@@ -237,7 +237,7 @@ CREATE TABLE supporter_listings (
 );
 
 -- Event: a webhook delivery of the payment provider (ADR-0074 §3, §4), recorded once per
--- (provider, event_id) in the transaction that queues its supporters.payment_event job. Only the
+-- (provider, event_id) in the transaction that queues its supporters.apply_payment_event job. Only the
 -- IDs and the type are kept, never the body (§5). The daily purge deletes the rows older than
 -- 45 days; a delivery that comes again after it is recorded again, and its job changes nothing.
 CREATE TABLE payment_webhook_receipts (

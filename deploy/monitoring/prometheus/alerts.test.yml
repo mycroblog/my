@@ -325,7 +325,7 @@ tests:
         values: 0+10x60
       - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="identity.verification_email", my_outcome="success"}
         values: 0+1x60
-      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="identity.password_reset_email", my_outcome="dead"}
+      - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="notification.email", my_outcome="dead"}
         values: 0x30 1x30
       # Other job types do not count.
       - series: my_job_duration_seconds_count{job="my", instance="a:9464", my_job_type="federation.deliver", my_outcome="dead"}

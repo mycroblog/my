@@ -45,7 +45,7 @@ DB スキーマは方言ごとに `schema/<dialect>.sql` を持つ（ADR-0003）
   - CI とコンテナイメージには Community Edition のバイナリを入れる（`arigaio/atlas:<version>-community`、または `atlasgo.sh` の `--community`）。
   - バージョンは固定する。
 - **Community Edition で扱えないもの**（拡張機能、シーケンス、パーティショニング、ビュー、トリガーなど）は、目標スキーマに書かない。
-  - 必要な拡張機能（PostgreSQL の `pg_trgm` など、ADR-0009）は、Atlas の前に実行する冪等な準備 SQL（`schema/postgres.bootstrap.sql`、`CREATE EXTENSION IF NOT EXISTS …`）で作る。
+  - 必要な拡張機能は、Atlas の前に実行する冪等な準備 SQL（`schema/postgres.bootstrap.sql`、`CREATE EXTENSION IF NOT EXISTS …`）で作る。
   - ID は UUIDv7 をアプリで生成するので（ADR-0003）、シーケンスは使わない。
 - **v0 の破壊的変更**（ADR-0012）:
   - カラムの削除など、データを失う変更も `schema apply` で反映してよい。

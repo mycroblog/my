@@ -19,10 +19,13 @@ info:
       (`read`, `write`, `follow`, `admin`) grants the fine-grained scopes under it. A missing or
       invalid token is a 401 with `WWW-Authenticate`, a token without the scope a 403
       `insufficient_scope`.
-    - Every response carries the `RateLimit` and `RateLimit-Policy` fields
+    - The operations carry the `RateLimit` and `RateLimit-Policy` fields
       (draft-ietf-httpapi-ratelimit-headers): anonymous requests share a limit per client IP,
-      authenticated requests one per account. Past the limit the answer is 429 with
-      `Retry-After`.
+      authenticated requests one per account, and an administrator may cap one client across
+      all its users (the `client` policy). Past a limit the answer is 429 with `Retry-After`.
+      The fields are left out while the server cannot read its limits, which then let requests
+      through.
+    - This document is served at `GET /openapi.yaml`, without a limit or a token.
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.
   license:
@@ -88,7 +91,7 @@ tags:
   - name: finance
     description: |
       The instance's finances as the holders of the `view_finance` permission read them, as far
-      as the instance settings show (ADR-0070 §5). The operations need a `read` scope and the
+      as the instance settings show (ADR-0070 §5). The operations need the `read:finance` scope and the
       `view_finance` or the `manage_finance` permission, never an `admin` scope.
   - name: supporters
     description: |
@@ -116,9 +119,10 @@ tags:
       `/api/v1/problems/missing-permission`.
   - name: admin-server
     description: |
-      The administration of the server itself: its settings and texts, its rules, the roles and
-      granting them, the custom emoji, the webhooks, the announcements, and the dead jobs of the
-      job queue (ADR-0058). The
+      The administration of the server itself: its settings, texts, theme, and brand, its rules,
+      the roles and granting them, the custom emoji, the webhooks, the announcements, the job
+      queue, the costs and income, the supporter program, the login providers, the OAuth apps, the
+      relays, the closure of the service, and the reported errors (ADR-0058). The
       operations need an `admin` scope and a permission of the user's roles in the server
       category; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 paths:
@@ -1208,7 +1212,10 @@ paths:
         `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
         cannot be fetched, or is suspended here (it or its server), and
         `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-        move was cancelled, or for a target the account moved to before.
+        move was cancelled, or for a target the account moved to before. An account that may not
+        move (under a moderation action that stops it, say) is a 403
+        `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
+        hour for the user, past which the answer is 429.
 
         Once moved, the account's followers on other servers get a `Move` and follow the target,
         the followers on this server follow it too, and the account's profile names the target
@@ -1418,7 +1425,7 @@ paths:
         `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
         activities), `moderation.json` (the moderation actions on the account, its appeals, and
         the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
-        `blocked_accounts.csv`, `muted_accounts.csv`, `bookmarks.csv`). The export is
+        `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
         `pending` until the archive is built. While
         another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
         at most 3 requests per account are accepted every day.
@@ -1818,6 +1825,9 @@ paths:
       responses:
         '201':
           description: The new passkey.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -1879,8 +1889,8 @@ paths:
         Returns the options of a WebAuthn authentication (with user verification) for the
         browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
         for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-        in place of the current password: deleting the account, changing or removing the
-        password, and registering a passkey. Nothing is stored.
+        in place of the current password: deleting the account, moving it, changing or removing
+        the password, registering a passkey, and linking an identity. Nothing is stored.
       tags:
         - passkeys
       security:
@@ -2228,7 +2238,8 @@ paths:
         A setting that breaks a rule is a 422 naming it, a user with 25 apps a 409
         `/api/v1/problems/too-many-oauth-apps`, and a server that does not let users register
         apps (the instance setting `user_app_registration`) a 403
-        `/api/v1/problems/oauth-app-registration-disabled`.
+        `/api/v1/problems/oauth-app-registration-disabled`. A user registers at most 5 apps an
+        hour; past that the answer is 429.
       tags:
         - oauth-apps
       security:
@@ -2313,7 +2324,7 @@ paths:
           description: The app is deleted.
         default:
           $ref: '#/components/responses/Problem'
-  /oauth_apps/{id}/secret:
+  /oauth_apps/{id}/rotate_secret:
     parameters:
       - $ref: '#/components/parameters/OAuthAppId'
     post:
@@ -2383,9 +2394,9 @@ paths:
       operationId: lookupAccount
       summary: Look up or resolve an account by its handle or URL
       description: |
-        Finds `username` (a local account), `username@domain`, or the `https` URL of an actor
-        (its `uri`, or a profile page that serves the actor) among the accounts that the instance
-        knows. A leading `@` of a handle is ignored. An account that blocks the viewer, is
+        Finds `username` (a local account), `username@domain`, or the `https` or `http` URL of an actor
+        among the accounts that the instance knows: its `uri` always, and a profile page that serves
+        the actor only with `resolve`, which fetches it. A leading `@` of a handle is ignored. An account that blocks the viewer, is
         deactivated, or is deleted is a 404, the same as an unknown one.
 
         With `resolve=true`, a remote account that the instance does not know yet is fetched
@@ -2407,7 +2418,7 @@ paths:
         - name: acct
           in: query
           required: true
-          description: The handle, `username` or `username@domain`, or the `https` URL of an actor.
+          description: The handle, `username` or `username@domain`, or the `https` or `http` URL of an actor.
           schema:
             type: string
             minLength: 1
@@ -2603,6 +2614,24 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unblockAccount
+      summary: Unblock an account
+      description: |
+        The follows that the block ended stay ended. Without a block it changes nothing. It also
+        works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:blocks
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/follow:
     post:
       operationId: followAccount
@@ -2630,6 +2659,22 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FollowAccountRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unfollowAccount
+      summary: Unfollow an account
+      description: Ends the follow or withdraws the follow request. Without one it changes nothing.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -2723,6 +2768,22 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unmuteAccount
+      summary: Unmute an account
+      description: Without a mute it changes nothing. It also works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/remove_from_followers:
     post:
       operationId: removeAccountFromFollowers
@@ -2735,59 +2796,6 @@ paths:
       security:
         - oauth2:
             - write:follows
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unblock:
-    post:
-      operationId: unblockAccount
-      summary: Unblock an account
-      description: |
-        The follows that the block ended stay ended. Without a block it changes nothing. It also
-        works on an account that blocks the user.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:blocks
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unfollow:
-    post:
-      operationId: unfollowAccount
-      summary: Unfollow an account
-      description: Ends the follow or withdraws the follow request. Without one it changes nothing.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:follows
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unmute:
-    post:
-      operationId: unmuteAccount
-      summary: Unmute an account
-      description: Without a mute it changes nothing. It also works on an account that blocks the user.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:mutes
       parameters:
         - $ref: '#/components/parameters/AccountId'
       responses:
@@ -2819,8 +2827,7 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
-  /accounts/{id}/unsubscribe:
-    post:
+    delete:
       operationId: unsubscribeAccount
       summary: Stop being notified of an account's new posts
       description: |
@@ -2896,7 +2903,7 @@ paths:
           $ref: '#/components/responses/AccountPage'
         default:
           $ref: '#/components/responses/Problem'
-  /follow_requests/{id}/authorize:
+  /follow_requests/{id}/accept:
     post:
       operationId: acceptFollowRequest
       summary: Accept a follow request
@@ -3406,7 +3413,8 @@ paths:
         deleted posts, and notifications from accounts that the user blocks, is blocked by, or
         mutes with notifications hidden are left out, also those that came before the block or
         mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
-        `admin_webhook_disabled`, `admin_custom_emoji_request`) are left out once
+        `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
+        `admin_service_closure_due`, `admin_error_group`) are left out once
         the user's roles no longer grant the permission they need.
       tags:
         - notifications
@@ -3422,7 +3430,6 @@ paths:
           explode: true
           schema:
             type: array
-            maxItems: 11
             items:
               $ref: '#/components/schemas/NotificationType'
         - $ref: '#/components/parameters/Cursor'
@@ -3790,7 +3797,10 @@ paths:
       summary: Get the thread around a status
       description: |
         The ancestors and descendants of a status that the viewer may see. A status that the
-        viewer may not see is a 404, the same as a missing one.
+        viewer may not see is a 404, the same as a missing one. For a remote status, any request,
+        an anonymous one included, may start fetching the rest of its thread from other servers;
+        a thread is fetched once at a time, 20 levels deep and at most 100 documents, so the
+        answer may grow on a later request.
       tags:
         - statuses
       security:
@@ -3876,8 +3886,8 @@ paths:
       operationId: pinStatus
       summary: Pin the authenticated user's status to the profile
       description: |
-        Pinning a status that is already pinned changes nothing. Another account's status, a
-        direct status, or a pin beyond the limit is a 422.
+        Pinning a status that is already pinned changes nothing. Another account's status is a
+        403, as for editing it, and a direct status or a pin beyond the limit a 422.
       tags:
         - statuses
       security:
@@ -4122,10 +4132,11 @@ paths:
       operationId: listAccountStatuses
       summary: List the posts and boosts of an account
       description: |
-        The account's posts and boosts that the viewer may see, newest first: its public posts
+        The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
         for everyone, its local posts for logged-in viewers, its followers-only posts for its
         followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
-        the account's pinned posts instead, newest pin first, in a single page.
+        the account's pinned posts instead, newest pin first, in a single page. A reply whose parent the viewer may not see has no
+        `in_reply_to_id`.
 
         The page lists only the posts this server has received. For a remote account, the first
         page (no `cursor`, no `pinned`) of a logged-in viewer may start fetching the account's
@@ -4263,9 +4274,9 @@ paths:
           $ref: '#/components/responses/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
-  /timelines/public:
+  /timelines/federated:
     get:
-      operationId: getPublicTimeline
+      operationId: getFederatedTimeline
       summary: Get the federated timeline
       description: |
         The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -4549,9 +4560,10 @@ paths:
         again after that many seconds. The server may also end an open stream when it may have
         missed updates; reconnect and read again, as after any other end.
 
-        Each server process delivers only the updates that it produced itself, so a deployment
-        that runs several web processes, or separate web and worker processes, misses updates
-        on some streams.
+        With the `stream = hub` setting, each server process delivers only the updates that it
+        produced itself, so a deployment that runs several web processes, or separate web and
+        worker processes, misses updates on some streams. A deployment with a shared stream broker
+        does not.
       tags:
         - streaming
       security:
@@ -4611,6 +4623,11 @@ paths:
         cannot receive updates (its broker is not ready, or it is shutting down) the answer is 503
         with `Retry-After`; try again after that many seconds. The server may also end an open
         stream when it may have missed updates; reconnect and read again, as after any other end.
+
+        With the `stream = hub` setting, each server process delivers only the updates that it
+        produced itself, so a deployment that runs several web processes, or separate web and
+        worker processes, misses updates on some streams. A deployment with a shared stream broker
+        does not.
       tags:
         - streaming
       security:
@@ -7036,8 +7053,8 @@ paths:
         lifted; several actions on one account add up. On a local account: `warn` only tells
         the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
         past ones included, followers-only and keeps them off the public timelines;
-        `restrict_posting` stops it posting, replying, boosting, and editing;
-        `restrict_interaction` stops it following, favouriting, boosting, and replying;
+        `restrict_posting` stops it posting, replying, boosting, quoting, and editing;
+        `restrict_interaction` stops it following, favouriting, boosting, and voting;
         `disable_login` ends its sessions and tokens and stops it logging in; `suspend` does all
         of these and hides its profile and posts from everyone else; `ban` is a `suspend` that
         is never lifted and deletes the account 30 days later. `delete_statuses` deletes the
@@ -7917,7 +7934,7 @@ paths:
       summary: List the instance texts
       description: |
         The current text of every key that has one (FR-705): the name, the descriptions, the
-        terms of service, the privacy policy, and the alternative texts of the preview image and
+        terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
         the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
         texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
       tags:
@@ -7945,7 +7962,7 @@ paths:
         Records a revision of the text of `key`, which becomes its current text in every locale:
         the administrator writes it once, in any language, and readers of every locale see the
         same value. An empty `body` clears the text. The revision and the change are kept
-        (`instance_text_revisions`, the audit log's `text_changed`). The terms of service and the privacy policy are Markdown, which the server renders and
+        (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
         sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
         `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
         the other texts are plain text. The display name (`name`) names the instance to people
@@ -7954,7 +7971,7 @@ paths:
         without a name, the domain names it, and handles and URLs always use the domain. An
         unknown key is a 404. A body longer than the key allows (100 characters for
         `name`, 500 for `short_description`, 1,500 for `preview_image_alt` and `thumbnail_alt`, 20,000 for
-        `description`, 100,000 for `terms` and `privacy_policy`), or with a line break in `name`
+        `description`, 100,000 for `terms`, `privacy_policy` and `commerce_disclosure`), or with a line break in `name`
         or of only spaces in `name`, is a 422 naming `body`. Needs the `manage_settings`
         permission.
       tags:
@@ -8238,7 +8255,7 @@ paths:
         403 `/api/v1/problems/target-outranks-actor`. Needs the
         `manage_accounts` permission.
       tags:
-        - admin-server
+        - admin-moderation
       security:
         - oauth2:
             - admin:write
@@ -8307,7 +8324,8 @@ paths:
         change applies to its holders from their next request, and the audit log records
         `role_updated`. A request that changes nothing records nothing. The key never changes.
         `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
-        `moderator` takes a new position and permissions like any other role. Removing the badge
+        `moderator` takes a new position and permissions like any other role. A change that would
+        break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
         hides it from every holder's profile (ADR-0071). A role, or a new position, above every
         role of the viewer is a 403. A position, permissions, or badge that break a rule, or
         adding or removing a permission that the viewer's roles do not grant, is a 422
@@ -8379,7 +8397,8 @@ paths:
         next request, and the audit log records `role_granted`. Granting a role that the user
         holds changes nothing and records nothing. A role whose position is above every role
         of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
-        account, one that is not local, or an unknown role is a 404. Answers the roles that the
+        account, one that is not local, or an unknown role is a 404, and a role that a supporter plan
+        manages a 409 `/api/v1/problems/role-managed-by-plan`. Answers the roles that the
         user holds afterwards. Needs the `manage_roles` permission.
       tags:
         - admin-server
@@ -8942,8 +8961,7 @@ paths:
             A provider to count as if it were enabled, for the question of what enabling it would do.
             A new provider needs none: nobody links to it yet.
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/Id'
       responses:
         '200':
           description: The count.
@@ -9012,7 +9030,7 @@ paths:
         - oauth2:
             - write:accounts
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -9090,7 +9108,7 @@ paths:
         - oauth2:
             - admin:write
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -9296,7 +9314,7 @@ paths:
       description: |
         The client can be authorized again. The tokens that the disablement revoked stay revoked:
         the users authorize the client again. Lifting nothing changes nothing. The lift is
-        recorded in the audit log. An unknown ID is a 404. Needs the `manage_oauth_apps`
+        recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
         permission.
       tags:
         - admin-server
@@ -9860,38 +9878,6 @@ paths:
                 $ref: '#/components/schemas/LinkCardDomainRuleList'
         default:
           $ref: '#/components/responses/Problem'
-    post:
-      operationId: setLinkCardDomainRule
-      summary: Set the rule of a domain for the link card crawler
-      description: |
-        Records the rule of a domain, replacing the rule it has, and records the change in the
-        audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-        link cards: federation and other remote media follow the domain actions. A domain that is
-        not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-        the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-      tags:
-        - admin-server
-      security:
-        - oauth2:
-            - admin:write
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetLinkCardDomainRuleRequest'
-      responses:
-        '200':
-          description: The rule.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LinkCardDomainRule'
-        default:
-          $ref: '#/components/responses/Problem'
   /admin/link_card_domains/{domain}:
     delete:
       operationId: removeLinkCardDomainRule
@@ -9918,6 +9904,47 @@ paths:
       responses:
         '204':
           description: The domain has no rule.
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: setLinkCardDomainRule
+      summary: Set the rule of a domain for the link card crawler
+      description: |
+        Records the rule of a domain, replacing the rule it has, and records the change in the
+        audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+        link cards: federation and other remote media follow the domain actions. A domain that is
+        not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+        422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 253
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLinkCardDomainRuleRequest'
+      responses:
+        '200':
+          description: The rule.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkCardDomainRule'
         default:
           $ref: '#/components/responses/Problem'
   /admin/relays:
@@ -10309,8 +10336,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SupporterPlanId'
       responses:
-        '204':
-          description: The plan is retired.
+        '200':
+          $ref: '#/components/responses/AdminSupporterPlan'
         default:
           $ref: '#/components/responses/Problem'
   /admin/supporter_subscriptions:
@@ -10397,8 +10424,8 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
-        OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
+        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving and deleting
+        the account, the user's own OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
         imports, changing and previewing the automatic deletion of posts, adding and removing
         aliases, invites, the user's moderation actions and appeals), are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
@@ -10427,8 +10454,8 @@ components:
             read:bookmarks: Read the user's bookmarks.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives (`read:statuses` does not show them).
-            read:finance: Read the totals of the instance's costs, as far as the user's roles allow.
-            read:follows: Read follows and follow requests.
+            read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
+            read:follows: Read follows, follow requests, lists, and the accounts whose new posts notify the user.
             read:mutes: Read the accounts and domains the user mutes.
             read:notifications: Read the user's notifications.
             read:reports: Read the reports the user filed and whether they are resolved.
@@ -10440,12 +10467,12 @@ components:
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
             write:favourites: Favourite posts and react to them with emoji, and take both back.
-            write:follows: Follow and unfollow accounts and answer follow requests.
-            write:media: Upload media and change their descriptions.
+            write:follows: Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            write:media: Upload media, read their state while they process, and change their descriptions.
             write:mutes: Mute and unmute accounts and domains.
             write:notifications: Mark notifications read and dismiss them.
             write:reports: Report accounts and posts to the moderators.
-            write:statuses: Post, edit, delete, boost, and pin posts.
+            write:statuses: Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             write:supporters: Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
             write:voice: Open, join, and leave voice chat rooms, and host them.
   headers:
@@ -11307,10 +11334,12 @@ components:
         id:
           $ref: '#/components/schemas/Id'
         username:
-          description: The username, without the domain.
+          description: The username, without the domain; empty for a remote account without a confirmed handle.
           type: string
         acct:
-          description: The username for local accounts, `username@domain` for remote ones.
+          description: |
+            The username for local accounts, `username@domain` for remote ones; empty for a remote
+            account without a confirmed handle.
           type: string
         domain:
           description: |
@@ -11554,10 +11583,12 @@ components:
             $ref: '#/components/schemas/AccountFieldSource'
         avatar_media_id:
           description: The media file of the avatar; omitted when there is none.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         header_media_id:
           description: The media file of the header image; omitted when there is none.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
     AccountStatusPage:
       description: A page of the statuses of an account.
       allOf:
@@ -11629,7 +11660,11 @@ components:
           items:
             $ref: '#/components/schemas/AdminAccountRestriction'
         registration_state:
-          $ref: '#/components/schemas/AdminAccountRegistrationState'
+          description: |
+            Where the registration of a local account stands; a user made with the command line is
+            `approved`. Omitted for a remote account.
+          allOf:
+            - $ref: '#/components/schemas/RegistrationState'
     AdminAccountAction:
       description: A moderation action on an account (FR-703).
       type: object
@@ -11678,7 +11713,7 @@ components:
           description: Whether the account is told of the action.
           type: boolean
         state:
-          $ref: '#/components/schemas/AdminAccountActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -11740,15 +11775,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminAccountAction'
-    AdminAccountActionState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminAccountDetail:
       description: The details of an account (FR-714).
       allOf:
@@ -11909,7 +11935,7 @@ components:
         - callback_url
         - linked_users
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -11976,7 +12002,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When the settings last changed.
           type: string
           format: date-time
@@ -12240,30 +12266,21 @@ components:
       type: object
       required:
         - kind
-        - since
+        - state_changed_at
       properties:
         kind:
           type: string
           enum:
             - hard_bounce
             - complaint
-        since:
+        state_changed_at:
           description: When the failure that started the suppression happened.
           type: string
           format: date-time
-    AdminAccountRegistrationState:
-      description: |
-        Where the registration of a local account stands; a user made with the command line is
-        `approved`. Omitted for a remote account.
-      type: string
-      enum:
-        - pending
-        - approved
-        - rejected
     AdminAccountRestriction:
       description: |
         A capability that an action takes away (data-model §5.2). `login`: logging in and the
-        API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,
+        API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
         boosting, voting. `visibility_ceiling_private`: posts are followers-only.
         `public_discovery`: posts stay off the public timelines and search.
         `unsolicited_reach`: notifications reach followers only. `media_sensitive`: media shows
@@ -12321,12 +12338,12 @@ components:
         - content
         - state
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
         title:
-          description: The heading, in plain text; empty for an announcement without one.
+          description: The heading, in plain text.
           type: string
         text:
           description: The text, in Markdown.
@@ -12351,7 +12368,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When its text or window last changed.
           type: string
           format: date-time
@@ -12548,7 +12565,7 @@ components:
         the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
         `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
         the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-        `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+        `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
         (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
         and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
         name.
@@ -12694,9 +12711,11 @@ components:
           $ref: '#/components/schemas/AdminAuditTargetKind'
         target_id:
           description: |
-            The target: the ID of an account, a report, an appeal, a user, a role, a rule, a
-            sign-up block, a custom emoji, a webhook, or an invite, the domain of a domain action,
-            or the key of a setting or a text.
+            The target: the ID of an account, a status, a report, an appeal, a user, a role, a rule,
+            a sign-up block, a custom emoji or a request for one, a webhook, an announcement, an
+            invite, a relay, a cost item, a supporter plan or subscription, an OAuth client, a voice
+            room, or a login provider; the domain of a domain action or a link card rule; the host of
+            a denied OAuth client; the source of a billing import; or the key of a setting or a text.
           type: string
         target_label:
           description: |
@@ -12714,9 +12733,8 @@ components:
           type: boolean
         source_event_id:
           description: |
-            The ID of the record of the operation (the domain action, the assignment, the
-            resolution, the reopening, the note, the decision, the revision), which holds its
-            reasons and notes; omitted when the operation has none.
+            An opaque ID that relates the entries of one operation; omitted when the operation has
+            no record of its own.
           type: string
         occurred_at:
           type: string
@@ -12970,7 +12988,7 @@ components:
           description: Whether a public list of the domain actions hides part of the domain.
           type: boolean
         state:
-          $ref: '#/components/schemas/AdminDomainActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -13007,15 +13025,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminDomainAction'
-    AdminDomainActionState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminIncomePeriodTotal:
       description: |
         A week, month, or year of the income totals as the administrators see it: the `gross`, the
@@ -13092,7 +13101,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/AdminInstanceState'
-        since:
+        state_changed_at:
           description: When the server entered its state; omitted for a server without failures.
           type: string
           format: date-time
@@ -13223,7 +13232,7 @@ components:
         - name
         - registration
         - confidential
-        - scope
+        - scopes
         - owner_deleted
         - disabled
         - created_at
@@ -13246,9 +13255,11 @@ components:
         confidential:
           description: Whether the client has a secret (a confidential client) or not (a public client).
           type: boolean
-        scope:
-          description: The most that the client may be granted, as space-separated scopes.
-          type: string
+        scopes:
+          description: The most that the client may be granted.
+          type: array
+          items:
+            type: string
         owner:
           description: |
             The account of the user who registered the client; omitted for the other routes and
@@ -13848,7 +13859,7 @@ components:
       required:
         - user_id
         - state
-        - since
+        - state_changed_at
         - submitted_at
       properties:
         user_id:
@@ -13862,7 +13873,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/RegistrationState'
-        since:
+        state_changed_at:
           description: When the registration entered its state.
           type: string
           format: date-time
@@ -13991,12 +14002,7 @@ components:
             made on this server.
           type: string
         category:
-          type: string
-          enum:
-            - spam
-            - legal
-            - violation
-            - other
+          $ref: '#/components/schemas/ReportCategory'
         comment:
           description: The reporter's comment as plain text, up to 5,000 characters.
           type: string
@@ -14323,7 +14329,10 @@ components:
           minLength: 1
           maxLength: 64
         position:
+          description: The rank of the role, from 0 to 999, and 1000 for `admin`.
           type: integer
+          minimum: 0
+          maximum: 1000
         permissions:
           description: The permissions that the role grants, in the order of `Permission`.
           type: array
@@ -14479,7 +14488,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Id'
         state:
-          $ref: '#/components/schemas/AdminSignupBlockState'
+          $ref: '#/components/schemas/ModerationActionState'
         created_at:
           type: string
           format: date-time
@@ -14521,15 +14530,6 @@ components:
       enum:
         - reject
         - require_approval
-    AdminSignupBlockState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminSupporterPlan:
       description: |
         A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
@@ -15093,7 +15093,7 @@ components:
         - state_reason
         - state_changed_at
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -15120,7 +15120,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When the URL, the description, or the events last changed.
           type: string
           format: date-time
@@ -15280,7 +15280,7 @@ components:
         - title
         - content
         - published_at
-        - updated_at
+        - revised_at
         - read
         - ended
       properties:
@@ -15304,7 +15304,7 @@ components:
           description: When it stops showing; omitted when it shows until it is withdrawn.
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When its text or window last changed.
           type: string
           format: date-time
@@ -15660,8 +15660,8 @@ components:
         new_password:
           description: The new password, 8 to 128 characters.
           type: string
-          minLength: 1
-          maxLength: 1024
+          minLength: 8
+          maxLength: 128
     ConfirmedOperation:
       description: |
         An operation that the user confirms: registering a passkey (`passkey_registration`),
@@ -16275,6 +16275,8 @@ components:
         position:
           description: The rank of the role, from 0 to 999 (below `admin`).
           type: integer
+          minimum: 0
+          maximum: 999
         permissions:
           description: The permissions that the role grants, each once.
           type: array
@@ -17097,7 +17099,7 @@ components:
         - id
         - fingerprint
         - state
-        - state_since
+        - state_changed_at
         - source
         - kind
         - where
@@ -17117,7 +17119,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/ErrorGroupState'
-        state_since:
+        state_changed_at:
           description: When the group entered its state; its first occurrence while it has always been open.
           type: string
           format: date-time
@@ -17548,7 +17550,7 @@ components:
         text:
           description: |
             The list: one value per line, or a CSV row whose first field is the value; blank
-            lines and lines starting with `#` are ignored. At most 10,000 values.
+            lines and lines starting with `#` are ignored. At most 10,000 values; the request body is at most 1 MiB, past which the answer is 413.
           type: string
         severity:
           $ref: '#/components/schemas/AdminSignupBlockSeverity'
@@ -18828,7 +18830,7 @@ components:
           items:
             $ref: '#/components/schemas/Id'
         state:
-          $ref: '#/components/schemas/AdminAccountActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -18933,7 +18935,7 @@ components:
       description: The settings of a mute.
       type: object
       properties:
-        notifications:
+        hide_notifications:
           description: Also hide the account's notifications.
           type: boolean
           default: true
@@ -18971,11 +18973,11 @@ components:
       type: object
       required:
         - account
-        - notifications
+        - hide_notifications
       properties:
         account:
           $ref: '#/components/schemas/Account'
-        notifications:
+        hide_notifications:
           description: Whether the mute also hides the account's notifications.
           type: boolean
         expires_at:
@@ -19668,7 +19670,7 @@ components:
     AuthorizedApp:
       description: |
         An app the authenticated user authorized: the user's grants of one OAuth client that still
-        work. The name, the website and the logo are what the app says about itself; `registration`,
+        work. The name and the website are what the app says about itself; `registration`,
         `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
       type: object
       required:
@@ -20191,7 +20193,7 @@ components:
         - csv
       properties:
         csv:
-          description: The file's text, with a header or as a list of domains; at most 5,000 rows.
+          description: The file's text, with a header or as a list of domains; at most 5,000 rows, and the request body at most 1 MiB, past which the answer is 413.
           type: string
     Problem:
       description: |
@@ -20307,7 +20309,7 @@ components:
           server serves only the operations with which the users take their data away: their own
           account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
           `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-          (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+          (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
           the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
           `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
           this problem; signing in and resetting a password stay available outside the client API.
@@ -20850,6 +20852,15 @@ components:
             - $ref: '#/components/schemas/Id'
         state:
           $ref: '#/components/schemas/ReportState'
+    ModerationActionState:
+      description: |
+        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
+        lifted it.
+      type: string
+      enum:
+        - active
+        - expired
+        - lifted
     ReportCategory:
       description: |
         Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
@@ -21039,14 +21050,8 @@ components:
       description: The rule to set on a domain.
       type: object
       required:
-        - domain
         - mode
       properties:
-        domain:
-          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
-          type: string
-          minLength: 1
-          maxLength: 253
         mode:
           $ref: '#/components/schemas/LinkCardDomainMode'
         note:
@@ -21380,16 +21385,6 @@ components:
         acct:
           description: The username for local accounts, `username@domain` for remote ones.
           type: string
-        domain:
-          description: |
-            The domain of the account: the domain of its handle, which for local accounts is the
-            instance's account domain, or the host of its `uri` when a remote account has no
-            confirmed handle.
-          type: string
-        uri:
-          description: The ActivityPub id of the account's actor, on the server it belongs to.
-          type: string
-          format: uri
         url:
           description: The account's profile page.
           type: string
@@ -22023,7 +22018,7 @@ components:
           maxProperties: 64
           additionalProperties:
             type: string
-            maxLength: 320
+            maxLength: 2048
     UpdateLoginProviderRequest:
       description: |
         The changes to a login provider; what is omitted stays. The kind does not change, and the
@@ -22166,6 +22161,8 @@ components:
         position:
           description: The new rank of the role, from 0 to 999.
           type: integer
+          minimum: 0
+          maximum: 999
         permissions:
           description: The new permissions of the role, each once; empty removes them all.
           type: array

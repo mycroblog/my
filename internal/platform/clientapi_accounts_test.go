@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/account"
@@ -102,7 +103,12 @@ func (e *accountsEnv) want(res *http.Response, status int, what string) string {
 func (e *accountsEnv) relate(action string, from testUser, to testUser, body any) clientapi.Relationship {
 	e.t.Helper()
 	var r clientapi.Relationship
-	e.want(e.do(http.MethodPost, "/accounts/"+to.id+"/"+action, from.token, body, &r), http.StatusOK, action)
+	// An action on a relation is a POST on its path, and its undoing a DELETE there.
+	method := http.MethodPost
+	if rel, undoing := strings.CutPrefix(action, "un"); undoing {
+		method, action = http.MethodDelete, rel
+	}
+	e.want(e.do(method, "/accounts/"+to.id+"/"+action, from.token, body, &r), http.StatusOK, action)
 	if r.Id != to.id {
 		e.t.Fatalf("%s: relationship of %s, want %s", action, r.Id, to.id)
 	}
@@ -205,7 +211,7 @@ func TestClientAPIAccounts(t *testing.T) {
 		t.Errorf("bob's relationship with alice = %+v", rs)
 	}
 	var r clientapi.Relationship
-	e.want(e.do(http.MethodPost, "/follow_requests/"+alice.id+"/authorize", bob.token, nil, &r), http.StatusOK, "authorize")
+	e.want(e.do(http.MethodPost, "/follow_requests/"+alice.id+"/accept", bob.token, nil, &r), http.StatusOK, "authorize")
 	if !set(r.FollowedBy) || set(r.RequestedBy) || r.Id != alice.id {
 		t.Errorf("authorize = %+v, want followed by alice", r)
 	}
@@ -297,9 +303,10 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusNotFound, "get blocker")
 	e.want(e.do(http.MethodGet, "/accounts/lookup?acct=carol", alice.token, nil, nil), http.StatusNotFound, "lookup blocker")
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers", alice.token, nil, nil), http.StatusNotFound, "blocker's followers")
-	for _, action := range []string{"follow", "unfollow", "mute"} {
+	for _, action := range []string{"follow", "mute"} {
 		e.want(e.do(http.MethodPost, "/accounts/"+carol.id+"/"+action, alice.token, nil, nil), http.StatusNotFound, action+" blocker")
 	}
+	e.want(e.do(http.MethodDelete, "/accounts/"+carol.id+"/follow", alice.token, nil, nil), http.StatusNotFound, "unfollow blocker")
 	if rs := e.relationships(alice, carol.id, dave.id); len(rs) != 1 || rs[0].Id != dave.id {
 		t.Errorf("alice's relationships = %+v, want dave's only", rs)
 	}
@@ -326,7 +333,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	}
 
 	// Mutes, with and without notifications and an expiry.
-	if r := e.relate("mute", alice, carol, map[string]any{"notifications": false, "duration": 3600}); !set(r.Muting) || set(r.MutingNotifications) {
+	if r := e.relate("mute", alice, carol, map[string]any{"hide_notifications": false, "duration": 3600}); !set(r.Muting) || set(r.MutingNotifications) {
 		t.Errorf("mute = %+v", r)
 	}
 	if r := e.relate("mute", alice, dave, nil); !set(r.Muting) || !set(r.MutingNotifications) {
@@ -335,13 +342,13 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusUnprocessableEntity, "negative duration")
 	var mutes clientapi.MutePage
 	e.want(e.do(http.MethodGet, "/mutes?limit=1", alice.token, nil, &mutes), http.StatusOK, "mutes")
-	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id || !mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt != nil || mutes.NextCursor == nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id || !mutes.Items[0].HideNotifications || mutes.Items[0].ExpiresAt != nil || mutes.NextCursor == nil {
 		t.Fatalf("first mutes page = %+v", mutes)
 	}
 	cursor := *mutes.NextCursor
 	mutes = clientapi.MutePage{}
 	e.want(e.do(http.MethodGet, "/mutes?limit=1&cursor="+url.QueryEscape(cursor), alice.token, nil, &mutes), http.StatusOK, "mutes page 2")
-	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != carol.id || mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt == nil || mutes.NextCursor != nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != carol.id || mutes.Items[0].HideNotifications || mutes.Items[0].ExpiresAt == nil || mutes.NextCursor != nil {
 		t.Errorf("second mutes page = %+v", mutes)
 	}
 	if r := e.relate("unmute", alice, carol, nil); set(r.Muting) {

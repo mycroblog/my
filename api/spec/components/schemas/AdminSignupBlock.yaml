@@ -23,7 +23,7 @@ properties:
     allOf:
       - $ref: ./Id.yaml
   state:
-    $ref: ./AdminSignupBlockState.yaml
+    $ref: ./ModerationActionState.yaml
   created_at:
     type: string
     format: date-time

@@ -195,7 +195,8 @@ func (s *Server) CreatePasskey(ctx context.Context, req CreatePasskeyRequestObje
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: register a passkey for %s: %w", v.UserID, err)
 	}
-	return CreatePasskey201JSONResponse(newPasskey(c)), nil
+	cache := cacheNoStore
+	return CreatePasskey201JSONResponse{Body: newPasskey(c), Headers: CreatePasskey201ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // DeletePasskey serves DELETE /api/v1/passkeys/{id}.

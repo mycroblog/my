@@ -21,10 +21,13 @@ info:
       (`read`, `write`, `follow`, `admin`) grants the fine-grained scopes under it. A missing or
       invalid token is a 401 with `WWW-Authenticate`, a token without the scope a 403
       `insufficient_scope`.
-    - Every response carries the `RateLimit` and `RateLimit-Policy` fields
+    - The operations carry the `RateLimit` and `RateLimit-Policy` fields
       (draft-ietf-httpapi-ratelimit-headers): anonymous requests share a limit per client IP,
-      authenticated requests one per account. Past the limit the answer is 429 with
-      `Retry-After`.
+      authenticated requests one per account, and an administrator may cap one client across
+      all its users (the `client` policy). Past a limit the answer is 429 with `Retry-After`.
+      The fields are left out while the server cannot read its limits, which then let requests
+      through.
+    - This document is served at `GET /openapi.yaml`, without a limit or a token.
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.
   license:
@@ -90,7 +93,7 @@ tags:
   - name: finance
     description: |
       The instance's finances as the holders of the `view_finance` permission read them, as far
-      as the instance settings show (ADR-0070 §5). The operations need a `read` scope and the
+      as the instance settings show (ADR-0070 §5). The operations need the `read:finance` scope and the
       `view_finance` or the `manage_finance` permission, never an `admin` scope.
   - name: supporters
     description: |
@@ -118,9 +121,10 @@ tags:
       `/api/v1/problems/missing-permission`.
   - name: admin-server
     description: |
-      The administration of the server itself: its settings and texts, its rules, the roles and
-      granting them, the custom emoji, the webhooks, the announcements, and the dead jobs of the
-      job queue (ADR-0058). The
+      The administration of the server itself: its settings, texts, theme, and brand, its rules,
+      the roles and granting them, the custom emoji, the webhooks, the announcements, the job
+      queue, the costs and income, the supporter program, the login providers, the OAuth apps, the
+      relays, the closure of the service, and the reported errors (ADR-0058). The
       operations need an `admin` scope and a permission of the user's roles in the server
       category; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 paths:
@@ -236,8 +240,8 @@ paths:
     $ref: ./paths/oauth_apps.yaml
   /oauth_apps/{id}:
     $ref: ./paths/oauth_apps_{id}.yaml
-  /oauth_apps/{id}/secret:
-    $ref: ./paths/oauth_apps_{id}_secret.yaml
+  /oauth_apps/{id}/rotate_secret:
+    $ref: ./paths/oauth_apps_{id}_rotate_secret.yaml
   /oauth_apps/{id}/tokens:
     $ref: ./paths/oauth_apps_{id}_tokens.yaml
   /accounts/lookup:
@@ -264,24 +268,16 @@ paths:
     $ref: ./paths/accounts_{id}_mute.yaml
   /accounts/{id}/remove_from_followers:
     $ref: ./paths/accounts_{id}_remove_from_followers.yaml
-  /accounts/{id}/unblock:
-    $ref: ./paths/accounts_{id}_unblock.yaml
-  /accounts/{id}/unfollow:
-    $ref: ./paths/accounts_{id}_unfollow.yaml
-  /accounts/{id}/unmute:
-    $ref: ./paths/accounts_{id}_unmute.yaml
   /accounts/{id}/subscribe:
     $ref: ./paths/accounts_{id}_subscribe.yaml
-  /accounts/{id}/unsubscribe:
-    $ref: ./paths/accounts_{id}_unsubscribe.yaml
   /subscriptions:
     $ref: ./paths/subscriptions.yaml
   /blocks:
     $ref: ./paths/blocks.yaml
   /follow_requests:
     $ref: ./paths/follow_requests.yaml
-  /follow_requests/{id}/authorize:
-    $ref: ./paths/follow_requests_{id}_authorize.yaml
+  /follow_requests/{id}/accept:
+    $ref: ./paths/follow_requests_{id}_accept.yaml
   /follow_requests/{id}/reject:
     $ref: ./paths/follow_requests_{id}_reject.yaml
   /mutes:
@@ -354,8 +350,8 @@ paths:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
     $ref: ./paths/timelines_local.yaml
-  /timelines/public:
-    $ref: ./paths/timelines_public.yaml
+  /timelines/federated:
+    $ref: ./paths/timelines_federated.yaml
   /timelines/tag/{hashtag}:
     $ref: ./paths/timelines_tag_{hashtag}.yaml
   /timelines/list/{id}:
@@ -722,8 +718,8 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
-        OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
+        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving and deleting
+        the account, the user's own OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
         imports, changing and previewing the automatic deletion of posts, adding and removing
         aliases, invites, the user's moderation actions and appeals), are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
@@ -752,8 +748,8 @@ components:
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives (`read:statuses` does not show them).
-            "read:finance": Read the totals of the instance's costs, as far as the user's roles allow.
-            "read:follows": Read follows and follow requests.
+            "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
+            "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
             "read:notifications": Read the user's notifications.
             "read:reports": Read the reports the user filed and whether they are resolved.
@@ -765,12 +761,12 @@ components:
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
-            "write:follows": Follow and unfollow accounts and answer follow requests.
-            "write:media": Upload media and change their descriptions.
+            "write:follows": Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts and domains.
             "write:notifications": Mark notifications read and dismiss them.
             "write:reports": Report accounts and posts to the moderators.
-            "write:statuses": Post, edit, delete, boost, and pin posts.
+            "write:statuses": Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             "write:supporters": Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
             "write:voice": Open, join, and leave voice chat rooms, and host them.
   headers:
@@ -1001,8 +997,6 @@ components:
       $ref: ./components/schemas/AdminAccountActionKind.yaml
     AdminAccountActionPage:
       $ref: ./components/schemas/AdminAccountActionPage.yaml
-    AdminAccountActionState:
-      $ref: ./components/schemas/AdminAccountActionState.yaml
     AdminAccountDetail:
       $ref: ./components/schemas/AdminAccountDetail.yaml
     AdminAccountPage:
@@ -1039,8 +1033,6 @@ components:
       $ref: ./components/schemas/CreateLoginProviderRequest.yaml
     EmailSuppression:
       $ref: ./components/schemas/EmailSuppression.yaml
-    AdminAccountRegistrationState:
-      $ref: ./components/schemas/AdminAccountRegistrationState.yaml
     AdminAccountRestriction:
       $ref: ./components/schemas/AdminAccountRestriction.yaml
     AdminAccountSignIn:
@@ -1091,8 +1083,6 @@ components:
       $ref: ./components/schemas/AdminDomainActionKind.yaml
     AdminDomainActionPage:
       $ref: ./components/schemas/AdminDomainActionPage.yaml
-    AdminDomainActionState:
-      $ref: ./components/schemas/AdminDomainActionState.yaml
     AdminIncomePeriodTotal:
       $ref: ./components/schemas/AdminIncomePeriodTotal.yaml
     AdminIncomeTotals:
@@ -1225,8 +1215,6 @@ components:
       $ref: ./components/schemas/AdminSignupBlockPage.yaml
     AdminSignupBlockSeverity:
       $ref: ./components/schemas/AdminSignupBlockSeverity.yaml
-    AdminSignupBlockState:
-      $ref: ./components/schemas/AdminSignupBlockState.yaml
     AdminSupporterPlan:
       $ref: ./components/schemas/AdminSupporterPlan.yaml
     AdminSupporterPlanCreateRequest:
@@ -1763,6 +1751,8 @@ components:
       $ref: ./components/schemas/ReplaceCustomEmojiImageRequest.yaml
     Report:
       $ref: ./components/schemas/Report.yaml
+    ModerationActionState:
+      $ref: ./components/schemas/ModerationActionState.yaml
     ReportCategory:
       $ref: ./components/schemas/ReportCategory.yaml
     ReportPage:

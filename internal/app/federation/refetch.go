@@ -28,7 +28,7 @@ const (
 	JobRefetchStatus = "federation.refetch_status"
 	// JobRefetchStatuses walks the remote posts of an account, or of the accounts of a domain,
 	// newest first, and enqueues a JobRefetchStatus for each, one batch per run.
-	JobRefetchStatuses = "federation.refetch_statuses"
+	JobRefetchStatuses = "federation.refetch_walk"
 	// RefetchMaxStatuses bounds the posts that one request for an account or a domain refetches.
 	RefetchMaxStatuses = 1000
 	// RefetchStatusesPerAccount bounds the posts of each account that a request for a domain

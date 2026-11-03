@@ -17,9 +17,9 @@ import {
   settled,
 } from "../../test/stories";
 
-/** GET /timelines/public answering `items`. */
+/** GET /timelines/federated answering `items`. */
 function timeline(items: Schemas["Status"][]) {
-  return http.get(`${apiBase}/timelines/public`, () => HttpResponse.json(statusPage(items)));
+  return http.get(`${apiBase}/timelines/federated`, () => HttpResponse.json(statusPage(items)));
 }
 
 const meta = {
@@ -49,7 +49,7 @@ export const SignInRequired: Story = {
       signedIn: false,
       errorPage: "request",
       handlers: [
-        http.get(`${apiBase}/timelines/public`, () =>
+        http.get(`${apiBase}/timelines/federated`, () =>
           problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
         ),
       ],
@@ -59,14 +59,14 @@ export const SignInRequired: Story = {
 
 /** The instance turned the timeline off. */
 export const TurnedOff: Story = answeringWithErrorPage(
-  http.get(`${apiBase}/timelines/public`, () => problem(404, "about:blank", "Not Found")),
+  http.get(`${apiBase}/timelines/federated`, () => problem(404, "about:blank", "Not Found")),
 );
 
 /** The first page has not arrived yet. */
-export const Loading: Story = loadingOn("get", "/timelines/public");
+export const Loading: Story = loadingOn("get", "/timelines/federated");
 
 /** The server failed to answer the first page. */
-export const ServerError: Story = failingOn("get", "/timelines/public");
+export const ServerError: Story = failingOn("get", "/timelines/federated");
 
 /** In Japanese. */
 export const Japanese: Story = inLocale("ja");

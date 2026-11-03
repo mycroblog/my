@@ -112,8 +112,8 @@ func TestApplySchemaToAnEmptyDatabase(t *testing.T) {
 	if !r.Applied || len(r.Statements) == 0 || len(r.Drops) > 0 {
 		t.Fatalf("ApplySchema on an empty database = %+v, want the statements applied with nothing dropped", r)
 	}
-	if got := query(t, url, "SELECT extname::text FROM pg_extension WHERE extname = 'pg_trgm'"); len(got) != 1 {
-		t.Error("the bootstrap SQL did not run: pg_trgm is missing")
+	if got := query(t, url, "SELECT extname::text FROM pg_extension WHERE extname = 'pg_trgm'"); len(got) != 0 {
+		t.Error("the schema needs no extension, but pg_trgm was created")
 	}
 	if got := tempSchemas(t, url); len(got) > 0 {
 		t.Errorf("temporary schemas remain: %q", got)

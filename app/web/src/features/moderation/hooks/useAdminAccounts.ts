@@ -21,7 +21,7 @@ import {
   adminAccountOrigins,
   type AdminAccountPrivateData,
   adminAccountQueryOptions,
-  type AdminAccountRegistrationState,
+  type RegistrationState,
   type AdminAccountRestriction,
   type AdminAccountSearch,
   adminAccountsQueryOptions,
@@ -66,7 +66,7 @@ export const adminAccountRestrictionLabels: Readonly<Record<AdminAccountRestrict
   federation: "client:admin.accounts.restriction.federation",
 };
 
-export const adminAccountRegistrationStateLabels: Readonly<Record<AdminAccountRegistrationState, ClientMessageKey>> = {
+export const adminAccountRegistrationStateLabels: Readonly<Record<RegistrationState, ClientMessageKey>> = {
   pending: "client:admin.accounts.registration.pending",
   approved: "client:admin.accounts.registration.approved",
   rejected: "client:admin.accounts.registration.rejected",

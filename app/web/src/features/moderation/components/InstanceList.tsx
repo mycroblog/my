@@ -119,7 +119,11 @@ function InstanceRow({ health }: { health: InstanceHealth }) {
         <InstanceStateLabel state={health.state} />
       </TableCell>
       <TableCell>
-        {health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}
+        {health.state_changed_at === undefined ? (
+          t("client:admin.instance.none")
+        ) : (
+          <DateTime value={health.state_changed_at} />
+        )}
       </TableCell>
       <TableCell numeric>{t("client:admin.instance.failure_days.value", { count: health.failure_days })}</TableCell>
       <TableCell>

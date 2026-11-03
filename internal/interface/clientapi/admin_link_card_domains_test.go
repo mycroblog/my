@@ -5,6 +5,7 @@ package clientapi_test
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"testing"
@@ -64,7 +65,7 @@ func TestLinkCardDomainOperationsNeedAPermission(t *testing.T) {
 	f.rules = []instance.LinkCardDomainRule{{Domain: "a.example", Mode: instance.LinkCardNoFetch}}
 	for _, op := range []struct{ method, path, body string }{
 		{http.MethodGet, "/admin/link_card_domains", ""},
-		{http.MethodPost, "/admin/link_card_domains", `{"domain":"b.example","mode":"no_fetch"}`},
+		{http.MethodPut, "/admin/link_card_domains/b.example", `{"mode":"no_fetch"}`},
 		{http.MethodDelete, "/admin/link_card_domains/a.example", ""},
 	} {
 		res := e.send(t, op.method, op.path, "bob-admin", op.body)
@@ -73,7 +74,7 @@ func TestLinkCardDomainOperationsNeedAPermission(t *testing.T) {
 			t.Errorf("%s by bob = %d %+v, want 403 for manage_settings", op.method, res.StatusCode, p)
 		}
 	}
-	res := e.sendJSON(t, http.MethodPost, "/admin/link_card_domains", "admin-read", `{"domain":"b.example","mode":"no_fetch"}`)
+	res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/b.example", "admin-read", `{"mode":"no_fetch"}`)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeInsufficientScope {
 		t.Errorf("post with admin:read = %d %+v, want 403 insufficient-scope", res.StatusCode, p)
 	}
@@ -85,7 +86,7 @@ func TestLinkCardDomainOperationsNeedAPermission(t *testing.T) {
 func TestManageLinkCardDomainRules(t *testing.T) {
 	e, f := newLinkCardDomainsEnv(t)
 	// The domain takes the canonical form of a domain action's.
-	res := e.sendJSON(t, http.MethodPost, "/admin/link_card_domains", "admin", `{"domain":" 例え.EXAMPLE. ","mode":"no_images","note":"Heavy"}`)
+	res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/"+url.PathEscape(" 例え.EXAMPLE. "), "admin", `{"mode":"no_images","note":"Heavy"}`)
 	saved := decodeJSON[clientapi.LinkCardDomainRule](t, res)
 	if res.StatusCode != http.StatusOK || saved.Domain != "xn--r8jz45g.example" || saved.Mode != clientapi.LinkCardDomainModeNoImages ||
 		saved.Note != "Heavy" || !saved.UpdatedAt.Equal(adminNow) {
@@ -99,7 +100,7 @@ func TestManageLinkCardDomainRules(t *testing.T) {
 	if res.StatusCode != http.StatusOK || len(list.Items) != 1 || list.Items[0] != saved || res.Header.Get("Cache-Control") != "no-store" {
 		t.Errorf("list = %d %+v (%s)", res.StatusCode, list, res.Header.Get("Cache-Control"))
 	}
-	res = e.sendJSON(t, http.MethodPost, "/admin/link_card_domains", "admin", `{"domain":"xn--r8jz45g.example","mode":"no_fetch"}`)
+	res = e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/xn--r8jz45g.example", "admin", `{"mode":"no_fetch"}`)
 	if changed := decodeJSON[clientapi.LinkCardDomainRule](t, res); res.StatusCode != http.StatusOK || changed.Mode != clientapi.LinkCardDomainModeNoFetch || len(f.rules) != 1 {
 		t.Errorf("change = %d %+v, rules %+v", res.StatusCode, changed, f.rules)
 	}
@@ -110,14 +111,17 @@ func TestManageLinkCardDomainRules(t *testing.T) {
 
 func TestLinkCardDomainRuleValidation(t *testing.T) {
 	e, f := newLinkCardDomainsEnv(t)
+	for _, domain := range []string{"https://a.example/", "a b.example", "a.example:443"} {
+		res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/"+url.PathEscape(domain), "admin", `{"mode":"no_fetch"}`)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "domain") {
+			t.Errorf("%q = %d %+v, want 400 naming domain", domain, res.StatusCode, p)
+		}
+	}
 	for name, tc := range map[string]struct{ body, field string }{
-		"URL":       {`{"domain":"https://a.example/","mode":"no_fetch"}`, "domain"},
-		"space":     {`{"domain":"a b.example","mode":"no_fetch"}`, "domain"},
-		"port":      {`{"domain":"a.example:443","mode":"no_fetch"}`, "domain"},
-		"mode":      {`{"domain":"a.example","mode":"off","x":"invalid-on-purpose"}`, "mode"},
-		"long note": {`{"domain":"a.example","mode":"no_fetch","x":"invalid-on-purpose","note":"` + strings.Repeat("a", instance.MaxLinkCardDomainNote+1) + `"}`, "note"},
+		"mode":      {`{"mode":"off","x":"invalid-on-purpose"}`, "mode"},
+		"long note": {`{"mode":"no_fetch","x":"invalid-on-purpose","note":"` + strings.Repeat("a", instance.MaxLinkCardDomainNote+1) + `"}`, "note"},
 	} {
-		res := e.sendJSON(t, http.MethodPost, "/admin/link_card_domains", "admin", tc.body)
+		res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/a.example", "admin", tc.body)
 		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.field) {
 			t.Errorf("%s = %d %+v, want 422 naming %s", name, res.StatusCode, p, tc.field)
 		}
@@ -126,7 +130,7 @@ func TestLinkCardDomainRuleValidation(t *testing.T) {
 		t.Errorf("an invalid rule was kept: %+v", f.rules)
 	}
 	f.tooMany = true
-	res := e.sendJSON(t, http.MethodPost, "/admin/link_card_domains", "admin", `{"domain":"a.example","mode":"no_fetch"}`)
+	res := e.sendJSON(t, http.MethodPut, "/admin/link_card_domains/a.example", "admin", `{"mode":"no_fetch"}`)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "rules") {
 		t.Errorf("too many = %d %+v, want 422 naming rules", res.StatusCode, p)
 	}

@@ -209,7 +209,7 @@ func TestChangeErrorGroups(t *testing.T) {
 		want clientapi.ErrorGroupState
 	}{{"resolve", clientapi.ErrorGroupStateResolved}, {"mute", clientapi.ErrorGroupStateMuted}, {"unmute", clientapi.ErrorGroupStateOpen}} {
 		g := decodeJSON[clientapi.ErrorGroup](t, e.admin(t, http.MethodPost, "/admin/error_groups/"+groupA+"/"+step.op, "admin", nil))
-		if g.Id != groupA || g.State != step.want || !g.StateSince.Equal(adminNow) {
+		if g.Id != groupA || g.State != step.want || !g.StateChangedAt.Equal(adminNow) {
 			t.Errorf("%s = %+v, want %s", step.op, g, step.want)
 		}
 		if res := e.send(t, http.MethodPost, "/admin/error_groups/01890a5d-ac96-774b-bcce-b30209900999/"+step.op, "admin", ""); res.StatusCode != http.StatusNotFound {

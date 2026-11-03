@@ -125,6 +125,8 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 匿名で取れる公開リソースの GET には `Cache-Control: public, max-age=60` を付けます（spec の `#/components/headers/CacheControl`）。
   利用者ごとに変わる応答には `private` か `no-store` を付けます。問題の応答は `no-store` です。
   匿名でも使える操作にトークン付きで来た要求は利用者のロケールで答えるので、`public` の代わりに `private, max-age=60` を付けます。
+  アカウントと投稿（`GET /accounts/{id}`・`GET /statuses/{id}` など）はトークン付きの要求の答えが閲覧者のブロックや関係で変わるので、トークン付きは `no-store` です（`cacheFor`）。
+  ボイスチャットの部屋の匿名の要約（`GET /voice/rooms/{id}/summary`）は参加者の増減ですぐ変わり、GET が記録を書くこともあるので、匿名でも `no-store` です。
 - 閲覧できる範囲をインスタンス設定で選ぶ公開の一覧は、ハンドラが設定を読んで答えます。サインインした人だけに見せる設定を持つ一覧は `security: [{}, {oauth2: [...]}]` に、持たない一覧（`cost_totals`・`income_totals`）は `security: []` にします。誰にも見せない設定では 404、サインインした人だけに見せる設定では、トークンのない要求に 401（`/api/v1/problems/unauthenticated`、`WWW-Authenticate: Bearer`）を返します。
 
   | 操作 | 設定 | 値（見せない / サインインした人 / 誰にでも） | `Cache-Control` |

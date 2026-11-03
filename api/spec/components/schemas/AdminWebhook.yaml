@@ -2,7 +2,7 @@
 description: |
   A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
 type: object
-required: [id, url, events, state, state_reason, state_changed_at, created_at, updated_at]
+required: [id, url, events, state, state_reason, state_changed_at, created_at, revised_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -29,7 +29,7 @@ properties:
   created_at:
     type: string
     format: date-time
-  updated_at:
+  revised_at:
     description: When the URL, the description, or the events last changed.
     type: string
     format: date-time

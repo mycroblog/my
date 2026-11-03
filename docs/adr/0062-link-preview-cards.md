@@ -148,7 +148,7 @@ Mastodon・Misskey・Pleroma / Akkoma の利用者はこのカードを前提に
 
 - URL の正規化: スキームとホストを小文字にし、既定のポートとフラグメントを除く。クエリは並べ替えない（意味が変わり得るため）。
 - **再取得**: 新しい投稿が URL を参照したとき、`fetched_at` から 14 日を過ぎていれば取り直す（Mastodon の 2 週間に合わせる）。定期的な一斉の取り直しはしない。
-- **保持と消去**: 1 日 1 回のジョブ `content.cleanup_link_cards` が、`status_link_cards` から参照されなくなって `fetched_at` から 14 日を過ぎた `link_cards` と、どこからも参照されない `link_card_media` を消す（FR-803）。
+- **保持と消去**: 1 日 1 回のジョブ `content.purge_link_cards` が、`status_link_cards` から参照されなくなって `fetched_at` から 14 日を過ぎた `link_cards` と、どこからも参照されない `link_card_media` を消す（FR-803）。
   投稿の削除・消去（ADR-0034 の保持期間切れ、処分による削除）は、同じトランザクションで `status_link_cards` の行を消す。
 - インスタンス設定 `link_cards`（`bool`、既定 `true`）を `instance_setting_revisions` の `key` に足す。偽ならジョブを積まず、API は `card` を返さない。
 

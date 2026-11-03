@@ -550,3 +550,25 @@ func requestLapsesWithItsRequester(t *testing.T, e *emojiEnv) {
 	// The shortcode is free again.
 	r.mustSubmit(t, requesterB, requesterBUser, "blob_pending")
 }
+
+// requestRebuildsPendingRequests checks that the pending requests come back from the requests and
+// their outcomes: a request to create with its shortcode reserved, and not a request that ended.
+func requestRebuildsPendingRequests(t *testing.T, e *emojiEnv) {
+	r := newRequestEnv(t, e)
+	ctx := t.Context()
+	pending := r.mustSubmit(t, requesterA, requesterAUser, "blob_pending")
+	ended := r.mustSubmit(t, requesterA, requesterAUser, "blob_ended")
+	if _, err := r.service.RejectRequest(ctx, ended.Request.ID, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := appcontent.RebuildCustomEmojiRequestProjection(ctx, e.h.UnitOfWork, e.h.Emojis); err != nil {
+		t.Fatalf("RebuildCustomEmojiRequestProjection = %v", err)
+	}
+	if _, err := r.submit(t, requesterB, requesterBUser, "blob_pending"); err == nil {
+		t.Error("the rebuilt projection does not reserve the pending request's shortcode")
+	}
+	r.mustSubmit(t, requesterB, requesterBUser, "blob_ended")
+	if _, err := r.service.WithdrawRequest(ctx, pending.Request.ID, requesterAUser); err != nil {
+		t.Errorf("WithdrawRequest(a rebuilt pending request) = %v", err)
+	}
+}

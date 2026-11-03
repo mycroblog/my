@@ -39,8 +39,8 @@ post:
     lifted; several actions on one account add up. On a local account: `warn` only tells
     the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
     past ones included, followers-only and keeps them off the public timelines;
-    `restrict_posting` stops it posting, replying, boosting, and editing;
-    `restrict_interaction` stops it following, favouriting, boosting, and replying;
+    `restrict_posting` stops it posting, replying, boosting, quoting, and editing;
+    `restrict_interaction` stops it following, favouriting, boosting, and voting;
     `disable_login` ends its sessions and tokens and stops it logging in; `suspend` does all
     of these and hides its profile and posts from everyone else; `ban` is a `suspend` that
     is never lifted and deletes the account 30 days later. `delete_statuses` deletes the

@@ -41,7 +41,7 @@ and the email links to the post, the profile, or the notifications.
 Service shutdown emails go to every user whose primary address is confirmed. Missing one can mean losing data, so they are sent
 as transactional email, carry no unsubscribe link, and are not stopped by a complaint (a hard bounce does stop them).
 The announcement, a change of date, a cancellation, and the closing each enqueue `identity.closure_email_fanout` in the same
-transaction as their record. The hourly `identity.closure_email_reminders` decides when to send the reminders for 7 days and
+transaction as their record. The hourly `identity.queue_closure_reminders` decides when to send the reminders for 7 days and
 1 day before the closing date and 7 days before the export deadline. A reminder whose time had already passed when the shutdown
 was announced is not sent, because the announcement email states the dates.
 The fan-out job records a row of `service_closure_emails` per user and enqueues `identity.closure_email` only for the users it

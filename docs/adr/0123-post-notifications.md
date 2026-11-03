@@ -60,7 +60,7 @@
 - 編集（新しい版）は通知しない。
 - 受け取る人が宛先のメンションの通知（`mention`）を同じ投稿で受け取るときは、`status` を作らない。
 - ブロック・ミュート（`hide_notifications`）・ドメインのミュート・差出人の `unsolicited_reach`（受け取る人がフォローしていないとき）の除外は、ほかの通知と同じに効く（data-model §4.7）。
-- 作り方: 投稿を記録したトランザクション（ローカルの作成と、配送された `Create` の取り込み）で積むジョブ（`notification.notify_post_subscribers`、冪等キーは投稿）が、購読者を 100 件ずつ通知する。`dedupe_key` は `status:<status_id>` で、投稿と受け取る人ごとに 1 つ。
+- 作り方: 投稿を記録したトランザクション（ローカルの作成と、配送された `Create` の取り込み）で積むジョブ（`notification.post_subscribers`、冪等キーは投稿）が、購読者を 100 件ずつ通知する。`dedupe_key` は `status:<status_id>` で、投稿と受け取る人ごとに 1 つ。
 - 投稿が消えたら、その通知は読み取り時に隠す（既存の `notification_deleted_statuses`）。
 
 ### 3. 通知の種類と経路

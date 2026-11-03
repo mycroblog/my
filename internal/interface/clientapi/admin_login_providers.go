@@ -56,7 +56,7 @@ func (s *Server) newAdminLoginProvider(v appidentity.LoginProviderView) AdminLog
 		Guilds: nonNil(set.Guilds),
 		State:  AdminLoginProviderState(p.State), StateChangedAt: p.StateChangedAt.UTC(),
 		CallbackUrl: s.origin() + identity.LoginProviderCallbackPath(p.ID), LinkedUsers: v.LinkedUsers,
-		CreatedAt: p.CreatedAt.UTC(), UpdatedAt: p.RevisedAt.UTC(),
+		CreatedAt: p.CreatedAt.UTC(), RevisedAt: p.RevisedAt.UTC(),
 	}
 	if set.Issuer != "" {
 		out.Issuer = &set.Issuer

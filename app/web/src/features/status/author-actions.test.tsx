@@ -67,6 +67,10 @@ function recordChanges(answer: Partial<Schemas["Relationship"]>) {
       changes.push(`${String(params["id"])} ${String(params["action"])}`);
       return HttpResponse.json(relationshipFixture(String(params["id"]), answer));
     }),
+    http.delete(`${apiBase}/accounts/:id/:relation`, ({ params }) => {
+      changes.push(`${String(params["id"])} un${String(params["relation"])}`);
+      return HttpResponse.json(relationshipFixture(String(params["id"]), answer));
+    }),
   );
   return changes;
 }

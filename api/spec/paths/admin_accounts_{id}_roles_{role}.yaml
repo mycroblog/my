@@ -7,7 +7,8 @@ put:
     next request, and the audit log records `role_granted`. Granting a role that the user
     holds changes nothing and records nothing. A role whose position is above every role
     of the viewer, or that has a permission the viewer does not hold, is a 403. An unknown
-    account, one that is not local, or an unknown role is a 404. Answers the roles that the
+    account, one that is not local, or an unknown role is a 404, and a role that a supporter plan
+    manages a 409 `/api/v1/problems/role-managed-by-plan`. Answers the roles that the
     user holds afterwards. Needs the `manage_roles` permission.
   tags: [admin-server]
   security:

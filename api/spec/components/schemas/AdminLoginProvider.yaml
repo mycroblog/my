@@ -4,7 +4,7 @@ description: |
   Its client secret is never shown.
 type: object
 required: [id, kind, display_name, client_id, scopes, allow_signup, allow_link, claims, organizations, guilds,
-  state, state_changed_at, callback_url, linked_users, created_at, updated_at]
+  state, state_changed_at, callback_url, linked_users, created_at, revised_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -71,7 +71,7 @@ properties:
   created_at:
     type: string
     format: date-time
-  updated_at:
+  revised_at:
     description: When the settings last changed.
     type: string
     format: date-time

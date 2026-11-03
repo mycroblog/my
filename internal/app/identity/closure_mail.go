@@ -36,7 +36,7 @@ const (
 	// JobClosureEmail sends one email of the service closure to one user.
 	JobClosureEmail = "identity.closure_email"
 	// JobClosureEmailReminders queues the reminders of the service closure whose time has come.
-	JobClosureEmailReminders = "identity.closure_email_reminders"
+	JobClosureEmailReminders = "identity.queue_closure_reminders"
 )
 
 // ClosureEmailReminderInterval is how often JobClosureEmailReminders runs. It is well under the

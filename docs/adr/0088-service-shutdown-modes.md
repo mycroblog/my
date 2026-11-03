@@ -88,7 +88,7 @@ v0 のリリース（M5）で運営者に渡す以上、始め方と同じく終
 
 ### 3. クローズの配送
 
-- `closed` を記録したトランザクションで、ジョブ `instance.closure_fanout`（カーソルはアカウントの ID）を outbox に積む。ジョブはローカルのアカウント（インスタンス Actor・削除済みを除く。凍結中は含む）を 100 件ずつ、アカウントごとに `Delete`（Actor）の outbound activity を記録し、既存の展開（[federation.md §7.2](../architecture/federation.md#72-展開fan-out)。承認済みのフォロワー → 既知の shared inbox）に渡す。ライフサイクル（`account_lifecycle_events`）は変えない（消去ジョブを動かさない。C1）。
+- `closed` を記録したトランザクションで、ジョブ `instance.closure_delete_actors`（カーソルはアカウントの ID）を outbox に積む。ジョブはローカルのアカウント（インスタンス Actor・削除済みを除く。凍結中は含む）を 100 件ずつ、アカウントごとに `Delete`（Actor）の outbound activity を記録し、既存の展開（[federation.md §7.2](../architecture/federation.md#72-展開fan-out)。承認済みのフォロワー → 既知の shared inbox）に渡す。ライフサイクル（`account_lifecycle_events`）は変えない（消去ジョブを動かさない。C1）。
 - 投稿ごとの `Delete` は送らない（B1。アカウントの削除と同じく `Delete`（Actor）が代わりを務める）。
 - 速度: 次のページの展開は、前のページの展開が終わってから積む。同時に動く配送はキューの同時実行数の設定で抑え、未処理の配送のジョブが上限（既定 10,000 件、Mastodon と同じ値。要調整）を超えている間は次のページを積まない。shared inbox への集約と `unavailable` のドメインの除外は既存のまま効く。
 - 再試行と諦める時点: 既存の配送の方針（最大 9 回、約 4 日、使い切ったら dead job）。dead job は自動では再実行しない（運営者は既存の管理 API で再実行できる）。
@@ -135,7 +135,7 @@ v0 のリリース（M5）で運営者に渡す以上、始め方と同じく終
   - 日付に下限が無いので、運営者が告知の期間をごく短くすると、利用者はデータを持ち出しきれない。警告と `export_until`（閉鎖日の後もエクスポートできる期間）でしか守らない。
 - 後続で必要になる作業（実装の issue はこの単位で分ける）
   - サーバー: 予告モード（`instance` のイベントと投影、遷移の検査、権限、登録・招待・審査待ちの申請、サポーターの解約、`GET /instance`・NodeInfo、通知の種類、監査ログ、CLI）
-  - サーバー: クローズモード（`closure.Allows` と各入口、`instance.closure_fanout`、完了の判定、Actor・投稿・WebFinger・inbox の `410`、進捗の管理 API と CLI）
+  - サーバー: クローズモード（`closure.Allows` と各入口、`instance.closure_delete_actors`、完了の判定、Actor・投稿・WebFinger・inbox の `410`、進捗の管理 API と CLI）
   - Web: 帯・閉鎖の画面・管理画面（予告・クローズの確認と進捗）、移転の設定の画面の案内、`locales/en`・`locales/ja`
   - メール（ADR-0086 のジョブとテンプレートの上に）: 予告・変更・取り消し・閉鎖日前・クローズ・期限前のテンプレート
   - 運用文書 `docs/operations/service-closure.md`: 手順（予告 → 閉鎖日 → クローズ → 完了の確認 → 期限 → 静的なページ → 破棄）、ワーカーを止めない注意、保全の記録の書き出し、ドメインの扱い、ステータスページの掲出。閉鎖のページの書き出し（ADR-0084 の書き出しの仕組みを使う）
