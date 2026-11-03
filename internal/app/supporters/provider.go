@@ -16,7 +16,7 @@ import (
 // PaymentProvider is the port of the payment provider (ADR-0074 §1). Its types are of the
 // standard library and this package only, never of the provider's SDK. It reports the
 // provider's facts only; the state of our subscriptions, the grace period, and the roles are
-// derived by this module. One adapter is active on a server (payments_provider).
+// derived by this module. One adapter is active on a server (payments).
 //
 // Every method that talks to the provider counts as one request to it, a page of a list
 // included; the reconciliation counts them against payments_reconcile_max_requests (§4). The

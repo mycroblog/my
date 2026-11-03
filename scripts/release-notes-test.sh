@@ -314,6 +314,13 @@ git merge -q --no-ff -m "feat!: a merge is not a change of its own" "$(git commi
 notes="$(draft v0.2.0)"
 expect_has "the comparison" "$notes" "compared with v0.1.1"
 
+# What the prose must name: the data upgrades, the settings, and the breaking changes; not the schema files.
+"$script" facts v0.2.0 "" "$work/required"
+required="$(cat "$work/required/required.json")"
+expect_has "required items" "$required" '"0001_new"' '"0000_old"' '"old_host"' '"gone"' '"vanished"' '"listen"' \
+  '"host"' '"data upgrade"' '"setting"' '"breaking commit"' 'feat(db,api)!: widen the id' "\"$(git log --format=%h --grep='widen the id')\""
+expect_not "required items" "$required" "schema/" "new_optional"
+
 upgrading="$(section Upgrading "$notes")"
 expect_has "upgrading" "$upgrading" \
   '`0001_new`: Carries the old rows over.' '`0002_contracted`: Done before. (only recorded' \
@@ -387,27 +394,70 @@ git rm -q internal/platform/setup_dbupgrade.go
 commit "chore: move the steps"
 if draft v0.3.0 > /dev/null 2>&1; then fail "a moved file: want an error"; fi
 
-# fit: the generated list is cut by whole lines under the limit, and keeps its Full Changelog line.
-printf '## Upgrading\n\nNone\n' > "$work/notes.md"
-{
-  echo "## What's Changed"
-  for i in $(seq 100); do echo "* change $i by someone"; done
-  echo
-  echo "**Full Changelog**: https://example.org/compare"
-} > "$work/generated.md"
-fitted="$("$script" fit "$work/notes.md" "$work/generated.md")"
-expect_has "fit under the limit" "$fitted" "## Upgrading" "* change 100 by someone" "**Full Changelog**"
-case "$fitted" in *"is cut at the limit"*) fail "fit under the limit: the list is cut" ;; esac
-fitted="$(RELEASE_NOTES_BODY_LIMIT=1000 "$script" fit "$work/notes.md" "$work/generated.md")"
-expect_has "fit over the limit" "$fitted" "## Upgrading" "* change 1 by someone" "is cut at the limit" "**Full Changelog**"
-case "$fitted" in *"* change 100 by someone"*) fail "fit over the limit: the list is whole" ;; esac
-[ "${#fitted}" -le 1000 ] || fail "fit over the limit: ${#fitted} characters"
-if RELEASE_NOTES_BODY_LIMIT=10 "$script" fit "$work/notes.md" "$work/generated.md" > /dev/null 2>&1; then
-  fail "fit with notes over the limit: want an error"
+# The steps after the facts, with a fake gh and a fake claude: the PRs come from git and GitHub, the prompt calls nothing,
+# and a failed call ends in the facts alone with no failure. tools/agentkit/cmd/releaseprose has the tests of the check.
+mkdir "$work/bin"
+cat > "$work/bin/gh" <<'FAKE'
+#!/bin/sh
+case "$1" in
+  pr) printf '%s\n' '[{"number":7,"title":"feat: seven","body":"## Summary\n\nThe seventh.\n\n## Changes\n\nhidden\n"},{"number":8,"title":"feat: eight","body":""},{"number":1,"title":"before the release","body":""}]' ;;
+  issue) printf '%s\n' '[{"number":6,"title":"the closed issue","closedAt":"2999-01-01T00:00:00Z","stateReason":"COMPLETED"}]' ;;
+esac
+FAKE
+cat > "$work/bin/claude" <<'FAKE'
+#!/bin/sh
+cat > /dev/null
+printf '%s\n' '{"type":"result","subtype":"success","is_error":true,"result":"Not logged in"}'
+exit 1
+FAKE
+chmod +x "$work/bin/gh" "$work/bin/claude"
+mkdir "$work/prs"
+cd "$work/prs"
+git init -q
+copy_real_files
+commit "chore: the start (#1)"
+git tag v0.4.0
+commit "feat: squashed (#8)"
+git checkout -q -b topic
+commit "feat: on the branch (#9)"
+git checkout -q -
+git merge -q --no-ff -m "Merge pull request #7 from mycroblog/topic" topic
+"$script" facts v0.5.0 "" "$work/prs-dir"
+expect_has "the facts' body" "$(cat "$work/prs-dir/body.md")" "<!-- release-notes: facts only." \
+  "**Full Changelog**: https://github.com/mycroblog/my/compare/v0.4.0...v0.5.0"
+[ -f "$work/prs-dir/required.json" ] || fail "no required.json"
+expect_has "the draft" "$(draft v0.5.0)" "**Full Changelog**: https://github.com/mycroblog/my/compare/v0.4.0...v0.5.0"
+expect_not "the draft lists no commits" "$(draft v0.5.0)" "squashed" "on the branch"
+if RELEASE_NOTES_BODY_LIMIT=10 "$script" facts v0.5.0 "" "$work/over" > /dev/null 2>&1; then
+  fail "facts over the limit: want an error"
 fi
+PATH="$work/bin:$PATH" "$script" prs "$work/prs-dir"
+[ "$(sort -n "$work/prs-dir/pr-numbers" | paste -sd ,)" = "7,8" ] ||
+  fail "merged PRs: $(cat "$work/prs-dir/pr-numbers")"
+prompt="$(PATH="$work/bin:$PATH" "$script" prompt v0.5.0 "$work/prs-dir")"
+expect_has "prompt" "$prompt" "Release v0.5.0, compared with v0.4.0" "## Upgrading" "<untrusted-" "The seventh." "- #8 feat: eight" "the closed issue"
+expect_not "prompt" "$prompt" "hidden" "before the release"
+before="$(cat "$work/prs-dir/body.md")"
+PATH="$work/bin:$PATH" "$script" prose v0.5.0 "$work/prs-dir" > "$work/prose.out" 2> /dev/null ||
+  fail "a failed call must not fail the command"
+expect_has "failed call" "$(cat "$work/prose.out")" "The draft has the facts alone"
+after="$(cat "$work/prs-dir/body.md")"
+expect_has "failed call" "$after" "<!-- release-notes: facts only." "the call failed" "## Upgrading" \
+  "**Full Changelog**: https://github.com/mycroblog/my/compare/v0.4.0...v0.5.0"
+[ "${before#*-->}" = "${after#*-->}" ] || fail "a failed call changed the facts"
+cat > "$work/bin/claude" <<'FAKE'
+#!/bin/sh
+cat > /dev/null
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"stop_reason":"end_turn","result":"## Main changes\n\nThe seventh (#7).\n\n## For operators\n\nNone.\n\n## For API and library users\n\nNone.\n"}'
+FAKE
+PATH="$work/bin:$PATH" "$script" prose v0.5.0 "$work/prs-dir" > /dev/null
+with="$(cat "$work/prs-dir/body.md")"
+expect_has "prose" "$with" "The seventh (#7)." "## Upgrading" "**Full Changelog**"
+expect_not "prose" "$with" "<!-- release-notes: facts only."
+cd "$work/real"
 
 skeleton="$("$script" skeleton v0.3.0)"
-expect_has "skeleton" "$skeleton" "## Upgrading" "## Breaking changes" "## API changes" "## mykit" "## mybot" \
+expect_has "skeleton" "$skeleton" "**Full Changelog**" "## Upgrading" "## Breaking changes" "## API changes" "## mykit" "## mybot" \
   "release-notes.sh failed" "pkg/mykit@v0.3.0"
 
 if [ "$failed" -ne 0 ]; then

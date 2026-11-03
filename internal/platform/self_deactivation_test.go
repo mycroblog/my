@@ -44,7 +44,7 @@ func newDeactivationEnv(t *testing.T) *deactivationEnv {
 	mailer := &testkit.Mailer{}
 	network := &relayNet{docs: map[string][]byte{}}
 	c := newStatusesClientWith(t, map[string]string{
-		"MY_QUEUE": "inline", "MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1",
+		"MY_QUEUE": "inline", "MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "127.0.0.1",
 	}, platform.AppOptions{HTTPClient: network, Clock: clock, Mailer: mailer}, "alice", "bob", "mod")
 	return &deactivationEnv{statusesClient: c, clock: clock, mailer: mailer, network: network}
 }

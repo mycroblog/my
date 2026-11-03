@@ -18,12 +18,12 @@ func TestAdminSignupBlockCommands(t *testing.T) {
 	code, stdout, stderr := runCmd(t, adminCmd, "signup-block", "create", "-kind", "email_domain", "-comment", "spam\nwave", "例え.JP")
 	m := addedBlock.FindStringSubmatch(stdout)
 	if code != 0 || m == nil {
-		t.Fatalf("signup-block add = %d %q %q", code, stdout, stderr)
+		t.Fatalf("signup-block create = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
 	if code, stdout, _ = runCmd(t, adminCmd, "signup-block", "create", "-kind", "ip_range", "-severity", "require_approval", "-duration", "24h", "192.0.2.9/24"); code != 0 ||
 		!strings.Contains(stdout, "created require_approval block on ip_range 192.0.2.0/24") || !strings.Contains(stdout, "expires 20") {
-		t.Errorf("signup-block add ip_range = %d %q", code, stdout)
+		t.Errorf("signup-block create ip_range = %d %q", code, stdout)
 	}
 	if code, stdout, _ = runCmd(t, adminCmd, "signup-block", "list"); code != 0 ||
 		!regexp.MustCompile(id+` +email_domain +xn--r8jz45g\.jp +reject +active +\S+ +- +cli +- +spam wave`).MatchString(stdout) ||

@@ -173,7 +173,7 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 	if err != nil {
 		return MigrationStep{}, false, err
 	}
-	// A move that was cancelled or replaced moves nobody more, when a dead job runs again.
+	// A move that was canceled or replaced moves nobody more, when a dead job runs again.
 	switch state, err := s.d.Accounts.MoveState(ctx, st.SourceAccountID); {
 	case errors.Is(err, appaccount.ErrNotFound):
 		return MigrationStep{}, true, nil

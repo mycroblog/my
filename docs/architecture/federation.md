@@ -761,7 +761,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 同期の部分（§3.1）は変えません。`refetch` のアクティビティと `Announce` だけ、署名者がどれかの参加中のリレーの Actor（`relay_states.relay_actor_uri`）かを引き、そうならジョブに `relay_id` を付けます。
 - 非同期の部分は、`relay_id` の付いたアクティビティを、何かを取得する前にリレーの関門（`federation.Relays.Admit`）に通します。
   1. 登録が `receive = false`、またはリレーが `accepted` でなければ捨てる。
-  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_ingest_hourly_limit`（既定 1,000）を超えたら捨てる。
+  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_max_activities_per_hour`（既定 1,000）を超えたら捨てる。
   3. `Create` / `Update` の `actor`、`Announce` の `object` のホストのドメインか、保存済みのアカウントに `federation` か `public_discovery` の制限があれば捨てる（`moderation.FederationPolicy.DiscoveryRestricted`）。`Delete` / `Undo` は捨てない。
 - 通ったものは、`trust = refetch` のとおりオリジンから取り直して（§3.2）、ほかの受信と同じハンドラで扱います。
   - `Create`（と、§3.3 で `Create` として扱う `Update`）は、取り込み範囲（§6.3）に入らなくても、`public` なら取り込みます。返信先と未知のメンション先は取得せず、取り込みのトランザクションで `relayed_statuses` に記録します。

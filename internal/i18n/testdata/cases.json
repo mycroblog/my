@@ -4,7 +4,7 @@
     { "key": "server:config.errors", "args": { "count": 1 } },
     { "key": "server:config.errors", "args": { "count": 2 } },
     { "key": "server:config.errors", "args": { "count": 1234 } },
-    { "key": "server:config.invalid", "args": { "name": "MY_DB" } },
+    { "key": "server:config.invalid", "args": { "name": "MY_DATABASE" } },
     { "key": "server:config.missing", "args": { "name": "MY_DATABASE_URL" } },
     { "key": "server:errors.bad_request", "args": {} },
     { "key": "server:errors.internal", "args": {} },

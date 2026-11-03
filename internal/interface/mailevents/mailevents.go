@@ -2,7 +2,7 @@
 
 // Package mailevents serves the endpoint that Amazon SNS calls with the notifications of Amazon
 // SES (ADR-0086 §5): POST /mail/events/ses. It is not part of the client API: no user calls it.
-// The endpoint exists only when the topic of the notifications (ses_sns_topic_arn) is set. The
+// The endpoint exists only when the topic of the notifications (mail_ses_sns_topic_arn) is set. The
 // body is read up to MaxBodyBytes before anything else, and the SNS signature is verified before
 // the message is used. A subscription confirmation is confirmed by a GET of its SubscribeURL; a
 // notification of a permanent bounce or a complaint is recorded by the identity module as a
@@ -45,7 +45,7 @@ type ProblemWriter func(w http.ResponseWriter, r *http.Request, status int)
 
 // Options configure a Handler.
 type Options struct {
-	// Topic is the SNS topic of the notifications (ses_sns_topic_arn); messages of any other
+	// Topic is the SNS topic of the notifications (mail_ses_sns_topic_arn); messages of any other
 	// topic are refused.
 	Topic TopicARN
 	// Recorder records the bounces and complaints.

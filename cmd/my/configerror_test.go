@@ -13,7 +13,7 @@ import (
 func TestPrintLoadError(t *testing.T) {
 	err := &config.ValidationError{Issues: []config.Issue{
 		{Key: "host", Missing: true},
-		{Key: "db", Message: `unknown value "x"`},
+		{Key: "database", Message: `unknown value "x"`},
 		{Message: `config file my.toml: unknown key "x"`},
 	}}
 	tests := []struct {
@@ -23,14 +23,14 @@ func TestPrintLoadError(t *testing.T) {
 	}{
 		{"en", map[string]string{"LANG": "C.UTF-8"}, `Found 3 configuration errors.
   - The required setting MY_HOST is not set.
-  - The setting MY_DB has an invalid value.
-    db: unknown value "x"
+  - The setting MY_DATABASE has an invalid value.
+    database: unknown value "x"
   - config file my.toml: unknown key "x"
 `},
 		{"ja", map[string]string{"LANG": "ja_JP.UTF-8"}, `設定エラーが3件あります。
   - 必須の設定 MY_HOST が設定されていません。
-  - 設定 MY_DB の値が正しくありません。
-    db: unknown value "x"
+  - 設定 MY_DATABASE の値が正しくありません。
+    database: unknown value "x"
   - config file my.toml: unknown key "x"
 `},
 	}

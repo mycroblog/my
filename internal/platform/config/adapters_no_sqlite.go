@@ -4,4 +4,4 @@
 
 package config
 
-func init() { exclude("no_sqlite", "db", "sqlite") }
+func init() { exclude("no_sqlite", "database", "sqlite") }

@@ -10,8 +10,11 @@ import (
 	"strings"
 )
 
-// draft is the generated text.
-type draft struct{ sections, mykit, mybot string }
+// draft is the generated text, and the facts that the prose must name.
+type draft struct {
+	sections, mykit, mybot string
+	required               []requiredItem
+}
 
 // doc links a document as of the release's tag.
 func doc(version, path, title string) string {
@@ -42,6 +45,7 @@ func firstRelease(o options, cur facts) draft {
 		sections: b.String(),
 		mykit:    "None. This is the first release of mykit.\n",
 		mybot:    "None. This is the first release of mybot.\n",
+		required: []requiredItem{},
 	}
 }
 
@@ -60,6 +64,7 @@ func laterRelease(o options, old, cur facts, commits []commit, schema []string) 
 		sections: b.String(),
 		mykit:    library("mykit", commits, api),
 		mybot:    library("mybot", commits, apiComparison{}),
+		required: requiredItems(old, cur, api, commits),
 	}
 }
 

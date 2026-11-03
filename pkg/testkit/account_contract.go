@@ -742,9 +742,9 @@ func accountRecordsLifecycle(t *testing.T, e *accountEnv) {
 	if s := state(); s.State != account.StateDeletionScheduled || s.DeletionDueAt == nil || !s.DeletionDueAt.Equal(due) {
 		t.Errorf("after deletion_scheduled: %+v, want due %v", s, due)
 	}
-	record(account.LifecycleDeletionCancelled, nil)
+	record(account.LifecycleDeletionCanceled, nil)
 	if s := state(); s.State != account.StateActive || s.DeletionDueAt != nil {
-		t.Errorf("after deletion_cancelled: %+v", s)
+		t.Errorf("after deletion_canceled: %+v", s)
 	}
 	if _, err := e.accounts.RecordLifecycleEvent(ctx, appaccount.LifecycleInput{
 		AccountID: reg.AccountID, Kind: account.LifecycleDeletionScheduled, InitiatedBy: account.InitiatedBySelf,
@@ -943,7 +943,7 @@ func accountProjectionEqualsRebuild(t *testing.T, e *accountEnv) {
 	rng := rand.New(rand.NewPCG(58, 20261016)) //nolint:gosec // deterministic test input, not a secret
 	kinds := []account.LifecycleKind{
 		account.LifecycleDeactivated, account.LifecycleReactivated, account.LifecycleDeletionScheduled,
-		account.LifecycleDeletionCancelled, account.LifecycleDeleted, account.LifecycleRemoteDeleted,
+		account.LifecycleDeletionCanceled, account.LifecycleDeleted, account.LifecycleRemoteDeleted,
 	}
 	var ids []string
 	for round := range 3 {

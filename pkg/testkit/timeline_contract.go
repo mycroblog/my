@@ -799,7 +799,7 @@ func timelineHidesDeletedAuthors(t *testing.T, e *timelineEnv) {
 	e.deleteAccount(t, carol, account.LifecycleReactivated)
 	e.home(t, alice, carols.ID)
 	// Other lifecycle events leave the timelines as they are.
-	e.deleteAccount(t, carol, account.LifecycleDeletionCancelled)
+	e.deleteAccount(t, carol, account.LifecycleDeletionCanceled)
 	e.home(t, alice, carols.ID)
 }
 

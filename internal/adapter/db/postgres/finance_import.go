@@ -81,7 +81,7 @@ func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, re
 		return err
 	}
 	return wrap(q.InsertBillingImportReservation(ctx, postgresgen.InsertBillingImportReservationParams{
-		ID: res.ID, Source: res.Source, RunKey: res.RunKey, Requests: requests, ReservedAt: res.ReservedAt,
+		ID: res.ID, Source: res.Source, Requests: requests, ReservedAt: res.ReservedAt,
 	}), "insert billing import reservation")
 }
 

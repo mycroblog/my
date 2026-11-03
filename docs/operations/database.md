@@ -17,7 +17,7 @@ on an up-to-date one it does nothing. It is safe to run any number of times, and
 
 ### With `my schema apply`
 
-`my schema apply` reads the database settings of the server's configuration (`db`, `database_url`, and `database_dev_url`,
+`my schema apply` reads the database settings of the server's configuration (`database`, `database_url`, and `database_dev_url`,
 from `-config <file>` or the environment; it needs no other setting) and brings the database to the schema of the binary's release:
 
 ```sh
@@ -32,7 +32,7 @@ my schema apply            # run them
 - On PostgreSQL it builds the schema it compares with in a temporary schema of the same database and drops it at the end,
   also on failure; the role needs the privilege to create a schema there. Where it has none, set `database_dev_url` to another database where it has
   ([`database_dev_url`](../reference/configuration.md#database_dev_url)). Runs against one database wait for each other, so two at once both succeed.
-- It supports `db = sqlite` and `db = postgres`, and exits with `1` when it applied nothing because of an error or a refused drop.
+- It supports `database = sqlite` and `database = postgres`, and exits with `1` when it applied nothing because of an error or a refused drop.
 
 From `v0.1.0` on, an upgrade between supported releases never contains a difference that loses data; releases before `v0.1.0` may drop columns
 and tables, and need `-allow-destructive`. Read the SQL with `-dry-run` before every upgrade (see [Upgrading](#upgrading)).
@@ -66,10 +66,10 @@ with the same database settings as the server:
 
 ```sh
 # SQLite: mount the volume that holds the database file at /data
-docker run --rm -v my_data:/data -e MY_DB=sqlite -e MY_DATABASE_URL=/data/my.db my schema apply
+docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/my.db my schema apply
 
 # PostgreSQL
-docker run --rm -e MY_DB=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
+docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
 ### From the repository (development)

@@ -100,7 +100,7 @@ func (a *App) newStreamBus(ctx context.Context, cfg *config.Config, processID st
 	switch cfg.Stream {
 	case "postgres":
 		if a.newPostgresBus == nil {
-			return nil, nil, errors.New("stream = postgres requires db = postgres")
+			return nil, nil, errors.New("stream = postgres requires database = postgres")
 		}
 		b, err := a.newPostgresBus(cfg.StreamPostgresURL)
 		return b, nil, err

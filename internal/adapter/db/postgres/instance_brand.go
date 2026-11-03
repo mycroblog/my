@@ -27,8 +27,8 @@ func (r *InstanceRepository) InsertBrandRevision(ctx context.Context, tx uow.Tx,
 	}
 	for _, f := range rev.Files {
 		err := q.InsertInstanceBrandFile(ctx, postgresgen.InsertInstanceBrandFileParams{
-			BrandRevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
-			Width: int32(min(f.Width, math.MaxInt32)), Height: int32(min(f.Height, math.MaxInt32)), ByteSize: f.Size, Sha256: f.SHA256, //nolint:gosec // bounded above
+			RevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
+			Width: int32(min(f.Width, math.MaxInt32)), Height: int32(min(f.Height, math.MaxInt32)), FileSize: f.Size, Sha256: f.SHA256, //nolint:gosec // bounded above
 		})
 		if err != nil {
 			return wrap(err, "insert instance brand file")
@@ -133,7 +133,7 @@ func findBrandRevision(ctx context.Context, q *postgresgen.Queries, id string) (
 	for _, f := range files {
 		rev.Files = append(rev.Files, instance.BrandFile{
 			Rendition: instance.BrandRendition(f.Rendition), Key: f.BlobKey, ContentType: f.ContentType,
-			Width: int(f.Width), Height: int(f.Height), Size: f.ByteSize, SHA256: f.Sha256,
+			Width: int(f.Width), Height: int(f.Height), Size: f.FileSize, SHA256: f.Sha256,
 		})
 	}
 	return rev, nil

@@ -104,7 +104,7 @@ func runAdminSupporters(args []string, stdout, stderr io.Writer) int {
 func describeSupportersError(err error, arg string) string {
 	switch {
 	case errors.Is(err, appsupporters.ErrNoProvider):
-		return "no payment provider is configured (payments_provider = none); nothing was changed"
+		return "no payment provider is configured (payments = none); nothing was changed"
 	case errors.Is(err, appsupporters.ErrNoMail):
 		return "the server sends no email (mail = none), which the program needs; nothing was changed"
 	case errors.Is(err, appsupporters.ErrLiveSubscriptions):
@@ -126,7 +126,7 @@ func printSupporterProgram(w io.Writer, p appsupporters.Program) {
 	if configured == "" {
 		configured = "none"
 	}
-	_, _ = fmt.Fprintf(w, "program: %s\npayments_provider: %s\nemail: %t\nlive subscriptions: %d\n", state, configured, p.SendsEmail, p.LiveSubscriptions)
+	_, _ = fmt.Fprintf(w, "program: %s\npayments: %s\nemail: %t\nlive subscriptions: %d\n", state, configured, p.SendsEmail, p.LiveSubscriptions)
 	if p.ProviderMismatch() {
 		_, _ = fmt.Fprintln(w, "warning: the configured payment provider is not the program's; new subscriptions are refused until the program is disabled and enabled again")
 	}
@@ -174,7 +174,7 @@ func adminSupportersUsage(w io.Writer) {
   my admin supporters cancel [-config <file>] <subscription id>
 
 The supporter program: paid plans that local users subscribe to on the
-web client, through the payment provider of payments_provider.
+web client, through the payment provider of payments.
 
 status shows whether the program is enabled and what enabling it needs. enable
 enables it with the configured payment provider; it needs a provider and email

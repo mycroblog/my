@@ -96,7 +96,7 @@ func TestServeMaintenanceOpensNoAdapter(t *testing.T) {
 	t.Setenv("MY_HOST", "example.test")
 	t.Setenv("MY_LISTEN", addr)
 	t.Setenv("MY_MAINTENANCE_MESSAGE", "Back soon.")
-	t.Setenv("MY_DB", "postgres")
+	t.Setenv("MY_DATABASE", "postgres")
 	t.Setenv("MY_DATABASE_URL", "postgres://unreachable.invalid:5432/my?connect_timeout=1")
 	t.Setenv("MY_QUEUE", "nosuchqueue")
 	t.Setenv("MY_BLOB", "nosuchblob")

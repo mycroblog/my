@@ -26,12 +26,12 @@ func TestLoginProviderCommands(t *testing.T) {
 		"-claim", "hd=example.org", "-allow-signup")
 	m := addedLoginProvider.FindStringSubmatch(stdout)
 	if code != 0 || m == nil || m[1] != m[2] {
-		t.Fatalf("login-provider add = %d %q %q", code, stdout, stderr)
+		t.Fatalf("login-provider create = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
 	if code, stdout, _ = runLoginProviderCmd(t, "", "create", "-kind", "github", "-name", "GitHub", "-client-id", "gh"); code != 1 ||
 		stdout != "" {
-		t.Errorf("login-provider add without a secret = %d %q", code, stdout)
+		t.Errorf("login-provider create without a secret = %d %q", code, stdout)
 	}
 
 	list := func() string {

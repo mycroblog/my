@@ -28,7 +28,7 @@ x-app: &app
     MY_HOST: ${MY_HOST:?set by scripts/upgrade-test.sh}
     MY_WEB_ORIGIN: ${MY_WEB_ORIGIN:?set by scripts/upgrade-test.sh}
     MY_ROLE: all
-    MY_DB: ${MY_DB:?set by scripts/upgrade-test.sh}
+    MY_DATABASE: ${MY_DATABASE:?set by scripts/upgrade-test.sh}
     MY_DATABASE_URL: ${MY_DATABASE_URL:?set by scripts/upgrade-test.sh}
     MY_BLOB_FS_DIR: /data/blobs
     MY_KEK: ${MY_KEK:?set by scripts/upgrade-test.sh}
@@ -95,7 +95,7 @@ services:
       - schema
       - apply
       - --url=${SCHEMA_URL:-}
-      - --to=file:///schema/${MY_DB}
+      - --to=file:///schema/${MY_DATABASE}
       - --dev-url=${SCHEMA_DEV_URL:-}
       - --auto-approve
     volumes:

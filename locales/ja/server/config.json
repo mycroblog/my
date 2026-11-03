@@ -5,7 +5,7 @@
   },
   "config.invalid": {
     "defaultMessage": "設定 {name} の値が正しくありません。",
-    "description": "A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DB."
+    "description": "A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE."
   },
   "config.missing": {
     "defaultMessage": "必須の設定 {name} が設定されていません。",

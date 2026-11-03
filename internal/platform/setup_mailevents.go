@@ -10,7 +10,7 @@ import (
 )
 
 // setUpMailEvents registers POST /mail/events/ses, which records the bounces and complaints that
-// SES publishes to the SNS topic ses_sns_topic_arn (ADR-0086 §5). Without the topic nothing is
+// SES publishes to the SNS topic mail_ses_sns_topic_arn (ADR-0086 §5). Without the topic nothing is
 // registered and the path answers 404 like any unknown path. Its requests count under the oauth
 // surface, with the other /mail endpoints of the server.
 func (a *App) setUpMailEvents(cfg *config.Config) error {
@@ -19,7 +19,7 @@ func (a *App) setUpMailEvents(cfg *config.Config) error {
 	}
 	topic, err := mailevents.ParseTopicARN(cfg.SESSNSTopicARN)
 	if err != nil {
-		return fmt.Errorf("ses_sns_topic_arn: %w", err)
+		return fmt.Errorf("mail_ses_sns_topic_arn: %w", err)
 	}
 	mailevents.New(mailevents.Options{
 		Topic: topic, Recorder: a.Identity, HTTPClient: a.HTTPClient, KV: a.KV, Clock: a.Clock,

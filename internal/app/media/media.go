@@ -312,7 +312,7 @@ type Processor interface {
 }
 
 // Rejected reports whether err means the content is not acceptable (as opposed to a failure
-// such as a cancelled context, after which a retry may succeed).
+// such as a canceled context, after which a retry may succeed).
 func Rejected(err error) bool {
 	return errors.Is(err, ErrUnsupportedFormat) || errors.Is(err, ErrTooLarge) ||
 		errors.Is(err, ErrDimensions) || errors.Is(err, ErrCorrupt) || errors.Is(err, ErrTooLong)

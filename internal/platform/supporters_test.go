@@ -37,8 +37,8 @@ func newSupportersEnvOn(t *testing.T, dialect string) (*accountsEnv, *fake.Provi
 	}
 	smtpPort := closingSMTPServer(t)
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
-		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1", "MY_SMTP_PORT": smtpPort,
+		"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
+		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "127.0.0.1", "MY_MAIL_SMTP_PORT": smtpPort,
 	})
 	prov := fake.New(fake.Options{Name: "stripe"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), PaymentProvider: prov})

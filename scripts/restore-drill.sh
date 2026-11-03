@@ -170,7 +170,7 @@ png_b64='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgG
 run() {
 	local dialect="$1"
 	echo "restore-drill: $dialect" >&2
-	export MY_DB="$dialect"
+	export MY_DATABASE="$dialect"
 	if [[ "$dialect" == sqlite ]]; then
 		export MY_DATABASE_URL=/data/my.db
 	else

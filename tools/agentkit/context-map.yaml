@@ -78,7 +78,7 @@ entries:
     notes:
       - "Every task with a desc appears in docs/reference/commands.md (`agentkit docs inventory`)."
   - name: release
-    paths: [".github/workflows/release.yml", ".github/workflows/release-image.yml", ".github/workflows/slow-suite.yml", "scripts/release-image.sh", "scripts/release-image-test.sh", "scripts/release-libraries.sh", "scripts/release-notes.sh", "scripts/release-notes-test.sh", "tools/agentkit/cmd/releasenotes/**"]
+    paths: [".github/workflows/release.yml", ".github/workflows/release-image.yml", ".github/workflows/slow-suite.yml", "scripts/release-image.sh", "scripts/release-image-test.sh", "scripts/release-libraries.sh", "scripts/release-notes.sh", "scripts/release-notes-test.sh", "tools/agentkit/cmd/releasenotes/**", "tools/agentkit/cmd/releaseprose/**"]
     userdocs: ["docs/operations/releasing.md"]
 
   # --- Documents --------------------------------------------------------------------------------------
@@ -491,7 +491,7 @@ entries:
     docs: ["docs/adr/0086-email-delivery.md#5-バウンス苦情", "docs/operations/email.md"]
     userdocs: ["docs/operations/email.md#receive-ses-notifications-sns"]
     notes:
-      - "POST /mail/events/ses exists only with ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
+      - "POST /mail/events/ses exists only with mail_ses_sns_topic_arn; the SNS signature (SignatureVersion 2) is verified before anything else, and the certificate and SubscribeURL are fetched only from sns.<region>.amazonaws.com through kernel.HTTPClient."
   - name: interface-other
     paths: ["internal/interface/media/**", "internal/interface/payments/**", "internal/interface/web/**"]
     docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0028-html-shell-link-previews-and-pwa.md"]
@@ -583,7 +583,7 @@ entries:
     userdocs: ["docs/reference/commands.md"]
     notes:
       - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); the front matter of each screen's L1 (parsed by app/web/l4/screens.ts, documented in screens/README.md) gives its start, the person of the scenario it signs in as (or none), the code that SINCE watches, the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new screen touches only its own L1 file (check with DRY_RUN=1; l4/screens.test.ts checks every L1's front matter)."
-      - "The Claude API is reached only by Workload Identity Federation in the `l4` job of nightly.yml (environment `ux-nightly`, `id-token: write`); never add an API key or `id-token` to another job (ADR-0115)."
+      - "The Claude API is reached only by Workload Identity Federation, in the `l4` job of nightly.yml (environment `ux-nightly`) and the `release-notes-prose` job of release.yml (environment `release-notes`), each with `id-token: write`; never add an API key or another job that calls it (ADR-0115)."
   - name: web-demo
     paths: ["app/web/demo/**"]
     docs: ["docs/adr/0117-demo-environment.md"]

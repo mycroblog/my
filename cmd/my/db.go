@@ -124,7 +124,7 @@ func dbBackup(name string, args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	if cfg.DB != "sqlite" {
-		_, _ = fmt.Fprintf(stderr, "%s: db is %s; it backs up only a SQLite database (back up PostgreSQL with pg_dump)\n", name, cfg.DB)
+		_, _ = fmt.Fprintf(stderr, "%s: database is %s; it backs up only a SQLite database (back up PostgreSQL with pg_dump)\n", name, cfg.DB)
 		return 1
 	}
 	// sqlite.Open would create a missing file; a backup of an empty database is a wrong path.
@@ -170,7 +170,7 @@ that fails; the steps that completed stay recorded, and running it again
 resumes from the failed step. The server reports not ready (503 on /readyz)
 until every step of its release is recorded.
 
-my db backup copies a SQLite database (db = sqlite) to the new <file>, which
+my db backup copies a SQLite database (database = sqlite) to the new <file>, which
 must not exist, in one consistent snapshot: the server may keep running and
 writing meanwhile, and the copy holds every write committed before the backup
 started. The copy is one file; restore it by putting it in place of the

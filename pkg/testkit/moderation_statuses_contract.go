@@ -76,13 +76,13 @@ func (s *stubModerationStatuses) ClearSensitivityOf(_ context.Context, _ uow.Tx,
 
 // stubLifecycles stands in for the account module in ModerationContract: the due time of each
 // account's scheduled deletion and the action that scheduled it, the deleted accounts, and the
-// cancellations (account ID -> the action that cancelled).
+// cancellations (account ID -> the action that canceled).
 type stubLifecycles struct {
-	mu        sync.Mutex
-	due       map[string]time.Time
-	action    string
-	deleted   map[string]bool
-	cancelled map[string]string
+	mu       sync.Mutex
+	due      map[string]time.Time
+	action   string
+	deleted  map[string]bool
+	canceled map[string]string
 }
 
 // CancelDeletionByModeration implements appmoderation.Lifecycles.
@@ -96,10 +96,10 @@ func (s *stubLifecycles) CancelDeletionByModeration(_ context.Context, _ uow.Tx,
 		return false, nil
 	}
 	delete(s.due, accountID)
-	if s.cancelled == nil {
-		s.cancelled = map[string]string{}
+	if s.canceled == nil {
+		s.canceled = map[string]string{}
 	}
-	s.cancelled[accountID] = actionID
+	s.canceled[accountID] = actionID
 	return true, nil
 }
 

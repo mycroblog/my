@@ -15,7 +15,7 @@ func TestAdminRelayCommands(t *testing.T) {
 	code, stdout, stderr := runCmd(t, adminCmd, "relay", "create", "-protocol", "mastodon", "https://relay.example/inbox")
 	m := addedRelay.FindStringSubmatch(stdout)
 	if code != 0 || m == nil {
-		t.Fatalf("relay add = %d %q %q", code, stdout, stderr)
+		t.Fatalf("relay create = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
 	if code, stdout, _ = runCmd(t, adminCmd, "relay", "list"); code != 0 ||

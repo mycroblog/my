@@ -182,9 +182,9 @@ const (
 	// AuditAppealOverturned: an appeal was decided and its action lifted
 	// (moderation_appeal_decisions); the lift has its own account_action_lifted entry.
 	AuditAppealOverturned AuditAction = "appeal_overturned"
-	// AuditAccountDeletionCancelled: an overturned appeal of a ban cancelled the scheduled
-	// deletion of the account (account_lifecycle_events, deletion_cancelled).
-	AuditAccountDeletionCancelled AuditAction = "account_deletion_cancelled"
+	// AuditAccountDeletionCanceled: an overturned appeal of a ban canceled the scheduled
+	// deletion of the account (account_lifecycle_events, deletion_canceled).
+	AuditAccountDeletionCanceled AuditAction = "account_deletion_canceled"
 	// AuditRevealedPrivateData: a moderator was shown the email address and the IP addresses of
 	// a local account (FR-714); the operation has no row of its own.
 	AuditRevealedPrivateData AuditAction = "revealed_private_data"
@@ -386,7 +386,7 @@ var auditActions = []struct {
 	{AuditRoleDeleted, AuditTargetRole},
 	{AuditAppealUpheld, AuditTargetAppeal},
 	{AuditAppealOverturned, AuditTargetAppeal},
-	{AuditAccountDeletionCancelled, AuditTargetAccount},
+	{AuditAccountDeletionCanceled, AuditTargetAccount},
 	{AuditRevealedPrivateData, AuditTargetAccount},
 	{AuditSignupBlockAdded, AuditTargetSignupBlock},
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},

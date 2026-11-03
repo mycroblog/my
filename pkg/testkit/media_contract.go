@@ -50,7 +50,7 @@ func MediaProcessorContract(t *testing.T, p media.Processor) {
 		{"PreviewsTheSmallStillVariant", mediaPreviews},
 		{"ComputesABlurhash", mediaComputesBlurhash},
 		{"GivesTheSameOutputForTheSameInput", mediaIsDeterministic},
-		{"StopsOnCancelledContext", mediaStopsOnCancel},
+		{"StopsOnCanceledContext", mediaStopsOnCancel},
 	}
 	cases = append(cases, mediaAVCases...)
 	for _, tc := range cases {
@@ -546,7 +546,7 @@ func mediaPreviews(t *testing.T, p media.Processor) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := p.Preview(ctx, FixtureJPEG(40, 20, 1), media.Limits{}, media.Sizes{}, media.Request{}); err == nil || media.Rejected(err) {
-		t.Errorf("Preview with a cancelled context = %v, want the context's error", err)
+		t.Errorf("Preview with a canceled context = %v, want the context's error", err)
 	}
 }
 
@@ -592,6 +592,6 @@ func mediaStopsOnCancel(t *testing.T, p media.Processor) {
 	cancel()
 	_, err := p.Process(ctx, FixtureJPEG(40, 20, 1), media.Limits{}, media.Sizes{}, media.Request{})
 	if err == nil || media.Rejected(err) {
-		t.Errorf("Process with a cancelled context = %v, want the context's error", err)
+		t.Errorf("Process with a canceled context = %v, want the context's error", err)
 	}
 }

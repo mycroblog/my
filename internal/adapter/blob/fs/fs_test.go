@@ -135,10 +135,10 @@ func TestFailedPutLeavesNoTemporaryFile(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	r := io.MultiReader(strings.NewReader("private data"), readerFunc(func([]byte) (int, error) {
 		cancel()
-		return 0, errors.New("cancelled")
+		return 0, errors.New("canceled")
 	}))
 	if _, err := s.Put(ctx, "k", r, blob.PutOptions{}); err == nil {
-		t.Fatal("Put with a cancelled context succeeded")
+		t.Fatal("Put with a canceled context succeeded")
 	}
 	assertTmpEmpty(t, dir)
 }

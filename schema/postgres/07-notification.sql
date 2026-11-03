@@ -173,7 +173,8 @@ CREATE TABLE notification_settings (
   enabled boolean NOT NULL,
   updated_at timestamptz NOT NULL,
   PRIMARY KEY (account_id, notification_group, channel),
-  CHECK (notification_group <> 'moderation' OR channel = 'email')
+  CHECK (notification_group <> 'moderation' OR channel = 'email'),
+  CHECK (notification_group NOT IN ('status', 'announcement') OR channel = 'in_app')
 );
 
 -- Current value: a local account's subscription to the new posts of another account (ADR-0123
