@@ -248,7 +248,9 @@ func dynamicHTTPSURL(field, raw string) (string, error) {
 // DeleteUnusedDynamicClients deletes the dynamically registered clients that are unused
 // (ADR-0090 §1), for the reason unused, and returns how many it deleted: the ones where no
 // authorization code was exchanged within the unredeemed TTL of the registration, and the ones
-// with no usable token whose newest token was issued longer ago than the idle TTL. It is safe to
+// with no usable token whose newest token was issued longer ago than the idle TTL. The first check
+// covers only clients younger than AuthRecordRetention: the exchanged codes of an older client may
+// be purged, and the idle TTL decides for it. It is safe to
 // repeat: a deleted client is not unused again, and a run that stops at its batch limit leaves
 // the rest to the next one.
 func (s *Service) DeleteUnusedDynamicClients(ctx context.Context) (int, error) {
@@ -262,7 +264,7 @@ func (s *Service) DeleteUnusedDynamicClients(ctx context.Context) (int, error) {
 	}
 	deleted := 0
 	for range unusedClientBatches {
-		ids, err := s.d.Repository.ListUnusedDynamicOAuthClients(ctx, now.Add(-unredeemed), now.Add(-idle), now, unusedClientBatch)
+		ids, err := s.d.Repository.ListUnusedDynamicOAuthClients(ctx, now.Add(-unredeemed), now.Add(-AuthRecordRetention), now.Add(-idle), now, unusedClientBatch)
 		if err != nil {
 			return deleted, err
 		}
