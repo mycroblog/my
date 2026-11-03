@@ -39,7 +39,7 @@ type Relationships interface {
 // that it notifies only the accounts that follow it (data-model §5.2).
 // *appmoderation.AccountPolicy implements it.
 type ReachPolicy interface {
-	UnsolicitedReachRestricted(ctx context.Context, accountID string) (bool, error)
+	UnsolicitedReachRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
 }
 
 // ProjectorDeps are the ports the notification projectors use.
@@ -456,7 +456,7 @@ func (p *projector) reaches(ctx context.Context, tx uow.Tx, recipientID, sourceI
 	if p.d.Reach == nil {
 		return true, nil
 	}
-	restricted, err := p.d.Reach.UnsolicitedReachRestricted(ctx, sourceID)
+	restricted, err := p.d.Reach.UnsolicitedReachRestrictedTx(ctx, tx, sourceID)
 	if err != nil || !restricted {
 		return err == nil, err
 	}

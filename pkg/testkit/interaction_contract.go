@@ -1044,3 +1044,7 @@ func snapshotInteractionProjections(t *testing.T, h InteractionHarness) interact
 	}
 	return p
 }
+
+func (s *stubActors) FindByIDTx(ctx context.Context, _ uow.Tx, id string) (appaccount.Actor, error) {
+	return s.FindByID(ctx, id)
+}

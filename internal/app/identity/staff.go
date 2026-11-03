@@ -66,7 +66,7 @@ func (s *Service) PermissionHolders(ctx context.Context, tx uow.Tx, p identity.P
 	}
 	out := make([]PermissionHolder, 0, len(ids))
 	for _, id := range ids {
-		la, err := s.d.Accounts.LocalAccountOfUser(ctx, id)
+		la, err := s.d.Accounts.LocalAccountOfUserTx(ctx, tx, id)
 		switch {
 		case errors.Is(err, account.ErrNotFound):
 			continue

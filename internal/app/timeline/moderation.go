@@ -19,7 +19,7 @@ import (
 // Accounts reads the lifecycle of the accounts that moderation restricts. *appaccount.Service
 // implements it.
 type Accounts interface {
-	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	FindByIDTx(ctx context.Context, tx uow.Tx, id string) (appaccount.Actor, error)
 }
 
 // feedRestrictions are the moderation restrictions that the timelines apply (data-model §4.6).
@@ -36,7 +36,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 	r.Register(appmoderation.EventAccountRestrictionsChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appmoderation.AccountRestrictionsChanged)
 		effects := ev.Effects
-		a, err := accounts.FindByID(ctx, ev.AccountID)
+		a, err := accounts.FindByIDTx(ctx, tx, ev.AccountID)
 		switch {
 		case errors.Is(err, appaccount.ErrNotFound):
 		case err != nil:

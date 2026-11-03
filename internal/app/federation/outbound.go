@@ -230,7 +230,7 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		if !ok {
 			return nil
 		}
-		switch publishes, err := modeAllows(ctx, d.Modes, federation.FlowPublish); {
+		switch publishes, err := modeAllowsTx(ctx, tx, d.Modes, federation.FlowPublish); {
 		case err != nil:
 			return err
 		case !publishes:

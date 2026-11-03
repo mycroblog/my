@@ -118,7 +118,7 @@ func (s *Interactions) RetractRemoteBoost(ctx context.Context, uri, boosterAccou
 		live := err == nil && edge.BoostID == b.ID
 		if !live {
 			// Retracted already, or of a deleted status, whose boosts left the projections with it.
-			switch _, err := repo.FindBoostRetraction(ctx, b.ID); {
+			switch _, err := repo.FindBoostRetractionTx(ctx, tx, b.ID); {
 			case err == nil:
 				return nil
 			case !errors.Is(err, ErrNotFound):

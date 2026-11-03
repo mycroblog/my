@@ -163,13 +163,14 @@ func (r *DiagnosticsRepository) ListSummaries(ctx context.Context, q appdiagnost
 
 // FindSummary implements appdiagnostics.Repository.
 func (r *DiagnosticsRepository) FindSummary(ctx context.Context, tx uow.Tx, id string, w appdiagnostics.Window) (appdiagnostics.Summary, error) {
-	q := r.db.reader()
+	db := r.db
 	if tx != nil {
 		var err error
-		if q, err = r.db.queries(tx); err != nil {
+		if db, err = r.db.in(tx); err != nil {
 			return appdiagnostics.Summary{}, err
 		}
 	}
+	q := db.reader()
 	row, err := q.GetErrorGroupSummary(ctx, sqlitegen.GetErrorGroupSummaryParams{
 		SinceDay: toMillis(w.SinceDay), SinceWeek: toMillis(w.SinceWeek), ID: id,
 	})

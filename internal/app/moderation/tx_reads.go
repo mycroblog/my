@@ -4,9 +4,11 @@ package moderation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
@@ -86,4 +88,28 @@ func (p *AccountPolicy) SuspendedTx(ctx context.Context, tx uow.Tx, accountID st
 		return false, err
 	}
 	return moderation.FederationSuspended(rows, p.clock.Now()), nil
+}
+
+// UnsolicitedReachRestrictedTx is UnsolicitedReachRestricted inside tx.
+func (p *AccountPolicy) UnsolicitedReachRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	now := p.clock.Now()
+	rs, err := p.repo.AccountRestrictionsInEffectTx(ctx, tx, accountID, now)
+	if err != nil {
+		return false, err
+	}
+	domain, err := p.accounts.AccountDomainTx(ctx, tx, accountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return slices.Contains(rs, moderation.RestrictUnsolicitedReach), nil
+	case err != nil:
+		return false, err
+	}
+	if domains := moderation.DomainAndParents(domain); len(domains) > 0 {
+		ds, err := p.repo.DomainRestrictionsInEffectTx(ctx, tx, domains, now)
+		if err != nil {
+			return false, err
+		}
+		rs = append(rs, ds...)
+	}
+	return slices.Contains(rs, moderation.RestrictUnsolicitedReach), nil
 }

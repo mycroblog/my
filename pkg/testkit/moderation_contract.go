@@ -1153,3 +1153,7 @@ func moderationFirstOpenReport(t *testing.T, e *moderationEnv) {
 	}
 	count(1)
 }
+
+func (s *stubActors) AccountDomainTx(ctx context.Context, _ uow.Tx, id string) (string, error) {
+	return s.AccountDomain(ctx, id)
+}

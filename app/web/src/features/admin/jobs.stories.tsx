@@ -142,7 +142,12 @@ export const Empty: Story = adminAnswering();
 export const WithoutListing: Story = adminAnswering(
   http.get(`${apiBase}/admin/queue`, ({ request }) =>
     withViewer(request, () =>
-      HttpResponse.json({ adapter: "sqs", pending_listing: false, counts: [] } satisfies Schemas["AdminQueue"]),
+      HttpResponse.json({
+        adapter: "sqs",
+        pending_listing: false,
+        counts: [],
+        waits: [],
+      } satisfies Schemas["AdminQueue"]),
     ),
   ),
 );

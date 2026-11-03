@@ -105,7 +105,7 @@ func (s *Interactions) RecordRemoteReaction(ctx context.Context, in RemoteReacti
 			return err
 		}
 		if c := in.Emoji.Custom; c != nil && in.Emoji.Borrowed {
-			emoji, err := s.d.Statuses.FindCustomEmojiByShortcode(ctx, c.Shortcode, in.Emoji.Domain)
+			emoji, err := s.d.Statuses.FindCustomEmojiByShortcodeTx(ctx, tx, c.Shortcode, in.Emoji.Domain)
 			if errors.Is(err, ErrNotFound) {
 				return fmt.Errorf("custom emoji %q of %s is not stored: %w", c.Shortcode, in.Emoji.Domain, content.ErrInvalidReaction)
 			}

@@ -10,12 +10,14 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
 // AccountDomains finds the domain of an account. *appaccount.Service implements it.
 type AccountDomains interface {
 	AccountDomain(ctx context.Context, id string) (string, error)
+	AccountDomainTx(ctx context.Context, tx uow.Tx, id string) (string, error)
 }
 
 // AccountPolicy is the RestrictionPolicy of data-model §5.3 as far as moderation decides it: the

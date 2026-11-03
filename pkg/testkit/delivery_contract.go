@@ -942,3 +942,7 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 		t.Errorf("Find(unknown.example) = %+v, %v; want available without a row", h, err)
 	}
 }
+
+func (d *deliveryEnv) FederationModeTx(ctx context.Context, _ uow.Tx) (federation.Mode, error) {
+	return d.FederationMode(ctx)
+}

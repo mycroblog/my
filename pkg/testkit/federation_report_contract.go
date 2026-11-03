@@ -13,6 +13,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -146,4 +147,8 @@ func fedForwardsReports(t *testing.T, e *fedEnv) {
 	if got := e.inboxes(t, act.ID); len(got) != 0 {
 		t.Errorf("Flag inboxes on a suspended server = %v, want none", got)
 	}
+}
+
+func (a *fedAccounts) InstanceActorTx(ctx context.Context, _ uow.Tx) (appaccount.Actor, error) {
+	return a.InstanceActor(ctx)
 }

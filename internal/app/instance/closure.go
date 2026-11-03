@@ -109,6 +109,15 @@ func (s *Service) Closure(ctx context.Context) (instance.Closure, error) {
 	return c, err
 }
 
+// ClosureTx is Closure inside tx.
+func (s *Service) ClosureTx(ctx context.Context, tx uow.Tx) (instance.Closure, error) {
+	c, err := s.d.Repository.CurrentClosureTx(ctx, tx)
+	if errors.Is(err, ErrNotFound) {
+		return instance.Closure{}, nil
+	}
+	return c, err
+}
+
 // AnnounceClosureInput announces the closure of the service or changes its dates.
 type AnnounceClosureInput struct {
 	ClosesAt time.Time

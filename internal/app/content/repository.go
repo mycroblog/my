@@ -130,11 +130,15 @@ type Repository interface {
 
 	FindStatus(ctx context.Context, id string) (content.Status, error)
 	FindStatusByURI(ctx context.Context, uri string) (content.Status, error)
+	// FindStatusByURITx is FindStatusByURI inside tx.
+	FindStatusByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)
 	FindLocalStatus(ctx context.Context, statusID string) (content.LocalStatus, error)
 	// FindLocalStatusByIdempotencyKey returns the local status that an author posted with key.
 	FindLocalStatusByIdempotencyKey(ctx context.Context, authorAccountID, key string) (content.LocalStatus, error)
 	// FindRevision returns a revision with its bodies, source, attachments, mentions, tags, and emoji.
 	FindRevision(ctx context.Context, id string) (content.Revision, error)
+	// FindRevisionTx is FindRevision inside tx.
+	FindRevisionTx(ctx context.Context, tx uow.Tx, id string) (content.Revision, error)
 	// FindCurrentRevision returns the revision that the head of a status points at; a deleted
 	// status has none.
 	FindCurrentRevision(ctx context.Context, statusID string) (content.Revision, error)
@@ -144,6 +148,8 @@ type Repository interface {
 	FindDeletion(ctx context.Context, statusID string) (content.Deletion, error)
 	// FindDeletionByURI returns the tombstone of a URI.
 	FindDeletionByURI(ctx context.Context, uri string) (content.Deletion, error)
+	// FindDeletionByURITx is FindDeletionByURI inside tx.
+	FindDeletionByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Deletion, error)
 	FindTagByName(ctx context.Context, nameNormalized string) (content.Tag, error)
 	FindTag(ctx context.Context, id string) (content.Tag, error)
 	// ListTagsByPrefix returns up to limit tags whose NameNormalized is at least low and less
@@ -192,6 +198,8 @@ type Repository interface {
 	// FindCustomEmojiByShortcode returns the emoji with a shortcode on a domain ("" for this
 	// instance).
 	FindCustomEmojiByShortcode(ctx context.Context, shortcode, domain string) (content.CustomEmoji, error)
+	// FindCustomEmojiByShortcodeTx is FindCustomEmojiByShortcode inside tx.
+	FindCustomEmojiByShortcodeTx(ctx context.Context, tx uow.Tx, shortcode, domain string) (content.CustomEmoji, error)
 	// FindCustomEmojiImage returns the current image of an emoji.
 	FindCustomEmojiImage(ctx context.Context, emojiID string) (content.CustomEmojiImage, error)
 	// FindPollTallies returns the tallies of a poll ordered by position; a poll without an

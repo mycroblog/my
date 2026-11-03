@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
@@ -240,4 +241,121 @@ func (r *IdentityRepository) ListLinkedExternalIdentitiesTx(ctx context.Context,
 		return nil, err
 	}
 	return (&IdentityRepository{db: db}).ListLinkedExternalIdentities(ctx, userID)
+}
+
+// HeldAccountIDsTx implements the reads in a transaction.
+func (r *ModerationRepository) HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&ModerationRepository{db: db}).HeldAccountIDs(ctx)
+}
+
+// ReportedVoiceRoomsTx implements the reads in a transaction.
+func (r *ModerationRepository) ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&ModerationRepository{db: db}).ReportedVoiceRooms(ctx, roomIDs)
+}
+
+// FindInstanceActorTx implements the reads in a transaction.
+func (r *AccountRepository) FindInstanceActorTx(ctx context.Context, tx uow.Tx) (account.Account, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return account.Account{}, err
+	}
+	return (&AccountRepository{db: db}).FindInstanceActor(ctx)
+}
+
+// FindRemoteHeadTx implements the reads in a transaction.
+func (r *AccountRepository) FindRemoteHeadTx(ctx context.Context, tx uow.Tx, accountID string) (account.RemoteHead, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return account.RemoteHead{}, err
+	}
+	return (&AccountRepository{db: db}).FindRemoteHead(ctx, accountID)
+}
+
+// HasAliasTx implements the reads in a transaction.
+func (r *AccountRepository) HasAliasTx(ctx context.Context, tx uow.Tx, accountID, uri string) (bool, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return false, err
+	}
+	return (&AccountRepository{db: db}).HasAlias(ctx, accountID, uri)
+}
+
+// FindMoveTx implements the reads in a transaction.
+func (r *AccountRepository) FindMoveTx(ctx context.Context, tx uow.Tx, id string) (account.Move, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return account.Move{}, err
+	}
+	return (&AccountRepository{db: db}).FindMove(ctx, id)
+}
+
+// FindCustomEmojiByShortcodeTx implements the reads in a transaction.
+func (r *StatusRepository) FindCustomEmojiByShortcodeTx(ctx context.Context, tx uow.Tx, shortcode, domain string) (content.CustomEmoji, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return content.CustomEmoji{}, err
+	}
+	return (&StatusRepository{db: db}).FindCustomEmojiByShortcode(ctx, shortcode, domain)
+}
+
+// FindRevisionTx implements the reads in a transaction.
+func (r *StatusRepository) FindRevisionTx(ctx context.Context, tx uow.Tx, id string) (content.Revision, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return content.Revision{}, err
+	}
+	return (&StatusRepository{db: db}).FindRevision(ctx, id)
+}
+
+// FindDeletionByURITx implements the reads in a transaction.
+func (r *StatusRepository) FindDeletionByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Deletion, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return content.Deletion{}, err
+	}
+	return (&StatusRepository{db: db}).FindDeletionByURI(ctx, uri)
+}
+
+// FindStatusByURITx implements the reads in a transaction.
+func (r *StatusRepository) FindStatusByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Status, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return content.Status{}, err
+	}
+	return (&StatusRepository{db: db}).FindStatusByURI(ctx, uri)
+}
+
+// FindBoostRetractionTx implements the reads in a transaction.
+func (r *InteractionRepository) FindBoostRetractionTx(ctx context.Context, tx uow.Tx, boostID string) (content.BoostRetraction, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return content.BoostRetraction{}, err
+	}
+	return (&InteractionRepository{db: db}).FindBoostRetraction(ctx, boostID)
+}
+
+// ListLoginProvidersTx implements the reads in a transaction.
+func (r *IdentityRepository) ListLoginProvidersTx(ctx context.Context, tx uow.Tx) ([]identity.LoginProvider, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&IdentityRepository{db: db}).ListLoginProviders(ctx)
+}
+
+// ListCurrentSettingsTx implements the reads in a transaction.
+func (r *InstanceRepository) ListCurrentSettingsTx(ctx context.Context, tx uow.Tx) ([]instance.CurrentSetting, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&InstanceRepository{db: db}).ListCurrentSettings(ctx)
 }
