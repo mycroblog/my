@@ -3,7 +3,7 @@ description: |
   A report that the user filed. It never names the reporter, and tells only whether the
   moderators resolved it, never how.
 type: object
-required: [id, category, comment, forwarded, filed_at, target_account, status_ids, rule_ids, state]
+required: [id, category, comment, forwarded, filed_at, status_ids, rule_ids, state]
 properties:
   id:
     $ref: ./Id.yaml
@@ -19,7 +19,11 @@ properties:
     type: string
     format: date-time
   target_account:
-    $ref: ./Account.yaml
+    description: |
+      The account reported, as the user would see it through `getAccount`; omitted when that
+      answers 404, because the account is suspended, deleted, or blocks the user.
+    allOf:
+      - $ref: ./Account.yaml
   status_ids:
     type: array
     items:

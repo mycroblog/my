@@ -91,17 +91,16 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: file a report on %s: %w", b.AccountId, err)
 	}
-	target, err := s.o.Accounts.FindByID(ctx, r.TargetAccountID)
-	if err != nil {
-		return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", r.TargetAccountID, r.ID, err)
-	}
-	accounts, err := s.newAccounts(ctx, []appaccount.Actor{target})
+	items, err := s.newReports(ctx, v, []moderation.ReportRecord{{Report: r, Status: moderation.ReportStatus{State: moderation.ReportOpen}}})
 	if err != nil {
 		return nil, err
 	}
+	if len(items) != 1 {
+		return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", r.TargetAccountID, r.ID, appaccount.ErrNotFound)
+	}
 	cache := cacheNoStore
 	return CreateReport200JSONResponse{
-		Body:    newReport(moderation.ReportRecord{Report: r, Status: moderation.ReportStatus{State: moderation.ReportOpen}}, accounts[0]),
+		Body:    items[0],
 		Headers: CreateReport200ResponseHeaders{CacheControl: &cache},
 	}, nil
 }
@@ -123,7 +122,7 @@ func (s *Server) ListOwnReports(ctx context.Context, req ListOwnReportsRequestOb
 		return nil, fmt.Errorf("clientapi: list the reports of %s: %w", v.AccountID, err)
 	}
 	recs, last := trim(recs, q.limit)
-	items, err := s.newReports(ctx, recs)
+	items, err := s.newReports(ctx, v, recs)
 	if err != nil {
 		return nil, err
 	}
@@ -135,48 +134,55 @@ func (s *Server) ListOwnReports(ctx context.Context, req ListOwnReportsRequestOb
 	return ListOwnReports200JSONResponse{Body: page, Headers: ListOwnReports200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
-// newReports presents the viewer's own reports recs, in order, as the Report schema, with each
-// target account read once, whether or not it is suspended or blocks the viewer: the report is
-// about that account. A report whose target account no longer exists is left out.
-func (s *Server) newReports(ctx context.Context, recs []moderation.ReportRecord) ([]Report, error) {
-	targets := map[string]bool{}
+// newReports presents the reports recs of the reporter viewer, in order, as the Report schema, with
+// each target account read once. The reporter sees of the target what getAccount shows them, so a
+// target that is not presentable to them (suspended, deleted, or blocking them) is left out of a
+// report that stays listed. A report whose target account no longer exists is left out.
+func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderation.ReportRecord) ([]Report, error) {
+	exists := map[string]bool{}
 	var actors []appaccount.Actor
 	for _, rec := range recs {
 		id := rec.Report.TargetAccountID
-		if _, ok := targets[id]; ok {
+		if _, ok := exists[id]; ok {
 			continue
 		}
 		a, err := s.o.Accounts.FindByID(ctx, id)
 		switch {
 		case errors.Is(err, appaccount.ErrNotFound):
-			targets[id] = false
+			exists[id] = false
 			continue
 		case err != nil:
 			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
 		}
-		targets[id] = true
-		actors = append(actors, a)
+		exists[id] = true
+		shown, err := s.presentable(ctx, a, &viewer, true)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
+		}
+		if shown {
+			actors = append(actors, a)
+		}
 	}
 	accounts, err := s.newAccounts(ctx, actors)
 	if err != nil {
 		return nil, err
 	}
-	byID := make(map[string]Account, len(accounts))
+	byID := make(map[string]*Account, len(accounts))
 	for i, a := range actors {
-		byID[a.Account.ID] = accounts[i]
+		byID[a.Account.ID] = &accounts[i]
 	}
 	out := make([]Report, 0, len(recs))
 	for _, rec := range recs {
-		if a, ok := byID[rec.Report.TargetAccountID]; ok {
-			out = append(out, newReport(rec, a))
+		if exists[rec.Report.TargetAccountID] {
+			out = append(out, newReport(rec, byID[rec.Report.TargetAccountID]))
 		}
 	}
 	return out, nil
 }
 
 // newReport presents a report to its reporter: whether it is open or resolved, never its
-// outcome or who handles it.
-func newReport(rec moderation.ReportRecord, target Account) Report {
+// outcome or who handles it. target is nil when the reporter may not see the account.
+func newReport(rec moderation.ReportRecord, target *Account) Report {
 	r := rec.Report
 	state := ReportStateOpen
 	if rec.Status.State == moderation.ReportResolved {

@@ -381,7 +381,7 @@ func (s *Server) notifiedReports(ctx context.Context, accountID string, ns []not
 		}
 		recs = append(recs, rec)
 	}
-	items, err := s.newReports(ctx, recs)
+	items, err := s.newReports(ctx, Viewer{AccountID: accountID}, recs)
 	if err != nil {
 		return nil, err
 	}
