@@ -659,11 +659,11 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 		t.Fatalf("lift = %d", res.StatusCode)
 	}
 	wantUpdates("the lift while deactivated", 0)
-	if res := e.do("bob", http.MethodGet, "/timelines/public", nil, nil); res.StatusCode != http.StatusOK {
+	if res := e.do("bob", http.MethodGet, "/timelines/federated", nil, nil); res.StatusCode != http.StatusOK {
 		t.Fatalf("public timeline = %d", res.StatusCode)
 	}
 	var page clientapi.StatusPage
-	e.do("bob", http.MethodGet, "/timelines/public", nil, &page)
+	e.do("bob", http.MethodGet, "/timelines/federated", nil, &page)
 	for _, st := range page.Items {
 		if st.Id == post.Id {
 			t.Error("a lift brought the deactivated author's post back into the timeline")
@@ -689,7 +689,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 	if err != nil || got.Deactivated || !got.LoginRestricted || got.Allowed() {
 		t.Errorf("access after the reactivation while suspended = %+v, %v", got, err)
 	}
-	e.do("bob", http.MethodGet, "/timelines/public", nil, &page)
+	e.do("bob", http.MethodGet, "/timelines/federated", nil, &page)
 	for _, st := range page.Items {
 		if st.Id == post.Id {
 			t.Error("the reactivation brought a suspended author's post back into the timeline")
@@ -699,7 +699,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 		t.Fatalf("lift = %d", res.StatusCode)
 	}
 	wantUpdates("the lift after the reactivation", 1)
-	e.do("bob", http.MethodGet, "/timelines/public", nil, &page)
+	e.do("bob", http.MethodGet, "/timelines/federated", nil, &page)
 	var listed bool
 	for _, st := range page.Items {
 		listed = listed || st.Id == post.Id
