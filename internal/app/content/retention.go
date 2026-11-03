@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	// RetentionDeletionRetention is how long a deletion by retention (status_deletions) is kept.
+	RetentionDeletionRetention = 30 * 24 * time.Hour
 	// JobPurgeRemoteStatuses deletes the remote statuses past their retention (ADR-0034,
 	// FR-803). Its payload is the cursor of the run (none for the first job of a run).
 	JobPurgeRemoteStatuses = "content.purge_remote_statuses"
@@ -49,6 +51,10 @@ type RetentionRepository interface {
 	// statuses. The deletions stay, and so do local accounts' boosts, favourites, bookmarks, and
 	// pins.
 	PurgeStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error
+	// DeleteRetentionDeletionsBefore deletes at most limit deletions by retention recorded before
+	// t whose status has no row and no boost, favourite, reaction, bookmark, or pin, and returns
+	// how many it deleted.
+	DeleteRetentionDeletionsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 }
 
 // PurgeQuery selects the remote statuses past their retention.
@@ -106,7 +112,8 @@ type RetentionDeps struct {
 // at, or whose author a retention hold preserves, is kept regardless (ADR-0038). The deletion leaves every projection as the author's
 // deletion would, and its rows are purged in the same transaction; local accounts' boosts,
 // favourites, bookmarks, and pins stay, and readers treat their status as deleted. A deletion by
-// retention does not keep the URI from being fetched again.
+// retention does not keep the URI from being fetched again, and goes after
+// RetentionDeletionRetention once no row names its status.
 type Retention struct{ d RetentionDeps }
 
 // NewRetention returns the retention purge on d.
@@ -163,6 +170,11 @@ func (r *Retention) handle(ctx context.Context, j queue.Job) queue.Result {
 // purged and the cursor to continue from, "" when it reached the end. It is safe to repeat.
 func (r *Retention) Run(ctx context.Context, after string) (next string, purged int, err error) {
 	now := r.d.Clock.Now()
+	if after == "" {
+		if err := r.purgeDeletions(ctx, now.Add(-RetentionDeletionRetention)); err != nil {
+			return after, 0, err
+		}
+	}
 	q := PurgeQuery{After: after, UnreferencedBefore: now.Add(-r.d.Period), Limit: r.d.Batch}
 	if r.d.MaxPeriod > 0 {
 		q.Before = now.Add(-r.d.MaxPeriod)
@@ -188,6 +200,26 @@ func (r *Retention) Run(ctx context.Context, after string) (next string, purged 
 		}
 	}
 	return after, purged, nil
+}
+
+// purgeDeletions deletes the records of past purges, a bounded batch per transaction; the first
+// job of the next run continues.
+func (r *Retention) purgeDeletions(ctx context.Context, before time.Time) error {
+	for range retentionMaxBatches {
+		var n int64
+		err := r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = r.d.Retention.DeleteRetentionDeletionsBefore(ctx, tx, before, r.d.Batch)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		if n < int64(r.d.Batch) {
+			return nil
+		}
+	}
+	return nil
 }
 
 // purgeBatch deletes one batch inside tx and returns how many statuses it deleted, how many it

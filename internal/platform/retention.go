@@ -46,7 +46,7 @@ func (a *App) setUpRetention(cfg *config.Config, repos retentionRepositories, st
 		UnitOfWork: a.UnitOfWork, Repository: repos.purges, Clock: a.Clock,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	account.NewProfilePruner(account.PruneDeps{
-		UnitOfWork: a.UnitOfWork, Repository: repos.profiles, Relations: remoteRelations{a}, Jobs: a.Jobs,
+		UnitOfWork: a.UnitOfWork, Repository: repos.profiles, Relations: remoteRelations{a}, Clock: a.Clock, Jobs: a.Jobs,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	// The profiles of the account module use emoji, and their avatars and headers may share a
 	// remote media file with an emoji image.
