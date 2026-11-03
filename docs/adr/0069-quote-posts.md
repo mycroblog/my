@@ -1,6 +1,6 @@
 # ADR-0069: 引用投稿（FEP-044f）
 
-- Status: Accepted
+- Status: Accepted（§3 のフォールバックの形と、§3・§4 の引用元の公開範囲を ADR-0144 が置き換える）
 - Date: 2026-10-22
 - Deciders: @rosylilly
 - Issue: #891
