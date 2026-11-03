@@ -11431,8 +11431,9 @@ type Report struct {
 	State     ReportState `json:"state"`
 	StatusIds []Id        `json:"status_ids"`
 
-	// TargetAccount An account, as clients show it (FR-006).
-	TargetAccount Account `json:"target_account"`
+	// TargetAccount The account reported, as the user would see it through `getAccount`; omitted when that
+	// answers 404, because the account is suspended, deleted, or blocks the user.
+	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// VoiceRoomId The voice chat room reported; omitted for none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
@@ -20430,8 +20431,9 @@ type ClientInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it. A report shows its target even when the account is suspended or blocks
-	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// who handles it. A report stays listed when the user may no longer see its target (the
+	// account is suspended, deleted, or blocks the user), without `target_account`. A report
+	// whose target no longer exists at all is left out, so a page may hold fewer
 	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Corresponds with GET /reports (the `ListOwnReports` operationId).
@@ -29545,8 +29547,9 @@ func (c *Client) PutPushSubscription(ctx context.Context, body PutPushSubscripti
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it. A report shows its target even when the account is suspended or blocks
-// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// who handles it. A report stays listed when the user may no longer see its target (the
+// account is suspended, deleted, or blocks the user), without `target_account`. A report
+// whose target no longer exists at all is left out, so a page may hold fewer
 // reports than `limit` and still have a `next_cursor`.
 //
 // Corresponds with GET /reports (the `ListOwnReports` operationId).
@@ -51768,8 +51771,9 @@ type ClientWithResponsesInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it. A report shows its target even when the account is suspended or blocks
-	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// who handles it. A report stays listed when the user may no longer see its target (the
+	// account is suspended, deleted, or blocks the user), without `target_account`. A report
+	// whose target no longer exists at all is left out, so a page may hold fewer
 	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -82618,8 +82622,9 @@ func (c *ClientWithResponses) PutPushSubscriptionWithResponse(ctx context.Contex
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it. A report shows its target even when the account is suspended or blocks
-// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// who handles it. A report stays listed when the user may no longer see its target (the
+// account is suspended, deleted, or blocks the user), without `target_account`. A report
+// whose target no longer exists at all is left out, so a page may hold fewer
 // reports than `limit` and still have a `next_cursor`.
 //
 // Returns a wrapper object for the known response body format(s).

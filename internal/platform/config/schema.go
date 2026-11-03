@@ -34,6 +34,19 @@ const EnvConfigFile = EnvPrefix + "CONFIG"
 // DefaultSourceURL is the repository of the unmodified server, the default of source_url.
 const DefaultSourceURL = "https://github.com/mycroblog/my"
 
+// releaseVersion matches the version of a release's tag, vX.Y.Z or vX.Y.Z-<pre-release> (ADR-0142 §7). Neither a commit
+// after a tag (git describe's v0.1.0-3-gabcdef0, whose "-" this rejects) nor a dirty tree is a release; see VersionedSourceURL.
+var releaseVersion = regexp.MustCompile(`^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$`)
+
+// VersionedSourceURL returns the source_url that GET /instance offers: at the default and with the version of a release,
+// the source of that version at its tag; anything else as it is, an operator's own value above all.
+func VersionedSourceURL(sourceURL, version string) string {
+	if sourceURL != DefaultSourceURL || !releaseVersion.MatchString(version) || strings.HasSuffix(version, "-dirty") {
+		return sourceURL
+	}
+	return DefaultSourceURL + "/tree/" + version
+}
+
 // kekSize is the length in bytes of the AES-256 key-encryption key (ADR-0019 §6).
 const kekSize = 32
 
@@ -111,7 +124,7 @@ var schema = []field{
 	},
 	{
 		key:   "source_url",
-		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).",
+		doc:   "Where users get the source code of the running server, as an `https` URL or a `mailto:` address to request it from. AGPL-3.0 section 13 requires offering the source to everyone who uses the server over the network; `GET /instance`, the information page (`/about`), the landing page, and NodeInfo (`metadata.sourceCode`, and `software.repository` for an `https` URL) publish it. At the default, a release's `GET /instance`, and so the information and landing pages, link to the source at the release's tag (`https://github.com/mycroblog/my/tree/v0.1.0`), and NodeInfo to the repository. Point it at your own source when you run a fork or a modified version (docs/operations/running.md).",
 		def:   DefaultSourceURL,
 		check: checkSourceURL,
 		set:   func(c *Config, v string) { c.SourceURL = v },

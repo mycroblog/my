@@ -1,8 +1,8 @@
 # Releasing
 
 How the decider cuts a release. Only `release.yml` creates releases. It runs the slow suite (`slow-suite.yml`) on the chosen commit and,
-only when every job passes, tags that commit, drafts a GitHub Release, and publishes the client libraries under the same version
-([Libraries](#libraries-mykit-and-mybot)). What the slow suite contains, and where else it runs, is in
+only when every job passes, tags that commit, drafts a GitHub Release, publishes the client libraries under the same version
+([Libraries](#libraries-mykit-and-mybot)), and pushes the [container image](#the-container-image) by digest. Publishing the draft gives the image its tags. What the slow suite contains, and where else it runs, is in
 [What CI runs where](../agents/workflow.md#what-ci-runs-where).
 
 ## Versions
@@ -33,11 +33,16 @@ only when every job passes, tags that commit, drafts a GitHub Release, and publi
    takes a while even with its jobs in parallel.
    The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
    On a failure, fix the cause on `main` and run the workflow again with the same version.
-   If only the `npm` job fails after `release` passed, fix the cause (usually the trusted publisher registration) and rerun the failed job of that run
+   If only the `npm` job or an `image` job fails after `release` passed, fix the cause (for `npm`, usually the trusted publisher registration) and rerun the failed jobs of that run
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
 4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page), tidy the generated list of changes,
-   review the sections that [Release notes](#release-notes) requires, fill in what the draft's comments ask for, and publish it.
-   A prerelease is drafted as a prerelease.
+   review the sections that [Release notes](#release-notes) requires, and fill in what the draft's comments ask for.
+5. [Review the image](#review-the-image-in-the-draft): run its digest, read the `image-scan` report, and write the digest in the notes.
+6. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
+
+   ```sh
+   gh run list -R mycroblog/my --workflow release-image.yml --limit 1
+   ```
 
 ## The upgrade test
 
@@ -69,7 +74,7 @@ scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.3                  # both dial
 scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.3 DIALECTS=postgres
 ```
 
-The previous release's images are built from its tag. A release that still shipped a separate schema image (Atlas Community Edition and
+Locally, the previous release's images are built from its tag; in the slow suite, the job takes that release's published image when the registry has one. A release that still shipped a separate schema image (Atlas Community Edition and
 its schema, the `schema` target of its `Dockerfile`) applies its schema with that image; a later one with its own `my schema apply`.
 To use images from a registry instead, set `MY_PREVIOUS_IMAGE` to that release's server image, and, for a release with a schema image,
 `MY_PREVIOUS_SCHEMA_IMAGE` to that image.
@@ -86,6 +91,7 @@ an empty section and a missing one mean different things to an operator.
 The `release` job writes a starting draft of them from the repository, with `scripts/release-notes.sh` (tested by `scripts/release-notes-test.sh`,
 run with `scripts/task.sh shell:test`). It compares this release with the previous one, picked as for [the upgrade test](#the-upgrade-test): `previous` when
 a prerelease names it, otherwise the latest patch release of the previous minor version, ignoring prerelease tags and the libraries' `pkg/...` tags.
+The generated list of changes is cut by whole lines to fit GitHub's limit of 125,000 characters on a Release's body, which a release with no earlier one passes, and its Full Changelog link stays.
 The decider still reviews every section before publishing. HTML comments in the draft name what a script cannot fill:
 
 | Section | The draft says | Left to the decider |
@@ -190,6 +196,87 @@ The client library `mykit` and the bot library `mybot` are released with the sam
 
   If `release.yml` runs before the registration, the `npm` job fails to authenticate. Rerun just that job after registering.
 
+## The container image
+
+The server image is `ghcr.io/mycroblog/my`, for `linux/amd64` and `linux/arm64`, built with every adapter. Nothing else is published: there are no images of `main`, and no binaries on the Release.
+
+### Tags
+
+Image tags have no `v`; the Git tag and `my version` do (`v0.1.0`).
+
+| The version | `X.Y.Z` | `X.Y` |
+| --- | --- | --- |
+| The largest patch of its `X.Y` (`v0.1.5` after `v0.2.0` too, which moves `0.1` alone) | Added, once | Moved to it |
+| Not the largest patch of its `X.Y` | Added, once | Left alone |
+| A prerelease (`v0.1.0-rc.1`) | `0.1.0-rc.1` only | Left alone |
+
+There is no `0` and no `latest` during v0, because both would cross a minor version, which can need steps of its own ([Skipping releases](database.md#skipping-releases)).
+`docker pull ghcr.io/mycroblog/my` without a tag therefore fails with `manifest unknown`, and every example in the documentation names a version.
+
+`scripts/release-image.sh tags` computes the list (tested by `scripts/release-image-test.sh`, run with `scripts/task.sh shell:test`).
+
+### How it is published
+
+`release.yml`, while the Release is a draft:
+
+1. `image` builds both platforms from the tested commit, with no cache and `VERSION` set to the version, and pushes them **by digest, with no tag**. It adds the OCI labels and annotations
+   (`scripts/release-image.sh metadata`) and an SBOM of the image and of the `web` stage. Buildx's provenance is off, because the signed one below replaces it.
+2. `image-check` runs on a runner of each platform: it takes the binary out of the image, runs `scripts/check-release-build.sh` on it, which fails on the test-only build tag `e2e_fakes`, and checks what `my version` prints.
+3. `image-attest` signs the digest's provenance with `actions/attest` (keyless, through Sigstore's public instance, which ties the workflow and the commit to the digest), pushes it next to the image, and attaches the digest to the draft as `image-digest.txt`.
+4. `image-scan` reports what Grype finds in both platforms in the job's summary. It stops nothing.
+
+`release-image.yml`, when the Release is published (a prerelease too), never builds:
+
+1. It reads `image-digest.txt`, verifies the attestation, and checks that the provenance names the commit of the version's tag. On any difference it fails with no tag made.
+2. It adds the [tags](#tags), and fails rather than move an `X.Y.Z` that exists at another digest.
+3. It checks that each tag is at the digest, and that it can be pulled without credentials.
+
+A rerun of a failed `image` job builds a new digest; the old one stays on the registry, unreferenced, and does no harm. So does the digest of a draft that was deleted. A rerun of `release-image.yml` changes nothing that is already right.
+
+```sh
+gh workflow run release-image.yml -R mycroblog/my --ref main -f version=v0.1.0
+```
+
+The image is built from the same commit as the slow suite tested, with the same pinned base images and lockfiles and a different `VERSION`, but it is not the very image the suite ran; the bits are not guaranteed to match.
+
+### Review the image in the draft
+
+The digest is in the `image-attest` job's summary, and on the draft:
+
+```sh
+gh release download v0.1.0 -R mycroblog/my --pattern image-digest.txt --output -
+docker run --rm ghcr.io/mycroblog/my@sha256:... version
+```
+
+- Run the digest as far as this release calls for; nothing has a tag yet, so no operator receives it.
+- Read the `image-scan` job's summary, and decide whether a finding should hold the release. A finding with a fix in a base image or a dependency means another commit and a new version.
+- Write the image in the notes, as `ghcr.io/mycroblog/my:0.1.0@sha256:...`, the form operators pin.
+
+### Vulnerability scan
+
+The Nightly `image-scan` job scans the `X.Y` tags of the two latest minor versions without credentials, and fails on a finding of HIGH or above that has a fix.
+Such a failure is about a published version and not about `main`: raise the base image or the dependency on `main` and release a patch of each minor version it applies to.
+Before any image is public, the job reports that there is nothing to scan and passes. Run it alone with `gh workflow run nightly.yml -R mycroblog/my -f jobs=image-scan`, or locally with `scripts/release-image.sh scan --fail ghcr.io/mycroblog/my:0.1`.
+
+### A faulty version
+
+Versions stay on the registry for good: operators pin digests, the latest patch of each minor version is on the upgrade path, and a package version downloaded more than 5,000 times cannot be deleted anyway.
+Replace a faulty version with the next patch and say so in its notes. A fix in a base image also ships as a new patch; an existing tag is never rebuilt.
+If `X.Y` must go back before the patch is ready, move it to the previous patch, which does not touch any `X.Y.Z`:
+
+```sh
+gh workflow run release-image.yml -R mycroblog/my --ref main -f version=v0.1.4 -f roll_back=true
+```
+
+### Before the first release (the decider, once)
+
+The workflows cannot do these; each is a setting of the repository or of the package.
+
+1. The first `image` job of `release.yml` creates the package, private, as ghcr.io does for every new package.
+2. On the package's settings page (`https://github.com/orgs/mycroblog/packages/container/my/settings`), check that it is linked to this repository, which its `org.opencontainers.image.source` label asks for, and that `mycroblog/my` has the Admin role under "Manage Actions access", and change its visibility to **public**. A public package cannot be made private again.
+3. Publish the draft. If `release-image.yml` ran before the package was public, it failed at the anonymous pull with its tags made: run it again.
+4. In the repository's settings, turn on **Immutable releases**, under General. It freezes the tag and the assets of a published Release, so `image-digest.txt` cannot change and the tag that `source_url` names cannot disappear. Nothing freezes a draft. Under this setting the tag of a published `v0.0.0-test.N` stays too, so give each trial a new number.
+
 ## Trying the gate on a branch
 
 A change to `release.yml` can be tried on a branch with a prerelease version, without tagging a real version.
@@ -223,10 +310,22 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
   gh api -X DELETE repos/mycroblog/my/git/refs/tags/pkg/mybot/v0.0.0-test.1
   ```
 
-  A version published to npm can be withdrawn within 72 hours with `npm unpublish @mycroblog/mybot@0.0.0-test.1` (and the same for `mykit`), but its number can never be used again.
+  This also pushes an image by digest and attaches `image-digest.txt` to the draft. Check the digest as [Verifying an image](running.md#verify-an-image) does, and the SBOM's Go modules and npm packages. Trying `release-image.yml` means publishing the `v0.0.0-test.1` Release, which adds the image tag `0.0.0-test.1`. Delete a test version's image on the package's page, or with the REST API:
+
+  ```sh
+  gh api 'orgs/mycroblog/packages/container/my/versions?per_page=100' --jq '.[] | select(.metadata.container.tags | index("0.0.0-test.1")) | .id'
+  gh api -X DELETE orgs/mycroblog/packages/container/my/versions/<id>
+  ```
+
+  An attestation or an untagged platform manifest shows as an untagged version on that page; a test digest's are deleted the same way, by the digest in `name`. Never delete an untagged version of a real release, because it can be a part of the image. A version published to npm can be withdrawn within 72 hours with `npm unpublish @mycroblog/mybot@0.0.0-test.1` (and the same for `mykit`), but its number can never be used again.
   A Go version that proxy.golang.org already fetched stays there after the tag is deleted. Use `v0.0.0-test.N` numbers, which never collide with real versions.
 
 ## What a release produces
 
-`release.yml` produces the tags (the server's and the libraries'), the draft Release with the starting draft of [its notes](#release-notes), and the npm packages.
-Publishing the container images is not part of it yet.
+| When | Workflow | What |
+| --- | --- | --- |
+| The slow suite passed | `release.yml` | The tags (the server's and the libraries'), the draft Release with the starting draft of [its notes](#release-notes), and the npm packages, which are public from then on |
+| The slow suite passed | `release.yml` | The [container image](#the-container-image) by digest, with no tag, its signed provenance and SBOM, and `image-digest.txt` on the draft |
+| The decider published the draft | `release-image.yml` | The image's tags `X.Y.Z` and, for the latest patch of a minor version, `X.Y` |
+
+A draft that is deleted still uses up its version number, on npm as on Git; the digest stays on the registry with no tag.

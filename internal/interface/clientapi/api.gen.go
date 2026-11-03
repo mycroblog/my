@@ -11427,8 +11427,9 @@ type Report struct {
 	State     ReportState `json:"state"`
 	StatusIds []Id        `json:"status_ids"`
 
-	// TargetAccount An account, as clients show it (FR-006).
-	TargetAccount Account `json:"target_account"`
+	// TargetAccount The account reported, as the user would see it through `getAccount`; omitted when that
+	// answers 404, because the account is suspended, deleted, or blocks the user.
+	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// VoiceRoomId The voice chat room reported; omitted for none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`

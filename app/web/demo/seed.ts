@@ -452,7 +452,7 @@ class Seeder {
       const api = await this.api(r.reporter);
       const target = await this.account(r.target);
       const filed = body((await api.GET("/reports")).data).items;
-      let report = filed.find((x) => x.target_account.id === target.id && x.comment === r.comment);
+      let report = filed.find((x) => x.target_account?.id === target.id && x.comment === r.comment);
       if (report === undefined) {
         report = body(
           (

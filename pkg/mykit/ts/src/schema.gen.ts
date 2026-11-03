@@ -3086,8 +3086,9 @@ export interface paths {
          * @description The reports that the user filed, newest first, each with whether it is still open or
          *     resolved (FR-711). A report reopened by the moderators is open again. It never tells how
          *     a report was resolved, which actions it led to, the reasons given to the account, or
-         *     who handles it. A report shows its target even when the account is suspended or blocks
-         *     the user. A report whose target no longer exists is left out, so a page may hold fewer
+         *     who handles it. A report stays listed when the user may no longer see its target (the
+         *     account is suspended, deleted, or blocks the user), without `target_account`. A report
+         *     whose target no longer exists at all is left out, so a page may hold fewer
          *     reports than `limit` and still have a `next_cursor`.
          */
         get: operations["listOwnReports"];
@@ -13334,7 +13335,11 @@ export interface components {
             forwarded: boolean;
             /** Format: date-time */
             filed_at: string;
-            target_account: components["schemas"]["Account"];
+            /**
+             * @description The account reported, as the user would see it through `getAccount`; omitted when that
+             *     answers 404, because the account is suspended, deleted, or blocks the user.
+             */
+            target_account?: components["schemas"]["Account"];
             status_ids: components["schemas"]["Id"][];
             rule_ids: components["schemas"]["Id"][];
             /** @description The voice chat room reported; omitted for none. */

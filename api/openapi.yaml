@@ -4283,8 +4283,9 @@ paths:
         The reports that the user filed, newest first, each with whether it is still open or
         resolved (FR-711). A report reopened by the moderators is open again. It never tells how
         a report was resolved, which actions it led to, the reasons given to the account, or
-        who handles it. A report shows its target even when the account is suspended or blocks
-        the user. A report whose target no longer exists is left out, so a page may hold fewer
+        who handles it. A report stays listed when the user may no longer see its target (the
+        account is suspended, deleted, or blocks the user), without `target_account`. A report
+        whose target no longer exists at all is left out, so a page may hold fewer
         reports than `limit` and still have a `next_cursor`.
       tags:
         - reports
@@ -20566,7 +20567,6 @@ components:
         - comment
         - forwarded
         - filed_at
-        - target_account
         - status_ids
         - rule_ids
         - state
@@ -20585,7 +20585,11 @@ components:
           type: string
           format: date-time
         target_account:
-          $ref: '#/components/schemas/Account'
+          description: |
+            The account reported, as the user would see it through `getAccount`; omitted when that
+            answers 404, because the account is suspended, deleted, or blocks the user.
+          allOf:
+            - $ref: '#/components/schemas/Account'
         status_ids:
           type: array
           items:
