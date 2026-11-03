@@ -118,6 +118,10 @@ export function useAccountDeletion(): AccountDeletion {
       await session.signOut().catch(() => undefined);
       await navigate({ to: "/" });
     },
+    onError: (error) => {
+      // The page offers the provider again, with why; the dialog has nothing left to send.
+      if (external.takeBackIfExpired(error)) setIsOpen(false);
+    },
   });
   const failure = mutation.isError ? confirmationFailure(mutation.error) : undefined;
   return {

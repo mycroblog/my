@@ -75,6 +75,10 @@ export function useAccountDeactivation(): AccountDeactivation {
       await session.signOut().catch(() => undefined);
       await navigate({ to: "/deactivated", search: { deletion_due_at } });
     },
+    onError: (error) => {
+      // The page offers the provider again, with why; the dialog has nothing left to send.
+      if (external.takeBackIfExpired(error)) setIsOpen(false);
+    },
   });
   const confirmation = (): DeactivationConfirmation | undefined => {
     if (method === "code") return code === "" ? undefined : { kind: "code", code };
