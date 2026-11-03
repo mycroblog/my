@@ -153,7 +153,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeRead() string {
 
 // ServerAuthAuthorizeScopeReadAccounts formats "server:auth.authorize.scope.read_accounts". Permission (OAuth scope read:accounts) listed on the authorization page.
 //
-//	en: Read accounts and your profile
+//	en: Read accounts, your profile, and your settings
 func (l *Localizer) ServerAuthAuthorizeScopeReadAccounts() string {
 	return l.format("server:auth.authorize.scope.read_accounts", nil)
 }
@@ -184,13 +184,6 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadCustomEmojis() string {
 //	en: Read the direct messages you send and receive
 func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
-}
-
-// ServerAuthAuthorizeScopeReadFavourites formats "server:auth.authorize.scope.read_favourites". Permission (OAuth scope read:favourites) listed on the authorization page.
-//
-//	en: Read your favourites
-func (l *Localizer) ServerAuthAuthorizeScopeReadFavourites() string {
-	return l.format("server:auth.authorize.scope.read_favourites", nil)
 }
 
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.

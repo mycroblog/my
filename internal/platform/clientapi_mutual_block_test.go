@@ -22,16 +22,16 @@ func TestBlockedUserManagesTheirOwnEdges(t *testing.T) {
 	e.relate("mute", alice, bob, nil)
 	e.relate("block", bob, alice, nil)
 
-	if r := e.relate("block", alice, bob, nil); !r.Blocking {
+	if r := e.relate("block", alice, bob, nil); !set(r.Blocking) {
 		t.Errorf("blocking back = %+v, want blocking", r)
 	}
 	if page := e.page("/blocks", alice.token); len(page.Accounts) != 1 || page.Accounts[0].Id != bob.id {
 		t.Errorf("blocks = %+v, want bob", page.Accounts)
 	}
-	if r := e.relate("unblock", alice, bob, nil); r.Blocking {
+	if r := e.relate("unblock", alice, bob, nil); set(r.Blocking) {
 		t.Errorf("unblocking in a mutual block = %+v, want not blocking", r)
 	}
-	if r := e.relate("unmute", alice, bob, nil); r.Muting {
+	if r := e.relate("unmute", alice, bob, nil); set(r.Muting) {
 		t.Errorf("unmuting an account that blocks the user = %+v, want not muting", r)
 	}
 

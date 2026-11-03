@@ -10,7 +10,9 @@ properties:
   keys:
     $ref: ./PushSubscriptionKeys.yaml
   alerts:
-    description: The notification types to push, each at most once; empty pushes none.
+    description: |
+      The notification types to push, each at most once; empty pushes none. A third-party
+      client's subscription leaves out the moderator notification types.
     type: array
     maxItems: 32
     items:

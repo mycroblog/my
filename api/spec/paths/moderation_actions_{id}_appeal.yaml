@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: appealModerationAction
+  x-first-party-only: true
   summary: Appeal a moderation action on the authenticated user's account
   description: |
     Asks the moderators to reconsider an action on the user's own account (FR-707), once
