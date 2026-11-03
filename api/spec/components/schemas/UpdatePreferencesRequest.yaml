@@ -27,6 +27,8 @@ properties:
   timeline_auto_insert:
     description: Whether the web client inserts new timeline posts without asking.
     type: boolean
+  link_card_size:
+    $ref: ./LinkCardSize.yaml
   timeline_languages:
     description: The languages that timelines show, at most 64; empty shows every language.
     type: array

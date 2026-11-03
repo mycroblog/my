@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: How a client shows link cards.
+type: string
+enum: [large, small]

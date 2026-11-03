@@ -96,6 +96,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:emoji:skin-tone` | localStorage | 絵文字のピッカーで選んだ肌の色（§12、ADR-0091 §3） | いいえ |
 | `my:user:first-run-dismissed:<アカウント ID>` | localStorage | ホームの「始め方」のチェックリストを閉じたか（[screens/home-first-run.md](screens/home-first-run.md)） | いいえ |
 | `my:compose:recent-tags` | localStorage | この端末で送った投稿で最近使ったハッシュタグ（16 個まで、新しい順。§12、ADR-0092 §1） | はい |
+| `my:user:link-card-size` | localStorage | 最後に読んだ設定の `link_card_size`。設定を読むまでのカードの大きさで、最初の読み込みで大きさが変わらないようにする（`useLinkCardSize`） | はい |
 | `my:user:compose:<アカウント ID>` | sessionStorage | 投稿の下書きと送信中の投稿（§12） | はい |
 | `my:user:home-timeline` | localStorage | オフラインで読むホームのタイムラインの新しい投稿（フォロワー限定・ダイレクトを除く）と、それを読み込んだ時刻（§11）。利用者が変わったときも消す | はい |
 | `my:oauth-pending` | sessionStorage | 進行中のサインインの verifier・`state`・戻り先（§10） | いいえ |

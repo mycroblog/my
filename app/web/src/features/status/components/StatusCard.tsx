@@ -25,6 +25,7 @@ import { useT } from "../../../lib/i18n";
 import type { Status } from "../api/status";
 import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
 import { useAudioPlayerLabels } from "../hooks/useAudioPlayerLabels";
+import { useLinkCardSize } from "../hooks/useLinkCardSize";
 import { useStatusView } from "../hooks/useStatusView";
 import { StatusActions } from "./StatusActions";
 import { QuotedStatus } from "./QuotedStatus";
@@ -73,6 +74,7 @@ export function StatusCard({
   const viewerLabels = useMediaViewerLabels();
   const audioLabels = useAudioPlayerLabels();
   const reportBoundaryError = useBoundaryErrorReport();
+  const linkCardSize = useLinkCardSize();
 
   const card =
     view.card === null ? undefined : (
@@ -81,6 +83,7 @@ export function StatusCard({
       <ErrorBoundary fallback={<Hint>{t("client:timeline.card.failed")}</Hint>} onError={reportBoundaryError}>
         <LinkCard
           href={view.card.href}
+          size={linkCardSize}
           title={view.card.title}
           description={view.card.description}
           siteName={view.card.siteName}

@@ -1692,6 +1692,8 @@ components:
       $ref: ./components/schemas/PushSubscriptionRequest.yaml
     QrCode:
       $ref: ./components/schemas/QrCode.yaml
+    LinkCardSize:
+      $ref: ./components/schemas/LinkCardSize.yaml
     QuotePolicy:
       $ref: ./components/schemas/QuotePolicy.yaml
     QuoteState:

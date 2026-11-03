@@ -16,6 +16,11 @@ import {
   withRelationFrom,
 } from "./cache";
 
+/** The viewer's preferences (GET /preferences), for the size of link cards; the app shell reads the same query. */
+export function preferencesQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/preferences");
+}
+
 /** A status (post or boost), as the client API returns it. */
 export type Status = components["schemas"]["Status"];
 

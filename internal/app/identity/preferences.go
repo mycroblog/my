@@ -58,6 +58,8 @@ type PreferencesInput struct {
 	RequireMediaDescription bool
 	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077).
 	TimelineAutoInsert bool
+	// LinkCardSize is how the web client shows link cards; "" keeps the current one.
+	LinkCardSize identity.LinkCardSize
 }
 
 // Preferences returns the preferences of a user. It fails with an error wrapping ErrNotFound
@@ -94,15 +96,23 @@ func (s *Service) SetPreferences(ctx context.Context, userID string, in Preferen
 	if err := identity.ValidateVisibility(in.DefaultVisibility); err != nil {
 		return identity.Preferences{}, err
 	}
-	quotePolicy := in.DefaultQuotePolicy
-	if quotePolicy == "" {
+	quotePolicy, cardSize := in.DefaultQuotePolicy, in.LinkCardSize
+	if quotePolicy == "" || cardSize == "" {
 		cur, err := s.d.Repository.FindPreferences(ctx, userID)
 		if err != nil {
 			return identity.Preferences{}, err
 		}
-		quotePolicy = cur.DefaultQuotePolicy
+		if quotePolicy == "" {
+			quotePolicy = cur.DefaultQuotePolicy
+		}
+		if cardSize == "" {
+			cardSize = cur.LinkCardSize
+		}
 	}
 	if err := identity.ValidateQuotePolicy(quotePolicy); err != nil {
+		return identity.Preferences{}, err
+	}
+	if err := identity.ValidateLinkCardSize(cardSize); err != nil {
 		return identity.Preferences{}, err
 	}
 	p := identity.Preferences{
@@ -115,6 +125,7 @@ func (s *Service) SetPreferences(ctx context.Context, userID string, in Preferen
 		DefaultPostLanguage:     postLang,
 		RequireMediaDescription: in.RequireMediaDescription,
 		TimelineAutoInsert:      in.TimelineAutoInsert,
+		LinkCardSize:            cardSize,
 		UpdatedAt:               s.d.Clock.Now(),
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.UpdatePreferences(ctx, tx, p) })
@@ -160,6 +171,8 @@ type PreferencesUpdate struct {
 	RequireMediaDescription *bool
 	// TimelineAutoInsert is the preference of that name (ADR-0077).
 	TimelineAutoInsert *bool
+	// LinkCardSize is the preference of that name.
+	LinkCardSize *identity.LinkCardSize
 	// TimelineLanguages replace the languages timelines show; empty shows every language.
 	TimelineLanguages *[]string
 }
@@ -237,6 +250,11 @@ func canonicalPreferencesUpdate(in PreferencesUpdate) (PreferencesUpdate, error)
 			return PreferencesUpdate{}, &PreferenceError{Preference: "default_quote_policy", Err: err}
 		}
 	}
+	if in.LinkCardSize != nil {
+		if err := identity.ValidateLinkCardSize(*in.LinkCardSize); err != nil {
+			return PreferencesUpdate{}, &PreferenceError{Preference: "link_card_size", Err: err}
+		}
+	}
 	if in.DefaultPostLanguage != nil {
 		lang, err := CanonicalLanguage(*in.DefaultPostLanguage)
 		if err != nil {
@@ -283,6 +301,9 @@ func (in PreferencesUpdate) applyTo(cur UserPreferences) UserPreferences {
 	}
 	if in.TimelineAutoInsert != nil {
 		p.TimelineAutoInsert = *in.TimelineAutoInsert
+	}
+	if in.LinkCardSize != nil {
+		p.LinkCardSize = *in.LinkCardSize
 	}
 	if in.TimelineLanguages != nil {
 		p.TimelineLanguages = *in.TimelineLanguages
@@ -367,6 +388,7 @@ func (s *Service) defaultPreferences(ctx context.Context, userID, locale string,
 		DefaultQuotePolicy:     identity.DefaultPostQuotePolicy,
 		DefaultPostLanguage:    identity.UndeterminedLanguage,
 		TimelineAutoInsert:     identity.DefaultTimelineAutoInsert,
+		LinkCardSize:           identity.DefaultLinkCardSize,
 		UpdatedAt:              now,
 	}, nil
 }

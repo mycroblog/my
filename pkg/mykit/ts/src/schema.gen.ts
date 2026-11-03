@@ -12824,6 +12824,11 @@ export interface components {
              *     behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
              */
             timeline_auto_insert: boolean;
+            /**
+             * @description How the web client shows link cards: `large`, with the image above the text, or `small`, with
+             *     a square image beside it. `large` for a new user; the same on every device.
+             */
+            link_card_size: components["schemas"]["LinkCardSize"];
             /** @description The languages that timelines show, sorted; empty shows every language. */
             timeline_languages: string[];
         };
@@ -13093,6 +13098,11 @@ export interface components {
             /** @description The path data (`d`) of the dark modules, one unit per module. */
             path: string;
         };
+        /**
+         * @description How a client shows link cards.
+         * @enum {string}
+         */
+        LinkCardSize: "large" | "small";
         /**
          * @description Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
          *     the author's followers, `nobody` the author alone. A followers-only status is quoted only
@@ -14072,6 +14082,7 @@ export interface components {
             require_media_description?: boolean;
             /** @description Whether the web client inserts new timeline posts without asking. */
             timeline_auto_insert?: boolean;
+            link_card_size?: components["schemas"]["LinkCardSize"];
             /** @description The languages that timelines show, at most 64; empty shows every language. */
             timeline_languages?: string[];
         };

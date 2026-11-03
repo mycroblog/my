@@ -25,7 +25,8 @@ type PreferenceKey =
   | "default_post_language"
   | "require_media_description"
   | "timeline_languages"
-  | "timeline_auto_insert";
+  | "timeline_auto_insert"
+  | "link_card_size";
 
 /** One preference as a control shows it: it is saved as soon as it changes. */
 export type PreferenceControl<T> = {
@@ -50,6 +51,7 @@ export type PreferencesControls = {
   requireMediaDescription: PreferenceControl<boolean>;
   timelineLanguages: PreferenceControl<string[]>;
   timelineAutoInsert: PreferenceControl<boolean>;
+  linkCardSize: PreferenceControl<"large" | "small">;
 };
 
 /**
@@ -84,6 +86,7 @@ export function usePreferences(): PreferencesControls {
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
     timelineAutoInsert: usePreferenceControl("timeline_auto_insert", data.timeline_auto_insert),
+    linkCardSize: usePreferenceControl("link_card_size", data.link_card_size),
   };
 }
 

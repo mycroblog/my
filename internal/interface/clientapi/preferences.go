@@ -54,7 +54,7 @@ func newPreferences(p appidentity.UserPreferences) Preferences {
 		DefaultVisibility:   Visibility(p.DefaultVisibility),
 		DefaultQuotePolicy:  QuotePolicy(p.DefaultQuotePolicy),
 		DefaultPostLanguage: p.DefaultPostLanguage, RequireMediaDescription: p.RequireMediaDescription,
-		TimelineAutoInsert: p.TimelineAutoInsert, TimelineLanguages: langs,
+		TimelineAutoInsert: p.TimelineAutoInsert, LinkCardSize: LinkCardSize(p.LinkCardSize), TimelineLanguages: langs,
 	}
 }
 
@@ -97,6 +97,10 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 		if b.DefaultQuotePolicy != nil {
 			policy := identity.QuotePolicy(*b.DefaultQuotePolicy)
 			in.DefaultQuotePolicy = &policy
+		}
+		if b.LinkCardSize != nil {
+			size := identity.LinkCardSize(*b.LinkCardSize)
+			in.LinkCardSize = &size
 		}
 	}
 	p, err := s.o.Preferences.UpdatePreferences(ctx, v.UserID, in)

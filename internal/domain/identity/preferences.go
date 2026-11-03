@@ -38,7 +38,9 @@ type Preferences struct {
 	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077);
 	// DefaultTimelineAutoInsert for a new user (ADR-0127 §6).
 	TimelineAutoInsert bool
-	UpdatedAt          time.Time
+	// LinkCardSize is how the web client shows link cards; DefaultLinkCardSize for a new user.
+	LinkCardSize LinkCardSize
+	UpdatedAt    time.Time
 }
 
 // Defaults of a new user's preferences (data-model §4.1). The locale comes from the registration
@@ -49,6 +51,7 @@ const (
 	DefaultPostQuotePolicy = QuotePolicyPublic
 	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0127 §6).
 	DefaultTimelineAutoInsert = true
+	DefaultLinkCardSize       = LinkCardLarge
 	UndeterminedLanguage      = "und" // BCP 47 "undetermined" (data-model §1.2, lang)
 	MaxLanguageTagLength      = 64    // longer tags are rejected before parsing
 	MaxTimeZoneLength         = 64
@@ -80,11 +83,12 @@ const (
 
 // Errors that preference validation reports.
 var (
-	ErrInvalidLanguageTag = errors.New("invalid language tag")
-	ErrInvalidTimeZone    = errors.New("invalid time zone")
-	ErrInvalidVisibility  = errors.New("invalid visibility")
-	ErrInvalidQuotePolicy = errors.New("invalid quote policy")
-	ErrTooManyLanguages   = errors.New("too many timeline languages")
+	ErrInvalidLanguageTag  = errors.New("invalid language tag")
+	ErrInvalidTimeZone     = errors.New("invalid time zone")
+	ErrInvalidVisibility   = errors.New("invalid visibility")
+	ErrInvalidQuotePolicy  = errors.New("invalid quote policy")
+	ErrInvalidLinkCardSize = errors.New("invalid link card size")
+	ErrTooManyLanguages    = errors.New("too many timeline languages")
 )
 
 // ValidateVisibility accepts the five visibility levels.
@@ -94,6 +98,26 @@ func ValidateVisibility(v Visibility) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %q", ErrInvalidVisibility, v)
+}
+
+// LinkCardSize is how a client shows link cards.
+type LinkCardSize string
+
+// The link card sizes.
+const (
+	// LinkCardLarge shows the image above the text.
+	LinkCardLarge LinkCardSize = "large"
+	// LinkCardSmall shows a square image beside the text.
+	LinkCardSmall LinkCardSize = "small"
+)
+
+// ValidateLinkCardSize accepts the two link card sizes.
+func ValidateLinkCardSize(s LinkCardSize) error {
+	switch s {
+	case LinkCardLarge, LinkCardSmall:
+		return nil
+	}
+	return fmt.Errorf("%w: %q", ErrInvalidLinkCardSize, s)
 }
 
 // ValidateQuotePolicy accepts the three quote policies.

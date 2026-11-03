@@ -73,6 +73,7 @@ func defaultPreferencesOf(userID, locale string, at time.Time) appidentity.UserP
 			TimeZoneFollowsBrowser: true,
 			DefaultVisibility:      identity.VisibilityPublic,
 			DefaultQuotePolicy:     identity.QuotePolicyPublic,
+			LinkCardSize:           identity.LinkCardLarge,
 			DefaultPostLanguage:    "und",
 			TimelineAutoInsert:     true,
 			UpdatedAt:              at,
@@ -168,6 +169,7 @@ func preferencesSet(t *testing.T, e *accountEnv) {
 			TimeZoneChosen:          true,
 			DefaultVisibility:       identity.VisibilityUnlisted,
 			DefaultQuotePolicy:      identity.QuotePolicyPublic,
+			LinkCardSize:            identity.LinkCardLarge,
 			DefaultPostLanguage:     "he",
 			RequireMediaDescription: true,
 			TimelineAutoInsert:      true,
@@ -318,10 +320,11 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 		t.Fatalf("UpdatePreferences(visibility) = %v", err)
 	}
 	checkPreferences(t, e.preferences(t, reg.User.ID), defaultPreferencesOf(reg.User.ID, "en", reg.User.CreatedAt))
+	cardSize := identity.LinkCardSmall
 	tz, vis, langs, quote := "Asia/Tokyo", identity.VisibilityPrivate, []string{"ja-jp", "en", "ja-JP"}, identity.QuotePolicyFollowers
 	e.clock.Advance(time.Minute)
 	got, err := e.identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{
-		TimeZone: &tz, DefaultVisibility: &vis, TimelineLanguages: &langs, DefaultQuotePolicy: &quote,
+		TimeZone: &tz, DefaultVisibility: &vis, LinkCardSize: &cardSize, TimelineLanguages: &langs, DefaultQuotePolicy: &quote,
 	})
 	if err != nil {
 		t.Fatalf("UpdatePreferences = %v", err)
@@ -329,6 +332,7 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 	want := defaultPreferencesOf(reg.User.ID, "en", e.clock.Now())
 	want.TimeZone, want.TimeZoneChosen, want.DefaultVisibility, want.TimelineLanguages = tz, true, vis, []string{"en", "ja-JP"}
 	want.DefaultQuotePolicy, want.TimeZoneFollowsBrowser = quote, false
+	want.LinkCardSize = identity.LinkCardSmall
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 
@@ -379,6 +383,7 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 
+	badCardSize := identity.LinkCardSize("huge")
 	bad, badVis, badQuote, tooMany := "nope/nope", identity.Visibility("everyone"), identity.QuotePolicy("friends"), make([]string, identity.MaxTimelineLanguageCount+1)
 	for i := range tooMany {
 		tooMany[i] = "en"
@@ -392,6 +397,7 @@ func preferencesUpdatePartially(t *testing.T, e *accountEnv) {
 		{appidentity.PreferencesUpdate{Locale: &bad}, "locale", identity.ErrInvalidLanguageTag},
 		{appidentity.PreferencesUpdate{DefaultPostLanguage: &bad}, "default_post_language", identity.ErrInvalidLanguageTag},
 		{appidentity.PreferencesUpdate{DefaultVisibility: &badVis}, "default_visibility", identity.ErrInvalidVisibility},
+		{appidentity.PreferencesUpdate{LinkCardSize: &badCardSize}, "link_card_size", identity.ErrInvalidLinkCardSize},
 		{appidentity.PreferencesUpdate{DefaultQuotePolicy: &badQuote}, "default_quote_policy", identity.ErrInvalidQuotePolicy},
 		{appidentity.PreferencesUpdate{TimeZone: &tz, TimelineLanguages: &tooMany}, "timeline_languages", identity.ErrTooManyLanguages},
 	} {

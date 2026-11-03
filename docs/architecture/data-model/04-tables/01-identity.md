@@ -268,7 +268,7 @@
 
 | テーブル | カラム | 制約 |
 | --- | --- | --- |
-| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0077）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
+| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0077）, `link_card_size`（`enum(large, small)`。リンクのカードの出し方、既定は `large`）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
 | `user_timeline_languages` | `user_id`, `language`（`lang`） | PK `(user_id, language)`。行が無ければすべての言語を表示（FR-208） |
 | `user_time_zones` | `user_id`（PK）, `time_zone`（IANA 名） | 行が無ければタイムゾーンを選んでいない（日時は UTC。Web クライアントは端末のゾーンを保存する） |
 

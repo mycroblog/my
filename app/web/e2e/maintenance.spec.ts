@@ -131,6 +131,7 @@ async function serveApi(page: Page, maintenance: () => boolean) {
       default_post_language: "en",
       require_media_description: false,
       timeline_auto_insert: false,
+      link_card_size: "large",
       timeline_languages: [],
     } satisfies Schemas["Preferences"]),
   );

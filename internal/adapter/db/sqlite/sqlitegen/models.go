@@ -1262,6 +1262,7 @@ type UserPreference struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription int64
 	TimelineAutoInsert      int64
+	LinkCardSize            string
 	LocaleFollowsBrowser    int64
 	TimeZoneFollowsBrowser  int64
 	UpdatedAt               int64

@@ -22,7 +22,7 @@ func (q *Queries) DeleteUserTimelineLanguages(ctx context.Context, userID string
 
 const getUserPreferences = `-- name: GetUserPreferences :one
 SELECT user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
-  timeline_auto_insert, locale_follows_browser, time_zone_follows_browser, updated_at
+  timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
 FROM user_preferences WHERE user_id = ?
 `
 
@@ -37,6 +37,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID string) (UserPr
 		&i.DefaultPostLanguage,
 		&i.RequireMediaDescription,
 		&i.TimelineAutoInsert,
+		&i.LinkCardSize,
 		&i.LocaleFollowsBrowser,
 		&i.TimeZoneFollowsBrowser,
 		&i.UpdatedAt,
@@ -59,8 +60,8 @@ const insertUserPreferences = `-- name: InsertUserPreferences :exec
 
 INSERT INTO user_preferences (
   user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
-  timeline_auto_insert, locale_follows_browser, time_zone_follows_browser, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertUserPreferencesParams struct {
@@ -71,6 +72,7 @@ type InsertUserPreferencesParams struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription int64
 	TimelineAutoInsert      int64
+	LinkCardSize            string
 	LocaleFollowsBrowser    int64
 	TimeZoneFollowsBrowser  int64
 	UpdatedAt               int64
@@ -86,6 +88,7 @@ func (q *Queries) InsertUserPreferences(ctx context.Context, arg InsertUserPrefe
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,
+		arg.LinkCardSize,
 		arg.LocaleFollowsBrowser,
 		arg.TimeZoneFollowsBrowser,
 		arg.UpdatedAt,
@@ -137,7 +140,7 @@ func (q *Queries) ListUserTimelineLanguages(ctx context.Context, userID string) 
 const updateUserPreferences = `-- name: UpdateUserPreferences :execrows
 UPDATE user_preferences SET
   locale = ?, default_visibility = ?, default_quote_policy = ?, default_post_language = ?,
-  require_media_description = ?, timeline_auto_insert = ?,
+  require_media_description = ?, timeline_auto_insert = ?, link_card_size = ?,
   locale_follows_browser = ?, time_zone_follows_browser = ?, updated_at = ?
 WHERE user_id = ?
 `
@@ -149,6 +152,7 @@ type UpdateUserPreferencesParams struct {
 	DefaultPostLanguage     string
 	RequireMediaDescription int64
 	TimelineAutoInsert      int64
+	LinkCardSize            string
 	LocaleFollowsBrowser    int64
 	TimeZoneFollowsBrowser  int64
 	UpdatedAt               int64
@@ -163,6 +167,7 @@ func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPrefe
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,
+		arg.LinkCardSize,
 		arg.LocaleFollowsBrowser,
 		arg.TimeZoneFollowsBrowser,
 		arg.UpdatedAt,

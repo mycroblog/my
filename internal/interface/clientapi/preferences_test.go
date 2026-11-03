@@ -63,6 +63,9 @@ func (f *fakePreferences) UpdatePreferences(ctx context.Context, userID string, 
 	if in.TimelineAutoInsert != nil {
 		p.TimelineAutoInsert = *in.TimelineAutoInsert
 	}
+	if in.LinkCardSize != nil {
+		p.LinkCardSize = *in.LinkCardSize
+	}
 	f.p = p
 	return p, nil
 }
@@ -73,7 +76,7 @@ func newPreferencesEnv(t *testing.T) (*authEnv, *fakePreferences) {
 		Preferences: identity.Preferences{
 			UserID: userOf(aliceAccountID), Locale: "ja", TimeZone: "Asia/Tokyo", TimeZoneChosen: true,
 			LocaleFollowsBrowser: true, TimeZoneFollowsBrowser: true,
-			DefaultVisibility: identity.Visibility("unlisted"), DefaultQuotePolicy: identity.QuotePolicyPublic, DefaultPostLanguage: "ja",
+			DefaultVisibility: identity.Visibility("unlisted"), LinkCardSize: identity.LinkCardLarge, DefaultQuotePolicy: identity.QuotePolicyPublic, DefaultPostLanguage: "ja",
 		},
 	}}
 	return newAuthEnv(t, func(o *clientapi.Options) { o.Preferences = prefs }), prefs
@@ -91,7 +94,7 @@ func TestGetPreferences(t *testing.T) {
 	}
 	want := clientapi.Preferences{
 		Locale: "ja", TimeZone: "Asia/Tokyo", TimeZoneChosen: true, LocaleFollowsBrowser: true, TimeZoneFollowsBrowser: true, DefaultVisibility: clientapi.VisibilityUnlisted, DefaultPostLanguage: "ja",
-		DefaultQuotePolicy: clientapi.QuotePolicyPublic, TimelineLanguages: []string{},
+		DefaultQuotePolicy: clientapi.QuotePolicyPublic, LinkCardSize: clientapi.LinkCardSizeLarge, TimelineLanguages: []string{},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("preferences = %+v, want %+v", got, want)
@@ -125,13 +128,16 @@ func TestPreferencesShowAnUndeliverableAddress(t *testing.T) {
 
 func TestUpdatePreferences(t *testing.T) {
 	e, prefs := newPreferencesEnv(t)
-	res := e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{"default_visibility":"local","default_quote_policy":"followers","timeline_languages":["en","ja"],"timeline_auto_insert":true}`)
+	res := e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{"default_visibility":"local","default_quote_policy":"followers","timeline_languages":["en","ja"],"timeline_auto_insert":true,"link_card_size":"small"}`)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", res.StatusCode)
 	}
 	var got clientapi.Preferences
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
 		t.Fatal(err)
+	}
+	if got.LinkCardSize != clientapi.LinkCardSizeSmall || prefs.p.LinkCardSize != identity.LinkCardSmall {
+		t.Errorf("link card size = %q, stored %q, want small", got.LinkCardSize, prefs.p.LinkCardSize)
 	}
 	if got.DefaultVisibility != clientapi.VisibilityLocal || !reflect.DeepEqual(got.TimelineLanguages, []string{"en", "ja"}) || got.Locale != "ja" ||
 		!got.TimelineAutoInsert || !prefs.p.TimelineAutoInsert {
