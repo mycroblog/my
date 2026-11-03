@@ -20,7 +20,9 @@ import (
 type stubClosureRecipients struct{ ids []string }
 
 func (r stubClosureRecipients) LocalUserAccountIDs(_ context.Context, after string, limit int) ([]string, string, error) {
-	limit = min(limit, 2)
+	if limit <= queue.FanOutBatch { // pages within a job are short; the read of a whole job is not
+		limit = min(limit, 2)
+	}
 	var page []string
 	for _, id := range r.ids {
 		if id > after && len(page) < limit {

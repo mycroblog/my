@@ -99,10 +99,8 @@ func (s *Service) prepareStartPost(ctx context.Context, accountID, roomID string
 // with; its idempotency key is the room's.
 const JobNotifyStarted = "voice.notify_started"
 
-// notifyBatch is how many followers one transaction of JobNotifyStarted notifies.
-const notifyBatch = 100
-
 type notifyStartedPayload struct {
+	queue.FanOutStep
 	Room       string           `json:"room"`
 	Host       string           `json:"host"`
 	Visibility voice.Visibility `json:"visibility"`
@@ -141,53 +139,66 @@ func (s *Service) NotifyStarted(ctx context.Context, j queue.Job) queue.Result {
 }
 
 func (s *Service) notifyStarted(ctx context.Context, p notifyStartedPayload) error {
-	before := ""
-	for {
-		ids, next, err := s.d.Relations.LocalFollowers(ctx, p.Host, before, notifyBatch)
-		if err != nil {
-			return err
-		}
-		v, err := s.view(ctx, p.Room)
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		if v.Head.State != voice.StateOpen || v.Head.HostAccountID != p.Host {
-			return nil
-		}
-		var to []string
-		for _, id := range ids {
-			ok, err := s.seesOpened(ctx, v, p.Visibility, id)
-			if err != nil {
-				return err
-			}
-			if ok {
-				to = append(to, id)
-			}
-		}
-		if len(to) > 0 {
-			err := s.roomTx(ctx, []string{p.Room}, func(tx uow.Tx, rec RoomRecord) error {
-				if rec.Head.State != voice.StateOpen {
-					return nil
+	fan := queue.FanOut{
+		Size: s.d.FanOutSize, Descending: true,
+		Page: func(ctx context.Context, before string, limit int) ([]string, string, error) {
+			return s.d.Relations.LocalFollowers(ctx, p.Host, before, limit)
+		},
+		Handle: func(ctx context.Context, ids []string) error { return s.notifyStartedBatch(ctx, p, ids) },
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
+			jobs := make([]queue.NewJob, 0, len(steps))
+			for _, step := range steps {
+				next := p
+				next.FanOutStep = step
+				b, err := json.Marshal(next)
+				if err != nil {
+					return err
 				}
-				for _, id := range to {
-					if err := s.d.Notifier.RoomStartedTx(ctx, tx, p.Room, p.Host, id, p.At); err != nil {
-						return err
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				return err
+				jobs = append(jobs, queue.NewJob{Type: JobNotifyStarted, Payload: b, IdempotencyKey: queue.StepKey(JobNotifyStarted+":"+p.Room, step)})
 			}
-		}
-		if next == "" {
-			return nil
-		}
-		before = next
+			return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Outbox.EnqueueTx(ctx, tx, jobs...) })
+		},
 	}
+	return fan.Run(ctx, p.FanOutStep)
+}
+
+// notifyStartedBatch notifies, in one transaction, those of ids who see the room, while it is open
+// and has the same host.
+func (s *Service) notifyStartedBatch(ctx context.Context, p notifyStartedPayload, ids []string) error {
+	v, err := s.view(ctx, p.Room)
+	if errors.Is(err, ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if v.Head.State != voice.StateOpen || v.Head.HostAccountID != p.Host {
+		return nil
+	}
+	var to []string
+	for _, id := range ids {
+		ok, err := s.seesOpened(ctx, v, p.Visibility, id)
+		if err != nil {
+			return err
+		}
+		if ok {
+			to = append(to, id)
+		}
+	}
+	if len(to) == 0 {
+		return nil
+	}
+	return s.roomTx(ctx, []string{p.Room}, func(tx uow.Tx, rec RoomRecord) error {
+		if rec.Head.State != voice.StateOpen {
+			return nil
+		}
+		for _, id := range to {
+			if err := s.d.Notifier.RoomStartedTx(ctx, tx, p.Room, p.Host, id, p.At); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // seesOpened reports whether accountID sees the room of v now and would have seen it with the

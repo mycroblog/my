@@ -76,7 +76,7 @@ func newSeveranceEnv(t *testing.T, newHarness SeveranceFactory) *severanceEnv {
 	e := &severanceEnv{remoteFollowEnv: re, jobs: &fedJobs{seen: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{}}
 	e.mod = appmoderation.NewService(appmoderation.Deps{
 		UnitOfWork: re.h.UnitOfWork, Repository: mods, Accounts: re.accounts, Clock: re.clock, IDs: re.ids,
-		Follows: re.graph, Directory: re.accounts, Outbox: queue.AfterCommit(projectors, e.jobs, nil),
+		Follows: re.graph, Directory: re.accounts, Outbox: queue.AfterCommit(projectors, e.jobs, nil), FanOutSize: 1,
 	})
 	e.mod.RegisterJobs(e.handlers, queue.NewScheduler(e.jobs, re.clock, nil))
 	return e
@@ -269,12 +269,18 @@ func severanceOfDomain(t *testing.T, e *severanceEnv) {
 		if !ok {
 			t.Fatalf("no handler for %s", job.Type)
 		}
-		j, err := job.Build(e.ids.NewID(), e.clock.Now())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if r := handle(ctx, j); !r.IsDone() {
-			t.Fatalf("%s = %+v (%v), want Done", job.Type, r, r.Err())
+		// The job, and the jobs of the fan-out it splits into, as each covers one local account.
+		for next, more := job, true; more; next, more = e.jobs.pop() {
+			if next.Type != appmoderation.JobSeverDomain {
+				continue
+			}
+			j, err := next.Build(e.ids.NewID(), e.clock.Now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if r := handle(ctx, j); !r.IsDone() {
+				t.Fatalf("%s = %+v (%v), want Done", next.Type, r, r.Err())
+			}
 		}
 	}
 	// Until the job runs, the follows stay.

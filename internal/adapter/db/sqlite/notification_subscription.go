@@ -77,6 +77,12 @@ func (r *NotificationRepository) ListSubscriptions(ctx context.Context, accountI
 	return out, nil
 }
 
+// CountSubscribers implements notification.SubscriptionRepository.
+func (r *NotificationRepository) CountSubscribers(ctx context.Context, targetAccountID string) (int64, error) {
+	n, err := r.db.reader().CountPostSubscribers(ctx, targetAccountID)
+	return n, wrap(err, "count post subscribers")
+}
+
 // ListSubscribers implements notification.SubscriptionRepository.
 func (r *NotificationRepository) ListSubscribers(ctx context.Context, targetAccountID, after string, limit int) ([]string, error) {
 	ids, err := r.db.reader().ListPostSubscribersPage(ctx, sqlitegen.ListPostSubscribersPageParams{

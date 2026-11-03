@@ -29,6 +29,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	a.Identity = identity.NewService(identity.Deps{
+		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Passwords: identity.NewPasswordHasher(identity.DefaultArgon2Params, 0), Accounts: a.Accounts,
 		Logins: a.AccountPolicy, RateLimiter: a.RateLimiter,

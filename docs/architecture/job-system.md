@@ -123,7 +123,7 @@ flowchart TD
 
 - **`federation.fanout`**: 公開の投稿はメンション・フォロワー・リレーの段階を順に進み、1 つのジョブが最大 500 の受信者（`FanOutBatch`）を読みます。段階ごとに 1 ジョブ以上で、フォロワーの段階のジョブ数は約 `フォロワー数 / 500` です。
 - **`federation.deliver`**: 受信者を共有 inbox にまとめ、`(activity, inbox)` で一意にします。数はフォロワー数ではなく、**フォロワーのいるリモートの inbox の数**です。ローカルのフォロワーと、ドメインブロックや配送不能のサーバーは含みません。リトライは行を増やさず、同じジョブの実行を増やします（最大 9 回）。
-- **`notification.notify_post_subscribers`**: 全購読者を 1 つのジョブの中で回します。100 人ごとの短いトランザクションで、再実行しても重複しません。
+- **`notification.notify_post_subscribers`**: 最初のジョブが購読者を数え、1,000 人以内なら自分で 100 人ごとの短いトランザクションで通知します。それより多ければ、同じ種類のジョブを範囲ごとに積みます（[§3.6](#36-広いジョブの分割)）。再実行しても重複しません。
 - **ホームタイムライン**: 配信のジョブはありません。
 
 | 例（フォロワーとリモートの inbox の数は推定の例） | `federation.fanout` | `federation.deliver` |
@@ -214,17 +214,41 @@ flowchart TD
 
 | 契機 | 流れ | 広がり |
 | --- | --- | --- |
-| お知らせの公開 | `instance.notify_announcement` → 通知 → `notification.push` | ローカルの全利用者（100 人ごと） |
+| お知らせの公開 | `instance.notify_announcement` → 通知 → `notification.push` | ローカルの全利用者（[§3.6](#36-広いジョブの分割)） |
 | サービス終了の予告 | `notification.service_closure_fanout` → 通知 → `notification.push`、`identity.closure_email_fanout` → `identity.closure_email`、`identity.closure_rejections`、`supporters.closure_notice`、`notification.service_closure_due` | ローカルの全利用者、確認済みのメールの全利用者（100 人ごと） |
 | サービス終了の実行 | `instance.closure_fanout` → アカウントごとの `federation.fanout` → `federation.deliver` | ローカルの全アカウント × 既知のサーバーの数 |
-| 通話の開始 | `voice.notify_started` → 通知 → `notification.push` | ローカルのフォロワー（100 人ごと） |
+| 通話の開始 | `voice.notify_started` → 通知 → `notification.push` | ローカルのフォロワー（[§3.6](#36-広いジョブの分割)） |
 | 通話の参加者の確認 | `voice.check_account`、`voice.check_block`、`voice.check_hosts` | アカウント・ブロックの変更ごとに 1、ロールの変更で開いている全ルーム |
 | 通報・登録の申請など | 通知 → `notification.push`、`notification.moderator_email` | その種類を受け取る権限を持つ人の数 |
 | パスワードの変更・削除 | `identity.password_notice_email` | 1 |
-| ドメインの凍結 | `moderation.sever_domain` | ローカルの全アカウントを読む（100 件ごと） |
+| ドメインの凍結 | `moderation.sever_domain` | ローカルの全アカウントを読む（[§3.6](#36-広いジョブの分割)） |
 | インポート | `identity.process_import` → フォローごとの `federation.fanout` → `federation.deliver` | 1 回 20 項目 |
 | 投稿の取り直し | `federation.refetch_statuses` → `federation.refetch_status` | 100 件ごと |
 | サポーターの決済 | `supporters.payment_event` → `supporters.sync`・`supporters.command`、`notification.supporter_email` | 決済の通知ごと |
+
+### 3.6 広いジョブの分割
+
+ハンドラの期限はリースの 5 分です。1 つのジョブで全員を回すと、リースが切れたときに先頭からやり直すので、その人数に届かない限り最後まで終わらず、やがて死んだジョブになります。通知の dedupe key は二重の通知を防ぎますが、やり直しの費用は減らしません。
+
+そのため、人数が広がるジョブは `queue.FanOut` で分けます。
+
+```mermaid
+flowchart LR
+  first["最初のジョブ"] -- "1,000 件以内" --> self["自分で処理"]
+  first -- "それより多い" --> dispatch["範囲を 100 個まで積む"]
+  dispatch -- "100 個ごとに" --> next["続きを積むジョブ"]
+  next --> dispatch
+  dispatch --> range["範囲のジョブ（1,000 件まで）"]
+  range --> tx["100 件ごとのトランザクション"]
+```
+
+- **対象**: `notification.notify_post_subscribers`（最初に `COUNT` で数える）、`instance.notify_announcement`、`notification.service_closure_fanout`、`identity.closure_email_fanout`、`voice.notify_started`、`moderation.sever_domain`（最初のページで判定する）。種類は増やさず、ペイロードの `cursor` と `range` で区別するので、同じワーカーで動きます。
+- **冪等キー**: 最初のジョブの冪等キーに範囲の始まりを足します。最初のジョブのやり直しは、まだ待っている範囲を積みません。すでに終わった範囲は積み直すことがありますが、各ジョブは 2 度処理しても安全です。
+- **途中の変更**: 範囲はキーの境界だけを持つので、途中で増えた人はその場所の範囲か、終わりのない最後の範囲で処理します。消えた人は処理せず、範囲が次の範囲に少しはみ出すことはあります。
+- **並行**: 範囲のジョブは順序キーを持たないので、[同時実行](../operations/running.md)や複数のワーカーで並びます。
+- **1,000 件の根拠**: 手元の WSL2 上の PostgreSQL 18（本番相当ではない）で購読者の通知は 1 人あたり約 3 ms（300 人で 3 回計測。再実行も同じ費用）で、1,000 人で約 3 秒です。リースの 5 分に約 100 倍の余裕があり、DB が遅くなっても 1 ジョブがリース内に収まる見込みです（推定）。また、1,000 件の境界を読むのは 100 回で 5.6 秒（100 万行）、数えるのは 32 ms でした。
+
+`instance.closure_fanout` と `identity.closure_rejections` は対象外です。前者はページごとに続きを積み、後者は処理した登録が待ちの一覧から外れるので、やり直しても進みます。
 
 ## 4. 負荷が集中するところ（推定）
 

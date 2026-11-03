@@ -124,6 +124,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 		c.Transport = voice.Transport(a.Voice.Method)
 	}
 	a.VoiceRooms = appvoice.NewService(appvoice.Deps{
+		FanOutSize: a.fanOutSize,
 		Repository: repo, UnitOfWork: a.UnitOfWork, Outbox: outbox, Clock: a.Clock, IDs: a.IDs, Heartbeats: heartbeats,
 		RateLimiter: a.RateLimiter, Transport: transport, Members: voiceMembers{a}, Relations: voiceRelations{a},
 		Streams: a.Streams, Emojis: voiceEmojis{a}, Notifier: a.voiceNotifier, Posts: a.Content, Host: cfg.Host,

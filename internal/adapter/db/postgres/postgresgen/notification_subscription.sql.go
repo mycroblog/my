@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+const countPostSubscribers = `-- name: CountPostSubscribers :one
+SELECT count(*) FROM post_subscriptions WHERE target_account_id = $1
+`
+
+// CountPostSubscribers counts the subscribers of a target.
+func (q *Queries) CountPostSubscribers(ctx context.Context, targetAccountID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countPostSubscribers, targetAccountID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countPostSubscriptions = `-- name: CountPostSubscriptions :one
 SELECT COUNT(*) FROM post_subscriptions WHERE account_id = $1
 `

@@ -43,6 +43,8 @@ type SubscriptionRepository interface {
 	// ListSubscribers returns at most limit of the accounts that subscribe to the target, in
 	// order of their IDs, after the ID after ("" starts at the first).
 	ListSubscribers(ctx context.Context, targetAccountID, after string, limit int) ([]string, error)
+	// CountSubscribers returns how many accounts subscribe to the target.
+	CountSubscribers(ctx context.Context, targetAccountID string) (int64, error)
 	// InsertSubscriptionRequest records a subscription asked for with a pending follow; recording
 	// it again changes nothing.
 	InsertSubscriptionRequest(ctx context.Context, tx uow.Tx, r notification.SubscriptionRequest) error
@@ -304,11 +306,14 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 	})
 }
 
-// JobNotifyPostSubscribers notifies the subscribers of the author of a new post (ADR-0123 §2).
+// JobNotifyPostSubscribers notifies the subscribers of the author of a new post (ADR-0123 §2). The
+// first job handles them itself up to the size of a fan-out job, and otherwise enqueues jobs of that
+// size, so that an author with many subscribers repeats only a part when a job runs out of its lease.
 const JobNotifyPostSubscribers = "notification.notify_post_subscribers"
 
 // postJob is the payload of JobNotifyPostSubscribers.
 type postJob struct {
+	queue.FanOutStep
 	StatusID        string `json:"status_id"`
 	AuthorAccountID string `json:"author_account_id"`
 	// InReplyToURI is the post it replies to, "" for none.
@@ -334,15 +339,17 @@ type PostNotificationDeps struct {
 	Posts      Posts
 	// Projectors are the ports that create the notifications, as for the projectors.
 	Projectors ProjectorDeps
+	// FanOutSize is the subscribers of one job, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 }
 
-// RegisterPostNotificationJobs registers the handler of JobNotifyPostSubscribers. The job takes
-// the subscribers of the author notification.SubscriberBatch at a time, each batch in its own
-// transaction, and notifies each one that may see the post with a status notification
-// (notification.StatusKey), unless the post replies to someone else's post, or the subscriber
-// gets a mention of it. The exclusions of the other notifications apply too (notify): blocks,
-// mutes with hide_notifications, domain mutes, unsolicited_reach, and the in-app setting. The
-// dedupe key makes a retried job notify nobody twice.
+// RegisterPostNotificationJobs registers the handler of JobNotifyPostSubscribers. A job takes its
+// subscribers notification.SubscriberBatch at a time, each batch in its own transaction, and
+// notifies each one that may see the post with a status notification (notification.StatusKey),
+// unless the post replies to someone else's post, or the subscriber gets a mention of it. The
+// exclusions of the other notifications apply too (notify): blocks, mutes with hide_notifications,
+// domain mutes, unsolicited_reach, and the in-app setting. The dedupe key makes a retried job, or a
+// range that reaches into the next, notify nobody twice.
 func RegisterPostNotificationJobs(reg *queue.JobHandlerRegistry, d PostNotificationDeps) {
 	n := &postNotifier{d: d, p: &projector{d: d.Projectors}}
 	reg.Register(JobNotifyPostSubscribers, func(ctx context.Context, j queue.Job) queue.Result {
@@ -363,7 +370,7 @@ type postNotifier struct {
 }
 
 func (n *postNotifier) run(ctx context.Context, job postJob) error {
-	if job.InReplyToURI != "" {
+	if job.Root() && job.InReplyToURI != "" {
 		parent, err := n.d.Posts.AuthorOf(ctx, job.InReplyToURI)
 		if err != nil {
 			return err
@@ -373,44 +380,77 @@ func (n *postNotifier) run(ctx context.Context, job postJob) error {
 		}
 	}
 	repo := n.d.Projectors.Repository
-	for after := ""; ; {
-		ids, err := repo.ListSubscribers(ctx, job.AuthorAccountID, after, notification.SubscriberBatch)
+	size := n.d.FanOutSize
+	if size <= 0 {
+		size = queue.FanOutSize
+	}
+	fan := queue.FanOut{
+		Size: size, Batch: notification.SubscriberBatch,
+		Page: queue.PageByLastKey(func(ctx context.Context, after string, limit int) ([]string, error) {
+			return repo.ListSubscribers(ctx, job.AuthorAccountID, after, limit)
+		}),
+		Handle:  func(ctx context.Context, ids []string) error { return n.notifyBatch(ctx, job, ids) },
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error { return n.enqueue(ctx, job, steps) },
+	}
+	if !job.Root() {
+		return fan.Dispatch(ctx, job.FanOutStep)
+	}
+	count, err := repo.CountSubscribers(ctx, job.AuthorAccountID)
+	if err != nil {
+		return err
+	}
+	if count <= int64(size) {
+		return fan.Walk(ctx, queue.KeyRange{})
+	}
+	return fan.Dispatch(ctx, job.FanOutStep)
+}
+
+// enqueue enqueues the jobs of steps, which carry what the first job read of the post.
+func (n *postNotifier) enqueue(ctx context.Context, job postJob, steps []queue.FanOutStep) error {
+	jobs := make([]queue.NewJob, 0, len(steps))
+	for _, step := range steps {
+		next := job
+		next.FanOutStep, next.InReplyToURI = step, ""
+		payload, err := json.Marshal(next)
 		if err != nil {
 			return err
 		}
-		var to []string
-		for _, id := range ids {
-			if slices.Contains(job.MentionedAccountIDs, id) {
-				continue
-			}
-			visible, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
-			if err != nil {
-				return err
-			}
-			if visible {
-				to = append(to, id)
-			}
+		jobs = append(jobs, queue.NewJob{
+			Type: JobNotifyPostSubscribers, Payload: payload,
+			IdempotencyKey: queue.StepKey(JobNotifyPostSubscribers+":"+job.StatusID, step),
+		})
+	}
+	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return n.d.Projectors.PostJobs.EnqueueTx(ctx, tx, jobs...) })
+}
+
+// notifyBatch notifies, in one transaction, those of ids who may see the post.
+func (n *postNotifier) notifyBatch(ctx context.Context, job postJob, ids []string) error {
+	var to []string
+	for _, id := range ids {
+		if slices.Contains(job.MentionedAccountIDs, id) {
+			continue
 		}
-		if len(to) > 0 {
-			err := n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				for _, id := range to {
-					err := n.p.notify(ctx, tx, notification.Notification{
-						RecipientAccountID: id, SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
-						StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
-					})
-					if err != nil {
-						return err
-					}
-				}
-				return nil
+		visible, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
+		if err != nil {
+			return err
+		}
+		if visible {
+			to = append(to, id)
+		}
+	}
+	if len(to) == 0 {
+		return nil
+	}
+	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for _, id := range to {
+			err := n.p.notify(ctx, tx, notification.Notification{
+				RecipientAccountID: id, SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
+				StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
 			})
 			if err != nil {
 				return err
 			}
 		}
-		if len(ids) < notification.SubscriberBatch {
-			return nil
-		}
-		after = ids[len(ids)-1]
-	}
+		return nil
+	})
 }

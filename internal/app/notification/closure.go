@@ -48,11 +48,9 @@ const (
 	JobServiceClosureDue = "notification.service_closure_due"
 )
 
-// closureFanoutBatch is how many recipients one transaction of JobServiceClosureFanout notifies.
-const closureFanoutBatch = 100
-
 // closureFanout is the payload of JobServiceClosureFanout.
 type closureFanout struct {
+	queue.FanOutStep
 	EventID string                     `json:"event_id"`
 	Change  notification.ClosureChange `json:"change"`
 	At      time.Time                  `json:"at"`
@@ -78,6 +76,8 @@ type ClosureDeps struct {
 	// Moderators creates admin_service_closure_due as the other moderator notifications, with
 	// their emails.
 	Moderators ModeratorDeps
+	// FanOutSize is the keys of one job of a wide fan-out, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 }
 
 // closureChange returns what a closure event tells the users of, and false for an event they
@@ -145,45 +145,61 @@ func RegisterClosureJobs(reg *queue.JobHandlerRegistry, d ClosureDeps) {
 	})
 }
 
-// fanOutClosure creates the service_closure of every local user, page by page. The dedupe key
-// names the event, so a job run again notifies nobody twice.
+// fanOutClosure runs the step of the fan-out that creates the service_closure of every local user.
+// The dedupe key names the event, so a job run again notifies nobody twice.
 func fanOutClosure(ctx context.Context, d ClosureDeps, p closureFanout) error {
-	after := ""
-	for {
-		ids, next, err := d.Recipients.LocalUserAccountIDs(ctx, after, closureFanoutBatch)
-		if err != nil {
-			return fmt.Errorf("notification: the recipients of the service closure: %w", err)
-		}
-		err = d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			for _, id := range ids {
-				n := notification.Notification{
-					ID: d.IDs.NewID(), RecipientAccountID: id, Type: notification.TypeServiceClosure,
-					ServiceClosureEventID: p.EventID, ServiceClosureChange: p.Change,
-					DedupeKey: notification.ServiceClosureKey(p.EventID), CreatedAt: p.At,
+	fan := queue.FanOut{
+		Size: d.FanOutSize,
+		Page: d.Recipients.LocalUserAccountIDs,
+		Handle: func(ctx context.Context, ids []string) error {
+			err := d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				for _, id := range ids {
+					n := notification.Notification{
+						ID: d.IDs.NewID(), RecipientAccountID: id, Type: notification.TypeServiceClosure,
+						ServiceClosureEventID: p.EventID, ServiceClosureChange: p.Change,
+						DedupeKey: notification.ServiceClosureKey(p.EventID), CreatedAt: p.At,
+					}
+					if err := n.Validate(); err != nil {
+						return err
+					}
+					created, err := d.Repository.InsertNotification(ctx, tx, n)
+					if err != nil {
+						return err
+					}
+					if created {
+						if err := d.Push.enqueue(ctx, tx, n); err != nil {
+							return err
+						}
+					}
 				}
-				if err := n.Validate(); err != nil {
-					return err
-				}
-				created, err := d.Repository.InsertNotification(ctx, tx, n)
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("notification: notify the service closure: %w", err)
+			}
+			return nil
+		},
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
+			jobs := make([]queue.NewJob, 0, len(steps))
+			for _, step := range steps {
+				next := p
+				next.FanOutStep = step
+				payload, err := json.Marshal(next)
 				if err != nil {
 					return err
 				}
-				if created {
-					if err := d.Push.enqueue(ctx, tx, n); err != nil {
-						return err
-					}
-				}
+				jobs = append(jobs, queue.NewJob{
+					Type: JobServiceClosureFanout, Payload: payload,
+					IdempotencyKey: queue.StepKey(JobServiceClosureFanout+":"+p.EventID, step),
+				})
 			}
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("notification: notify the service closure: %w", err)
-		}
-		if next == "" {
-			return nil
-		}
-		after = next
+			return d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return d.Outbox.EnqueueTx(ctx, tx, jobs...) })
+		},
 	}
+	if err := fan.Run(ctx, p.FanOutStep); err != nil {
+		return fmt.Errorf("notification: the recipients of the service closure: %w", err)
+	}
+	return nil
 }
 
 // notifyClosureDue creates admin_service_closure_due when the announcement is still in effect

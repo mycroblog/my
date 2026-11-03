@@ -26,6 +26,7 @@ func (a *App) setUpClosureNotifications(repo notification.Repository, moderators
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	d := notification.ClosureDeps{
+		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Recipients: closureRecipients{a}, Closures: a.Instance,
 		IDs: a.IDs, Clock: a.Clock, Outbox: outbox, Push: push, Moderators: moderators,
 	}
@@ -44,6 +45,7 @@ func (a *App) setUpAnnouncementNotifications(repo notification.Repository, push 
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	d := notification.AnnouncementDeps{
+		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Recipients: announcementRecipients{closureRecipients{a}},
 		Announcements: a.Instance, IDs: a.IDs, Clock: a.Clock, Outbox: outbox, Push: push,
 	}

@@ -32,6 +32,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	a.Moderation = moderation.NewService(moderation.Deps{
+		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Clock: a.Clock, IDs: a.IDs,
 		Statuses: moderationStatuses{a}, Lifecycles: a.Accounts, AppealWindow: appealWindow{a},
 		Retention: retentionSettings{a},
