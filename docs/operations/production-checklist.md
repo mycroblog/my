@@ -47,13 +47,16 @@ for example as a step of the deployment before the new version takes traffic.
 ### The server's domain and the handle domain
 
 - **Why**: `host` is part of every ActivityPub id of the server, and other servers store those ids.
-  `account_domain` is the domain of the handles (`@alice@example.org`). Both are recorded in the database on the first start
-  and must not change afterwards: a change after federating breaks every follow and every reference to the server's posts
-  and accounts.
+  `account_domain` is the domain of the handles (`@alice@example.org`). The first `my serve` or `my` command that uses the
+  database records both in it, and from then on `my serve` and those commands refuse to run when the configuration differs:
+  a change after federating breaks every follow and every reference to the server's posts and accounts.
+  Set both before the first start. A mistake found before federating is fixed by
+  [recreating the database](database.md#recreating-erasing-every-row), which erases every row.
 - **Decide**: whether the handles use the server's domain or a separate one (for example handles on `example.org`
   and the server on `social.example.org`). A separate handle domain must redirect its WebFinger, host-meta, and NodeInfo
   to the server.
 - **Verify**: `my config check` shows `host` and `account_domain` and reports a domain that other servers cannot reach.
+  `my config check -instance` also fails when they differ from the values in the database, and records nothing.
   With a separate handle domain, `curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"`
   answers `301` to `https://<host>/.well-known/webfinger?...`.
 - **Details**: [running the server](running.md) (the federation endpoints and serving the handles from another domain),

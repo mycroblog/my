@@ -36,6 +36,9 @@ type ServeOptions struct {
 	// JobStopTimeout bounds the wait for the job runner after ShutdownTimeout cancelled its
 	// job; the default is DefaultJobStopTimeout.
 	JobStopTimeout time.Duration
+	// DomainsRetry is how often a process that could not verify its domains at the start tries
+	// again; the default is defaultDomainsRetry. Tests only.
+	DomainsRetry time.Duration
 }
 
 // Serve runs the App in its configured role until ctx ends, then shuts down gracefully:
@@ -45,6 +48,9 @@ type ServeOptions struct {
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
 //     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
 //   - every role first ensures the built-in roles, giving admin every permission.
+//
+// A process that started before the schema was applied or while the database was down verifies
+// host and account_domain as soon as it can, and stops with an error when they differ.
 //
 // When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
 // ShutdownTimeout for the requests and the job in progress to finish. After the timeout it
@@ -123,6 +129,21 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		default: // a shutdown has already been asked for
 		}
 	})()
+	if !a.domainsVerified.Load() {
+		a.Logger.WarnContext(ctx, "host and account_domain not verified yet; the process is not ready until they are")
+		retry := opts.DomainsRetry
+		if retry <= 0 {
+			retry = defaultDomainsRetry
+		}
+		kernel.Go(ctx, "serve.verify_domains", a.ErrorReporter, func(ctx context.Context) {
+			if err := a.awaitDomains(ctx, retry); err != nil {
+				select {
+				case fatal <- err:
+				default: // a shutdown has already been asked for
+				}
+			}
+		})
+	}
 	kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
 	if metricsSrv != nil {
 		kernel.Go(ctx, "http.serve_metrics", a.ErrorReporter, func(context.Context) {

@@ -279,6 +279,7 @@ same host name gets a different key and is a different Actor to other servers, a
 A public instance that cannot apply a schema change [rolls back](#rolling-back) from its backup instead.
 
 There is no `my` command that erases a database: remove it with the tools of the database, then apply the schema again.
+The empty database has no recorded `host` and `account_domain`, so the next start records the configured values.
 
 ### Docker Compose
 

@@ -26,6 +26,7 @@
 | `service_closure_schedules` | イベント（`announced` の部分型） | `event_id`（PK）, `closes_at`, `export_until`, `message`（`string(5000)`。空 = なし） | CHECK `export_until >= closes_at` |
 | `service_closure_heads` | 投影 | `id`（PK。常に 1）, `state`（`enum(announced, closed, delivery_completed)`）, `event_id`（最後のイベント）, `announcement_event_id`（効いている予定の `announced`） | 終了を予告している間とその後に 1 行。行が無い = 予告なし |
 | `instance_secrets` | リソース | `id`, `name`（`string`。`media_proxy_key`）, `sealed_secret`（`Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(name)`。サーバーが最初に使うときに作る秘密（[ADR-0121](../../../adr/0121-kms-key-managers.md) §2）。名前は `internal/domain/instance` に定義する。`my kek rewrap` の対象 |
+| `instance_domains` | リソース | `id`（PK。常に 1）, `host`（`string`）, `account_domain`（`string`）, `recorded_at` | この DB が属するドメイン。最初に DB を使う `my serve` か `my` コマンドが 1 回だけ書き、以後は設定と比べて、違えば拒否する（[ADR-0018](../../../adr/0018-federated-uris.md)）。`my config check -instance` と `my db upgrade -check` は比べるだけで書かない |
 
 - 設定値は 1 キー 1 スカラーにします。複合的な設定はキーを分けます（JSON にしない）。
   キー・型・既定値・検証は `internal/domain/instance` に定義し、`key` の `CHECK` と一緒に増やします。一度も設定していないキーは既定値として読みます。
