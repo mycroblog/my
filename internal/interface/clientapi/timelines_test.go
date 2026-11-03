@@ -123,8 +123,9 @@ var (
 		Local:   &account.LocalAccount{AccountID: aliceAccountID, UserID: userOf(aliceAccountID), Username: "alice"},
 	}
 	bobActor = appaccount.Actor{
-		Account: account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: createdAt},
-		Local:   &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+		Account:   account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: createdAt},
+		Local:     &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+		Lifecycle: account.InitialLifecycleState(bobAccountID),
 	}
 )
 
@@ -207,9 +208,12 @@ func newTimelineEnv(t *testing.T) *timelineEnv {
 }
 
 // remoteActor is a remote account, whose profile may start fetching its recent posts.
-var remoteActor = appaccount.Actor{Account: account.Account{
-	ID: "01890a5d-ac96-774b-bcce-b302099a8110", Domain: "remote.example", URI: "https://remote.example/users/carol", CreatedAt: createdAt,
-}}
+var remoteActor = appaccount.Actor{
+	Account: account.Account{
+		ID: "01890a5d-ac96-774b-bcce-b302099a8110", Domain: "remote.example", URI: "https://remote.example/users/carol", CreatedAt: createdAt,
+	},
+	Lifecycle: account.InitialLifecycleState("01890a5d-ac96-774b-bcce-b302099a8110"),
+}
 
 func decodePage(t *testing.T, res *http.Response) clientapi.StatusPage {
 	t.Helper()
