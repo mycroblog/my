@@ -33,7 +33,7 @@
 | `supporter_plan_price_heads` | 投影 | `plan_id`, `interval`, `price_id` | PK `(plan_id, interval)`。新しい加入と変更に使う価格。アーカイブされていない最新の価格 |
 | `supporter_plan_price_archivals` | イベント | `price_id`（PK）, `archived_at` | |
 | `supporter_customers` | リソース | `id`, `user_id`, `provider`, `provider_customer_id`, `created_at` | 一意 `(provider, user_id)`, `(provider, provider_customer_id)` |
-| `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`, `price_id`（開始のとき）, `provider`, `created_at` | インデックス `(user_id, id DESC)` |
+| `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`, `price_id`（開始のとき）, `provider`, `created_at` | |
 | `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | 一意 `(provider, provider_checkout_id)`。インデックス `(subscription_id, id DESC)`, `(provider, expires_at)` |
 | `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)` |
 | `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |

@@ -71,7 +71,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `account_lifecycle_events` | イベント | `id`, `account_id`, `kind`（`enum(deactivated, reactivated, deletion_scheduled, deletion_cancelled, deleted, remote_deleted)`）, `initiated_by`（`enum(self, moderator, system, remote)`）, `moderation_action_id`（NULL 可）, `deletion_due_at`（NULL 可。`deletion_scheduled` のみ）, `occurred_at` | インデックス `(account_id, id DESC)` |
+| `account_lifecycle_events` | イベント | `id`, `account_id`, `kind`（`enum(deactivated, reactivated, deletion_scheduled, deletion_cancelled, deleted, remote_deleted)`）, `initiated_by`（`enum(self, moderator, system, remote)`）, `moderation_action_id`（NULL 可）, `deletion_due_at`（NULL 可。`deletion_scheduled` のみ）, `occurred_at` | |
 | `account_lifecycle_states` | 投影 | `account_id`（PK）, `state`（`enum(active, deactivated, deletion_scheduled, deleted)`）, `since`, `deletion_due_at`（NULL 可） | インデックス `(state, deletion_due_at)`（削除の実行） |
 | `account_erasures` | イベント | `account_id`（PK）, `erased_at` | 消去ジョブがアカウントのデータを消し終えた記録（§8）。1 アカウントにつき 1 回 |
 
@@ -95,7 +95,7 @@
 | --- | --- | --- | --- |
 | `account_moves` | イベント | `id`, `account_id`（移転元）, `target_account_id`, `initiated_by`（`enum(self, remote)`）, `activity_uri`（NULL 可。受けた `Move`）, `occurred_at` | 一意 `(account_id, target_account_id)`、インデックス `(account_id, occurred_at DESC, id DESC)`、`CHECK (account_id <> target_account_id)` |
 | `account_move_cancellations` | イベント | `move_id`（PK）, `cancelled_at` | ローカルの移転だけ |
-| `account_move_states` | 投影 | `account_id`（PK）, `move_id`, `target_account_id`, `since` | インデックス `(target_account_id)` |
+| `account_move_states` | 投影 | `account_id`（PK）, `move_id`, `target_account_id`, `since` | |
 | `account_aliases` | 現在値 | `account_id`, `alias_uri`, `added_at` | PK `(account_id, alias_uri)`。ローカルのアカウントだけ。1 アカウント 5 件まで（`account.MaxAliases`） |
 
 - **移転はライフサイクルと直交する軸** です（ADR-0020 規約 2）。移転済みでも `account_lifecycle_states` は変わりません。

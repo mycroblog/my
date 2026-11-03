@@ -563,6 +563,7 @@ CREATE TABLE user_tokens (
 ) STRICT;
 CREATE UNIQUE INDEX user_tokens_token_hash ON user_tokens (token_hash);
 CREATE INDEX user_tokens_expires_at ON user_tokens (expires_at);
+CREATE INDEX user_tokens_user_id ON user_tokens (user_id);
 
 -- Event: a token was used; the primary key makes every token single-use.
 CREATE TABLE user_token_redemptions (
@@ -727,6 +728,7 @@ CREATE TABLE login_provider_revision_guilds (
 );
 CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
 CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
+CREATE INDEX oauth_authorization_codes_user_id ON oauth_authorization_codes (user_id);
 
 -- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds
 -- a row; the newest one is current. created_by_user_id is NULL for the CLI.

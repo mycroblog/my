@@ -119,7 +119,6 @@ CREATE TABLE supporter_subscriptions (
   provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
   created_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX supporter_subscriptions_user_id_id ON supporter_subscriptions (user_id, id DESC);
 
 -- Event: a hosted checkout started for a pending subscription, open until expires_at; starting
 -- again while the subscription is pending makes a new one. The reconciliation re-reads the open

@@ -127,7 +127,6 @@ CREATE TABLE instance_brand_revisions (
   revised_at timestamptz NOT NULL,
   CHECK ((kind = 'icon' AND action = 'set') = (background_color IS NOT NULL))
 );
-CREATE INDEX instance_brand_revisions_kind_id ON instance_brand_revisions (kind, id DESC);
 
 -- Event (child of a set revision): one stored file, the sanitized SVG or one of its PNG
 -- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
@@ -234,7 +233,6 @@ CREATE TABLE announcement_revisions (
   revised_at timestamptz NOT NULL,
   CHECK (starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at)
 );
-CREATE INDEX announcement_revisions_announcement_id_id ON announcement_revisions (announcement_id, id DESC);
 
 -- Event: an announcement was published or withdrawn; a withdrawal is for good.
 -- changed_by_user_id is NULL for the CLI.
@@ -245,7 +243,6 @@ CREATE TABLE announcement_state_changes (
   changed_by_user_id uuid,
   changed_at timestamptz NOT NULL
 );
-CREATE INDEX announcement_state_changes_announcement_id_id ON announcement_state_changes (announcement_id, id DESC);
 
 -- Projection: the current revision and state of each announcement. published_at is the time of
 -- its latest publication, set exactly when it has been published.
