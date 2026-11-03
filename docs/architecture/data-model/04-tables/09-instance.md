@@ -12,17 +12,17 @@
 | `instance_rule_heads` | 投影 | `rule_id`（PK）, `revision_id`, `position` | 有効なルールだけ。インデックス `(position)` |
 | `link_card_domain_rules` | 現在値 | `domain`（PK。正規化したホスト）, `mode`（`enum(no_fetch, no_images)`）, `note`（`string(5000)`。空 = メモなし）, `updated_at` | リンクのカードのクローラーのドメインごとのルール（FR-117、ADR-0132）。サブドメインにも効く。最大 1,000 行。変更の履歴は監査ログ（§4.3）に残し、再構築の対象でない |
 | `instance_theme_revisions` | イベント（版） | `id`, `custom_css`（`string`。空 = なし。64 KiB まで）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | トークンもカスタム CSS も無い版はテーマを既定に戻す |
-| `instance_theme_tokens` | イベント（版の子） | `theme_revision_id`, `token`（`enum`。上書きできるトークンの生成した一覧）, `scheme`（`enum(light, dark, all)`。色はライトとダーク、ほかは `all`）, `value` | PK `(theme_revision_id, token, scheme)` |
+| `instance_theme_tokens` | イベント（版の子） | `revision_id`, `token`（`enum`。上書きできるトークンの生成した一覧）, `scheme`（`enum(light, dark, all)`。色はライトとダーク、ほかは `all`）, `value` | PK `(revision_id, token, scheme)` |
 | `instance_theme` | 投影 | `id`（PK。常に 1）, `revision_id` | テーマを保存したことがあれば 1 行 |
 | `instance_brand_revisions` | イベント（版） | `id`, `kind`（`enum(icon, logo, logo_dark)`）, `action`（`enum(set, clear)`）, `background_color`（NULL 可。`#rrggbb`。設定したアイコンの不透明な版の地の色）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | CHECK `(kind = 'icon' AND action = 'set') = (background_color IS NOT NULL)` |
-| `instance_brand_files` | イベント（版の子） | `brand_revision_id`, `rendition`（`enum(svg, favicon-32, favicon-48, apple-touch-180, pwa-192, pwa-512, maskable-512, logo-mail, logo-dark-mail, preview-1200x630)`）, `blob_key`, `content_type`（`enum(image/svg+xml, image/png)`）, `width`, `height`, `byte_size`, `sha256` | PK `(brand_revision_id, rendition)`。`set` の版だけが持つ |
+| `instance_brand_files` | イベント（版の子） | `revision_id`, `rendition`（`enum(svg, favicon-32, favicon-48, apple-touch-180, pwa-192, pwa-512, maskable-512, logo-mail, logo-dark-mail, preview-1200x630)`）, `blob_key`, `content_type`（`enum(image/svg+xml, image/png)`）, `width`, `height`, `file_size`, `sha256` | PK `(revision_id, rendition)`。`set` の版だけが持つ |
 | `instance_brands` | 投影 | `kind`（PK）, `revision_id` | 設定している種類ごとに 1 行。`clear` の版で行を消す |
 | `announcements` | リソース | `id`, `created_at` | サーバーのローカルの利用者全員へのお知らせ（FR-726） |
 | `announcement_revisions` | イベント（版） | `id`, `announcement_id`, `title`（`string`。プレーンテキストで書記素 1〜100。既定 `''` = タイトルなし）, `body`（`string(5000)`。Markdown）, `starts_at`（NULL 可 = 公開した時から）, `ends_at`（NULL 可 = 取り下げるまで）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | CHECK `ends_at > starts_at`（両方あるとき） |
 | `announcement_state_changes` | イベント | `id`, `announcement_id`, `state`（`enum(published, withdrawn)`）, `changed_by_user_id`（NULL 可 = CLI による変更）, `changed_at` | |
 | `announcement_heads` | 投影 | `announcement_id`（PK）, `revision_id`, `state`（`enum(draft, published, withdrawn)`）, `published_at`（最後に公開した時刻） | CHECK `(state = 'draft') = (published_at IS NULL)`。インデックス `(state)` |
 | `announcement_reads` | 現在値 | `user_id`, `announcement_id`, `read_at` | PK `(user_id, announcement_id)`。既読の履歴には意味がない（ADR-0020 規約 5） |
-| `service_closure_events` | イベント | `id`, `kind`（`enum(announced, withdrawn, closed, delivery_completed)`）, `by_user_id`（NULL 可 = CLI とサーバー自身による変更）, `occurred_at` | サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md)）の状態の変化 |
+| `service_closure_events` | イベント | `id`, `kind`（`enum(announced, withdrawn, closed, delivery_completed)`）, `changed_by_user_id`（NULL 可 = CLI とサーバー自身による変更）, `occurred_at` | サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md)）の状態の変化 |
 | `service_closure_schedules` | イベント（`announced` の部分型） | `event_id`（PK）, `closes_at`, `export_until`, `message`（`string(5000)`。空 = なし） | CHECK `export_until >= closes_at` |
 | `service_closure_heads` | 投影 | `id`（PK。常に 1）, `state`（`enum(announced, closed, delivery_completed)`）, `event_id`（最後のイベント）, `announcement_event_id`（効いている予定の `announced`） | 終了を予告している間とその後に 1 行。行が無い = 予告なし |
 | `instance_secrets` | リソース | `id`, `name`（`string`。`media_proxy_key`）, `sealed_secret`（`Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(name)`。サーバーが最初に使うときに作る秘密（[ADR-0121](../../../adr/0121-kms-key-managers.md) §2）。名前は `internal/domain/instance` に定義する。`my kek rewrap` の対象 |

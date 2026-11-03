@@ -110,7 +110,6 @@ CREATE INDEX billing_import_runs_run_key ON billing_import_runs (run_key);
 CREATE TABLE billing_import_reservations (
   id uuid NOT NULL PRIMARY KEY,
   source text NOT NULL CHECK (source IN ('aws', 'gcp')),
-  run_key text COLLATE "C" NOT NULL,
   requests integer NOT NULL CHECK (requests >= 0),
   reserved_at timestamptz NOT NULL
 );
@@ -146,17 +145,19 @@ CREATE UNIQUE INDEX imported_cost_revisions_key_run_key ON imported_cost_revisio
 -- Projection of imported_cost_revisions: the newest revision of each key, updated in the
 -- transaction that adds the revision.
 CREATE TABLE imported_cost_heads (
-  source text NOT NULL,
+  source text NOT NULL CHECK (source IN ('aws', 'gcp')),
   billing_month text COLLATE "C" NOT NULL,
   service text COLLATE "C" NOT NULL,
-  charge_type text NOT NULL,
+  charge_type text NOT NULL CHECK (charge_type IN (
+    'usage', 'credit', 'refund', 'tax', 'support', 'fee', 'adjustment', 'other'
+  )),
   revision_id uuid NOT NULL,
   PRIMARY KEY (source, billing_month, service, charge_type)
 );
 
 -- Event: a money movement on the payment provider's account (ADR-0073 §2, §8): a payment, a
 -- refund, a chargeback, its reversal, or a fee that belongs to no payment, recorded once per
--- (provider, provider_id) when its amounts are final, with its gross, fee, and net in the minor
+-- (provider, provider_movement_id) when its amounts are final, with its gross, fee, and net in the minor
 -- unit of its currency. occurred_on is occurred_at as a date in the provider's reporting time
 -- zone; covers_* is the billing period of a payment. parent_movement_id is the payment of a
 -- refund, a chargeback, or a reversal. subscription_id refers to the subscription without a
@@ -164,7 +165,7 @@ CREATE TABLE imported_cost_heads (
 CREATE TABLE income_movements (
   id uuid NOT NULL PRIMARY KEY,
   provider text NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
-  provider_id text COLLATE "C" NOT NULL CHECK (length(provider_id) BETWEEN 1 AND 255),
+  provider_movement_id text COLLATE "C" NOT NULL CHECK (length(provider_movement_id) BETWEEN 1 AND 255),
   kind text NOT NULL CHECK (kind IN ('payment', 'refund', 'chargeback', 'chargeback_reversal', 'fee')),
   parent_movement_id uuid,
   subscription_id uuid,
@@ -182,5 +183,5 @@ CREATE TABLE income_movements (
   CHECK (covers_starts_on IS NULL OR (kind = 'payment' AND covers_starts_on <= covers_ends_on)),
   CHECK (parent_movement_id IS NULL OR kind IN ('refund', 'chargeback', 'chargeback_reversal'))
 );
-CREATE UNIQUE INDEX income_movements_provider_id ON income_movements (provider, provider_id);
+CREATE UNIQUE INDEX income_movements_provider_movement_id ON income_movements (provider, provider_movement_id);
 CREATE INDEX income_movements_occurred_on ON income_movements (occurred_on);

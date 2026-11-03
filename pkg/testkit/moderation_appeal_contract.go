@@ -26,7 +26,7 @@ import (
 // account, with a text of at most moderation.MaxAppealText characters; its own actions show the
 // appeal, the deadline, and whether it can still appeal; a moderator upholds an appeal, keeping
 // the action, or overturns it, lifting the action in the same transaction (the statuses that
-// delete_statuses deleted stay deleted; a ban's scheduled deletion is cancelled and its
+// delete_statuses deleted stay deleted; a ban's scheduled deletion is canceled and its
 // suspension ends, and a ban whose account is deleted is not overturned); each decision is audited and emitted once, and a decided appeal is not decided
 // otherwise; the moderators list the appeals newest first by state, in keyset pages, and count
 // the pending ones. The accounts and statuses are in-memory stand-ins.
@@ -453,8 +453,8 @@ func appealBan(t *testing.T, e *appealEnv) {
 	if got.Action.State != moderation.ActionLifted {
 		t.Errorf("the ban after overturning = %+v, want lifted", got.Action)
 	}
-	if e.lifecycles.cancelled[e.local] != ban.ID {
-		t.Errorf("cancelled deletions = %v, want the ban's", e.lifecycles.cancelled)
+	if e.lifecycles.canceled[e.local] != ban.ID {
+		t.Errorf("canceled deletions = %v, want the ban's", e.lifecycles.canceled)
 	}
 	if restricted, err := e.policy.LoginRestricted(ctx, e.local); err != nil || restricted {
 		t.Errorf("LoginRestricted after overturning the ban = %v, %v; want false", restricted, err)
@@ -466,8 +466,8 @@ func appealBan(t *testing.T, e *appealEnv) {
 		t.Errorf("suspension change = %+v, %v; want the end of the suspension", s, ok)
 	}
 	if got := e.audited(t, moderation.AuditTargetAccount, e.local); len(got) < 2 ||
-		got[0] != moderation.AuditAccountActionLifted || got[1] != moderation.AuditAccountDeletionCancelled {
-		t.Errorf("audit log of the account = %v, want the lift after the cancelled deletion", got)
+		got[0] != moderation.AuditAccountActionLifted || got[1] != moderation.AuditAccountDeletionCanceled {
+		t.Errorf("audit log of the account = %v, want the lift after the canceled deletion", got)
 	}
 
 	// After the deletion, a ban is not appealed, and a pending appeal of it is not overturned.

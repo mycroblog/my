@@ -715,7 +715,7 @@ export interface paths {
          *     `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
          *     cannot be fetched, or is suspended here (it or its server), and
          *     `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-         *     move was cancelled, or for a target the account moved to before.
+         *     move was canceled, or for a target the account moved to before.
          *
          *     Once moved, the account's followers on other servers get a `Move` and follow the target,
          *     the followers on this server follow it too, and the account's profile names the target
@@ -752,7 +752,7 @@ export interface paths {
          * @description Cancels the move of the user's account (ADR-0089): the account no longer names the target,
          *     can post, boost, react, follow, and vote again, and the other servers get an `Update` of
          *     its actor without `movedTo`. The followers that moved stay with the target, and the next
-         *     move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+         *     move still waits 30 days from the canceled one. An account that has not moved gets a 409
          *     `/api/v1/problems/account-not-moved`.
          */
         post: operations["cancelOwnAccountMove"];
@@ -8379,7 +8379,7 @@ export interface components {
         };
         /**
          * @description The kind of an audited operation, each on one kind of target. On an `account`:
-         *     `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+         *     `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
          *     `revealed_private_data` (a moderator was shown the account's email address and IP
          *     addresses), `two_factor_disabled` (an administrator removed the account's two-factor
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -8399,7 +8399,7 @@ export interface components {
          *     `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
          *     an `appeal`:
          *     `appeal_upheld`, `appeal_overturned` (which also records the action's
-         *     `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+         *     `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
          *     `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
          *     `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
          *     `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -8446,7 +8446,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -16137,7 +16137,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The move is cancelled. */
+            /** @description The move is canceled. */
             204: {
                 headers: {
                     [name: string]: unknown;

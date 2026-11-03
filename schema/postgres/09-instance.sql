@@ -79,7 +79,7 @@ CREATE TABLE instance_theme_revisions (
 -- (light and dark for a color token, all for the others). The token list is generated from the
 -- web client's theme.css (internal/domain/instance/theme_tokens.gen.go).
 CREATE TABLE instance_theme_tokens (
-  theme_revision_id uuid NOT NULL,
+  revision_id uuid NOT NULL,
   token text COLLATE "C" NOT NULL CHECK (token IN (
     'color-surface', 'color-surface-raised', 'color-surface-sunken', 'color-soft', 'color-fg',
    'color-fg-muted', 'color-accent', 'color-accent-hover', 'color-accent-fg', 'color-accent-fill',
@@ -100,7 +100,7 @@ CREATE TABLE instance_theme_tokens (
   )),
   scheme text COLLATE "C" NOT NULL CHECK (scheme IN ('light', 'dark', 'all')),
   value text NOT NULL,
-  PRIMARY KEY (theme_revision_id, token, scheme)
+  PRIMARY KEY (revision_id, token, scheme)
 );
 
 -- Projection: the current theme revision, one row once a theme has been saved.
@@ -132,7 +132,7 @@ CREATE TABLE instance_brand_revisions (
 -- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
 -- sha256 is the hex SHA-256 of the content.
 CREATE TABLE instance_brand_files (
-  brand_revision_id uuid NOT NULL,
+  revision_id uuid NOT NULL,
   rendition text NOT NULL CHECK (rendition IN (
     'svg', 'favicon-32', 'favicon-48', 'apple-touch-180', 'pwa-192', 'pwa-512', 'maskable-512',
     'logo-mail', 'logo-dark-mail', 'preview-1200x630'
@@ -141,14 +141,14 @@ CREATE TABLE instance_brand_files (
   content_type text NOT NULL CHECK (content_type IN ('image/svg+xml', 'image/png')),
   width integer NOT NULL CHECK (width > 0),
   height integer NOT NULL CHECK (height > 0),
-  byte_size bigint NOT NULL CHECK (byte_size > 0),
+  file_size bigint NOT NULL CHECK (file_size > 0),
   sha256 text NOT NULL CHECK (length(sha256) = 64),
-  PRIMARY KEY (brand_revision_id, rendition)
+  PRIMARY KEY (revision_id, rendition)
 );
 
 -- Projection: the current set revision of each kind; a clear revision deletes the row.
 CREATE TABLE instance_brands (
-  kind text NOT NULL PRIMARY KEY,
+  kind text NOT NULL PRIMARY KEY CHECK (kind IN ('icon', 'logo', 'logo_dark')),
   revision_id uuid NOT NULL
 );
 
@@ -274,7 +274,7 @@ CREATE TABLE announcement_reads (
 CREATE TABLE service_closure_events (
   id uuid NOT NULL PRIMARY KEY,
   kind text NOT NULL CHECK (kind IN ('announced', 'withdrawn', 'closed', 'delivery_completed')),
-  by_user_id uuid,
+  changed_by_user_id uuid,
   occurred_at timestamptz NOT NULL
 );
 

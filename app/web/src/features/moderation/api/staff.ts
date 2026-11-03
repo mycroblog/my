@@ -302,7 +302,7 @@ export const auditActions = [
   "role_deleted",
   "appeal_upheld",
   "appeal_overturned",
-  "account_deletion_cancelled",
+  "account_deletion_canceled",
   "signup_block_added",
   "signup_block_lifted",
   "custom_emoji_created",

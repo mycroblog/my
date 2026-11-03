@@ -47,7 +47,7 @@ var (
 	// expired, another sign-in's, or used, and a sign-up whose ticket is: it starts again.
 	ErrExternalLoginExpired = errors.New("identity: the external sign-in expired")
 	// ErrExternalLoginFailed reports a sign-in that the provider did not complete: the user
-	// cancelled it, the provider answered an error, or its tokens did not verify.
+	// canceled it, the provider answered an error, or its tokens did not verify.
 	ErrExternalLoginFailed = errors.New("identity: the external sign-in failed")
 	// ErrExternalLoginDenied reports an account at the provider that does not meet the
 	// provider's conditions (ADR-0106 §4).
@@ -313,7 +313,7 @@ type ExternalLogin struct {
 // It fails with a *kernel.RateLimitedError when too many sign-ins failed from the client
 // (LoginIPLimit); with ErrExternalLoginExpired when the cookie or the state is missing, does not
 // match, expired, or was used; with ErrLoginProviderUnavailable for a provider that users cannot
-// sign in with; with an error wrapping ErrExternalLoginFailed when the user cancelled at the
+// sign in with; with an error wrapping ErrExternalLoginFailed when the user canceled at the
 // provider, the provider answered an error, or its ID token does not verify; with
 // ErrExternalLoginDenied when the account does not meet the provider's conditions; with
 // ErrInvalidCredentials when the linked user's account is not active; and with

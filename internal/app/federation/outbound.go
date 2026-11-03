@@ -129,7 +129,7 @@ type RecorderDeps struct {
 //     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor.
 //   - account.moved of a local account's own move: Update of the actor, which carries movedTo,
-//     and Move (ADR-0089); account.move_cancelled: Update of the actor, without movedTo.
+//     and Move (ADR-0089); account.move_canceled: Update of the actor, without movedTo.
 //   - graph.followed / follow_requested / follow_accepted / follow_rejected / follow_terminated
 //     between a local and a remote account: Follow, Accept, Reject, and Undo Follow
 //     (registerFollowProjectors).
@@ -257,7 +257,7 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 
 // registerMoveProjectors records what the move of a local account sends to its followers
 // (ADR-0089): the Update of the actor, whose movedTo Misskey reads when the Move arrives, then
-// the Move; and the Update of the actor when the move is cancelled. The moves of remote accounts
+// the Move; and the Update of the actor when the move is canceled. The moves of remote accounts
 // send nothing.
 func registerMoveProjectors(r *uow.Projectors, rec recorder) {
 	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -277,14 +277,14 @@ func registerMoveProjectors(r *uow.Projectors, rec recorder) {
 			ObjectKind: federation.OutboundMove, ObjectID: m.ID, CreatedAt: m.OccurredAt,
 		}, "")
 	})
-	r.Register(appaccount.EventMoveCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev, ok := e.(appaccount.MoveCancelled)
+	r.Register(appaccount.EventMoveCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appaccount.MoveCanceled)
 		if !ok {
 			return nil
 		}
 		return rec.record(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityUpdate, ActorAccountID: ev.Move.AccountID,
-			ObjectKind: federation.OutboundAccount, ObjectID: ev.Move.AccountID, CreatedAt: ev.Cancellation.CancelledAt,
+			ObjectKind: federation.OutboundAccount, ObjectID: ev.Move.AccountID, CreatedAt: ev.Cancellation.CanceledAt,
 		}, "")
 	})
 }

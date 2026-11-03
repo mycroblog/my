@@ -12,7 +12,7 @@
 | `feed_exclusions` | `viewer_account_id`, `target_account_id`, `reason`（`enum(block, blocked_by, mute)`）, `expires_at`（NULL 可。ミュートの期限） | PK `(viewer_account_id, target_account_id, reason)` | ブロック（両方向の 2 行）・ブロックの解除・ミュート・ミュートの解除 |
 | `feed_domain_mutes` | `viewer_account_id`, `domain` | PK `(viewer_account_id, domain)`。サブドメインにも効く（FR-304） | ドメインのミュート・解除 |
 | `feed_author_restrictions` | `account_id`, `restriction`（`enum(profile_view, visibility_ceiling_private, public_discovery)`）, `effective_until`（NULL 可） | PK `(account_id, restriction)`（複数の処分の和集合をまとめ、最も遅い期限を持つ） | 制限・ライフサイクル（凍結・削除済みは `profile_view` として表す。削除は最終なので、削除済み（`deleted` / `remote_deleted`）の `profile_view` は `effective_until` が NULL） |
-| `feed_domain_restrictions` | `domain`, `restriction`（同上）, `effective_until`（NULL 可） | PK `(domain, restriction)`。サブドメインにも効く | ドメイン単位の制限 |
+| `feed_domain_restrictions` | `domain`, `restriction`（`enum(profile_view, public_discovery)`。ドメインに効く制限だけ）, `effective_until`（NULL 可） | PK `(domain, restriction)`。サブドメインにも効く | ドメイン単位の制限 |
 
 - ドメイン（`author_domain` / `original_author_domain`）はローカルなら `''`、リモートなら投稿・ブーストの URI のホストです。ドメイン単位の制限の照合に使います。
 - ブーストの行は、元投稿の行から作者・ドメイン・言語・版を写します。元投稿の版が進むと、元投稿とそのブーストの行の `language` と `revision_seq` をまとめて更新します（`revision_seq` 以下の版は無視します）。

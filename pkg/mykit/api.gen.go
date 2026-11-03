@@ -306,7 +306,7 @@ func (e AdminAnnouncementState) Valid() bool {
 const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -409,7 +409,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountActionLifted:
 		return true
-	case AdminAuditActionAccountDeletionCancelled:
+	case AdminAuditActionAccountDeletionCanceled:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -4931,7 +4931,7 @@ type AdminAppealPage struct {
 }
 
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
-// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4951,7 +4951,7 @@ type AdminAppealPage struct {
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
-// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -5006,7 +5006,7 @@ type AdminAuditActorKind string
 // AdminAuditEntry One operation of a moderator or an administrator (FR-704).
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
-	// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -5026,7 +5026,7 @@ type AdminAuditEntry struct {
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
-	// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -16292,7 +16292,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before.
+	// move was canceled, or for a target the account moved to before.
 	//
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
@@ -16327,7 +16327,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before.
+	// move was canceled, or for a target the account moved to before.
 	//
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
@@ -16353,7 +16353,7 @@ type ClientInterface interface {
 	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -21921,7 +21921,7 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before.
+// move was canceled, or for a target the account moved to before.
 //
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
@@ -21966,7 +21966,7 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before.
+// move was canceled, or for a target the account moved to before.
 //
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
@@ -22002,7 +22002,7 @@ func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequ
 // Cancels the move of the user's account (ADR-0089): the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -47276,7 +47276,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before.
+	// move was canceled, or for a target the account moved to before.
 	//
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
@@ -47311,7 +47311,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before.
+	// move was canceled, or for a target the account moved to before.
 	//
 	// Once moved, the account's followers on other servers get a `Move` and follow the target,
 	// the followers on this server follow it too, and the account's profile names the target
@@ -47337,7 +47337,7 @@ type ClientWithResponsesInterface interface {
 	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -76054,7 +76054,7 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before.
+// move was canceled, or for a target the account moved to before.
 //
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
@@ -76095,7 +76095,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before.
+// move was canceled, or for a target the account moved to before.
 //
 // Once moved, the account's followers on other servers get a `Move` and follow the target,
 // the followers on this server follow it too, and the account's profile names the target
@@ -76127,7 +76127,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, bo
 // Cancels the move of the user's account (ADR-0089): the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Returns a wrapper object for the known response body format(s).

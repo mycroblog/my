@@ -113,7 +113,7 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 - A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window_days` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
 - When a user appeals, people with `manage_accounts` get a notification (`admin_appeal`). When it is reviewed, the user gets a notification (`appeal_decided`) and can see the outcome and `public_reason`. The reviewer is not shown.
 - Overturning lifts the action in the same transaction (the same effect as `lift`, with an empty lift reason). Overturning `delete_statuses` does not bring back the deleted posts. An action already lifted before the review stays as it is.
-- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_cancelled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
+- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_canceled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
   If the account was deleted before the review, it cannot be overturned (`422`, `/api/v1/problems/not-appealable`; upholding is still possible).
 - A review happens once. Reviewing again with the same outcome changes nothing, and the opposite outcome gives `409` (`/api/v1/problems/appeal-decided`).
 
@@ -334,7 +334,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 
 | Target kind | Operations |
 | --- | --- |
-| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_cancelled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
+| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
 | `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
@@ -342,7 +342,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (instance rules) |
 | `role` | `role_granted`, `role_revoked` (granting and revoking a role for a user), `role_created`, `role_updated`, `role_deleted` (creating, changing and deleting a role) |
-| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_cancelled` for a `ban`) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_canceled` for a `ban`) |
 | `signup_block` | `signup_block_added`, `signup_block_lifted` (adding and lifting a sign-up block) |
 | `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |

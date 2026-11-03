@@ -57,16 +57,16 @@ func (q *Queries) DeleteCostItemHead(ctx context.Context, costItemID string) err
 }
 
 const findIncomeMovementID = `-- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = ? AND provider_id = ?
+SELECT id FROM income_movements WHERE provider = ? AND provider_movement_id = ?
 `
 
 type FindIncomeMovementIDParams struct {
-	Provider   string
-	ProviderID string
+	Provider           string
+	ProviderMovementID string
 }
 
 func (q *Queries) FindIncomeMovementID(ctx context.Context, arg FindIncomeMovementIDParams) (string, error) {
-	row := q.db.QueryRowContext(ctx, findIncomeMovementID, arg.Provider, arg.ProviderID)
+	row := q.db.QueryRowContext(ctx, findIncomeMovementID, arg.Provider, arg.ProviderMovementID)
 	var id string
 	err := row.Scan(&id)
 	return id, err
@@ -101,13 +101,12 @@ func (q *Queries) GetCostItemCurrent(ctx context.Context, costItemID string) (Ge
 }
 
 const insertBillingImportReservation = `-- name: InsertBillingImportReservation :exec
-INSERT INTO billing_import_reservations (id, source, run_key, requests, reserved_at) VALUES (?, ?, ?, ?, ?)
+INSERT INTO billing_import_reservations (id, source, requests, reserved_at) VALUES (?, ?, ?, ?)
 `
 
 type InsertBillingImportReservationParams struct {
 	ID         string
 	Source     string
-	RunKey     string
 	Requests   int64
 	ReservedAt int64
 }
@@ -118,7 +117,6 @@ func (q *Queries) InsertBillingImportReservation(ctx context.Context, arg Insert
 	_, err := q.db.ExecContext(ctx, insertBillingImportReservation,
 		arg.ID,
 		arg.Source,
-		arg.RunKey,
 		arg.Requests,
 		arg.ReservedAt,
 	)
@@ -347,38 +345,38 @@ func (q *Queries) InsertImportedCostRevision(ctx context.Context, arg InsertImpo
 const insertIncomeMovement = `-- name: InsertIncomeMovement :execrows
 
 INSERT INTO income_movements (
-  id, provider, provider_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
   covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT (provider, provider_id) DO NOTHING
+ON CONFLICT (provider, provider_movement_id) DO NOTHING
 `
 
 type InsertIncomeMovementParams struct {
-	ID               string
-	Provider         string
-	ProviderID       string
-	Kind             string
-	ParentMovementID sql.NullString
-	SubscriptionID   sql.NullString
-	OccurredAt       int64
-	OccurredOn       string
-	CoversStartsOn   sql.NullString
-	CoversEndsOn     sql.NullString
-	GrossMinor       int64
-	FeeMinor         int64
-	NetMinor         int64
-	Currency         string
-	RecordedAt       int64
+	ID                 string
+	Provider           string
+	ProviderMovementID string
+	Kind               string
+	ParentMovementID   sql.NullString
+	SubscriptionID     sql.NullString
+	OccurredAt         int64
+	OccurredOn         string
+	CoversStartsOn     sql.NullString
+	CoversEndsOn       sql.NullString
+	GrossMinor         int64
+	FeeMinor           int64
+	NetMinor           int64
+	Currency           string
+	RecordedAt         int64
 }
 
 // The income records (ADR-0073 section 8). income_movements is written once per (provider,
-// provider_id); the totals read it on every request.
+// provider_movement_id); the totals read it on every request.
 // InsertIncomeMovement writes nothing when the movement is already recorded.
 func (q *Queries) InsertIncomeMovement(ctx context.Context, arg InsertIncomeMovementParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, insertIncomeMovement,
 		arg.ID,
 		arg.Provider,
-		arg.ProviderID,
+		arg.ProviderMovementID,
 		arg.Kind,
 		arg.ParentMovementID,
 		arg.SubscriptionID,
@@ -399,8 +397,8 @@ func (q *Queries) InsertIncomeMovement(ctx context.Context, arg InsertIncomeMove
 }
 
 const knownIncomeMovements = `-- name: KnownIncomeMovements :many
-SELECT provider_id FROM income_movements
-WHERE provider = ?1 AND provider_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+SELECT provider_movement_id FROM income_movements
+WHERE provider = ?1 AND provider_movement_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
 `
 
 type KnownIncomeMovementsParams struct {
@@ -417,11 +415,11 @@ func (q *Queries) KnownIncomeMovements(ctx context.Context, arg KnownIncomeMovem
 	defer rows.Close()
 	items := []string{}
 	for rows.Next() {
-		var provider_id string
-		if err := rows.Scan(&provider_id); err != nil {
+		var provider_movement_id string
+		if err := rows.Scan(&provider_movement_id); err != nil {
 			return nil, err
 		}
-		items = append(items, provider_id)
+		items = append(items, provider_movement_id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -640,8 +638,8 @@ func (q *Queries) ListImportedCostHeads(ctx context.Context, arg ListImportedCos
 }
 
 const listIncomeMovements = `-- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
-  m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_id AS parent_provider_id
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+  m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= ?1 AND m.occurred_on <= ?2
   AND (CAST(?3 AS TEXT) = '' OR m.kind = ?3)
@@ -661,21 +659,21 @@ type ListIncomeMovementsParams struct {
 }
 
 type ListIncomeMovementsRow struct {
-	ID               string
-	Provider         string
-	ProviderID       string
-	Kind             string
-	SubscriptionID   sql.NullString
-	OccurredAt       int64
-	OccurredOn       string
-	CoversStartsOn   sql.NullString
-	CoversEndsOn     sql.NullString
-	GrossMinor       int64
-	FeeMinor         int64
-	NetMinor         int64
-	Currency         string
-	RecordedAt       int64
-	ParentProviderID sql.NullString
+	ID                       string
+	Provider                 string
+	ProviderMovementID       string
+	Kind                     string
+	SubscriptionID           sql.NullString
+	OccurredAt               int64
+	OccurredOn               string
+	CoversStartsOn           sql.NullString
+	CoversEndsOn             sql.NullString
+	GrossMinor               int64
+	FeeMinor                 int64
+	NetMinor                 int64
+	Currency                 string
+	RecordedAt               int64
+	ParentProviderMovementID sql.NullString
 }
 
 // ListIncomeMovements returns up to lim movements on the dates from starts_on to ends_on, of
@@ -698,7 +696,7 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 		if err := rows.Scan(
 			&i.ID,
 			&i.Provider,
-			&i.ProviderID,
+			&i.ProviderMovementID,
 			&i.Kind,
 			&i.SubscriptionID,
 			&i.OccurredAt,
@@ -710,7 +708,7 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 			&i.NetMinor,
 			&i.Currency,
 			&i.RecordedAt,
-			&i.ParentProviderID,
+			&i.ParentProviderMovementID,
 		); err != nil {
 			return nil, err
 		}

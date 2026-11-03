@@ -93,7 +93,7 @@ CREATE TABLE delivery_attempts (
   delivery_id uuid NOT NULL,
   outcome text NOT NULL CHECK (outcome IN ('succeeded', 'retryable_failure', 'permanent_failure', 'skipped')),
   signature_scheme text CHECK (signature_scheme IN ('rfc9421', 'cavage')),
-  http_status integer,
+  status_code integer,
   error text,
   attempted_at timestamptz NOT NULL
 );

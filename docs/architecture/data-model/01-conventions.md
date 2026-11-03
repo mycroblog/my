@@ -56,6 +56,8 @@
 - 表記: カラムは特記がなければ `NOT NULL`。NULL 可のものは「NULL 可」と書きます。
   - **状態を NULL で表すことはしません**（ADR-0020 規約 4）。NULL 可は「任意の関連」（例: 通報に基づかない処分の `report_id`）と「無期限」（`expires_at`）に限ります。
 - 名前: カラム・テーブルは英語スネークケースで、テーブル名は複数形です。
+  - 例外として、1 件ごとの実体の集まりではなく、1 つの値か不可算の名詞を表す表は単数形のままにします（`session_activity`・`oauth_token_family_last_used`・`status_mention_index`・`media_focus`・`remote_media_cache`・`instance_health`・`instance_theme`・`tag_usage`）。
+  - インデックスの名前は `<table>_<columns>` を基本にします。部分インデックスなど列だけでは用途が分からないものは、列の代わりに用途の名前を付けてかまいません（`feed_entries_local`）。一意違反を名前で見分けるコード（`isUniqueViolation`）があるので、既存の名前を変えるときはそちらも合わせます。
   - 大文字小文字を無視する値は正規化済みカラム（`*_normalized`）を別に持ち、そちらに一意制約を張ります。
   - ドメイン名とリモートの URI のホストは、IDNA 2008 の A-label（小文字の punycode）で保存します（[federation §1.2](../federation.md#12-自サーバーの-uri)）。
 - 「ローカル」を表すドメインは空文字 `''` です。NULL は一意制約上は互いに別の値として扱われるため、NULL では表しません。

@@ -113,11 +113,11 @@ SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries
 WHERE outbound_activity_id = @outbound_activity_id AND id > @after_id ORDER BY id LIMIT @batch_limit;
 
 -- name: InsertDeliveryAttempt :exec
-INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at)
-VALUES (@id, @delivery_id, @outcome, @signature_scheme, @http_status, @error, @attempted_at);
+INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at)
+VALUES (@id, @delivery_id, @outcome, @signature_scheme, @status_code, @error, @attempted_at);
 
 -- name: ListDeliveryAttempts :many
-SELECT id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at FROM delivery_attempts
+SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
 WHERE delivery_id = @delivery_id ORDER BY id;
 
 -- InsertOutboundFanOutCompletion records once that the fan-out of an activity enqueued its last

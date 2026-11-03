@@ -60,30 +60,30 @@ func (q *Queries) GetInstanceBrandRevision(ctx context.Context, id string) (Inst
 }
 
 const insertInstanceBrandFile = `-- name: InsertInstanceBrandFile :exec
-INSERT INTO instance_brand_files (brand_revision_id, rendition, blob_key, content_type, width, height, byte_size, sha256)
+INSERT INTO instance_brand_files (revision_id, rendition, blob_key, content_type, width, height, file_size, sha256)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertInstanceBrandFileParams struct {
-	BrandRevisionID string
-	Rendition       string
-	BlobKey         string
-	ContentType     string
-	Width           int64
-	Height          int64
-	ByteSize        int64
-	Sha256          string
+	RevisionID  string
+	Rendition   string
+	BlobKey     string
+	ContentType string
+	Width       int64
+	Height      int64
+	FileSize    int64
+	Sha256      string
 }
 
 func (q *Queries) InsertInstanceBrandFile(ctx context.Context, arg InsertInstanceBrandFileParams) error {
 	_, err := q.db.ExecContext(ctx, insertInstanceBrandFile,
-		arg.BrandRevisionID,
+		arg.RevisionID,
 		arg.Rendition,
 		arg.BlobKey,
 		arg.ContentType,
 		arg.Width,
 		arg.Height,
-		arg.ByteSize,
+		arg.FileSize,
 		arg.Sha256,
 	)
 	return err
@@ -118,8 +118,8 @@ func (q *Queries) InsertInstanceBrandRevision(ctx context.Context, arg InsertIns
 }
 
 const listInstanceBrandFiles = `-- name: ListInstanceBrandFiles :many
-SELECT rendition, blob_key, content_type, width, height, byte_size, sha256
-FROM instance_brand_files WHERE brand_revision_id = ? ORDER BY rendition
+SELECT rendition, blob_key, content_type, width, height, file_size, sha256
+FROM instance_brand_files WHERE revision_id = ? ORDER BY rendition
 `
 
 type ListInstanceBrandFilesRow struct {
@@ -128,12 +128,12 @@ type ListInstanceBrandFilesRow struct {
 	ContentType string
 	Width       int64
 	Height      int64
-	ByteSize    int64
+	FileSize    int64
 	Sha256      string
 }
 
-func (q *Queries) ListInstanceBrandFiles(ctx context.Context, brandRevisionID string) ([]ListInstanceBrandFilesRow, error) {
-	rows, err := q.db.QueryContext(ctx, listInstanceBrandFiles, brandRevisionID)
+func (q *Queries) ListInstanceBrandFiles(ctx context.Context, revisionID string) ([]ListInstanceBrandFilesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listInstanceBrandFiles, revisionID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (q *Queries) ListInstanceBrandFiles(ctx context.Context, brandRevisionID st
 			&i.ContentType,
 			&i.Width,
 			&i.Height,
-			&i.ByteSize,
+			&i.FileSize,
 			&i.Sha256,
 		); err != nil {
 			return nil, err

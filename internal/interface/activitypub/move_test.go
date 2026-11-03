@@ -37,7 +37,7 @@ func (f fakeMoves) FindByID(ctx context.Context, id string) (appaccount.Actor, e
 // TestMovedActor checks GET of a local actor that moved (ADR-0089, federation.md §10): its
 // document names the target in movedTo, also in the minimal document that authorized fetch
 // serves to an unsigned request (Misskey reads it when the Move arrives), and has none once the
-// move is cancelled.
+// move is canceled.
 func TestMovedActor(t *testing.T) {
 	s := newServer(t, accountDomain)
 	target := "https://remote.example/users/erin"
@@ -56,7 +56,7 @@ func TestMovedActor(t *testing.T) {
 	delete(s.moves.targets, aliceID)
 	rec = s.get(t, "/ap/actors/"+aliceID, acceptMastodon)
 	if doc := decode(t, rec.Body.Bytes()); rec.Code != http.StatusOK || doc["movedTo"] != nil {
-		t.Errorf("GET of alice after the move is cancelled = %d %s, want no movedTo", rec.Code, rec.Body)
+		t.Errorf("GET of alice after the move is canceled = %d %s, want no movedTo", rec.Code, rec.Body)
 	}
 	if got := account.ActorURI(host, remoteID); got == target {
 		t.Fatalf("the remote target has a local URI")

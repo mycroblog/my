@@ -63,7 +63,7 @@ func (s *Service) ScheduleDeletionByModeration(ctx context.Context, tx uow.Tx, a
 var ErrAlreadyDeleted = errors.New("account: the account is deleted")
 
 // CancelDeletionByModeration records inside tx that a moderation decision (an overturned appeal
-// of a ban) cancels the scheduled deletion of an account: a deletion_cancelled lifecycle event
+// of a ban) cancels the scheduled deletion of an account: a deletion_canceled lifecycle event
 // initiated by a moderator that names the action, with ID eventID (data-model §4.2). It reports
 // whether it recorded one: an account whose deletion is not scheduled is left as it is. A deleted
 // account fails with ErrAlreadyDeleted. The state is read with a lock where the database takes
@@ -81,7 +81,7 @@ func (s *Service) CancelDeletionByModeration(ctx context.Context, tx uow.Tx, acc
 		return false, nil
 	}
 	e := account.LifecycleEvent{
-		ID: eventID, AccountID: accountID, Kind: account.LifecycleDeletionCancelled,
+		ID: eventID, AccountID: accountID, Kind: account.LifecycleDeletionCanceled,
 		InitiatedBy: account.InitiatedByModerator, ModerationActionID: actionID, OccurredAt: kernel.Normalize(s.d.Clock.Now()),
 	}
 	if err := s.d.Repository.InsertLifecycleEvent(ctx, tx, e); err != nil {
@@ -151,7 +151,7 @@ func (s *Service) RegisterDeletionJobs(reg *queue.JobHandlerRegistry, sched *que
 // ExecuteDueDeletions deletes up to deletionBatch accounts whose scheduled deletion is due: each
 // gets a deleted lifecycle event initiated by the system, in a short transaction of its own,
 // which hides it and its statuses at once and sends the Delete of the actor (federation.md
-// §7.1). An account whose deletion was cancelled or rescheduled meanwhile is left as it is, so
+// §7.1). An account whose deletion was canceled or rescheduled meanwhile is left as it is, so
 // running it again is safe. It returns how many accounts it deleted.
 func (s *Service) ExecuteDueDeletions(ctx context.Context) (int, error) {
 	now := kernel.Normalize(s.d.Clock.Now())

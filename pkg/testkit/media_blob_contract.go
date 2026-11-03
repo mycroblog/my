@@ -23,7 +23,7 @@ import (
 var errBlobPut = errors.New("testkit: blob write failed")
 
 // flakyBlobs is a blob store that, for the keys that putFails matches, stores the blob and then
-// fails the write, as a write cancelled after the object was published does; deletions fail
+// fails the write, as a write canceled after the object was published does; deletions fail
 // while failDeletes is set. beforePut, when set, runs once before the first write of a key it
 // matches.
 type flakyBlobs struct {

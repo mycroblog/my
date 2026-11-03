@@ -307,7 +307,7 @@ func (s *Service) CountPendingAppeals(ctx context.Context) (int64, error) {
 // entry in one transaction, and emits AppealDecided. Overturning also lifts the action in that
 // transaction, with LiftAccountAction's effects and audit log entry, a ban included; an action
 // lifted meanwhile stays as it is. Overturning a ban first cancels the deletion of its account
-// (Lifecycles.CancelDeletionByModeration, audited as account_deletion_cancelled); a ban whose
+// (Lifecycles.CancelDeletionByModeration, audited as account_deletion_canceled); a ban whose
 // account is deleted fails with ErrNotAppealable, and without Lifecycles with
 // ErrUnsupportedAction. Deciding a decided appeal the same way again records nothing; deciding it
 // otherwise fails with ErrAppealDecided. An unknown appeal fails with ErrNotFound, and an
@@ -339,7 +339,7 @@ func (s *Service) DecideAppeal(ctx context.Context, appealID string, decision mo
 	if err != nil {
 		return AppealView{}, err
 	}
-	// The IDs follow the order of the records: the cancelled deletion, the lift, the decision.
+	// The IDs follow the order of the records: the canceled deletion, the lift, the decision.
 	cancelID, cancelAuditID, liftAuditID, auditID := s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID()
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		err := repo.InsertAppealDecision(ctx, tx, d)
@@ -400,15 +400,15 @@ func (s *Service) cancelBanDeletion(ctx context.Context, tx uow.Tx, a moderation
 	if s.d.Lifecycles == nil {
 		return fmt.Errorf("%w: overturning ban %s", ErrUnsupportedAction, a.ID)
 	}
-	cancelled, err := s.d.Lifecycles.CancelDeletionByModeration(ctx, tx, a.TargetAccountID, a.ID, eventID)
+	canceled, err := s.d.Lifecycles.CancelDeletionByModeration(ctx, tx, a.TargetAccountID, a.ID, eventID)
 	if errors.Is(err, appaccount.ErrAlreadyDeleted) {
 		return fmt.Errorf("%w: the account of ban %s is deleted", ErrNotAppealable, a.ID)
 	}
-	if err != nil || !cancelled {
+	if err != nil || !canceled {
 		return err
 	}
 	return s.emitAudit(ctx, tx, moderation.AuditEntry{
-		ID: auditID, Action: moderation.AuditAccountDeletionCancelled, TargetKind: moderation.AuditTargetAccount,
+		ID: auditID, Action: moderation.AuditAccountDeletionCanceled, TargetKind: moderation.AuditTargetAccount,
 		TargetID: a.TargetAccountID, TargetLabel: label, SourceEventID: eventID, OccurredAt: kernel.Normalize(s.d.Clock.Now()),
 	}, byUserID)
 }

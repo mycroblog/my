@@ -12,7 +12,7 @@ const (
 	LifecycleDeactivated       LifecycleKind = "deactivated"
 	LifecycleReactivated       LifecycleKind = "reactivated"
 	LifecycleDeletionScheduled LifecycleKind = "deletion_scheduled"
-	LifecycleDeletionCancelled LifecycleKind = "deletion_cancelled"
+	LifecycleDeletionCanceled  LifecycleKind = "deletion_canceled"
 	LifecycleDeleted           LifecycleKind = "deleted"
 	LifecycleRemoteDeleted     LifecycleKind = "remote_deleted"
 )
@@ -83,7 +83,7 @@ func (s LifecycleState) Apply(e LifecycleEvent) LifecycleState {
 	switch e.Kind {
 	case LifecycleDeactivated:
 		next.State = StateDeactivated
-	case LifecycleReactivated, LifecycleDeletionCancelled:
+	case LifecycleReactivated, LifecycleDeletionCanceled:
 		next.State = StateActive
 	case LifecycleDeletionScheduled:
 		next.State = StateDeletionScheduled
