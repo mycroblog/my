@@ -3,6 +3,7 @@
 package platform_test
 
 import (
+	"encoding/json"
 	"html"
 	"net/http"
 	"regexp"
@@ -12,9 +13,11 @@ import (
 	"time"
 
 	mailsmtp "github.com/mycroblog/my/internal/adapter/mail/smtp"
+	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/authpages"
+	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit/mailpittest"
 )
@@ -117,5 +120,63 @@ func TestEmailLinksThroughMailpit(t *testing.T) {
 	}
 	if c, status := signIn(newPassword); status != http.StatusSeeOther || !signedIn(c) {
 		t.Errorf("sign-in with the new password = %d", status)
+	}
+}
+
+// TestDeactivationEmailThroughMailpit deactivates an account through the client API with
+// mail = smtp on a Mailpit server: the job sends the one email over SMTP, whose text and HTML state
+// the date of the deletion and link to the sign-in page that undoes it.
+func TestDeactivationEmailThroughMailpit(t *testing.T) {
+	mp := mailpittest.New(t, mailpittest.Options{STARTTLS: true, Username: "mailer", Password: "s3cret"})
+	mailer, err := mailsmtp.New(mailsmtp.Options{
+		Host: mp.Host, Port: mp.Port, Username: "mailer", Password: "s3cret", From: "noreply@example.test", TLSConfig: mp.TLSConfig,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test",
+		"MY_MAIL_SMTP_HOST": mp.Host, "MY_MAIL_SMTP_PORT": strconv.Itoa(mp.Port), "MY_MAIL_SMTP_USERNAME": "mailer", "MY_MAIL_SMTP_PASSWORD": "s3cret",
+	})
+	s := startApp(t, cfg, platform.AppOptions{Mailer: mailer}, platform.ServeOptions{}, nil)
+	ctx := t.Context()
+	const email, password = "alice@example.com", "correct horse battery"
+	if _, err := s.app.Identity.CreateAdmin(ctx, identity.CreateAdminInput{Username: "root", Email: "root@example.com", Password: password}); err != nil {
+		t.Fatal(err)
+	}
+	alice, err := s.app.Identity.CreateAdmin(ctx, identity.CreateAdminInput{Username: "alice", Email: email, Password: password})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.url+"/api/v1/accounts/deactivation", strings.NewReader(`{"password":"`+password+`"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+issueTokens(t, s.app, alice.User.ID, "").AccessToken)
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var d clientapi.Deactivation
+	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("POST /accounts/deactivation = %d, %v", resp.StatusCode, err)
+	}
+
+	m := mp.WaitFor(t, email, 1, 30*time.Second)
+	if m.From.Address != "noreply@example.test" || len(m.To) != 1 || m.To[0].Address != email {
+		t.Errorf("the email is from %+v to %+v", m.From, m.To)
+	}
+	date := identity.DeletionDateText(d.DeletionDueAt, "")
+	link := "https://example.test" + authpages.PathSignIn
+	if !strings.Contains(m.Text, date) || !strings.Contains(m.Text, link) {
+		t.Errorf("the text does not state %q or link to %s:\n%s", date, link, m.Text)
+	}
+	if !strings.Contains(html.UnescapeString(m.HTML), date) || !strings.Contains(m.HTML, `href="`+html.EscapeString(link)+`"`) {
+		t.Errorf("the HTML does not state %q or link to %s:\n%s", date, link, m.HTML)
+	}
+	if n := len(mp.Messages(t)); n != 1 {
+		t.Errorf("%d emails in Mailpit, want the 1", n)
 	}
 }
