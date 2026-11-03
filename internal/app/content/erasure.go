@@ -30,8 +30,8 @@ type ErasureRepository interface {
 	// bookmarks, and pins of them. The deletions stay.
 	EraseStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// EraseInteractionsBy deletes up to limit of each of the account's favourites, reactions,
-	// bookmarks, pins, and boosts (with their retractions), and its automatic deletion policy,
-	// counting the favourites, the reactions, and the boosts in force out of the statuses'
+	// bookmarks, pins, boosts (with their retractions), and remote media files that nothing uses,
+	// and its automatic deletion policy, counting the favourites, the reactions, and the boosts in force out of the statuses'
 	// counters, and returns the most rows that one kind lost.
 	EraseInteractionsBy(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error)
 }
@@ -53,7 +53,7 @@ type ErasureDeps struct {
 	Clock    kernel.Clock
 }
 
-// StatusEraser erases the statuses of deleted local accounts (data-model §8): each status that
+// StatusEraser erases the statuses of deleted accounts, local and remote (data-model §8): each status that
 // is not deleted yet gets a deletion with origin account_deletion, which takes it out of every
 // projection as the author's deletion does but sends no Delete (the Delete of the actor stands
 // for them, federation.md §7.1); then its rows, every boost, favourite, reaction, bookmark, and pin of it,
@@ -117,8 +117,8 @@ func (e *StatusEraser) EraseAccountData(ctx context.Context, t appaccount.Erasur
 	return out, err
 }
 
-// InteractionEraser erases a deleted local account's favourites, reactions, bookmarks, pins, and boosts of
-// other statuses (data-model §8), counting them out of the statuses' counters. The timeline
+// InteractionEraser erases a deleted account's favourites, reactions, bookmarks, pins, and boosts of
+// other statuses (data-model §8), and a remote account's media files, counting them out of the statuses' counters. The timeline
 // entries of its boosts and the notifications of its interactions go with the timeline and
 // notification modules' erasers.
 type InteractionEraser struct {

@@ -1,16 +1,17 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- The erasure of deleted local accounts' data (data-model sections 4.2 and 8, #397). Each module
+-- The erasure of deleted accounts' data (data-model sections 4.2 and 8, #397). Each module
 -- erases its own tables; the statements whose rows grow with the number of users or followers
 -- take a bounded batch (@lim). A list argument is an array of strings.
 
 -- account ---------------------------------------------------------------------------------------
 
--- ListAccountsToErase returns, in account ID order after @after, up to @lim local accounts that
--- were deleted at or before @deleted_before and are not erased yet, with their users.
+-- ListAccountsToErase returns, in account ID order after @after, up to @lim accounts that were
+-- deleted at or before @deleted_before and are not erased yet, local or remote (remote_deleted),
+-- with the user of a local one.
 -- name: ListAccountsToErase :many
 SELECT s.account_id, la.user_id FROM account_lifecycle_states s
-JOIN local_accounts la ON la.account_id = s.account_id
+LEFT JOIN local_accounts la ON la.account_id = s.account_id
 WHERE s.state = 'deleted' AND s.since <= sqlc.arg(deleted_before)::timestamptz
   AND s.account_id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT EXISTS (SELECT 1 FROM account_erasures e WHERE e.account_id = s.account_id)
@@ -33,6 +34,10 @@ DELETE FROM account_profile_revision_emojis WHERE revision_id IN (
 DELETE FROM account_profile_revision_sources WHERE revision_id IN (
   SELECT r.id FROM account_profile_revisions r WHERE r.account_id = sqlc.arg(account_id));
 
+-- name: EraseRemoteProfileRevisions :exec
+DELETE FROM remote_profile_revisions WHERE revision_id IN (
+  SELECT r.id FROM account_profile_revisions r WHERE r.account_id = sqlc.arg(account_id));
+
 -- name: EraseProfileHead :exec
 DELETE FROM account_profile_heads WHERE account_id = sqlc.arg(account_id);
 
@@ -52,6 +57,23 @@ DELETE FROM account_keys WHERE account_id = sqlc.arg(account_id);
 
 -- name: EraseAliases :exec
 DELETE FROM account_aliases WHERE account_id = sqlc.arg(account_id);
+
+-- A remote account keeps no snapshot, endpoint, or handle: the handle may be someone else's later.
+-- A local account has none of the first three and keeps its handle, so that its username is not
+-- used again.
+
+-- name: EraseRemoteAccountSnapshots :exec
+DELETE FROM remote_account_snapshots WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHead :exec
+DELETE FROM remote_account_heads WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHandleVerifications :exec
+DELETE FROM remote_account_handle_verifications WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHandle :exec
+DELETE FROM account_handles WHERE account_handles.account_id = sqlc.arg(account_id)
+  AND EXISTS (SELECT 1 FROM remote_accounts r WHERE r.account_id = sqlc.arg(account_id));
 
 -- name: InsertAccountErasure :exec
 INSERT INTO account_erasures (account_id, erased_at) VALUES (sqlc.arg(account_id), sqlc.arg(erased_at))
@@ -278,6 +300,16 @@ DELETE FROM bookmarks WHERE bookmarks.account_id = sqlc.arg(account_id) AND book
 -- name: ErasePollVotesBy :execrows
 DELETE FROM poll_votes WHERE poll_votes.id IN (
   SELECT v.id FROM poll_votes v WHERE v.account_id = sqlc.arg(account_id) ORDER BY v.id LIMIT sqlc.arg(lim));
+
+-- The remote media files of the account that no attachment and no custom emoji uses, up to lim.
+-- A status that the moderation records keep keeps its attachments until a later run.
+
+-- name: ListRemoteMediaToErase :many
+SELECT r.media_id FROM remote_media r
+WHERE r.owner_account_id = sqlc.arg(account_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = r.media_id)
+ORDER BY r.media_id LIMIT sqlc.arg(lim);
 
 -- name: ErasePinsBy :execrows
 DELETE FROM status_pins WHERE account_id = sqlc.arg(account_id);

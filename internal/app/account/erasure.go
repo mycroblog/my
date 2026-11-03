@@ -16,14 +16,15 @@ import (
 )
 
 const (
-	// JobEraseDeletedAccounts erases the data of the deleted local accounts (data-model §8,
-	// FR-008). Its payload is the cursor of the run (none for the first job of a run).
+	// JobEraseDeletedAccounts erases the data of the deleted accounts, local and remote
+	// (data-model §8, FR-008). Its payload is the cursor of the run (none for the first job of a run).
 	JobEraseDeletedAccounts = "account.erase_deleted"
 	// ErasureInterval is the period of the erasure's schedule.
 	ErasureInterval = time.Hour
 	// ErasureDelay is how long a deleted account's data stays before the erasure: the Delete of
-	// the actor reaches its followers with the account's key and its follows, and its delivery
-	// retries end within about four days (federation.md §7.3).
+	// a local actor reaches its followers with the account's key and its follows, and its
+	// delivery retries end within about four days (federation.md §7.3). The retries of a remote
+	// actor's server end within such a time too, so no late activity needs its keys.
 	ErasureDelay = 7 * 24 * time.Hour
 	// ErasureBatch is the number of rows (statuses, for the statuses) that one erasure statement
 	// deletes; erasureMaxBatches bounds the transactions of one job, and a job that used them up
@@ -34,8 +35,8 @@ const (
 	erasureAccounts = 20
 )
 
-// ErasureTarget is a deleted local account whose data the erasure removes, with the user who
-// logged in as it.
+// ErasureTarget is a deleted account whose data the erasure removes, with the user who logged in
+// as it; UserID is "" for a remote account.
 type ErasureTarget struct {
 	AccountID string
 	UserID    string
@@ -52,7 +53,7 @@ type ErasureStep struct {
 	Kept bool
 }
 
-// DataEraser erases one module's part of a deleted local account's data (data-model §8). Each
+// DataEraser erases one module's part of a deleted account's data (data-model §8). Each
 // call is one short transaction that deletes at most about limit rows, starting from cursor (""
 // for the first batch of a run), and is safe to repeat; external I/O such as blob deletions runs
 // outside that transaction. The content, graph, timeline, notification, and identity modules
@@ -65,12 +66,13 @@ type DataEraser interface {
 // ErasureRepository is the part of the account module's persistence that the erasure uses. The
 // database adapters' account repositories implement it and pass testkit.AccountErasureContract.
 type ErasureRepository interface {
-	// ListAccountsToErase returns, outside any transaction, up to limit local accounts in ID
-	// order after the account ID after that were deleted at or before deletedBefore and are not
-	// erased yet.
+	// ListAccountsToErase returns, outside any transaction, up to limit accounts, local or
+	// remote, in ID order after the account ID after that were deleted at or before deletedBefore
+	// and are not erased yet.
 	ListAccountsToErase(ctx context.Context, deletedBefore time.Time, after string, limit int) ([]ErasureTarget, error)
 	// EraseProfilesAndKeys deletes the profile revisions of an account with their sources and
-	// fields, its profile head, and its keys with their private halves and revocations.
+	// fields, its profile head, and its keys with their private halves and revocations; and for a
+	// remote account its snapshots, its head, its handle, and the checks of its handle.
 	EraseProfilesAndKeys(ctx context.Context, tx uow.Tx, accountID string) error
 	// InsertErasure records that the account is erased; a second record does nothing.
 	InsertErasure(ctx context.Context, tx uow.Tx, accountID string, at time.Time) error
@@ -101,13 +103,14 @@ type ErasureDeps struct {
 	Batch int
 }
 
-// Eraser runs JobEraseDeletedAccounts (data-model §8): a local account deleted longer than the
-// delay ago, that no retention hold preserves, loses its statuses (each recorded as deleted with
+// Eraser runs JobEraseDeletedAccounts (data-model §8): an account deleted longer than the
+// delay ago, local or remote (remote_deleted), that no retention hold preserves, loses its statuses (each recorded as deleted with
 // origin account_deletion first), its favourites, reactions, bookmarks, pins, boosts, follows, blocks, mutes,
 // its timeline and notification rows, its uploads with their blobs, its user's email addresses,
 // credentials, sessions, tokens, preferences, and registration application, and its profile
-// revisions and keys. The account's row with its URI and domain, its username, its lifecycle,
-// and the moderation records stay. A status that a report or an action points at keeps its rows
+// revisions and keys. The account's row with its URI and domain, a local account's username, its
+// lifecycle, and the moderation records stay. A remote account also loses its remote media files,
+// snapshots, head, and handle; the statuses that local accounts bookmarked or replied to go too. A status that a report or an action points at keeps its rows
 // and its media files until the moderation purge erases that record, and the account is
 // recorded as erased only when nothing is left.
 type Eraser struct{ d ErasureDeps }
