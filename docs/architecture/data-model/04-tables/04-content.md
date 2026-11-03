@@ -111,7 +111,7 @@
 - 1 トランザクションで消すのは 100 件まで、1 回のジョブで 10 トランザクションまでです。続きはカーソル（投稿の `id`）を持った次のジョブが読みます。
   リモートの投稿の `id` は公開日時の UUIDv7（§1.3）なので、走査は主キーの範囲（期限の UUIDv7 の下限より前）で止まります。
 - リレーだけが運んだ投稿（[ADR-0061](../../../adr/0061-federation-relays.md)）は、取り込みのトランザクションで `relayed_statuses` に記録します。
-  1 時間ごとの消去ジョブ `content.purge_relayed_statuses` が、`relayed_statuses` にあり、公開から設定 `relay_status_retention`（既定 7 日）を過ぎ、上と同じくローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、同じ規則（`origin = retention`、保全と通報の対象を残す）で消します。
+  1 時間ごとの消去ジョブ `content.purge_relayed_statuses` が、`relayed_statuses` にあり、公開から設定 `relay_status_retention_days`（既定 7 日）を過ぎ、上と同じくローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、同じ規則（`origin = retention`、保全と通報の対象を残す）で消します。
   フォローは `graph` の公開 API（フォロワーの数）でトランザクションの外で調べ、消すトランザクションで候補を読み直して、その間に参照されたものを残します。走査は `relayed_statuses` の主キーで行い、残ったものは `content.purge_remote_statuses` の対象になります。
 
 | テーブル | 分類 | カラム | 制約 |

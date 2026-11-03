@@ -15,7 +15,7 @@ import (
 )
 
 // The remote statuses that only a relay brought in (ADR-0061): the federation module records
-// them in relayed_statuses when it takes them in, and they are kept for relay_status_retention
+// them in relayed_statuses when it takes them in, and they are kept for relay_status_retention_days
 // instead of remote_status_retention_days, unless something local refers to them or a local account
 // follows their author.
 
@@ -24,7 +24,7 @@ const (
 	// the cursor of the run (none for the first job of a run).
 	JobPurgeRelayedStatuses = "content.purge_relayed_statuses"
 	// DefaultRelayedStatusRetention is how long a relayed status is kept after its publication
-	// (the relay_status_retention setting).
+	// (the relay_status_retention_days setting).
 	DefaultRelayedStatusRetention = 7 * 24 * time.Hour
 )
 

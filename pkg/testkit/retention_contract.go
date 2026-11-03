@@ -57,7 +57,7 @@ type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 // and the remote custom emoji that no status, profile, or reaction refers to any more go with the
 // remote media of their images, while the referenced and the disabled ones stay, and a disabled
 // one stays disabled when it arrives again. The statuses that only a relay brought in go after
-// relay_status_retention unless something local refers to them or a local account follows their
+// relay_status_retention_days unless something local refers to them or a local account follows their
 // author (ADR-0061).
 func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 	t.Helper()
