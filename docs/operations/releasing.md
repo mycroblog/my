@@ -272,7 +272,7 @@ gh workflow run release-image.yml -R mycroblog/my --ref main -f version=v0.1.4 -
 
 The workflows cannot do these; each is a setting of the repository or of the package.
 
-1. Run the first prerelease with `release.yml`. Its `image` job creates the package, private, as ghcr.io does for every new package.
+1. The first `image` job of `release.yml` creates the package, private, as ghcr.io does for every new package.
 2. On the package's settings page (`https://github.com/orgs/mycroblog/packages/container/my/settings`), check that it is linked to this repository, which its `org.opencontainers.image.source` label asks for, and that `mycroblog/my` has the Admin role under "Manage Actions access", and change its visibility to **public**. A public package cannot be made private again.
 3. Publish the draft. If `release-image.yml` ran before the package was public, it failed at the anonymous pull with its tags made: run it again.
 4. In the repository's settings, turn on **Immutable releases**, under General. It freezes the tag and the assets of a published Release, so `image-digest.txt` cannot change and the tag that `source_url` names cannot disappear. Nothing freezes a draft. Under this setting the tag of a published `v0.0.0-test.N` stays too, so give each trial a new number.
