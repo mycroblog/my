@@ -6,7 +6,9 @@ get:
     The reports that the user filed, newest first, each with whether it is still open or
     resolved (FR-711). A report reopened by the moderators is open again. It never tells how
     a report was resolved, which actions it led to, the reasons given to the account, or
-    who handles it.
+    who handles it. A report shows its target even when the account is suspended or blocks
+    the user. A report whose target no longer exists is left out, so a page may hold fewer
+    reports than `limit` and still have a `next_cursor`.
   tags: [reports]
   security:
     - oauth2: ["read:reports"]

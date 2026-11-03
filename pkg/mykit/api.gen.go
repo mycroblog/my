@@ -5788,7 +5788,8 @@ type AdminReport struct {
 	// StatusIds The IDs of the target's posts that the report points at.
 	StatusIds []Id `json:"status_ids"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5860,7 +5861,8 @@ type AdminReportDetail struct {
 	// review. A post that the server no longer has is left out.
 	Statuses []AdminReportStatus `json:"statuses"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -16317,7 +16319,8 @@ type ClientInterface interface {
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
 	// either from following the other until the block is lifted (FR-303). Blocking an
-	// account that the viewer already blocks changes nothing. Blocking a remote account
+	// account that the viewer already blocks changes nothing, and an account that blocks the
+	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
@@ -16424,6 +16427,9 @@ type ClientInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+	// deleted account, the instance actor, and an account that blocks the viewer.
+	//
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16442,7 +16448,8 @@ type ClientInterface interface {
 
 	// UnblockAccount Unblock an account
 	//
-	// The follows that the block ended stay ended. Without a block it changes nothing.
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
 	//
 	// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
 	UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16456,7 +16463,7 @@ type ClientInterface interface {
 
 	// UnmuteAccount Unmute an account
 	//
-	// Without a mute it changes nothing.
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
 	//
 	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 	UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20383,7 +20390,9 @@ type ClientInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it.
+	// who handles it. A report shows its target even when the account is suspended or blocks
+	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Corresponds with GET /reports (the `ListOwnReports` operationId).
 	ListOwnReports(ctx context.Context, params *ListOwnReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -22050,7 +22059,8 @@ func (c *Client) GetAccount(ctx context.Context, id AccountId, reqEditors ...Req
 //
 // Ends the follows between the viewer and the account in both directions and keeps
 // either from following the other until the block is lifted (FR-303). Blocking an
-// account that the viewer already blocks changes nothing. Blocking a remote account
+// account that the viewer already blocks changes nothing, and an account that blocks the
+// viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
 //
 // Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
@@ -22247,6 +22257,9 @@ func (c *Client) RemoveAccountFromFollowers(ctx context.Context, id AccountId, r
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+// deleted account, the instance actor, and an account that blocks the viewer.
+//
 // Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAccountStatusesRequest(c.Server, id, params)
@@ -22285,7 +22298,8 @@ func (c *Client) SubscribeAccount(ctx context.Context, id AccountId, reqEditors 
 
 // UnblockAccount Unblock an account
 //
-// The follows that the block ended stay ended. Without a block it changes nothing.
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
 //
 // Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
 func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -22319,7 +22333,7 @@ func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors .
 
 // UnmuteAccount Unmute an account
 //
-// Without a mute it changes nothing.
+// Without a mute it changes nothing. It also works on an account that blocks the user.
 //
 // Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29466,7 +29480,9 @@ func (c *Client) PutPushSubscription(ctx context.Context, body PutPushSubscripti
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it.
+// who handles it. A report shows its target even when the account is suspended or blocks
+// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// reports than `limit` and still have a `next_cursor`.
 //
 // Corresponds with GET /reports (the `ListOwnReports` operationId).
 func (c *Client) ListOwnReports(ctx context.Context, params *ListOwnReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -47223,7 +47239,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
 	// either from following the other until the block is lifted (FR-303). Blocking an
-	// account that the viewer already blocks changes nothing. Blocking a remote account
+	// account that the viewer already blocks changes nothing, and an account that blocks the
+	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47340,6 +47357,9 @@ type ClientWithResponsesInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+	// deleted account, the instance actor, and an account that blocks the viewer.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
@@ -47362,7 +47382,8 @@ type ClientWithResponsesInterface interface {
 
 	// UnblockAccountWithResponse Unblock an account
 	//
-	// The follows that the block ended stay ended. Without a block it changes nothing.
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -47380,7 +47401,7 @@ type ClientWithResponsesInterface interface {
 
 	// UnmuteAccountWithResponse Unmute an account
 	//
-	// Without a mute it changes nothing.
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -51657,7 +51678,9 @@ type ClientWithResponsesInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it.
+	// who handles it. A report shows its target even when the account is suspended or blocks
+	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -76031,7 +76054,8 @@ func (c *ClientWithResponses) GetAccountWithResponse(ctx context.Context, id Acc
 //
 // Ends the follows between the viewer and the account in both directions and keeps
 // either from following the other until the block is lifted (FR-303). Blocking an
-// account that the viewer already blocks changes nothing. Blocking a remote account
+// account that the viewer already blocks changes nothing, and an account that blocks the
+// viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76202,6 +76226,9 @@ func (c *ClientWithResponses) RemoveAccountFromFollowersWithResponse(ctx context
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+// deleted account, the instance actor, and an account that blocks the viewer.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
@@ -76236,7 +76263,8 @@ func (c *ClientWithResponses) SubscribeAccountWithResponse(ctx context.Context, 
 
 // UnblockAccountWithResponse Unblock an account
 //
-// The follows that the block ended stay ended. Without a block it changes nothing.
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -76266,7 +76294,7 @@ func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, i
 
 // UnmuteAccountWithResponse Unmute an account
 //
-// Without a mute it changes nothing.
+// Without a mute it changes nothing. It also works on an account that blocks the user.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -82475,7 +82503,9 @@ func (c *ClientWithResponses) PutPushSubscriptionWithResponse(ctx context.Contex
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it.
+// who handles it. A report shows its target even when the account is suspended or blocks
+// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// reports than `limit` and still have a `next_cursor`.
 //
 // Returns a wrapper object for the known response body format(s).
 //

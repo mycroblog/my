@@ -1716,7 +1716,8 @@ export interface paths {
          * Block an account
          * @description Ends the follows between the viewer and the account in both directions and keeps
          *     either from following the other until the block is lifted (FR-303). Blocking an
-         *     account that the viewer already blocks changes nothing. Blocking a remote account
+         *     account that the viewer already blocks changes nothing, and an account that blocks the
+         *     viewer can be blocked back. Blocking a remote account
          *     also sends a Block to its server.
          */
         post: operations["blockAccount"];
@@ -1871,7 +1872,8 @@ export interface paths {
         put?: never;
         /**
          * Unblock an account
-         * @description The follows that the block ended stay ended. Without a block it changes nothing.
+         * @description The follows that the block ended stay ended. Without a block it changes nothing. It also
+         *     works on an account that blocks the user.
          */
         post: operations["unblockAccount"];
         delete?: never;
@@ -1911,7 +1913,7 @@ export interface paths {
         put?: never;
         /**
          * Unmute an account
-         * @description Without a mute it changes nothing.
+         * @description Without a mute it changes nothing. It also works on an account that blocks the user.
          */
         post: operations["unmuteAccount"];
         delete?: never;
@@ -2917,6 +2919,9 @@ export interface paths {
          *     recent public posts from its server in the background; `remote_fetch_started` tells
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
+         *
+         *     An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+         *     deleted account, the instance actor, and an account that blocks the viewer.
          */
         get: operations["listAccountStatuses"];
         put?: never;
@@ -3078,7 +3083,9 @@ export interface paths {
          * @description The reports that the user filed, newest first, each with whether it is still open or
          *     resolved (FR-711). A report reopened by the moderators is open again. It never tells how
          *     a report was resolved, which actions it led to, the reasons given to the account, or
-         *     who handles it.
+         *     who handles it. A report shows its target even when the account is suspended or blocks
+         *     the user. A report whose target no longer exists is left out, so a page may hold fewer
+         *     reports than `limit` and still have a `next_cursor`.
          */
         get: operations["listOwnReports"];
         put?: never;
@@ -9166,7 +9173,10 @@ export interface components {
             /** @description The reporter, often the instance actor of a remote server; omitted when the account is gone. */
             reporter_account?: components["schemas"]["Account"];
             target_account_id: components["schemas"]["Id"];
-            /** @description The account reported; omitted when the account is gone. */
+            /**
+             * @description The account reported, even when it is suspended or blocks the reporter; omitted when the
+             *     account is gone.
+             */
             target_account?: components["schemas"]["Account"];
             /** @description The IDs of the target's posts that the report points at. */
             status_ids: components["schemas"]["Id"][];
