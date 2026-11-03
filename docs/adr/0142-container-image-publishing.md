@@ -1,6 +1,6 @@
 # ADR-0142: コンテナイメージの公開: GHCR、タグ、サプライチェーン
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-03
 - Deciders: @rosylilly
 - Issue: #2022
@@ -73,8 +73,6 @@ M5（エピック #30）には `ghcr.io/mycroblog/my` のイメージが要る�
 | 3（推奨） | `0.1.0`・`0.1` だけ。v0 の間 `0` と `latest` はない | 更新の保証の範囲と一致する | `docker pull ghcr.io/mycroblog/my` が `manifest unknown` で失敗する。慣習に慣れた人は一度つまずく。タグなしを前提にするツールは使えない |
 
 ## Decision（決定）
-
-> 推奨案（Proposed）。Accepted にするのは人間の Decider のみ。
 
 **D と 3 を推奨する。** レジストリは ADR-0010 のとおり `ghcr.io/mycroblog/my` だけとし、公開（public）にする。
 
