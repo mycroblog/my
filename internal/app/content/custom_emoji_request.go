@@ -79,6 +79,9 @@ type CustomEmojiRequestRepository interface {
 	ListPendingCustomEmojiRequestsOfUser(ctx context.Context, tx uow.Tx, userID string) ([]string, error)
 	// BlankCustomEmojiRequester removes a user from its requests, which stay for the audit log.
 	BlankCustomEmojiRequester(ctx context.Context, tx uow.Tx, userID string) error
+	// RebuildCustomEmojiPendingRequests makes custom_emoji_pending_requests again from the requests
+	// without an outcome (data-model §9).
+	RebuildCustomEmojiPendingRequests(ctx context.Context, tx uow.Tx) error
 	FindCustomEmojiRequest(ctx context.Context, id string) (content.CustomEmojiRequestRecord, error)
 	// ListCustomEmojiRequests returns up to limit requests matching q, newest first.
 	ListCustomEmojiRequests(ctx context.Context, q CustomEmojiRequestQuery, limit int) ([]content.CustomEmojiRequestRecord, error)
@@ -695,4 +698,13 @@ func (s *CustomEmojiService) EraseAccountData(ctx context.Context, t appaccount.
 		return s.d.Repository.BlankCustomEmojiRequester(ctx, tx, t.UserID)
 	})
 	return appaccount.ErasureStep{Done: true}, err
+}
+
+// RebuildCustomEmojiRequestProjection makes the pending requests again from the requests and their
+// outcomes (data-model §9).
+func RebuildCustomEmojiRequestProjection(ctx context.Context, u uow.UnitOfWork, repo CustomEmojiRequestRepository) error {
+	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildCustomEmojiPendingRequests(ctx, tx) }); err != nil {
+		return fmt.Errorf("rebuild custom_emoji_pending_requests: %w", err)
+	}
+	return nil
 }
