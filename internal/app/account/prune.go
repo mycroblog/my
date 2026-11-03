@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 )
@@ -23,6 +24,13 @@ const (
 	// cursor.
 	PruneBatch      = 100
 	pruneMaxBatches = 10
+	// HandleVerificationRetention is how long a check of a remote handle is kept; the newest of an
+	// account always stays, because it rebuilds account_handles.
+	HandleVerificationRetention = 90 * 24 * time.Hour
+	// handleVerificationBatch is the number of checks one statement deletes;
+	// handleVerificationMaxBatches bounds the batches of one run, and the next run continues.
+	handleVerificationBatch      = 1000
+	handleVerificationMaxBatches = 20
 )
 
 // ProfilePruneRepository is the part of the account module's persistence that the prune uses.
@@ -36,6 +44,9 @@ type ProfilePruneRepository interface {
 	// one, with their fields, and the snapshots that neither the head nor the current revision
 	// points to. An account without a head keeps everything.
 	PrunePastProfiles(ctx context.Context, tx uow.Tx, accountID string) error
+	// DeleteHandleVerificationsBefore deletes at most limit handle checks made before t, except the
+	// newest of each account, and returns how many it deleted.
+	DeleteHandleVerificationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 }
 
 // RemoteRelations tells whether something local relates to a remote account: a follow either
@@ -50,6 +61,7 @@ type PruneDeps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository ProfilePruneRepository
 	Relations  RemoteRelations
+	Clock      kernel.Clock
 	// Jobs enqueues the next job of a run, outside any transaction.
 	Jobs queue.JobQueue
 	// Batch is the number of accounts per transaction; zero means PruneBatch.
@@ -105,10 +117,36 @@ func (p *ProfilePruner) handle(ctx context.Context, j queue.Job) queue.Result {
 	return queue.Done()
 }
 
+// purgeHandleVerifications deletes the checks of remote handles past their retention, for every
+// remote account whether or not something local relates to it.
+func (p *ProfilePruner) purgeHandleVerifications(ctx context.Context) error {
+	before := p.d.Clock.Now().Add(-HandleVerificationRetention)
+	for range handleVerificationMaxBatches {
+		var n int64
+		err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = p.d.Repository.DeleteHandleVerificationsBefore(ctx, tx, before, handleVerificationBatch)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		if n < handleVerificationBatch {
+			return nil
+		}
+	}
+	return nil
+}
+
 // Run prunes the remote accounts after the account ID after ("" for the first), in a bounded
 // number of batches of one short transaction each. It returns how many accounts it pruned and
 // the cursor to continue from, "" when it reached the end. It is safe to repeat.
 func (p *ProfilePruner) Run(ctx context.Context, after string) (next string, pruned int, err error) {
+	if after == "" {
+		if err := p.purgeHandleVerifications(ctx); err != nil {
+			return after, 0, err
+		}
+	}
 	for range pruneMaxBatches {
 		ids, err := p.d.Repository.ListRemoteAccountsWithPastProfiles(ctx, after, p.d.Batch)
 		if err != nil {
