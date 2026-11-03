@@ -173,7 +173,7 @@ test.describe("new posts inserted on their own (ADR-0077)", () => {
 test.describe("new posts in the local and the federated timelines (ADR-0127)", () => {
   for (const { path, stream, timeline } of [
     { path: "/local", stream: "local", timeline: "local" },
-    { path: "/public", stream: "federated", timeline: "public" },
+    { path: "/public", stream: "federated", timeline: "federated" },
   ] as const) {
     test(`${path} keeps the timeline's stream open and shows its new posts behind the button`, async ({
       page,
