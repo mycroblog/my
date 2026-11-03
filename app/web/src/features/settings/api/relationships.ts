@@ -164,7 +164,7 @@ export async function cacheListChange(
   relationship: Relationship,
   viewerId: string,
 ): Promise<void> {
-  queryClient.setQueriesData<Relationship[]>(
+  queryClient.setQueriesData<Schemas["RelationshipList"]>(
     {
       predicate: (query) =>
         query.queryKey[0] === "get" &&
@@ -172,8 +172,8 @@ export async function cacheListChange(
         query.state.data !== undefined,
     },
     (data) =>
-      data?.some((item) => item.id === relationship.id)
-        ? data.map((item) => (item.id === relationship.id ? relationship : item))
+      data?.items.some((item) => item.id === relationship.id)
+        ? { ...data, items: data.items.map((item) => (item.id === relationship.id ? relationship : item)) }
         : data,
   );
   // The viewer's own account counts the follow requests (the settings menu's badge): accepting one refreshes it with
