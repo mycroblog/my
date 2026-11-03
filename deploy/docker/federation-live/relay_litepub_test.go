@@ -154,7 +154,7 @@ func (e *env) onFederatedTimeline(ctx context.Context, text string) (bool, strin
 	var page struct {
 		Items []status `json:"items"`
 	}
-	if err := e.local.call(ctx, http.MethodGet, "/timelines/public?limit=40", nil, &page); err != nil {
+	if err := e.local.call(ctx, http.MethodGet, "/timelines/federated?limit=40", nil, &page); err != nil {
 		return false, err.Error()
 	}
 	for _, s := range page.Items {

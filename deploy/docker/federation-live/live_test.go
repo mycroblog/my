@@ -339,7 +339,7 @@ func (e *env) deliveryAttempts(t *testing.T, inbox string) []deliveryAttempt {
 	}
 	defer func() { _ = conn.Close(context.Background()) }()
 	rows, err := conn.Query(ctx, `
-		SELECT d.inbox_url, a.outcome, COALESCE(a.signature_scheme, ''), COALESCE(a.http_status, 0)
+		SELECT d.inbox_url, a.outcome, COALESCE(a.signature_scheme, ''), COALESCE(a.status_code, 0)
 		FROM delivery_attempts a JOIN deliveries d ON d.id = a.delivery_id
 		WHERE d.inbox_url = $1 ORDER BY a.attempted_at, a.id`, inbox)
 	if err != nil {
@@ -554,18 +554,20 @@ func (l *localClient) follow(ctx context.Context, id string) (relationship, erro
 }
 
 func (l *localClient) relationship(ctx context.Context, id string) (relationship, error) {
-	var rs []relationship
+	var rs struct {
+		Items []relationship `json:"items"`
+	}
 	if err := l.call(ctx, http.MethodGet, "/accounts/relationships?"+url.Values{"id": {id}}.Encode(), nil, &rs); err != nil {
 		return relationship{}, err
 	}
-	if len(rs) != 1 {
-		return relationship{}, fmt.Errorf("%d relationships with %s", len(rs), id)
+	if len(rs.Items) != 1 {
+		return relationship{}, fmt.Errorf("%d relationships with %s", len(rs.Items), id)
 	}
-	return rs[0], nil
+	return rs.Items[0], nil
 }
 
 func (l *localClient) unfollow(ctx context.Context, id string) error {
-	return l.call(ctx, http.MethodPost, "/accounts/"+url.PathEscape(id)+"/unfollow", nil, nil)
+	return l.call(ctx, http.MethodDelete, "/accounts/"+url.PathEscape(id)+"/follow", nil, nil)
 }
 
 // setLocked turns the approval of follow requests on or off (update_credentials).
@@ -576,14 +578,14 @@ func (l *localClient) setLocked(ctx context.Context, locked bool) error {
 // followRequests returns the accounts whose follow requests wait for alice's approval.
 func (l *localClient) followRequests(ctx context.Context) ([]account, error) {
 	var page struct {
-		Accounts []account `json:"accounts"`
+		Items []account `json:"items"`
 	}
 	err := l.call(ctx, http.MethodGet, "/follow_requests", nil, &page)
-	return page.Accounts, err
+	return page.Items, err
 }
 
 func (l *localClient) authorize(ctx context.Context, id string) error {
-	return l.call(ctx, http.MethodPost, "/follow_requests/"+url.PathEscape(id)+"/authorize", nil, nil)
+	return l.call(ctx, http.MethodPost, "/follow_requests/"+url.PathEscape(id)+"/accept", nil, nil)
 }
 
 func (l *localClient) post(ctx context.Context, text, visibility string) (status, error) {
