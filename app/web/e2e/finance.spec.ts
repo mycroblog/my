@@ -256,7 +256,7 @@ async function serveApi(page: Page) {
       items = [created, ...items];
       return json(route, created);
     }
-    if (/^POST \/admin\/cost_items\/[^/]+\/cancel$/.test(key)) {
+    if (/^DELETE \/admin\/cost_items\/[^/]+$/.test(key)) {
       sent.push("cancel");
       items = items.filter((item) => !path.includes(item.id));
       return route.fulfill({ status: 204 });

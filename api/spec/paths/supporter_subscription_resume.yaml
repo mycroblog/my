@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: resumeOwnSupporterSubscription
-  summary: Withdraw the cancellation of the authenticated user's subscription
+  summary: Resume the authenticated user's canceling subscription
   description: |
-    Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+    Takes back the cancellation of a `canceling` subscription, which then renews as before. A
     409 `/api/v1/problems/supporter-subscription-state` in another state.
   tags: [supporters]
   security:

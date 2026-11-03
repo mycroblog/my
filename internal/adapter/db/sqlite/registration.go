@@ -78,6 +78,17 @@ func (r *IdentityRepository) FindRegistrationApplication(ctx context.Context, us
 	}, nil
 }
 
+// FindRegistrationApplicationByID implements identity.Repository.
+func (r *IdentityRepository) FindRegistrationApplicationByID(ctx context.Context, id string) (identity.RegistrationApplication, error) {
+	row, err := r.db.reader().GetRegistrationApplication(ctx, id)
+	if err != nil {
+		return identity.RegistrationApplication{}, notFound(err, appidentity.ErrNotFound, "registration application "+id)
+	}
+	return identity.RegistrationApplication{
+		ID: row.ID, UserID: row.UserID, Reason: row.Reason.String, InviteID: row.InviteID.String, SubmittedAt: fromMillis(row.SubmittedAt),
+	}, nil
+}
+
 // RegistrationDecisionNote implements identity.Repository.
 func (r *IdentityRepository) RegistrationDecisionNote(ctx context.Context, applicationID string) (string, error) {
 	note, err := r.db.reader().FindRegistrationDecisionNote(ctx, applicationID)

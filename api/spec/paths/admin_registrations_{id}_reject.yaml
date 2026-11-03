@@ -1,20 +1,19 @@
 # SPDX-License-Identifier: MIT
 post:
-  operationId: approveRegistration
-  summary: Approve a registration
+  operationId: rejectRegistration
+  summary: Reject a registration
   description: |
-    Approves a pending registration, so that its user can sign in, with an optional note
+    Rejects a pending registration, so that its user cannot sign in, with an optional note
     for the moderators; the decision is audited. Deciding a decided registration changes
     nothing and keeps its decision. The answer on a decided registration has no email address:
-    only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
-    announcement of the closure of the service on, a pending registration is not approved: a
-    409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
-    the `manage_accounts` permission.
+    only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+    An unknown ID is a 404. Needs the
+    `manage_accounts` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]
   parameters:
-    - $ref: ../components/parameters/RegistrationUserId.yaml
+    - $ref: ../components/parameters/RegistrationId.yaml
   requestBody:
     content:
       application/json:

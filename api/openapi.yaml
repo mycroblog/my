@@ -746,8 +746,7 @@ paths:
           $ref: '#/components/responses/AccountAliasList'
         default:
           $ref: '#/components/responses/Problem'
-  /accounts/aliases/remove:
-    post:
+    delete:
       operationId: removeAccountAlias
       x-first-party-only: true
       summary: Remove an alias of the authenticated user
@@ -759,12 +758,15 @@ paths:
       security:
         - oauth2:
             - write:accounts
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RemoveAccountAliasRequest'
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          description: The `uri` of the alias, as `GET /accounts/aliases` lists it.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 2048
       responses:
         '200':
           $ref: '#/components/responses/AccountAliasList'
@@ -1215,7 +1217,7 @@ paths:
         Once moved, the account's followers on other servers get a `Move` and follow the target,
         the followers on this server follow it too, and the account's profile names the target
         (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-        aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+        aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
         following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
         password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
         `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -1241,8 +1243,7 @@ paths:
           description: The account moved.
         default:
           $ref: '#/components/responses/Problem'
-  /accounts/move/cancel:
-    post:
+    delete:
       operationId: cancelOwnAccountMove
       x-first-party-only: true
       summary: Cancel the move of the authenticated user's account
@@ -2775,9 +2776,9 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
-  /accounts/{id}/remove_from_followers:
-    post:
-      operationId: removeAccountFromFollowers
+  /accounts/{id}/follower:
+    delete:
+      operationId: removeFollower
       summary: Remove an account from the viewer's followers
       description: |
         Ends the account's active follow of the viewer. Without one it changes nothing; a
@@ -4065,7 +4066,7 @@ paths:
           $ref: '#/components/responses/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
-  /statuses/{id}/quotes/{quote_id}/revoke:
+  /statuses/{id}/quotes/{quote_id}/approval:
     parameters:
       - $ref: '#/components/parameters/StatusId'
       - name: quote_id
@@ -4074,8 +4075,8 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/Id'
-    post:
-      operationId: revokeStatusQuote
+    delete:
+      operationId: revokeStatusQuoteApproval
       summary: Revoke the approval of a quote of the authenticated user's status
       description: |
         Withdraws this server's approval of the quote: the quote shows the quoted
@@ -4904,9 +4905,9 @@ paths:
   /supporter/subscription/resume:
     post:
       operationId: resumeOwnSupporterSubscription
-      summary: Withdraw the cancellation of the authenticated user's subscription
+      summary: Resume the authenticated user's canceling subscription
       description: |
-        Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+        Takes back the cancellation of a `canceling` subscription, which then renews as before. A
         409 `/api/v1/problems/supporter-subscription-state` in another state.
       tags:
         - supporters
@@ -4928,9 +4929,9 @@ paths:
   /supporter/subscription/cancel_scheduled_change:
     post:
       operationId: cancelOwnSupporterScheduledChange
-      summary: Withdraw the scheduled change of the authenticated user's subscription
+      summary: Cancel the scheduled change of the authenticated user's subscription
       description: |
-        Withdraws the change to a lower plan or to the monthly price that waits for the end of
+        Cancels the change to a lower plan or to the monthly price that waits for the end of
         the period; the subscription renews at its current plan and interval. A 409
         `/api/v1/problems/supporter-subscription-state` without a scheduled change.
       tags:
@@ -6242,7 +6243,7 @@ paths:
       operationId: listCostItems
       summary: List the cost items
       description: |
-        The instance's cost items that are not canceled, newest first.
+        The instance's cost items that are not deleted, newest first.
         Needs the `manage_finance` permission.
       tags:
         - admin-server
@@ -6294,7 +6295,7 @@ paths:
     get:
       operationId: getCostItem
       summary: Get a cost item
-      description: An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+      description: An unknown or deleted item is a 404. Needs the `manage_finance` permission.
       tags:
         - admin-server
       security:
@@ -6312,7 +6313,7 @@ paths:
       summary: Change a cost item's label
       description: |
         Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-        its value. The values are checked as for a new item (422). An unknown or canceled item is
+        its value. The values are checked as for a new item (422). An unknown or deleted item is
         a 404. Recorded in the audit log. Needs the `manage_finance` permission.
       tags:
         - admin-server
@@ -6332,13 +6333,32 @@ paths:
           $ref: '#/components/responses/CostItem'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteCostItem
+      summary: Delete a cost item
+      description: |
+        Removes a cost item recorded by mistake from every period, past ones included. There is
+        no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+        the audit log. Needs the `manage_finance` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/CostItemId'
+      responses:
+        '204':
+          description: The item is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/cost_items/{id}/price_revisions:
     post:
       operationId: reviseCostItemPrice
       summary: Revise a cost item's price
       description: |
         Records the price of the payments on or after `effective_on`. A date before the start
-        date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+        date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
         item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
       tags:
         - admin-server
@@ -6365,7 +6385,7 @@ paths:
       description: |
         Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
         go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-        the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+        the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
         in the audit log. Needs the `manage_finance` permission.
       tags:
         - admin-server
@@ -6383,26 +6403,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CostItem'
-        default:
-          $ref: '#/components/responses/Problem'
-  /admin/cost_items/{id}/cancel:
-    post:
-      operationId: cancelCostItem
-      summary: Cancel a cost item
-      description: |
-        Removes a cost item recorded by mistake from every period, past ones included. There is
-        no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-        the audit log. Needs the `manage_finance` permission.
-      tags:
-        - admin-server
-      security:
-        - oauth2:
-            - admin:write
-      parameters:
-        - $ref: '#/components/parameters/CostItemId'
-      responses:
-        '204':
-          description: The item is canceled.
         default:
           $ref: '#/components/responses/Problem'
   /admin/cost_totals:
@@ -7714,9 +7714,8 @@ paths:
       operationId: updateCustomEmoji
       summary: Change the settings of a custom emoji
       description: |
-        Changes what the request names and keeps the rest. A remote emoji can only be enabled
-        and disabled (`enabled`); a change of its other settings is a 422 with the reason
-        `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+        Changes what the request names and keeps the rest. A remote emoji has none of these
+        settings: a change of one is a 422 with the reason `remote_emoji`.
         `category` is trimmed, and an empty one removes the category; `aliases` replace the
         aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
         `manage_custom_emojis` permission.
@@ -7757,6 +7756,45 @@ paths:
           description: The emoji is deleted.
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/custom_emojis/{id}/enable:
+    post:
+      operationId: enableCustomEmoji
+      summary: Enable a custom emoji
+      description: |
+        Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+        remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/CustomEmojiId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminCustomEmoji'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/custom_emojis/{id}/disable:
+    post:
+      operationId: disableCustomEmoji
+      summary: Disable a custom emoji
+      description: |
+        Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+        changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+        An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/CustomEmojiId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminCustomEmoji'
         default:
           $ref: '#/components/responses/Problem'
   /admin/custom_emojis/{id}/image:
@@ -8568,7 +8606,7 @@ paths:
                 $ref: '#/components/schemas/AdminRegistrationPage'
         default:
           $ref: '#/components/responses/Problem'
-  /admin/registrations/{user_id}/approve:
+  /admin/registrations/{id}/approve:
     post:
       operationId: approveRegistration
       summary: Approve a registration
@@ -8576,7 +8614,7 @@ paths:
         Approves a pending registration, so that its user can sign in, with an optional note
         for the moderators; the decision is audited. Deciding a decided registration changes
         nothing and keeps its decision. The answer on a decided registration has no email address:
-        only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+        only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
         announcement of the closure of the service on, a pending registration is not approved: a
         409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
         the `manage_accounts` permission.
@@ -8586,7 +8624,7 @@ paths:
         - oauth2:
             - admin:write
       parameters:
-        - $ref: '#/components/parameters/RegistrationUserId'
+        - $ref: '#/components/parameters/RegistrationId'
       requestBody:
         content:
           application/json:
@@ -8597,7 +8635,7 @@ paths:
           $ref: '#/components/responses/AdminRegistration'
         default:
           $ref: '#/components/responses/Problem'
-  /admin/registrations/{user_id}/reject:
+  /admin/registrations/{id}/reject:
     post:
       operationId: rejectRegistration
       summary: Reject a registration
@@ -8606,7 +8644,7 @@ paths:
         for the moderators; the decision is audited. Deciding a decided registration changes
         nothing and keeps its decision. The answer on a decided registration has no email address:
         only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-        A user without a registration is a 404. Needs the
+        An unknown ID is a 404. Needs the
         `manage_accounts` permission.
       tags:
         - admin-moderation
@@ -8614,7 +8652,7 @@ paths:
         - oauth2:
             - admin:write
       parameters:
-        - $ref: '#/components/parameters/RegistrationUserId'
+        - $ref: '#/components/parameters/RegistrationId'
       requestBody:
         content:
           application/json:
@@ -9278,8 +9316,8 @@ paths:
       summary: Disable an OAuth client
       description: |
         Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-        its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-        new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+        its authorization requests, token exchanges and refreshes until it is enabled again.
+        Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
         is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
         `manage_oauth_apps` permission.
       tags:
@@ -9297,12 +9335,12 @@ paths:
   /admin/oauth_clients/{id}/enable:
     post:
       operationId: enableOAuthClient
-      summary: Lift the disablement of an OAuth client
+      summary: Enable an OAuth client
       description: |
-        The client can be authorized again. The tokens that the disablement revoked stay revoked:
-        the users authorize the client again. Lifting nothing changes nothing. The lift is
-        recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-        permission.
+        The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+        users authorize the client again. Enabling an enabled client changes nothing. The change is
+        recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+        naming `id`. Needs the `manage_oauth_apps` permission.
       tags:
         - admin-server
       security:
@@ -10165,9 +10203,9 @@ paths:
                 $ref: '#/components/schemas/PaymentStatus'
         default:
           $ref: '#/components/responses/Problem'
-  /admin/payment_reconciles:
+  /admin/payment_reconciliation/runs:
     post:
-      operationId: runPaymentReconcile
+      operationId: runPaymentReconciliation
       summary: Reconcile with the payment provider now
       description: |
         Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
@@ -10361,10 +10399,10 @@ paths:
                 $ref: '#/components/schemas/AdminSupporterSubscriptionPage'
         default:
           $ref: '#/components/responses/Problem'
-  /admin/supporter_subscriptions/{id}/cancel:
+  /admin/supporter_subscriptions/{id}/end:
     post:
-      operationId: cancelSupporterSubscription
-      summary: Cancel a subscription at once
+      operationId: endSupporterSubscription
+      summary: End a subscription at once
       description: |
         Ends a subscription at once, without a refund: the role goes now, and the
         payment provider stops billing. A refund is the operator's to make at the provider. A
@@ -10378,8 +10416,15 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SupporterSubscriptionId'
       responses:
-        '204':
-          description: The subscription has ended.
+        '200':
+          description: The subscription after it ended.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSupporterSubscription'
         default:
           $ref: '#/components/responses/Problem'
 components:
@@ -10658,11 +10703,11 @@ components:
       description: The ID of the OAuth app (not its `client_id`).
       schema:
         $ref: '#/components/schemas/Id'
-    RegistrationUserId:
-      name: user_id
+    RegistrationId:
+      name: id
       in: path
       required: true
-      description: The ID of the user who signed up.
+      description: The ID of the registration.
       schema:
         $ref: '#/components/schemas/Id'
     RelayId:
@@ -12843,7 +12888,7 @@ components:
         - id
         - shortcode
         - local
-        - enabled
+        - state
         - visible_in_picker
         - aliases
         - created_by_deleted
@@ -12877,9 +12922,8 @@ components:
           description: The URL of a still image of the emoji; absent with `url`.
           type: string
           format: uri
-        enabled:
-          description: Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-          type: boolean
+        state:
+          $ref: '#/components/schemas/CustomEmojiState'
         visible_in_picker:
           description: Whether the picker offers the local emoji; always `true` for a remote one.
           type: boolean
@@ -13217,7 +13261,7 @@ components:
         - confidential
         - scopes
         - owner_deleted
-        - disabled
+        - state
         - created_at
       properties:
         id:
@@ -13252,9 +13296,8 @@ components:
         owner_deleted:
           description: Whether a user registered the client whose account no longer exists.
           type: boolean
-        disabled:
-          description: Whether an administrator has disabled the client and not lifted it.
-          type: boolean
+        state:
+          $ref: '#/components/schemas/AdminOAuthClientState'
         created_at:
           type: string
           format: date-time
@@ -13308,6 +13351,13 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminOAuthClient'
+    AdminOAuthClientState:
+      description: |
+        Whether the client is authorized and gets tokens. An administrator disables and enables it.
+      type: string
+      enum:
+        - enabled
+        - disabled
     DenyOAuthClientHostRequest:
       description: A host to deny.
       type: object
@@ -13840,12 +13890,12 @@ components:
       description: A user's registration as the moderators review it.
       type: object
       required:
-        - user_id
+        - id
         - state
         - state_changed_at
         - submitted_at
       properties:
-        user_id:
+        id:
           $ref: '#/components/schemas/Id'
         account_id:
           description: The user's local account; omitted when it is gone.
@@ -15725,7 +15775,7 @@ components:
         - year
     CostItem:
       description: |
-        A cost of the instance that is not canceled, with its current label and end
+        A cost of the instance that is not deleted, with its current label and end
         and every price revision. Never published: the public totals carry no item.
       type: object
       required:
@@ -16595,6 +16645,12 @@ components:
         - rejected
         - withdrawn
         - lapsed
+    CustomEmojiState:
+      description: Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+      type: string
+      enum:
+        - enabled
+        - disabled
     DataExport:
       description: A request for an archive of the user's data.
       type: object
@@ -19456,7 +19512,7 @@ components:
       required:
         - id
         - shortcode
-        - enabled
+        - state
         - visible_in_picker
         - aliases
         - created_at
@@ -19475,11 +19531,8 @@ components:
           description: The URL of a still image of the emoji; absent with `url`.
           type: string
           format: uri
-        enabled:
-          description: |
-            Whether the emoji is shown; an administrator disables and enables it, and a disabled one
-            stays `:shortcode:` text.
-          type: boolean
+        state:
+          $ref: '#/components/schemas/CustomEmojiState'
         visible_in_picker:
           description: Whether the picker offers the emoji.
           type: boolean
@@ -19779,7 +19832,7 @@ components:
             Whether the password signs in; false after the user removed it, when only the
             passkeys sign in.
           type: boolean
-    PaymentReconcileRun:
+    PaymentReconciliationRun:
       description: The last attempt of the reconciliation with the payment provider; omitted before the first.
       type: object
       required:
@@ -19863,19 +19916,19 @@ components:
             deliveries are kept 45 days).
           type: string
           format: date-time
-        last_reconcile:
-          $ref: '#/components/schemas/PaymentReconcileRun'
+        last_reconciliation:
+          $ref: '#/components/schemas/PaymentReconciliationRun'
         warnings:
           description: |
             The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-            recorded) and `reconcile_corrected` (the last reconciliation corrected subscriptions,
+            recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
             which a webhook delivery should have done).
           type: array
           items:
             type: string
             enum:
               - no_webhook
-              - reconcile_corrected
+              - reconciliation_corrected
     Permission:
       description: |
         A capability that a role grants. `manage_accounts`: the accounts and their moderation
@@ -20281,7 +20334,7 @@ components:
           (`POST /admin/closure/close`).
         - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
           stops new registrations and supporter subscriptions: approving a pending
-          registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+          registration (`/admin/registrations/{id}/approve`) or starting a supporter checkout
           (`POST /supporter/checkout`).
         - `/api/v1/problems/service-closed` (403): the server is closed. A closed
           server serves only the operations with which the users take their data away: their own
@@ -20359,7 +20412,7 @@ components:
         - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
           an administrator. Make another user an administrator first.
         - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
-          (`POST /accounts/move/cancel`).
+          (`DELETE /accounts/move`).
         - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
           `DELETE /sessions/{id}`; signing out ends it.
         - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
@@ -20752,17 +20805,6 @@ components:
         - accepted
         - rejected
         - left
-    RemoveAccountAliasRequest:
-      description: The alias to remove.
-      type: object
-      required:
-        - uri
-      properties:
-        uri:
-          description: The `uri` of the alias, as `GET /accounts/aliases` lists it.
-          type: string
-          minLength: 1
-          maxLength: 2048
     RemovePasswordRequest:
       description: |
         What confirms the removal of the user's password: a `passkey` of the user or an
@@ -21963,9 +22005,6 @@ components:
       description: The settings of a custom emoji to change; absent ones stay.
       type: object
       properties:
-        enabled:
-          description: Whether the emoji is shown.
-          type: boolean
         visible_in_picker:
           description: Whether the picker offers the local emoji.
           type: boolean
@@ -22504,8 +22543,8 @@ components:
       required:
         - account
         - role
-        - host
-        - cohost
+        - hosting
+        - cohosting
         - hand_raised
         - blocked
       properties:
@@ -22513,10 +22552,10 @@ components:
           $ref: '#/components/schemas/Account'
         role:
           $ref: '#/components/schemas/VoiceRole'
-        host:
+        hosting:
           description: Whether the participant is the host.
           type: boolean
-        cohost:
+        cohosting:
           description: Whether the participant is a co-host. The host is never a co-host.
           type: boolean
         hand_raised:

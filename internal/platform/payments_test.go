@@ -179,15 +179,15 @@ func TestPaymentReconcileByHand(t *testing.T) {
 	if code := api(http.MethodGet, "/admin/payment_status", &st); code != http.StatusOK {
 		t.Fatalf("GET /admin/payment_status = %d", code)
 	}
-	if st.Provider != "stripe" || st.Mode != clientapi.PaymentStatusModeTest || st.LastWebhookAt != nil || st.LastReconcile != nil ||
+	if st.Provider != "stripe" || st.Mode != clientapi.PaymentStatusModeTest || st.LastWebhookAt != nil || st.LastReconciliation != nil ||
 		!slices.Equal(st.Warnings, []clientapi.PaymentStatusWarnings{clientapi.PaymentStatusWarningsNoWebhook}) {
 		t.Errorf("status before = %+v", st)
 	}
 
-	if code := api(http.MethodPost, "/admin/payment_reconciles", nil); code != http.StatusAccepted {
-		t.Fatalf("POST /admin/payment_reconciles = %d, want 204", code)
+	if code := api(http.MethodPost, "/admin/payment_reconciliation/runs", nil); code != http.StatusAccepted {
+		t.Fatalf("POST /admin/payment_reconciliation/runs = %d, want 204", code)
 	}
-	if code := api(http.MethodPost, "/admin/payment_reconciles", nil); code != http.StatusTooManyRequests {
+	if code := api(http.MethodPost, "/admin/payment_reconciliation/runs", nil); code != http.StatusTooManyRequests {
 		t.Errorf("a second reconciliation in the hour = %d, want 429", code)
 	}
 	if n := synced.count(); n != 1 {
@@ -198,11 +198,11 @@ func TestPaymentReconcileByHand(t *testing.T) {
 	if code := api(http.MethodGet, "/admin/payment_status", &st); code != http.StatusOK {
 		t.Fatalf("GET /admin/payment_status = %d", code)
 	}
-	if r := st.LastReconcile; r == nil || r.Outcome != clientapi.PaymentReconcileRunOutcomeSucceeded ||
-		r.ErrorKind != clientapi.PaymentReconcileRunErrorKindNone || r.CheckedSubscriptions != 1 || r.CorrectedSubscriptions != 1 {
+	if r := st.LastReconciliation; r == nil || r.Outcome != clientapi.PaymentReconciliationRunOutcomeSucceeded ||
+		r.ErrorKind != clientapi.PaymentReconciliationRunErrorKindNone || r.CheckedSubscriptions != 1 || r.CorrectedSubscriptions != 1 {
 		t.Errorf("last reconcile = %+v", r)
 	}
-	if !slices.Contains(st.Warnings, clientapi.PaymentStatusWarningsReconcileCorrected) {
+	if !slices.Contains(st.Warnings, clientapi.PaymentStatusWarningsReconciliationCorrected) {
 		t.Errorf("warnings = %v, want reconcile_corrected", st.Warnings)
 	}
 

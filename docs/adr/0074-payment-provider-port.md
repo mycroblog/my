@@ -300,7 +300,7 @@ type MoneyMovement struct {
 
 - `payment_webhook_receipts` は 45 日を過ぎた行を定期ジョブで消す（Stripe の手での再送は CLI で 30 日まで遡れる）。消した後に同じイベントが来ても、ジョブが取り直して適用するだけで状態は変わらない。
 - 管理画面 `/admin/supporters`（ADR-0072）に事業者の状態を出す: 事業者とモード（テスト・ライブ）、最後に webhook を受けた時刻、最後の照合の結果と失敗の種類（`client*` のメッセージで直し方を案内する）。
-  webhook を一度も受けていないか、照合が直した加入があれば、webhook の設定の誤りとして示す。API は `GET /admin/payment_status` と `POST /admin/payment_reconciles`。手動の照合は監査ログ（ADR-0037）に残す。
+  webhook を一度も受けていないか、照合が直した加入があれば、webhook の設定の誤りとして示す。API は `GET /admin/payment_status` と `POST /admin/payment_reconciliation/runs`。手動の照合は監査ログ（ADR-0037）に残す。
 
 ### 5. カード情報と秘密
 
@@ -363,7 +363,7 @@ type MoneyMovement struct {
   - 鍵と webhook の秘密をデプロイの設定に置くので、Stripe を有効にするには再デプロイが要る。webhook のエンドポイントの登録は運営者の手作業になる。
   - webhook の受け口が匿名で叩ける経路を 1 つ増やす。署名の検証の前に読む本文を 1 MiB に限り、ADR-0019 §5 のレート制限の対象にする。
 - 後続で必要になる作業（Epic #925）
-  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.apply_payment_event` と `supporters.reconcile_payments`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciles` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
+  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.apply_payment_event` と `supporters.reconcile_payments`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciliation/runs` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
   - #920（`stripe` adapter）: §2 の adapter（プランと価格・Checkout・顧客ポータルの設定・プランの変更と Subscription Schedule・解約・balance transaction の写し・`ListSubscriptions`（`latest_invoice` の展開）と `ListChanges`（events）・要求の速さの制御・最低額の表・レポートのタイムゾーン）、§3 の標準ライブラリの検証器、§7 の URL のホストの確かめ、`payments_stripe_secret_key`・`payments_stripe_webhook_secret` の設定と `make config-docs`、`no_payments_stripe` と build-tags.md、`stripe-go` の go.mod と `make go-licenses`、docs（ダッシュボードの設定、制限付きの鍵の権限、登録するイベント、Stripe CLI でのローカルの試し方、テストモード、PCI の範囲）
   - #924（決定者）: §6 の 4 の筋書きをテストモードで確かめ、要検証の項目（Subscription Schedule、アーカイブした Price での更新、`subscription_data.metadata`、Account のタイムゾーン、制限付きの鍵の権限、最低額）の結果を issue に書く
 

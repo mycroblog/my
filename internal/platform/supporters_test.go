@@ -186,6 +186,35 @@ func TestSupporterProgram(t *testing.T) {
 	}
 }
 
+// TestEndSupporterSubscription ends a subscription as an administrator: the answer is the
+// subscription as it is then, and a second request finds it ended.
+func TestEndSupporterSubscription(t *testing.T) {
+	t.Parallel()
+	e, prov := newSupportersEnvOn(t, "sqlite")
+	admin := e.user("alice")
+	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
+		http.StatusCreated, "POST /admin/roles")
+	var plan clientapi.AdminSupporterPlan
+	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
+		"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
+		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
+	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
+	bob := e.user("bob")
+	subID := subscribeOnFake(t, e.app, prov, bob.id, plan.Id, "sub_1")
+
+	path := "/admin/supporter_subscriptions/" + subID + "/end"
+	var ended clientapi.AdminSupporterSubscription
+	e.want(e.do(http.MethodPost, path, admin.token, nil, &ended), http.StatusOK, "POST end")
+	if ended.Id != subID || ended.State != clientapi.SupporterSubscriptionStateExpired || ended.Username == nil || *ended.Username != "bob" {
+		t.Errorf("the ended subscription = %+v", ended)
+	}
+	res := e.do(http.MethodPost, path, admin.token, nil, nil)
+	if typ := e.want(res, http.StatusConflict, "POST end again"); typ != clientapi.ProblemTypeSubscriptionEnded {
+		t.Errorf("problem %s", typ)
+	}
+}
+
 // TestSupporterPlanAmountComesBack changes a plan's monthly amount A -> B -> A on both dialects:
 // each change makes the plan ready again with the new price as its current one, an amount the
 // plan had before comes back as a new price beside the old one, the price heads stay what a

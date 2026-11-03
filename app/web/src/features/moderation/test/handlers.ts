@@ -203,7 +203,7 @@ export function registrationFixture(
   overrides: Partial<Schemas["AdminRegistration"]> = {},
 ): Schemas["AdminRegistration"] {
   return {
-    user_id: "0192f0c4-7a8e-7000-8000-0000000000b1",
+    id: "0192f0c4-7a8e-7000-8000-0000000000b1",
     account_id: "0192f0c4-7a8e-7000-8000-0000000000c1",
     username: "bob",
     state: "pending",
@@ -549,22 +549,22 @@ export const handlers = [
   http.get(`${apiBase}/admin/registrations`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] })),
   ),
-  http.post(`${apiBase}/admin/registrations/:userId/approve`, ({ request, params }) =>
+  http.post(`${apiBase}/admin/registrations/:id/approve`, ({ request, params }) =>
     withViewer(request, () =>
       HttpResponse.json(
         registrationFixture({
-          user_id: String(params["userId"]),
+          id: String(params["id"]),
           state: "approved",
           state_changed_at: "2026-10-17T00:00:00Z",
         }),
       ),
     ),
   ),
-  http.post(`${apiBase}/admin/registrations/:userId/reject`, ({ request, params }) =>
+  http.post(`${apiBase}/admin/registrations/:id/reject`, ({ request, params }) =>
     withViewer(request, () =>
       HttpResponse.json(
         registrationFixture({
-          user_id: String(params["userId"]),
+          id: String(params["id"]),
           state: "rejected",
           state_changed_at: "2026-10-17T00:00:00Z",
         }),

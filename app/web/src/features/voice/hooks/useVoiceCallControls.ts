@@ -57,7 +57,7 @@ export function useVoiceCallControls(): VoiceCallControls | null {
   const self =
     room.participants.find((p) => p.session === call.session) ??
     room.participants.find((p) => p.account.id === viewerId);
-  const isHost = self?.host ?? false;
+  const isHost = self?.hosting ?? false;
   const others = room.participants.filter((p) => p !== self);
   return {
     room,

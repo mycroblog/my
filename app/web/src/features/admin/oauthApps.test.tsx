@@ -86,17 +86,17 @@ describe("the OAuth apps screen", () => {
     server.use(
       http.get(`${apiBase}/admin/oauth_clients`, () =>
         HttpResponse.json({
-          items: [oauthClientFixture(clientId, { disabled })],
+          items: [oauthClientFixture(clientId, { state: disabled ? "disabled" : "enabled" })],
         } satisfies Schemas["AdminOAuthClientPage"]),
       ),
       http.post(`${apiBase}/admin/oauth_clients/:id/disable`, ({ params }) => {
         disabled = true;
         disabledIds.push(String(params["id"]));
-        return HttpResponse.json(oauthClientFixture(clientId, { disabled }));
+        return HttpResponse.json(oauthClientFixture(clientId, { state: "disabled" }));
       }),
       http.post(`${apiBase}/admin/oauth_clients/:id/enable`, () => {
         disabled = false;
-        return HttpResponse.json(oauthClientFixture(clientId, { disabled }));
+        return HttpResponse.json(oauthClientFixture(clientId, { state: "enabled" }));
       }),
     );
     const { user } = await renderApp({ path: "/admin/oauth-apps" });

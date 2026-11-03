@@ -108,7 +108,7 @@ const enabled = supporterProgramFixture({ enabled: true, provider: "stripe", liv
 const live = paymentStatusFixture({
   mode: "live",
   last_webhook_at: "2026-10-28T23:40:00Z",
-  last_reconcile: {
+  last_reconciliation: {
     outcome: "succeeded",
     error_kind: "none",
     requests: 4,
@@ -165,7 +165,7 @@ export const Warnings: Story = adminAnswering(
     (() => {
       const { last_webhook_at: _webhook, ...status } = paymentStatusFixture({
         mode: "live",
-        last_reconcile: {
+        last_reconciliation: {
           outcome: "failed",
           error_kind: "permission",
           requests: 3,
@@ -173,7 +173,7 @@ export const Warnings: Story = adminAnswering(
           corrected_subscriptions: 2,
           occurred_at: "2026-10-22T00:00:00Z",
         },
-        warnings: ["no_webhook", "reconcile_corrected"],
+        warnings: ["no_webhook", "reconciliation_corrected"],
       });
       return status;
     })(),

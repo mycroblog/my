@@ -182,7 +182,7 @@ describe("the supporters screen", () => {
       http.get(`${apiBase}/admin/payment_status`, () => {
         const { last_webhook_at: _webhook, ...status } = paymentStatusFixture({
           mode: "live",
-          last_reconcile: {
+          last_reconciliation: {
             outcome: "failed",
             error_kind: "permission",
             requests: 3,
@@ -190,7 +190,7 @@ describe("the supporters screen", () => {
             corrected_subscriptions: 2,
             occurred_at: "2026-10-22T00:00:00Z",
           },
-          warnings: ["no_webhook", "reconcile_corrected"],
+          warnings: ["no_webhook", "reconciliation_corrected"],
         });
         return HttpResponse.json(status);
       }),
@@ -211,7 +211,7 @@ describe("the supporters screen", () => {
   test("reconciles now, and explains a second one within the hour", async () => {
     let queued = 0;
     server.use(
-      http.post(`${apiBase}/admin/payment_reconciles`, () => {
+      http.post(`${apiBase}/admin/payment_reconciliation/runs`, () => {
         queued += 1;
         if (queued > 1) return refusal(429, "/api/v1/problems/rate-limited", "Too many requests.", "Try again later.");
         return new HttpResponse(null, { status: 204 });
@@ -365,9 +365,9 @@ describe("the supporters screen", () => {
           ],
         });
       }),
-      http.post(`${apiBase}/admin/supporter_subscriptions/:id/cancel`, () => {
+      http.post(`${apiBase}/admin/supporter_subscriptions/:id/end`, ({ params }) => {
         canceled = true;
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json(supporterSubscriptionFixture(String(params["id"]), { state: "expired" }));
       }),
     );
     const { user, router } = await renderApp({ path: "/admin/supporters" });

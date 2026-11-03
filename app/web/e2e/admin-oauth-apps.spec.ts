@@ -68,7 +68,7 @@ async function operatorServer(page: Page) {
     scopes: ["read", "write"],
     owner: operator,
     owner_deleted: false,
-    disabled,
+    state: disabled ? "disabled" : "enabled",
     created_at: "2026-10-22T00:00:00Z",
   });
   await page.route("**/oauth/token/refresh", (route) =>

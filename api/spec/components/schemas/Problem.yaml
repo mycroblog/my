@@ -106,7 +106,7 @@ description: |
     (`POST /admin/closure/close`).
   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
     stops new registrations and supporter subscriptions: approving a pending
-    registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+    registration (`/admin/registrations/{id}/approve`) or starting a supporter checkout
     (`POST /supporter/checkout`).
   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
     server serves only the operations with which the users take their data away: their own
@@ -184,7 +184,7 @@ description: |
   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
     an administrator. Make another user an administrator first.
   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
-    (`POST /accounts/move/cancel`).
+    (`DELETE /accounts/move`).
   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
     `DELETE /sessions/{id}`; signing out ends it.
   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is

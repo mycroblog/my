@@ -41,14 +41,14 @@ function json(route: Route, body: unknown, status = 200) {
   });
 }
 
-type Registration = Record<string, unknown> & { user_id: string; username: string };
+type Registration = Record<string, unknown> & { id: string; username: string };
 
 /** Plays the admin API of a signed-in moderator; returns the decisions taken. */
 async function moderatorServer(page: Page) {
   const locale = test.info().project.use.locale ?? "en";
   let pending: Registration[] = [
     {
-      user_id: "0192f0c4-7a8e-7000-8000-0000000000b1",
+      id: "0192f0c4-7a8e-7000-8000-0000000000b1",
       account_id: "0192f0c4-7a8e-7000-8000-0000000000c1",
       username: "bob",
       state: "pending",
@@ -59,7 +59,7 @@ async function moderatorServer(page: Page) {
       submitted_at: "2026-10-16T09:00:00Z",
     },
     {
-      user_id: "0192f0c4-7a8e-7000-8000-0000000000b2",
+      id: "0192f0c4-7a8e-7000-8000-0000000000b2",
       account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
       username: "carol",
       state: "pending",
@@ -114,11 +114,11 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/registrations") return json(route, { items: pending });
     const decide = /^POST \/admin\/registrations\/([^/]+)\/(approve|reject)$/.exec(key);
     if (decide) {
-      const [, userId, decision] = decide;
+      const [, id, decision] = decide;
       const body = (request.postDataJSON() ?? {}) as { note?: string };
-      decisions.push(`${decision} ${userId} ${body.note ?? ""}`.trim());
-      const registration = pending.find((item) => item.user_id === userId);
-      pending = pending.filter((item) => item.user_id !== userId);
+      decisions.push(`${decision} ${id} ${body.note ?? ""}`.trim());
+      const registration = pending.find((item) => item.id === id);
+      pending = pending.filter((item) => item.id !== id);
       return json(route, {
         ...registration,
         state: decision === "approve" ? "approved" : "rejected",

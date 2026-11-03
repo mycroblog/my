@@ -84,8 +84,8 @@ It records each event once by ID, enqueues a job, and returns `2xx`. When it can
 While you rotate the signing secret, Stripe signs with both the old and the new one, so putting the new secret in the configuration is enough.
 
 The state of the provider (the mode, when the last webhook arrived, and the result and failure kind of the last reconciliation) is shown in the "Payment provider" section of `/admin/supporters` in the administration, and by the admin API `GET /api/v1/admin/payment_status` (permission `manage_supporters`). The section explains how to fix each kind of reconciliation failure.
-`warnings` lists `no_webhook` (no webhook has ever been recorded) and `reconcile_corrected` (the last reconciliation repaired a subscription). Suspect a misconfigured webhook when either appears.
-"Reconcile now" in the section (`POST /api/v1/admin/payment_reconciles`) reconciles at once instead of waiting for the scheduled run. It is limited to once per UTC hour (a second call in the same hour returns `429`), and the audit log records `payment_reconcile_queued`.
+`warnings` lists `no_webhook` (no webhook has ever been recorded) and `reconciliation_corrected` (the last reconciliation repaired a subscription). Suspect a misconfigured webhook when either appears.
+"Reconcile now" in the section (`POST /api/v1/admin/payment_reconciliation/runs`) reconciles at once instead of waiting for the scheduled run. It is limited to once per UTC hour (a second call in the same hour returns `429`), and the audit log records `payment_reconcile_queued`.
 
 ## 4. Configure the server
 

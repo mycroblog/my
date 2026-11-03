@@ -105,7 +105,7 @@ const room: Schemas["VoiceRoom"] = {
   opened_at: "2026-10-26T12:00:00Z",
   participants_count: 2,
   participants: [
-    { account: bob, role: "speaker", host: true, cohost: false, hand_raised: false, blocked: false },
+    { account: bob, role: "speaker", hosting: true, cohosting: false, hand_raised: false, blocked: false },
     {
       account: {
         ...alice,
@@ -115,8 +115,8 @@ const room: Schemas["VoiceRoom"] = {
         display_name: "Carol",
       },
       role: "listener",
-      host: false,
-      cohost: false,
+      hosting: false,
+      cohosting: false,
       hand_raised: false,
       blocked: false,
     },
@@ -131,7 +131,7 @@ const joined: Schemas["VoiceRoom"] = {
   participants_count: 3,
   participants: [
     ...room.participants,
-    { account: alice, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false },
+    { account: alice, role: "listener", hosting: false, cohosting: false, hand_raised: false, blocked: false },
   ],
 };
 

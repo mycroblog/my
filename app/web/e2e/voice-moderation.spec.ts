@@ -76,7 +76,9 @@ const room: Schemas["VoiceRoom"] = {
   host: bob,
   opened_at: "2026-10-26T12:00:00Z",
   participants_count: 1,
-  participants: [{ account: bob, role: "speaker", host: true, cohost: false, hand_raised: false, blocked: false }],
+  participants: [
+    { account: bob, role: "speaker", hosting: true, cohosting: false, hand_raised: false, blocked: false },
+  ],
 };
 
 const reportId = "0192f0c4-7a8e-7000-8000-0000000c0009";

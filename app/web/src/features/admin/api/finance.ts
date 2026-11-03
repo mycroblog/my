@@ -184,13 +184,13 @@ export function setCostItemEndMutation(api: Api) {
   };
 }
 
-/** Cancels a cost item for good (POST /admin/cost_items/{id}/cancel). */
-export function cancelCostItemMutation(api: Api) {
+/** Deletes a cost item for good (DELETE /admin/cost_items/{id}). */
+export function deleteCostItemMutation(api: Api) {
   return {
-    mutationKey: ["post", "/admin/cost_items/{id}/cancel"] as const,
+    mutationKey: ["delete", "/admin/cost_items/{id}"] as const,
     mutationFn: async (id: string): Promise<void> => {
       // The middleware throws for every error status; a 204 has no body to read.
-      await api.fetch.POST("/admin/cost_items/{id}/cancel", { params: { path: { id } } });
+      await api.fetch.DELETE("/admin/cost_items/{id}", { params: { path: { id } } });
     },
   };
 }

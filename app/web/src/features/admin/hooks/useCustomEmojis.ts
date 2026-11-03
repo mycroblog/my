@@ -22,6 +22,7 @@ import {
   type CustomEmojiFilter,
   deleteCustomEmojiMutation,
   replaceCustomEmojiImageMutation,
+  setCustomEmojiEnabledMutation,
   updateCustomEmojiMutation,
 } from "../api/customEmojis";
 
@@ -154,18 +155,20 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
     notice.inPlace(message);
   };
   const update = useMutation(updateCustomEmojiMutation(api));
+  const toggle = useMutation(setCustomEmojiEnabledMutation(api));
   const replace = useMutation(replaceCustomEmojiImageMutation(api));
   const remove = useMutation(deleteCustomEmojiMutation(api));
   const copy = useMutation(copyCustomEmojiMutation(api));
-  const pending = [update, replace, copy].find((mutation) => mutation.isPending);
+  const pending = [update, toggle, replace, copy].find((mutation) => mutation.isPending);
   const pendingId = remove.isPending ? remove.variables : pending?.variables.id;
-  const failed = [update, replace, remove, copy].find((mutation) => mutation.isError);
+  const failed = [update, toggle, replace, remove, copy].find((mutation) => mutation.isError);
   const changed = async (emoji: AdminCustomEmoji, message: string) => {
     await cacheChangedCustomEmoji(queryClient, emoji);
     report(message);
   };
   return {
     update: async (emoji, change) => {
+      toggle.reset();
       replace.reset();
       remove.reset();
       copy.reset();
@@ -178,11 +181,12 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
       }
     },
     setEnabled: (emoji, enabled) => {
+      update.reset();
       replace.reset();
       remove.reset();
       copy.reset();
-      update.mutate(
-        { id: emoji.id, change: { enabled } },
+      toggle.mutate(
+        { id: emoji.id, enabled },
         {
           onSuccess: (saved) => {
             void changed(
@@ -196,6 +200,7 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
       );
     },
     replaceImage: (emoji, file) => {
+      toggle.reset();
       update.reset();
       remove.reset();
       copy.reset();
@@ -209,6 +214,7 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
       );
     },
     remove: async (emoji) => {
+      toggle.reset();
       update.reset();
       replace.reset();
       copy.reset();
@@ -223,6 +229,7 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
       return true;
     },
     copy: async (emoji, shortcode) => {
+      toggle.reset();
       update.reset();
       replace.reset();
       remove.reset();
@@ -242,6 +249,7 @@ export function useCustomEmojiActions(onDeleted: (id: string) => void): CustomEm
     error: failed === undefined ? undefined : failure(t, failed.error),
     status,
     report: (message) => {
+      toggle.reset();
       update.reset();
       replace.reset();
       remove.reset();

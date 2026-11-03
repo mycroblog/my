@@ -27,7 +27,7 @@ const twoRooms = openRooms([
     description: "",
     hashtags: [],
     participants: [
-      participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+      participantFixture(otherAccountFixture, { role: "speaker", hosting: true }),
       participantFixture(accountFixture(21, "Dave", instanceFixture.domain), { role: "speaker" }),
       participantFixture(accountFixture(22, "Erin", instanceFixture.domain)),
     ],

@@ -243,14 +243,6 @@
     "defaultMessage": "Close",
     "description": "Accessible name of the close button of the dialog of a custom emoji's settings."
   },
-  "admin.custom_emojis.enabled": {
-    "defaultMessage": "Enabled",
-    "description": "Checkbox of whether a custom emoji is shown."
-  },
-  "admin.custom_emojis.enabled.description": {
-    "defaultMessage": "A disabled emoji is shown nowhere; its :shortcode: stays text.",
-    "description": "Help of the checkbox of whether a custom emoji is shown. :shortcode: is not translated."
-  },
   "admin.custom_emojis.save": {
     "defaultMessage": "Save",
     "description": "Button that saves the settings of a custom emoji."

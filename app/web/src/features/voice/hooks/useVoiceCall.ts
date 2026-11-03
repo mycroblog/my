@@ -118,14 +118,14 @@ export function useVoiceCall(room: VoiceRoom): VoiceCallControl {
   const reactions = new Map<string, VoiceReactionShown[]>();
   for (const shown of snapshot.reactions)
     reactions.set(shown.participant, [...(reactions.get(shown.participant) ?? []), shown]);
-  const isHost = self?.host ?? false;
+  const isHost = self?.hosting ?? false;
   return {
     status: "in-call",
     phase: snapshot.phase,
     self,
     isSpeaker: self?.role === "speaker",
     isHost,
-    manages: isHost || (self?.cohost ?? false),
+    manages: isHost || (self?.cohosting ?? false),
     operate: (op) => {
       operation.mutate(op);
     },

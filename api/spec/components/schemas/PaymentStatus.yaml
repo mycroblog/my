@@ -21,14 +21,14 @@ properties:
       deliveries are kept 45 days).
     type: string
     format: date-time
-  last_reconcile:
-    $ref: ./PaymentReconcileRun.yaml
+  last_reconciliation:
+    $ref: ./PaymentReconciliationRun.yaml
   warnings:
     description: |
       The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-      recorded) and `reconcile_corrected` (the last reconciliation corrected subscriptions,
+      recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
       which a webhook delivery should have done).
     type: array
     items:
       type: string
-      enum: [no_webhook, reconcile_corrected]
+      enum: [no_webhook, reconciliation_corrected]

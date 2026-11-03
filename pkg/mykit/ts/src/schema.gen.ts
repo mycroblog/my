@@ -447,28 +447,12 @@ export interface paths {
          *     changes nothing.
          */
         post: operations["addAccountAlias"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/aliases/remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
          * Remove an alias of the authenticated user
          * @description Removes an alias; the actor's `Update` goes to the user's followers as a
          *     profile change does. Removing an alias that the user does not have changes nothing.
          */
-        post: operations["removeAccountAlias"];
-        delete?: never;
+        delete: operations["removeAccountAlias"];
         options?: never;
         head?: never;
         patch?: never;
@@ -764,7 +748,7 @@ export interface paths {
          *     Once moved, the account's followers on other servers get a `Move` and follow the target,
          *     the followers on this server follow it too, and the account's profile names the target
          *     (`Account.moved`). The account can still sign in, read, export, delete itself, set its
-         *     aliases, and cancel the move (`POST /accounts/move/cancel`); posting, boosting, reacting,
+         *     aliases, and cancel the move (`DELETE /accounts/move`); posting, boosting, reacting,
          *     following, and voting are refused with a 403 `/api/v1/problems/account-moved`. A wrong
          *     password is a 422 `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
          *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
@@ -776,21 +760,6 @@ export interface paths {
          *     `/api/v1/problems/external-confirmation-expired`.
          */
         post: operations["moveOwnAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/move/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
          * Cancel the move of the authenticated user's account
          * @description Cancels the move of the user's account: the account no longer names the target,
@@ -799,8 +768,7 @@ export interface paths {
          *     move still waits 30 days from the canceled one. An account that has not moved gets a 409
          *     `/api/v1/problems/account-not-moved`.
          */
-        post: operations["cancelOwnAccountMove"];
-        delete?: never;
+        delete: operations["cancelOwnAccountMove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1897,7 +1865,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/accounts/{id}/remove_from_followers": {
+    "/accounts/{id}/follower": {
         parameters: {
             query?: never;
             header?: never;
@@ -1906,13 +1874,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
         /**
          * Remove an account from the viewer's followers
          * @description Ends the account's active follow of the viewer. Without one it changes nothing; a
          *     pending request is declined with `rejectFollowRequest` instead.
          */
-        post: operations["removeAccountFromFollowers"];
-        delete?: never;
+        delete: operations["removeFollower"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2832,7 +2800,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/statuses/{id}/quotes/{quote_id}/revoke": {
+    "/statuses/{id}/quotes/{quote_id}/approval": {
         parameters: {
             query?: never;
             header?: never;
@@ -2846,6 +2814,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
         /**
          * Revoke the approval of a quote of the authenticated user's status
          * @description Withdraws this server's approval of the quote: the quote shows the quoted
@@ -2853,8 +2822,7 @@ export interface paths {
          *     (from software without approvals, or of the user's own status) is a 404, as is one revoked
          *     already.
          */
-        post: operations["revokeStatusQuote"];
-        delete?: never;
+        delete: operations["revokeStatusQuoteApproval"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3482,8 +3450,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Withdraw the cancellation of the authenticated user's subscription
-         * @description Withdraws the cancellation of a `canceling` subscription, which then renews as before. A
+         * Resume the authenticated user's canceling subscription
+         * @description Takes back the cancellation of a `canceling` subscription, which then renews as before. A
          *     409 `/api/v1/problems/supporter-subscription-state` in another state.
          */
         post: operations["resumeOwnSupporterSubscription"];
@@ -3503,8 +3471,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Withdraw the scheduled change of the authenticated user's subscription
-         * @description Withdraws the change to a lower plan or to the monthly price that waits for the end of
+         * Cancel the scheduled change of the authenticated user's subscription
+         * @description Cancels the change to a lower plan or to the monthly price that waits for the end of
          *     the period; the subscription renews at its current plan and interval. A 409
          *     `/api/v1/problems/supporter-subscription-state` without a scheduled change.
          */
@@ -4491,7 +4459,7 @@ export interface paths {
         };
         /**
          * List the cost items
-         * @description The instance's cost items that are not canceled, newest first.
+         * @description The instance's cost items that are not deleted, newest first.
          *     Needs the `manage_finance` permission.
          */
         get: operations["listCostItems"];
@@ -4521,18 +4489,24 @@ export interface paths {
         };
         /**
          * Get a cost item
-         * @description An unknown or canceled item is a 404. Needs the `manage_finance` permission.
+         * @description An unknown or deleted item is a 404. Needs the `manage_finance` permission.
          */
         get: operations["getCostItem"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a cost item
+         * @description Removes a cost item recorded by mistake from every period, past ones included. There is
+         *     no undo: record the item again. An unknown or already deleted item is a 404. Recorded in
+         *     the audit log. Needs the `manage_finance` permission.
+         */
+        delete: operations["deleteCostItem"];
         options?: never;
         head?: never;
         /**
          * Change a cost item's label
          * @description Records a new name, provider, category, or memo of a cost item; an omitted property keeps
-         *     its value. The values are checked as for a new item (422). An unknown or canceled item is
+         *     its value. The values are checked as for a new item (422). An unknown or deleted item is
          *     a 404. Recorded in the audit log. Needs the `manage_finance` permission.
          */
         patch: operations["updateCostItem"];
@@ -4550,7 +4524,7 @@ export interface paths {
         /**
          * Revise a cost item's price
          * @description Records the price of the payments on or after `effective_on`. A date before the start
-         *     date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or canceled
+         *     date (`effective_on`) and an invalid price (`price`) are a 422. An unknown or deleted
          *     item is a 404. Recorded in the audit log. Needs the `manage_finance` permission.
          */
         post: operations["reviseCostItemPrice"];
@@ -4572,33 +4546,11 @@ export interface paths {
          * Set a cost item's end
          * @description Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it
          *     go away, the past ones stay), or makes it endless again without `ends_on`. A date before
-         *     the start date is a 422 naming `ends_on`. An unknown or canceled item is a 404. Recorded
+         *     the start date is a 422 naming `ends_on`. An unknown or deleted item is a 404. Recorded
          *     in the audit log. Needs the `manage_finance` permission.
          */
         put: operations["setCostItemEnd"];
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/cost_items/{id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cancel a cost item
-         * @description Removes a cost item recorded by mistake from every period, past ones included. There is
-         *     no undo: record the item again. An unknown or already canceled item is a 404. Recorded in
-         *     the audit log. Needs the `manage_finance` permission.
-         */
-        post: operations["cancelCostItem"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5546,14 +5498,56 @@ export interface paths {
         head?: never;
         /**
          * Change the settings of a custom emoji
-         * @description Changes what the request names and keeps the rest. A remote emoji can only be enabled
-         *     and disabled (`enabled`); a change of its other settings is a 422 with the reason
-         *     `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+         * @description Changes what the request names and keeps the rest. A remote emoji has none of these
+         *     settings: a change of one is a 422 with the reason `remote_emoji`.
          *     `category` is trimmed, and an empty one removes the category; `aliases` replace the
          *     aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
          *     `manage_custom_emojis` permission.
          */
         patch: operations["updateCustomEmoji"];
+        trace?: never;
+    };
+    "/admin/custom_emojis/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable a custom emoji
+         * @description Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a
+         *     remote emoji. Each change is recorded in the audit log. An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+         */
+        post: operations["enableCustomEmoji"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/custom_emojis/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable a custom emoji
+         * @description Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji
+         *     changes nothing. Works on a local and a remote emoji. Each change is recorded in the audit log.
+         *     An unknown ID is a 404. Needs the `manage_custom_emojis` permission.
+         */
+        post: operations["disableCustomEmoji"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/admin/custom_emojis/{id}/image": {
@@ -6180,7 +6174,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/registrations/{user_id}/approve": {
+    "/admin/registrations/{id}/approve": {
         parameters: {
             query?: never;
             header?: never;
@@ -6194,7 +6188,7 @@ export interface paths {
          * @description Approves a pending registration, so that its user can sign in, with an optional note
          *     for the moderators; the decision is audited. Deciding a decided registration changes
          *     nothing and keeps its decision. The answer on a decided registration has no email address:
-         *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
+         *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. An unknown ID is a 404. From the
          *     announcement of the closure of the service on, a pending registration is not approved: a
          *     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
          *     the `manage_accounts` permission.
@@ -6206,7 +6200,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/registrations/{user_id}/reject": {
+    "/admin/registrations/{id}/reject": {
         parameters: {
             query?: never;
             header?: never;
@@ -6221,7 +6215,7 @@ export interface paths {
          *     for the moderators; the decision is audited. Deciding a decided registration changes
          *     nothing and keeps its decision. The answer on a decided registration has no email address:
          *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
-         *     A user without a registration is a 404. Needs the
+         *     An unknown ID is a 404. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["rejectRegistration"];
@@ -6736,8 +6730,8 @@ export interface paths {
         /**
          * Disable an OAuth client
          * @description Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-         *     its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-         *     new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+         *     its authorization requests, token exchanges and refreshes until it is enabled again.
+         *     Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
          *     is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
          *     `manage_oauth_apps` permission.
          */
@@ -6758,11 +6752,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Lift the disablement of an OAuth client
-         * @description The client can be authorized again. The tokens that the disablement revoked stay revoked:
-         *     the users authorize the client again. Lifting nothing changes nothing. The lift is
-         *     recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422 naming `id`. Needs the `manage_oauth_apps`
-         *     permission.
+         * Enable an OAuth client
+         * @description The client can be authorized again. The tokens that disabling it revoked stay revoked: the
+         *     users authorize the client again. Enabling an enabled client changes nothing. The change is
+         *     recorded in the audit log. An unknown ID is a 404, and one of the server's own clients a 422
+         *     naming `id`. Needs the `manage_oauth_apps` permission.
          */
         post: operations["enableOAuthClient"];
         delete?: never;
@@ -7425,7 +7419,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/payment_reconciles": {
+    "/admin/payment_reconciliation/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -7441,7 +7435,7 @@ export interface paths {
          *     429. A deployment without a payment provider is a 404. The request is recorded in the
          *     audit log. Needs the `manage_supporters` permission.
          */
-        post: operations["runPaymentReconcile"];
+        post: operations["runPaymentReconciliation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7572,7 +7566,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/supporter_subscriptions/{id}/cancel": {
+    "/admin/supporter_subscriptions/{id}/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -7582,13 +7576,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Cancel a subscription at once
+         * End a subscription at once
          * @description Ends a subscription at once, without a refund: the role goes now, and the
          *     payment provider stops billing. A refund is the operator's to make at the provider. A
          *     subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
          *     unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
          */
-        post: operations["cancelSupporterSubscription"];
+        post: operations["endSupporterSubscription"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8555,8 +8549,7 @@ export interface components {
              * @description The URL of a still image of the emoji; absent with `url`.
              */
             static_url?: string;
-            /** @description Whether the emoji is shown; a disabled one stays `:shortcode:` text. */
-            enabled: boolean;
+            state: components["schemas"]["CustomEmojiState"];
             /** @description Whether the picker offers the local emoji; always `true` for a remote one. */
             visible_in_picker: boolean;
             /** @description The category of a local emoji in the picker; absent for none. */
@@ -8764,8 +8757,7 @@ export interface components {
             owner?: components["schemas"]["Account"];
             /** @description Whether a user registered the client whose account no longer exists. */
             owner_deleted: boolean;
-            /** @description Whether an administrator has disabled the client and not lifted it. */
-            disabled: boolean;
+            state: components["schemas"]["AdminOAuthClientState"];
             /** Format: date-time */
             created_at: string;
         };
@@ -8792,6 +8784,11 @@ export interface components {
         AdminOAuthClientPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminOAuthClient"][];
         };
+        /**
+         * @description Whether the client is authorized and gets tokens. An administrator disables and enables it.
+         * @enum {string}
+         */
+        AdminOAuthClientState: "enabled" | "disabled";
         /** @description A host to deny. */
         DenyOAuthClientHostRequest: {
             /** @description The host name of `client_id` URLs, without a scheme, a port or a path; it is lowercased. */
@@ -9112,7 +9109,7 @@ export interface components {
         };
         /** @description A user's registration as the moderators review it. */
         AdminRegistration: {
-            user_id: components["schemas"]["Id"];
+            id: components["schemas"]["Id"];
             /** @description The user's local account; omitted when it is gone. */
             account_id?: components["schemas"]["Id"];
             /** @description The username of the user's local account; omitted when it is gone. */
@@ -10205,7 +10202,7 @@ export interface components {
          */
         CostGranularity: "week" | "month" | "year";
         /**
-         * @description A cost of the instance that is not canceled, with its current label and end
+         * @description A cost of the instance that is not deleted, with its current label and end
          *     and every price revision. Never published: the public totals carry no item.
          */
         CostItem: {
@@ -10724,6 +10721,11 @@ export interface components {
          * @enum {string}
          */
         CustomEmojiRequestState: "pending" | "approved" | "rejected" | "withdrawn" | "lapsed";
+        /**
+         * @description Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+         * @enum {string}
+         */
+        CustomEmojiState: "enabled" | "disabled";
         /** @description A request for an archive of the user's data. */
         DataExport: {
             id: components["schemas"]["Id"];
@@ -12493,11 +12495,7 @@ export interface components {
              * @description The URL of a still image of the emoji; absent with `url`.
              */
             static_url?: string;
-            /**
-             * @description Whether the emoji is shown; an administrator disables and enables it, and a disabled one
-             *     stays `:shortcode:` text.
-             */
-            enabled: boolean;
+            state: components["schemas"]["CustomEmojiState"];
             /** @description Whether the picker offers the emoji. */
             visible_in_picker: boolean;
             /** @description The category of the emoji in the picker; absent for none. */
@@ -12700,7 +12698,7 @@ export interface components {
             has_password: boolean;
         };
         /** @description The last attempt of the reconciliation with the payment provider; omitted before the first. */
-        PaymentReconcileRun: {
+        PaymentReconciliationRun: {
             /**
              * @description `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
              *     continuation takes over; `failed` when the provider failed.
@@ -12743,13 +12741,13 @@ export interface components {
              *     deliveries are kept 45 days).
              */
             last_webhook_at?: string;
-            last_reconcile?: components["schemas"]["PaymentReconcileRun"];
+            last_reconciliation?: components["schemas"]["PaymentReconciliationRun"];
             /**
              * @description The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-             *     recorded) and `reconcile_corrected` (the last reconciliation corrected subscriptions,
+             *     recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
              *     which a webhook delivery should have done).
              */
-            warnings: ("no_webhook" | "reconcile_corrected")[];
+            warnings: ("no_webhook" | "reconciliation_corrected")[];
         };
         /**
          * @description A capability that a role grants. `manage_accounts`: the accounts and their moderation
@@ -13039,7 +13037,7 @@ export interface components {
          *       (`POST /admin/closure/close`).
          *     - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
          *       stops new registrations and supporter subscriptions: approving a pending
-         *       registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+         *       registration (`/admin/registrations/{id}/approve`) or starting a supporter checkout
          *       (`POST /supporter/checkout`).
          *     - `/api/v1/problems/service-closed` (403): the server is closed. A closed
          *       server serves only the operations with which the users take their data away: their own
@@ -13117,7 +13115,7 @@ export interface components {
          *     - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
          *       an administrator. Make another user an administrator first.
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
-         *       (`POST /accounts/move/cancel`).
+         *       (`DELETE /accounts/move`).
          *     - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
          *       `DELETE /sessions/{id}`; signing out ends it.
          *     - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
@@ -13387,11 +13385,6 @@ export interface components {
          * @enum {string}
          */
         RelayState: "pending" | "accepted" | "rejected" | "left";
-        /** @description The alias to remove. */
-        RemoveAccountAliasRequest: {
-            /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
-            uri: string;
-        };
         /**
          * @description What confirms the removal of the user's password: a `passkey` of the user or an
          *     `external_confirmation`.
@@ -14101,8 +14094,6 @@ export interface components {
         };
         /** @description The settings of a custom emoji to change; absent ones stay. */
         UpdateCustomEmojiRequest: {
-            /** @description Whether the emoji is shown. */
-            enabled?: boolean;
             /** @description Whether the picker offers the local emoji. */
             visible_in_picker?: boolean;
             /** @description The category in the picker, up to 64 characters; empty removes it. */
@@ -14406,9 +14397,9 @@ export interface components {
             account: components["schemas"]["Account"];
             role: components["schemas"]["VoiceRole"];
             /** @description Whether the participant is the host. */
-            host: boolean;
+            hosting: boolean;
             /** @description Whether the participant is a co-host. The host is never a co-host. */
-            cohost: boolean;
+            cohosting: boolean;
             /** @description Whether the participant raised a hand to speak. */
             hand_raised: boolean;
             /** @description Whether the user blocks the participant or the participant blocks the user. */
@@ -15270,8 +15261,8 @@ export interface components {
         ListId: components["schemas"]["Id"];
         /** @description The ID of the OAuth app (not its `client_id`). */
         OAuthAppId: components["schemas"]["Id"];
-        /** @description The ID of the user who signed up. */
-        RegistrationUserId: components["schemas"]["Id"];
+        /** @description The ID of the registration. */
+        RegistrationId: components["schemas"]["Id"];
         /** @description The ID of the relay. */
         RelayId: components["schemas"]["Id"];
         /** @description The ID of the report. */
@@ -15794,16 +15785,15 @@ export interface operations {
     };
     removeAccountAlias: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description The `uri` of the alias, as `GET /accounts/aliases` lists it. */
+                uri: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RemoveAccountAliasRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             200: components["responses"]["AccountAliasList"];
             default: components["responses"]["Problem"];
@@ -17330,7 +17320,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    removeAccountFromFollowers: {
+    removeFollower: {
         parameters: {
             query?: never;
             header?: never;
@@ -18477,7 +18467,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    revokeStatusQuote: {
+    revokeStatusQuoteApproval: {
         parameters: {
             query?: never;
             header?: never;
@@ -20287,6 +20277,28 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    deleteCostItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the cost item. */
+                id: components["parameters"]["CostItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     updateCostItem: {
         parameters: {
             query?: never;
@@ -20344,28 +20356,6 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["CostItem"];
-            default: components["responses"]["Problem"];
-        };
-    };
-    cancelCostItem: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The ID of the cost item. */
-                id: components["parameters"]["CostItemId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The item is canceled. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
             default: components["responses"]["Problem"];
         };
     };
@@ -21384,6 +21374,38 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    enableCustomEmoji: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the custom emoji. */
+                id: components["parameters"]["CustomEmojiId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminCustomEmoji"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    disableCustomEmoji: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the custom emoji. */
+                id: components["parameters"]["CustomEmojiId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminCustomEmoji"];
+            default: components["responses"]["Problem"];
+        };
+    };
     replaceCustomEmojiImage: {
         parameters: {
             query?: never;
@@ -21978,8 +22000,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The ID of the user who signed up. */
-                user_id: components["parameters"]["RegistrationUserId"];
+                /** @description The ID of the registration. */
+                id: components["parameters"]["RegistrationId"];
             };
             cookie?: never;
         };
@@ -21998,8 +22020,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The ID of the user who signed up. */
-                user_id: components["parameters"]["RegistrationUserId"];
+                /** @description The ID of the registration. */
+                id: components["parameters"]["RegistrationId"];
             };
             cookie?: never;
         };
@@ -23221,7 +23243,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    runPaymentReconcile: {
+    runPaymentReconciliation: {
         parameters: {
             query?: never;
             header?: never;
@@ -23378,7 +23400,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    cancelSupporterSubscription: {
+    endSupporterSubscription: {
         parameters: {
             query?: never;
             header?: never;
@@ -23390,12 +23412,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The subscription has ended. */
-            204: {
+            /** @description The subscription after it ended. */
+            200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminSupporterSubscription"];
+                };
             };
             default: components["responses"]["Problem"];
         };

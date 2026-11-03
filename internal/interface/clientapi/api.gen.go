@@ -862,6 +862,24 @@ func (e AdminLoginProviderState) Valid() bool {
 	}
 }
 
+// Defines values for AdminOAuthClientState.
+const (
+	AdminOAuthClientStateDisabled AdminOAuthClientState = "disabled"
+	AdminOAuthClientStateEnabled  AdminOAuthClientState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the AdminOAuthClientState enum.
+func (e AdminOAuthClientState) Valid() bool {
+	switch e {
+	case AdminOAuthClientStateDisabled:
+		return true
+	case AdminOAuthClientStateEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminReportOutcome.
 const (
 	AdminReportOutcomeActioned  AdminReportOutcome = "actioned"
@@ -1666,6 +1684,24 @@ func (e CustomEmojiRequestState) Valid() bool {
 	case CustomEmojiRequestStateRejected:
 		return true
 	case CustomEmojiRequestStateWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomEmojiState.
+const (
+	CustomEmojiStateDisabled CustomEmojiState = "disabled"
+	CustomEmojiStateEnabled  CustomEmojiState = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the CustomEmojiState enum.
+func (e CustomEmojiState) Valid() bool {
+	switch e {
+	case CustomEmojiStateDisabled:
+		return true
+	case CustomEmojiStateEnabled:
 		return true
 	default:
 		return false
@@ -2992,66 +3028,66 @@ func (e OAuthClientRegistration) Valid() bool {
 	}
 }
 
-// Defines values for PaymentReconcileRunErrorKind.
+// Defines values for PaymentReconciliationRunErrorKind.
 const (
-	PaymentReconcileRunErrorKindInvalidRequest   PaymentReconcileRunErrorKind = "invalid_request"
-	PaymentReconcileRunErrorKindInvalidResponse  PaymentReconcileRunErrorKind = "invalid_response"
-	PaymentReconcileRunErrorKindInvalidSignature PaymentReconcileRunErrorKind = "invalid_signature"
-	PaymentReconcileRunErrorKindModeMismatch     PaymentReconcileRunErrorKind = "mode_mismatch"
-	PaymentReconcileRunErrorKindNone             PaymentReconcileRunErrorKind = "none"
-	PaymentReconcileRunErrorKindNotFound         PaymentReconcileRunErrorKind = "not_found"
-	PaymentReconcileRunErrorKindPermission       PaymentReconcileRunErrorKind = "permission"
-	PaymentReconcileRunErrorKindRequestCap       PaymentReconcileRunErrorKind = "request_cap"
-	PaymentReconcileRunErrorKindStaleSignature   PaymentReconcileRunErrorKind = "stale_signature"
-	PaymentReconcileRunErrorKindThrottled        PaymentReconcileRunErrorKind = "throttled"
-	PaymentReconcileRunErrorKindUnavailable      PaymentReconcileRunErrorKind = "unavailable"
+	PaymentReconciliationRunErrorKindInvalidRequest   PaymentReconciliationRunErrorKind = "invalid_request"
+	PaymentReconciliationRunErrorKindInvalidResponse  PaymentReconciliationRunErrorKind = "invalid_response"
+	PaymentReconciliationRunErrorKindInvalidSignature PaymentReconciliationRunErrorKind = "invalid_signature"
+	PaymentReconciliationRunErrorKindModeMismatch     PaymentReconciliationRunErrorKind = "mode_mismatch"
+	PaymentReconciliationRunErrorKindNone             PaymentReconciliationRunErrorKind = "none"
+	PaymentReconciliationRunErrorKindNotFound         PaymentReconciliationRunErrorKind = "not_found"
+	PaymentReconciliationRunErrorKindPermission       PaymentReconciliationRunErrorKind = "permission"
+	PaymentReconciliationRunErrorKindRequestCap       PaymentReconciliationRunErrorKind = "request_cap"
+	PaymentReconciliationRunErrorKindStaleSignature   PaymentReconciliationRunErrorKind = "stale_signature"
+	PaymentReconciliationRunErrorKindThrottled        PaymentReconciliationRunErrorKind = "throttled"
+	PaymentReconciliationRunErrorKindUnavailable      PaymentReconciliationRunErrorKind = "unavailable"
 )
 
-// Valid indicates whether the value is a known member of the PaymentReconcileRunErrorKind enum.
-func (e PaymentReconcileRunErrorKind) Valid() bool {
+// Valid indicates whether the value is a known member of the PaymentReconciliationRunErrorKind enum.
+func (e PaymentReconciliationRunErrorKind) Valid() bool {
 	switch e {
-	case PaymentReconcileRunErrorKindInvalidRequest:
+	case PaymentReconciliationRunErrorKindInvalidRequest:
 		return true
-	case PaymentReconcileRunErrorKindInvalidResponse:
+	case PaymentReconciliationRunErrorKindInvalidResponse:
 		return true
-	case PaymentReconcileRunErrorKindInvalidSignature:
+	case PaymentReconciliationRunErrorKindInvalidSignature:
 		return true
-	case PaymentReconcileRunErrorKindModeMismatch:
+	case PaymentReconciliationRunErrorKindModeMismatch:
 		return true
-	case PaymentReconcileRunErrorKindNone:
+	case PaymentReconciliationRunErrorKindNone:
 		return true
-	case PaymentReconcileRunErrorKindNotFound:
+	case PaymentReconciliationRunErrorKindNotFound:
 		return true
-	case PaymentReconcileRunErrorKindPermission:
+	case PaymentReconciliationRunErrorKindPermission:
 		return true
-	case PaymentReconcileRunErrorKindRequestCap:
+	case PaymentReconciliationRunErrorKindRequestCap:
 		return true
-	case PaymentReconcileRunErrorKindStaleSignature:
+	case PaymentReconciliationRunErrorKindStaleSignature:
 		return true
-	case PaymentReconcileRunErrorKindThrottled:
+	case PaymentReconciliationRunErrorKindThrottled:
 		return true
-	case PaymentReconcileRunErrorKindUnavailable:
+	case PaymentReconciliationRunErrorKindUnavailable:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for PaymentReconcileRunOutcome.
+// Defines values for PaymentReconciliationRunOutcome.
 const (
-	PaymentReconcileRunOutcomeFailed    PaymentReconcileRunOutcome = "failed"
-	PaymentReconcileRunOutcomePartial   PaymentReconcileRunOutcome = "partial"
-	PaymentReconcileRunOutcomeSucceeded PaymentReconcileRunOutcome = "succeeded"
+	PaymentReconciliationRunOutcomeFailed    PaymentReconciliationRunOutcome = "failed"
+	PaymentReconciliationRunOutcomePartial   PaymentReconciliationRunOutcome = "partial"
+	PaymentReconciliationRunOutcomeSucceeded PaymentReconciliationRunOutcome = "succeeded"
 )
 
-// Valid indicates whether the value is a known member of the PaymentReconcileRunOutcome enum.
-func (e PaymentReconcileRunOutcome) Valid() bool {
+// Valid indicates whether the value is a known member of the PaymentReconciliationRunOutcome enum.
+func (e PaymentReconciliationRunOutcome) Valid() bool {
 	switch e {
-	case PaymentReconcileRunOutcomeFailed:
+	case PaymentReconciliationRunOutcomeFailed:
 		return true
-	case PaymentReconcileRunOutcomePartial:
+	case PaymentReconciliationRunOutcomePartial:
 		return true
-	case PaymentReconcileRunOutcomeSucceeded:
+	case PaymentReconciliationRunOutcomeSucceeded:
 		return true
 	default:
 		return false
@@ -3078,8 +3114,8 @@ func (e PaymentStatusMode) Valid() bool {
 
 // Defines values for PaymentStatusWarnings.
 const (
-	PaymentStatusWarningsNoWebhook          PaymentStatusWarnings = "no_webhook"
-	PaymentStatusWarningsReconcileCorrected PaymentStatusWarnings = "reconcile_corrected"
+	PaymentStatusWarningsNoWebhook               PaymentStatusWarnings = "no_webhook"
+	PaymentStatusWarningsReconciliationCorrected PaymentStatusWarnings = "reconciliation_corrected"
 )
 
 // Valid indicates whether the value is a known member of the PaymentStatusWarnings enum.
@@ -3087,7 +3123,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 	switch e {
 	case PaymentStatusWarningsNoWebhook:
 		return true
-	case PaymentStatusWarningsReconcileCorrected:
+	case PaymentStatusWarningsReconciliationCorrected:
 		return true
 	default:
 		return false
@@ -5162,9 +5198,6 @@ type AdminCustomEmoji struct {
 	// Domain The domain of a remote emoji; absent for a local one.
 	Domain *string `json:"domain,omitempty"`
 
-	// Enabled Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -5175,6 +5208,9 @@ type AdminCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -5640,9 +5676,6 @@ type AdminOAuthClient struct {
 	Confidential bool      `json:"confidential"`
 	CreatedAt    time.Time `json:"created_at"`
 
-	// Disabled Whether an administrator has disabled the client and not lifted it.
-	Disabled bool `json:"disabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -5667,6 +5700,9 @@ type AdminOAuthClient struct {
 
 	// Scopes The most that the client may be granted.
 	Scopes []string `json:"scopes"`
+
+	// State Whether the client is authorized and gets tokens. An administrator disables and enables it.
+	State AdminOAuthClientState `json:"state"`
 
 	// Website The client's home page; omitted when it has none.
 	Website *string `json:"website,omitempty"`
@@ -5707,6 +5743,9 @@ type AdminOAuthClientPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// AdminOAuthClientState Whether the client is authorized and gets tokens. An administrator disables and enables it.
+type AdminOAuthClientState string
 
 // AdminPasswordResetLink A password reset link that an administrator issued for a local account. It is
 // shown once.
@@ -5759,6 +5798,11 @@ type AdminRegistration struct {
 	// EmailVerified Whether the user confirmed the email address; present together with `email`.
 	EmailVerified *bool `json:"email_verified,omitempty"`
 
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
 
@@ -5774,11 +5818,6 @@ type AdminRegistration struct {
 
 	// SubmittedAt When the user signed up.
 	SubmittedAt time.Time `json:"submitted_at"`
-
-	// UserId The ID of a resource, a UUIDv7 in its canonical string form.
-	//
-	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-	UserId Id `json:"user_id"`
 
 	// Username The username of the user's local account; omitted when it is gone.
 	Username *string `json:"username,omitempty"`
@@ -7317,7 +7356,7 @@ type CostCategory string
 // years, cut by date.
 type CostGranularity string
 
-// CostItem A cost of the instance that is not canceled, with its current label and end
+// CostItem A cost of the instance that is not deleted, with its current label and end
 // and every price revision. Never published: the public totals carry no item.
 type CostItem struct {
 	// Category The fixed category of a cost; clients translate its name.
@@ -8115,6 +8154,9 @@ type CustomEmojiRequestProblem struct {
 // `approved` or `rejected`; `withdrawn` by the requester before that; or `lapsed`, a request
 // for a new image of an emoji that was deleted.
 type CustomEmojiRequestState string
+
+// CustomEmojiState Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+type CustomEmojiState string
 
 // DataExport A request for an archive of the user's data.
 type DataExport struct {
@@ -10617,10 +10659,6 @@ type OwnCustomEmoji struct {
 	// CreatedAt When the emoji was made.
 	CreatedAt time.Time `json:"created_at"`
 
-	// Enabled Whether the emoji is shown; an administrator disables and enables it, and a disabled one
-	// stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -10628,6 +10666,9 @@ type OwnCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -10817,8 +10858,8 @@ type PasswordStatus struct {
 	HasPassword bool `json:"has_password"`
 }
 
-// PaymentReconcileRun The last attempt of the reconciliation with the payment provider; omitted before the first.
-type PaymentReconcileRun struct {
+// PaymentReconciliationRun The last attempt of the reconciliation with the payment provider; omitted before the first.
+type PaymentReconciliationRun struct {
 	// CheckedSubscriptions The subscriptions it read again from the provider.
 	CheckedSubscriptions int `json:"checked_subscriptions"`
 
@@ -10830,32 +10871,32 @@ type PaymentReconcileRun struct {
 	// (the provider is busy or down; the next reconciliation tries again),
 	// `invalid_signature`, `stale_signature`, `mode_mismatch` (the key's mode differs from
 	// the account's), `invalid_response`; `none` for a success.
-	ErrorKind  PaymentReconcileRunErrorKind `json:"error_kind"`
-	OccurredAt time.Time                    `json:"occurred_at"`
+	ErrorKind  PaymentReconciliationRunErrorKind `json:"error_kind"`
+	OccurredAt time.Time                         `json:"occurred_at"`
 
 	// Outcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
 	// continuation takes over; `failed` when the provider failed.
-	Outcome PaymentReconcileRunOutcome `json:"outcome"`
+	Outcome PaymentReconciliationRunOutcome `json:"outcome"`
 
 	// Requests The requests it sent to the provider.
 	Requests int `json:"requests"`
 }
 
-// PaymentReconcileRunErrorKind Why it stopped: `request_cap` (a partial attempt), `permission` (the API key is wrong
+// PaymentReconciliationRunErrorKind Why it stopped: `request_cap` (a partial attempt), `permission` (the API key is wrong
 // or lacks permissions), `not_found`, `invalid_request`, `throttled` and `unavailable`
 // (the provider is busy or down; the next reconciliation tries again),
 // `invalid_signature`, `stale_signature`, `mode_mismatch` (the key's mode differs from
 // the account's), `invalid_response`; `none` for a success.
-type PaymentReconcileRunErrorKind string
+type PaymentReconciliationRunErrorKind string
 
-// PaymentReconcileRunOutcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
+// PaymentReconciliationRunOutcome `succeeded`; `partial` when it used its `payments_reconcile_max_requests` and a
 // continuation takes over; `failed` when the provider failed.
-type PaymentReconcileRunOutcome string
+type PaymentReconciliationRunOutcome string
 
 // PaymentStatus The state of the payment provider.
 type PaymentStatus struct {
-	// LastReconcile The last attempt of the reconciliation with the payment provider; omitted before the first.
-	LastReconcile *PaymentReconcileRun `json:"last_reconcile,omitempty"`
+	// LastReconciliation The last attempt of the reconciliation with the payment provider; omitted before the first.
+	LastReconciliation *PaymentReconciliationRun `json:"last_reconciliation,omitempty"`
 
 	// LastWebhookAt When the newest webhook delivery was received; omitted when none is recorded (the
 	// deliveries are kept 45 days).
@@ -10872,7 +10913,7 @@ type PaymentStatus struct {
 	TimeZone string `json:"time_zone"`
 
 	// Warnings The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-	// recorded) and `reconcile_corrected` (the last reconciliation corrected subscriptions,
+	// recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
 	// which a webhook delivery should have done).
 	Warnings []PaymentStatusWarnings `json:"warnings"`
 }
@@ -11182,7 +11223,7 @@ type PreviewDomainBlockImportRequest struct {
 //     (`POST /admin/closure/close`).
 //   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
 //     stops new registrations and supporter subscriptions: approving a pending
-//     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
+//     registration (`/admin/registrations/{id}/approve`) or starting a supporter checkout
 //     (`POST /supporter/checkout`).
 //   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
 //     server serves only the operations with which the users take their data away: their own
@@ -11260,7 +11301,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
 //     an administrator. Make another user an administrator first.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
-//     (`POST /accounts/move/cancel`).
+//     (`DELETE /accounts/move`).
 //   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
 //     `DELETE /sessions/{id}`; signing out ends it.
 //   - `/api/v1/problems/account-not-moved` (409): the user's account has not moved, so there is
@@ -11556,12 +11597,6 @@ type RelayProtocol string
 // `rejected`: the relay rejected the `Follow` or ended the membership. `left`: the
 // instance sent the `Undo` of its `Follow`.
 type RelayState string
-
-// RemoveAccountAliasRequest The alias to remove.
-type RemoveAccountAliasRequest struct {
-	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
-	Uri string `json:"uri"`
-}
 
 // RemovePasswordRequest What confirms the removal of the user's password: a `passkey` of the user or an
 // `external_confirmation`.
@@ -12579,9 +12614,6 @@ type UpdateCustomEmojiRequest struct {
 	// Category The category in the picker, up to 64 characters; empty removes it.
 	Category *string `json:"category,omitempty"`
 
-	// Enabled Whether the emoji is shown.
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// VisibleInPicker Whether the picker offers the local emoji.
 	VisibleInPicker *bool `json:"visible_in_picker,omitempty"`
 }
@@ -12973,14 +13005,14 @@ type VoiceRoomParticipant struct {
 	// Blocked Whether the user blocks the participant or the participant blocks the user.
 	Blocked bool `json:"blocked"`
 
-	// Cohost Whether the participant is a co-host. The host is never a co-host.
-	Cohost bool `json:"cohost"`
+	// Cohosting Whether the participant is a co-host. The host is never a co-host.
+	Cohosting bool `json:"cohosting"`
 
 	// HandRaised Whether the participant raised a hand to speak.
 	HandRaised bool `json:"hand_raised"`
 
-	// Host Whether the participant is the host.
-	Host bool `json:"host"`
+	// Hosting Whether the participant is the host.
+	Hosting bool `json:"hosting"`
 
 	// Role Whether a participant speaks or listens.
 	Role VoiceRole `json:"role"`
@@ -13230,9 +13262,6 @@ type WebhookCustomEmoji struct {
 	// Domain The domain of a remote emoji; absent for a local one.
 	Domain *string `json:"domain,omitempty"`
 
-	// Enabled Whether the emoji is shown; a disabled one stays `:shortcode:` text.
-	Enabled bool `json:"enabled"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -13248,6 +13277,9 @@ type WebhookCustomEmoji struct {
 
 	// Shortcode The shortcode, without the colons around it.
 	Shortcode string `json:"shortcode"`
+
+	// State Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+	State CustomEmojiState `json:"state"`
 
 	// StaticUrl The URL of a still image of the emoji; absent with `url`.
 	StaticUrl *string `json:"static_url,omitempty"`
@@ -13474,10 +13506,10 @@ type OAuthClientHost = string
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type OAuthClientId = Id
 
-// RegistrationUserId The ID of a resource, a UUIDv7 in its canonical string form.
+// RegistrationId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-type RegistrationUserId = Id
+type RegistrationId = Id
 
 // RelayId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -13548,6 +13580,12 @@ type AccountProfile = Account
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
 type StatusAfterAction = Status
+
+// RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
+type RemoveAccountAliasParams struct {
+	// Uri The `uri` of the alias, as `GET /accounts/aliases` lists it.
+	Uri string `form:"uri" json:"uri"`
+}
 
 // LookupAccountParams defines parameters for LookupAccount.
 type LookupAccountParams struct {
@@ -14312,9 +14350,6 @@ type LeaveVoiceRoomParams struct {
 // AddAccountAliasJSONRequestBody defines body for AddAccountAlias for application/json ContentType.
 type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 
-// RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
-type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
-
 // DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
 type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
 
@@ -14626,15 +14661,15 @@ type SendVoiceSignalJSONRequestBody = VoiceSignal
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	// (DELETE /accounts/aliases)
+	RemoveAccountAlias(w http.ResponseWriter, r *http.Request, params RemoveAccountAliasParams)
 	// ListAccountAliases List the authenticated user's aliases
 	// (GET /accounts/aliases)
 	ListAccountAliases(w http.ResponseWriter, r *http.Request)
 	// AddAccountAlias Add an alias to the authenticated user
 	// (POST /accounts/aliases)
 	AddAccountAlias(w http.ResponseWriter, r *http.Request)
-	// RemoveAccountAlias Remove an alias of the authenticated user
-	// (POST /accounts/aliases/remove)
-	RemoveAccountAlias(w http.ResponseWriter, r *http.Request)
 	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
 	// (GET /accounts/deactivation)
 	GetDeactivationPreview(w http.ResponseWriter, r *http.Request)
@@ -14650,12 +14685,12 @@ type ServerInterface interface {
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(w http.ResponseWriter, r *http.Request, params LookupAccountParams)
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	// (DELETE /accounts/move)
+	CancelOwnAccountMove(w http.ResponseWriter, r *http.Request)
 	// MoveOwnAccount Move the authenticated user's account to another account
 	// (POST /accounts/move)
 	MoveOwnAccount(w http.ResponseWriter, r *http.Request)
-	// CancelOwnAccountMove Cancel the move of the authenticated user's account
-	// (POST /accounts/move/cancel)
-	CancelOwnAccountMove(w http.ResponseWriter, r *http.Request)
 	// GetPasswordStatus Get whether the authenticated user has a password
 	// (GET /accounts/password)
 	GetPasswordStatus(w http.ResponseWriter, r *http.Request)
@@ -14695,6 +14730,9 @@ type ServerInterface interface {
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// RemoveFollower Remove an account from the viewer's followers
+	// (DELETE /accounts/{id}/follower)
+	RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId)
 	// ListAccountFollowers List the followers of an account
 	// (GET /accounts/{id}/followers)
 	ListAccountFollowers(w http.ResponseWriter, r *http.Request, id AccountId, params ListAccountFollowersParams)
@@ -14710,9 +14748,6 @@ type ServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// RemoveAccountFromFollowers Remove an account from the viewer's followers
-	// (POST /accounts/{id}/remove_from_followers)
-	RemoveAccountFromFollowers(w http.ResponseWriter, r *http.Request, id AccountId)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
@@ -14824,15 +14859,15 @@ type ServerInterface interface {
 	// CreateCostItem Record a cost item
 	// (POST /admin/cost_items)
 	CreateCostItem(w http.ResponseWriter, r *http.Request)
+	// DeleteCostItem Delete a cost item
+	// (DELETE /admin/cost_items/{id})
+	DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
 	// GetCostItem Get a cost item
 	// (GET /admin/cost_items/{id})
 	GetCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
 	// UpdateCostItem Change a cost item's label
 	// (PATCH /admin/cost_items/{id})
 	UpdateCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
-	// CancelCostItem Cancel a cost item
-	// (POST /admin/cost_items/{id}/cancel)
-	CancelCostItem(w http.ResponseWriter, r *http.Request, id CostItemId)
 	// SetCostItemEnd Set a cost item's end
 	// (PUT /admin/cost_items/{id}/end)
 	SetCostItemEnd(w http.ResponseWriter, r *http.Request, id CostItemId)
@@ -14872,6 +14907,12 @@ type ServerInterface interface {
 	// CopyCustomEmoji Copy a remote custom emoji into a local one
 	// (POST /admin/custom_emojis/{id}/copy)
 	CopyCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	// DisableCustomEmoji Disable a custom emoji
+	// (POST /admin/custom_emojis/{id}/disable)
+	DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
+	// EnableCustomEmoji Enable a custom emoji
+	// (POST /admin/custom_emojis/{id}/enable)
+	EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
 	// ReplaceCustomEmojiImage Replace the image of a local custom emoji
 	// (PUT /admin/custom_emojis/{id}/image)
 	ReplaceCustomEmojiImage(w http.ResponseWriter, r *http.Request, id CustomEmojiId)
@@ -15016,12 +15057,12 @@ type ServerInterface interface {
 	// DisableOAuthClient Disable an OAuth client
 	// (POST /admin/oauth_clients/{id}/disable)
 	DisableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
-	// EnableOAuthClient Lift the disablement of an OAuth client
+	// EnableOAuthClient Enable an OAuth client
 	// (POST /admin/oauth_clients/{id}/enable)
 	EnableOAuthClient(w http.ResponseWriter, r *http.Request, id OAuthClientId)
-	// RunPaymentReconcile Reconcile with the payment provider now
-	// (POST /admin/payment_reconciles)
-	RunPaymentReconcile(w http.ResponseWriter, r *http.Request)
+	// RunPaymentReconciliation Reconcile with the payment provider now
+	// (POST /admin/payment_reconciliation/runs)
+	RunPaymentReconciliation(w http.ResponseWriter, r *http.Request)
 	// GetPaymentStatus Get the state of the payment provider
 	// (GET /admin/payment_status)
 	GetPaymentStatus(w http.ResponseWriter, r *http.Request)
@@ -15032,11 +15073,11 @@ type ServerInterface interface {
 	// (GET /admin/registrations)
 	ListPendingRegistrations(w http.ResponseWriter, r *http.Request, params ListPendingRegistrationsParams)
 	// ApproveRegistration Approve a registration
-	// (POST /admin/registrations/{user_id}/approve)
-	ApproveRegistration(w http.ResponseWriter, r *http.Request, userId RegistrationUserId)
+	// (POST /admin/registrations/{id}/approve)
+	ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId)
 	// RejectRegistration Reject a registration
-	// (POST /admin/registrations/{user_id}/reject)
-	RejectRegistration(w http.ResponseWriter, r *http.Request, userId RegistrationUserId)
+	// (POST /admin/registrations/{id}/reject)
+	RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId)
 	// ListAdminRelays List the relays
 	// (GET /admin/relays)
 	ListAdminRelays(w http.ResponseWriter, r *http.Request)
@@ -15151,9 +15192,9 @@ type ServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(w http.ResponseWriter, r *http.Request, params ListSupporterSubscriptionsParams)
-	// CancelSupporterSubscription Cancel a subscription at once
-	// (POST /admin/supporter_subscriptions/{id}/cancel)
-	CancelSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
+	// EndSupporterSubscription End a subscription at once
+	// (POST /admin/supporter_subscriptions/{id}/end)
+	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(w http.ResponseWriter, r *http.Request)
@@ -15532,9 +15573,9 @@ type ServerInterface interface {
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	// (GET /statuses/{id}/quotes)
 	ListStatusQuotes(w http.ResponseWriter, r *http.Request, id StatusId, params ListStatusQuotesParams)
-	// RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
-	// (POST /statuses/{id}/quotes/{quote_id}/revoke)
-	RevokeStatusQuote(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id)
+	// RevokeStatusQuoteApproval Revoke the approval of a quote of the authenticated user's status
+	// (DELETE /statuses/{id}/quotes/{quote_id}/approval)
+	RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id)
 	// UnreactToStatus Take back the emoji reaction to a status
 	// (DELETE /statuses/{id}/reaction)
 	UnreactToStatus(w http.ResponseWriter, r *http.Request, id StatusId)
@@ -15562,13 +15603,13 @@ type ServerInterface interface {
 	// CancelOwnSupporterSubscription Cancel the authenticated user's subscription at the end of its period
 	// (POST /supporter/subscription/cancel)
 	CancelOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
-	// CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
+	// CancelOwnSupporterScheduledChange Cancel the scheduled change of the authenticated user's subscription
 	// (POST /supporter/subscription/cancel_scheduled_change)
 	CancelOwnSupporterScheduledChange(w http.ResponseWriter, r *http.Request)
 	// ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 	// (POST /supporter/subscription/change)
 	ChangeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
-	// ResumeOwnSupporterSubscription Withdraw the cancellation of the authenticated user's subscription
+	// ResumeOwnSupporterSubscription Resume the authenticated user's canceling subscription
 	// (POST /supporter/subscription/resume)
 	ResumeOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
 	// SyncOwnSupporterSubscription Re-read the authenticated user's subscription from the payment provider
@@ -15705,6 +15746,39 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// RemoveAccountAlias operation middleware
+func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RemoveAccountAliasParams
+
+	// ------------- Required query parameter "uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "uri", r.URL.Query(), &params.Uri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "uri", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveAccountAlias(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAccountAliases operation middleware
 func (siw *ServerInterfaceWrapper) ListAccountAliases(w http.ResponseWriter, r *http.Request) {
 
@@ -15724,20 +15798,6 @@ func (siw *ServerInterfaceWrapper) AddAccountAlias(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddAccountAlias(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RemoveAccountAlias operation middleware
-func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveAccountAlias(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15849,11 +15909,11 @@ func (siw *ServerInterfaceWrapper) LookupAccount(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// MoveOwnAccount operation middleware
-func (siw *ServerInterfaceWrapper) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
+// CancelOwnAccountMove operation middleware
+func (siw *ServerInterfaceWrapper) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.MoveOwnAccount(w, r)
+		siw.Handler.CancelOwnAccountMove(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15863,11 +15923,11 @@ func (siw *ServerInterfaceWrapper) MoveOwnAccount(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
-// CancelOwnAccountMove operation middleware
-func (siw *ServerInterfaceWrapper) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
+// MoveOwnAccount operation middleware
+func (siw *ServerInterfaceWrapper) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelOwnAccountMove(w, r)
+		siw.Handler.MoveOwnAccount(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16189,6 +16249,32 @@ func (siw *ServerInterfaceWrapper) FollowAccount(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveFollower operation middleware
+func (siw *ServerInterfaceWrapper) RemoveFollower(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveFollower(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAccountFollowers operation middleware
 func (siw *ServerInterfaceWrapper) ListAccountFollowers(w http.ResponseWriter, r *http.Request) {
 
@@ -16368,32 +16454,6 @@ func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MuteAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RemoveAccountFromFollowers operation middleware
-func (siw *ServerInterfaceWrapper) RemoveAccountFromFollowers(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveAccountFromFollowers(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -17621,6 +17681,32 @@ func (siw *ServerInterfaceWrapper) CreateCostItem(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteCostItem operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCostItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CostItemId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCostItem(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetCostItem operation middleware
 func (siw *ServerInterfaceWrapper) GetCostItem(w http.ResponseWriter, r *http.Request) {
 
@@ -17664,32 +17750,6 @@ func (siw *ServerInterfaceWrapper) UpdateCostItem(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCostItem(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CancelCostItem operation middleware
-func (siw *ServerInterfaceWrapper) CancelCostItem(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id CostItemId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelCostItem(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -18142,6 +18202,58 @@ func (siw *ServerInterfaceWrapper) CopyCustomEmoji(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CopyCustomEmoji(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisableCustomEmoji operation middleware
+func (siw *ServerInterfaceWrapper) DisableCustomEmoji(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CustomEmojiId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableCustomEmoji(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableCustomEmoji operation middleware
+func (siw *ServerInterfaceWrapper) EnableCustomEmoji(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CustomEmojiId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableCustomEmoji(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19688,11 +19800,11 @@ func (siw *ServerInterfaceWrapper) EnableOAuthClient(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
-// RunPaymentReconcile operation middleware
-func (siw *ServerInterfaceWrapper) RunPaymentReconcile(w http.ResponseWriter, r *http.Request) {
+// RunPaymentReconciliation operation middleware
+func (siw *ServerInterfaceWrapper) RunPaymentReconciliation(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RunPaymentReconcile(w, r)
+		siw.Handler.RunPaymentReconciliation(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19782,17 +19894,17 @@ func (siw *ServerInterfaceWrapper) ApproveRegistration(w http.ResponseWriter, r 
 	var err error
 	_ = err
 
-	// ------------- Path parameter "user_id" -------------
-	var userId RegistrationUserId
+	// ------------- Path parameter "id" -------------
+	var id RegistrationId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", r.PathValue("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveRegistration(w, r, userId)
+		siw.Handler.ApproveRegistration(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19808,17 +19920,17 @@ func (siw *ServerInterfaceWrapper) RejectRegistration(w http.ResponseWriter, r *
 	var err error
 	_ = err
 
-	// ------------- Path parameter "user_id" -------------
-	var userId RegistrationUserId
+	// ------------- Path parameter "id" -------------
+	var id RegistrationId
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user_id", r.PathValue("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RejectRegistration(w, r, userId)
+		siw.Handler.RejectRegistration(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -20838,8 +20950,8 @@ func (siw *ServerInterfaceWrapper) ListSupporterSubscriptions(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
-// CancelSupporterSubscription operation middleware
-func (siw *ServerInterfaceWrapper) CancelSupporterSubscription(w http.ResponseWriter, r *http.Request) {
+// EndSupporterSubscription operation middleware
+func (siw *ServerInterfaceWrapper) EndSupporterSubscription(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -20854,7 +20966,7 @@ func (siw *ServerInterfaceWrapper) CancelSupporterSubscription(w http.ResponseWr
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CancelSupporterSubscription(w, r, id)
+		siw.Handler.EndSupporterSubscription(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24184,8 +24296,8 @@ func (siw *ServerInterfaceWrapper) ListStatusQuotes(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
-// RevokeStatusQuote operation middleware
-func (siw *ServerInterfaceWrapper) RevokeStatusQuote(w http.ResponseWriter, r *http.Request) {
+// RevokeStatusQuoteApproval operation middleware
+func (siw *ServerInterfaceWrapper) RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -24209,7 +24321,7 @@ func (siw *ServerInterfaceWrapper) RevokeStatusQuote(w http.ResponseWriter, r *h
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeStatusQuote(w, r, id, quoteId)
+		siw.Handler.RevokeStatusQuoteApproval(w, r, id, quoteId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25950,9 +26062,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/supporters", wrapper.ListInstanceSupporters)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/verify_credentials", wrapper.VerifyAccountCredentials)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/update_credentials", wrapper.UpdateAccountCredentials)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/aliases", wrapper.RemoveAccountAlias)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/aliases", wrapper.ListAccountAliases)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/aliases", wrapper.AddAccountAlias)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/aliases/remove", wrapper.RemoveAccountAlias)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences", wrapper.GetPreferences)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences", wrapper.UpdatePreferences)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/auto_delete", wrapper.GetAutoDeletePolicy)
@@ -25967,8 +26079,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/deactivation", wrapper.DeactivateOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/delete", wrapper.DeleteOwnAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/move", wrapper.CancelOwnAccountMove)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move", wrapper.MoveOwnAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move/cancel", wrapper.CancelOwnAccountMove)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/password", wrapper.GetPasswordStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password", wrapper.ChangePassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/password/remove", wrapper.RemovePassword)
@@ -26020,7 +26132,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/lists", wrapper.ListAccountLists)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.UnmuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/remove_from_followers", wrapper.RemoveAccountFromFollowers)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/follower", wrapper.RemoveFollower)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/subscriptions", wrapper.ListSubscriptions)
@@ -26073,7 +26185,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/reactions", wrapper.ListStatusReactions)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/quote_policy", wrapper.SetStatusQuotePolicy)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/quotes", wrapper.ListStatusQuotes)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses/{id}/quotes/{quote_id}/revoke", wrapper.RevokeStatusQuote)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}/quotes/{quote_id}/approval", wrapper.RevokeStatusQuoteApproval)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/source", wrapper.GetStatusSource)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statuses", wrapper.ListAccountStatuses)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/tags/search", wrapper.SearchTags)
@@ -26140,11 +26252,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/billing_imports/{source}/runs", wrapper.RunBillingImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/cost_items", wrapper.ListCostItems)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/cost_items", wrapper.CreateCostItem)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/cost_items/{id}", wrapper.DeleteCostItem)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/cost_items/{id}", wrapper.GetCostItem)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/cost_items/{id}", wrapper.UpdateCostItem)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/cost_items/{id}/price_revisions", wrapper.ReviseCostItemPrice)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/cost_items/{id}/end", wrapper.SetCostItemEnd)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/cost_items/{id}/cancel", wrapper.CancelCostItem)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/cost_totals", wrapper.GetCostTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/income_totals", wrapper.GetIncomeTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/income_movements", wrapper.ListIncomeMovements)
@@ -26192,6 +26304,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/custom_emojis/{id}", wrapper.DeleteCustomEmoji)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/custom_emojis/{id}", wrapper.GetAdminCustomEmoji)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/custom_emojis/{id}", wrapper.UpdateCustomEmoji)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/custom_emojis/{id}/enable", wrapper.EnableCustomEmoji)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/custom_emojis/{id}/disable", wrapper.DisableCustomEmoji)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/custom_emojis/{id}/image", wrapper.ReplaceCustomEmojiImage)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/custom_emojis/{id}/copy", wrapper.CopyCustomEmoji)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/custom_emoji_requests", wrapper.ListAdminCustomEmojiRequests)
@@ -26218,8 +26332,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/appeals/{id}/overturn", wrapper.OverturnAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/appeals/{id}/uphold", wrapper.UpholdAppeal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/registrations", wrapper.ListPendingRegistrations)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/registrations/{user_id}/approve", wrapper.ApproveRegistration)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/registrations/{user_id}/reject", wrapper.RejectRegistration)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/registrations/{id}/approve", wrapper.ApproveRegistration)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/registrations/{id}/reject", wrapper.RejectRegistration)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/signup_blocks", wrapper.ListSignupBlocks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/signup_blocks", wrapper.CreateSignupBlock)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/signup_blocks/{id}", wrapper.GetSignupBlock)
@@ -26279,7 +26393,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/refetch_statuses", wrapper.RefetchAccountStatuses)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/refetch_statuses", wrapper.RefetchInstanceStatuses)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/payment_status", wrapper.GetPaymentStatus)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/payment_reconciles", wrapper.RunPaymentReconcile)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/payment_reconciliation/runs", wrapper.RunPaymentReconciliation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_program", wrapper.GetSupporterProgram)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/supporter_program", wrapper.SetSupporterProgram)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_plans", wrapper.ListAdminSupporterPlans)
@@ -26287,7 +26401,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/supporter_plans/{id}", wrapper.UpdateSupporterPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_plans/{id}/retire", wrapper.RetireSupporterPlan)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_subscriptions", wrapper.ListSupporterSubscriptions)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}/cancel", wrapper.CancelSupporterSubscription)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_subscriptions/{id}/end", wrapper.EndSupporterSubscription)
 
 	return m
 }
@@ -26744,6 +26858,61 @@ type WebhookProblemApplicationProblemPlusJSONResponse struct {
 	Headers WebhookProblemResponseHeaders
 }
 
+type RemoveAccountAliasRequestObject struct {
+	Params RemoveAccountAliasParams
+}
+
+type RemoveAccountAliasResponseObject interface {
+	VisitRemoveAccountAliasResponse(w http.ResponseWriter) error
+}
+
+type RemoveAccountAlias200JSONResponse struct{ AccountAliasListJSONResponse }
+
+func (response RemoveAccountAlias200JSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListAccountAliasesRequestObject struct {
 }
 
@@ -26830,61 +26999,6 @@ type AddAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response AddAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitAddAccountAliasResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveAccountAliasRequestObject struct {
-	Body *RemoveAccountAliasJSONRequestBody
-}
-
-type RemoveAccountAliasResponseObject interface {
-	VisitRemoveAccountAliasResponse(w http.ResponseWriter) error
-}
-
-type RemoveAccountAlias200JSONResponse struct{ AccountAliasListJSONResponse }
-
-func (response RemoveAccountAlias200JSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -27167,29 +27281,28 @@ func (response LookupAccountdefaultApplicationProblemPlusJSONResponse) VisitLook
 	return err
 }
 
-type MoveOwnAccountRequestObject struct {
-	Body *MoveOwnAccountJSONRequestBody
+type CancelOwnAccountMoveRequestObject struct {
 }
 
-type MoveOwnAccountResponseObject interface {
-	VisitMoveOwnAccountResponse(w http.ResponseWriter) error
+type CancelOwnAccountMoveResponseObject interface {
+	VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error
 }
 
-type MoveOwnAccount204Response struct {
+type CancelOwnAccountMove204Response struct {
 }
 
-func (response MoveOwnAccount204Response) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
+func (response CancelOwnAccountMove204Response) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type MoveOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
+type CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response MoveOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
+func (response CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -27213,28 +27326,29 @@ func (response MoveOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitMov
 	return err
 }
 
-type CancelOwnAccountMoveRequestObject struct {
+type MoveOwnAccountRequestObject struct {
+	Body *MoveOwnAccountJSONRequestBody
 }
 
-type CancelOwnAccountMoveResponseObject interface {
-	VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error
+type MoveOwnAccountResponseObject interface {
+	VisitMoveOwnAccountResponse(w http.ResponseWriter) error
 }
 
-type CancelOwnAccountMove204Response struct {
+type MoveOwnAccount204Response struct {
 }
 
-func (response CancelOwnAccountMove204Response) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
+func (response MoveOwnAccount204Response) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse struct {
+type MoveOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response CancelOwnAccountMovedefaultApplicationProblemPlusJSONResponse) VisitCancelOwnAccountMoveResponse(w http.ResponseWriter) error {
+func (response MoveOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitMoveOwnAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -27996,6 +28110,61 @@ func (response FollowAccountdefaultApplicationProblemPlusJSONResponse) VisitFoll
 	return err
 }
 
+type RemoveFollowerRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type RemoveFollowerResponseObject interface {
+	VisitRemoveFollowerResponse(w http.ResponseWriter) error
+}
+
+type RemoveFollower200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response RemoveFollower200JSONResponse) VisitRemoveFollowerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveFollowerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveFollowerdefaultApplicationProblemPlusJSONResponse) VisitRemoveFollowerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListAccountFollowersRequestObject struct {
 	Id     AccountId `json:"id"`
 	Params ListAccountFollowersParams
@@ -28251,61 +28420,6 @@ type MuteAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response MuteAccountdefaultApplicationProblemPlusJSONResponse) VisitMuteAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveAccountFromFollowersRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type RemoveAccountFromFollowersResponseObject interface {
-	VisitRemoveAccountFromFollowersResponse(w http.ResponseWriter) error
-}
-
-type RemoveAccountFromFollowers200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response RemoveAccountFromFollowers200JSONResponse) VisitRemoveAccountFromFollowersResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveAccountFromFollowersdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response RemoveAccountFromFollowersdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountFromFollowersResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -30412,6 +30526,52 @@ func (response CreateCostItemdefaultApplicationProblemPlusJSONResponse) VisitCre
 	return err
 }
 
+type DeleteCostItemRequestObject struct {
+	Id CostItemId `json:"id"`
+}
+
+type DeleteCostItemResponseObject interface {
+	VisitDeleteCostItemResponse(w http.ResponseWriter) error
+}
+
+type DeleteCostItem204Response struct {
+}
+
+func (response DeleteCostItem204Response) VisitDeleteCostItemResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCostItemdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteCostItemdefaultApplicationProblemPlusJSONResponse) VisitDeleteCostItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetCostItemRequestObject struct {
 	Id CostItemId `json:"id"`
 }
@@ -30500,52 +30660,6 @@ type UpdateCostItemdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UpdateCostItemdefaultApplicationProblemPlusJSONResponse) VisitUpdateCostItemResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type CancelCostItemRequestObject struct {
-	Id CostItemId `json:"id"`
-}
-
-type CancelCostItemResponseObject interface {
-	VisitCancelCostItemResponse(w http.ResponseWriter) error
-}
-
-type CancelCostItem204Response struct {
-}
-
-func (response CancelCostItem204Response) VisitCancelCostItemResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type CancelCostItemdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response CancelCostItemdefaultApplicationProblemPlusJSONResponse) VisitCancelCostItemResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31464,6 +31578,116 @@ type CopyCustomEmojidefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response CopyCustomEmojidefaultApplicationProblemPlusJSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableCustomEmojiRequestObject struct {
+	Id CustomEmojiId `json:"id"`
+}
+
+type DisableCustomEmojiResponseObject interface {
+	VisitDisableCustomEmojiResponse(w http.ResponseWriter) error
+}
+
+type DisableCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+
+func (response DisableCustomEmoji200JSONResponse) VisitDisableCustomEmojiResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableCustomEmojidefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DisableCustomEmojidefaultApplicationProblemPlusJSONResponse) VisitDisableCustomEmojiResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableCustomEmojiRequestObject struct {
+	Id CustomEmojiId `json:"id"`
+}
+
+type EnableCustomEmojiResponseObject interface {
+	VisitEnableCustomEmojiResponse(w http.ResponseWriter) error
+}
+
+type EnableCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+
+func (response EnableCustomEmoji200JSONResponse) VisitEnableCustomEmojiResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableCustomEmojidefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EnableCustomEmojidefaultApplicationProblemPlusJSONResponse) VisitEnableCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34427,28 +34651,28 @@ func (response EnableOAuthClientdefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
-type RunPaymentReconcileRequestObject struct {
+type RunPaymentReconciliationRequestObject struct {
 }
 
-type RunPaymentReconcileResponseObject interface {
-	VisitRunPaymentReconcileResponse(w http.ResponseWriter) error
+type RunPaymentReconciliationResponseObject interface {
+	VisitRunPaymentReconciliationResponse(w http.ResponseWriter) error
 }
 
-type RunPaymentReconcile202Response struct {
+type RunPaymentReconciliation202Response struct {
 }
 
-func (response RunPaymentReconcile202Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
+func (response RunPaymentReconciliation202Response) VisitRunPaymentReconciliationResponse(w http.ResponseWriter) error {
 	w.WriteHeader(202)
 	return nil
 }
 
-type RunPaymentReconciledefaultApplicationProblemPlusJSONResponse struct {
+type RunPaymentReconciliationdefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response RunPaymentReconciledefaultApplicationProblemPlusJSONResponse) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
+func (response RunPaymentReconciliationdefaultApplicationProblemPlusJSONResponse) VisitRunPaymentReconciliationResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34657,8 +34881,8 @@ func (response ListPendingRegistrationsdefaultApplicationProblemPlusJSONResponse
 }
 
 type ApproveRegistrationRequestObject struct {
-	UserId RegistrationUserId `json:"user_id"`
-	Body   *ApproveRegistrationJSONRequestBody
+	Id   RegistrationId `json:"id"`
+	Body *ApproveRegistrationJSONRequestBody
 }
 
 type ApproveRegistrationResponseObject interface {
@@ -34713,8 +34937,8 @@ func (response ApproveRegistrationdefaultApplicationProblemPlusJSONResponse) Vis
 }
 
 type RejectRegistrationRequestObject struct {
-	UserId RegistrationUserId `json:"user_id"`
-	Body   *RejectRegistrationJSONRequestBody
+	Id   RegistrationId `json:"id"`
+	Body *RejectRegistrationJSONRequestBody
 }
 
 type RejectRegistrationResponseObject interface {
@@ -37090,29 +37314,45 @@ func (response ListSupporterSubscriptionsdefaultApplicationProblemPlusJSONRespon
 	return err
 }
 
-type CancelSupporterSubscriptionRequestObject struct {
+type EndSupporterSubscriptionRequestObject struct {
 	Id SupporterSubscriptionId `json:"id"`
 }
 
-type CancelSupporterSubscriptionResponseObject interface {
-	VisitCancelSupporterSubscriptionResponse(w http.ResponseWriter) error
+type EndSupporterSubscriptionResponseObject interface {
+	VisitEndSupporterSubscriptionResponse(w http.ResponseWriter) error
 }
 
-type CancelSupporterSubscription204Response struct {
+type EndSupporterSubscription200ResponseHeaders struct {
+	CacheControl *string
 }
 
-func (response CancelSupporterSubscription204Response) VisitCancelSupporterSubscriptionResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+type EndSupporterSubscription200JSONResponse struct {
+	Body    AdminSupporterSubscription
+	Headers EndSupporterSubscription200ResponseHeaders
 }
 
-type CancelSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse struct {
+func (response EndSupporterSubscription200JSONResponse) VisitEndSupporterSubscriptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response CancelSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse) VisitCancelSupporterSubscriptionResponse(w http.ResponseWriter) error {
+func (response EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse) VisitEndSupporterSubscriptionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -44629,30 +44869,30 @@ func (response ListStatusQuotesdefaultApplicationProblemPlusJSONResponse) VisitL
 	return err
 }
 
-type RevokeStatusQuoteRequestObject struct {
+type RevokeStatusQuoteApprovalRequestObject struct {
 	Id      StatusId `json:"id"`
 	QuoteId Id       `json:"quote_id"`
 }
 
-type RevokeStatusQuoteResponseObject interface {
-	VisitRevokeStatusQuoteResponse(w http.ResponseWriter) error
+type RevokeStatusQuoteApprovalResponseObject interface {
+	VisitRevokeStatusQuoteApprovalResponse(w http.ResponseWriter) error
 }
 
-type RevokeStatusQuote204Response struct {
+type RevokeStatusQuoteApproval204Response struct {
 }
 
-func (response RevokeStatusQuote204Response) VisitRevokeStatusQuoteResponse(w http.ResponseWriter) error {
+func (response RevokeStatusQuoteApproval204Response) VisitRevokeStatusQuoteApprovalResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type RevokeStatusQuotedefaultApplicationProblemPlusJSONResponse struct {
+type RevokeStatusQuoteApprovaldefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response RevokeStatusQuotedefaultApplicationProblemPlusJSONResponse) VisitRevokeStatusQuoteResponse(w http.ResponseWriter) error {
+func (response RevokeStatusQuoteApprovaldefaultApplicationProblemPlusJSONResponse) VisitRevokeStatusQuoteApprovalResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47794,15 +48034,15 @@ func (response GetVoiceRoomSummarydefaultApplicationProblemPlusJSONResponse) Vis
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// RemoveAccountAlias Remove an alias of the authenticated user
+	// (DELETE /accounts/aliases)
+	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
 	// ListAccountAliases List the authenticated user's aliases
 	// (GET /accounts/aliases)
 	ListAccountAliases(ctx context.Context, request ListAccountAliasesRequestObject) (ListAccountAliasesResponseObject, error)
 	// AddAccountAlias Add an alias to the authenticated user
 	// (POST /accounts/aliases)
 	AddAccountAlias(ctx context.Context, request AddAccountAliasRequestObject) (AddAccountAliasResponseObject, error)
-	// RemoveAccountAlias Remove an alias of the authenticated user
-	// (POST /accounts/aliases/remove)
-	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
 	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
 	// (GET /accounts/deactivation)
 	GetDeactivationPreview(ctx context.Context, request GetDeactivationPreviewRequestObject) (GetDeactivationPreviewResponseObject, error)
@@ -47818,12 +48058,12 @@ type StrictServerInterface interface {
 	// LookupAccount Look up or resolve an account by its handle or URL
 	// (GET /accounts/lookup)
 	LookupAccount(ctx context.Context, request LookupAccountRequestObject) (LookupAccountResponseObject, error)
+	// CancelOwnAccountMove Cancel the move of the authenticated user's account
+	// (DELETE /accounts/move)
+	CancelOwnAccountMove(ctx context.Context, request CancelOwnAccountMoveRequestObject) (CancelOwnAccountMoveResponseObject, error)
 	// MoveOwnAccount Move the authenticated user's account to another account
 	// (POST /accounts/move)
 	MoveOwnAccount(ctx context.Context, request MoveOwnAccountRequestObject) (MoveOwnAccountResponseObject, error)
-	// CancelOwnAccountMove Cancel the move of the authenticated user's account
-	// (POST /accounts/move/cancel)
-	CancelOwnAccountMove(ctx context.Context, request CancelOwnAccountMoveRequestObject) (CancelOwnAccountMoveResponseObject, error)
 	// GetPasswordStatus Get whether the authenticated user has a password
 	// (GET /accounts/password)
 	GetPasswordStatus(ctx context.Context, request GetPasswordStatusRequestObject) (GetPasswordStatusResponseObject, error)
@@ -47863,6 +48103,9 @@ type StrictServerInterface interface {
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(ctx context.Context, request FollowAccountRequestObject) (FollowAccountResponseObject, error)
+	// RemoveFollower Remove an account from the viewer's followers
+	// (DELETE /accounts/{id}/follower)
+	RemoveFollower(ctx context.Context, request RemoveFollowerRequestObject) (RemoveFollowerResponseObject, error)
 	// ListAccountFollowers List the followers of an account
 	// (GET /accounts/{id}/followers)
 	ListAccountFollowers(ctx context.Context, request ListAccountFollowersRequestObject) (ListAccountFollowersResponseObject, error)
@@ -47878,9 +48121,6 @@ type StrictServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
-	// RemoveAccountFromFollowers Remove an account from the viewer's followers
-	// (POST /accounts/{id}/remove_from_followers)
-	RemoveAccountFromFollowers(ctx context.Context, request RemoveAccountFromFollowersRequestObject) (RemoveAccountFromFollowersResponseObject, error)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
@@ -47992,15 +48232,15 @@ type StrictServerInterface interface {
 	// CreateCostItem Record a cost item
 	// (POST /admin/cost_items)
 	CreateCostItem(ctx context.Context, request CreateCostItemRequestObject) (CreateCostItemResponseObject, error)
+	// DeleteCostItem Delete a cost item
+	// (DELETE /admin/cost_items/{id})
+	DeleteCostItem(ctx context.Context, request DeleteCostItemRequestObject) (DeleteCostItemResponseObject, error)
 	// GetCostItem Get a cost item
 	// (GET /admin/cost_items/{id})
 	GetCostItem(ctx context.Context, request GetCostItemRequestObject) (GetCostItemResponseObject, error)
 	// UpdateCostItem Change a cost item's label
 	// (PATCH /admin/cost_items/{id})
 	UpdateCostItem(ctx context.Context, request UpdateCostItemRequestObject) (UpdateCostItemResponseObject, error)
-	// CancelCostItem Cancel a cost item
-	// (POST /admin/cost_items/{id}/cancel)
-	CancelCostItem(ctx context.Context, request CancelCostItemRequestObject) (CancelCostItemResponseObject, error)
 	// SetCostItemEnd Set a cost item's end
 	// (PUT /admin/cost_items/{id}/end)
 	SetCostItemEnd(ctx context.Context, request SetCostItemEndRequestObject) (SetCostItemEndResponseObject, error)
@@ -48040,6 +48280,12 @@ type StrictServerInterface interface {
 	// CopyCustomEmoji Copy a remote custom emoji into a local one
 	// (POST /admin/custom_emojis/{id}/copy)
 	CopyCustomEmoji(ctx context.Context, request CopyCustomEmojiRequestObject) (CopyCustomEmojiResponseObject, error)
+	// DisableCustomEmoji Disable a custom emoji
+	// (POST /admin/custom_emojis/{id}/disable)
+	DisableCustomEmoji(ctx context.Context, request DisableCustomEmojiRequestObject) (DisableCustomEmojiResponseObject, error)
+	// EnableCustomEmoji Enable a custom emoji
+	// (POST /admin/custom_emojis/{id}/enable)
+	EnableCustomEmoji(ctx context.Context, request EnableCustomEmojiRequestObject) (EnableCustomEmojiResponseObject, error)
 	// ReplaceCustomEmojiImage Replace the image of a local custom emoji
 	// (PUT /admin/custom_emojis/{id}/image)
 	ReplaceCustomEmojiImage(ctx context.Context, request ReplaceCustomEmojiImageRequestObject) (ReplaceCustomEmojiImageResponseObject, error)
@@ -48184,12 +48430,12 @@ type StrictServerInterface interface {
 	// DisableOAuthClient Disable an OAuth client
 	// (POST /admin/oauth_clients/{id}/disable)
 	DisableOAuthClient(ctx context.Context, request DisableOAuthClientRequestObject) (DisableOAuthClientResponseObject, error)
-	// EnableOAuthClient Lift the disablement of an OAuth client
+	// EnableOAuthClient Enable an OAuth client
 	// (POST /admin/oauth_clients/{id}/enable)
 	EnableOAuthClient(ctx context.Context, request EnableOAuthClientRequestObject) (EnableOAuthClientResponseObject, error)
-	// RunPaymentReconcile Reconcile with the payment provider now
-	// (POST /admin/payment_reconciles)
-	RunPaymentReconcile(ctx context.Context, request RunPaymentReconcileRequestObject) (RunPaymentReconcileResponseObject, error)
+	// RunPaymentReconciliation Reconcile with the payment provider now
+	// (POST /admin/payment_reconciliation/runs)
+	RunPaymentReconciliation(ctx context.Context, request RunPaymentReconciliationRequestObject) (RunPaymentReconciliationResponseObject, error)
 	// GetPaymentStatus Get the state of the payment provider
 	// (GET /admin/payment_status)
 	GetPaymentStatus(ctx context.Context, request GetPaymentStatusRequestObject) (GetPaymentStatusResponseObject, error)
@@ -48200,10 +48446,10 @@ type StrictServerInterface interface {
 	// (GET /admin/registrations)
 	ListPendingRegistrations(ctx context.Context, request ListPendingRegistrationsRequestObject) (ListPendingRegistrationsResponseObject, error)
 	// ApproveRegistration Approve a registration
-	// (POST /admin/registrations/{user_id}/approve)
+	// (POST /admin/registrations/{id}/approve)
 	ApproveRegistration(ctx context.Context, request ApproveRegistrationRequestObject) (ApproveRegistrationResponseObject, error)
 	// RejectRegistration Reject a registration
-	// (POST /admin/registrations/{user_id}/reject)
+	// (POST /admin/registrations/{id}/reject)
 	RejectRegistration(ctx context.Context, request RejectRegistrationRequestObject) (RejectRegistrationResponseObject, error)
 	// ListAdminRelays List the relays
 	// (GET /admin/relays)
@@ -48319,9 +48565,9 @@ type StrictServerInterface interface {
 	// ListSupporterSubscriptions List the subscriptions
 	// (GET /admin/supporter_subscriptions)
 	ListSupporterSubscriptions(ctx context.Context, request ListSupporterSubscriptionsRequestObject) (ListSupporterSubscriptionsResponseObject, error)
-	// CancelSupporterSubscription Cancel a subscription at once
-	// (POST /admin/supporter_subscriptions/{id}/cancel)
-	CancelSupporterSubscription(ctx context.Context, request CancelSupporterSubscriptionRequestObject) (CancelSupporterSubscriptionResponseObject, error)
+	// EndSupporterSubscription End a subscription at once
+	// (POST /admin/supporter_subscriptions/{id}/end)
+	EndSupporterSubscription(ctx context.Context, request EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error)
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(ctx context.Context, request GetAdminThemeRequestObject) (GetAdminThemeResponseObject, error)
@@ -48700,9 +48946,9 @@ type StrictServerInterface interface {
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	// (GET /statuses/{id}/quotes)
 	ListStatusQuotes(ctx context.Context, request ListStatusQuotesRequestObject) (ListStatusQuotesResponseObject, error)
-	// RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
-	// (POST /statuses/{id}/quotes/{quote_id}/revoke)
-	RevokeStatusQuote(ctx context.Context, request RevokeStatusQuoteRequestObject) (RevokeStatusQuoteResponseObject, error)
+	// RevokeStatusQuoteApproval Revoke the approval of a quote of the authenticated user's status
+	// (DELETE /statuses/{id}/quotes/{quote_id}/approval)
+	RevokeStatusQuoteApproval(ctx context.Context, request RevokeStatusQuoteApprovalRequestObject) (RevokeStatusQuoteApprovalResponseObject, error)
 	// UnreactToStatus Take back the emoji reaction to a status
 	// (DELETE /statuses/{id}/reaction)
 	UnreactToStatus(ctx context.Context, request UnreactToStatusRequestObject) (UnreactToStatusResponseObject, error)
@@ -48730,13 +48976,13 @@ type StrictServerInterface interface {
 	// CancelOwnSupporterSubscription Cancel the authenticated user's subscription at the end of its period
 	// (POST /supporter/subscription/cancel)
 	CancelOwnSupporterSubscription(ctx context.Context, request CancelOwnSupporterSubscriptionRequestObject) (CancelOwnSupporterSubscriptionResponseObject, error)
-	// CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
+	// CancelOwnSupporterScheduledChange Cancel the scheduled change of the authenticated user's subscription
 	// (POST /supporter/subscription/cancel_scheduled_change)
 	CancelOwnSupporterScheduledChange(ctx context.Context, request CancelOwnSupporterScheduledChangeRequestObject) (CancelOwnSupporterScheduledChangeResponseObject, error)
 	// ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 	// (POST /supporter/subscription/change)
 	ChangeOwnSupporterSubscription(ctx context.Context, request ChangeOwnSupporterSubscriptionRequestObject) (ChangeOwnSupporterSubscriptionResponseObject, error)
-	// ResumeOwnSupporterSubscription Withdraw the cancellation of the authenticated user's subscription
+	// ResumeOwnSupporterSubscription Resume the authenticated user's canceling subscription
 	// (POST /supporter/subscription/resume)
 	ResumeOwnSupporterSubscription(ctx context.Context, request ResumeOwnSupporterSubscriptionRequestObject) (ResumeOwnSupporterSubscriptionResponseObject, error)
 	// SyncOwnSupporterSubscription Re-read the authenticated user's subscription from the payment provider
@@ -48903,6 +49149,32 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// RemoveAccountAlias operation middleware
+func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Request, params RemoveAccountAliasParams) {
+	var request RemoveAccountAliasRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveAccountAlias(ctx, request.(RemoveAccountAliasRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveAccountAlias")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
+		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListAccountAliases operation middleware
 func (sh *strictHandler) ListAccountAliases(w http.ResponseWriter, r *http.Request) {
 	var request ListAccountAliasesRequestObject
@@ -48951,37 +49223,6 @@ func (sh *strictHandler) AddAccountAlias(w http.ResponseWriter, r *http.Request)
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AddAccountAliasResponseObject); ok {
 		if err := validResponse.VisitAddAccountAliasResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RemoveAccountAlias operation middleware
-func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Request) {
-	var request RemoveAccountAliasRequestObject
-
-	var body RemoveAccountAliasJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RemoveAccountAlias(ctx, request.(RemoveAccountAliasRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RemoveAccountAlias")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
-		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -49125,6 +49366,30 @@ func (sh *strictHandler) LookupAccount(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
+// CancelOwnAccountMove operation middleware
+func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
+	var request CancelOwnAccountMoveRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelOwnAccountMove(ctx, request.(CancelOwnAccountMoveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelOwnAccountMove")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelOwnAccountMoveResponseObject); ok {
+		if err := validResponse.VisitCancelOwnAccountMoveResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // MoveOwnAccount operation middleware
 func (sh *strictHandler) MoveOwnAccount(w http.ResponseWriter, r *http.Request) {
 	var request MoveOwnAccountRequestObject
@@ -49149,30 +49414,6 @@ func (sh *strictHandler) MoveOwnAccount(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MoveOwnAccountResponseObject); ok {
 		if err := validResponse.VisitMoveOwnAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CancelOwnAccountMove operation middleware
-func (sh *strictHandler) CancelOwnAccountMove(w http.ResponseWriter, r *http.Request) {
-	var request CancelOwnAccountMoveRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CancelOwnAccountMove(ctx, request.(CancelOwnAccountMoveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CancelOwnAccountMove")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CancelOwnAccountMoveResponseObject); ok {
-		if err := validResponse.VisitCancelOwnAccountMoveResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -49539,6 +49780,32 @@ func (sh *strictHandler) FollowAccount(w http.ResponseWriter, r *http.Request, i
 	}
 }
 
+// RemoveFollower operation middleware
+func (sh *strictHandler) RemoveFollower(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request RemoveFollowerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveFollower(ctx, request.(RemoveFollowerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveFollower")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveFollowerResponseObject); ok {
+		if err := validResponse.VisitRemoveFollowerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListAccountFollowers operation middleware
 func (sh *strictHandler) ListAccountFollowers(w http.ResponseWriter, r *http.Request, id AccountId, params ListAccountFollowersParams) {
 	var request ListAccountFollowersRequestObject
@@ -49674,32 +49941,6 @@ func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MuteAccountResponseObject); ok {
 		if err := validResponse.VisitMuteAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RemoveAccountFromFollowers operation middleware
-func (sh *strictHandler) RemoveAccountFromFollowers(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request RemoveAccountFromFollowersRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RemoveAccountFromFollowers(ctx, request.(RemoveAccountFromFollowersRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RemoveAccountFromFollowers")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RemoveAccountFromFollowersResponseObject); ok {
-		if err := validResponse.VisitRemoveAccountFromFollowersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -50727,6 +50968,32 @@ func (sh *strictHandler) CreateCostItem(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// DeleteCostItem operation middleware
+func (sh *strictHandler) DeleteCostItem(w http.ResponseWriter, r *http.Request, id CostItemId) {
+	var request DeleteCostItemRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCostItem(ctx, request.(DeleteCostItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCostItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCostItemResponseObject); ok {
+		if err := validResponse.VisitDeleteCostItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetCostItem operation middleware
 func (sh *strictHandler) GetCostItem(w http.ResponseWriter, r *http.Request, id CostItemId) {
 	var request GetCostItemRequestObject
@@ -50779,32 +51046,6 @@ func (sh *strictHandler) UpdateCostItem(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateCostItemResponseObject); ok {
 		if err := validResponse.VisitUpdateCostItemResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CancelCostItem operation middleware
-func (sh *strictHandler) CancelCostItem(w http.ResponseWriter, r *http.Request, id CostItemId) {
-	var request CancelCostItemRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CancelCostItem(ctx, request.(CancelCostItemRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CancelCostItem")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CancelCostItemResponseObject); ok {
-		if err := validResponse.VisitCancelCostItemResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -51187,6 +51428,58 @@ func (sh *strictHandler) CopyCustomEmoji(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CopyCustomEmojiResponseObject); ok {
 		if err := validResponse.VisitCopyCustomEmojiResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableCustomEmoji operation middleware
+func (sh *strictHandler) DisableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+	var request DisableCustomEmojiRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableCustomEmoji(ctx, request.(DisableCustomEmojiRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableCustomEmoji")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableCustomEmojiResponseObject); ok {
+		if err := validResponse.VisitDisableCustomEmojiResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableCustomEmoji operation middleware
+func (sh *strictHandler) EnableCustomEmoji(w http.ResponseWriter, r *http.Request, id CustomEmojiId) {
+	var request EnableCustomEmojiRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableCustomEmoji(ctx, request.(EnableCustomEmojiRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableCustomEmoji")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableCustomEmojiResponseObject); ok {
+		if err := validResponse.VisitEnableCustomEmojiResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -52540,23 +52833,23 @@ func (sh *strictHandler) EnableOAuthClient(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// RunPaymentReconcile operation middleware
-func (sh *strictHandler) RunPaymentReconcile(w http.ResponseWriter, r *http.Request) {
-	var request RunPaymentReconcileRequestObject
+// RunPaymentReconciliation operation middleware
+func (sh *strictHandler) RunPaymentReconciliation(w http.ResponseWriter, r *http.Request) {
+	var request RunPaymentReconciliationRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RunPaymentReconcile(ctx, request.(RunPaymentReconcileRequestObject))
+		return sh.ssi.RunPaymentReconciliation(ctx, request.(RunPaymentReconciliationRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RunPaymentReconcile")
+		handler = middleware(handler, "RunPaymentReconciliation")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RunPaymentReconcileResponseObject); ok {
-		if err := validResponse.VisitRunPaymentReconcileResponse(w); err != nil {
+	} else if validResponse, ok := response.(RunPaymentReconciliationResponseObject); ok {
+		if err := validResponse.VisitRunPaymentReconciliationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -52639,10 +52932,10 @@ func (sh *strictHandler) ListPendingRegistrations(w http.ResponseWriter, r *http
 }
 
 // ApproveRegistration operation middleware
-func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Request, userId RegistrationUserId) {
+func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId) {
 	var request ApproveRegistrationRequestObject
 
-	request.UserId = userId
+	request.Id = id
 
 	var body ApproveRegistrationJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -52675,10 +52968,10 @@ func (sh *strictHandler) ApproveRegistration(w http.ResponseWriter, r *http.Requ
 }
 
 // RejectRegistration operation middleware
-func (sh *strictHandler) RejectRegistration(w http.ResponseWriter, r *http.Request, userId RegistrationUserId) {
+func (sh *strictHandler) RejectRegistration(w http.ResponseWriter, r *http.Request, id RegistrationId) {
 	var request RejectRegistrationRequestObject
 
-	request.UserId = userId
+	request.Id = id
 
 	var body RejectRegistrationJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -53770,25 +54063,25 @@ func (sh *strictHandler) ListSupporterSubscriptions(w http.ResponseWriter, r *ht
 	}
 }
 
-// CancelSupporterSubscription operation middleware
-func (sh *strictHandler) CancelSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId) {
-	var request CancelSupporterSubscriptionRequestObject
+// EndSupporterSubscription operation middleware
+func (sh *strictHandler) EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId) {
+	var request EndSupporterSubscriptionRequestObject
 
 	request.Id = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CancelSupporterSubscription(ctx, request.(CancelSupporterSubscriptionRequestObject))
+		return sh.ssi.EndSupporterSubscription(ctx, request.(EndSupporterSubscriptionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CancelSupporterSubscription")
+		handler = middleware(handler, "EndSupporterSubscription")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CancelSupporterSubscriptionResponseObject); ok {
-		if err := validResponse.VisitCancelSupporterSubscriptionResponse(w); err != nil {
+	} else if validResponse, ok := response.(EndSupporterSubscriptionResponseObject); ok {
+		if err := validResponse.VisitEndSupporterSubscriptionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -57234,26 +57527,26 @@ func (sh *strictHandler) ListStatusQuotes(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// RevokeStatusQuote operation middleware
-func (sh *strictHandler) RevokeStatusQuote(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id) {
-	var request RevokeStatusQuoteRequestObject
+// RevokeStatusQuoteApproval operation middleware
+func (sh *strictHandler) RevokeStatusQuoteApproval(w http.ResponseWriter, r *http.Request, id StatusId, quoteId Id) {
+	var request RevokeStatusQuoteApprovalRequestObject
 
 	request.Id = id
 	request.QuoteId = quoteId
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RevokeStatusQuote(ctx, request.(RevokeStatusQuoteRequestObject))
+		return sh.ssi.RevokeStatusQuoteApproval(ctx, request.(RevokeStatusQuoteApprovalRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RevokeStatusQuote")
+		handler = middleware(handler, "RevokeStatusQuoteApproval")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RevokeStatusQuoteResponseObject); ok {
-		if err := validResponse.VisitRevokeStatusQuoteResponse(w); err != nil {
+	} else if validResponse, ok := response.(RevokeStatusQuoteApprovalResponseObject); ok {
+		if err := validResponse.VisitRevokeStatusQuoteApprovalResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

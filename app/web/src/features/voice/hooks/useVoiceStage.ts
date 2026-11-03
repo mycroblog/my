@@ -39,15 +39,15 @@ export type VoiceStage = {
 
 /** The label of a participant's place in the room: the host, a co-host, or a speaker or a listener. */
 function roleLabel(participant: VoiceRoomParticipant): ClientMessageKey {
-  if (participant.host) return "client:voice.role.host";
-  if (participant.cohost) return "client:voice.role.cohost";
+  if (participant.hosting) return "client:voice.role.host";
+  if (participant.cohosting) return "client:voice.role.cohost";
   return participant.role === "speaker" ? "client:voice.role.speaker" : "client:voice.role.listener";
 }
 
 /** The host first, then the co-hosts, then everyone else, each in the order they joined. */
 function rank(participant: VoiceRoomParticipant): number {
-  if (participant.host) return 0;
-  return participant.cohost ? 1 : 2;
+  if (participant.hosting) return 0;
+  return participant.cohosting ? 1 : 2;
 }
 
 /** The raised hands of the room, in the order they joined. */
@@ -68,7 +68,7 @@ export function useVoiceStage(room: VoiceRoom, call: InCall | undefined, micOn: 
     const speaker = participant.role === "speaker";
     // A listener's caption names only the host or a co-host: the heading of the grid says the rest.
     const parts = [
-      ...(speaker || participant.host || participant.cohost ? [t(roleLabel(participant))] : []),
+      ...(speaker || participant.hosting || participant.cohosting ? [t(roleLabel(participant))] : []),
       ...(isSelf ? [t("client:voice.participant.you")] : []),
       ...(participant.blocked ? [t("client:voice.participant.blocked")] : []),
     ];

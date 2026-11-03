@@ -168,8 +168,11 @@ func TestLocalCustomEmoji(t *testing.T) {
 	checkTag("served", served)
 
 	// Disabled, the emoji is text again everywhere.
-	if code := api(http.MethodPatch, "/admin/custom_emojis/"+emoji.Id, map[string]any{"enabled": false}, &emoji); code != http.StatusOK || emoji.Enabled {
-		t.Fatalf("PATCH enabled false = %d %+v", code, emoji)
+	if code := api(http.MethodPost, "/admin/custom_emojis/"+emoji.Id+"/disable", nil, &emoji); code != http.StatusOK || emoji.State != clientapi.CustomEmojiStateDisabled {
+		t.Fatalf("POST disable = %d %+v", code, emoji)
+	}
+	if code := api(http.MethodPost, "/admin/custom_emojis/0192f0c1-0000-7000-8000-00000000ffff/disable", nil, nil); code != http.StatusNotFound {
+		t.Errorf("POST disable of an unknown emoji = %d, want 404", code)
 	}
 	if code := api(http.MethodGet, "/statuses/"+post.Status.ID, nil, &st); code != http.StatusOK || len(st.Emojis) != 0 || len(st.Account.Emojis) != 0 {
 		t.Errorf("a disabled emoji is shown: %d %+v %+v", code, st.Emojis, st.Account.Emojis)
@@ -182,6 +185,9 @@ func TestLocalCustomEmoji(t *testing.T) {
 	}
 	if code := api(http.MethodGet, "/custom_emojis", nil, &picker); code != http.StatusOK || len(picker.Items) != 0 {
 		t.Errorf("the picker lists a disabled emoji: %+v", picker)
+	}
+	if code := api(http.MethodPost, "/admin/custom_emojis/"+emoji.Id+"/enable", nil, &emoji); code != http.StatusOK || emoji.State != clientapi.CustomEmojiStateEnabled {
+		t.Errorf("POST enable = %d %+v", code, emoji)
 	}
 	if code := api(http.MethodDelete, "/admin/custom_emojis/"+emoji.Id, nil, nil); code != http.StatusNoContent {
 		t.Errorf("DELETE = %d", code)
@@ -202,7 +208,7 @@ func TestLocalCustomEmoji(t *testing.T) {
 		actions = append(actions, e.Action)
 	}
 	slices.Reverse(actions)
-	want := []moderation.AuditAction{moderation.AuditCustomEmojiCreated, moderation.AuditCustomEmojiDisabled, moderation.AuditCustomEmojiDeleted}
+	want := []moderation.AuditAction{moderation.AuditCustomEmojiCreated, moderation.AuditCustomEmojiDisabled, moderation.AuditCustomEmojiEnabled, moderation.AuditCustomEmojiDeleted}
 	if !slices.Equal(actions, want) {
 		t.Errorf("audit log = %v, want %v", actions, want)
 	}

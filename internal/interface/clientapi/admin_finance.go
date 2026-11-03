@@ -304,13 +304,13 @@ func (s *Server) SetCostItemEnd(ctx context.Context, req SetCostItemEndRequestOb
 	return SetCostItemEnd200JSONResponse{costItemResponse(item)}, nil
 }
 
-// CancelCostItem serves POST /api/v1/admin/cost_items/{id}/cancel.
-func (s *Server) CancelCostItem(ctx context.Context, req CancelCostItemRequestObject) (CancelCostItemResponseObject, error) {
+// DeleteCostItem serves DELETE /api/v1/admin/cost_items/{id}.
+func (s *Server) DeleteCostItem(ctx context.Context, req DeleteCostItemRequestObject) (DeleteCostItemResponseObject, error) {
 	if p, err := s.requireCosts(ctx); err != nil || p != nil {
 		if err != nil {
 			return nil, err
 		}
-		return CancelCostItemdefaultApplicationProblemPlusJSONResponse(*p), nil
+		return DeleteCostItemdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -318,11 +318,11 @@ func (s *Server) CancelCostItem(ctx context.Context, req CancelCostItemRequestOb
 	}
 	err = s.o.Costs.Cancel(ctx, req.Id, v.UserID)
 	if errors.Is(err, appfinance.ErrNotFound) {
-		return CancelCostItemdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+		return DeleteCostItemdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	} else if err != nil {
-		return nil, fmt.Errorf("clientapi: cancel cost item %s: %w", req.Id, err)
+		return nil, fmt.Errorf("clientapi: delete cost item %s: %w", req.Id, err)
 	}
-	return CancelCostItem204Response{}, nil
+	return DeleteCostItem204Response{}, nil
 }
 
 // GetCostTotals serves GET /api/v1/admin/cost_totals.

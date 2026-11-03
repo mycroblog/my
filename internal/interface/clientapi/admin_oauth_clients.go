@@ -73,7 +73,10 @@ func (s *Server) newAdminOAuthClients(ctx context.Context, list []identity.OAuth
 func newAdminOAuthClient(l identity.OAuthClientListing) AdminOAuthClient {
 	out := AdminOAuthClient{
 		Id: l.ID, ClientId: l.ClientID, Name: l.Name, Registration: OAuthClientRegistration(l.Registration),
-		Confidential: !l.Public(), Scopes: l.Scope.Tokens(), Disabled: l.Disabled, CreatedAt: l.CreatedAt.UTC(),
+		Confidential: !l.Public(), Scopes: l.Scope.Tokens(), State: AdminOAuthClientStateEnabled, CreatedAt: l.CreatedAt.UTC(),
+	}
+	if l.Disabled {
+		out.State = AdminOAuthClientStateDisabled
 	}
 	if l.Website != "" {
 		out.Website = &l.Website

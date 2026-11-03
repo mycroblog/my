@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 description: A user's registration as the moderators review it.
 type: object
-required: [user_id, state, state_changed_at, submitted_at]
+required: [id, state, state_changed_at, submitted_at]
 properties:
-  user_id:
+  id:
     $ref: ./Id.yaml
   account_id:
     description: The user's local account; omitted when it is gone.

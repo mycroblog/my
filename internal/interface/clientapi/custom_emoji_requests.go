@@ -301,7 +301,7 @@ func (s *Server) WithdrawCustomEmojiRequest(ctx context.Context, req WithdrawCus
 // newOwnCustomEmoji presents an emoji to its creator.
 func newOwnCustomEmoji(e appcontent.AdminCustomEmoji) OwnCustomEmoji {
 	out := OwnCustomEmoji{
-		Id: e.Emoji.ID, Shortcode: e.Emoji.Shortcode, Enabled: e.Settings.Enabled, VisibleInPicker: e.Settings.VisibleInPicker,
+		Id: e.Emoji.ID, Shortcode: e.Emoji.Shortcode, State: customEmojiState(e.Settings.Enabled), VisibleInPicker: e.Settings.VisibleInPicker,
 		Aliases: e.Aliases, CreatedAt: e.Emoji.CreatedAt.UTC(), UpdatedAt: e.Image.RevisedAt.UTC(),
 	}
 	if out.Aliases == nil {

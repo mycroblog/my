@@ -4,8 +4,8 @@ post:
   summary: Disable an OAuth client
   description: |
     Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-    its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
-    new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
+    its authorization requests, token exchanges and refreshes until it is enabled again.
+    Disabling a disabled client revokes its tokens again and records nothing new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
     is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
     `manage_oauth_apps` permission.
   tags: [admin-server]

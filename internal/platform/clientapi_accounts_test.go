@@ -257,7 +257,7 @@ func TestClientAPIAccounts(t *testing.T) {
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers?limit=41", "", nil, nil), http.StatusBadRequest, "limit too large")
 
 	// Removing a follower and unfollowing end the follows.
-	e.want(e.do(http.MethodPost, "/accounts/"+alice.id+"/remove_from_followers", bob.token, nil, &r), http.StatusOK, "remove follower")
+	e.want(e.do(http.MethodDelete, "/accounts/"+alice.id+"/follower", bob.token, nil, &r), http.StatusOK, "remove follower")
 	if set(r.FollowedBy) {
 		t.Errorf("remove follower = %+v", r)
 	}

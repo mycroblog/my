@@ -168,7 +168,7 @@ const appeal: Schemas["AdminAppeal"] = {
 };
 
 const registration = {
-  user_id: "0192f0c4-7a8e-7000-8000-0000000000b2",
+  id: "0192f0c4-7a8e-7000-8000-0000000000b2",
   account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
   username: "bob",
   state: "pending",
@@ -226,7 +226,7 @@ const customEmoji: Schemas["AdminCustomEmoji"] = {
   static_url: servedImage(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR4nGN4ViH3nxLMMGrAqAGjBgwXAwAvJnsfj06SzAAAAABJRU5ErkJggg==",
   ),
-  enabled: true,
+  state: "enabled",
   visible_in_picker: true,
   category: "Blobs and other round creatures of the fediverse",
   aliases: ["cat", "kitty", "round_cat_of_the_fediverse"],
@@ -344,7 +344,7 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   scopes: ["read", "write"],
   owner: target,
   owner_deleted: false,
-  disabled: false,
+  state: "enabled",
   created_at: "2026-10-22T00:00:00Z",
 };
 

@@ -162,7 +162,7 @@ export function participantName(participant: VoiceRoomParticipant): string {
 
 /** Whether the participant hosts or co-hosts, who handles raised hands. */
 function manages(participant: VoiceRoomParticipant | undefined): boolean {
-  return participant !== undefined && (participant.host || participant.cohost);
+  return participant !== undefined && (participant.hosting || participant.cohosting);
 }
 
 /** Why getUserMedia failed, by the name of its DOMException (Media Capture and Streams §10). */
@@ -483,9 +483,10 @@ export class VoiceCall {
       } else if (before.hand_raised && !after.hand_raised) {
         this.#options.onNotice({ kind: "hand-down" });
       }
-      if (!before.host && after.host) this.#options.onNotice({ kind: "host" });
-      else if (!before.cohost && after.cohost) this.#options.onNotice({ kind: "cohost" });
-      else if (before.cohost && !after.cohost && !after.host) this.#options.onNotice({ kind: "cohost-removed" });
+      if (!before.hosting && after.hosting) this.#options.onNotice({ kind: "host" });
+      else if (!before.cohosting && after.cohosting) this.#options.onNotice({ kind: "cohost" });
+      else if (before.cohosting && !after.cohosting && !after.hosting)
+        this.#options.onNotice({ kind: "cohost-removed" });
     }
     if (wasManager && manages(after)) {
       const raised = new Set(previous.participants.filter((p) => p.hand_raised).map((p) => p.account.id));

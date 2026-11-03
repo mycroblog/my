@@ -2,9 +2,6 @@
 description: The settings of a custom emoji to change; absent ones stay.
 type: object
 properties:
-  enabled:
-    description: Whether the emoji is shown.
-    type: boolean
   visible_in_picker:
     description: Whether the picker offers the local emoji.
     type: boolean

@@ -17,7 +17,7 @@ export function ownCustomEmojiFixture(
     shortcode,
     url: `https://my.example/media/${id}/r/medium.webp`,
     static_url: `https://my.example/media/${id}/r/medium.webp`,
-    enabled: true,
+    state: "enabled",
     visible_in_picker: true,
     aliases: [],
     created_at: "2026-10-20T00:00:00Z",

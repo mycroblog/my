@@ -115,7 +115,7 @@ func (s *Server) moveProblem(ctx context.Context, err error) *problem {
 	return &p
 }
 
-// CancelOwnAccountMove serves POST /api/v1/accounts/move/cancel.
+// CancelOwnAccountMove serves DELETE /api/v1/accounts/move.
 func (s *Server) CancelOwnAccountMove(ctx context.Context, _ CancelOwnAccountMoveRequestObject) (CancelOwnAccountMoveResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {

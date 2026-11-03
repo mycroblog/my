@@ -54,6 +54,9 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - パスは `/api/v1/...` です。spec の `servers` が `/api/v1` なので、`paths` には `/api/v1` を除いた部分（`/instance`）を書きます。
 - `operationId` は lowerCamelCase の動詞句（`getInstance`、`createStatus`）です。Go のメソッド名（`GetInstance`）と TS の操作名になります。
 - プロパティ名とパス・クエリのパラメータ名は snake_case です（lint で強制）。
+- 関係や状態を元に戻す操作は、本文が要らないなら同じ資源への `DELETE`（`DELETE /accounts/{id}/follow`、`DELETE /accounts/move`）で、消す相手がパスに入らない値ならクエリで受けます（`DELETE /accounts/aliases?uri=`）。本人の確認を本文で受ける操作（`POST /accounts/password/remove`、`POST /two_factor/totp/disable`、`POST /accounts/delete`）は、`DELETE` の本文が広く扱われず、確認の値をクエリに置けないので、動詞のパスの `POST` にします。
+- 動詞のパスの言葉は意味で使い分けます。`lift`: 処分や抑止を解く（記録は残る）。`revoke`: 与えた権限や招待を失効させる。`withdraw`: 出した申請やお知らせを取り下げる。`retire`: 提供をやめる（使っている人には残る）。`cancel`: 予定されたことや予約された変更をやめる。`end`: 続いているものをその場で終わらせる。`delete`: 消す（`DELETE`）。`enable` / `disable`: 状態（`state` の `enabled` / `disabled`）を切り替える。
+- 操作の後も読める資源は、その資源を答えます（200）。読めるものが残らない操作だけ 204 です。
 - タグはモジュール単位（`instance`、`statuses`、`accounts` など）で付けます。スタッフの操作（`/admin/...`）だけは、モジュールではなく区分（[ADR-0058](../adr/0058-moderation-admin-separation.md)）で
   `admin-moderation`（通報・異議申し立て・アカウントと処分・登録・登録の拒否・招待・ドメインへの処分・連合先・監査ログ・`/admin/counts`）と
   `admin-server`（インスタンス設定と文章・ルール・テーマ・ロールとその付与・カスタム絵文字・webhook・お知らせ・ジョブのキュー・費用と利用料金の取り込み・サポーターのプランと加入・エラーのグループ）に分けます。操作のタグは、その操作が要る権限の区分（`identity.Permission.Category`）に合わせます。
@@ -81,7 +84,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   `Status.quotable`（ログインした閲覧者が引用できるか、`content.MayQuote`）と、作者にだけの `Status.quote_policy` も `StatusView` から詰め替えます。
   公開範囲が `local`・`private`・`direct` の投稿でリモートの投稿を引用すると `422` で、投稿を作りません（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用は投稿の作成（`createStatus` の `quoted_status_id` と `quote_policy`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
-  作者は `setStatusQuotePolicy` で引用の許可を変え、`listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuote` で承認を取り消します。既定の許可は `Preferences.default_quote_policy` です。
+  作者は `setStatusQuotePolicy` で引用の許可を変え、`listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuoteApproval` で承認を取り消します。既定の許可は `Preferences.default_quote_policy` です。
   アカウントの投稿の一覧（`listAccountStatuses`）だけは、`StatusPage` に `remote_fetch_started` を加えた `#/components/responses/AccountStatusPage` を返します。
   その要求がリモートのアカウントの最近の投稿の取得を始めたときだけ `true` が入り、ほかのときは省きます（[federation.md §6.3](federation.md#63-投稿)、ADR-0044）。
 

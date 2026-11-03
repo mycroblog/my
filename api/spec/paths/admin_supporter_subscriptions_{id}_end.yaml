@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
-  operationId: cancelSupporterSubscription
-  summary: Cancel a subscription at once
+  operationId: endSupporterSubscription
+  summary: End a subscription at once
   description: |
     Ends a subscription at once, without a refund: the role goes now, and the
     payment provider stops billing. A refund is the operator's to make at the provider. A
@@ -13,7 +13,14 @@ post:
   parameters:
     - $ref: ../components/parameters/SupporterSubscriptionId.yaml
   responses:
-    "204":
-      description: The subscription has ended.
+    "200":
+      description: The subscription after it ended.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminSupporterSubscription.yaml
     default:
       $ref: ../components/responses/Problem.yaml

@@ -37,22 +37,22 @@ export function registrationsQueryOptions(api: Api) {
 }
 
 /** One decision: on whose registration, which, and the note for the moderators ("" for none). */
-export type DecideRegistration = { userId: string; decision: RegistrationDecision; note: string };
+export type DecideRegistration = { id: string; decision: RegistrationDecision; note: string };
 
 /**
- * Approves or rejects a registration (POST /admin/registrations/{user_id}/approve | reject), as the options of
+ * Approves or rejects a registration (POST /admin/registrations/{id}/approve | reject), as the options of
  * TanStack Query's useMutation (web-client/10-api-client-and-auth.md §10). Returns the registration after it: a registration that was
  * decided already keeps its decision, so the state may differ from the decision sent.
  */
 export function decideRegistrationMutation(api: Api) {
   return {
-    mutationKey: ["post", "/admin/registrations/{user_id}"] as const,
-    mutationFn: async ({ userId, decision, note }: DecideRegistration): Promise<Registration> => {
-      const init = { params: { path: { user_id: userId } }, body: note === "" ? {} : { note } };
+    mutationKey: ["post", "/admin/registrations/{id}"] as const,
+    mutationFn: async ({ id, decision, note }: DecideRegistration): Promise<Registration> => {
+      const init = { params: { path: { id } }, body: note === "" ? {} : { note } };
       const { data, error } =
         decision === "approve"
-          ? await api.fetch.POST("/admin/registrations/{user_id}/approve", init)
-          : await api.fetch.POST("/admin/registrations/{user_id}/reject", init);
+          ? await api.fetch.POST("/admin/registrations/{id}/approve", init)
+          : await api.fetch.POST("/admin/registrations/{id}/reject", init);
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;
@@ -80,16 +80,16 @@ export async function refreshDecidedRegistration(queryClient: QueryClient): Prom
 }
 
 /**
- * Takes the decided registration of `userId` off the cached list, which keeps only those awaiting approval, and
+ * Takes the decided registration `id` off the cached list, which keeps only those awaiting approval, and
  * marks the moderators' counts (ADR-0045).
  */
-export function cacheDecidedRegistration(api: Api, queryClient: QueryClient, userId: string): void {
+export function cacheDecidedRegistration(api: Api, queryClient: QueryClient, id: string): void {
   queryClient.setQueryData(
     registrationsQueryOptions(api).queryKey,
     (data) =>
       data && {
         ...data,
-        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.user_id !== userId) })),
+        pages: data.pages.map((page) => ({ ...page, items: page.items.filter((item) => item.id !== id) })),
       },
   );
   void queryClient.invalidateQueries({ predicate: (query) => isAdminCountsQuery(query.queryKey) });

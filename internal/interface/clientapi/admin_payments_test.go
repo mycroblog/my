@@ -58,12 +58,12 @@ func TestPaymentStatus(t *testing.T) {
 	if st.Provider != "stripe" || st.Mode != clientapi.PaymentStatusModeLive || st.TimeZone != "UTC" || st.LastWebhookAt != nil {
 		t.Errorf("status = %+v", st)
 	}
-	if r := st.LastReconcile; r == nil || r.Outcome != clientapi.PaymentReconcileRunOutcomeFailed || r.ErrorKind != "permission" ||
+	if r := st.LastReconciliation; r == nil || r.Outcome != clientapi.PaymentReconciliationRunOutcomeFailed || r.ErrorKind != "permission" ||
 		r.Requests != 3 || r.CheckedSubscriptions != 2 || r.CorrectedSubscriptions != 1 {
 		t.Errorf("last reconcile = %+v", r)
 	}
 	if want := []clientapi.PaymentStatusWarnings{
-		clientapi.PaymentStatusWarningsNoWebhook, clientapi.PaymentStatusWarningsReconcileCorrected,
+		clientapi.PaymentStatusWarningsNoWebhook, clientapi.PaymentStatusWarningsReconciliationCorrected,
 	}; !slices.Equal(st.Warnings, want) {
 		t.Errorf("warnings = %v, want %v", st.Warnings, want)
 	}
@@ -72,10 +72,10 @@ func TestPaymentStatus(t *testing.T) {
 		method, path, token string
 		status              int
 	}{
-		{http.MethodPost, "/admin/payment_reconciles", "admin", http.StatusAccepted},
-		{http.MethodPost, "/admin/payment_reconciles", "admin", http.StatusTooManyRequests},
-		{http.MethodPost, "/admin/payment_reconciles", "admin-read", http.StatusForbidden},
-		{http.MethodPost, "/admin/payment_reconciles", "bob-admin", http.StatusForbidden},
+		{http.MethodPost, "/admin/payment_reconciliation/runs", "admin", http.StatusAccepted},
+		{http.MethodPost, "/admin/payment_reconciliation/runs", "admin", http.StatusTooManyRequests},
+		{http.MethodPost, "/admin/payment_reconciliation/runs", "admin-read", http.StatusForbidden},
+		{http.MethodPost, "/admin/payment_reconciliation/runs", "bob-admin", http.StatusForbidden},
 		{http.MethodGet, "/admin/payment_status", "bob-admin", http.StatusForbidden},
 	} {
 		res := e.admin(t, tc.method, tc.path, tc.token, nil)
@@ -100,7 +100,7 @@ func TestPaymentStatusWithoutProvider(t *testing.T) {
 	for _, method := range []string{http.MethodGet, http.MethodPost} {
 		path := "/admin/payment_status"
 		if method == http.MethodPost {
-			path = "/admin/payment_reconciles"
+			path = "/admin/payment_reconciliation/runs"
 		}
 		if res := e.admin(t, method, path, "admin", nil); res.StatusCode != http.StatusNotFound {
 			t.Errorf("%s %s = %d, want 404", method, path, res.StatusCode)

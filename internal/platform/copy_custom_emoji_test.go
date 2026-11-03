@@ -93,7 +93,7 @@ func TestCopyRemoteCustomEmoji(t *testing.T) {
 	if code := api(http.MethodPost, "/admin/custom_emojis/"+blobcat+"/copy", nil, &copied); code != http.StatusCreated {
 		t.Fatalf("POST copy = %d", code)
 	}
-	if !copied.Local || copied.Id == blobcat || copied.Shortcode != "blobcat" || copied.Domain != nil || !copied.Enabled || !copied.VisibleInPicker ||
+	if !copied.Local || copied.Id == blobcat || copied.Shortcode != "blobcat" || copied.Domain != nil || copied.State != clientapi.CustomEmojiStateEnabled || !copied.VisibleInPicker ||
 		copied.Url == nil || strings.Contains(*copied.Url, "/media/proxy/") {
 		t.Errorf("copied emoji = %+v", copied)
 	}

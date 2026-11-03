@@ -48,8 +48,8 @@ function aliasesServer(initial: Alias[]) {
       ];
       return HttpResponse.json({ items: aliases });
     }),
-    http.post(`${apiBase}/accounts/aliases/remove`, async ({ request }) => {
-      const { uri } = (await request.json()) as Schemas["RemoveAccountAliasRequest"];
+    http.delete(`${apiBase}/accounts/aliases`, ({ request }) => {
+      const uri = new URL(request.url).searchParams.get("uri") ?? "";
       removed.push(uri);
       aliases = aliases.filter((alias) => alias.uri !== uri);
       return HttpResponse.json({ items: aliases });
@@ -79,7 +79,7 @@ function moveServer({ moved = false }: { moved?: boolean } = {}) {
       movedTo = carol;
       return new HttpResponse(null, { status: 204 });
     }),
-    http.post(`${apiBase}/accounts/move/cancel`, () => {
+    http.delete(`${apiBase}/accounts/move`, () => {
       cancellations++;
       movedTo = undefined;
       return new HttpResponse(null, { status: 204 });

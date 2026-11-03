@@ -162,8 +162,6 @@ paths:
     $ref: ./paths/accounts_update_credentials.yaml
   /accounts/aliases:
     $ref: ./paths/accounts_aliases.yaml
-  /accounts/aliases/remove:
-    $ref: ./paths/accounts_aliases_remove.yaml
   /preferences:
     $ref: ./paths/preferences.yaml
   /preferences/auto_delete:
@@ -184,8 +182,6 @@ paths:
     $ref: ./paths/accounts_delete.yaml
   /accounts/move:
     $ref: ./paths/accounts_move.yaml
-  /accounts/move/cancel:
-    $ref: ./paths/accounts_move_cancel.yaml
   /accounts/password:
     $ref: ./paths/accounts_password.yaml
   /accounts/password/remove:
@@ -266,8 +262,8 @@ paths:
     $ref: ./paths/accounts_{id}_lists.yaml
   /accounts/{id}/mute:
     $ref: ./paths/accounts_{id}_mute.yaml
-  /accounts/{id}/remove_from_followers:
-    $ref: ./paths/accounts_{id}_remove_from_followers.yaml
+  /accounts/{id}/follower:
+    $ref: ./paths/accounts_{id}_follower.yaml
   /accounts/{id}/subscribe:
     $ref: ./paths/accounts_{id}_subscribe.yaml
   /subscriptions:
@@ -338,8 +334,8 @@ paths:
     $ref: ./paths/statuses_{id}_quote_policy.yaml
   /statuses/{id}/quotes:
     $ref: ./paths/statuses_{id}_quotes.yaml
-  /statuses/{id}/quotes/{quote_id}/revoke:
-    $ref: ./paths/statuses_{id}_quotes_{quote_id}_revoke.yaml
+  /statuses/{id}/quotes/{quote_id}/approval:
+    $ref: ./paths/statuses_{id}_quotes_{quote_id}_approval.yaml
   /statuses/{id}/source:
     $ref: ./paths/statuses_{id}_source.yaml
   /accounts/{id}/statuses:
@@ -464,8 +460,6 @@ paths:
     $ref: ./paths/admin_cost_items_{id}_price_revisions.yaml
   /admin/cost_items/{id}/end:
     $ref: ./paths/admin_cost_items_{id}_end.yaml
-  /admin/cost_items/{id}/cancel:
-    $ref: ./paths/admin_cost_items_{id}_cancel.yaml
   /admin/cost_totals:
     $ref: ./paths/admin_cost_totals.yaml
   /admin/income_totals:
@@ -538,6 +532,10 @@ paths:
     $ref: ./paths/admin_custom_emojis.yaml
   /admin/custom_emojis/{id}:
     $ref: ./paths/admin_custom_emojis_{id}.yaml
+  /admin/custom_emojis/{id}/enable:
+    $ref: ./paths/admin_custom_emojis_{id}_enable.yaml
+  /admin/custom_emojis/{id}/disable:
+    $ref: ./paths/admin_custom_emojis_{id}_disable.yaml
   /admin/custom_emojis/{id}/image:
     $ref: ./paths/admin_custom_emojis_{id}_image.yaml
   /admin/custom_emojis/{id}/copy:
@@ -584,10 +582,10 @@ paths:
     $ref: ./paths/admin_appeals_{id}_uphold.yaml
   /admin/registrations:
     $ref: ./paths/admin_registrations.yaml
-  /admin/registrations/{user_id}/approve:
-    $ref: ./paths/admin_registrations_{user_id}_approve.yaml
-  /admin/registrations/{user_id}/reject:
-    $ref: ./paths/admin_registrations_{user_id}_reject.yaml
+  /admin/registrations/{id}/approve:
+    $ref: ./paths/admin_registrations_{id}_approve.yaml
+  /admin/registrations/{id}/reject:
+    $ref: ./paths/admin_registrations_{id}_reject.yaml
   /admin/signup_blocks:
     $ref: ./paths/admin_signup_blocks.yaml
   /admin/signup_blocks/{id}:
@@ -678,8 +676,8 @@ paths:
     $ref: ./paths/admin_instances_{domain}_refetch_statuses.yaml
   /admin/payment_status:
     $ref: ./paths/admin_payment_status.yaml
-  /admin/payment_reconciles:
-    $ref: ./paths/admin_payment_reconciles.yaml
+  /admin/payment_reconciliation/runs:
+    $ref: ./paths/admin_payment_reconciliation_runs.yaml
   /admin/supporter_program:
     $ref: ./paths/admin_supporter_program.yaml
   /admin/supporter_plans:
@@ -690,8 +688,8 @@ paths:
     $ref: ./paths/admin_supporter_plans_{id}_retire.yaml
   /admin/supporter_subscriptions:
     $ref: ./paths/admin_supporter_subscriptions.yaml
-  /admin/supporter_subscriptions/{id}/cancel:
-    $ref: ./paths/admin_supporter_subscriptions_{id}_cancel.yaml
+  /admin/supporter_subscriptions/{id}/end:
+    $ref: ./paths/admin_supporter_subscriptions_{id}_end.yaml
 components:
   securitySchemes:
     oauth2:
@@ -825,8 +823,8 @@ components:
       $ref: ./components/parameters/ListId.yaml
     OAuthAppId:
       $ref: ./components/parameters/OAuthAppId.yaml
-    RegistrationUserId:
-      $ref: ./components/parameters/RegistrationUserId.yaml
+    RegistrationId:
+      $ref: ./components/parameters/RegistrationId.yaml
     RelayId:
       $ref: ./components/parameters/RelayId.yaml
     ReportId:
@@ -1109,6 +1107,8 @@ components:
       $ref: ./components/schemas/AdminOAuthClientHostDenialPage.yaml
     AdminOAuthClientPage:
       $ref: ./components/schemas/AdminOAuthClientPage.yaml
+    AdminOAuthClientState:
+      $ref: ./components/schemas/AdminOAuthClientState.yaml
     DenyOAuthClientHostRequest:
       $ref: ./components/schemas/DenyOAuthClientHostRequest.yaml
     InstanceBrandImage:
@@ -1399,6 +1399,8 @@ components:
       $ref: ./components/schemas/CustomEmojiRequestProblem.yaml
     CustomEmojiRequestState:
       $ref: ./components/schemas/CustomEmojiRequestState.yaml
+    CustomEmojiState:
+      $ref: ./components/schemas/CustomEmojiState.yaml
     DataExport:
       $ref: ./components/schemas/DataExport.yaml
     DataExportList:
@@ -1679,8 +1681,8 @@ components:
       $ref: ./components/schemas/PasskeyRegistrationRequest.yaml
     PasswordStatus:
       $ref: ./components/schemas/PasswordStatus.yaml
-    PaymentReconcileRun:
-      $ref: ./components/schemas/PaymentReconcileRun.yaml
+    PaymentReconciliationRun:
+      $ref: ./components/schemas/PaymentReconciliationRun.yaml
     PaymentStatus:
       $ref: ./components/schemas/PaymentStatus.yaml
     Permission:
@@ -1743,8 +1745,6 @@ components:
       $ref: ./components/schemas/RelayProtocol.yaml
     RelayState:
       $ref: ./components/schemas/RelayState.yaml
-    RemoveAccountAliasRequest:
-      $ref: ./components/schemas/RemoveAccountAliasRequest.yaml
     RemovePasswordRequest:
       $ref: ./components/schemas/RemovePasswordRequest.yaml
     ReplaceCustomEmojiImageRequest:

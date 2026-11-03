@@ -41,8 +41,8 @@ function aliases(initial: Alias[]) {
         return HttpResponse.json({ items });
       });
     }),
-    http.post(`${apiBase}/accounts/aliases/remove`, async ({ request }) => {
-      const { uri } = (await request.clone().json()) as { uri: string };
+    http.delete(`${apiBase}/accounts/aliases`, ({ request }) => {
+      const uri = new URL(request.url).searchParams.get("uri");
       return withViewer(request, () => {
         items = items.filter((alias) => alias.uri !== uri);
         return HttpResponse.json({ items });

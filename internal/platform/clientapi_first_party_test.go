@@ -50,7 +50,7 @@ func TestFirstPartyOnlyOperationsRefuseThirdPartyTokens(t *testing.T) {
 		{"updateAutoDeletePolicy", http.MethodPut, "/preferences/auto_delete", map[string]any{"enabled": false}},
 		{"previewAutoDeletePolicy", http.MethodPost, "/preferences/auto_delete/preview", map[string]any{"enabled": false}},
 		{"addAccountAlias", http.MethodPost, "/accounts/aliases", map[string]any{"acct": "bob@remote.example"}},
-		{"removeAccountAlias", http.MethodPost, "/accounts/aliases/remove", map[string]any{"acct": "bob@remote.example"}},
+		{"removeAccountAlias", http.MethodDelete, "/accounts/aliases?uri=https%3A%2F%2Fremote.example%2Fusers%2Fbob", nil},
 		{"listOwnInvites", http.MethodGet, "/invites", nil},
 		{"createOwnInvite", http.MethodPost, "/invites", map[string]any{}},
 		{"revokeOwnInvite", http.MethodPost, "/invites/" + missing + "/revoke", nil},

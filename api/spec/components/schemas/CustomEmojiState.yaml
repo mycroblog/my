@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: Whether the emoji is shown; a disabled one stays `:shortcode:` text.
+type: string
+enum: [enabled, disabled]

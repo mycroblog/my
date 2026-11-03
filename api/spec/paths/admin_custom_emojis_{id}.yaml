@@ -17,9 +17,8 @@ patch:
   operationId: updateCustomEmoji
   summary: Change the settings of a custom emoji
   description: |
-    Changes what the request names and keeps the rest. A remote emoji can only be enabled
-    and disabled (`enabled`); a change of its other settings is a 422 with the reason
-    `remote_emoji`. A disabled emoji is shown nowhere: its `:shortcode:` stays text.
+    Changes what the request names and keeps the rest. A remote emoji has none of these
+    settings: a change of one is a 422 with the reason `remote_emoji`.
     `category` is trimmed, and an empty one removes the category; `aliases` replace the
     aliases. Each change is recorded in the audit log. An unknown ID is a 404. Needs the
     `manage_custom_emojis` permission.

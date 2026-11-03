@@ -35,12 +35,12 @@ export function moveAccountMutation(api: Api) {
   };
 }
 
-/** Cancels the move (POST /accounts/move/cancel), as the options of useMutation. */
+/** Cancels the move (DELETE /accounts/move), as the options of useMutation. */
 export function cancelMoveMutation(api: Api) {
   return {
-    mutationKey: ["post", "/accounts/move/cancel"] as const,
+    mutationKey: ["delete", "/accounts/move"] as const,
     mutationFn: async (): Promise<void> => {
-      await api.fetch.POST("/accounts/move/cancel");
+      await api.fetch.DELETE("/accounts/move");
     },
   };
 }

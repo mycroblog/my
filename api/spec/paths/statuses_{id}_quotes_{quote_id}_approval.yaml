@@ -7,8 +7,8 @@ parameters:
     required: true
     schema:
       $ref: ../components/schemas/Id.yaml
-post:
-  operationId: revokeStatusQuote
+delete:
+  operationId: revokeStatusQuoteApproval
   summary: Revoke the approval of a quote of the authenticated user's status
   description: |
     Withdraws this server's approval of the quote: the quote shows the quoted

@@ -273,8 +273,8 @@ describe("the page of a room", () => {
     voiceOn([
       voiceRoomFixture({
         participants: [
-          participantFixture(otherAccountFixture, { role: "speaker", host: true }),
-          participantFixture(carol, { cohost: true, hand_raised: true }),
+          participantFixture(otherAccountFixture, { role: "speaker", hosting: true }),
+          participantFixture(carol, { cohosting: true, hand_raised: true }),
         ],
       }),
     ]);

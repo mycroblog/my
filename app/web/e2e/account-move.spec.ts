@@ -112,7 +112,7 @@ async function userServer(page: Page) {
       moved = true;
       return route.fulfill({ status: 204 });
     }
-    if (key === "POST /accounts/move/cancel") {
+    if (key === "DELETE /accounts/move") {
       cancellations.push("cancel");
       moved = false;
       return route.fulfill({ status: 204 });

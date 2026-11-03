@@ -14,13 +14,21 @@ export function participantFixture(
   account: Schemas["Account"],
   overrides: Partial<Schemas["VoiceRoomParticipant"]> = {},
 ): Schemas["VoiceRoomParticipant"] {
-  return { account, role: "listener", host: false, cohost: false, hand_raised: false, blocked: false, ...overrides };
+  return {
+    account,
+    role: "listener",
+    hosting: false,
+    cohosting: false,
+    hand_raised: false,
+    blocked: false,
+    ...overrides,
+  };
 }
 
 /** Bob's open room for every local user, with Bob as its host and only speaker, with `overrides`. */
 export function voiceRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}): Schemas["VoiceRoom"] {
   const participants = overrides.participants ?? [
-    participantFixture(otherAccountFixture, { role: "speaker", host: true }),
+    participantFixture(otherAccountFixture, { role: "speaker", hosting: true }),
   ];
   return {
     id: roomId,
@@ -41,7 +49,7 @@ export function voiceRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}):
 export function ownRoomFixture(overrides: Partial<Schemas["VoiceRoom"]> = {}): Schemas["VoiceRoom"] {
   return voiceRoomFixture({
     host: viewerFixture,
-    participants: [participantFixture(viewerFixture, { role: "speaker", host: true })],
+    participants: [participantFixture(viewerFixture, { role: "speaker", hosting: true })],
     ...overrides,
   });
 }

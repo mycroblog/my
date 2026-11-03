@@ -150,7 +150,7 @@ describe("the custom emoji screen", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
-    expect(change).toEqual({ category: "Blobs", aliases: [], visible_in_picker: false, enabled: true });
+    expect(change).toEqual({ category: "Blobs", aliases: [], visible_in_picker: false });
     const list = screen.getByRole("region", { name: "Registered custom emoji" });
     expect(await within(list).findByText("Hidden")).toBeInTheDocument();
     expect(within(list).getByRole("status")).toHaveTextContent("is saved.");
@@ -179,7 +179,7 @@ describe("the custom emoji screen", () => {
     });
     expect(deleted).toBe("e1");
     expect(screen.getByRole("heading", { level: 3, name: ":blobfox:" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Edit ⁦:blobfox:⁩" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Disable ⁦:blobfox:⁩" })).toHaveFocus();
   });
 
   test("shows the emoji of other servers from the toolbar, where the reason to copy stands for adding", async () => {
@@ -205,13 +205,30 @@ describe("the custom emoji screen", () => {
       http.get(`${apiBase}/admin/custom_emojis`, ({ request }) =>
         HttpResponse.json({ items: new URL(request.url).searchParams.get("local") === "false" ? [remote] : [] }),
       ),
-      http.patch(`${apiBase}/admin/custom_emojis/:id`, () => HttpResponse.json({ ...remote, enabled: false })),
+      http.post(`${apiBase}/admin/custom_emojis/:id/disable`, () =>
+        HttpResponse.json({ ...remote, state: "disabled" }),
+      ),
     );
     const { user } = await renderApp({ path: "/admin/custom-emojis?origin=remote" });
     await user.click(await screen.findByRole("button", { name: "Disable ⁦:partyparrot:@remote.example⁩" }));
 
     expect(await screen.findByRole("button", { name: "Enable ⁦:partyparrot:@remote.example⁩" })).toBeInTheDocument();
     expect(screen.getByText("Disabled: shown as text")).toBeInTheDocument();
+  });
+
+  test("disables and enables an emoji of this server with one press", async () => {
+    const emoji = adminCustomEmojiFixture("e1", "blobcat");
+    server.use(
+      http.get(`${apiBase}/admin/custom_emojis`, () => HttpResponse.json({ items: [emoji] })),
+      http.post(`${apiBase}/admin/custom_emojis/:id/disable`, () => HttpResponse.json({ ...emoji, state: "disabled" })),
+      http.post(`${apiBase}/admin/custom_emojis/:id/enable`, () => HttpResponse.json(emoji)),
+    );
+    const { user } = await renderApp({ path: "/admin/custom-emojis" });
+    await user.click(await screen.findByRole("button", { name: "Disable ⁦:blobcat:⁩" }));
+
+    await user.click(await screen.findByRole("button", { name: "Enable ⁦:blobcat:⁩" }));
+
+    expect(await screen.findByRole("button", { name: "Disable ⁦:blobcat:⁩" })).toBeInTheDocument();
   });
 
   test("copies an emoji of another server under a new shortcode, and keeps a refusal in the dialog", async () => {

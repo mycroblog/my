@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Whether the client is authorized and gets tokens. An administrator disables and enables it.
+type: string
+enum: [enabled, disabled]

@@ -12,7 +12,7 @@ import { ApiError, errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { type PagedPages, toPagedList } from "../../moderation";
 import {
-  cancelSupporterSubscriptionMutation,
+  endSupporterSubscriptionMutation,
   createSupporterPlanMutation,
   maxAnnualDiscount,
   maxEmojiLimit,
@@ -22,7 +22,7 @@ import {
   refreshPaymentStatus,
   refreshSupporters,
   retireSupporterPlanMutation,
-  runPaymentReconcileMutation,
+  runPaymentReconciliationMutation,
   setSupporterProgramMutation,
   type SupporterPlan,
   type SupporterPlanChange,
@@ -104,7 +104,7 @@ export function useRunPaymentReconcile() {
   const notice = useNotice();
   const [result, setResult] = useState<{ status: string } | { error: string } | undefined>(undefined);
   const mutation = useMutation({
-    ...runPaymentReconcileMutation(api),
+    ...runPaymentReconciliationMutation(api),
     onMutate: () => {
       setResult(undefined);
     },
@@ -434,7 +434,7 @@ export function useSubscriptionActions(): SubscriptionActions {
   const queryClient = useQueryClient();
   const notice = useNotice();
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const cancel = useMutation(cancelSupporterSubscriptionMutation(api));
+  const cancel = useMutation(endSupporterSubscriptionMutation(api));
   return {
     cancel: async (subscription) => {
       setStatus(undefined);

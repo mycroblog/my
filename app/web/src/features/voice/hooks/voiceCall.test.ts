@@ -35,7 +35,7 @@ function grantFixture(overrides: Partial<VoiceGrantData> = {}): VoiceGrantData {
 
 const live: VoiceRoom = voiceRoomFixture({
   participants: [
-    participantFixture(otherAccountFixture, { role: "speaker", host: true, session: "s9" }),
+    participantFixture(otherAccountFixture, { role: "speaker", hosting: true, session: "s9" }),
     participantFixture(viewerFixture, { session: "s5" }),
   ],
 });
@@ -208,7 +208,7 @@ describe("the room stream's events", () => {
     const hosted: VoiceRoom = {
       ...live,
       participants: [
-        participantFixture(viewerFixture, { role: "speaker", host: true, session: "s5" }),
+        participantFixture(viewerFixture, { role: "speaker", hosting: true, session: "s5" }),
         participantFixture(otherAccountFixture, { session: "s9" }),
       ],
     };

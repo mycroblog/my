@@ -455,11 +455,11 @@ export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status)
 
 /**
  * Revokes the approval of the quote `quotingId` of the viewer's post `quotedId`
- * (POST /statuses/{id}/quotes/{quote_id}/revoke, ADR-0069 §3): the quote shows the post no more.
+ * (DELETE /statuses/{id}/quotes/{quote_id}/approval, ADR-0069 §3): the quote shows the post no more.
  */
 export async function revokeQuote(api: Api, quotedId: string, quotingId: string): Promise<void> {
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
-  await api.fetch.POST("/statuses/{id}/quotes/{quote_id}/revoke", {
+  await api.fetch.DELETE("/statuses/{id}/quotes/{quote_id}/approval", {
     params: { path: { id: quotedId, quote_id: quotingId } },
   });
 }

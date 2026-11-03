@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -130,14 +131,14 @@ func TestAccountAliases(t *testing.T) {
 	wantProblem(add("bob@remote.example"), clientapi.ProblemTypeTooManyAliases, "add a sixth alias")
 
 	// Removing an alias lists the rest; removing one the viewer does not have changes nothing.
-	res = e.sendJSON(t, http.MethodPost, "/accounts/aliases/remove", "write", `{"uri":"https://other.example/users/last"}`)
+	res = e.sendJSON(t, http.MethodDelete, "/accounts/aliases?uri="+url.QueryEscape("https://other.example/users/last"), "write", "")
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("remove = %d, want 200", res.StatusCode)
 	}
 	if list := decode[clientapi.AccountAliasList](t, res); len(list.Items) != account.MaxAliases-1 || list.Items[0].Acct != nil {
 		t.Errorf("aliases after removing one = %+v, want 4 without handles", list.Items)
 	}
-	res = e.sendJSON(t, http.MethodPost, "/accounts/aliases/remove", "write", `{"uri":"https://nowhere.example/users/x"}`)
+	res = e.sendJSON(t, http.MethodDelete, "/accounts/aliases?uri="+url.QueryEscape("https://nowhere.example/users/x"), "write", "")
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("remove an unknown alias = %d, want 200", res.StatusCode)
 	}

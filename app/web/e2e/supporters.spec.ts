@@ -98,7 +98,7 @@ async function serveApi(page: Page) {
     provider: "stripe",
     mode: "test",
     time_zone: "UTC",
-    last_reconcile: {
+    last_reconciliation: {
       outcome: "failed",
       error_kind: "permission",
       requests: 1,
@@ -166,7 +166,7 @@ async function serveApi(page: Page) {
       return json(route, program());
     }
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
-    if (key === "POST /admin/payment_reconciles") {
+    if (key === "POST /admin/payment_reconciliation/runs") {
       reconciles += 1;
       sent.push(`reconcile ${String(reconciles)}`);
       if (reconciles > 1) return json(route, { type: "about:blank", title: "Too Many Requests", status: 429 }, 429);
@@ -191,10 +191,10 @@ async function serveApi(page: Page) {
       return route.fulfill({ status: 204 });
     }
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: subscriptions });
-    if (/^POST \/admin\/supporter_subscriptions\/[^/]+\/cancel$/.test(key)) {
+    if (/^POST \/admin\/supporter_subscriptions\/[^/]+\/end$/.test(key)) {
       sent.push("cancel");
       subscriptions = subscriptions.map((s) => ({ ...s, state: "expired" }));
-      return route.fulfill({ status: 204 });
+      return json(route, subscriptions[0]);
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });

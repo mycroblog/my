@@ -340,7 +340,7 @@ ADR-0071 との契約:
   `POST /supporter/subscription/change`（`{plan_id, interval}`）、`POST /supporter/subscription/cancel`、`POST /supporter/subscription/resume`、`POST /supporter/portal`（ポータルの URL）
 - 公開（タグ `instance`、`security: []`）: `GET /instance/supporter_plans`（公開のプラン: 名前・説明・月額・年額・順位）。無効なら `404`。`GET /instance` に `supporters_enabled` を足す。
 - 管理（タグ `admin-server`、`admin:read` / `admin:write` と `manage_supporters`）: `GET/PUT /admin/supporter_program`、`GET/POST /admin/supporter_plans`、`PATCH /admin/supporter_plans/{id}`（ロールの権限と位置を含む）、`POST /admin/supporter_plans/{id}/retire`、
-  `GET /admin/supporter_subscriptions`（状態とプランで絞り込む。キーセットページング）、`POST /admin/supporter_subscriptions/{id}/cancel`
+  `GET /admin/supporter_subscriptions`（状態とプランで絞り込む。キーセットページング）、`POST /admin/supporter_subscriptions/{id}/end`
 - CLI: `my admin supporters`（有効化・無効化・プランの一覧・加入の一覧と解約）。
 
 ### この決定を覆す条件

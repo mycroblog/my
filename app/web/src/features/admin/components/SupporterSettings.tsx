@@ -60,7 +60,7 @@ import {
 import { instanceQueryOptions } from "../api/documents";
 import { SupporterListPublicationForm } from "./PublicationSettings";
 import {
-  type PaymentReconcileRun,
+  type PaymentReconciliationRun,
   type PaymentStatus,
   type PaymentStatusWarning,
   type SupporterPlan,
@@ -105,28 +105,29 @@ const paymentModeLabels: Readonly<Record<PaymentStatus["mode"], ClientMessageKey
 
 const paymentWarningLabels: Readonly<Record<PaymentStatusWarning, ClientMessageKey>> = {
   no_webhook: "client:admin.supporters.payment.warning.no_webhook",
-  reconcile_corrected: "client:admin.supporters.payment.warning.reconcile_corrected",
+  reconciliation_corrected: "client:admin.supporters.payment.warning.reconcile_corrected",
 };
 
-const reconcileOutcomeLabels: Readonly<Record<PaymentReconcileRun["outcome"], ClientMessageKey>> = {
+const reconcileOutcomeLabels: Readonly<Record<PaymentReconciliationRun["outcome"], ClientMessageKey>> = {
   succeeded: "client:admin.supporters.payment.outcome.succeeded",
   partial: "client:admin.supporters.payment.outcome.partial",
   failed: "client:admin.supporters.payment.outcome.failed",
 };
 
 /** How to fix each reason a reconciliation stopped (ADR-0074 §2); a success has none. */
-const reconcileErrorFixes: Readonly<Record<Exclude<PaymentReconcileRun["error_kind"], "none">, ClientMessageKey>> = {
-  request_cap: "client:admin.supporters.payment.error.request_cap",
-  permission: "client:admin.supporters.payment.error.permission",
-  not_found: "client:admin.supporters.payment.error.not_found",
-  invalid_request: "client:admin.supporters.payment.error.invalid_request",
-  throttled: "client:admin.supporters.payment.error.throttled",
-  unavailable: "client:admin.supporters.payment.error.unavailable",
-  invalid_signature: "client:admin.supporters.payment.error.invalid_signature",
-  stale_signature: "client:admin.supporters.payment.error.stale_signature",
-  mode_mismatch: "client:admin.supporters.payment.error.mode_mismatch",
-  invalid_response: "client:admin.supporters.payment.error.invalid_response",
-};
+const reconcileErrorFixes: Readonly<Record<Exclude<PaymentReconciliationRun["error_kind"], "none">, ClientMessageKey>> =
+  {
+    request_cap: "client:admin.supporters.payment.error.request_cap",
+    permission: "client:admin.supporters.payment.error.permission",
+    not_found: "client:admin.supporters.payment.error.not_found",
+    invalid_request: "client:admin.supporters.payment.error.invalid_request",
+    throttled: "client:admin.supporters.payment.error.throttled",
+    unavailable: "client:admin.supporters.payment.error.unavailable",
+    invalid_signature: "client:admin.supporters.payment.error.invalid_signature",
+    stale_signature: "client:admin.supporters.payment.error.stale_signature",
+    mode_mismatch: "client:admin.supporters.payment.error.mode_mismatch",
+    invalid_response: "client:admin.supporters.payment.error.invalid_response",
+  };
 
 const visibilityLabels: Readonly<Record<SupporterPlanVisibility, ClientMessageKey>> = {
   public: "client:admin.supporters.plan.visibility.public",
@@ -273,7 +274,7 @@ function PaymentStatusView() {
   const intl = useIntl();
   const status = usePaymentStatus();
   const reconcile = useRunPaymentReconcile();
-  const last = status.last_reconcile;
+  const last = status.last_reconciliation;
   return (
     <Stack gap="4">
       <Hint size="inherit">{t("client:admin.supporters.payment.description")}</Hint>

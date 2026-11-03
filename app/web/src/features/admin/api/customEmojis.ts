@@ -91,6 +91,21 @@ export function updateCustomEmojiMutation(api: Api) {
   };
 }
 
+/** Shows an emoji or stops showing it, as the options of useMutation. Returns the emoji as recorded. */
+export function setCustomEmojiEnabledMutation(api: Api) {
+  return {
+    mutationKey: ["post", "/admin/custom_emojis/{id}/enable"] as const,
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }): Promise<AdminCustomEmoji> => {
+      const { data, error } = await api.fetch.POST(
+        enabled ? "/admin/custom_emojis/{id}/enable" : "/admin/custom_emojis/{id}/disable",
+        { params: { path: { id } } },
+      );
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  };
+}
+
 /** Uploads a new image of a local emoji and makes it its image, as the options of useMutation. */
 export function replaceCustomEmojiImageMutation(api: Api) {
   return {

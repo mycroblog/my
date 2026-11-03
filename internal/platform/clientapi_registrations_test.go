@@ -60,7 +60,7 @@ func TestRegistrationReviewThroughTheAPI(t *testing.T) {
 		t.Fatalf("first page = %+v, want one registration and a cursor", first)
 	}
 	d := first.Items[0]
-	if d.UserId != dave.User.ID || d.State != clientapi.RegistrationStatePending || d.Reason == nil || *d.Reason != "I like ducks." ||
+	if d.State != clientapi.RegistrationStatePending || d.Reason == nil || *d.Reason != "I like ducks." ||
 		d.Username == nil || *d.Username != "dave" || d.AccountId == nil || *d.AccountId != dave.AccountID || d.Email == nil || *d.Email != "dave@example.com" {
 		t.Errorf("first registration = %+v, want dave's", d)
 	}
@@ -68,29 +68,29 @@ func TestRegistrationReviewThroughTheAPI(t *testing.T) {
 	if res := c.do("carol", http.MethodGet, "/admin/registrations?limit=1&cursor="+*first.NextCursor, nil, &second); res.StatusCode != http.StatusOK {
 		t.Fatalf("GET /admin/registrations (second page) = %d", res.StatusCode)
 	}
-	if len(second.Items) != 1 || second.Items[0].UserId != erin.User.ID || second.Items[0].Reason != nil || second.NextCursor != nil {
+	if len(second.Items) != 1 || second.Items[0].AccountId == nil || *second.Items[0].AccountId != erin.AccountID || second.Items[0].Reason != nil || second.NextCursor != nil {
 		t.Fatalf("second page = %+v, want erin's registration alone", second)
 	}
 
-	decide := func(user, action string, body any) clientapi.AdminRegistration {
+	decide := func(id, action string, body any) clientapi.AdminRegistration {
 		t.Helper()
 		var got clientapi.AdminRegistration
-		if res := c.do("carol", http.MethodPost, "/admin/registrations/"+user+"/"+action, body, &got); res.StatusCode != http.StatusOK {
-			t.Fatalf("POST %s %s = %d", action, user, res.StatusCode)
+		if res := c.do("carol", http.MethodPost, "/admin/registrations/"+id+"/"+action, body, &got); res.StatusCode != http.StatusOK {
+			t.Fatalf("POST %s %s = %d", action, id, res.StatusCode)
 		}
 		return got
 	}
-	if got := decide(dave.User.ID, "approve", map[string]any{"note": "welcome"}); got.State != clientapi.RegistrationStateApproved {
+	if got := decide(d.Id, "approve", map[string]any{"note": "welcome"}); got.State != clientapi.RegistrationStateApproved {
 		t.Errorf("approved = %+v", got)
 	}
-	if got := decide(erin.User.ID, "reject", nil); got.State != clientapi.RegistrationStateRejected {
+	if got := decide(second.Items[0].Id, "reject", nil); got.State != clientapi.RegistrationStateRejected {
 		t.Errorf("rejected = %+v", got)
 	}
 	// Deciding again changes nothing.
-	if got := decide(dave.User.ID, "reject", nil); got.State != clientapi.RegistrationStateApproved {
+	if got := decide(d.Id, "reject", nil); got.State != clientapi.RegistrationStateApproved {
 		t.Errorf("dave after a second decision = %+v, want approved", got)
 	}
-	if got := decide(erin.User.ID, "approve", nil); got.State != clientapi.RegistrationStateRejected {
+	if got := decide(second.Items[0].Id, "approve", nil); got.State != clientapi.RegistrationStateRejected {
 		t.Errorf("erin after a second decision = %+v, want rejected", got)
 	}
 	var left clientapi.AdminRegistrationPage

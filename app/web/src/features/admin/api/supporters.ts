@@ -3,7 +3,7 @@
 // the supporter program (GET / PUT /admin/supporter_program), every plan, retired ones too (GET /admin/supporter_plans),
 // creating, changing and retiring one, and the subscriptions (GET /admin/supporter_subscriptions, newest first, as an
 // infinite query narrowed to a plan and a state) with cancelling one at once, and the state of the payment provider
-// (GET /admin/payment_status, ADR-0074 §4) with reconciling with it now (POST /admin/payment_reconciles, once an hour). A
+// (GET /admin/payment_status, ADR-0074 §4) with reconciling with it now (POST /admin/payment_reconciliation/runs, once an hour). A
 // plan that breaks a rule is a 422 `invalid-supporter-plan` problem whose `reason` says which. Every change is recorded
 // in the audit log.
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ export type SupporterSubscription = Schemas["AdminSupporterSubscription"];
 export type SupporterSubscriptionState = Schemas["SupporterSubscriptionState"];
 export type PaymentStatus = Schemas["PaymentStatus"];
 export type PaymentStatusWarning = PaymentStatus["warnings"][number];
-export type PaymentReconcileRun = Schemas["PaymentReconcileRun"];
+export type PaymentReconciliationRun = Schemas["PaymentReconciliationRun"];
 
 /** The visibilities of a plan, in the order of the form. */
 export const supporterPlanVisibilities = ["public", "hidden"] as const satisfies readonly SupporterPlanVisibility[];
@@ -171,23 +171,23 @@ export function retireSupporterPlanMutation(api: Api) {
   };
 }
 
-/** Ends a subscription at once, without a refund (POST /admin/supporter_subscriptions/{id}/cancel), as the options of useMutation. */
-export function cancelSupporterSubscriptionMutation(api: Api) {
+/** Ends a subscription at once, without a refund (POST /admin/supporter_subscriptions/{id}/end), as the options of useMutation. */
+export function endSupporterSubscriptionMutation(api: Api) {
   return {
-    mutationKey: ["post", "/admin/supporter_subscriptions/{id}/cancel"] as const,
+    mutationKey: ["post", "/admin/supporter_subscriptions/{id}/end"] as const,
     mutationFn: async (id: string): Promise<void> => {
-      await api.fetch.POST("/admin/supporter_subscriptions/{id}/cancel", { params: { path: { id } } });
+      await api.fetch.POST("/admin/supporter_subscriptions/{id}/end", { params: { path: { id } } });
     },
   };
 }
 
-/** Queues a reconciliation with the payment provider now (POST /admin/payment_reconciles), as the options of useMutation. */
-export function runPaymentReconcileMutation(api: Api) {
+/** Queues a reconciliation with the payment provider now (POST /admin/payment_reconciliation/runs), as the options of useMutation. */
+export function runPaymentReconciliationMutation(api: Api) {
   return {
-    mutationKey: ["post", "/admin/payment_reconciles"] as const,
+    mutationKey: ["post", "/admin/payment_reconciliation/runs"] as const,
     mutationFn: async (): Promise<void> => {
       // The middleware throws for every error status (a 429 within the hour); a 202 has no body to read.
-      await api.fetch.POST("/admin/payment_reconciles");
+      await api.fetch.POST("/admin/payment_reconciliation/runs");
     },
   };
 }
