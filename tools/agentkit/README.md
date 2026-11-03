@@ -136,3 +136,6 @@ a change to see what it saved.
 `scripts/task.sh agentkit:check` runs `go mod tidy -diff`, `go vet`, golangci-lint (`.golangci.yml` here), the tests, the
 dependency check (only module versions the server's `go.sum` has, so `scripts/task.sh go:licenses` covers their licenses), and
 `map check`. Bump `extract.Version` when an extractor's output changes, so that indexes are rebuilt.
+
+`cmd/releasenotes` is not part of agentkit: it is the reader behind `scripts/release-notes.sh`, in this module for its YAML parser,
+and is tested with that script by `scripts/task.sh shell:test`.

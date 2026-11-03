@@ -23,7 +23,8 @@ type retiredKey struct {
 
 // retiredKeys lists the renamed and removed settings, oldest first. Keep an entry for at least
 // the minor release that changes the key and the next one, the releases an upgrade passes
-// through (ADR-0087 §4).
+// through (ADR-0087 §4). scripts/release-notes.sh reads the literal for the release notes: keep
+// its strings literal, or that script fails.
 var retiredKeys []retiredKey
 
 func (r *retiredKey) env() string { return EnvPrefix + strings.ToUpper(r.key) }

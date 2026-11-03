@@ -92,6 +92,16 @@ expect_error "workspace dependency outside the release" "$script" npm-version v1
 expect_eq "file left as it was" "$before" "$(cat "$work/other/package.json")"
 expect_error "no package.json" "$script" npm-version v1.2.3 "$work/none"
 
+# The text of each library, from scripts/release-notes.sh, replaces the note on what to write there.
+printf 'mykit text\n' > "$work/mykit.md"
+printf 'mybot text\n' > "$work/mybot.md"
+notes="$("$script" notes v0.1.0 "$work/mykit.md" "$work/mybot.md")"
+for want in "mykit text" "mybot text"; do
+  [[ "$notes" == *"$want"* ]] || fail "notes with text: no '$want'"
+done
+[[ "$notes" != *"commits marked"* ]] || fail "notes with text: the note is still there"
+expect_error "notes with one text" "$script" notes v0.1.0 "$work/mykit.md"
+
 # The release notes name the tag and the npm version.
 notes="$("$script" notes v0.1.0-rc.1)"
 for want in "## mykit" "go get github.com/mycroblog/my/pkg/mykit@v0.1.0-rc.1" "npm install @mycroblog/mykit@0.1.0-rc.1" \

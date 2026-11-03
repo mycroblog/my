@@ -23,6 +23,9 @@ type DataUpgrades struct {
 // without external I/O. Its key never changes once released. When a later release contracts
 // the schema, the step stays here with Run set to nil, so that new databases record it too, and
 // that release lists it in Prerequisites with the release whose `my db upgrade` runs it.
+//
+// scripts/release-notes.sh reads the returned literal from this file for the release notes, at
+// each release: keep the steps in it, with literal strings, or that script fails.
 func (a *App) dataUpgrades() DataUpgrades {
 	return DataUpgrades{}
 }
