@@ -334,7 +334,7 @@ entries:
       - "diagnostics.error_group_created, diagnostics.error_group_regressed, and diagnostics.error_group_confirmed are the events that the administrators' notifications and the webhooks subscribe to; a group created by an unauthenticated web report (Group.Unauthenticated) notifies only when the first report with a session confirms it."
   - name: app-infrastructure
     paths: ["internal/app/kernel/**", "internal/app/uow/**", "internal/app/queue/**", "internal/app/stream/**", "internal/app/projection/**", "internal/app/dbupgrade/**", "internal/app/blob/**", "internal/app/media/**", "internal/app/metrics/**"]
-    docs: ["docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
+    docs: ["docs/architecture/job-system.md", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
     notes:
       - "Every external resource goes through a port, and every adapter passes the port's contract suite (pkg/testkit)."
   - name: data-upgrade

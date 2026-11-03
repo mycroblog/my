@@ -59,6 +59,7 @@ The requirements, the architecture, and the decision records are written in Japa
 - [Logical data model](architecture/data-model/README.md)
 - [Visibility checks (canView)](architecture/visibility.md)
 - [Federation design (ActivityPub server-to-server)](architecture/federation.md)
+- [Job system: components, lifecycle, and fan-out](architecture/job-system.md)
 - [Deployment targets and low-cost setups](architecture/deployment-targets.md)
 - [Web client conventions](architecture/web-client/README.md)
 - [Architecture Decision Records](adr/README.md)
