@@ -730,5 +730,9 @@
   "errors.deactivation.recently_reactivated": {
     "defaultMessage": "このアカウントは再有効化から 24 時間たっていません。",
     "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてください。",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

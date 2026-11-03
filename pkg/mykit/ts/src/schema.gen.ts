@@ -694,8 +694,8 @@ export interface paths {
          *     `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
          *     now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
          *     keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-         *     review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-         *     5 attempts per account are accepted every hour.
+         *     review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+         *     less than 24 hours ago. At most 5 attempts per account are accepted every hour.
          */
         post: operations["deactivateOwnAccount"];
         delete?: never;
@@ -10891,11 +10891,12 @@ export interface components {
              * @description Why the account cannot be deactivated now; absent when it can: moderation keeps it from
              *     logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
              *     deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-             *     (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-             *     reactivated less than 24 hours ago (`recently_reactivated`).
+             *     (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+             *     administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+             *     ago (`recently_reactivated`).
              * @enum {string}
              */
-            refusal?: "login_restricted" | "deletion_scheduled" | "already_deactivated" | "moved" | "registration_pending" | "paid_subscription" | "recently_reactivated";
+            refusal?: "login_restricted" | "deletion_scheduled" | "already_deactivated" | "moved" | "registration_pending" | "paid_subscription" | "last_administrator" | "recently_reactivated";
             /**
              * Format: date-time
              * @description When the account can be deactivated again, for `recently_reactivated`.

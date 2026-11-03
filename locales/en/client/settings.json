@@ -2690,5 +2690,9 @@
   "settings.account.deactivate.refused.recently_reactivated": {
     "defaultMessage": "You reactivated this account recently. You can deactivate it again from {date}.",
     "description": "Why the account cannot be deactivated. {date} is a formatted date and time, 24 hours after the reactivation."
+  },
+  "settings.account.deactivate.refused.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in, so it cannot be deactivated. Make someone else an administrator first.",
+    "description": "Why the account cannot be deactivated."
   }
 }

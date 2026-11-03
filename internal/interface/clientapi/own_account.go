@@ -301,6 +301,8 @@ func deactivationRefusalDetail(l *i18n.Localizer, r appaccount.DeactivationRefus
 		return l.ServerErrorsDeactivationRegistrationPending()
 	case appaccount.DeactivationRefusedSubscription:
 		return l.ServerErrorsDeactivationPaidSubscription()
+	case appaccount.DeactivationRefusedLastAdministrator:
+		return l.ServerErrorsDeactivationLastAdministrator()
 	case appaccount.DeactivationRefusedRecentlyReactivated:
 		return l.ServerErrorsDeactivationRecentlyReactivated()
 	}

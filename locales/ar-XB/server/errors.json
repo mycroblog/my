@@ -71,6 +71,10 @@
     "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ıs ʍɐıʇıuƃ ʇo qǝ pǝʅǝʇǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "‮⊥ɥıs ıs ʇɥǝ ouʅʎ ɐpɯıuısʇɹɐʇoɹ ɐɔɔonuʇ ʇɥɐʇ ɔɐu sıƃu ıu. Wɐʞǝ soɯǝouǝ ǝʅsǝ ɐu ɐpɯıuısʇɹɐʇoɹ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.deactivation.login_restricted": {
     "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʇɥıs ɐɔɔonuʇ ɟɹoɯ sıƃuıuƃ ıu.‬",
     "description": "Generated from en by tools/i18n; do not edit."

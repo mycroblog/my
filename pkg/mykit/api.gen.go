@@ -1911,6 +1911,7 @@ func (e DataImportSkippedReason) Valid() bool {
 const (
 	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
 	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
 	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
 	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
 	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
@@ -1924,6 +1925,8 @@ func (e DeactivationPreviewRefusal) Valid() bool {
 	case DeactivationPreviewRefusalAlreadyDeactivated:
 		return true
 	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
 		return true
 	case DeactivationPreviewRefusalLoginRestricted:
 		return true
@@ -8405,16 +8408,18 @@ type DeactivationPreview struct {
 	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
 	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
 	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-	// reactivated less than 24 hours ago (`recently_reactivated`).
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
 	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
 }
 
 // DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
 // logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
 // deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-// reactivated less than 24 hours ago (`recently_reactivated`).
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
 type DeactivationPreviewRefusal string
 
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
@@ -16282,8 +16287,8 @@ type ClientInterface interface {
 	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-	// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-	// 5 attempts per account are accepted every hour.
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -16311,8 +16316,8 @@ type ClientInterface interface {
 	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-	// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-	// 5 attempts per account are accepted every hour.
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21933,8 +21938,8 @@ func (c *Client) GetDeactivationPreview(ctx context.Context, reqEditors ...Reque
 // `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 // now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 // keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-// 5 attempts per account are accepted every hour.
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 //
 // Takes any type of body and a specified content type.
 //
@@ -21972,8 +21977,8 @@ func (c *Client) DeactivateOwnAccountWithBody(ctx context.Context, contentType s
 // `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 // now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 // keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-// 5 attempts per account are accepted every hour.
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -47465,8 +47470,8 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-	// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-	// 5 attempts per account are accepted every hour.
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47494,8 +47499,8 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-	// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-	// 5 attempts per account are accepted every hour.
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -76402,8 +76407,8 @@ func (c *ClientWithResponses) GetDeactivationPreviewWithResponse(ctx context.Con
 // `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 // now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 // keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-// 5 attempts per account are accepted every hour.
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -76437,8 +76442,8 @@ func (c *ClientWithResponses) DeactivateOwnAccountWithBodyWithResponse(ctx conte
 // `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
 // now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
 // keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-// review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-// 5 attempts per account are accepted every hour.
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

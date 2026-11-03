@@ -1913,6 +1913,7 @@ func (e DataImportSkippedReason) Valid() bool {
 const (
 	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
 	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
 	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
 	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
 	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
@@ -1926,6 +1927,8 @@ func (e DeactivationPreviewRefusal) Valid() bool {
 	case DeactivationPreviewRefusalAlreadyDeactivated:
 		return true
 	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
 		return true
 	case DeactivationPreviewRefusalLoginRestricted:
 		return true
@@ -8404,16 +8407,18 @@ type DeactivationPreview struct {
 	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
 	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
 	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-	// reactivated less than 24 hours ago (`recently_reactivated`).
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
 	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
 }
 
 // DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
 // logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
 // deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-// reactivated less than 24 hours ago (`recently_reactivated`).
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
 type DeactivationPreviewRefusal string
 
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.

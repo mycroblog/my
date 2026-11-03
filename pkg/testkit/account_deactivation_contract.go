@@ -16,6 +16,16 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
+// otherAdmin creates another administrator, so that deactivating the session user leaves one.
+func (e *accountEnv) otherAdmin(t *testing.T) {
+	t.Helper()
+	if _, err := e.identity.CreateAdmin(t.Context(), appidentity.CreateAdminInput{
+		Username: "backup", Email: "backup@example.com", Password: sessionPassword,
+	}); err != nil {
+		t.Fatalf("CreateAdmin(backup) = %v", err)
+	}
+}
+
 // deactivationConfirmed is the confirmation of the deactivation by the user of sessionUser.
 var deactivationConfirmed = appidentity.Confirmation{Password: sessionPassword}
 
@@ -47,6 +57,7 @@ func deactivationConfirmsAndEndsSessions(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	appidentity.RegisterLifecycleProjectors(e.projectors, e.h.Identity, e.accounts, e.clock)
 	reg := e.sessionUser(t)
+	e.otherAdmin(t)
 	signedIn := e.signIn(t, appidentity.SignInInput{})
 	tokens, _ := e.webTokensFor(t, reg.User.ID)
 
@@ -102,6 +113,10 @@ func deactivationRefusals(t *testing.T, e *accountEnv) {
 	deactivate := func(s *appidentity.Service) error {
 		return errorOf(s.DeactivateOwnAccount(ctx, reg.User.ID, deactivationConfirmed))
 	}
+
+	// The only administrator who can sign in stays, or the deletion would leave the instance without one.
+	wantRefused(t, deactivate(e.identity), appaccount.DeactivationRefusedLastAdministrator)
+	e.otherAdmin(t)
 
 	// Moderation keeps the account from logging in, and it is told in the preview too.
 	restricted := e.newIdentityWith(func(d *appidentity.Deps) { d.Logins = loginPolicy{reg.AccountID: true} })
@@ -187,6 +202,7 @@ func (l liveSubscribers) HasLiveSubscription(_ context.Context, userID string) (
 func deactivationDeletesAfterThePeriod(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	reg := e.sessionUser(t)
+	e.otherAdmin(t)
 	back := e.register(t, "back")
 	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, deactivationConfirmed); err != nil {
 		t.Fatalf("DeactivateOwnAccount = %v", err)
@@ -255,6 +271,7 @@ func lastLifecycleEvent(t *testing.T, e *accountEnv, accountID string) account.L
 func deactivationYieldsToABan(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	reg := e.sessionUser(t)
+	e.otherAdmin(t)
 	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, deactivationConfirmed); err != nil {
 		t.Fatalf("DeactivateOwnAccount = %v", err)
 	}
@@ -288,6 +305,7 @@ func deactivationSendsOneEmail(t *testing.T, e *accountEnv) {
 	m := &Mailer{}
 	e.withMailer(m)
 	reg := e.sessionUser(t)
+	e.otherAdmin(t)
 	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, deactivationConfirmed); err != nil {
 		t.Fatalf("DeactivateOwnAccount = %v", err)
 	}
@@ -351,6 +369,7 @@ func deactivationSendsOneEmail(t *testing.T, e *accountEnv) {
 func deactivationStatusPageDelete(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	reg := e.sessionUser(t)
+	e.otherAdmin(t)
 	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, deactivationConfirmed); err != nil {
 		t.Fatalf("DeactivateOwnAccount = %v", err)
 	}

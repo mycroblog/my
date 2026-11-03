@@ -45,8 +45,8 @@ post:
     `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
     now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
     keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
-    review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
-    5 attempts per account are accepted every hour.
+    review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+    less than 24 hours ago. At most 5 attempts per account are accepted every hour.
   tags: [accounts]
   security:
     - oauth2: ["write:accounts"]

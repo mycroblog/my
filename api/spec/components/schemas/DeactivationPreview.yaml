@@ -12,8 +12,9 @@ properties:
       Why the account cannot be deactivated now; absent when it can: moderation keeps it from
       logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
       deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
-      (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
-      reactivated less than 24 hours ago (`recently_reactivated`).
+      (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+      administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+      ago (`recently_reactivated`).
     type: string
     enum:
       - login_restricted
@@ -22,6 +23,7 @@ properties:
       - moved
       - registration_pending
       - paid_subscription
+      - last_administrator
       - recently_reactivated
   available_at:
     description: When the account can be deactivated again, for `recently_reactivated`.

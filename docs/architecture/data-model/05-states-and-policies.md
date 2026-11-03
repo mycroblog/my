@@ -101,7 +101,7 @@
 本人による無効化（[ADR-0145](../../adr/0145-self-deactivation.md)）は、ライフサイクルの `deactivated` です。処分の制限と独立で、`initiated_by = self` だけが作ります。
 
 - **操作**: `POST /api/v1/accounts/deactivation`（一次のクライアントだけ）。パスワード・二要素認証のコード（リカバリーコードを含む）・パスキーのどれか、どれも持たない人は連携先のログインで確かめます。`account.DeactivationPeriod`（30 日）後が削除の日付で、`deactivated` の `since` から求めます（カラムはありません）。
-- **断るとき**: ログインを奪う処分、`deletion_scheduled`、すでに `deactivated`、移転済み（`account_move_states`）、登録の審査中、続いている支援（期間の終わりに終わる予定のものも含む）、最後の `reactivated` から `account.DeactivationGap`（24 時間）たっていない。
+- **断るとき**: ログインを奪う処分、`deletion_scheduled`、すでに `deactivated`、移転済み（`account_move_states`）、登録の審査中、続いている支援（期間の終わりに終わる予定のものも含む）、ログインできるほかの管理者がいない最後の管理者（期限の削除で管理者がいなくなるため）、最後の `reactivated` から `account.DeactivationGap`（24 時間）たっていない。
 - **同じトランザクションで起きること**: `deactivated` の記録、セッションとトークンの失効（`session_revocations.reason = logout`、`oauth_token_revocations.reason = user`。登録したクライアントのトークンは `client_disabled`）、`feed_author_restrictions` の `profile_view`、検索語の削除、`Update(Actor)` の記録（[federation.md §7.1](../federation.md)）、メールを送る構成なら確認のメールのジョブ（`identity.deactivation_email`）、通話の参加者の確認（`voice.check_account`）。
 - **見えるもの**: プロフィール・投稿・検索・おすすめ・メンションの補完から外します。モデレーターの画面には `deactivated` の状態で出し、通報と処分は続けられます。処分は `AdminAccountState` の順で優先します。
 - **届くもの**: 通知・メール・Web Push は作りません（`notification` の projector と、ジョブのメールボックスが判定します）。メンションと DM は宛先に入れません。お気に入り・ブースト・リアクションは数として残します（§4.5 の受信）。

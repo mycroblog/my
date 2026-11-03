@@ -37,6 +37,9 @@ const (
 	DeactivationRefusedPending DeactivationRefusal = "registration_pending"
 	// DeactivationRefusedSubscription is an account with a paid subscription that goes on.
 	DeactivationRefusedSubscription DeactivationRefusal = "paid_subscription"
+	// DeactivationRefusedLastAdministrator is the account of the only administrator who can sign
+	// in: the deletion at the end of the period would leave the instance without one.
+	DeactivationRefusedLastAdministrator DeactivationRefusal = "last_administrator"
 	// DeactivationRefusedRecentlyReactivated is an account reactivated less than
 	// account.DeactivationGap ago.
 	DeactivationRefusedRecentlyReactivated DeactivationRefusal = "recently_reactivated"

@@ -170,6 +170,7 @@ function DeactivationRefusal({ deactivation }: { deactivation: AccountDeactivati
     already_deactivated: "client:settings.account.deactivate.refused.already_deactivated",
     moved: "client:settings.account.deactivate.refused.moved",
     registration_pending: "client:settings.account.deactivate.refused.registration_pending",
+    last_administrator: "client:settings.account.deactivate.refused.last_administrator",
   };
   return refusal === undefined ? null : <p>{t(labels[refusal])}</p>;
 }

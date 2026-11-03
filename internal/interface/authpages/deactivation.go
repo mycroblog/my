@@ -98,6 +98,9 @@ func (h *Handler) deleteDeactivated(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, appidentity.ErrWrongPassword):
 		refuse(http.StatusUnprocessableEntity, (*i18n.Localizer).ServerAuthStatusDeactivatedWrongPassword)
 		return
+	case errors.Is(err, appidentity.ErrLastAdmin):
+		refuse(http.StatusConflict, (*i18n.Localizer).ServerErrorsDeactivationLastAdministrator)
+		return
 	case errors.Is(err, appidentity.ErrSignInAgain):
 		refuse(http.StatusUnprocessableEntity, (*i18n.Localizer).ServerAuthStatusDeactivatedSignInAgain)
 		return

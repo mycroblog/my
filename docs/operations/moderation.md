@@ -112,7 +112,8 @@ the account and act on it. A moderation action does not change the date of the d
 replaces it with its own: from then on the user cannot reactivate. A suspension sends nothing to other servers while the
 account is deactivated, and it stays in effect after the user reactivates. A user cannot deactivate an account while
 moderation keeps it from signing in, while its deletion is scheduled, after it moved, while its registration waits
-for review, or while a paid subscription is still running (including one set to end at the end of its period).
+for review, while a paid subscription is still running (including one set to end at the end of its period), or when
+it is the only administrator who can sign in. A deactivated administrator does not count as one who can.
 
 ## Appeals
 

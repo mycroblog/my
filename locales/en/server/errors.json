@@ -730,5 +730,9 @@
   "errors.deactivation.recently_reactivated": {
     "defaultMessage": "This account was reactivated less than 24 hours ago.",
     "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in. Make someone else an administrator first.",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

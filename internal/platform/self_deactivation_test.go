@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/account"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
@@ -541,8 +542,9 @@ func TestSelfDeactivationFederates(t *testing.T) {
 		t.Fatalf("a direct post to another local account as well was not stored: %v", err)
 	}
 
-	// A favourite counts and notifies nobody.
+	// A favourite and a boost count and notify nobody.
 	postInbox(t, e.statusesClient, carol, map[string]any{"id": carol.id + "/likes/1", "type": "Like", "actor": carol.id, "object": post.Uri, "to": []string{aliceURI}})
+	postInbox(t, e.statusesClient, carol, map[string]any{"id": carol.id + "/boosts/1", "type": "Announce", "actor": carol.id, "object": post.Uri, "to": []string{public}, "published": e.clock.Now().UTC().Format(time.RFC3339)})
 	e.network.taken()
 
 	// The reactivation sends the original document, and everything else is as it was.
@@ -569,6 +571,9 @@ func TestSelfDeactivationFederates(t *testing.T) {
 	e.do("alice", http.MethodGet, "/statuses/"+post.Id, nil, &back)
 	if back.FavouritesCount != 1 {
 		t.Errorf("favourites of the post = %d, want the one received while deactivated", back.FavouritesCount)
+	}
+	if back.BoostsCount != 1 {
+		t.Errorf("boosts of the post = %d, want the one received while deactivated", back.BoostsCount)
 	}
 	var notifications clientapi.NotificationPage
 	e.do("alice", http.MethodGet, "/notifications", nil, &notifications)
@@ -608,6 +613,10 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 	e := newDeactivationEnv(t)
 	ctx := t.Context()
 	aliceUser, aliceID := e.userOf("alice")
+	// A moderator acts only on a user of a lower rank.
+	if _, err := e.app.Identity.RevokeRole(ctx, identity.RoleChangeInput{UserID: aliceUser, RoleKey: domainidentity.RoleAdmin}); err != nil {
+		t.Fatalf("RevokeRole = %v", err)
+	}
 	const carolInbox = "https://remote.example/users/carol/inbox"
 	carol := newRemoteActor(t, e.network, "https://remote.example/users/carol", "Person", carolInbox)
 	aliceURI := "https://example.test/ap/actors/" + aliceID

@@ -1666,6 +1666,13 @@ func (l *Localizer) ServerErrorsDeactivationDeletionScheduled() string {
 	return l.format("server:errors.deactivation.deletion_scheduled", nil)
 }
 
+// ServerErrorsDeactivationLastAdministrator formats "server:errors.deactivation.last_administrator". API error detail: the account cannot be deactivated or deleted because no other administrator can sign in.
+//
+//	en: This is the only administrator account that can sign in. Make someone else an administrator first.
+func (l *Localizer) ServerErrorsDeactivationLastAdministrator() string {
+	return l.format("server:errors.deactivation.last_administrator", nil)
+}
+
 // ServerErrorsDeactivationLoginRestricted formats "server:errors.deactivation.login_restricted". API error detail: the account cannot be deactivated because a moderation action disables its login.
 //
 //	en: A moderation action keeps this account from signing in.

@@ -21,7 +21,7 @@ import { type ExternalConfirmation, useExternalConfirmation } from "./useExterna
 import { useHasPassword } from "./usePasswordChange";
 
 /** What confirms the deactivation in the dialog: the way the account signs in, or a code of its second factor. */
-export type DeactivationMethod = "sign-in" | "code";
+type DeactivationMethod = "sign-in" | "code";
 
 /** What the deactivation of the account needs. */
 export type AccountDeactivation = {
