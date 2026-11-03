@@ -58,9 +58,9 @@ func (f *fakeVoiceRooms) Mute(_ context.Context, _, _, to string) error {
 	return f.err
 }
 
-func (f *fakeVoiceRooms) Remove(_ context.Context, _, _, to string) error {
+func (f *fakeVoiceRooms) Remove(_ context.Context, _, _, to string) (appvoice.RoomView, error) {
 	f.record("remove", to)
-	return f.err
+	return f.room(), f.err
 }
 
 func (f *fakeVoiceRooms) AssignCohost(_ context.Context, _, _, to string) (appvoice.RoomView, error) {
@@ -113,11 +113,11 @@ func TestVoiceParticipantOperations(t *testing.T) {
 		{http.MethodDelete, room + "/speaker", "", http.StatusOK, "listen:" + aliceAccountID},
 		{http.MethodPost, room + "/hand", "", http.StatusOK, "raise:" + aliceAccountID},
 		{http.MethodDelete, room + "/hand", "", http.StatusOK, "lower:" + aliceAccountID},
-		{http.MethodPost, member + "/grant", "", http.StatusOK, "grant:" + bobAccountID},
-		{http.MethodDelete, member + "/grant", "", http.StatusOK, "revoke:" + bobAccountID},
+		{http.MethodPost, member + "/speaking_permission", "", http.StatusOK, "grant:" + bobAccountID},
+		{http.MethodDelete, member + "/speaking_permission", "", http.StatusOK, "revoke:" + bobAccountID},
 		{http.MethodDelete, member + "/hand", "", http.StatusOK, "dismiss:" + bobAccountID},
 		{http.MethodPost, member + "/mute", "", http.StatusNoContent, "mute:" + bobAccountID},
-		{http.MethodDelete, member, "", http.StatusNoContent, "remove:" + bobAccountID},
+		{http.MethodDelete, member, "", http.StatusOK, "remove:" + bobAccountID},
 		{http.MethodPost, member + "/cohost", "", http.StatusOK, "cohost:" + bobAccountID},
 		{http.MethodDelete, member + "/cohost", "", http.StatusOK, "uncohost:" + bobAccountID},
 		{http.MethodPost, room + "/invitations", `{"account_id":"` + aliceAccountID + `"}`, http.StatusCreated, "invite-:" + aliceAccountID},
@@ -202,8 +202,8 @@ func TestVoiceParticipantOperationsOff(t *testing.T) {
 		{http.MethodPost, room + "/hand", ""},
 		{http.MethodDelete, room + "/hand", ""},
 		{http.MethodDelete, member, ""},
-		{http.MethodPost, member + "/grant", ""},
-		{http.MethodDelete, member + "/grant", ""},
+		{http.MethodPost, member + "/speaking_permission", ""},
+		{http.MethodDelete, member + "/speaking_permission", ""},
 		{http.MethodDelete, member + "/hand", ""},
 		{http.MethodPost, member + "/mute", ""},
 		{http.MethodPost, member + "/cohost", ""},

@@ -17,3 +17,4 @@ properties:
       Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
       `suspended`, `room_ended`); omitted while it takes part.
     type: string
+    enum: [left, moved, disconnected, removed, blocked, suspended, room_ended]

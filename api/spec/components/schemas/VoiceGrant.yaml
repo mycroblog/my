@@ -8,6 +8,7 @@ required: [kind, options, ice_servers, relay_only, expires_at]
 properties:
   kind:
     type: string
+    enum: [p2p, livekit, sora]
   url:
     description: The endpoint of the media server; omitted for `p2p`.
     type: string

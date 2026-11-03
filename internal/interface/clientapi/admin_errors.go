@@ -166,7 +166,7 @@ func (s *Server) errorGroupDetail(ctx context.Context, sm appdiagnostics.Summary
 	case err == nil:
 		d.Sample = &ErrorGroupSample{
 			Type: sample.ErrorType, Message: sample.Message, Stack: sample.Stack, RequestId: optText(sample.RequestID),
-			TraceId: optText(sample.TraceID), Version: sample.Version, Role: sample.Role, OccurredAt: sample.OccurredAt,
+			TraceId: optText(sample.TraceID), Version: sample.Version, Role: ErrorGroupSampleRole(sample.Role), OccurredAt: sample.OccurredAt,
 		}
 	case !errors.Is(err, appdiagnostics.ErrNotFound):
 		return ErrorGroupDetail{}, fmt.Errorf("clientapi: the sample of error group %s: %w", sm.Group.ID, err)

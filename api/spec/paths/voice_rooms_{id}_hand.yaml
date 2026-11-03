@@ -6,7 +6,7 @@ post:
   summary: Raise a hand in a voice chat room
   description: |
     Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-    speaker raises none. A 404 while the voice chat is off on the server.
+    speaker raises none.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
@@ -26,7 +26,7 @@ delete:
   operationId: lowerVoiceHand
   summary: Lower a hand in a voice chat room
   description: |
-    Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+    Withdraws the user's request to speak. A hand that is down stays down.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

@@ -113,7 +113,14 @@ function serve(room: Schemas["VoiceRoom"], joined: Schemas["VoiceRoom"]) {
         ),
       });
     }),
-    http.post(`${apiBase}/voice/rooms/:id/participants/:accountId/grant`, async ({ request, params }) => {
+    http.delete(`${apiBase}/voice/rooms/:id/participants/:accountId`, async ({ request, params }) => {
+      await record(request);
+      return respondRoom({
+        ...current,
+        participants: current.participants.filter((p) => p.account.id !== params["accountId"]),
+      });
+    }),
+    http.post(`${apiBase}/voice/rooms/:id/participants/:accountId/speaking_permission`, async ({ request, params }) => {
       await record(request);
       return respondRoom({
         ...current,
@@ -616,8 +623,36 @@ describe("the host in the call", () => {
     await user.click(within(menu).getByRole("menuitem", { name: "Let speak" }));
     expect(await screen.findByText("Bob can speak now.")).toBeInTheDocument();
     expect(
-      srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`),
+      srv.requests.some(
+        (r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/speaking_permission`,
+      ),
     ).toBe(true);
+  });
+
+  test("removes a participant and shows the room the server answers", async () => {
+    const room = hostRoom();
+    const srv = serve(room, room);
+    const { user } = await renderApp({ path: `/voice/${roomId}` });
+    await user.click(await screen.findByRole("button", { name: "Join" }));
+    await screen.findByText("Connected");
+
+    const listeners = screen.getByRole("list", { name: "Listeners · 1" });
+    await user.click(within(listeners).getByRole("button", { name: /^Bob.*Hand raised/u }));
+    const menu = await screen.findByRole("menu", { name: /^Bob/u });
+    await user.click(within(menu).getByRole("menuitem", { name: "Remove from room" }));
+    const confirm = await screen.findByRole("alertdialog");
+    await user.click(within(confirm).getByRole("button", { name: "Remove from room" }));
+
+    expect(await screen.findByText("Removed Bob from the room.")).toBeInTheDocument();
+    expect(
+      srv.requests.some(
+        (r) => r.method === "DELETE" && r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}`,
+      ),
+    ).toBe(true);
+    // The answer replaces the room, without waiting for the stream.
+    await waitFor(() => {
+      expect(screen.queryByRole("list", { name: "Listeners · 1" })).not.toBeInTheDocument();
+    });
   });
 
   test("lets a raised hand speak from the list that the dock's Hands button opens", async () => {
@@ -637,7 +672,9 @@ describe("the host in the call", () => {
     await user.click(within(list).getByRole("button", { name: "Allow Bob to speak" }));
     expect(await screen.findByText("Bob can speak now.")).toBeInTheDocument();
     expect(
-      srv.requests.some((r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/grant`),
+      srv.requests.some(
+        (r) => r.path === `/voice/rooms/${roomId}/participants/${otherAccountFixture.id}/speaking_permission`,
+      ),
     ).toBe(true);
     expect(await within(list).findByText("No raised hands right now.")).toBeInTheDocument();
   });

@@ -8,7 +8,7 @@ post:
     Makes a participant who may host rooms the host of a room that the user hosts; the user
     stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
     and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-    over. A 404 while the voice chat is off on the server.
+    over.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
