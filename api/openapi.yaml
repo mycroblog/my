@@ -303,7 +303,7 @@ paths:
             schema:
               $ref: '#/components/schemas/NewCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/CustomEmojiRequest'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -2296,7 +2296,7 @@ paths:
             schema:
               $ref: '#/components/schemas/IssueOAuthAppTokenRequest'
       responses:
-        '200':
+        '201':
           description: The tokens.
           headers:
             Cache-Control:
@@ -3005,7 +3005,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ListRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/List'
         default:
           $ref: '#/components/responses/Problem'
@@ -3548,7 +3548,7 @@ paths:
       operationId: createStatus
       summary: Post a status
       description: |
-        Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+        Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
         returns the status posted with it, before the post rate limit and the other checks of
         a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
         finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -3567,7 +3567,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateStatusRequest'
       responses:
-        '200':
+        '201':
           description: The posted status.
           headers:
             Cache-Control:
@@ -4323,7 +4323,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateReportRequest'
       responses:
-        '200':
+        '201':
           description: The filed report.
           headers:
             Cache-Control:
@@ -5937,7 +5937,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The job is enqueued.
         default:
           $ref: '#/components/responses/Problem'
@@ -6155,7 +6155,7 @@ paths:
           schema:
             $ref: '#/components/schemas/BillingSourceName'
       responses:
-        '204':
+        '202':
           description: The import is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -6208,7 +6208,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CostItemCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/CostItem'
         default:
           $ref: '#/components/responses/Problem'
@@ -6544,7 +6544,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateDomainActionRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminDomainAction'
         default:
           $ref: '#/components/responses/Problem'
@@ -6999,7 +6999,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateAccountActionRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminAccountAction'
         default:
           $ref: '#/components/responses/Problem'
@@ -7103,7 +7103,7 @@ paths:
             schema:
               $ref: '#/components/schemas/InstanceRuleInput'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRule'
         default:
           $ref: '#/components/responses/Problem'
@@ -7245,7 +7245,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AdminAnnouncementCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminAnnouncement'
         default:
           $ref: '#/components/responses/Problem'
@@ -7609,7 +7609,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminCustomEmoji'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -7738,7 +7738,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CopyCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminCustomEmoji'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -8219,7 +8219,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRoleRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRole'
         '422':
           $ref: '#/components/responses/RoleProblem'
@@ -8612,7 +8612,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateSignupBlockRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminSignupBlock'
         default:
           $ref: '#/components/responses/Problem'
@@ -8947,7 +8947,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateOwnInviteRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/OwnInvite'
         default:
           $ref: '#/components/responses/Problem'
@@ -9025,7 +9025,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateInviteRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminInvite'
         default:
           $ref: '#/components/responses/Problem'
@@ -9360,7 +9360,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateLoginProviderRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminLoginProvider'
         '422':
           $ref: '#/components/responses/LoginProviderProblem'
@@ -9545,7 +9545,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateWebhookRequest'
       responses:
-        '200':
+        '201':
           description: The new webhook and its secret.
           headers:
             Cache-Control:
@@ -9898,7 +9898,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRelayRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRelay'
         '422':
           $ref: '#/components/responses/RelayProblem'
@@ -9999,7 +9999,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10026,7 +10026,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10048,7 +10048,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/InstanceDomain'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10096,7 +10096,7 @@ paths:
         - oauth2:
             - admin:write
       responses:
-        '204':
+        '202':
           description: The reconciliation is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10185,7 +10185,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AdminSupporterPlanCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminSupporterPlan'
         '422':
           $ref: '#/components/responses/SupporterPlanProblem'

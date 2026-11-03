@@ -114,7 +114,6 @@ CREATE TABLE account_lifecycle_events (
   occurred_at INTEGER NOT NULL,
   CHECK ((kind = 'deletion_scheduled') = (deletion_due_at IS NOT NULL))
 ) STRICT;
-CREATE INDEX account_lifecycle_events_account_id_id ON account_lifecycle_events (account_id, id DESC);
 
 -- Projection: the current lifecycle state. An account without a row is active.
 CREATE TABLE account_lifecycle_states (
@@ -157,7 +156,6 @@ CREATE TABLE account_move_states (
   target_account_id TEXT NOT NULL,
   since INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX account_move_states_target_account_id ON account_move_states (target_account_id);
 
 -- Current value: the aliases of a local account (ADR-0089, FR-009), the actor ids of the accounts
 -- it moves from, which its actor names in alsoKnownAs. At most 5 per account. Only local

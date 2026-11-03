@@ -98,7 +98,7 @@ func TestLocalCustomEmoji(t *testing.T) {
 	var emoji clientapi.AdminCustomEmoji
 	if code := api(http.MethodPost, "/admin/custom_emojis", map[string]any{
 		"shortcode": "blobcat", "media_id": image(testkit.FixturePNG(32, 32, true)), "category": "Cats", "aliases": []string{"neko"},
-	}, &emoji); code != http.StatusOK {
+	}, &emoji); code != http.StatusCreated {
 		t.Fatalf("POST /admin/custom_emojis = %d", code)
 	}
 	wantURI := "https://" + cfg.Host + "/ap/emojis/" + emoji.Id

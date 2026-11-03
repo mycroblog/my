@@ -71,7 +71,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateAccountActionRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminAccountAction.yaml
     default:
       $ref: ../components/responses/Problem.yaml

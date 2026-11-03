@@ -29,7 +29,7 @@ func writeJSON(w http.ResponseWriter, status int, contentType, body string) {
 func ExampleNew() {
 	srv := fakeServer(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.Method, r.URL.Path, "Idempotency-Key set:", r.Header.Get("Idempotency-Key") != "")
-		writeJSON(w, http.StatusOK, "application/json", `{"id":"01890a5d-ac96-774b-bcce-b302099a8057"}`)
+		writeJSON(w, http.StatusCreated, "application/json", `{"id":"01890a5d-ac96-774b-bcce-b302099a8057"}`)
 	})
 	defer srv.Close()
 
@@ -49,7 +49,7 @@ func ExampleNew() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("posted", resp.JSON200.Id)
+	fmt.Println("posted", resp.JSON201.Id)
 	// Output:
 	// POST /api/v1/statuses Idempotency-Key set: true
 	// posted 01890a5d-ac96-774b-bcce-b302099a8057

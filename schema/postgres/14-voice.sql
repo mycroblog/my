@@ -198,4 +198,3 @@ CREATE TABLE voice_room_host_graces (
   room_id uuid NOT NULL PRIMARY KEY,
   ends_at timestamptz NOT NULL
 );
-CREATE INDEX voice_room_host_graces_ends_at ON voice_room_host_graces (ends_at);

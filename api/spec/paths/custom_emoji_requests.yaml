@@ -51,7 +51,7 @@ post:
         schema:
           $ref: ../components/schemas/NewCustomEmojiRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/CustomEmojiRequest.yaml
     "422":
       $ref: ../components/responses/CustomEmojiProblem.yaml

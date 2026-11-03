@@ -194,7 +194,7 @@ func (s *Server) CreateLoginProvider(ctx context.Context, req CreateLoginProvide
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create login provider: %w", err)
 	}
-	return CreateLoginProvider200JSONResponse{s.adminLoginProviderResponse(created)}, nil
+	return CreateLoginProvider201JSONResponse{s.adminLoginProviderResponse(created)}, nil
 }
 
 // GetAdminLoginProvider serves GET /api/v1/admin/login_providers/{id}.

@@ -132,7 +132,7 @@ func TestWebhooks(t *testing.T) {
 	var created clientapi.AdminWebhookCreated
 	if code := api(adminToken, http.MethodPost, "/admin/webhooks", map[string]any{
 		"url": srv.URL + "/hook?token=s3cret", "description": "Moderation chat", "events": []string{"status.created", "report.created"},
-	}, &created); code != http.StatusOK {
+	}, &created); code != http.StatusCreated {
 		t.Fatalf("POST /admin/webhooks = %d", code)
 	}
 	hook := created.Webhook
@@ -298,7 +298,7 @@ func TestWebhookData(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 		}
 		res := spec.Serve(t, h, req)
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusNoContent {
 			t.Fatalf("%s %s = %d", method, path, res.StatusCode)
 		}
 		if out != nil {

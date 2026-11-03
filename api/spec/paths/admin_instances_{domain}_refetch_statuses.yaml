@@ -14,7 +14,7 @@ post:
   parameters:
     - $ref: ../components/parameters/InstanceDomain.yaml
   responses:
-    "204":
+    "202":
       description: The refetch is queued.
     default:
       $ref: ../components/responses/Problem.yaml
