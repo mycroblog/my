@@ -644,8 +644,8 @@ entries:
     docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
     checks: [docker]
   - name: docker-compose
-    paths: ["deploy/docker/compose.yaml", "Dockerfile"]
-    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+    paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/.env.example", "Dockerfile"]
+    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
   - name: monitoring
     paths: ["deploy/monitoring/**", "docs/operations/alerts.md"]
     docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md"]

@@ -103,7 +103,8 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 
 Where to run it:
 
-- **Docker Compose and Kubernetes**: pull it from `ghcr.io` as it is.
+- **Docker Compose**: `deploy/docker/compose.yaml` runs the image of `MY_VERSION` in `.env`. To build it from a checkout instead, add the override `compose.build.yaml` (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`), and set `MY_VERSION` to a name of your own, since it names your local image and is what `my version` prints.
+- **Kubernetes**: pull it from `ghcr.io` as it is.
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
 - **AWS Lambda**: the image does not run as it is. Lambda needs a single-architecture image in ECR with a runtime interface client.

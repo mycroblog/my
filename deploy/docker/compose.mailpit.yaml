@@ -5,7 +5,7 @@
 # http://127.0.0.1:8025 instead of reaching anyone (docs/operations/email.md, development setup). Never use it in production.
 #
 #   scripts/mailpit-cert.sh
-#   docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
+#   docker compose -f compose.yaml -f compose.mailpit.yaml up -d
 
 include:
   - mailpit/compose.yaml

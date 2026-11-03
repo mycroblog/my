@@ -50,7 +50,7 @@ after the previous one succeeded, and the server (`my`) starts last:
 
 ```sh
 cd deploy/docker
-docker compose up -d --build     # the three one-off services run in order, then my starts
+docker compose up -d             # pulls the image of MY_VERSION; the three one-off services run in order, then my starts
 curl -fsS localhost:8080/readyz  # ready when it answers {"status":"ok"}
 docker compose exec -T my my admin create -username alice -email alice@example.com < password.txt
 ```
@@ -125,9 +125,8 @@ MY_MAINTENANCE=true docker compose up -d --no-deps --force-recreate my
 # 2. Back up the volume (database and media) while the maintenance mode holds no connection.
 docker run --rm -v my_data:/data -v "$PWD":/backup busybox tar czf /backup/my-data-$(date +%Y%m%d%H%M).tar.gz -C /data .
 
-# 3. Check out the new release and build its image (or set MY_VERSION in .env to the new version).
-git fetch --tags && git checkout v0.2.0
-docker compose build
+# 3. Set MY_VERSION in .env to the new version (0.2.0, or its digest form 0.2.0@sha256:... from the notes), and pull it.
+docker compose pull
 
 # 4. Check the SQL that the schema service will run.
 docker compose run --rm --no-deps upgrade-check
@@ -142,6 +141,9 @@ curl -fsS localhost:8080/readyz
 If one fails, `docker compose up` reports it and the server stays stopped: put the [exported maintenance page](maintenance.md#docker-compose) in front meanwhile.
 Read `docker compose logs <service>`, then either fix the cause and run `docker compose up -d` again, or [roll back](#rolling-back).
 The volume name `my_data` is the Compose project name (`my`) followed by the volume name (`data`).
+
+`MY_VERSION` is the only thing an upgrade changes, and nothing changes it for you: there is no `latest` tag, and `0.1` moves only within `v0.1`. With `MY_VERSION=0.1`, step 3 is `docker compose pull` alone, and it takes the latest patch.
+To build from source instead, check out the new release's tag and use `docker compose -f compose.yaml -f compose.build.yaml build` in step 3, and the same `-f` options in the other steps.
 
 ### Kubernetes
 
@@ -160,16 +162,16 @@ spec:
       restartPolicy: Never
       initContainers:
         - name: upgrade-check
-          image: registry.example/my:v0.2.0
+          image: ghcr.io/mycroblog/my:0.2.0
           args: [db, upgrade, -check]
           envFrom: [{ secretRef: { name: my-config } }]   # the Deployment's settings
         - name: schema
-          image: registry.example/my:v0.2.0
+          image: ghcr.io/mycroblog/my:0.2.0
           args: [schema, apply]
           envFrom: [{ secretRef: { name: my-config } }]
       containers:
         - name: upgrade
-          image: registry.example/my:v0.2.0
+          image: ghcr.io/mycroblog/my:0.2.0
           args: [db, upgrade]
           envFrom: [{ secretRef: { name: my-config } }]
 ```
@@ -179,7 +181,7 @@ kubectl set env deployment/my MY_MAINTENANCE=true && kubectl rollout status depl
 # back up, and check the SQL with a one-off Pod of the new image: my schema apply -dry-run
 kubectl apply -f my-upgrade-v0-2-0.yaml
 kubectl wait --for=condition=complete --timeout=30m job/my-upgrade-v0-2-0
-kubectl set image deployment/my my=registry.example/my:v0.2.0
+kubectl set image deployment/my my=ghcr.io/mycroblog/my:0.2.0
 kubectl set env deployment/my MY_MAINTENANCE-
 kubectl rollout status deployment/my
 ```
@@ -196,17 +198,17 @@ Give the jobs the same environment variables and secrets as the service.
 gcloud run services update my --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
 # back up (see below)
 
-gcloud run jobs deploy my-upgrade-check --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
+gcloud run jobs deploy my-upgrade-check --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 \
   --args=db,upgrade,-check --set-env-vars=... --set-secrets=...
-gcloud run jobs deploy my-schema --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
+gcloud run jobs deploy my-schema --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 \
   --args=schema,apply --set-env-vars=... --set-secrets=...
-gcloud run jobs deploy my-upgrade --region=asia-northeast1 --image=registry.example/my:v0.2.0 \
+gcloud run jobs deploy my-upgrade --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 \
   --args=db,upgrade --set-env-vars=... --set-secrets=...
 
 gcloud run jobs execute my-upgrade-check --region=asia-northeast1 --wait &&
   gcloud run jobs execute my-schema --region=asia-northeast1 --wait &&
   gcloud run jobs execute my-upgrade --region=asia-northeast1 --wait &&
-  gcloud run deploy my --region=asia-northeast1 --image=registry.example/my:v0.2.0 --remove-env-vars=MY_MAINTENANCE
+  gcloud run deploy my --region=asia-northeast1 --image=ghcr.io/mycroblog/my:0.2.0 --remove-env-vars=MY_MAINTENANCE
 ```
 
 To check the SQL first, deploy the schema job with `--args=schema,apply,-dry-run`, execute it, and read its logs before redeploying it for the apply.
@@ -236,7 +238,7 @@ There are no reverse migrations. To go back, restore the backup taken before the
 2. Restore the backup: with Compose, extract the archive into the emptied volume
    (`docker run --rm -v my_data:/data -v "$PWD":/backup busybox sh -c 'rm -rf /data/* && tar xzf /backup/<archive> -C /data'`);
    with PostgreSQL, `pg_restore --clean --if-exists --dbname=<url> <dump>`.
-3. Start the previous release's image (with Compose, check out the previous tag or set `MY_VERSION` back, then `docker compose up -d`).
+3. Start the previous release's image (with Compose, set `MY_VERSION` back to the previous version, then `docker compose up -d`).
 
 Whatever the new release wrote after the upgrade is lost, so roll back soon after the upgrade, before the instance federates much.
 

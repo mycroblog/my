@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Smoke test of deploy/docker/compose.yaml: build the server image, start the stack on an empty volume (my db upgrade -check,
-# my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
+# Smoke test of deploy/docker/compose.yaml, the path an operator takes: build the server image with the override
+# compose.build.yaml and give it the published image's name, so that the plain compose.yaml starts it as it starts a
+# pulled one. Start the stack on an empty volume (my db upgrade -check, my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
 # NodeInfo, and the embedded web client, and sign in as the web client does over plain HTTP on localhost
 # (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
 # one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
 # keeps the server stopped (docs/operations/database.md, "Upgrading").
 # Prints the logs on failure and always removes the stack and its volume.
+# With SMOKE_PUBLISHED=<image tag> (0.1.0), it pulls that published image instead of building, to check a release.
 # Usage: scripts/docker-smoke.sh   (needs docker with compose, curl, jq, openssl)
 set -euo pipefail
 
@@ -18,7 +20,12 @@ base="http://127.0.0.1:$port"
 export MY_HOST="localhost:$port"
 export MY_WEB_ORIGIN="http://$MY_HOST"
 export MY_HTTP_PORT="$port"
-export MY_VERSION="${MY_VERSION:-smoke}"
+published="${SMOKE_PUBLISHED:-}"
+export MY_VERSION="${published:-${MY_VERSION:-smoke}}"
+# What the server reports: a release's Git tag, and otherwise the VERSION of the build.
+want_version="$MY_VERSION"
+if [[ -n "$published" ]]; then want_version="v$published"; fi
+published_image="ghcr.io/mycroblog/my:$MY_VERSION"
 MY_KEK="$(openssl rand -base64 32)"
 export MY_KEK
 
@@ -26,6 +33,7 @@ export MY_KEK
 . "$root/scripts/web-sign-in.sh"
 
 compose=(docker compose --project-directory "$root/deploy/docker" -f "$root/deploy/docker/compose.yaml" -p my-smoke)
+build=("${compose[@]}" -f "$root/deploy/docker/compose.build.yaml")
 
 fail() {
 	echo "docker-smoke: $*" >&2
@@ -40,6 +48,7 @@ cleanup() {
 		"${compose[@]}" logs --no-color >&2 || true
 	fi
 	"${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
+	if [[ -z "$published" ]]; then docker rmi "$published_image" >/dev/null 2>&1 || true; fi
 	exit "$status"
 }
 trap cleanup EXIT
@@ -89,7 +98,14 @@ if out="$(docker build --progress=plain --target build --build-arg GO_TAGS=no_va
 fi
 [[ "$out" == *"which only test builds may have"* ]] || fail "docker build with GO_TAGS=no_valkey,e2e_fakes failed for another reason: $out"
 
-"${compose[@]}" up -d --build
+if [[ -n "$published" ]]; then
+	"${compose[@]}" pull
+else
+	# The building option, and then the local image under the published name: nothing below can reach the registry.
+	"${build[@]}" build
+	docker tag "my:$MY_VERSION" "$published_image"
+fi
+"${compose[@]}" up -d --pull never
 wait_ready
 check_order "statement(s) applied"
 
@@ -114,7 +130,7 @@ echo "$actor" | jq -e --arg id "$actor_id" '
 ' >/dev/null || fail "unexpected Actor: $actor"
 
 nodeinfo="$(curl -fsS "$base/nodeinfo/2.1")"
-echo "$nodeinfo" | jq -e --arg v "$MY_VERSION" '.version == "2.1" and .software.version == $v and .usage.users.total == 1' >/dev/null ||
+echo "$nodeinfo" | jq -e --arg v "$want_version" '.version == "2.1" and .software.version == $v and .usage.users.total == 1' >/dev/null ||
 	fail "unexpected NodeInfo: $nodeinfo"
 
 # The image embeds the web client: the shell loads its entry module from /assets/ (ADR-0028).

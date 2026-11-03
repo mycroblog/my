@@ -44,7 +44,7 @@ layer the override [`compose.voice.yaml`](../../deploy/docker/compose.voice.yaml
 
 ```sh
 cd deploy/docker
-docker compose -f compose.yaml -f compose.voice.yaml up -d --build
+docker compose -f compose.yaml -f compose.voice.yaml up -d
 ```
 
 - Open the instance at `http://localhost:8080` (the `MY_WEB_ORIGIN` of `.env.example`). Browsers let a page use the microphone only on
@@ -53,7 +53,7 @@ docker compose -f compose.yaml -f compose.voice.yaml up -d --build
   server. To reach browsers on other machines, put the instance behind HTTPS and set `MY_VOICE_STUN_URLS` in `.env`.
 - Only the `admin` role may open rooms by default. Sign in as the administrator you created, or set `voice_room_starters` to `everyone`
   under the server settings to let every user open rooms.
-- To combine it with Mailpit, list both overrides: `docker compose -f compose.yaml -f compose.mailpit.yaml -f compose.voice.yaml up -d --build`.
+- To combine it with Mailpit, list both overrides: `docker compose -f compose.yaml -f compose.mailpit.yaml -f compose.voice.yaml up -d`.
 
 ### Size and bandwidth
 
