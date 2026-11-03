@@ -90,6 +90,7 @@ func TestRemoteStatusRepresentation(t *testing.T) {
 	}
 	te.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
 		o.Timelines, o.TimelineReader, o.RemoteProfiles = te.timelines, te.views, profiles
+		o.Instance = federatedTimelineForEveryone()
 	})
 	page := decodePage(t, te.get(t, "/timelines/public", nil))
 	if len(page.Items) != 1 {

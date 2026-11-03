@@ -195,6 +195,8 @@ func newTimelineEnv(t *testing.T) *timelineEnv {
 	}
 	te.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
 		o.Timelines, o.TimelineReader, o.Outboxes = te.timelines, te.views, te.outboxes
+		// These tests read the federated timeline anonymously, which its default does not allow.
+		o.Instance = federatedTimelineForEveryone()
 		o.TimelineLanguages = func(_ context.Context, userID string) ([]string, error) {
 			if userID != userOf(aliceAccountID) {
 				t.Errorf("TimelineLanguages(%q), want alice's user", userID)
@@ -377,6 +379,11 @@ func TestPublicTimeline(t *testing.T) {
 }
 
 // timelineAccessEnv is a timeline environment whose instance settings are settings.
+// federatedTimelineForEveryone is an instance whose federated timeline anonymous visitors may read.
+func federatedTimelineForEveryone() *fakeInstance {
+	return &fakeInstance{settings: []instance.CurrentSetting{{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "everyone"}}}
+}
+
 func timelineAccessEnv(t *testing.T, settings ...instance.CurrentSetting) *timelineEnv {
 	te := &timelineEnv{timelines: &fakeTimelines{}, views: &fakeViews{}}
 	te.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
@@ -415,7 +422,19 @@ func TestLocalTimelineCanBeTurnedOff(t *testing.T) {
 	if len(te.timelines.calls) != 0 {
 		t.Errorf("calls = %+v, want none", te.timelines.calls)
 	}
-	decodePage(t, te.get(t, "/timelines/public", nil))
+	// The federated timeline has its own setting.
+	decodePage(t, te.get(t, "/timelines/public", map[string]string{"Authorization": "Bearer read"}))
+}
+
+// TestTimelineDefaults checks what an instance with no stored settings serves: only the federated
+// timeline needs a sign-in, and the local timeline stays open to anonymous visitors.
+func TestTimelineDefaults(t *testing.T) {
+	te := timelineAccessEnv(t)
+	if res := te.get(t, "/timelines/public", nil); res.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous federated timeline = %d, want 401", res.StatusCode)
+	}
+	decodePage(t, te.get(t, "/timelines/public", map[string]string{"Authorization": "Bearer read"}))
+	decodePage(t, te.get(t, "/timelines/local", nil))
 }
 
 // TestTimelinesForLoggedInUsers checks the timelines whose access is logged_in: an anonymous

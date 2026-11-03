@@ -86,7 +86,7 @@ A job type can also be registered or do its work only with some settings; **Need
 
 ## Email
 
-Mail jobs run only when `mail` is set to a provider. If the address or the state they check has changed, they end without sending.
+Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identity.verification_email` and `identity.password_notice_email` run: they send nothing and log the category of the message, or, with `profile = development`, the whole message. If the address or the state they check has changed, they end without sending.
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
@@ -226,4 +226,4 @@ Most job types exist on every server. These do not:
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, the emails of the identity module without `mail`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

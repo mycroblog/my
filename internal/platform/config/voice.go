@@ -18,6 +18,10 @@ const (
 	minVoiceP2PMaxParticipants     = 2
 	maxVoiceP2PMaxParticipants     = 50
 	defaultVoiceP2PMaxParticipants = 10
+	// The limits a media server starts with, so that its cost has a bound before anyone sets them.
+	defaultVoiceMaxParticipants = 50
+	defaultVoiceMaxRoomDuration = "4h"
+	defaultVoiceMaxOpenRooms    = 10
 )
 
 // maxCloudflareTURNTTL is the longest validity of the credentials of Cloudflare's TURN service
