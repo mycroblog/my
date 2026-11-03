@@ -1512,7 +1512,7 @@ func (l *Localizer) ServerConfigErrors(count int) string {
 	return l.format("server:config.errors", map[string]any{"count": count})
 }
 
-// ServerConfigInvalid formats "server:config.invalid". A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DB.
+// ServerConfigInvalid formats "server:config.invalid". A configuration value failed validation at startup. {name} is the environment variable or config file key, e.g. MY_DATABASE.
 //
 //	en: The setting {name} has an invalid value.
 func (l *Localizer) ServerConfigInvalid(name string) string {

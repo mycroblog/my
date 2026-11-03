@@ -9168,7 +9168,7 @@ export interface components {
             taken_last_day: number;
             /**
              * @description The activities it brought in during the last 24 hours that were dropped over the
-             *     hourly limit (`relay_ingest_hourly_limit`).
+             *     hourly limit (`relay_max_activities_per_hour`).
              */
             dropped_last_day: number;
             /**
@@ -12727,7 +12727,7 @@ export interface components {
         };
         /** @description The state of the payment provider. */
         PaymentStatus: {
-            /** @description The provider of `payments_provider` (`stripe`, `payjp`). */
+            /** @description The provider of `payments` (`stripe`, `payjp`). */
             provider: string;
             /**
              * @description `test` for test credentials, with which nothing is charged, and `live` for live

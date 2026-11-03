@@ -5,6 +5,6 @@
 package config
 
 func init() {
-	exclude("no_postgres", "db", "postgres")
+	exclude("no_postgres", "database", "postgres")
 	exclude("no_postgres", "stream", "postgres")
 }

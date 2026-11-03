@@ -42,7 +42,7 @@ type DB struct {
 var _ uow.UnitOfWork = (*DB)(nil)
 
 // Open opens the SQLite database named by dsn, which is a file path or a "file:" URI with
-// query parameters (the database_url setting for db = "sqlite"). The file is created if it does
+// query parameters (the database_url setting for database = "sqlite"). The file is created if it does
 // not exist. Open sets the parameters the adapter relies on: _txlock=immediate, and the pragmas
 // journal_mode(wal), synchronous(normal), foreign_keys(1), and busy_timeout unless dsn sets
 // them. In-memory databases are rejected: each connection would see its own database.

@@ -160,7 +160,7 @@ func postInbox(t *testing.T, c *statusesClient, signer remoteActor, activity map
 func TestRelays(t *testing.T) {
 	t.Parallel()
 	network := &relayNet{docs: map[string][]byte{}}
-	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline", "MY_RELAY_INGEST_HOURLY_LIMIT": "2"},
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline", "MY_RELAY_MAX_ACTIVITIES_PER_HOUR": "2"},
 		platform.AppOptions{HTTPClient: network}, "alice")
 	ctx := t.Context()
 	relay := newRemoteActor(t, network, "https://relay.example/actor", "Application", "https://relay.example/inbox")

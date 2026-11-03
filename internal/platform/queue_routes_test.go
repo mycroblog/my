@@ -73,7 +73,7 @@ func (s *fakeSQS) waker(t *testing.T, queueURL string) queue.Waker {
 func routedSQSApp(t *testing.T, server *fakeSQS, routes string, setup func(*platform.App)) *server {
 	t.Helper()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
 		"MY_QUEUE_SQS_QUEUE_URL": defaultSQSQueue, "MY_QUEUE_SQS_ROUTES": routes,
 	})
 	cfg.DB, cfg.DatabaseURL = "sqlite", "file:"+newDatabase(t, true)
@@ -151,7 +151,7 @@ func TestQueueRoutesMisroutedSignalStillRuns(t *testing.T) {
 func TestQueueRoutesUnknownTypeFailsStartup(t *testing.T) {
 	for _, role := range []string{"web", "worker", "all"} {
 		cfg := loadConfig(t, map[string]string{
-			"MY_ROLE": role, "MY_DB": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
+			"MY_ROLE": role, "MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
 			"MY_QUEUE_SQS_QUEUE_URL": defaultSQSQueue, "MY_QUEUE_SQS_ROUTES": "nonexistent.*=" + mailSQSQueue,
 		})
 		cfg.DB, cfg.DatabaseURL = "sqlite", "file:"+newDatabase(t, true)

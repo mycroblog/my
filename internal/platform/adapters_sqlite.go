@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// openSQLite opens the SQLite database of db = sqlite and, when cfg selects them, the
+// openSQLite opens the SQLite database of database = sqlite and, when cfg selects them, the
 // queue and the key-value store kept in it.
 func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queuedb.Options) (*repositories, error) {
 	d, err := sqlite.Open(ctx, cfg.DatabaseURL, uow.Options{Projectors: a.Projectors})

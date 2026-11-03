@@ -222,9 +222,9 @@ Most job types exist on every server. These do not:
 | `mail` set to a provider (not `none`) | `notification.email`, `notification.moderator_email`, `notification.supporter_email` |
 | `vapid_private_key` set | `notification.push` |
 | `stream = sns` or `pubsub` | `stream.sweep` |
-| `payments_provider` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
+| `payments` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
 | `billing_sources` set | The `finance.billing_import` schedules. The job type itself always exists. |
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

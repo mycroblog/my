@@ -72,7 +72,7 @@ func TestOneConnectionIsEnough(t *testing.T) {
 	q := dbURL.Query()
 	q.Set("pool_max_conns", "1")
 	dbURL.RawQuery = q.Encode()
-	cfg := loadConfig(t, map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"})
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
@@ -156,7 +156,7 @@ func TestDatabaseAcquireTimeoutAnswers503(t *testing.T) {
 	q.Set("pool_max_conns", "1")
 	dbURL.RawQuery = q.Encode()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin,
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin,
 		"MY_DATABASE_ACQUIRE_TIMEOUT": "200ms",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})

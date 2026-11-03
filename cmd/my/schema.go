@@ -50,7 +50,7 @@ func schemaApply(ctx context.Context, cfg *config.Config, opts schemaapply.Optio
 	case "postgres":
 		r, err = applyPostgresSchema(ctx, cfg.DatabaseURL, cfg.DatabaseDevURL, opts)
 	default:
-		_, _ = fmt.Fprintf(stderr, "%s: db is %s; it applies the schema of db = sqlite and db = postgres only\n", name, cfg.DB)
+		_, _ = fmt.Fprintf(stderr, "%s: database is %s; it applies the schema of database = sqlite and database = postgres only\n", name, cfg.DB)
 		return 1
 	}
 	var destructive *schemaapply.DestructiveError
@@ -99,7 +99,7 @@ the database with the schema, prints the SQL statements of the difference, and
 runs them in one transaction: when one fails, none of them stays. A database
 that already matches the schema is left unchanged, so running it again is safe.
 Apply the schema before starting a new release's server; "my serve" never
-applies it. db = sqlite and db = postgres are supported.
+applies it. database = sqlite and database = postgres are supported.
 
 On PostgreSQL it builds the schema to compare with in a temporary
 schema of the database, which it drops at the end, also on failure; when the

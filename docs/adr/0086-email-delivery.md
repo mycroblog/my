@@ -147,7 +147,7 @@ v0 のリリース（M5）に向けて、次が欠けている。
   - 苦情: 通知と告知のメールを送らない。取引のメールは送る
   - モデレーターは管理画面のアカウントの詳細で抑止の状態を見て、解除（`moderator`）できる。利用者は設定画面で、アドレスに届いていないことを見る
 - **SES の通知の受け口**（M6、`mail/ses` と一緒に作る）
-  - `POST /mail/events/ses`（interface 層の新しいパッケージ。決済の Webhook（ADR-0074 §3）と同じく、クライアント API ではない）。設定 `ses_sns_topic_arn` があるときだけ開き、ないときは `404`
+  - `POST /mail/events/ses`（interface 層の新しいパッケージ。決済の Webhook（ADR-0074 §3）と同じく、クライアント API ではない）。設定 `mail_ses_sns_topic_arn` があるときだけ開き、ないときは `404`
   - SES の構成セットのイベントの送り先（SNS）か、アイデンティティの通知のどちらからでも受ける（本文の `eventType` / `notificationType` の両方を読む。2026-10-23 に [SES の通知の内容](https://docs.aws.amazon.com/ses/latest/dg/notification-contents.html) で確認）
   - **署名の検証**: 処理の前に必ず検証する。`TopicArn` が設定と一致しないものは拒否する。`SignatureVersion` は `2`（SHA256withRSA）だけを受け付け、運営者はトピックの属性 `SignatureVersion` を `2` にする（既定は `1`）。
     署名の証明書は、`SigningCertURL` が `https` で、ホストが `TopicArn` のリージョンの `sns.<region>.amazonaws.com` のときだけ取得し、KV にキャッシュする。
@@ -158,7 +158,7 @@ v0 のリリース（M5）に向けて、次が欠けている。
 
 ### 6. `mail/ses`
 
-- **M6** で SES v2 の API（`sesv2.SendEmail`、Raw content）で作る。認証は SDK の既定の資格情報の連鎖（IAM ロール）で、SMTP のパスワードを持たない。設定はリージョン・任意の構成セット（configuration set）・§5 の `ses_sns_topic_arn`
+- **M6** で SES v2 の API（`sesv2.SendEmail`、Raw content）で作る。認証は SDK の既定の資格情報の連鎖（IAM ロール）で、SMTP のパスワードを持たない。設定はリージョン・任意の構成セット（configuration set）・§5 の `mail_ses_sns_topic_arn`
 - **M5** の間は、SES を使う運営者は SES の SMTP インタフェース（STARTTLS、587）を `mail = smtp` で使う。運用文書に例を載せる。この構成では送信時の拒否だけを記録する
 - `mail/ses` は `testkit.MailerContract` を通す。恒久的な拒否を `ErrMailRejected` に写す
 - SES は SMTPUTF8 に対応せず、アドレスは 7 ビットの ASCII（ドメインは Punycode）、`From` の表示名は MIME の encoded-word で書く（2026-10-23 に [SendRawEmail](https://docs.aws.amazon.com/ses/latest/APIReference/API_SendRawEmail.html) で確認）。`mail/smtp` と同じ組み立てで満たす

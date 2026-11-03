@@ -135,7 +135,7 @@ type Listener interface {
 - SQS は point-to-point なので、全プロセスへの同報には SNS のトピックからプロセスごとのキューへ配る形にする
 - トピック（標準）はデプロイのテンプレートが作る。送信は `sns:Publish`（Raw の本文）
 - `Listen` で作るもの
-  - キュー `<stream_sqs_queue_prefix>-<process id>-<n>`（80 文字以内。`n` はそのプロセスの `Listen` の連番）。`MessageRetentionPeriod` 60 秒（最小）、`ReceiveMessageWaitTimeSeconds` 20 秒、タグ付き
+  - キュー `<stream_sns_queue_prefix>-<process id>-<n>`（80 文字以内。`n` はそのプロセスの `Listen` の連番）。`MessageRetentionPeriod` 60 秒（最小）、`ReceiveMessageWaitTimeSeconds` 20 秒、タグ付き
   - キューのポリシー: `sns.amazonaws.com` に `sqs:SendMessage` を許し、`aws:SourceArn` をトピックの ARN に限る
   - トピックの購読（`Protocol` は `sqs`、`RawMessageDelivery=true`）。同じアカウントなので自動で確認される
 - 受信は 20 秒のロングポーリング（最大 10 件）と `DeleteMessageBatch`。`Close` で `Unsubscribe` と `DeleteQueue` を呼ぶ。キューの削除は最大 60 秒かかり、同じ名前は 60 秒使えないので、名前はプロセス ID と `Listen` の連番で毎回新しくする（`Relay` は `Broken` の後に同じプロセスで listen し直す）
@@ -184,9 +184,9 @@ type Listener interface {
 | 設定 | 内容 |
 | --- | --- |
 | `stream` | `hub`（既定）/ `postgres` / `valkey` / `sns` / `pubsub` |
-| `stream_postgres_url` | `LISTEN` に使う直接の接続先（既定は `database_url`）。`stream = postgres` は `db = postgres` のときだけ |
+| `stream_postgres_url` | `LISTEN` に使う直接の接続先（既定は `database_url`）。`stream = postgres` は `database = postgres` のときだけ |
 | `valkey_url`（`_FILE` 可）、`valkey_tls_ca_file`、`valkey_key_prefix` | `kv = valkey` と共有（必須の条件に `stream = valkey` を足す） |
-| `stream_sns_topic_arn`、`stream_sqs_queue_prefix` | AWS。認証とリージョンは SDK の既定の連鎖 |
+| `stream_sns_topic_arn`、`stream_sns_queue_prefix` | AWS。認証とリージョンは SDK の既定の連鎖 |
 | `stream_pubsub_topic`、`stream_pubsub_subscription_prefix` | GCP（`projects/<p>/topics/<t>`） |
 
 ### 5. テスト
@@ -233,7 +233,7 @@ type Listener interface {
 ## Open Questions / 要検証
 
 - AWS（Lambda）でストリームを既定で有効にするか。上記の Lambda の実行時間を避けるなら、Lambda ではストリームを無効にしてクライアントのポーリングに任せる設定が要る
-- Self-hosted の `db = postgres` で、`stream` の既定を `postgres` にするか（今の推奨案は `db` と同じく推測しない）
+- Self-hosted の `database = postgres` で、`stream` の既定を `postgres` にするか（今の推奨案は `db` と同じく推測しない）
 - ElastiCache Serverless の公開エンドポイントの提供リージョンと、valkey-go の IAM 認証の対応（対応すれば AWS で `valkey` も選べる）
 - `NOTIFY` のコミット時の直列化が、知らせの多い構成で投稿の書き込みを遅らせないか（負荷試験）
 

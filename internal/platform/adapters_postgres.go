@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// openPostgres opens the PostgreSQL database of db = postgres and, when cfg selects them, the
+// openPostgres opens the PostgreSQL database of database = postgres and, when cfg selects them, the
 // queue and the key-value store kept in it.
 func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts queuedb.Options) (*repositories, error) {
 	d, err := postgres.Open(ctx, cfg.DatabaseURL, uow.Options{Projectors: a.Projectors})

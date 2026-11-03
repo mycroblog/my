@@ -54,7 +54,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`maintenance_server_name`](#maintenance_server_name) | `MY_MAINTENANCE_SERVER_NAME` | value of `host` | no | no |
 | [`maintenance_message`](#maintenance_message) | `MY_MAINTENANCE_MESSAGE` | none | no | no |
 | [`maintenance_until`](#maintenance_until) | `MY_MAINTENANCE_UNTIL` | none | no | no |
-| [`maintenance_retry_after`](#maintenance_retry_after) | `MY_MAINTENANCE_RETRY_AFTER` | `600` | no | no |
+| [`maintenance_retry_after`](#maintenance_retry_after) | `MY_MAINTENANCE_RETRY_AFTER` | `10m` | no | no |
 | [`web_origin`](#web_origin) | `MY_WEB_ORIGIN` | `https://{host}` | no | no |
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
 | [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
@@ -63,7 +63,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
 | [`trusted_proxies`](#trusted_proxies) | `MY_TRUSTED_PROXIES` | none | no | no |
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
-| [`db`](#db) | `MY_DB` | `sqlite` | no | no |
+| [`database`](#database) | `MY_DATABASE` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
 | [`database_acquire_timeout`](#database_acquire_timeout) | `MY_DATABASE_ACQUIRE_TIMEOUT` | `60s` | no | no |
 | [`database_dev_url`](#database_dev_url) | `MY_DATABASE_DEV_URL` | a temporary schema in the database of `database_url` | no | yes |
@@ -92,7 +92,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`media_max_image_bytes`](#media_max_image_bytes) | `MY_MEDIA_MAX_IMAGE_BYTES` | `16777216` | no | no |
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
 | [`media_max_image_pixels`](#media_max_image_pixels) | `MY_MEDIA_MAX_IMAGE_PIXELS` | `33177600` | no | no |
-| [`media_unattached_ttl`](#media_unattached_ttl) | `MY_MEDIA_UNATTACHED_TTL` | `24h` | no | no |
+| [`media_unattached_retention`](#media_unattached_retention) | `MY_MEDIA_UNATTACHED_RETENTION` | `24h` | no | no |
 | [`media_max_av_bytes`](#media_max_av_bytes) | `MY_MEDIA_MAX_AV_BYTES` | `104857600` | no | no |
 | [`media_max_video_duration`](#media_max_video_duration) | `MY_MEDIA_MAX_VIDEO_DURATION` | `5m` | no | no |
 | [`media_max_audio_duration`](#media_max_audio_duration) | `MY_MEDIA_MAX_AUDIO_DURATION` | `10m` | no | no |
@@ -106,7 +106,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`stream`](#stream) | `MY_STREAM` | `hub` | no | no |
 | [`stream_postgres_url`](#stream_postgres_url) | `MY_STREAM_POSTGRES_URL` | value of `database_url` | no | yes |
 | [`stream_sns_topic_arn`](#stream_sns_topic_arn) | `MY_STREAM_SNS_TOPIC_ARN` | none | when `stream = sns` | no |
-| [`stream_sqs_queue_prefix`](#stream_sqs_queue_prefix) | `MY_STREAM_SQS_QUEUE_PREFIX` | none | when `stream = sns` | no |
+| [`stream_sns_queue_prefix`](#stream_sns_queue_prefix) | `MY_STREAM_SNS_QUEUE_PREFIX` | none | when `stream = sns` | no |
 | [`stream_pubsub_topic`](#stream_pubsub_topic) | `MY_STREAM_PUBSUB_TOPIC` | none | when `stream = pubsub` | no |
 | [`stream_pubsub_subscription_prefix`](#stream_pubsub_subscription_prefix) | `MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX` | none | when `stream = pubsub` | no |
 | [`key_manager`](#key_manager) | `MY_KEY_MANAGER` | `local` | no | no |
@@ -118,13 +118,13 @@ An instance setting that has never been set reads as its default, which is defin
 | [`kms_dek_cache_entries`](#kms_dek_cache_entries) | `MY_KMS_DEK_CACHE_ENTRIES` | `1024` | no | no |
 | [`mail`](#mail) | `MY_MAIL` | `none` | no | no |
 | [`mail_from`](#mail_from) | `MY_MAIL_FROM` | none | when `mail` is not `none` | no |
-| [`smtp_host`](#smtp_host) | `MY_SMTP_HOST` | none | when `mail = smtp` | no |
-| [`smtp_port`](#smtp_port) | `MY_SMTP_PORT` | `587` | no | no |
-| [`smtp_username`](#smtp_username) | `MY_SMTP_USERNAME` | none | no | no |
-| [`smtp_password`](#smtp_password) | `MY_SMTP_PASSWORD` | none | no | yes |
-| [`ses_region`](#ses_region) | `MY_SES_REGION` | none | no | no |
-| [`ses_configuration_set`](#ses_configuration_set) | `MY_SES_CONFIGURATION_SET` | none | no | no |
-| [`ses_sns_topic_arn`](#ses_sns_topic_arn) | `MY_SES_SNS_TOPIC_ARN` | none | no | no |
+| [`mail_smtp_host`](#mail_smtp_host) | `MY_MAIL_SMTP_HOST` | none | when `mail = smtp` | no |
+| [`mail_smtp_port`](#mail_smtp_port) | `MY_MAIL_SMTP_PORT` | `587` | no | no |
+| [`mail_smtp_username`](#mail_smtp_username) | `MY_MAIL_SMTP_USERNAME` | none | no | no |
+| [`mail_smtp_password`](#mail_smtp_password) | `MY_MAIL_SMTP_PASSWORD` | none | no | yes |
+| [`mail_ses_region`](#mail_ses_region) | `MY_MAIL_SES_REGION` | none | no | no |
+| [`mail_ses_configuration_set`](#mail_ses_configuration_set) | `MY_MAIL_SES_CONFIGURATION_SET` | none | no | no |
+| [`mail_ses_sns_topic_arn`](#mail_ses_sns_topic_arn) | `MY_MAIL_SES_SNS_TOPIC_ARN` | none | no | no |
 | [`captcha`](#captcha) | `MY_CAPTCHA` | `none` | no | no |
 | [`captcha_site_key`](#captcha_site_key) | `MY_CAPTCHA_SITE_KEY` | none | when `captcha` is not `none` | no |
 | [`captcha_secret_key`](#captcha_secret_key) | `MY_CAPTCHA_SECRET_KEY` | none | when `captcha` is not `none` | yes |
@@ -137,7 +137,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`remote_status_retention`](#remote_status_retention) | `MY_REMOTE_STATUS_RETENTION` | `2160h` | no | no |
 | [`remote_status_max_retention`](#remote_status_max_retention) | `MY_REMOTE_STATUS_MAX_RETENTION` | none | no | no |
 | [`relay_status_retention`](#relay_status_retention) | `MY_RELAY_STATUS_RETENTION` | `168h` | no | no |
-| [`relay_ingest_hourly_limit`](#relay_ingest_hourly_limit) | `MY_RELAY_INGEST_HOURLY_LIMIT` | `1000` | no | no |
+| [`relay_max_activities_per_hour`](#relay_max_activities_per_hour) | `MY_RELAY_MAX_ACTIVITIES_PER_HOUR` | `1000` | no | no |
 | [`billing_sources`](#billing_sources) | `MY_BILLING_SOURCES` | none | no | no |
 | [`billing_aws_max_requests_per_day`](#billing_aws_max_requests_per_day) | `MY_BILLING_AWS_MAX_REQUESTS_PER_DAY` | `4` | no | no |
 | [`billing_aws_max_requests_per_month`](#billing_aws_max_requests_per_month) | `MY_BILLING_AWS_MAX_REQUESTS_PER_MONTH` | `120` | no | no |
@@ -153,23 +153,23 @@ An instance setting that has never been set reads as its default, which is defin
 | [`billing_gcp_label`](#billing_gcp_label) | `MY_BILLING_GCP_LABEL` | none | no | no |
 | [`billing_gcp_max_bytes_billed`](#billing_gcp_max_bytes_billed) | `MY_BILLING_GCP_MAX_BYTES_BILLED` | `1073741824` | no | no |
 | [`billing_gcp_budget_subscription`](#billing_gcp_budget_subscription) | `MY_BILLING_GCP_BUDGET_SUBSCRIPTION` | none | when `billing_sources` includes `gcp` and `billing_gcp_method = budget` | no |
-| [`payments_provider`](#payments_provider) | `MY_PAYMENTS_PROVIDER` | `none` | no | no |
-| [`payments_stripe_secret_key`](#payments_stripe_secret_key) | `MY_PAYMENTS_STRIPE_SECRET_KEY` | none | when `payments_provider = stripe` | yes |
-| [`payments_stripe_webhook_secret`](#payments_stripe_webhook_secret) | `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` | none | when `payments_provider = stripe` | yes |
-| [`payments_payjp_secret_key`](#payments_payjp_secret_key) | `MY_PAYMENTS_PAYJP_SECRET_KEY` | none | when `payments_provider = payjp` | yes |
-| [`payments_payjp_public_key`](#payments_payjp_public_key) | `MY_PAYMENTS_PAYJP_PUBLIC_KEY` | none | when `payments_provider = payjp` | no |
-| [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments_provider = payjp` | yes |
+| [`payments`](#payments) | `MY_PAYMENTS` | `none` | no | no |
+| [`payments_stripe_secret_key`](#payments_stripe_secret_key) | `MY_PAYMENTS_STRIPE_SECRET_KEY` | none | when `payments = stripe` | yes |
+| [`payments_stripe_webhook_secret`](#payments_stripe_webhook_secret) | `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` | none | when `payments = stripe` | yes |
+| [`payments_payjp_secret_key`](#payments_payjp_secret_key) | `MY_PAYMENTS_PAYJP_SECRET_KEY` | none | when `payments = payjp` | yes |
+| [`payments_payjp_public_key`](#payments_payjp_public_key) | `MY_PAYMENTS_PAYJP_PUBLIC_KEY` | none | when `payments = payjp` | no |
+| [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
-| [`voice_max_participants`](#voice_max_participants) | `MY_VOICE_MAX_PARTICIPANTS` | `50` | no | no |
+| [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `50` | no | no |
 | [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `4h` | no | no |
 | [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `10` | no | no |
 | [`voice_stun_urls`](#voice_stun_urls) | `MY_VOICE_STUN_URLS` | none | no | no |
 | [`voice_turn`](#voice_turn) | `MY_VOICE_TURN` | `none` | no | no |
-| [`voice_turn_urls`](#voice_turn_urls) | `MY_VOICE_TURN_URLS` | none | when `voice = p2p` and `voice_turn = coturn` | no |
-| [`voice_turn_secret`](#voice_turn_secret) | `MY_VOICE_TURN_SECRET` | none | when `voice = p2p` and `voice_turn = coturn` | yes |
+| [`voice_turn_coturn_urls`](#voice_turn_coturn_urls) | `MY_VOICE_TURN_COTURN_URLS` | none | when `voice = p2p` and `voice_turn = coturn` | no |
+| [`voice_turn_coturn_secret`](#voice_turn_coturn_secret) | `MY_VOICE_TURN_COTURN_SECRET` | none | when `voice = p2p` and `voice_turn = coturn` | yes |
 | [`voice_turn_cloudflare_key_id`](#voice_turn_cloudflare_key_id) | `MY_VOICE_TURN_CLOUDFLARE_KEY_ID` | none | when `voice = p2p` and `voice_turn = cloudflare` | no |
 | [`voice_turn_cloudflare_api_token`](#voice_turn_cloudflare_api_token) | `MY_VOICE_TURN_CLOUDFLARE_API_TOKEN` | none | when `voice = p2p` and `voice_turn = cloudflare` | yes |
 | [`voice_turn_credential_ttl`](#voice_turn_credential_ttl) | `MY_VOICE_TURN_CREDENTIAL_TTL` | `6h` | no | no |
@@ -187,11 +187,11 @@ An instance setting that has never been set reads as its default, which is defin
 | [`voice_sora_webhook_password`](#voice_sora_webhook_password) | `MY_VOICE_SORA_WEBHOOK_PASSWORD` | none | when `voice = sora` and `voice_sora_mode = self_hosted` | yes |
 | [`voice_sora_cloud_project_id`](#voice_sora_cloud_project_id) | `MY_VOICE_SORA_CLOUD_PROJECT_ID` | none | when `voice = sora` and `voice_sora_mode = cloud` | no |
 | [`voice_sora_cloud_api_key`](#voice_sora_cloud_api_key) | `MY_VOICE_SORA_CLOUD_API_KEY` | none | when `voice = sora` and `voice_sora_mode = cloud` | yes |
-| [`voice_join_secret`](#voice_join_secret) | `MY_VOICE_JOIN_SECRET` | none | when `voice = sora` | yes |
+| [`voice_sora_join_secret`](#voice_sora_join_secret) | `MY_VOICE_SORA_JOIN_SECRET` | none | when `voice = sora` | yes |
 | [`dead_job_retention`](#dead_job_retention) | `MY_DEAD_JOB_RETENTION` | `720h` | no | no |
 | [`job_attempt_retention`](#job_attempt_retention) | `MY_JOB_ATTEMPT_RETENTION` | `720h` | no | no |
-| [`dynamic_client_unredeemed_ttl`](#dynamic_client_unredeemed_ttl) | `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL` | `24h` | no | no |
-| [`dynamic_client_idle_ttl`](#dynamic_client_idle_ttl) | `MY_DYNAMIC_CLIENT_IDLE_TTL` | `2160h` | no | no |
+| [`dynamic_client_unredeemed_retention`](#dynamic_client_unredeemed_retention) | `MY_DYNAMIC_CLIENT_UNREDEEMED_RETENTION` | `24h` | no | no |
+| [`dynamic_client_idle_retention`](#dynamic_client_idle_retention) | `MY_DYNAMIC_CLIENT_IDLE_RETENTION` | `2160h` | no | no |
 | [`oauth_client_rate_limits`](#oauth_client_rate_limits) | `MY_OAUTH_CLIENT_RATE_LIMITS` | none | no | no |
 | [`metrics_exporter`](#metrics_exporter) | `MY_METRICS_EXPORTER` | `none` | no | no |
 | [`metrics_listen`](#metrics_listen) | `MY_METRICS_LISTEN` | `127.0.0.1:9464` | no | no |
@@ -277,10 +277,10 @@ When the maintenance is expected to end, as an RFC 3339 time such as `2026-10-24
 
 ### `maintenance_retry_after`
 
-Seconds of the `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, from 1 to 86,400.
+The `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, a Go duration from `1s` to `24h`.
 
 - Environment variable: `MY_MAINTENANCE_RETRY_AFTER`
-- Default: `600`
+- Default: `10m`
 - Required: no
 
 ### `web_origin`
@@ -323,7 +323,7 @@ Comma-separated job types that this process does not run, written like `worker_j
 
 ### `worker_job_concurrency`
 
-How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `db = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `db = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.
+How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `database = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `database = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.
 
 - Environment variable: `MY_WORKER_JOB_CONCURRENCY`
 - Default: `1`
@@ -358,11 +358,11 @@ Forwarding header that the `trusted_proxies` append the client IP to. Only this 
 | `x-forwarded-for` | yes | `X-Forwarded-For`, which nginx, Caddy, Traefik, Google Cloud load balancers and Cloud Run, and AWS Application Load Balancers append to. |
 | `forwarded` | yes | The `for` parameters of `Forwarded` (RFC 7239). |
 
-### `db`
+### `database`
 
 Database adapter. The adapter is never inferred from `database_url`.
 
-- Environment variable: `MY_DB`
+- Environment variable: `MY_DATABASE`
 - Default: `sqlite`
 - Required: no
 
@@ -374,7 +374,7 @@ Database adapter. The adapter is never inferred from `database_url`.
 
 ### `database_url`
 
-Connection string passed to the `db` adapter, in that adapter's format.
+Connection string passed to the `database` adapter, in that adapter's format.
 
 - Environment variable: `MY_DATABASE_URL` or `MY_DATABASE_URL_FILE`
 - Default: none
@@ -382,7 +382,7 @@ Connection string passed to the `db` adapter, in that adapter's format.
 
 ### `database_acquire_timeout`
 
-How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `db = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.
+How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `database = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.
 
 - Environment variable: `MY_DATABASE_ACQUIRE_TIMEOUT`
 - Default: `60s`
@@ -390,7 +390,7 @@ How long a request or a job waits for a free connection of the database's pool b
 
 ### `database_dev_url`
 
-Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege. The server itself never uses it.
+Connection string of the dev database that `my schema apply` builds the desired schema in, for `database = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege. The server itself never uses it.
 
 - Environment variable: `MY_DATABASE_DEV_URL` or `MY_DATABASE_DEV_URL_FILE`
 - Default: a temporary schema in the database of `database_url`
@@ -408,8 +408,8 @@ Job queue adapter.
 | --- | --- | --- |
 | `db` | yes | Queue table in the database. |
 | `inline` | yes | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
-| `sqs` | yes | The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
-| `cloudtasks` | yes | The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
+| `sqs` | yes | The queue table in the database (`database = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
+| `cloudtasks` | yes | The queue table in the database (`database = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
 
 ### `queue_sqs_routes`
 
@@ -620,11 +620,11 @@ Largest accepted image area (width × height, and for an animated GIF the frames
 - Default: `33177600`
 - Required: no
 
-### `media_unattached_ttl`
+### `media_unattached_retention`
 
 How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it, as a Go duration such as `24h`.
 
-- Environment variable: `MY_MEDIA_UNATTACHED_TTL`
+- Environment variable: `MY_MEDIA_UNATTACHED_RETENTION`
 - Default: `24h`
 - Required: no
 
@@ -725,9 +725,9 @@ Broker that carries the signals of the real-time updates (`GET /api/v1/streaming
 | Value | In v0 | Description |
 | --- | --- | --- |
 | `hub` | yes | In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process). |
-| `postgres` | yes | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `db = postgres`. The build tag `no_postgres` leaves it out. |
+| `postgres` | yes | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. The build tag `no_postgres` leaves it out. |
 | `valkey` | yes | Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. The build tag `no_valkey` leaves it out. |
-| `sns` | yes | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sqs_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out. |
+| `sns` | yes | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out. |
 | `pubsub` | yes | A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. The build tag `no_pubsub` leaves it out. |
 
 ### `stream_postgres_url`
@@ -746,11 +746,11 @@ ARN of the Amazon SNS standard topic of `stream = sns`, which the deployment tem
 - Default: none
 - Required: when `stream = sns`
 
-### `stream_sqs_queue_prefix`
+### `stream_sns_queue_prefix`
 
 Start of the names of the per-process SQS queues of `stream = sns`, `{prefix}-{process id}-{n}`: at most 40 letters, digits, hyphens, and underscores. The `stream.sweep` job deletes the queues under it that ended processes left behind, so it belongs to one instance.
 
-- Environment variable: `MY_STREAM_SQS_QUEUE_PREFIX`
+- Environment variable: `MY_STREAM_SNS_QUEUE_PREFIX`
 - Default: none
 - Required: when `stream = sns`
 
@@ -843,8 +843,8 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 | Value | In v0 | Description |
 | --- | --- | --- |
 | `none` | yes | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
-| `smtp` | yes | SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`). |
-| `ses` | yes | The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
+| `smtp` | yes | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
+| `ses` | yes | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
 
 ### `mail_from`
 
@@ -854,59 +854,59 @@ Sender address of emails, as a bare address such as `noreply@social.example`. Em
 - Default: none
 - Required: when `mail` is not `none`
 
-### `smtp_host`
+### `mail_smtp_host`
 
 Host name of the SMTP server. The server must offer STARTTLS with a certificate valid for this name; the connection is refused otherwise.
 
-- Environment variable: `MY_SMTP_HOST`
+- Environment variable: `MY_MAIL_SMTP_HOST`
 - Default: none
 - Required: when `mail = smtp`
 
-### `smtp_port`
+### `mail_smtp_port`
 
 TCP port of the SMTP server (submission).
 
-- Environment variable: `MY_SMTP_PORT`
+- Environment variable: `MY_MAIL_SMTP_PORT`
 - Default: `587`
 - Required: no
 
-### `smtp_username`
+### `mail_smtp_username`
 
 User name for SMTP AUTH PLAIN, sent only after STARTTLS. Leave it empty for a server that needs no authentication.
 
-- Environment variable: `MY_SMTP_USERNAME`
+- Environment variable: `MY_MAIL_SMTP_USERNAME`
 - Default: none
 - Required: no
 
-### `smtp_password`
+### `mail_smtp_password`
 
 Password for SMTP AUTH PLAIN.
 
-- Environment variable: `MY_SMTP_PASSWORD` or `MY_SMTP_PASSWORD_FILE`
+- Environment variable: `MY_MAIL_SMTP_PASSWORD` or `MY_MAIL_SMTP_PASSWORD_FILE`
 - Default: none
 - Required: no
 
-### `ses_region`
+### `mail_ses_region`
 
 AWS region of the SES endpoint of `mail = ses`, such as `eu-west-1`: the region where the identity of `mail_from` is verified. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`).
 
-- Environment variable: `MY_SES_REGION`
+- Environment variable: `MY_MAIL_SES_REGION`
 - Default: none
 - Required: no
 
-### `ses_configuration_set`
+### `mail_ses_configuration_set`
 
 Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.
 
-- Environment variable: `MY_SES_CONFIGURATION_SET`
+- Environment variable: `MY_MAIL_SES_CONFIGURATION_SET`
 - Default: none
 - Required: no
 
-### `ses_sns_topic_arn`
+### `mail_ses_sns_topic_arn`
 
 ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions; empty answers `404` there.
 
-- Environment variable: `MY_SES_SNS_TOPIC_ARN`
+- Environment variable: `MY_MAIL_SES_SNS_TOPIC_ARN`
 - Default: none
 - Required: no
 
@@ -1009,7 +1009,7 @@ How long a remote post is kept after its publication when nothing on this instan
 
 ### `remote_status_max_retention`
 
-The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.
+The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); `0` or empty keeps referred posts without limit.
 
 - Environment variable: `MY_REMOTE_STATUS_MAX_RETENTION`
 - Default: none
@@ -1023,11 +1023,11 @@ How long a remote post that only a relay brought in is kept after its publicatio
 - Default: `168h`
 - Required: no
 
-### `relay_ingest_hourly_limit`
+### `relay_max_activities_per_hour`
 
 How many activities each relay may bring in per hour. The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.
 
-- Environment variable: `MY_RELAY_INGEST_HOURLY_LIMIT`
+- Environment variable: `MY_RELAY_MAX_ACTIVITIES_PER_HOUR`
 - Default: `1000`
 - Required: no
 
@@ -1167,11 +1167,11 @@ The pull subscription of the Pub/Sub topic of a monthly Cloud Billing budget tha
 - Default: none
 - Required: when `billing_sources` includes `gcp` and `billing_gcp_method = budget`
 
-### `payments_provider`
+### `payments`
 
 The payment provider of the supporters: local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.
 
-- Environment variable: `MY_PAYMENTS_PROVIDER`
+- Environment variable: `MY_PAYMENTS`
 - Default: `none`
 - Required: no
 
@@ -1184,11 +1184,11 @@ The payment provider of the supporters: local users subscribe to paid plans on i
 
 ### `payments_stripe_secret_key`
 
-The API key of the Stripe account of `payments_provider = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).
+The API key of the Stripe account of `payments = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).
 
 - Environment variable: `MY_PAYMENTS_STRIPE_SECRET_KEY` or `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`
 - Default: none
-- Required: when `payments_provider = stripe`
+- Required: when `payments = stripe`
 
 ### `payments_stripe_webhook_secret`
 
@@ -1196,23 +1196,23 @@ The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments
 
 - Environment variable: `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` or `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET_FILE`
 - Default: none
-- Required: when `payments_provider = stripe`
+- Required: when `payments = stripe`
 
 ### `payments_payjp_secret_key`
 
-The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.
+The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.
 
 - Environment variable: `MY_PAYMENTS_PAYJP_SECRET_KEY` or `MY_PAYMENTS_PAYJP_SECRET_KEY_FILE`
 - Default: none
-- Required: when `payments_provider = payjp`
+- Required: when `payments = payjp`
 
 ### `payments_payjp_public_key`
 
-The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.
+The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.
 
 - Environment variable: `MY_PAYMENTS_PAYJP_PUBLIC_KEY`
 - Default: none
-- Required: when `payments_provider = payjp`
+- Required: when `payments = payjp`
 
 ### `payments_payjp_webhook_token`
 
@@ -1220,11 +1220,11 @@ The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payj
 
 - Environment variable: `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` or `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN_FILE`
 - Default: none
-- Required: when `payments_provider = payjp`
+- Required: when `payments = payjp`
 
 ### `payments_reconcile_interval`
 
-How often the reconciliation with `payments_provider` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.
+How often the reconciliation with `payments` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_INTERVAL`
 - Default: `6h`
@@ -1232,7 +1232,7 @@ How often the reconciliation with `payments_provider` runs: it reads the provide
 
 ### `payments_reconcile_max_requests`
 
-How many requests one reconciliation sends to `payments_provider`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.
+How many requests one reconciliation sends to `payments`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.
 
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
@@ -1251,7 +1251,7 @@ How the voice chat rooms connect their participants. With `off`, the voice chat 
 | `off` | yes | No voice chat. |
 | `p2p` | yes | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
 | `livekit` | yes | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out. |
-| `sora` | yes | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out. |
+| `sora` | yes | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out. |
 
 ### `voice_p2p_max_participants`
 
@@ -1261,11 +1261,11 @@ How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused
 - Default: `10`
 - Required: no
 
-### `voice_max_participants`
+### `voice_sfu_max_participants`
 
 How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.
 
-- Environment variable: `MY_VOICE_MAX_PARTICIPANTS`
+- Environment variable: `MY_VOICE_SFU_MAX_PARTICIPANTS`
 - Default: `50`
 - Required: no
 
@@ -1304,22 +1304,22 @@ The TURN server that relays the audio of `voice = p2p` between browsers that can
 | Value | In v0 | Description |
 | --- | --- | --- |
 | `none` | yes | No TURN server: browsers behind strict NATs or firewalls may not connect. |
-| `coturn` | yes | A coturn server at `voice_turn_urls`, with its `static-auth-secret` in `voice_turn_secret`. |
+| `coturn` | yes | A coturn server at `voice_turn_coturn_urls`, with its `static-auth-secret` in `voice_turn_coturn_secret`. |
 | `cloudflare` | yes | Cloudflare's TURN service, with `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`; the server asks it for the credentials of each participant. |
 
-### `voice_turn_urls`
+### `voice_turn_coturn_urls`
 
 The URLs of the coturn server of `voice_turn = coturn`, comma-separated `turn:` or `turns:` URLs such as `turn:turn.example.org:3478?transport=udp, turns:turn.example.org:5349`.
 
-- Environment variable: `MY_VOICE_TURN_URLS`
+- Environment variable: `MY_VOICE_TURN_COTURN_URLS`
 - Default: none
 - Required: when `voice = p2p` and `voice_turn = coturn`
 
-### `voice_turn_secret`
+### `voice_turn_coturn_secret`
 
 The `static-auth-secret` of the coturn server of `voice_turn = coturn`, which signs the short-lived credentials that the server gives the participants.
 
-- Environment variable: `MY_VOICE_TURN_SECRET` or `MY_VOICE_TURN_SECRET_FILE`
+- Environment variable: `MY_VOICE_TURN_COTURN_SECRET` or `MY_VOICE_TURN_COTURN_SECRET_FILE`
 - Default: none
 - Required: when `voice = p2p` and `voice_turn = coturn`
 
@@ -1469,11 +1469,11 @@ The API key of the Sora Cloud project, which signs the access tokens of the part
 - Default: none
 - Required: when `voice = sora` and `voice_sora_mode = cloud`
 
-### `voice_join_secret`
+### `voice_sora_join_secret`
 
 The secret that signs the values with which the participants of `voice = sora` join a room, which the Sora server sends back for the server to authorize each connection. A random string of at least 32 bytes, such as the output of `openssl rand -base64 32`.
 
-- Environment variable: `MY_VOICE_JOIN_SECRET` or `MY_VOICE_JOIN_SECRET_FILE`
+- Environment variable: `MY_VOICE_SORA_JOIN_SECRET` or `MY_VOICE_SORA_JOIN_SECRET_FILE`
 - Default: none
 - Required: when `voice = sora`
 
@@ -1493,19 +1493,19 @@ How long the record of a job's run that did not succeed (a retry, or the run tha
 - Default: `720h`
 - Required: no
 
-### `dynamic_client_unredeemed_ttl`
+### `dynamic_client_unredeemed_retention`
 
-How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. From 30 days on, `dynamic_client_idle_ttl` decides instead, because exchanged codes are purged by then. A Go duration such as `24h`.
+How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. From 30 days on, `dynamic_client_idle_retention` decides instead, because exchanged codes are purged by then. A Go duration such as `24h`.
 
-- Environment variable: `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL`
+- Environment variable: `MY_DYNAMIC_CLIENT_UNREDEEMED_RETENTION`
 - Default: `24h`
 - Required: no
 
-### `dynamic_client_idle_ttl`
+### `dynamic_client_idle_retention`
 
 How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it. Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).
 
-- Environment variable: `MY_DYNAMIC_CLIENT_IDLE_TTL`
+- Environment variable: `MY_DYNAMIC_CLIENT_IDLE_RETENTION`
 - Default: `2160h`
 - Required: no
 

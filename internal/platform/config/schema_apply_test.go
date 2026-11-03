@@ -8,7 +8,7 @@ import "testing"
 // kek, and wrong settings of other adapters.
 func TestLoadSchemaApply(t *testing.T) {
 	env := map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": "postgres://db/my", "MY_DATABASE_DEV_URL": "postgres://db/my_dev",
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://db/my", "MY_DATABASE_DEV_URL": "postgres://db/my_dev",
 		"MY_QUEUE": "nosuchqueue", "MY_BLOB": "nosuchblob",
 	}
 	skipExcluded(t, env)
@@ -27,7 +27,7 @@ func TestLoadSchemaApply(t *testing.T) {
 			t.Errorf("LoadSchemaApply read %s", s.Key)
 		}
 	}
-	if _, _, err := LoadSchemaApply(source(map[string]string{"MY_DB": "sqlite"}, nil)); err == nil {
+	if _, _, err := LoadSchemaApply(source(map[string]string{"MY_DATABASE": "sqlite"}, nil)); err == nil {
 		t.Error("LoadSchemaApply accepted a configuration without database_url")
 	}
 }

@@ -5803,7 +5803,7 @@ type AdminRelay struct {
 	DomainSuspended bool `json:"domain_suspended"`
 
 	// DroppedLastDay The activities it brought in during the last 24 hours that were dropped over the
-	// hourly limit (`relay_ingest_hourly_limit`).
+	// hourly limit (`relay_max_activities_per_hour`).
 	DroppedLastDay int `json:"dropped_last_day"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -10865,7 +10865,7 @@ type PaymentStatus struct {
 	// credentials.
 	Mode PaymentStatusMode `json:"mode"`
 
-	// Provider The provider of `payments_provider` (`stripe`, `payjp`).
+	// Provider The provider of `payments` (`stripe`, `payjp`).
 	Provider string `json:"provider"`
 
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.

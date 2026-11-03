@@ -118,7 +118,7 @@ func TestPaymentWebhooks(t *testing.T) {
 	}
 }
 
-// Without payments_provider, the webhook path is not served.
+// Without payments, the webhook path is not served.
 func TestPaymentWebhooksOff(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"})
@@ -128,7 +128,7 @@ func TestPaymentWebhooksOff(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = app.Close() })
 	if app.Payments != nil {
-		t.Error("payments_provider = none built the payments")
+		t.Error("payments = none built the payments")
 	}
 	rec := httptest.NewRecorder()
 	app.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/payments/webhooks/stripe", bytes.NewReader([]byte("{}"))))
