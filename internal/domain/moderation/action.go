@@ -94,22 +94,18 @@ type Issuer string
 // Issuers.
 const (
 	IssuerModerator Issuer = "moderator"
-	IssuerSystem    Issuer = "system"
-	IssuerRemote    Issuer = "remote"
 )
 
 // Valid reports whether i is one of the issuers.
 func (i Issuer) Valid() bool {
-	switch i {
-	case IssuerModerator, IssuerSystem, IssuerRemote:
-		return true
-	}
-	return false
+	return i == IssuerModerator
 }
 
 var (
 	// ErrInvalidAction reports an action with a missing or invalid field.
 	ErrInvalidAction = errors.New("moderation: invalid action")
+	// ErrOwnDomain reports a domain action on this instance's own domain.
+	ErrOwnDomain = errors.New("moderation: the domain is this instance's")
 	// ErrActionNeverExpires reports an end on a kind of action that never expires: a ban and
 	// the actions on statuses. It wraps ErrInvalidAction.
 	ErrActionNeverExpires = fmt.Errorf("%w: the kind of action never expires", ErrInvalidAction)

@@ -8,7 +8,7 @@ properties:
     minimum: 1
     maximum: 1000
   expires_in:
-    description: How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+    description: How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
     type: integer
     minimum: 1
     maximum: 31536000

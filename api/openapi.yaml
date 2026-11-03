@@ -303,7 +303,7 @@ paths:
             schema:
               $ref: '#/components/schemas/NewCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/CustomEmojiRequest'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -2367,7 +2367,7 @@ paths:
             schema:
               $ref: '#/components/schemas/IssueOAuthAppTokenRequest'
       responses:
-        '200':
+        '201':
           description: The tokens.
           headers:
             Cache-Control:
@@ -3076,7 +3076,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ListRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/List'
         default:
           $ref: '#/components/responses/Problem'
@@ -3619,7 +3619,7 @@ paths:
       operationId: createStatus
       summary: Post a status
       description: |
-        Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+        Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
         returns the status posted with it, before the post rate limit and the other checks of
         a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
         finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -3638,7 +3638,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateStatusRequest'
       responses:
-        '200':
+        '201':
           description: The posted status.
           headers:
             Cache-Control:
@@ -4247,8 +4247,8 @@ paths:
       description: |
         The public posts of the instance's accounts, newest first, and their local posts for a
         logged-in viewer, in the viewer's timeline languages. The instance setting
-        `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-        is `logged_in` an anonymous request is a 401.
+        `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+        is `signed_in` an anonymous request is a 401.
       tags:
         - timelines
       security:
@@ -4271,8 +4271,8 @@ paths:
         The public posts of the instance's accounts and of the remote accounts whose posts the
         instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
         visibilities, `local` ones included, and boosts never appear on it. The instance setting
-        `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-        is `logged_in` an anonymous request is a 401.
+        `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+        is `signed_in` an anonymous request is a 401.
       tags:
         - timelines
       security:
@@ -4394,7 +4394,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateReportRequest'
       responses:
-        '200':
+        '201':
           description: The filed report.
           headers:
             Cache-Control:
@@ -4589,7 +4589,7 @@ paths:
         (`local`) or the federated timeline (`federated`), from the moment it opens. Read it with
         `fetch` and send the access token in `Authorization`, like every other operation
         (`EventSource` cannot send it). Only logged-in users open it, whatever the instance setting
-        `local_timeline_access` or `federated_timeline_access` allows anonymous visitors; while the
+        `local_timeline_visibility` or `federated_timeline_visibility` allows anonymous visitors; while the
         setting of the timeline is `off` it is a 404.
 
         Events:
@@ -6008,7 +6008,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The job is enqueued.
         default:
           $ref: '#/components/responses/Problem'
@@ -6226,7 +6226,7 @@ paths:
           schema:
             $ref: '#/components/schemas/BillingSourceName'
       responses:
-        '204':
+        '202':
           description: The import is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -6279,7 +6279,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CostItemCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/CostItem'
         default:
           $ref: '#/components/responses/Problem'
@@ -6600,7 +6600,7 @@ paths:
         from reaching users who do not follow them; `reject_media` stops fetching its media;
         `reject_reports` drops the reports it sends; `force_sensitive` marks its media
         sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-        dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+        dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
         `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
         `manage_domains` permission.
       tags:
@@ -6615,7 +6615,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateDomainActionRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminDomainAction'
         default:
           $ref: '#/components/responses/Problem'
@@ -7070,7 +7070,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateAccountActionRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminAccountAction'
         default:
           $ref: '#/components/responses/Problem'
@@ -7174,7 +7174,7 @@ paths:
             schema:
               $ref: '#/components/schemas/InstanceRuleInput'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRule'
         default:
           $ref: '#/components/responses/Problem'
@@ -7197,12 +7197,12 @@ paths:
           $ref: '#/components/responses/AdminRule'
         default:
           $ref: '#/components/responses/Problem'
-    patch:
+    put:
       operationId: updateInstanceRule
       summary: Revise the text of an instance rule
       description: |
-        Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-        and position. They are checked as for a new rule (422). A retired rule is a 409
+        Records a revision whose text and hint replace those of the rule, so that an omitted hint
+        removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
         and an unknown ID a 404. Needs the `manage_rules` permission.
       tags:
         - admin-server
@@ -7316,7 +7316,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AdminAnnouncementCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminAnnouncement'
         default:
           $ref: '#/components/responses/Problem'
@@ -7680,7 +7680,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminCustomEmoji'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -7809,7 +7809,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CopyCustomEmojiRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminCustomEmoji'
         '422':
           $ref: '#/components/responses/CustomEmojiProblem'
@@ -8290,7 +8290,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRoleRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRole'
         '422':
           $ref: '#/components/responses/RoleProblem'
@@ -8683,7 +8683,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateSignupBlockRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminSignupBlock'
         default:
           $ref: '#/components/responses/Problem'
@@ -9001,7 +9001,7 @@ paths:
         registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
         `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
         value over the cap of the instance settings (`member_invite_max_uses`,
-        `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+        `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
         `member_invite_max_active` usable invites gets a 409
         `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
         user as the actor. Every sign-up with the invite checks again that the user may create
@@ -9018,7 +9018,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateOwnInviteRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/OwnInvite'
         default:
           $ref: '#/components/responses/Problem'
@@ -9096,7 +9096,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateInviteRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminInvite'
         default:
           $ref: '#/components/responses/Problem'
@@ -9371,9 +9371,9 @@ paths:
       summary: Lift the denial of a host
       description: |
         The Client ID Metadata Documents on the host are accepted again. The tokens that the
-        denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-        is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-        permission.
+        denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+        cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+        log. Needs the `manage_oauth_apps` permission.
       tags:
         - admin-server
       security:
@@ -9431,7 +9431,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateLoginProviderRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminLoginProvider'
         '422':
           $ref: '#/components/responses/LoginProviderProblem'
@@ -9616,7 +9616,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateWebhookRequest'
       responses:
-        '200':
+        '201':
           description: The new webhook and its secret.
           headers:
             Cache-Control:
@@ -9969,7 +9969,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRelayRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminRelay'
         '422':
           $ref: '#/components/responses/RelayProblem'
@@ -10070,7 +10070,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10097,7 +10097,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10119,7 +10119,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/InstanceDomain'
       responses:
-        '204':
+        '202':
           description: The refetch is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10167,7 +10167,7 @@ paths:
         - oauth2:
             - admin:write
       responses:
-        '204':
+        '202':
           description: The reconciliation is queued.
         default:
           $ref: '#/components/responses/Problem'
@@ -10256,7 +10256,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AdminSupporterPlanCreateRequest'
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/AdminSupporterPlan'
         '422':
           $ref: '#/components/responses/SupporterPlanProblem'
@@ -10572,7 +10572,9 @@ components:
       name: domain
       in: path
       required: true
-      description: The domain of the remote server, such as `mastodon.example`.
+      description: |
+        The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+        lower case without a trailing dot. A value that is not a host name is a 400.
       schema:
         type: string
         minLength: 1
@@ -11662,14 +11664,10 @@ components:
           allOf:
             - $ref: '#/components/schemas/Id'
         issuer:
-          description: |
-            `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-            account's own server.
+          description: '`moderator`: a moderator or the CLI.'
           type: string
           enum:
             - moderator
-            - system
-            - remote
         issued_by_account_id:
           description: |
             The account of the moderator who took the action; omitted for the CLI and the
@@ -13226,6 +13224,7 @@ components:
         - registration
         - confidential
         - scope
+        - owner_deleted
         - disabled
         - created_at
       properties:
@@ -13250,10 +13249,15 @@ components:
         scope:
           description: The most that the client may be granted, as space-separated scopes.
           type: string
-        owner_id:
-          description: The ID of the user who registered the client; omitted for the other routes.
+        owner:
+          description: |
+            The account of the user who registered the client; omitted for the other routes and
+            when that account is deleted (`owner_deleted`).
           allOf:
-            - $ref: '#/components/schemas/Id'
+            - $ref: '#/components/schemas/Account'
+        owner_deleted:
+          description: Whether a user registered the client whose account no longer exists.
+          type: boolean
         disabled:
           description: Whether an administrator has disabled the client and not lifted it.
           type: boolean
@@ -13266,6 +13270,7 @@ components:
       required:
         - id
         - host
+        - denied_by_deleted
         - denied_at
       properties:
         id:
@@ -13274,9 +13279,14 @@ components:
           description: The host name in lowercase, without a port.
           type: string
         denied_by:
-          description: The ID of the administrator's user; omitted for a denial from the command line.
+          description: |
+            The account of the administrator; omitted for a denial from the command line and when
+            that account is deleted (`denied_by_deleted`).
           allOf:
-            - $ref: '#/components/schemas/Id'
+            - $ref: '#/components/schemas/Account'
+        denied_by_deleted:
+          description: Whether an administrator denied the host whose account no longer exists.
+          type: boolean
         denied_at:
           type: string
           format: date-time
@@ -13561,7 +13571,7 @@ components:
     MemberInviteLimits:
       description: |
         The caps and defaults of the invites that members create, from the instance settings
-        `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+        `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
       type: object
       required:
         - max_active
@@ -14104,7 +14114,7 @@ components:
       description: |
         The voice chat room that a report points at, as the moderators review it: every revision
         of its settings, and the records of its participants while the server keeps them (90 days
-        after the room ends by default, `retention_voice_participants`, and as long as a report
+        after the room ends by default, `voice_participants_retention_days`, and as long as a report
         points at the room).
       type: object
       required:
@@ -16123,7 +16133,7 @@ components:
           minimum: 1
           maximum: 1000
         expires_in:
-          description: How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+          description: How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
           type: integer
           minimum: 1
           maximum: 31536000
@@ -16995,13 +17005,14 @@ components:
         `already_applied`: an action in effect of each of the row's kinds covers the domain
         already, on it or on a parent domain. `no_action`: the row stands for no action (a
         `noop` without rejections). `duplicate`: an earlier row has the same domain once
-        normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+        normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
       type: string
       enum:
         - importable
         - already_applied
         - no_action
         - duplicate
+        - own_domain
         - invalid
     DomainBlockSeverity:
       description: |
@@ -17777,7 +17788,7 @@ components:
         - rules
         - search_indexing
         - ai_usage
-        - link_cards_enabled
+        - link_cards
         - link_cards_ignore_robots_txt
         - finance_visibility
         - income_visibility
@@ -17869,7 +17880,7 @@ components:
             and the subscriptions show only then.
           type: boolean
         supporter_list_visibility:
-          $ref: '#/components/schemas/SupporterListVisibility'
+          $ref: '#/components/schemas/InstanceAudience'
         voice_enabled:
           description: |
             Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
@@ -17900,7 +17911,7 @@ components:
           $ref: '#/components/schemas/SearchIndexing'
         ai_usage:
           $ref: '#/components/schemas/AIUsage'
-        link_cards_enabled:
+        link_cards:
           description: |
             Whether the server fetches the pages that posts link to, for their link cards. While it is
             false, the server fetches nothing for link cards.
@@ -18167,6 +18178,18 @@ components:
         - terms
         - privacy_policy
         - commerce_disclosure
+    InstanceAudience:
+      description: |
+        Who may read something public about the instance, the value of the instance settings
+        `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+        `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+        resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+        a 401; `everyone`, everyone, anonymous visitors included.
+      type: string
+      enum:
+        - 'off'
+        - signed_in
+        - everyone
     InstanceSettingKey:
       description: |
         The key of an instance setting (docs/operations/instance-settings.md). New keys may be
@@ -18176,29 +18199,29 @@ components:
         - registration_mode
         - max_status_length
         - default_locale
-        - local_timeline_access
-        - federated_timeline_access
+        - local_timeline_visibility
+        - federated_timeline_visibility
         - preview_image
         - contact_account
         - contact_email
         - thumbnail
         - remote_media_policy
-        - remote_media_cache_ttl
+        - remote_media_cache_ttl_seconds
         - authorized_fetch
         - domain_actions_visibility
         - domain_actions_rationale_visibility
-        - appeal_window
-        - retention_session_origins
-        - retention_registration_origins
-        - retention_reports
-        - retention_moderation_actions
-        - retention_audit_log
+        - appeal_window_days
+        - session_origins_retention_days
+        - registration_origins_retention_days
+        - reports_retention_days
+        - moderation_actions_retention_days
+        - audit_log_retention_days
         - search_indexing
         - ai_usage
         - indexable_default
         - security_contact
         - require_media_description
-        - link_cards_enabled
+        - link_cards
         - link_cards_ignore_robots_txt
         - finance_visibility
         - finance_viewer_item_names
@@ -18212,11 +18235,11 @@ components:
         - oauth_metadata_document_clients
         - voice_room_starters
         - voice_public_summary
-        - retention_voice_participants
+        - voice_participants_retention_days
         - invite_creators
         - member_invite_max_active
         - member_invite_max_uses
-        - member_invite_max_expires_in
+        - member_invite_max_lifetime_seconds
         - public_counts
         - featured_accounts
         - login_providers_only
@@ -18302,18 +18325,18 @@ components:
     InstanceTimelines:
       description: |
         Who may read the public timelines the instance serves (FR-202): `local` is the instance
-        setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-        setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-        timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+        setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+        setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+        timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
       type: object
       required:
         - local
         - federated
       properties:
         local:
-          $ref: '#/components/schemas/TimelineAccess'
+          $ref: '#/components/schemas/InstanceAudience'
         federated:
-          $ref: '#/components/schemas/TimelineAccess'
+          $ref: '#/components/schemas/InstanceAudience'
     IssueOAuthAppTokenRequest:
       description: The scope of the tokens of an app for the authenticated user.
       type: object
@@ -18375,7 +18398,7 @@ components:
         after the status was posted or received. Omitted from a status with attachments or a
         poll, from a status whose link has no card yet, from a status whose link is on a domain
         where a rule of the crawler stops fetching, and when the instance setting
-        `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+        `link_cards` is off. A card appears after its fetch, so a status read right after
         it was posted may have none.
 
         Clients show the card as one link to `url` and, under a content warning, only once the
@@ -21568,16 +21591,6 @@ components:
           $ref: '#/components/schemas/Id'
         name:
           type: string
-    SupporterListVisibility:
-      description: |
-        Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-        §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-        `signed_in`, the users signed in to this server.
-      type: string
-      enum:
-        - 'off'
-        - public
-        - signed_in
     SupporterListing:
       description: Whether the user is on the supporter list.
       type: object
@@ -21870,17 +21883,6 @@ components:
           type: string
         value:
           type: string
-    TimelineAccess:
-      description: |
-        Who may read a public timeline (the instance settings `local_timeline_access` and
-        `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-        `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-        `everyone`, everyone, anonymous visitors included.
-      type: string
-      enum:
-        - 'off'
-        - logged_in
-        - everyone
     TotpSetup:
       description: A new TOTP secret to add to an authenticator app.
       type: object

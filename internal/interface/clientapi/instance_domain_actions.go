@@ -12,7 +12,7 @@ import (
 
 // ListInstanceDomainActions serves GET /api/v1/instance/domain_actions: the limits and
 // suspensions of remote domains in effect, newest first (FR-718). The instance setting
-// domain_actions_visibility decides who may read it: none is a 404, users a 401 for anonymous
+// domain_actions_visibility decides who may read it: off is a 404, signed_in a 401 for anonymous
 // requests. domain_actions_rationale_visibility decides in the same way who gets the public
 // comments. The cursor is the ID of the last action of the previous page.
 func (s *Server) ListInstanceDomainActions(ctx context.Context, req ListInstanceDomainActionsRequestObject) (ListInstanceDomainActionsResponseObject, error) {
@@ -26,7 +26,7 @@ func (s *Server) ListInstanceDomainActions(ctx context.Context, req ListInstance
 	_, loggedIn := ViewerFrom(ctx)
 	visibility := settings.DomainActionsVisibility()
 	if !visibility.Allows(loggedIn) {
-		if visibility != instance.AudienceUsers {
+		if visibility != instance.AudienceSignedIn {
 			return ListInstanceDomainActionsdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 		}
 		body, headers := s.NewProblem(ctx, http.StatusUnauthorized, ProblemTypeUnauthenticated, s.Localizer(ctx).ServerErrorsUnauthenticated(), "")

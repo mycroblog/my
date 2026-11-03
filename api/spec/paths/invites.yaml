@@ -41,7 +41,7 @@ post:
     registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
     `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
     value over the cap of the instance settings (`member_invite_max_uses`,
-    `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+    `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
     `member_invite_max_active` usable invites gets a 409
     `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
     user as the actor. Every sign-up with the invite checks again that the user may create
@@ -56,7 +56,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateOwnInviteRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/OwnInvite.yaml
     default:
       $ref: ../components/responses/Problem.yaml

@@ -180,10 +180,10 @@ func (w *world) mention(t *testing.T, text string) mykit.Status {
 	if err != nil {
 		t.Fatalf("alice mentions the bot: %v", err)
 	}
-	if resp.JSON200 == nil {
+	if resp.JSON201 == nil {
 		t.Fatalf("alice mentions the bot = %d %s", resp.StatusCode(), resp.Body)
 	}
-	return *resp.JSON200
+	return *resp.JSON201
 }
 
 // replies are the replies to st, as alice sees its thread.

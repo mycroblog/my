@@ -42,7 +42,7 @@ func TestClientAPIAccountSuggestionsAndSearch(t *testing.T) {
 
 	post := func(u testUser, visibility string) {
 		t.Helper()
-		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]string{"text": "hello", "visibility": visibility}, nil), http.StatusOK, "post")
+		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]string{"text": "hello", "visibility": visibility}, nil), http.StatusCreated, "post")
 	}
 	post(alice, "public")
 	post(dave, "private")

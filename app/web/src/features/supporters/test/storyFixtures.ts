@@ -36,7 +36,7 @@ export const plans: Schemas["SupporterPlan"][] = [
 ];
 
 /** GET /instance with the program on and the list published to `list`. */
-export function programOn(list: Schemas["SupporterListVisibility"] = "public") {
+export function programOn(list: Schemas["InstanceAudience"] = "everyone") {
   return http.get(`${apiBase}/instance`, () =>
     HttpResponse.json({
       ...instanceFixture,

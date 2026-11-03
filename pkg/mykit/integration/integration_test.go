@@ -67,10 +67,10 @@ func post(t *testing.T, api *mykit.API, text string, ids ...string) mykit.Status
 	if err != nil {
 		t.Fatalf("post %q: %v", text, err)
 	}
-	if resp.JSON200 == nil {
-		t.Fatalf("post %q = %d %s, want 200 with the status", text, resp.StatusCode(), resp.Body)
+	if resp.JSON201 == nil {
+		t.Fatalf("post %q = %d %s, want 201 with the status", text, resp.StatusCode(), resp.Body)
 	}
-	return *resp.JSON200
+	return *resp.JSON201
 }
 
 // homeTimeline returns the PageFunc of the home timeline, limit statuses a page, counting the pages it fetches.
@@ -383,11 +383,11 @@ func TestRetryAfterALostAnswer(t *testing.T) {
 	}
 
 	resp, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{IdempotencyKey: &ne.IdempotencyKey}, req)
-	if err != nil || resp.JSON200 == nil {
-		t.Fatalf("retry = %v, want 200 with the status", err)
+	if err != nil || resp.JSON201 == nil {
+		t.Fatalf("retry = %v, want 201 with the status", err)
 	}
-	if resp.JSON200.Id != first.Id {
-		t.Errorf("retry answered status %s, want %s that the first request posted", resp.JSON200.Id, first.Id)
+	if resp.JSON201.Id != first.Id {
+		t.Errorf("retry answered status %s, want %s that the first request posted", resp.JSON201.Id, first.Id)
 	}
 	if other := post(t, api, "once"); other.Id == first.Id {
 		t.Error("a post without the key answered the earlier status")

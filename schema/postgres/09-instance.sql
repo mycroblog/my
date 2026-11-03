@@ -15,16 +15,16 @@
 CREATE TABLE instance_setting_revisions (
   id uuid NOT NULL PRIMARY KEY,
   key text COLLATE "C" NOT NULL CHECK (key IN (
-    'registration_mode', 'max_status_length', 'default_locale', 'local_timeline_access', 'federated_timeline_access',
-    'preview_image', 'contact_account', 'contact_email', 'thumbnail', 'remote_media_policy', 'remote_media_cache_ttl', 'authorized_fetch',
-    'domain_actions_visibility', 'domain_actions_rationale_visibility', 'appeal_window',
-    'retention_session_origins', 'retention_registration_origins', 'retention_reports',
-    'retention_moderation_actions', 'retention_audit_log',
-    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards_enabled', 'link_cards_ignore_robots_txt',
+    'registration_mode', 'max_status_length', 'default_locale', 'local_timeline_visibility', 'federated_timeline_visibility',
+    'preview_image', 'contact_account', 'contact_email', 'thumbnail', 'remote_media_policy', 'remote_media_cache_ttl_seconds', 'authorized_fetch',
+    'domain_actions_visibility', 'domain_actions_rationale_visibility', 'appeal_window_days',
+    'session_origins_retention_days', 'registration_origins_retention_days', 'reports_retention_days',
+    'moderation_actions_retention_days', 'audit_log_retention_days',
+    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards', 'link_cards_ignore_robots_txt',
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
-    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
-    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in',
+    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'voice_participants_retention_days',
+    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
     'public_counts', 'featured_accounts', 'login_providers_only'
   )),
   value text NOT NULL,
@@ -127,7 +127,6 @@ CREATE TABLE instance_brand_revisions (
   revised_at timestamptz NOT NULL,
   CHECK ((kind = 'icon' AND action = 'set') = (background_color IS NOT NULL))
 );
-CREATE INDEX instance_brand_revisions_kind_id ON instance_brand_revisions (kind, id DESC);
 
 -- Event (child of a set revision): one stored file, the sanitized SVG or one of its PNG
 -- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
@@ -234,7 +233,6 @@ CREATE TABLE announcement_revisions (
   revised_at timestamptz NOT NULL,
   CHECK (starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at)
 );
-CREATE INDEX announcement_revisions_announcement_id_id ON announcement_revisions (announcement_id, id DESC);
 
 -- Event: an announcement was published or withdrawn; a withdrawal is for good.
 -- changed_by_user_id is NULL for the CLI.
@@ -245,7 +243,6 @@ CREATE TABLE announcement_state_changes (
   changed_by_user_id uuid,
   changed_at timestamptz NOT NULL
 );
-CREATE INDEX announcement_state_changes_announcement_id_id ON announcement_state_changes (announcement_id, id DESC);
 
 -- Projection: the current revision and state of each announcement. published_at is the time of
 -- its latest publication, set exactly when it has been published.

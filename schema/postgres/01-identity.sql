@@ -233,7 +233,7 @@ CREATE INDEX sessions_expires_at ON sessions (expires_at);
 -- Event: a session ended before it expired.
 CREATE TABLE session_revocations (
   session_id uuid NOT NULL PRIMARY KEY,
-  reason text NOT NULL CHECK (reason IN ('logout', 'replaced', 'password_changed', 'moderation', 'expired_cleanup', 'account_deleted')),
+  reason text NOT NULL CHECK (reason IN ('logout', 'replaced', 'password_changed', 'moderation', 'account_deleted')),
   revoked_at timestamptz NOT NULL
 );
 
@@ -369,6 +369,7 @@ CREATE TABLE oauth_authorization_codes (
 );
 CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
 CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
+CREATE INDEX oauth_authorization_codes_user_id ON oauth_authorization_codes (user_id);
 
 -- Event: a code was exchanged; the primary key makes it one-time. token_id is the first token
 -- of the family it started.
@@ -564,6 +565,7 @@ CREATE TABLE user_tokens (
 );
 CREATE UNIQUE INDEX user_tokens_token_hash ON user_tokens (token_hash);
 CREATE INDEX user_tokens_expires_at ON user_tokens (expires_at);
+CREATE INDEX user_tokens_user_id ON user_tokens (user_id);
 
 -- Event: a token was used; the primary key makes every token single-use.
 CREATE TABLE user_token_redemptions (

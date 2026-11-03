@@ -89,18 +89,12 @@ func (e AccountSuggestionSource) Valid() bool {
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
-	AdminAccountActionIssuerRemote    AdminAccountActionIssuer = "remote"
-	AdminAccountActionIssuerSystem    AdminAccountActionIssuer = "system"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountActionIssuer enum.
 func (e AdminAccountActionIssuer) Valid() bool {
 	switch e {
 	case AdminAccountActionIssuerModerator:
-		return true
-	case AdminAccountActionIssuerRemote:
-		return true
-	case AdminAccountActionIssuerSystem:
 		return true
 	default:
 		return false
@@ -1953,6 +1947,7 @@ const (
 	DomainBlockImportStatusImportable     DomainBlockImportStatus = "importable"
 	DomainBlockImportStatusInvalid        DomainBlockImportStatus = "invalid"
 	DomainBlockImportStatusNoAction       DomainBlockImportStatus = "no_action"
+	DomainBlockImportStatusOwnDomain      DomainBlockImportStatus = "own_domain"
 )
 
 // Valid indicates whether the value is a known member of the DomainBlockImportStatus enum.
@@ -1967,6 +1962,8 @@ func (e DomainBlockImportStatus) Valid() bool {
 	case DomainBlockImportStatusInvalid:
 		return true
 	case DomainBlockImportStatusNoAction:
+		return true
+	case DomainBlockImportStatusOwnDomain:
 		return true
 	default:
 		return false
@@ -2255,6 +2252,27 @@ func (e InstanceVoiceRoomStarters) Valid() bool {
 	}
 }
 
+// Defines values for InstanceAudience.
+const (
+	InstanceAudienceEveryone InstanceAudience = "everyone"
+	InstanceAudienceOff      InstanceAudience = "off"
+	InstanceAudienceSignedIn InstanceAudience = "signed_in"
+)
+
+// Valid indicates whether the value is a known member of the InstanceAudience enum.
+func (e InstanceAudience) Valid() bool {
+	switch e {
+	case InstanceAudienceEveryone:
+		return true
+	case InstanceAudienceOff:
+		return true
+	case InstanceAudienceSignedIn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceDocumentKind.
 const (
 	InstanceDocumentKindCommerceDisclosure InstanceDocumentKind = "commerce_disclosure"
@@ -2345,7 +2363,8 @@ func (e InstanceRegistrationsMode) Valid() bool {
 // Defines values for InstanceSettingKey.
 const (
 	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindow                     InstanceSettingKey = "appeal_window"
+	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
@@ -2354,7 +2373,7 @@ const (
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
 	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
+	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
 	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
@@ -2363,32 +2382,31 @@ const (
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
+	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
+	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionAuditLog                InstanceSettingKey = "retention_audit_log"
-	InstanceSettingKeyRetentionModerationActions       InstanceSettingKey = "retention_moderation_actions"
-	InstanceSettingKeyRetentionRegistrationOrigins     InstanceSettingKey = "retention_registration_origins"
-	InstanceSettingKeyRetentionReports                 InstanceSettingKey = "retention_reports"
-	InstanceSettingKeyRetentionSessionOrigins          InstanceSettingKey = "retention_session_origins"
-	InstanceSettingKeyRetentionVoiceParticipants       InstanceSettingKey = "retention_voice_participants"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
 )
@@ -2398,7 +2416,9 @@ func (e InstanceSettingKey) Valid() bool {
 	switch e {
 	case InstanceSettingKeyAiUsage:
 		return true
-	case InstanceSettingKeyAppealWindow:
+	case InstanceSettingKeyAppealWindowDays:
+		return true
+	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
@@ -2416,7 +2436,7 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
-	case InstanceSettingKeyFederatedTimelineAccess:
+	case InstanceSettingKeyFederatedTimelineVisibility:
 		return true
 	case InstanceSettingKeyFederationMode:
 		return true
@@ -2434,11 +2454,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyInviteCreators:
 		return true
-	case InstanceSettingKeyLinkCardsEnabled:
+	case InstanceSettingKeyLinkCards:
 		return true
 	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
-	case InstanceSettingKeyLocalTimelineAccess:
+	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
 		return true
@@ -2446,9 +2466,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyMemberInviteMaxActive:
 		return true
-	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+	case InstanceSettingKeyMemberInviteMaxLifetimeSeconds:
 		return true
 	case InstanceSettingKeyMemberInviteMaxUses:
+		return true
+	case InstanceSettingKeyModerationActionsRetentionDays:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2458,33 +2480,29 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
-	case InstanceSettingKeyRemoteMediaCacheTtl:
+	case InstanceSettingKeyRegistrationOriginsRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteMediaCacheTtlSeconds:
 		return true
 	case InstanceSettingKeyRemoteMediaPolicy:
 		return true
+	case InstanceSettingKeyReportsRetentionDays:
+		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionAuditLog:
-		return true
-	case InstanceSettingKeyRetentionModerationActions:
-		return true
-	case InstanceSettingKeyRetentionRegistrationOrigins:
-		return true
-	case InstanceSettingKeyRetentionReports:
-		return true
-	case InstanceSettingKeyRetentionSessionOrigins:
-		return true
-	case InstanceSettingKeyRetentionVoiceParticipants:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
 	case InstanceSettingKeySecurityContact:
+		return true
+	case InstanceSettingKeySessionOriginsRetentionDays:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
 	case InstanceSettingKeyVoicePublicSummary:
 		return true
@@ -3695,27 +3713,6 @@ func (e SupporterInterval) Valid() bool {
 	}
 }
 
-// Defines values for SupporterListVisibility.
-const (
-	SupporterListVisibilityOff      SupporterListVisibility = "off"
-	SupporterListVisibilityPublic   SupporterListVisibility = "public"
-	SupporterListVisibilitySignedIn SupporterListVisibility = "signed_in"
-)
-
-// Valid indicates whether the value is a known member of the SupporterListVisibility enum.
-func (e SupporterListVisibility) Valid() bool {
-	switch e {
-	case SupporterListVisibilityOff:
-		return true
-	case SupporterListVisibilityPublic:
-		return true
-	case SupporterListVisibilitySignedIn:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SupporterPlanProblemReason.
 const (
 	SupporterPlanProblemReasonAnnualDiscountPercent SupporterPlanProblemReason = "annual_discount_percent"
@@ -3902,27 +3899,6 @@ func (e ThemeErrorScheme) Valid() bool {
 	case ThemeErrorSchemeDark:
 		return true
 	case ThemeErrorSchemeLight:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for TimelineAccess.
-const (
-	TimelineAccessEveryone TimelineAccess = "everyone"
-	TimelineAccessLoggedIn TimelineAccess = "logged_in"
-	TimelineAccessOff      TimelineAccess = "off"
-)
-
-// Valid indicates whether the value is a known member of the TimelineAccess enum.
-func (e TimelineAccess) Valid() bool {
-	switch e {
-	case TimelineAccessEveryone:
-		return true
-	case TimelineAccessLoggedIn:
-		return true
-	case TimelineAccessOff:
 		return true
 	default:
 		return false
@@ -4653,8 +4629,7 @@ type AdminAccountAction struct {
 	// system.
 	IssuedByAccountId *Id `json:"issued_by_account_id,omitempty"`
 
-	// Issuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-	// account's own server.
+	// Issuer `moderator`: a moderator or the CLI.
 	Issuer AdminAccountActionIssuer `json:"issuer"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -4695,8 +4670,7 @@ type AdminAccountAction struct {
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
-// AdminAccountActionIssuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-// account's own server.
+// AdminAccountActionIssuer `moderator`: a moderator or the CLI.
 type AdminAccountActionIssuer string
 
 // AdminAccountActionCategory The kind of reason for an action.
@@ -5798,8 +5772,12 @@ type AdminOAuthClient struct {
 	// document declares; every other name is a claim of whoever registered the client.
 	Name string `json:"name"`
 
-	// OwnerId The ID of the user who registered the client; omitted for the other routes.
-	OwnerId *Id `json:"owner_id,omitempty"`
+	// Owner The account of the user who registered the client; omitted for the other routes and
+	// when that account is deleted (`owner_deleted`).
+	Owner *Account `json:"owner,omitempty"`
+
+	// OwnerDeleted Whether a user registered the client whose account no longer exists.
+	OwnerDeleted bool `json:"owner_deleted"`
 
 	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
@@ -5818,8 +5796,12 @@ type AdminOAuthClient struct {
 type AdminOAuthClientHostDenial struct {
 	DeniedAt time.Time `json:"denied_at"`
 
-	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
-	DeniedBy *Id `json:"denied_by,omitempty"`
+	// DeniedBy The account of the administrator; omitted for a denial from the command line and when
+	// that account is deleted (`denied_by_deleted`).
+	DeniedBy *Account `json:"denied_by,omitempty"`
+
+	// DeniedByDeleted Whether an administrator denied the host whose account no longer exists.
+	DeniedByDeleted bool `json:"denied_by_deleted"`
 
 	// Host The host name in lowercase, without a port.
 	Host string `json:"host"`
@@ -6112,7 +6094,7 @@ type AdminReportDetail struct {
 
 	// VoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 	// of its settings, and the records of its participants while the server keeps them (90 days
-	// after the room ends by default, `retention_voice_participants`, and as long as a report
+	// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 	// points at the room).
 	VoiceRoom *AdminReportVoiceRoom `json:"voice_room,omitempty"`
 
@@ -6185,7 +6167,7 @@ type AdminReportTargetHistory struct {
 
 // AdminReportVoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 // of its settings, and the records of its participants while the server keeps them (90 days
-// after the room ends by default, `retention_voice_participants`, and as long as a report
+// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 // points at the room).
 type AdminReportVoiceRoom struct {
 	// Bans The accounts removed from the room, who may not join it again.
@@ -7816,7 +7798,7 @@ type CreateOAuthAppRequest struct {
 
 // CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
 type CreateOwnInviteRequest struct {
-	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
@@ -8518,7 +8500,7 @@ type DomainBlockImportRow struct {
 	// `already_applied`: an action in effect of each of the row's kinds covers the domain
 	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
 	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 	Status DomainBlockImportStatus `json:"status"`
 
 	// WrittenDomain The domain as written in the row.
@@ -8538,7 +8520,7 @@ type DomainBlockImportSkipped struct {
 // `already_applied`: an action in effect of each of the row's kinds covers the domain
 // already, on it or on a parent domain. `no_action`: the row stands for no action (a
 // `noop` without rejections). `duplicate`: an earlier row has the same domain once
-// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 type DomainBlockImportStatus string
 
 // DomainBlockSeverity The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
@@ -9215,9 +9197,9 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
-	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// LinkCards Whether the server fetches the pages that posts link to, for their link cards. While it is
 	// false, the server fetches nothing for link cards.
-	LinkCardsEnabled bool `json:"link_cards_enabled"`
+	LinkCards bool `json:"link_cards"`
 
 	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
 	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
@@ -9285,10 +9267,12 @@ type Instance struct {
 	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
-	// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-	// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-	// `signed_in`, the users signed in to this server.
-	SupporterListVisibility SupporterListVisibility `json:"supporter_list_visibility"`
+	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	SupporterListVisibility InstanceAudience `json:"supporter_list_visibility"`
 
 	// SupportersEnabled Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
 	// and the subscriptions show only then.
@@ -9309,9 +9293,9 @@ type Instance struct {
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
 	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-	// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-	// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Version The server version.
@@ -9331,6 +9315,13 @@ type Instance struct {
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceAudience Who may read something public about the instance, the value of the instance settings
+// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+// a 401; `everyone`, everyone, anonymous visitors included.
+type InstanceAudience string
 
 // InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 // under `/brand/` on the server that name the revision, so their content never changes and
@@ -9588,21 +9579,23 @@ type InstanceThumbnail struct {
 }
 
 // InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
-	// Federated Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Federated TimelineAccess `json:"federated"`
+	// Federated Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Federated InstanceAudience `json:"federated"`
 
-	// Local Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Local TimelineAccess `json:"local"`
+	// Local Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Local InstanceAudience `json:"local"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -9626,7 +9619,7 @@ type LiftAccountActionRequest struct {
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
 // where a rule of the crawler stops fetching, and when the instance setting
-// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+// `link_cards` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
@@ -10092,7 +10085,7 @@ type MediaVariants struct {
 }
 
 // MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
-// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 type MemberInviteLimits struct {
 	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
 	DefaultExpiresIn int `json:"default_expires_in"`
@@ -10839,7 +10832,7 @@ type OwnInvitePage struct {
 	Items     []OwnInvite `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
-	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 	Limits MemberInviteLimits `json:"limits"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -12025,7 +12018,7 @@ type Status struct {
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
 	// where a rule of the crawler stops fetching, and when the instance setting
-	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+	// `link_cards` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
@@ -12391,11 +12384,6 @@ type SupporterListPlan struct {
 	Name string `json:"name"`
 }
 
-// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-// `signed_in`, the users signed in to this server.
-type SupporterListVisibility string
-
 // SupporterListing Whether the user is on the supporter list.
 type SupporterListing struct {
 	Listed bool `json:"listed"`
@@ -12644,12 +12632,6 @@ type ThemeTokenValue struct {
 	Token string  `json:"token"`
 	Value *string `json:"value,omitempty"`
 }
-
-// TimelineAccess Who may read a public timeline (the instance settings `local_timeline_access` and
-// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-// `everyone`, everyone, anonymous visitors included.
-type TimelineAccess string
 
 // TotpSetup A new TOTP secret to add to an authenticator app.
 type TotpSetup struct {
@@ -17794,7 +17776,7 @@ type ClientInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -17812,7 +17794,7 @@ type ClientInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -18427,9 +18409,9 @@ type ClientInterface interface {
 	// AllowOAuthClientHost Lift the denial of a host
 	//
 	// The Client ID Metadata Documents on the host are accepted again. The tokens that the
-	// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-	// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-	// permission.
+	// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+	// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+	// log. Needs the `manage_oauth_apps` permission.
 	//
 	// Corresponds with DELETE /admin/oauth_client_host_denials/{host} (the `AllowOAuthClientHost` operationId).
 	AllowOAuthClientHost(ctx context.Context, host OAuthClientHost, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -18851,24 +18833,24 @@ type ClientInterface interface {
 
 	// UpdateInstanceRuleWithBody Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateInstanceRule Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRule(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MoveInstanceRuleWithBody Move an instance rule
@@ -19963,7 +19945,7 @@ type ClientInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -19984,7 +19966,7 @@ type ClientInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -20902,7 +20884,7 @@ type ClientInterface interface {
 
 	// CreateStatusWithBody Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -20915,7 +20897,7 @@ type ClientInterface interface {
 
 	// CreateStatus Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -21330,8 +21312,8 @@ type ClientInterface interface {
 	//
 	// The public posts of the instance's accounts, newest first, and their local posts for a
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
-	// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 	GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21341,8 +21323,8 @@ type ClientInterface interface {
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
 	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
 	GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24509,7 +24491,7 @@ func (c *Client) ListDomainActions(ctx context.Context, params *ListDomainAction
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -24537,7 +24519,7 @@ func (c *Client) CreateDomainActionWithBody(ctx context.Context, contentType str
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -25672,9 +25654,9 @@ func (c *Client) DenyOAuthClientHost(ctx context.Context, body DenyOAuthClientHo
 // AllowOAuthClientHost Lift the denial of a host
 //
 // The Client ID Metadata Documents on the host are accepted again. The tokens that the
-// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-// permission.
+// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+// log. Needs the `manage_oauth_apps` permission.
 //
 // Corresponds with DELETE /admin/oauth_client_host_denials/{host} (the `AllowOAuthClientHost` operationId).
 func (c *Client) AllowOAuthClientHost(ctx context.Context, host OAuthClientHost, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -26466,13 +26448,13 @@ func (c *Client) GetInstanceRule(ctx context.Context, id RuleId, reqEditors ...R
 
 // UpdateInstanceRuleWithBody Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *Client) UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateInstanceRuleRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
@@ -26487,13 +26469,13 @@ func (c *Client) UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, cont
 
 // UpdateInstanceRule Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *Client) UpdateInstanceRule(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateInstanceRuleRequest(c.Server, id, body)
 	if err != nil {
@@ -28488,7 +28470,7 @@ func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParam
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -28519,7 +28501,7 @@ func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -30187,7 +30169,7 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 
 // CreateStatusWithBody Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -30210,7 +30192,7 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 
 // CreateStatus Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -31025,8 +31007,8 @@ func (c *Client) GetListTimeline(ctx context.Context, id ListId, params *GetList
 //
 // The public posts of the instance's accounts, newest first, and their local posts for a
 // logged-in viewer, in the viewer's timeline languages. The instance setting
-// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31046,8 +31028,8 @@ func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineP
 // The public posts of the instance's accounts and of the remote accounts whose posts the
 // instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
 func (c *Client) GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -39002,7 +38984,7 @@ func NewUpdateInstanceRuleRequestWithBody(server string, id RuleId, contentType 
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -49115,7 +49097,7 @@ type ClientWithResponsesInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -49133,7 +49115,7 @@ type ClientWithResponsesInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -49810,9 +49792,9 @@ type ClientWithResponsesInterface interface {
 	// AllowOAuthClientHostWithResponse Lift the denial of a host
 	//
 	// The Client ID Metadata Documents on the host are accepted again. The tokens that the
-	// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-	// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-	// permission.
+	// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+	// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+	// log. Needs the `manage_oauth_apps` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50276,24 +50258,24 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateInstanceRuleWithBodyWithResponse Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithBodyWithResponse(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error)
 
 	// UpdateInstanceRuleWithResponse Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithResponse(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error)
 
 	// MoveInstanceRuleWithBodyWithResponse Move an instance rule
@@ -51502,7 +51484,7 @@ type ClientWithResponsesInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -51523,7 +51505,7 @@ type ClientWithResponsesInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -52507,7 +52489,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateStatusWithBodyWithResponse Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -52520,7 +52502,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateStatusWithResponse Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -52989,8 +52971,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// The public posts of the instance's accounts, newest first, and their local posts for a
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
-	// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -53002,8 +52984,8 @@ type ClientWithResponsesInterface interface {
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
 	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -55869,8 +55851,8 @@ func (r ListAccountActionsResponse) ContentType() string {
 	return ""
 }
 
-// CreateAccountActionResponse200Headers the declared response headers of an HTTP 200 response for CreateAccountAction
-type CreateAccountActionResponse200Headers struct {
+// CreateAccountActionResponse201Headers the declared response headers of an HTTP 201 response for CreateAccountAction
+type CreateAccountActionResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -55885,19 +55867,19 @@ type CreateAccountActionResponseDefaultHeaders struct {
 type CreateAccountActionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAccountAction
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminAccountAction
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateAccountActionResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateAccountActionResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateAccountActionResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateAccountActionResponse) GetJSON200() *AdminAccountAction {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateAccountActionResponse) GetJSON201() *AdminAccountAction {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -56477,8 +56459,8 @@ func (r ListAdminAnnouncementsResponse) ContentType() string {
 	return ""
 }
 
-// CreateAdminAnnouncementResponse200Headers the declared response headers of an HTTP 200 response for CreateAdminAnnouncement
-type CreateAdminAnnouncementResponse200Headers struct {
+// CreateAdminAnnouncementResponse201Headers the declared response headers of an HTTP 201 response for CreateAdminAnnouncement
+type CreateAdminAnnouncementResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -56493,19 +56475,19 @@ type CreateAdminAnnouncementResponseDefaultHeaders struct {
 type CreateAdminAnnouncementResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAnnouncement
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminAnnouncement
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateAdminAnnouncementResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateAdminAnnouncementResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateAdminAnnouncementResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateAdminAnnouncementResponse) GetJSON200() *AdminAnnouncement {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateAdminAnnouncementResponse) GetJSON201() *AdminAnnouncement {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -57633,8 +57615,8 @@ func (r ListCostItemsResponse) ContentType() string {
 	return ""
 }
 
-// CreateCostItemResponse200Headers the declared response headers of an HTTP 200 response for CreateCostItem
-type CreateCostItemResponse200Headers struct {
+// CreateCostItemResponse201Headers the declared response headers of an HTTP 201 response for CreateCostItem
+type CreateCostItemResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -57649,19 +57631,19 @@ type CreateCostItemResponseDefaultHeaders struct {
 type CreateCostItemResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *CostItem
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CostItem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCostItemResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCostItemResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCostItemResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCostItemResponse) GetJSON200() *CostItem {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCostItemResponse) GetJSON201() *CostItem {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -58459,8 +58441,8 @@ func (r ListAdminCustomEmojisResponse) ContentType() string {
 	return ""
 }
 
-// CreateCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for CreateCustomEmoji
-type CreateCustomEmojiResponse200Headers struct {
+// CreateCustomEmojiResponse201Headers the declared response headers of an HTTP 201 response for CreateCustomEmoji
+type CreateCustomEmojiResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -58481,23 +58463,23 @@ type CreateCustomEmojiResponseDefaultHeaders struct {
 type CreateCustomEmojiResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminCustomEmoji
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminCustomEmoji
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCustomEmojiResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCustomEmojiResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateCustomEmojiResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCustomEmojiResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCustomEmojiResponse) GetJSON201() *AdminCustomEmoji {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -58750,8 +58732,8 @@ func (r UpdateCustomEmojiResponse) ContentType() string {
 	return ""
 }
 
-// CopyCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for CopyCustomEmoji
-type CopyCustomEmojiResponse200Headers struct {
+// CopyCustomEmojiResponse201Headers the declared response headers of an HTTP 201 response for CopyCustomEmoji
+type CopyCustomEmojiResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -58772,23 +58754,23 @@ type CopyCustomEmojiResponseDefaultHeaders struct {
 type CopyCustomEmojiResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminCustomEmoji
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminCustomEmoji
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CopyCustomEmojiResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CopyCustomEmojiResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CopyCustomEmojiResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CopyCustomEmojiResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CopyCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CopyCustomEmojiResponse) GetJSON201() *AdminCustomEmoji {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -58975,8 +58957,8 @@ func (r ListDomainActionsResponse) ContentType() string {
 	return ""
 }
 
-// CreateDomainActionResponse200Headers the declared response headers of an HTTP 200 response for CreateDomainAction
-type CreateDomainActionResponse200Headers struct {
+// CreateDomainActionResponse201Headers the declared response headers of an HTTP 201 response for CreateDomainAction
+type CreateDomainActionResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -58991,19 +58973,19 @@ type CreateDomainActionResponseDefaultHeaders struct {
 type CreateDomainActionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminDomainAction
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminDomainAction
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateDomainActionResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateDomainActionResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateDomainActionResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateDomainActionResponse) GetJSON200() *AdminDomainAction {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateDomainActionResponse) GetJSON201() *AdminDomainAction {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -60596,8 +60578,8 @@ func (r ListInvitesResponse) ContentType() string {
 	return ""
 }
 
-// CreateInviteResponse200Headers the declared response headers of an HTTP 200 response for CreateInvite
-type CreateInviteResponse200Headers struct {
+// CreateInviteResponse201Headers the declared response headers of an HTTP 201 response for CreateInvite
+type CreateInviteResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -60612,19 +60594,19 @@ type CreateInviteResponseDefaultHeaders struct {
 type CreateInviteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminInvite
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminInvite
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateInviteResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateInviteResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateInviteResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateInviteResponse) GetJSON200() *AdminInvite {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateInviteResponse) GetJSON201() *AdminInvite {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -61153,8 +61135,8 @@ func (r ListAdminLoginProvidersResponse) ContentType() string {
 	return ""
 }
 
-// CreateLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for CreateLoginProvider
-type CreateLoginProviderResponse200Headers struct {
+// CreateLoginProviderResponse201Headers the declared response headers of an HTTP 201 response for CreateLoginProvider
+type CreateLoginProviderResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -61175,23 +61157,23 @@ type CreateLoginProviderResponseDefaultHeaders struct {
 type CreateLoginProviderResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminLoginProvider
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminLoginProvider
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *LoginProviderProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateLoginProviderResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateLoginProviderResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateLoginProviderResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateLoginProviderResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateLoginProviderResponse) GetJSON200() *AdminLoginProvider {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateLoginProviderResponse) GetJSON201() *AdminLoginProvider {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -62442,8 +62424,8 @@ func (r ListAdminRelaysResponse) ContentType() string {
 	return ""
 }
 
-// CreateRelayResponse200Headers the declared response headers of an HTTP 200 response for CreateRelay
-type CreateRelayResponse200Headers struct {
+// CreateRelayResponse201Headers the declared response headers of an HTTP 201 response for CreateRelay
+type CreateRelayResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -62464,23 +62446,23 @@ type CreateRelayResponseDefaultHeaders struct {
 type CreateRelayResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRelay
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRelay
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *RelayProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateRelayResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateRelayResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateRelayResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateRelayResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateRelayResponse) GetJSON200() *AdminRelay {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateRelayResponse) GetJSON201() *AdminRelay {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -63268,8 +63250,8 @@ func (r ListRolesResponse) ContentType() string {
 	return ""
 }
 
-// CreateRoleResponse200Headers the declared response headers of an HTTP 200 response for CreateRole
-type CreateRoleResponse200Headers struct {
+// CreateRoleResponse201Headers the declared response headers of an HTTP 201 response for CreateRole
+type CreateRoleResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -63290,23 +63272,23 @@ type CreateRoleResponseDefaultHeaders struct {
 type CreateRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRole
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRole
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *RoleProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateRoleResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateRoleResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateRoleResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateRoleResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateRoleResponse) GetJSON200() *AdminRole {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateRoleResponse) GetJSON201() *AdminRole {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -63559,8 +63541,8 @@ func (r ListInstanceRulesResponse) ContentType() string {
 	return ""
 }
 
-// CreateInstanceRuleResponse200Headers the declared response headers of an HTTP 200 response for CreateInstanceRule
-type CreateInstanceRuleResponse200Headers struct {
+// CreateInstanceRuleResponse201Headers the declared response headers of an HTTP 201 response for CreateInstanceRule
+type CreateInstanceRuleResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -63575,19 +63557,19 @@ type CreateInstanceRuleResponseDefaultHeaders struct {
 type CreateInstanceRuleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRule
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRule
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateInstanceRuleResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateInstanceRuleResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateInstanceRuleResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateInstanceRuleResponse) GetJSON200() *AdminRule {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateInstanceRuleResponse) GetJSON201() *AdminRule {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -64144,8 +64126,8 @@ func (r ListSignupBlocksResponse) ContentType() string {
 	return ""
 }
 
-// CreateSignupBlockResponse200Headers the declared response headers of an HTTP 200 response for CreateSignupBlock
-type CreateSignupBlockResponse200Headers struct {
+// CreateSignupBlockResponse201Headers the declared response headers of an HTTP 201 response for CreateSignupBlock
+type CreateSignupBlockResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -64160,19 +64142,19 @@ type CreateSignupBlockResponseDefaultHeaders struct {
 type CreateSignupBlockResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminSignupBlock
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminSignupBlock
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateSignupBlockResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateSignupBlockResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateSignupBlockResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateSignupBlockResponse) GetJSON200() *AdminSignupBlock {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateSignupBlockResponse) GetJSON201() *AdminSignupBlock {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -64520,8 +64502,8 @@ func (r ListAdminSupporterPlansResponse) ContentType() string {
 	return ""
 }
 
-// CreateSupporterPlanResponse200Headers the declared response headers of an HTTP 200 response for CreateSupporterPlan
-type CreateSupporterPlanResponse200Headers struct {
+// CreateSupporterPlanResponse201Headers the declared response headers of an HTTP 201 response for CreateSupporterPlan
+type CreateSupporterPlanResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -64542,23 +64524,23 @@ type CreateSupporterPlanResponseDefaultHeaders struct {
 type CreateSupporterPlanResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminSupporterPlan
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminSupporterPlan
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *SupporterPlanProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateSupporterPlanResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateSupporterPlanResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateSupporterPlanResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateSupporterPlanResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateSupporterPlanResponse) GetJSON200() *AdminSupporterPlan {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateSupporterPlanResponse) GetJSON201() *AdminSupporterPlan {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -65238,8 +65220,8 @@ func (r ListAdminWebhooksResponse) ContentType() string {
 	return ""
 }
 
-// CreateWebhookResponse200Headers the declared response headers of an HTTP 200 response for CreateWebhook
-type CreateWebhookResponse200Headers struct {
+// CreateWebhookResponse201Headers the declared response headers of an HTTP 201 response for CreateWebhook
+type CreateWebhookResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -65260,23 +65242,23 @@ type CreateWebhookResponseDefaultHeaders struct {
 type CreateWebhookResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminWebhookCreated
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminWebhookCreated
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *WebhookProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateWebhookResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateWebhookResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateWebhookResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateWebhookResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateWebhookResponse) GetJSON200() *AdminWebhookCreated {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateWebhookResponse) GetJSON201() *AdminWebhookCreated {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -66534,8 +66516,8 @@ func (r ListCustomEmojiRequestsResponse) ContentType() string {
 	return ""
 }
 
-// CreateCustomEmojiRequestResponse200Headers the declared response headers of an HTTP 200 response for CreateCustomEmojiRequest
-type CreateCustomEmojiRequestResponse200Headers struct {
+// CreateCustomEmojiRequestResponse201Headers the declared response headers of an HTTP 201 response for CreateCustomEmojiRequest
+type CreateCustomEmojiRequestResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -66556,23 +66538,23 @@ type CreateCustomEmojiRequestResponseDefaultHeaders struct {
 type CreateCustomEmojiRequestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *CustomEmojiRequest
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CustomEmojiRequest
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCustomEmojiRequestResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCustomEmojiRequestResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateCustomEmojiRequestResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCustomEmojiRequestResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCustomEmojiRequestResponse) GetJSON200() *CustomEmojiRequest {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCustomEmojiRequestResponse) GetJSON201() *CustomEmojiRequest {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -68511,8 +68493,8 @@ func (r ListOwnInvitesResponse) ContentType() string {
 	return ""
 }
 
-// CreateOwnInviteResponse200Headers the declared response headers of an HTTP 200 response for CreateOwnInvite
-type CreateOwnInviteResponse200Headers struct {
+// CreateOwnInviteResponse201Headers the declared response headers of an HTTP 201 response for CreateOwnInvite
+type CreateOwnInviteResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -68527,19 +68509,19 @@ type CreateOwnInviteResponseDefaultHeaders struct {
 type CreateOwnInviteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *OwnInvite
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *OwnInvite
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateOwnInviteResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateOwnInviteResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateOwnInviteResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateOwnInviteResponse) GetJSON200() *OwnInvite {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateOwnInviteResponse) GetJSON201() *OwnInvite {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -68952,8 +68934,8 @@ func (r ListListsResponse) ContentType() string {
 	return ""
 }
 
-// CreateListResponse200Headers the declared response headers of an HTTP 200 response for CreateList
-type CreateListResponse200Headers struct {
+// CreateListResponse201Headers the declared response headers of an HTTP 201 response for CreateList
+type CreateListResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -68968,19 +68950,19 @@ type CreateListResponseDefaultHeaders struct {
 type CreateListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *List
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *List
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateListResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateListResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateListResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateListResponse) GetJSON200() *List {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateListResponse) GetJSON201() *List {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -70377,8 +70359,8 @@ func (r RotateOAuthAppSecretResponse) ContentType() string {
 	return ""
 }
 
-// IssueOAuthAppTokenResponse200Headers the declared response headers of an HTTP 200 response for IssueOAuthAppToken
-type IssueOAuthAppTokenResponse200Headers struct {
+// IssueOAuthAppTokenResponse201Headers the declared response headers of an HTTP 201 response for IssueOAuthAppToken
+type IssueOAuthAppTokenResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -70393,19 +70375,19 @@ type IssueOAuthAppTokenResponseDefaultHeaders struct {
 type IssueOAuthAppTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *OAuthAppToken
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *OAuthAppToken
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *IssueOAuthAppTokenResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *IssueOAuthAppTokenResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *IssueOAuthAppTokenResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r IssueOAuthAppTokenResponse) GetJSON200() *OAuthAppToken {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r IssueOAuthAppTokenResponse) GetJSON201() *OAuthAppToken {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -71707,8 +71689,8 @@ func (r ListOwnReportsResponse) ContentType() string {
 	return ""
 }
 
-// CreateReportResponse200Headers the declared response headers of an HTTP 200 response for CreateReport
-type CreateReportResponse200Headers struct {
+// CreateReportResponse201Headers the declared response headers of an HTTP 201 response for CreateReport
+type CreateReportResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -71723,19 +71705,19 @@ type CreateReportResponseDefaultHeaders struct {
 type CreateReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Report
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Report
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateReportResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateReportResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateReportResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateReportResponse) GetJSON200() *Report {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateReportResponse) GetJSON201() *Report {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -71939,8 +71921,8 @@ func (r RevokeSessionResponse) ContentType() string {
 	return ""
 }
 
-// CreateStatusResponse200Headers the declared response headers of an HTTP 200 response for CreateStatus
-type CreateStatusResponse200Headers struct {
+// CreateStatusResponse201Headers the declared response headers of an HTTP 201 response for CreateStatus
+type CreateStatusResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -71955,19 +71937,19 @@ type CreateStatusResponseDefaultHeaders struct {
 type CreateStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Status
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateStatusResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateStatusResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateStatusResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateStatusResponse) GetJSON200() *Status {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateStatusResponse) GetJSON201() *Status {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -78696,7 +78678,7 @@ func (c *ClientWithResponses) ListDomainActionsWithResponse(ctx context.Context,
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -78720,7 +78702,7 @@ func (c *ClientWithResponses) CreateDomainActionWithBodyWithResponse(ctx context
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -79709,9 +79691,9 @@ func (c *ClientWithResponses) DenyOAuthClientHostWithResponse(ctx context.Contex
 // AllowOAuthClientHostWithResponse Lift the denial of a host
 //
 // The Client ID Metadata Documents on the host are accepted again. The tokens that the
-// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-// permission.
+// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+// log. Needs the `manage_oauth_apps` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -80397,13 +80379,13 @@ func (c *ClientWithResponses) GetInstanceRuleWithResponse(ctx context.Context, i
 
 // UpdateInstanceRuleWithBodyWithResponse Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *ClientWithResponses) UpdateInstanceRuleWithBodyWithResponse(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error) {
 	rsp, err := c.UpdateInstanceRuleWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
@@ -80414,13 +80396,13 @@ func (c *ClientWithResponses) UpdateInstanceRuleWithBodyWithResponse(ctx context
 
 // UpdateInstanceRuleWithResponse Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *ClientWithResponses) UpdateInstanceRuleWithResponse(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error) {
 	rsp, err := c.UpdateInstanceRule(ctx, id, body, reqEditors...)
 	if err != nil {
@@ -82169,7 +82151,7 @@ func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, pa
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -82196,7 +82178,7 @@ func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Co
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -83630,7 +83612,7 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 
 // CreateStatusWithBodyWithResponse Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -83649,7 +83631,7 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 
 // CreateStatusWithResponse Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -84358,8 +84340,8 @@ func (c *ClientWithResponses) GetListTimelineWithResponse(ctx context.Context, i
 //
 // The public posts of the instance's accounts, newest first, and their local posts for a
 // logged-in viewer, in the viewer's timeline languages. The instance setting
-// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84377,8 +84359,8 @@ func (c *ClientWithResponses) GetLocalTimelineWithResponse(ctx context.Context, 
 // The public posts of the instance's accounts and of the remote accounts whose posts the
 // instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -87974,12 +87956,12 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminAccountAction
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -87991,8 +87973,8 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateAccountActionResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateAccountActionResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -88000,7 +87982,7 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateAccountActionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -88191,7 +88173,7 @@ func ParseRefetchAccountStatusesResponse(rsp *http.Response) (*RefetchAccountSta
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -88702,12 +88684,12 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminAnnouncement
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -88719,8 +88701,8 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateAdminAnnouncementResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateAdminAnnouncementResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -88728,7 +88710,7 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateAdminAnnouncementResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -89549,7 +89531,7 @@ func ParseRunBillingImportResponse(rsp *http.Response) (*RunBillingImportRespons
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -90074,12 +90056,12 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest CostItem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -90091,8 +90073,8 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCostItemResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCostItemResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -90100,7 +90082,7 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateCostItemResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -91080,12 +91062,12 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminCustomEmoji
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -91104,8 +91086,8 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCustomEmojiResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCustomEmojiResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -91113,7 +91095,7 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateCustomEmojiResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -91446,12 +91428,12 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminCustomEmoji
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -91470,8 +91452,8 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CopyCustomEmojiResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CopyCustomEmojiResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -91479,7 +91461,7 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CopyCustomEmojiResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -91725,12 +91707,12 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminDomainAction
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -91742,8 +91724,8 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateDomainActionResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateDomainActionResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -91751,7 +91733,7 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateDomainActionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -93530,7 +93512,7 @@ func ParseRefetchInstanceStatusesResponse(rsp *http.Response) (*RefetchInstanceS
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -93670,12 +93652,12 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminInvite
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -93687,8 +93669,8 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateInviteResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateInviteResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -93696,7 +93678,7 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -93978,7 +93960,7 @@ func ParseRetryAdminJobResponse(rsp *http.Response) (*RetryAdminJobResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -94335,12 +94317,12 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminLoginProvider
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest LoginProviderProblem
@@ -94359,8 +94341,8 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateLoginProviderResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateLoginProviderResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -94368,7 +94350,7 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateLoginProviderResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -95366,7 +95348,7 @@ func ParseRunPaymentReconcileResponse(rsp *http.Response) (*RunPaymentReconcileR
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -95891,12 +95873,12 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRelay
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest RelayProblem
@@ -95915,8 +95897,8 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateRelayResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateRelayResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -95924,7 +95906,7 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateRelayResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -96897,12 +96879,12 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRole
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest RoleProblem
@@ -96921,8 +96903,8 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateRoleResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateRoleResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -96930,7 +96912,7 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateRoleResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -97263,12 +97245,12 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRule
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -97280,8 +97262,8 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateInstanceRuleResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateInstanceRuleResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -97289,7 +97271,7 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateInstanceRuleResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -97956,12 +97938,12 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminSignupBlock
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -97973,8 +97955,8 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateSignupBlockResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateSignupBlockResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -97982,7 +97964,7 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateSignupBlockResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -98264,7 +98246,7 @@ func ParseRefetchStatusResponse(rsp *http.Response) (*RefetchStatusResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -98404,12 +98386,12 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminSupporterPlan
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest SupporterPlanProblem
@@ -98428,8 +98410,8 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateSupporterPlanResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateSupporterPlanResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -98437,7 +98419,7 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateSupporterPlanResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -99281,12 +99263,12 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminWebhookCreated
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest WebhookProblem
@@ -99305,8 +99287,8 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateWebhookResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateWebhookResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -99314,7 +99296,7 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateWebhookResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -100841,12 +100823,12 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest CustomEmojiRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -100865,8 +100847,8 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCustomEmojiRequestResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCustomEmojiRequestResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -100874,7 +100856,7 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateCustomEmojiRequestResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -103226,12 +103208,12 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest OwnInvite
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -103243,8 +103225,8 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateOwnInviteResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateOwnInviteResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -103252,7 +103234,7 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateOwnInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -103751,12 +103733,12 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest List
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -103768,8 +103750,8 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateListResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateListResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -103777,7 +103759,7 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateListResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -105452,12 +105434,12 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest OAuthAppToken
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -105469,8 +105451,8 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers IssueOAuthAppTokenResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers IssueOAuthAppTokenResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -105478,7 +105460,7 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers IssueOAuthAppTokenResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -107031,12 +107013,12 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Report
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -107048,8 +107030,8 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateReportResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateReportResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -107057,7 +107039,7 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateReportResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -107311,12 +107293,12 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Status
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -107328,8 +107310,8 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateStatusResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateStatusResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -107337,7 +107319,7 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

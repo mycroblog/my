@@ -99,9 +99,9 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 		return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", r.TargetAccountID, r.ID, appaccount.ErrNotFound)
 	}
 	cache := cacheNoStore
-	return CreateReport200JSONResponse{
+	return CreateReport201JSONResponse{
 		Body:    items[0],
-		Headers: CreateReport200ResponseHeaders{CacheControl: &cache},
+		Headers: CreateReport201ResponseHeaders{CacheControl: &cache},
 	}, nil
 }
 

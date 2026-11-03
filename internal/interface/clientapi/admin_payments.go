@@ -6,8 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"time"
 
 	appsupporters "github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -93,13 +91,9 @@ func (s *Server) RunPaymentReconcile(ctx context.Context, _ RunPaymentReconcileR
 	err = s.o.Payments.RequestReconcile(ctx, v.UserID)
 	switch {
 	case errors.Is(err, appsupporters.ErrReconcileTooSoon):
-		l := s.Localizer(ctx)
-		now := time.Now().UTC()
-		wait := int(now.Truncate(time.Hour).Add(time.Hour).Sub(now).Seconds()) + 1
-		return RunPaymentReconciledefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusTooManyRequests, ProblemTypeBlank, l.ServerErrorsRateLimited(), l.ServerErrorsRateLimitedDetail(wait))), nil
+		return RunPaymentReconciledefaultApplicationProblemPlusJSONResponse(s.nextHourProblem(ctx)), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: reconcile with the payment provider: %w", err)
 	}
-	return RunPaymentReconcile204Response{}, nil
+	return RunPaymentReconcile202Response{}, nil
 }

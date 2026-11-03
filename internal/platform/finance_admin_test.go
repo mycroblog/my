@@ -21,7 +21,7 @@ func TestCostItemsAdmin(t *testing.T) {
 	create := func(body map[string]any) clientapi.CostItem {
 		t.Helper()
 		var item clientapi.CostItem
-		e.want(e.do(http.MethodPost, "/admin/cost_items", admin.token, body, &item), http.StatusOK, "POST /admin/cost_items")
+		e.want(e.do(http.MethodPost, "/admin/cost_items", admin.token, body, &item), http.StatusCreated, "POST /admin/cost_items")
 		return item
 	}
 	domain := create(map[string]any{

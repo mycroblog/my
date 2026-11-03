@@ -45,7 +45,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateInviteRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminInvite.yaml
     default:
       $ref: ../components/responses/Problem.yaml

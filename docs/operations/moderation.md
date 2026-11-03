@@ -135,9 +135,9 @@ While [sign-in is limited to login providers](login-providers.md#limit-sign-in-t
 The page shows the form and the deadline for an action that can be appealed, the content and outcome for an action already appealed, and the reason for an action whose deadline has passed or that cannot be appealed. For a rejected appeal it shows the reason.
 In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{id}`, and `POST .../{id}/uphold` and `POST .../{id}/overturn` (the body `{"public_reason": "..."}` is optional). They need the `manage_accounts` permission.
 
-- An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
+- An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window_days` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
   An action past the deadline and a second appeal give `422` (`/api/v1/problems/appeal-window-closed` and `/api/v1/problems/already-appealed`).
-- A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
+- A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window_days` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
 - When a user appeals, people with `manage_accounts` get a notification (`admin_appeal`). When it is reviewed, the user gets a notification (`appeal_decided`) and can see the outcome and `public_reason`. The reviewer is not shown.
 - Overturning lifts the action in the same transaction (the same effect as `lift`, with an empty lift reason). Overturning `delete_statuses` does not bring back the deleted posts. An action already lifted before the review stays as it is.
 - Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_cancelled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
@@ -220,6 +220,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
+A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
 In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
 
 | CSV row | Action on this server |
@@ -248,20 +249,20 @@ A domain `suspend` and a remote account `suspend` cut follows between local user
 ### Publishing the domains you act on
 
 You can publish the `limit` and `suspend` actions in effect through `GET /api/v1/instance/domain_actions`.
-The instance setting `domain_actions_visibility` (`none` / `users` / `all`, default `none`) decides who sees the list, and
-`domain_actions_rationale_visibility` (the same values, default `none`) decides who sees the public comments ([instance settings](instance-settings.md)).
+The instance setting `domain_actions_visibility` (`off` / `signed_in` / `everyone`, default `off`) decides who sees the list, and
+`domain_actions_rationale_visibility` (the same values, default `off`) decides who sees the public comments ([instance settings](instance-settings.md)).
 
 ```sh
-my instance set domain_actions_visibility users
-my instance set domain_actions_rationale_visibility users
+my instance set domain_actions_visibility signed_in
+my instance set domain_actions_rationale_visibility signed_in
 ```
 
-- With `none` the API returns `404`, and with `users` it returns `401` to a request without an access token.
+- With `off` the API returns `404`, and with `signed_in` it returns `401` to a request without an access token.
 - There is one entry per action, newest first. An entry has the domain, the SHA-256 of the domain (hex) and the kind, and the public comment for people allowed to see it. Private notes are never returned.
 - For an action with `-obfuscate` (`obfuscate`), the middle half of the domain's characters (other than dots) is replaced with `*` (`bad.example` becomes `bad.*****le`).
   Anyone can compare the SHA-256 of a domain they know to check whether it is an obfuscated one.
 - `reject_media`, `reject_reports` and `force_sensitive` actions, and lifted or expired actions, are not published.
-- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `none` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
+- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
 
 ## Refetching remote posts
 
@@ -316,7 +317,7 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - A local user can report an open voice chat room that they can see (`POST /api/v1/reports` with `voice_room_id`, and `account_id` set to the room's host).
   The report targets the host at that moment and points at the room's settings (name and description) as they were then. It points at no posts and is never forwarded to another server.
 - The report details (`GET /api/v1/admin/reports/{id}`) show the room (`voice_room`): every change of its settings, who took part and when they left, who was removed from it, and how it ended.
-  The records of who took part are kept for 90 days after the room ends (`retention_voice_participants`) and as long as a report points at the room ([record retention](#record-retention-and-holds)).
+  The records of who took part are kept for 90 days after the room ends (`voice_participants_retention_days`) and as long as a report points at the room ([record retention](#record-retention-and-holds)).
   There are no recordings and no text chat, so these records are the only evidence.
 - A holder of `manage_reports` can end an open room for every participant with `POST /api/v1/admin/voice_rooms/{id}/end` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is only for the moderators; the participants see only that the room ended. It works while the voice chat is off too, and the audit log records `voice_room_ended`.
@@ -413,13 +414,13 @@ You can change the periods in the instance settings, but not below the lower lim
 
 | Record | Setting | Default | Lower limit | Starts from |
 | --- | --- | --- | --- | --- |
-| Sign-in IP address and User-Agent | `retention_session_origins` | 180 days | 90 days | The sign-in |
-| Registration IP address | `retention_registration_origins` | 180 days | 90 days | The registration |
-| Reports (comment, target posts, notes, assignments, resolutions, reopenings) | `retention_reports` | 365 days | 180 days | The last resolution |
-| Actions against accounts (reason, note, target posts, lifting) and appeals | `retention_moderation_actions` | 365 days | 180 days | The end of the action |
-| Audit log | `retention_audit_log` | 730 days | 365 days | The record |
+| Sign-in IP address and User-Agent | `session_origins_retention_days` | 180 days | 90 days | The sign-in |
+| Registration IP address | `registration_origins_retention_days` | 180 days | 90 days | The registration |
+| Reports (comment, target posts, notes, assignments, resolutions, reopenings) | `reports_retention_days` | 365 days | 180 days | The last resolution |
+| Actions against accounts (reason, note, target posts, lifting) and appeals | `moderation_actions_retention_days` | 365 days | 180 days | The end of the action |
+| Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
-| Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `retention_voice_participants` | 90 days | 30 days | The end of the room |
+| Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.

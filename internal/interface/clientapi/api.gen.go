@@ -91,18 +91,12 @@ func (e AccountSuggestionSource) Valid() bool {
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
-	AdminAccountActionIssuerRemote    AdminAccountActionIssuer = "remote"
-	AdminAccountActionIssuerSystem    AdminAccountActionIssuer = "system"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountActionIssuer enum.
 func (e AdminAccountActionIssuer) Valid() bool {
 	switch e {
 	case AdminAccountActionIssuerModerator:
-		return true
-	case AdminAccountActionIssuerRemote:
-		return true
-	case AdminAccountActionIssuerSystem:
 		return true
 	default:
 		return false
@@ -1955,6 +1949,7 @@ const (
 	DomainBlockImportStatusImportable     DomainBlockImportStatus = "importable"
 	DomainBlockImportStatusInvalid        DomainBlockImportStatus = "invalid"
 	DomainBlockImportStatusNoAction       DomainBlockImportStatus = "no_action"
+	DomainBlockImportStatusOwnDomain      DomainBlockImportStatus = "own_domain"
 )
 
 // Valid indicates whether the value is a known member of the DomainBlockImportStatus enum.
@@ -1969,6 +1964,8 @@ func (e DomainBlockImportStatus) Valid() bool {
 	case DomainBlockImportStatusInvalid:
 		return true
 	case DomainBlockImportStatusNoAction:
+		return true
+	case DomainBlockImportStatusOwnDomain:
 		return true
 	default:
 		return false
@@ -2257,6 +2254,27 @@ func (e InstanceVoiceRoomStarters) Valid() bool {
 	}
 }
 
+// Defines values for InstanceAudience.
+const (
+	InstanceAudienceEveryone InstanceAudience = "everyone"
+	InstanceAudienceOff      InstanceAudience = "off"
+	InstanceAudienceSignedIn InstanceAudience = "signed_in"
+)
+
+// Valid indicates whether the value is a known member of the InstanceAudience enum.
+func (e InstanceAudience) Valid() bool {
+	switch e {
+	case InstanceAudienceEveryone:
+		return true
+	case InstanceAudienceOff:
+		return true
+	case InstanceAudienceSignedIn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceDocumentKind.
 const (
 	InstanceDocumentKindCommerceDisclosure InstanceDocumentKind = "commerce_disclosure"
@@ -2347,7 +2365,8 @@ func (e InstanceRegistrationsMode) Valid() bool {
 // Defines values for InstanceSettingKey.
 const (
 	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindow                     InstanceSettingKey = "appeal_window"
+	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
@@ -2356,7 +2375,7 @@ const (
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
 	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
+	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
 	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
@@ -2365,32 +2384,31 @@ const (
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
+	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
+	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionAuditLog                InstanceSettingKey = "retention_audit_log"
-	InstanceSettingKeyRetentionModerationActions       InstanceSettingKey = "retention_moderation_actions"
-	InstanceSettingKeyRetentionRegistrationOrigins     InstanceSettingKey = "retention_registration_origins"
-	InstanceSettingKeyRetentionReports                 InstanceSettingKey = "retention_reports"
-	InstanceSettingKeyRetentionSessionOrigins          InstanceSettingKey = "retention_session_origins"
-	InstanceSettingKeyRetentionVoiceParticipants       InstanceSettingKey = "retention_voice_participants"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
 )
@@ -2400,7 +2418,9 @@ func (e InstanceSettingKey) Valid() bool {
 	switch e {
 	case InstanceSettingKeyAiUsage:
 		return true
-	case InstanceSettingKeyAppealWindow:
+	case InstanceSettingKeyAppealWindowDays:
+		return true
+	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
@@ -2418,7 +2438,7 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
-	case InstanceSettingKeyFederatedTimelineAccess:
+	case InstanceSettingKeyFederatedTimelineVisibility:
 		return true
 	case InstanceSettingKeyFederationMode:
 		return true
@@ -2436,11 +2456,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyInviteCreators:
 		return true
-	case InstanceSettingKeyLinkCardsEnabled:
+	case InstanceSettingKeyLinkCards:
 		return true
 	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
-	case InstanceSettingKeyLocalTimelineAccess:
+	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
 		return true
@@ -2448,9 +2468,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyMemberInviteMaxActive:
 		return true
-	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+	case InstanceSettingKeyMemberInviteMaxLifetimeSeconds:
 		return true
 	case InstanceSettingKeyMemberInviteMaxUses:
+		return true
+	case InstanceSettingKeyModerationActionsRetentionDays:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2460,33 +2482,29 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
-	case InstanceSettingKeyRemoteMediaCacheTtl:
+	case InstanceSettingKeyRegistrationOriginsRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteMediaCacheTtlSeconds:
 		return true
 	case InstanceSettingKeyRemoteMediaPolicy:
 		return true
+	case InstanceSettingKeyReportsRetentionDays:
+		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionAuditLog:
-		return true
-	case InstanceSettingKeyRetentionModerationActions:
-		return true
-	case InstanceSettingKeyRetentionRegistrationOrigins:
-		return true
-	case InstanceSettingKeyRetentionReports:
-		return true
-	case InstanceSettingKeyRetentionSessionOrigins:
-		return true
-	case InstanceSettingKeyRetentionVoiceParticipants:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
 	case InstanceSettingKeySecurityContact:
+		return true
+	case InstanceSettingKeySessionOriginsRetentionDays:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
 	case InstanceSettingKeyVoicePublicSummary:
 		return true
@@ -3697,27 +3715,6 @@ func (e SupporterInterval) Valid() bool {
 	}
 }
 
-// Defines values for SupporterListVisibility.
-const (
-	SupporterListVisibilityOff      SupporterListVisibility = "off"
-	SupporterListVisibilityPublic   SupporterListVisibility = "public"
-	SupporterListVisibilitySignedIn SupporterListVisibility = "signed_in"
-)
-
-// Valid indicates whether the value is a known member of the SupporterListVisibility enum.
-func (e SupporterListVisibility) Valid() bool {
-	switch e {
-	case SupporterListVisibilityOff:
-		return true
-	case SupporterListVisibilityPublic:
-		return true
-	case SupporterListVisibilitySignedIn:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SupporterPlanProblemReason.
 const (
 	SupporterPlanProblemReasonAnnualDiscountPercent SupporterPlanProblemReason = "annual_discount_percent"
@@ -3904,27 +3901,6 @@ func (e ThemeErrorScheme) Valid() bool {
 	case ThemeErrorSchemeDark:
 		return true
 	case ThemeErrorSchemeLight:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for TimelineAccess.
-const (
-	TimelineAccessEveryone TimelineAccess = "everyone"
-	TimelineAccessLoggedIn TimelineAccess = "logged_in"
-	TimelineAccessOff      TimelineAccess = "off"
-)
-
-// Valid indicates whether the value is a known member of the TimelineAccess enum.
-func (e TimelineAccess) Valid() bool {
-	switch e {
-	case TimelineAccessEveryone:
-		return true
-	case TimelineAccessLoggedIn:
-		return true
-	case TimelineAccessOff:
 		return true
 	default:
 		return false
@@ -4655,8 +4631,7 @@ type AdminAccountAction struct {
 	// system.
 	IssuedByAccountId *Id `json:"issued_by_account_id,omitempty"`
 
-	// Issuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-	// account's own server.
+	// Issuer `moderator`: a moderator or the CLI.
 	Issuer AdminAccountActionIssuer `json:"issuer"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -4697,8 +4672,7 @@ type AdminAccountAction struct {
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
-// AdminAccountActionIssuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-// account's own server.
+// AdminAccountActionIssuer `moderator`: a moderator or the CLI.
 type AdminAccountActionIssuer string
 
 // AdminAccountActionCategory The kind of reason for an action.
@@ -5800,8 +5774,12 @@ type AdminOAuthClient struct {
 	// document declares; every other name is a claim of whoever registered the client.
 	Name string `json:"name"`
 
-	// OwnerId The ID of the user who registered the client; omitted for the other routes.
-	OwnerId *Id `json:"owner_id,omitempty"`
+	// Owner The account of the user who registered the client; omitted for the other routes and
+	// when that account is deleted (`owner_deleted`).
+	Owner *Account `json:"owner,omitempty"`
+
+	// OwnerDeleted Whether a user registered the client whose account no longer exists.
+	OwnerDeleted bool `json:"owner_deleted"`
 
 	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
@@ -5820,8 +5798,12 @@ type AdminOAuthClient struct {
 type AdminOAuthClientHostDenial struct {
 	DeniedAt time.Time `json:"denied_at"`
 
-	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
-	DeniedBy *Id `json:"denied_by,omitempty"`
+	// DeniedBy The account of the administrator; omitted for a denial from the command line and when
+	// that account is deleted (`denied_by_deleted`).
+	DeniedBy *Account `json:"denied_by,omitempty"`
+
+	// DeniedByDeleted Whether an administrator denied the host whose account no longer exists.
+	DeniedByDeleted bool `json:"denied_by_deleted"`
 
 	// Host The host name in lowercase, without a port.
 	Host string `json:"host"`
@@ -6114,7 +6096,7 @@ type AdminReportDetail struct {
 
 	// VoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 	// of its settings, and the records of its participants while the server keeps them (90 days
-	// after the room ends by default, `retention_voice_participants`, and as long as a report
+	// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 	// points at the room).
 	VoiceRoom *AdminReportVoiceRoom `json:"voice_room,omitempty"`
 
@@ -6187,7 +6169,7 @@ type AdminReportTargetHistory struct {
 
 // AdminReportVoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 // of its settings, and the records of its participants while the server keeps them (90 days
-// after the room ends by default, `retention_voice_participants`, and as long as a report
+// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 // points at the room).
 type AdminReportVoiceRoom struct {
 	// Bans The accounts removed from the room, who may not join it again.
@@ -7817,7 +7799,7 @@ type CreateOAuthAppRequest struct {
 
 // CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
 type CreateOwnInviteRequest struct {
-	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
@@ -8517,7 +8499,7 @@ type DomainBlockImportRow struct {
 	// `already_applied`: an action in effect of each of the row's kinds covers the domain
 	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
 	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 	Status DomainBlockImportStatus `json:"status"`
 
 	// WrittenDomain The domain as written in the row.
@@ -8537,7 +8519,7 @@ type DomainBlockImportSkipped struct {
 // `already_applied`: an action in effect of each of the row's kinds covers the domain
 // already, on it or on a parent domain. `no_action`: the row stands for no action (a
 // `noop` without rejections). `duplicate`: an earlier row has the same domain once
-// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 type DomainBlockImportStatus string
 
 // DomainBlockSeverity The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
@@ -9214,9 +9196,9 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
-	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// LinkCards Whether the server fetches the pages that posts link to, for their link cards. While it is
 	// false, the server fetches nothing for link cards.
-	LinkCardsEnabled bool `json:"link_cards_enabled"`
+	LinkCards bool `json:"link_cards"`
 
 	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
 	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
@@ -9284,10 +9266,12 @@ type Instance struct {
 	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
-	// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-	// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-	// `signed_in`, the users signed in to this server.
-	SupporterListVisibility SupporterListVisibility `json:"supporter_list_visibility"`
+	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	SupporterListVisibility InstanceAudience `json:"supporter_list_visibility"`
 
 	// SupportersEnabled Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
 	// and the subscriptions show only then.
@@ -9308,9 +9292,9 @@ type Instance struct {
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
 	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-	// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-	// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Version The server version.
@@ -9330,6 +9314,13 @@ type Instance struct {
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceAudience Who may read something public about the instance, the value of the instance settings
+// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+// a 401; `everyone`, everyone, anonymous visitors included.
+type InstanceAudience string
 
 // InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 // under `/brand/` on the server that name the revision, so their content never changes and
@@ -9587,21 +9578,23 @@ type InstanceThumbnail struct {
 }
 
 // InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
-	// Federated Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Federated TimelineAccess `json:"federated"`
+	// Federated Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Federated InstanceAudience `json:"federated"`
 
-	// Local Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Local TimelineAccess `json:"local"`
+	// Local Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Local InstanceAudience `json:"local"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -9625,7 +9618,7 @@ type LiftAccountActionRequest struct {
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
 // where a rule of the crawler stops fetching, and when the instance setting
-// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+// `link_cards` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
@@ -10090,7 +10083,7 @@ type MediaVariants struct {
 }
 
 // MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
-// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 type MemberInviteLimits struct {
 	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
 	DefaultExpiresIn int `json:"default_expires_in"`
@@ -10837,7 +10830,7 @@ type OwnInvitePage struct {
 	Items     []OwnInvite `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
-	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 	Limits MemberInviteLimits `json:"limits"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -12020,7 +12013,7 @@ type Status struct {
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
 	// where a rule of the crawler stops fetching, and when the instance setting
-	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+	// `link_cards` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
@@ -12386,11 +12379,6 @@ type SupporterListPlan struct {
 	Name string `json:"name"`
 }
 
-// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-// `signed_in`, the users signed in to this server.
-type SupporterListVisibility string
-
 // SupporterListing Whether the user is on the supporter list.
 type SupporterListing struct {
 	Listed bool `json:"listed"`
@@ -12637,12 +12625,6 @@ type ThemeTokenValue struct {
 	Token string  `json:"token"`
 	Value *string `json:"value,omitempty"`
 }
-
-// TimelineAccess Who may read a public timeline (the instance settings `local_timeline_access` and
-// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-// `everyone`, everyone, anonymous visitors included.
-type TimelineAccess string
 
 // TotpSetup A new TOTP secret to add to an authenticator app.
 type TotpSetup struct {
@@ -15248,7 +15230,7 @@ type ServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)
@@ -26313,7 +26295,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules", wrapper.ListInstanceRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules", wrapper.CreateInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules/{id}", wrapper.GetInstanceRule)
-	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/move", wrapper.MoveInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/retire", wrapper.RetireInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/announcements", wrapper.ListAdminAnnouncements)
@@ -28943,9 +28925,9 @@ type CreateAccountActionResponseObject interface {
 	VisitCreateAccountActionResponse(w http.ResponseWriter) error
 }
 
-type CreateAccountAction200JSONResponse struct{ AdminAccountActionJSONResponse }
+type CreateAccountAction201JSONResponse struct{ AdminAccountActionJSONResponse }
 
-func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
+func (response CreateAccountAction201JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -28955,7 +28937,7 @@ func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -29106,11 +29088,11 @@ type RefetchAccountStatusesResponseObject interface {
 	VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchAccountStatuses204Response struct {
+type RefetchAccountStatuses202Response struct {
 }
 
-func (response RefetchAccountStatuses204Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchAccountStatuses202Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -29488,9 +29470,9 @@ type CreateAdminAnnouncementResponseObject interface {
 	VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error
 }
 
-type CreateAdminAnnouncement200JSONResponse struct{ AdminAnnouncementJSONResponse }
+type CreateAdminAnnouncement201JSONResponse struct{ AdminAnnouncementJSONResponse }
 
-func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
+func (response CreateAdminAnnouncement201JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -29500,7 +29482,7 @@ func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncem
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -30116,11 +30098,11 @@ type RunBillingImportResponseObject interface {
 	VisitRunBillingImportResponse(w http.ResponseWriter) error
 }
 
-type RunBillingImport204Response struct {
+type RunBillingImport202Response struct {
 }
 
-func (response RunBillingImport204Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunBillingImport202Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -30506,9 +30488,9 @@ type CreateCostItemResponseObject interface {
 	VisitCreateCostItemResponse(w http.ResponseWriter) error
 }
 
-type CreateCostItem200JSONResponse struct{ CostItemJSONResponse }
+type CreateCostItem201JSONResponse struct{ CostItemJSONResponse }
 
-func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
+func (response CreateCostItem201JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -30518,7 +30500,7 @@ func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31280,9 +31262,9 @@ type CreateCustomEmojiResponseObject interface {
 	VisitCreateCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CreateCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmoji201JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31292,7 +31274,7 @@ func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31559,9 +31541,9 @@ type CopyCustomEmojiResponseObject interface {
 	VisitCopyCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CopyCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CopyCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CopyCustomEmoji201JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31571,7 +31553,7 @@ func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31776,9 +31758,9 @@ type CreateDomainActionResponseObject interface {
 	VisitCreateDomainActionResponse(w http.ResponseWriter) error
 }
 
-type CreateDomainAction200JSONResponse struct{ AdminDomainActionJSONResponse }
+type CreateDomainAction201JSONResponse struct{ AdminDomainActionJSONResponse }
 
-func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
+func (response CreateDomainAction201JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31788,7 +31770,7 @@ func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -33186,11 +33168,11 @@ type RefetchInstanceStatusesResponseObject interface {
 	VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchInstanceStatuses204Response struct {
+type RefetchInstanceStatuses202Response struct {
 }
 
-func (response RefetchInstanceStatuses204Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchInstanceStatuses202Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -33294,9 +33276,9 @@ type CreateInviteResponseObject interface {
 	VisitCreateInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateInvite200JSONResponse struct{ AdminInviteJSONResponse }
+type CreateInvite201JSONResponse struct{ AdminInviteJSONResponse }
 
-func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
+func (response CreateInvite201JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33306,7 +33288,7 @@ func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -33529,11 +33511,11 @@ type RetryAdminJobResponseObject interface {
 	VisitRetryAdminJobResponse(w http.ResponseWriter) error
 }
 
-type RetryAdminJob204Response struct {
+type RetryAdminJob202Response struct {
 }
 
-func (response RetryAdminJob204Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RetryAdminJob202Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -33805,9 +33787,9 @@ type CreateLoginProviderResponseObject interface {
 	VisitCreateLoginProviderResponse(w http.ResponseWriter) error
 }
 
-type CreateLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+type CreateLoginProvider201JSONResponse struct{ AdminLoginProviderJSONResponse }
 
-func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+func (response CreateLoginProvider201JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33817,7 +33799,7 @@ func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -34574,11 +34556,11 @@ type RunPaymentReconcileResponseObject interface {
 	VisitRunPaymentReconcileResponse(w http.ResponseWriter) error
 }
 
-type RunPaymentReconcile204Response struct {
+type RunPaymentReconcile202Response struct {
 }
 
-func (response RunPaymentReconcile204Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunPaymentReconcile202Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -34977,9 +34959,9 @@ type CreateRelayResponseObject interface {
 	VisitCreateRelayResponse(w http.ResponseWriter) error
 }
 
-type CreateRelay200JSONResponse struct{ AdminRelayJSONResponse }
+type CreateRelay201JSONResponse struct{ AdminRelayJSONResponse }
 
-func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
+func (response CreateRelay201JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34989,7 +34971,7 @@ func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.Respo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -35724,9 +35706,9 @@ type CreateRoleResponseObject interface {
 	VisitCreateRoleResponse(w http.ResponseWriter) error
 }
 
-type CreateRole200JSONResponse struct{ AdminRoleJSONResponse }
+type CreateRole201JSONResponse struct{ AdminRoleJSONResponse }
 
-func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
+func (response CreateRole201JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35736,7 +35718,7 @@ func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36009,9 +35991,9 @@ type CreateInstanceRuleResponseObject interface {
 	VisitCreateInstanceRuleResponse(w http.ResponseWriter) error
 }
 
-type CreateInstanceRule200JSONResponse struct{ AdminRuleJSONResponse }
+type CreateInstanceRule201JSONResponse struct{ AdminRuleJSONResponse }
 
-func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
+func (response CreateInstanceRule201JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36021,7 +36003,7 @@ func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36519,9 +36501,9 @@ type CreateSignupBlockResponseObject interface {
 	VisitCreateSignupBlockResponse(w http.ResponseWriter) error
 }
 
-type CreateSignupBlock200JSONResponse struct{ AdminSignupBlockJSONResponse }
+type CreateSignupBlock201JSONResponse struct{ AdminSignupBlockJSONResponse }
 
-func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
+func (response CreateSignupBlock201JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36531,7 +36513,7 @@ func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36746,11 +36728,11 @@ type RefetchStatusResponseObject interface {
 	VisitRefetchStatusResponse(w http.ResponseWriter) error
 }
 
-type RefetchStatus204Response struct {
+type RefetchStatus202Response struct {
 }
 
-func (response RefetchStatus204Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchStatus202Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -36853,9 +36835,9 @@ type CreateSupporterPlanResponseObject interface {
 	VisitCreateSupporterPlanResponse(w http.ResponseWriter) error
 }
 
-type CreateSupporterPlan200JSONResponse struct{ AdminSupporterPlanJSONResponse }
+type CreateSupporterPlan201JSONResponse struct{ AdminSupporterPlanJSONResponse }
 
-func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
+func (response CreateSupporterPlan201JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36865,7 +36847,7 @@ func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -37520,16 +37502,16 @@ type CreateWebhookResponseObject interface {
 	VisitCreateWebhookResponse(w http.ResponseWriter) error
 }
 
-type CreateWebhook200ResponseHeaders struct {
+type CreateWebhook201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateWebhook200JSONResponse struct {
+type CreateWebhook201JSONResponse struct {
 	Body    AdminWebhookCreated
-	Headers CreateWebhook200ResponseHeaders
+	Headers CreateWebhook201ResponseHeaders
 }
 
-func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
+func (response CreateWebhook201JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -37539,7 +37521,7 @@ func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.R
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -38736,9 +38718,9 @@ type CreateCustomEmojiRequestResponseObject interface {
 	VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmojiRequest200JSONResponse struct{ CustomEmojiRequestJSONResponse }
+type CreateCustomEmojiRequest201JSONResponse struct{ CustomEmojiRequestJSONResponse }
 
-func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmojiRequest201JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38748,7 +38730,7 @@ func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRe
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -40621,9 +40603,9 @@ type CreateOwnInviteResponseObject interface {
 	VisitCreateOwnInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateOwnInvite200JSONResponse struct{ OwnInviteJSONResponse }
+type CreateOwnInvite201JSONResponse struct{ OwnInviteJSONResponse }
 
-func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+func (response CreateOwnInvite201JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40633,7 +40615,7 @@ func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -41016,9 +40998,9 @@ type CreateListResponseObject interface {
 	VisitCreateListResponse(w http.ResponseWriter) error
 }
 
-type CreateList200JSONResponse struct{ ListJSONResponse }
+type CreateList201JSONResponse struct{ ListJSONResponse }
 
-func (response CreateList200JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
+func (response CreateList201JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -41028,7 +41010,7 @@ func (response CreateList200JSONResponse) VisitCreateListResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -42326,16 +42308,16 @@ type IssueOAuthAppTokenResponseObject interface {
 	VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error
 }
 
-type IssueOAuthAppToken200ResponseHeaders struct {
+type IssueOAuthAppToken201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type IssueOAuthAppToken200JSONResponse struct {
+type IssueOAuthAppToken201JSONResponse struct {
 	Body    OAuthAppToken
-	Headers IssueOAuthAppToken200ResponseHeaders
+	Headers IssueOAuthAppToken201ResponseHeaders
 }
 
-func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
+func (response IssueOAuthAppToken201JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -42345,7 +42327,7 @@ func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -43578,16 +43560,16 @@ type CreateReportResponseObject interface {
 	VisitCreateReportResponse(w http.ResponseWriter) error
 }
 
-type CreateReport200ResponseHeaders struct {
+type CreateReport201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateReport200JSONResponse struct {
+type CreateReport201JSONResponse struct {
 	Body    Report
-	Headers CreateReport200ResponseHeaders
+	Headers CreateReport201ResponseHeaders
 }
 
-func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
+func (response CreateReport201JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43597,7 +43579,7 @@ func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -43793,16 +43775,16 @@ type CreateStatusResponseObject interface {
 	VisitCreateStatusResponse(w http.ResponseWriter) error
 }
 
-type CreateStatus200ResponseHeaders struct {
+type CreateStatus201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateStatus200JSONResponse struct {
+type CreateStatus201JSONResponse struct {
 	Body    Status
-	Headers CreateStatus200ResponseHeaders
+	Headers CreateStatus201ResponseHeaders
 }
 
-func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
+func (response CreateStatus201JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43812,7 +43794,7 @@ func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -48384,7 +48366,7 @@ type StrictServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(ctx context.Context, request GetInstanceRuleRequestObject) (GetInstanceRuleResponseObject, error)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(ctx context.Context, request UpdateInstanceRuleRequestObject) (UpdateInstanceRuleResponseObject, error)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)

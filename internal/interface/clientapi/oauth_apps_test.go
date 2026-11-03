@@ -237,12 +237,12 @@ func TestOAuthAppChanges(t *testing.T) {
 
 	res = e.sendJSON(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", `{"scope":"read"}`)
 	tok := decodeJSON[clientapi.OAuthAppToken](t, res)
-	if res.StatusCode != http.StatusOK || tok.AccessToken == "" || tok.RefreshToken == "" || tok.TokenType != clientapi.OAuthAppTokenTokenTypeBearer ||
+	if res.StatusCode != http.StatusCreated || tok.AccessToken == "" || tok.RefreshToken == "" || tok.TokenType != clientapi.OAuthAppTokenTokenTypeBearer ||
 		tok.ExpiresIn != 3600 || tok.Scope != "read" || res.Header.Get("Cache-Control") != "no-store" {
 		t.Errorf("issue tokens = %d %+v, want a pair for an hour", res.StatusCode, tok)
 	}
 	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", "")
-	if tok := decodeJSON[clientapi.OAuthAppToken](t, res); res.StatusCode != http.StatusOK || tok.Scope != "read write:statuses" {
+	if tok := decodeJSON[clientapi.OAuthAppToken](t, res); res.StatusCode != http.StatusCreated || tok.Scope != "read write:statuses" {
 		t.Errorf("issue tokens without a body = %d %+v, want the app's scope", res.StatusCode, tok)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", `{"scope":"follow"}`)

@@ -2,7 +2,9 @@
 name: domain
 in: path
 required: true
-description: The domain of the remote server, such as `mastodon.example`.
+description: |
+  The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+  lower case without a trailing dot. A value that is not a host name is a 400.
 schema:
   type: string
   minLength: 1

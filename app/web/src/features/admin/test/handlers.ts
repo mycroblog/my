@@ -216,6 +216,7 @@ export function oauthClientFixture(
     registration: "user",
     confidential: false,
     scope: "read write",
+    owner_deleted: false,
     disabled: false,
     created_at: "2026-10-22T00:00:00Z",
     ...overrides,
@@ -228,7 +229,7 @@ export function hostDenialFixture(
   host: string,
   overrides: Partial<Schemas["AdminOAuthClientHostDenial"]> = {},
 ): Schemas["AdminOAuthClientHostDenial"] {
-  return { id, host, denied_at: "2026-10-23T00:00:00Z", ...overrides };
+  return { id, host, denied_by_deleted: false, denied_at: "2026-10-23T00:00:00Z", ...overrides };
 }
 
 /** An announcement as the admin API answers it, written at 2026-10-21T00:00:00Z as a draft, with `overrides`. */
@@ -259,22 +260,32 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "registration_mode", kind: "enum", default: "approval", choices: ["open", "approval", "invite", "closed"] },
   { key: "max_status_length", kind: "int", default: "500", minimum: 1, maximum: 100000 },
   { key: "default_locale", kind: "locale", default: "en" },
-  { key: "local_timeline_access", kind: "enum", default: "everyone", choices: ["off", "logged_in", "everyone"] },
-  { key: "federated_timeline_access", kind: "enum", default: "everyone", choices: ["off", "logged_in", "everyone"] },
+  { key: "local_timeline_visibility", kind: "enum", default: "everyone", choices: ["off", "signed_in", "everyone"] },
+  {
+    key: "federated_timeline_visibility",
+    kind: "enum",
+    default: "everyone",
+    choices: ["off", "signed_in", "everyone"],
+  },
   { key: "contact_account", kind: "account", default: "" },
   { key: "contact_email", kind: "email", default: "" },
   { key: "thumbnail", kind: "media", default: "" },
   { key: "remote_media_policy", kind: "enum", default: "none", choices: ["none", "avatars", "all"] },
-  { key: "remote_media_cache_ttl", kind: "int", default: "86400", minimum: 60, maximum: 31536000 },
+  { key: "remote_media_cache_ttl_seconds", kind: "int", default: "86400", minimum: 60, maximum: 31536000 },
   { key: "authorized_fetch", kind: "bool", default: "false" },
-  { key: "domain_actions_visibility", kind: "enum", default: "none", choices: ["none", "users", "all"] },
-  { key: "domain_actions_rationale_visibility", kind: "enum", default: "none", choices: ["none", "users", "all"] },
+  { key: "domain_actions_visibility", kind: "enum", default: "off", choices: ["off", "signed_in", "everyone"] },
+  {
+    key: "domain_actions_rationale_visibility",
+    kind: "enum",
+    default: "off",
+    choices: ["off", "signed_in", "everyone"],
+  },
   { key: "search_indexing", kind: "enum", default: "deny", choices: ["allow", "deny"] },
   { key: "ai_usage", kind: "enum", default: "deny", choices: ["allow", "deny_training", "deny"] },
   { key: "indexable_default", kind: "bool", default: "false" },
   { key: "security_contact", kind: "uri", default: "" },
   { key: "require_media_description", kind: "bool", default: "false" },
-  { key: "link_cards_enabled", kind: "bool", default: "true" },
+  { key: "link_cards", kind: "bool", default: "true" },
   { key: "link_cards_ignore_robots_txt", kind: "bool", default: "false" },
   { key: "finance_visibility", kind: "enum", default: "private", choices: ["private", "totals", "breakdown"] },
   { key: "finance_viewer_item_names", kind: "bool", default: "false" },
@@ -291,11 +302,11 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "dynamic_client_registration", kind: "bool", default: "true" },
   { key: "voice_room_starters", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
   { key: "voice_public_summary", kind: "bool", default: "false" },
-  { key: "retention_voice_participants", kind: "int", default: "90", minimum: 30, maximum: 3650 },
+  { key: "voice_participants_retention_days", kind: "int", default: "90", minimum: 30, maximum: 3650 },
   { key: "invite_creators", kind: "enum", default: "permitted", choices: ["everyone", "permitted"] },
   { key: "member_invite_max_active", kind: "int", default: "5", minimum: 0, maximum: 100 },
   { key: "member_invite_max_uses", kind: "int", default: "10", minimum: 1, maximum: 1000 },
-  { key: "member_invite_max_expires_in", kind: "int", default: "2592000", minimum: 3600, maximum: 31536000 },
+  { key: "member_invite_max_lifetime_seconds", kind: "int", default: "2592000", minimum: 3600, maximum: 31536000 },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */
@@ -627,7 +638,7 @@ export const handlers = [
   http.get(`${apiBase}/admin/rules/:id`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1))),
   ),
-  http.patch(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
+  http.put(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["InstanceRuleInput"];
     return withViewer(request, () =>
       HttpResponse.json(ruleFixture(String(params["id"]), 1, { ...body, revised_at: "2026-10-17T00:00:00Z" })),

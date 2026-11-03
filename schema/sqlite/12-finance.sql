@@ -185,4 +185,3 @@ CREATE TABLE income_movements (
 ) STRICT;
 CREATE UNIQUE INDEX income_movements_provider_id ON income_movements (provider, provider_id);
 CREATE INDEX income_movements_occurred_on ON income_movements (occurred_on);
-CREATE INDEX income_movements_subscription_occurred_at ON income_movements (subscription_id, occurred_at);

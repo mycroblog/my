@@ -141,7 +141,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `boosts` | リソース | `id`, `uri`（`Announce` の IRI）, `booster_account_id`, `status_id`, `visibility`（ローカルのブーストは元投稿の値を写す。リモートのブーストは `Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう。不変）, `is_local`（ブーストした人がローカルか）, `boosted_at` | 一意 `(uri)`。インデックス `(status_id)`（件数の再集計）。CHECK `visibility <> 'local' OR is_local` |
-| `boost_retractions` | イベント | `boost_id`（PK）, `origin`（`enum(booster, status_deleted, moderation, remote)`）, `retracted_at` | |
+| `boost_retractions` | イベント | `boost_id`（PK）, `origin`（`enum(booster, remote)`）, `retracted_at` | |
 | `boost_edges` | 投影 | `booster_account_id`, `status_id`, `boost_id` | PK `(booster_account_id, status_id)`、インデックス `(status_id)`（投稿の削除での除去）。有効なブーストは 1 人 1 投稿につき 1 つ。取り消し後の再ブーストは新しい `boosts` 行 |
 
 - `local` 投稿のブーストは連合しません（ADR-0017）。写した `visibility = 'local'` がその印です。`local` 投稿のブーストはこのサーバーのアカウントだけが作るので、`boosts.is_local` は常に真です（CHECK）。配送ジョブは作りません（`content.Boost.Federates`）。
@@ -258,7 +258,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `tags` | リソース | `id`, `name`（最初に使われた表記）, `name_normalized`（NFKC + 小文字化）, `created_at` | 一意 `(name_normalized)`（PostgreSQL は `COLLATE "C"`、SQLite は既定の `BINARY` でバイト順。ハッシュタグの前方一致の検索が範囲で引く、ADR-0092 §1） |
-| `custom_emojis` | リソース | `id`, `shortcode`, `domain`（ローカルは `''`）, `uri`（NULL 可。ローカルは常に NULL で、`id` から `https://{host}/ap/emojis/{id}` を導く）, `created_by_user_id`（NULL 可。作った利用者。承認で作った絵文字は申請者、管理画面で作った絵文字と複製はその管理者、CLI とリモートの絵文字は NULL。変えない）, `created_at` | 一意 `(shortcode, domain)`, `(uri)`。インデックス `(created_by_user_id, id)`（作成者の絵文字と上限の数え上げ） |
+| `custom_emojis` | リソース | `id`, `shortcode`, `domain`（ローカルは `''`）, `uri`（NULL 可。ローカルは常に NULL で、`id` から `https://{host}/ap/emojis/{id}` を導く）, `created_by_user_id`（NULL 可。作った利用者。承認で作った絵文字は申請者、管理画面で作った絵文字と複製はその管理者、CLI とリモートの絵文字は NULL。変えない）, `created_at` | 一意 `(shortcode, domain)`, `(uri)`。インデックス `(domain, shortcode)`（ローカルのカスタム絵文字の一覧）, `(created_by_user_id, id)`（作成者の絵文字と上限の数え上げ） |
 | `custom_emoji_images` | イベント（版） | `id`, `emoji_id`, `media_id`, `revised_at` | インデックス `(emoji_id, id DESC)`, `(media_id)`。最新の行が現在の画像。ローカルは管理者がアップロードした `media_files`（CLI と承認した申請はインスタンスの Actor の `media_files`。申請は申請者のアップロードの処理結果を複製する）、リモートは `remote_media` |
 | `custom_emoji_requests` | リソース | `id`, `kind`（`enum(create, image)`）, `requester_user_id`（NULL 可 = 申請者のアカウントを消去した）, `emoji_id`（NULL 可。`image` の対象）, `shortcode`（`image` は対象の写し）, `media_id`（申請者のローカルのアカウントのアップロード）, `created_at` | CHECK `(kind = 'create') = (emoji_id IS NULL)`。インデックス `(requester_user_id, id)`, `(media_id)`。終わった申請も消さない（ADR-0070 §7） |
 | `custom_emoji_request_outcomes` | イベント | `id`, `request_id`, `outcome`（`enum(approved, rejected, withdrawn, lapsed)`）, `decided_by_user_id`（NULL 可。CLI と `lapsed`。取り下げは申請者）, `reason`（NULL 可、500 文字まで。`rejected` だけ）, `emoji_id`（`approved` だけ。作った・変えた絵文字）, `decided_at` | 一意 `(request_id)`。行のない申請が審査中 |

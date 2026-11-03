@@ -168,10 +168,10 @@ func TestCreateStatusIdempotencyKey(t *testing.T) {
 	for range 2 {
 		r, err := api.CreateStatusWithResponse(t.Context(), &mykit.CreateStatusParams{IdempotencyKey: &key},
 			mykit.CreateStatusRequest{Text: "hi", Visibility: mykit.VisibilityUnlisted})
-		if err != nil || r.JSON200 == nil {
+		if err != nil || r.JSON201 == nil {
 			t.Fatalf("createStatus = %v %v", r, err)
 		}
-		ids = append(ids, r.JSON200.Id)
+		ids = append(ids, r.JSON201.Id)
 	}
 	if ids[0] != ids[1] {
 		t.Errorf("the second request with the key posted %s, want the first post %s", ids[1], ids[0])

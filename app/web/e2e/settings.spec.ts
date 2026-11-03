@@ -250,7 +250,7 @@ async function signedInServer(
           rules: [],
           search_indexing: "deny",
           ai_usage: "deny",
-          link_cards_enabled: true,
+          link_cards: true,
           link_cards_ignore_robots_txt: false,
         });
       case "GET /accounts/verify_credentials":

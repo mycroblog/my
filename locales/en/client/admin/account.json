@@ -51,14 +51,6 @@
     "defaultMessage": "Command line",
     "description": "Who took an account action: a moderator on the command line."
   },
-  "admin.account.actions.issuer.remote": {
-    "defaultMessage": "The account's server",
-    "description": "Who took an account action: the account's own server."
-  },
-  "admin.account.actions.issuer.system": {
-    "defaultMessage": "This server",
-    "description": "Who took an account action: this server by itself."
-  },
   "admin.account.actions.lift": {
     "defaultMessage": "Lift",
     "description": "Button that lifts a moderation action on an account, and the confirmation's button."

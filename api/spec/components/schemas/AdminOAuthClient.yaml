@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: An OAuth client, as the administrators see it.
 type: object
-required: [id, client_id, name, registration, confidential, scope, disabled, created_at]
+required: [id, client_id, name, registration, confidential, scope, owner_deleted, disabled, created_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -24,10 +24,15 @@ properties:
   scope:
     description: The most that the client may be granted, as space-separated scopes.
     type: string
-  owner_id:
-    description: The ID of the user who registered the client; omitted for the other routes.
+  owner:
+    description: |
+      The account of the user who registered the client; omitted for the other routes and
+      when that account is deleted (`owner_deleted`).
     allOf:
-      - $ref: ./Id.yaml
+      - $ref: ./Account.yaml
+  owner_deleted:
+    description: Whether a user registered the client whose account no longer exists.
+    type: boolean
   disabled:
     description: Whether an administrator has disabled the client and not lifted it.
     type: boolean

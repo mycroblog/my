@@ -375,7 +375,7 @@ func TestCreateStatus(t *testing.T) {
 	e := newStatusEnv(t, f)
 	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"local","spoiler_text":"cw","sensitive":true,
 		"language":"en","in_reply_to_id":"`+sampleStatusID+`","media":[{"id":"`+sampleMediaID+`","description":"a cat"},{"id":"`+otherMediaID+`"}]}`)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("POST = %d", res.StatusCode)
 	}
 	want := appcontent.CreateInput{
@@ -392,7 +392,7 @@ func TestCreateStatus(t *testing.T) {
 	// A poll ends expires_in seconds after the post (FR-112).
 	res = e.send(t, http.MethodPost, "/statuses", "write", `{"text":"which?","visibility":"public",
 		"poll":{"options":["a","b"],"expires_in":3600,"multiple":true,"hide_totals":true}}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST with a poll = %d", res.StatusCode)
 	}
 	wantPoll := content.PollInput{Options: []string{"a", "b"}, Duration: time.Hour, Multiple: true, HideTotals: true}
@@ -404,7 +404,7 @@ func TestCreateStatus(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer write")
 	req.Header.Set("Idempotency-Key", "key-1")
-	if res := e.spec.Serve(t, e.h, req); res.StatusCode != http.StatusOK || got.IdempotencyKey != "key-1" {
+	if res := e.spec.Serve(t, e.h, req); res.StatusCode != http.StatusCreated || got.IdempotencyKey != "key-1" {
 		t.Errorf("POST with Idempotency-Key = %d, key %q", res.StatusCode, got.IdempotencyKey)
 	}
 }
@@ -564,7 +564,7 @@ func TestQuoteOperations(t *testing.T) {
 	e := newStatusEnv(t, f)
 
 	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","quote_policy":"nobody"}`)
-	if res.StatusCode != http.StatusOK || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
+	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
 		t.Errorf("create = %d with %+v, want the quote and its policy", res.StatusCode, created)
 	}
 	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.QuotePolicy == nil || *s.QuotePolicy != clientapi.QuotePolicyFollowers {
@@ -603,7 +603,7 @@ func TestPostLimit(t *testing.T) {
 		o.AccountLimit = kernel.Limit{Name: "api.account", Max: 1000, Window: time.Minute}
 	})
 	for i := range clientapi.PostLimit.Max {
-		if res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`); res.StatusCode != http.StatusOK {
+		if res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`); res.StatusCode != http.StatusCreated {
 			t.Fatalf("post %d = %d", i, res.StatusCode)
 		}
 	}
@@ -644,12 +644,12 @@ func TestCreateStatusReplaysBeforeTheLimit(t *testing.T) {
 		return e.spec.Serve(t, e.h, req)
 	}
 	for i := range clientapi.PostLimit.Max {
-		if res := post(fmt.Sprintf("key-%d", i)); res.StatusCode != http.StatusOK {
+		if res := post(fmt.Sprintf("key-%d", i)); res.StatusCode != http.StatusCreated {
 			t.Fatalf("post %d = %d", i, res.StatusCode)
 		}
 	}
-	if res := post("key-0"); res.StatusCode != http.StatusOK || decodeStatus(t, res).Id != sampleStatusID {
-		t.Errorf("retry over the limit = %d, want 200 with the status", res.StatusCode)
+	if res := post("key-0"); res.StatusCode != http.StatusCreated || decodeStatus(t, res).Id != sampleStatusID {
+		t.Errorf("retry over the limit = %d, want 201 with the status", res.StatusCode)
 	}
 	if created != clientapi.PostLimit.Max {
 		t.Errorf("created %d statuses, want %d", created, clientapi.PostLimit.Max)

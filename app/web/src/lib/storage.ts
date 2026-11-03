@@ -278,8 +278,8 @@ export const notificationSoundKey = declareKey<NotificationSoundSettings>("my:no
 });
 
 /** Which public timelines the instance served when GET /instance last answered (features/timeline). */
-/** Who may read a public timeline (the instance settings `local_timeline_access` and `federated_timeline_access`). */
-const timelineAccess = z.enum(["off", "logged_in", "everyone"]);
+/** Who may read a public timeline (the instance settings `local_timeline_visibility` and `federated_timeline_visibility`). */
+const timelineAccess = z.enum(["off", "signed_in", "everyone"]);
 
 export type StoredTimelines = { local: z.infer<typeof timelineAccess>; federated: z.infer<typeof timelineAccess> };
 
