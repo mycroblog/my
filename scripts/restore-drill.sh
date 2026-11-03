@@ -249,8 +249,8 @@ run() {
 	expect "alice's public post" "$(api GET "/statuses/$public_id" "$bob_token")" \
 		'(.content | contains("restore-drill public post")) and .media_attachments[0].url == $url' --arg url "$media_url"
 	expect "alice's followers-only post as bob" "$(api GET "/statuses/$private_id" "$bob_token")" '.visibility == "private"'
-	expect "alice's followers" "$(api GET "/accounts/$alice_id/followers" "$alice_token")" '[.accounts[].id] | index($id) != null' --arg id "$bob_id"
-	expect "alice's follow of carol" "$(api GET "/accounts/relationships?id=$carol" "$alice_token")" '.[0].following == true or .[0].requested == true'
+	expect "alice's followers" "$(api GET "/accounts/$alice_id/followers" "$alice_token")" '[.items[].id] | index($id) != null' --arg id "$bob_id"
+	expect "alice's follow of carol" "$(api GET "/accounts/relationships?id=$carol" "$alice_token")" '.items[0].following == true or .items[0].requested == true'
 	curl -fsS "$media_url" -o "$work/media.after" || fail "GET $media_url after the restore"
 	cmp -s "$work/media.before" "$work/media.after" || fail "the image differs after the restore"
 	[[ "$(actor_key alice)" == "$alice_key" ]] || fail "alice's public key changed"
@@ -258,7 +258,7 @@ run() {
 
 	# A signed delivery: alice unfollows carol, and remote.test receives an Undo signed with alice's unchanged key.
 	local post
-	api POST "/accounts/$carol/unfollow" "$alice_token" >/dev/null
+	api DELETE "/accounts/$carol/follow" "$alice_token" >/dev/null
 	post="$(wait_for_inbox_post "$(echo "$alice_key" | jq -r .id)")"
 	verify_signature "$post" "$(echo "$alice_key" | jq -r .publicKeyPem)"
 	echo "restore-drill: $dialect: remote.test verified a POST signed with $(echo "$alice_key" | jq -r .id) after the restore" >&2
