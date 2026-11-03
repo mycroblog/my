@@ -21,7 +21,7 @@ CREATE TABLE moderation_actions (
   public_reason TEXT,
   private_note TEXT,
   report_id TEXT,
-  issuer TEXT NOT NULL CHECK (issuer IN ('moderator', 'system', 'remote')),
+  issuer TEXT NOT NULL CHECK (issuer IN ('moderator')),
   issued_by_user_id TEXT,
   notify_target INTEGER NOT NULL CHECK (notify_target IN (0, 1)),
   expires_at INTEGER,

@@ -89,18 +89,12 @@ func (e AccountSuggestionSource) Valid() bool {
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
-	AdminAccountActionIssuerRemote    AdminAccountActionIssuer = "remote"
-	AdminAccountActionIssuerSystem    AdminAccountActionIssuer = "system"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountActionIssuer enum.
 func (e AdminAccountActionIssuer) Valid() bool {
 	switch e {
 	case AdminAccountActionIssuerModerator:
-		return true
-	case AdminAccountActionIssuerRemote:
-		return true
-	case AdminAccountActionIssuerSystem:
 		return true
 	default:
 		return false
@@ -4593,8 +4587,7 @@ type AdminAccountAction struct {
 	// system.
 	IssuedByAccountId *Id `json:"issued_by_account_id,omitempty"`
 
-	// Issuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-	// account's own server.
+	// Issuer `moderator`: a moderator or the CLI.
 	Issuer AdminAccountActionIssuer `json:"issuer"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -4635,8 +4628,7 @@ type AdminAccountAction struct {
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
-// AdminAccountActionIssuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-// account's own server.
+// AdminAccountActionIssuer `moderator`: a moderator or the CLI.
 type AdminAccountActionIssuer string
 
 // AdminAccountActionCategory The kind of reason for an action.
