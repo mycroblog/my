@@ -40,6 +40,15 @@ func (q *Queries) InsertStatusSensitivityOverride(ctx context.Context, arg Inser
 	return err
 }
 
+const purgeStatusSensitivityOverrides = `-- name: PurgeStatusSensitivityOverrides :exec
+DELETE FROM status_sensitivity_overrides WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeStatusSensitivityOverrides(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeStatusSensitivityOverrides, ids)
+	return err
+}
+
 const statusSensitivityOverridden = `-- name: StatusSensitivityOverridden :one
 SELECT EXISTS (SELECT 1 FROM status_sensitivity_overrides WHERE status_id = ?)
 `

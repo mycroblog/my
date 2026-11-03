@@ -45,6 +45,7 @@ type objWorld struct {
 	followers []string
 	blocks    map[[2]string]bool
 	suspended map[string]bool
+	boosts    map[string]appcontent.Boost
 }
 
 func actorOn(id, uri, domain string) appaccount.Actor {
@@ -57,6 +58,7 @@ func newObjWorld() *objWorld {
 	w := &objWorld{
 		statuses: map[string]appcontent.Status{}, revs: map[string]appcontent.Revision{}, deleted: map[string]bool{},
 		actors: map[string]appaccount.Actor{}, blocks: map[[2]string]bool{}, suspended: map[string]bool{},
+		boosts: map[string]appcontent.Boost{},
 	}
 	author := actorOn(authorID, "https://"+objHost+"/ap/actors/"+authorID, "")
 	// The author is a local account named "author". The account module's domain types are not
@@ -213,8 +215,103 @@ func (w *objWorld) Pinned(ctx context.Context, viewer appcontent.Viewer, _ strin
 
 func newObjects(w *objWorld, sv *appfederation.SignatureVerifier) *appfederation.Objects {
 	return appfederation.NewObjects(appfederation.ObjectsDeps{
-		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Signatures: sv, Domains: w, Host: objHost,
+		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Boosts: w, Signatures: sv, Domains: w, Host: objHost,
 	})
+}
+
+func (w *objWorld) FindLiveBoost(_ context.Context, id string) (appcontent.Boost, error) {
+	b, ok := w.boosts[id]
+	if !ok {
+		return appcontent.Boost{}, appcontent.ErrNotFound
+	}
+	return b, nil
+}
+
+// TestObjectsAnnounce checks which boosts GET of the Announce serves (ADR-0144 §5).
+func TestObjectsAnnounce(t *testing.T) {
+	const (
+		publicID   = "0192f3b0-0000-7000-8000-000000000301"
+		unlistedID = "0192f3b0-0000-7000-8000-000000000302"
+		privateID  = "0192f3b0-0000-7000-8000-000000000303"
+		localID    = "0192f3b0-0000-7000-8000-000000000304"
+		directID   = "0192f3b0-0000-7000-8000-000000000305"
+		remoteID   = "0192f3b0-0000-7000-8000-000000000306"
+		deletedID  = "0192f3b0-0000-7000-8000-000000000307"
+		ofRemoteID = "0192f3b0-0000-7000-8000-000000000308"
+		missingID  = "0192f3b0-0000-7000-8000-0000000003ff"
+	)
+	w := newObjWorld()
+	boost := func(id string, v appcontent.Visibility, local bool, st appcontent.Status) {
+		w.boosts[id] = appcontent.Boost{
+			ID: id, URI: appcontent.ActivityURI(objHost, id), BoosterAccountID: authorID, StatusID: st.ID,
+			Visibility: v, IsLocal: local, BoostedAt: objNow,
+		}
+	}
+	status := func(n string, v appcontent.Visibility) appcontent.Status {
+		return w.post("0192f3b0-0000-7000-8000-0000000004"+n, v)
+	}
+	publicStatus := status("01", appcontent.VisibilityPublic)
+	boost(publicID, appcontent.VisibilityPublic, true, publicStatus)
+	boost(unlistedID, appcontent.VisibilityUnlisted, true, status("02", appcontent.VisibilityUnlisted))
+	boost(privateID, appcontent.VisibilityPrivate, true, status("03", appcontent.VisibilityPrivate))
+	boost(localID, appcontent.VisibilityLocal, true, status("04", appcontent.VisibilityLocal))
+	boost(directID, appcontent.VisibilityDirect, true, status("05", appcontent.VisibilityDirect))
+	boost(remoteID, appcontent.VisibilityPublic, false, publicStatus)
+	gone := status("07", appcontent.VisibilityPublic)
+	w.deleted[gone.ID] = true
+	boost(deletedID, appcontent.VisibilityPublic, true, gone)
+	ofRemote := status("08", appcontent.VisibilityPublic)
+	ofRemote.IsLocal, ofRemote.AuthorAccountID = false, remoteAuthor
+	w.statuses[ofRemote.ID] = ofRemote
+	boost(ofRemoteID, appcontent.VisibilityPublic, true, ofRemote)
+	o := newObjects(w, nil)
+	actor := "https://" + objHost + "/ap/actors/" + authorID
+
+	for _, id := range []string{publicID, unlistedID, ofRemoteID} {
+		obj, err := o.Announce(t.Context(), appfederation.Requester{}, id)
+		if err != nil {
+			t.Fatalf("Announce(%s): %v", id, err)
+		}
+		doc := decodeDoc(t, obj.Document)
+		if !obj.Public || obj.Gone || doc["id"] != appcontent.ActivityURI(objHost, id) || doc["type"] != "Announce" ||
+			doc["actor"] != actor || doc["object"] != w.statuses[w.boosts[id].StatusID].URI || doc["@context"] == nil ||
+			doc["published"] != "2026-10-17T12:00:00Z" {
+			t.Errorf("Announce(%s) = %+v, %v", id, obj, doc)
+		}
+	}
+	obj, err := o.Announce(t.Context(), appfederation.Requester{}, ofRemoteID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := decodeDoc(t, obj.Document)
+	if !slices.Equal(strs(doc["to"]), []string{"https://www.w3.org/ns/activitystreams#Public"}) ||
+		!slices.Equal(strs(doc["cc"]), []string{actor + "/followers", "https://follower.example/users/r"}) {
+		t.Errorf("Announce addressing = to %v cc %v", doc["to"], doc["cc"])
+	}
+	for _, id := range []string{privateID, localID, directID, remoteID, deletedID, missingID} {
+		if _, err := o.Announce(t.Context(), appfederation.Requester{}, id); !errors.Is(err, appfederation.ErrNotFound) {
+			t.Errorf("Announce(%s) = %v, want ErrNotFound", id, err)
+		}
+	}
+	// A block between the signer and the booster hides it from that signer alone.
+	blocked := appfederation.Requester{Domain: "follower.example", AccountID: blockedID}
+	if _, err := o.Announce(t.Context(), blocked, publicID); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("Announce to a blocked signer = %v, want ErrNotFound", err)
+	}
+	if _, err := o.Announce(t.Context(), appfederation.Requester{Domain: "follower.example", AccountID: followerID}, publicID); err != nil {
+		t.Errorf("Announce to a signer = %v", err)
+	}
+	// A ceiling on the booster makes the Announce followers-only, which is not served.
+	w.ceiling = true
+	if _, err := o.Announce(t.Context(), appfederation.Requester{Domain: "follower.example", AccountID: followerID}, publicID); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("Announce under a ceiling = %v, want ErrNotFound", err)
+	}
+	w.ceiling = false
+	// Without the port no Announce is served.
+	none := appfederation.NewObjects(appfederation.ObjectsDeps{Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Domains: w, Host: objHost})
+	if _, err := none.Announce(t.Context(), appfederation.Requester{}, publicID); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("Announce without Boosts = %v, want ErrNotFound", err)
+	}
 }
 
 // TestObjectsCanView checks the decision of object fetches (visibility.md §5.1, data-model §7):

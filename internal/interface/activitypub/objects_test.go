@@ -156,3 +156,31 @@ func TestCollectionPages(t *testing.T) {
 		}
 	})
 }
+
+// TestAnnounceRoute checks GET of an activity id: the handler serves what Objects answers, 404 for
+// any other id and for a browser, and authorized fetch asks for a signature first.
+func TestAnnounceRoute(t *testing.T) {
+	s := newServer(t, accountDomain)
+	target := "/ap/activities/" + announceID
+	rec := s.get(t, target, acceptMastodon)
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "application/activity+json" ||
+		rec.Header().Get("Cache-Control") != "public, max-age=60" || decode(t, rec.Body.Bytes())["type"] != "Announce" {
+		t.Errorf("GET the Announce = %d %v %s", rec.Code, rec.Header(), rec.Body)
+	}
+	for name, get := range map[string]func() int{
+		"another activity": func() int { return s.get(t, "/ap/activities/"+missingStatusID, acceptMastodon).Code },
+		"an invalid id":    func() int { return s.get(t, "/ap/activities/x", acceptMastodon).Code },
+		"a browser":        func() int { return s.get(t, target, acceptBrowser).Code },
+	} {
+		if code := get(); code != http.StatusNotFound {
+			t.Errorf("GET %s = %d, want 404", name, code)
+		}
+	}
+	s.objects.authorizedFetch = true
+	if rec := s.getSigned(t, target, acceptMastodon, ""); rec.Code != http.StatusUnauthorized {
+		t.Errorf("unsigned GET under authorized fetch = %d, want 401", rec.Code)
+	}
+	if rec := s.getSigned(t, target, acceptMastodon, followerDomain); rec.Code != http.StatusOK {
+		t.Errorf("signed GET under authorized fetch = %d, want 200", rec.Code)
+	}
+}

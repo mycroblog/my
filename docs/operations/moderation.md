@@ -382,7 +382,7 @@ In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`,
 ## Record retention and holds
 
 After the retention period for each kind of record, hourly jobs (`moderation.purge_records`, `identity.purge_origins`, and `voice.purge_records`) remove moderation records.
-You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run.
+You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run. A released retention hold, with its reason, is removed once the retention period for moderation actions has passed since its release.
 
 | Record | Setting | Default | Lower limit | Starts from |
 | --- | --- | --- | --- | --- |

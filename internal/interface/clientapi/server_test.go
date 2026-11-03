@@ -60,7 +60,7 @@ func TestGetInstance(t *testing.T) {
 		Domain: "social.example", Name: "social.example", Version: "1.2.3", SourceUrl: "https://git.example/my",
 		Registrations: clientapi.InstanceRegistrations{Mode: clientapi.InstanceRegistrationsModeApproval},
 		Limits:        clientapi.InstanceLimits{MaxPostCharacters: 500},
-		Timelines:     clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceEveryone},
+		Timelines:     clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn},
 		Rules:         []clientapi.InstanceRule{},
 		// Unset, the instance federates both ways (ADR-0076).
 		Federation: clientapi.InstanceFederation{Mode: clientapi.InstanceFederationModeBoth},

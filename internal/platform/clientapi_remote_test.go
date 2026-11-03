@@ -86,6 +86,15 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	local := e.post(t, alice, "local only", domcontent.VisibilityLocal, "en")
 	pub := e.post(t, alice, "hello", domcontent.VisibilityPublic, "en")
 
+	// By default the federated timeline is for signed-in users, until the operator opens it.
+	unset := e.spec.Serve(t, e.h, httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/timelines/public", nil))
+	if unset.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous federated timeline by default = %d, want 401", unset.StatusCode)
+	}
+	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineVisibility, Value: "everyone"}); err != nil {
+		t.Fatalf("SetSetting: %v", err)
+	}
+
 	for _, viewer := range []*timelineUser{nil, &alice} {
 		page := e.page(t, viewer, "/timelines/public")
 		if got, want := itemIDs(page), []string{pub, public}; !slices.Equal(got, want) {

@@ -38,7 +38,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx
 		pending.EmojiID = toNullString(req.EmojiID)
 	}
 	err = q.InsertCustomEmojiRequest(ctx, postgresgen.InsertCustomEmojiRequestParams{
-		ID: req.ID, Kind: string(req.Kind), RequesterUserID: req.RequesterUserID, EmojiID: toNullString(req.EmojiID),
+		ID: req.ID, Kind: string(req.Kind), RequesterUserID: toNullString(req.RequesterUserID), EmojiID: toNullString(req.EmojiID),
 		Shortcode: req.Shortcode, MediaID: req.MediaID, CreatedAt: utc(req.CreatedAt),
 	})
 	if err != nil {
@@ -93,19 +93,19 @@ func (r *CustomEmojiRepository) PendingImageRequestOf(ctx context.Context, tx uo
 // emojiRequestRow is a row of GetCustomEmojiRequest, ListCustomEmojiRequests, or
 // ListCustomEmojiRequestsByID.
 type emojiRequestRow struct {
-	ID, Kind, RequesterUserID string
-	EmojiID                   *string
-	Shortcode, MediaID        string
-	CreatedAt                 time.Time
-	OutcomeID, Outcome        string
-	DecidedByUserID, Reason   string
-	OutcomeEmojiID            string
-	DecidedAt                 time.Time
+	ID, Kind                 string
+	RequesterUserID, EmojiID *string
+	Shortcode, MediaID       string
+	CreatedAt                time.Time
+	OutcomeID, Outcome       string
+	DecidedByUserID, Reason  string
+	OutcomeEmojiID           string
+	DecidedAt                time.Time
 }
 
 func emojiRequestFrom(row emojiRequestRow) content.CustomEmojiRequestRecord {
 	out := content.CustomEmojiRequestRecord{Request: content.CustomEmojiRequest{
-		ID: row.ID, Kind: content.CustomEmojiRequestKind(row.Kind), RequesterUserID: row.RequesterUserID, EmojiID: fromNullString(row.EmojiID),
+		ID: row.ID, Kind: content.CustomEmojiRequestKind(row.Kind), RequesterUserID: fromNullString(row.RequesterUserID), EmojiID: fromNullString(row.EmojiID),
 		Shortcode: row.Shortcode, MediaID: row.MediaID, CreatedAt: utc(row.CreatedAt),
 	}}
 	if row.OutcomeID != "" {
@@ -171,4 +171,23 @@ func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userI
 func (r *CustomEmojiRepository) IsMediaOfPendingCustomEmojiRequest(ctx context.Context, mediaID string) (bool, error) {
 	pending, err := r.db.reader().IsMediaOfPendingCustomEmojiRequest(ctx, mediaID)
 	return pending, wrap(err, "is media of a pending custom emoji request")
+}
+
+// ListPendingCustomEmojiRequestsOfUser implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) ListPendingCustomEmojiRequestsOfUser(ctx context.Context, tx uow.Tx, userID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListPendingCustomEmojiRequestsOfUser(ctx, userID)
+	return ids, wrap(err, "list pending custom emoji requests")
+}
+
+// BlankCustomEmojiRequester implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) BlankCustomEmojiRequester(ctx context.Context, tx uow.Tx, userID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.BlankCustomEmojiRequester(ctx, userID), "blank custom emoji requester")
 }

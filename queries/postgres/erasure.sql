@@ -559,3 +559,15 @@ DELETE FROM post_subscriptions WHERE post_subscriptions.target_account_id = sqlc
 DELETE FROM post_subscription_requests WHERE post_subscription_requests.target_account_id = sqlc.arg(account_id) AND post_subscription_requests.account_id IN (
   SELECT x.account_id FROM post_subscription_requests x WHERE x.target_account_id = sqlc.arg(account_id)
   ORDER BY x.account_id LIMIT sqlc.arg(lim));
+
+-- name: ListOAuthClientIDsOwnedBy :many
+SELECT id FROM oauth_clients WHERE owner_user_id = sqlc.arg(user_id)::uuid ORDER BY id;
+
+-- BlankOAuthClientDetailsOf removes the name and website of the clients of an erased owner.
+-- name: BlankOAuthClientDetailsOf :exec
+UPDATE oauth_clients SET name = '', website = NULL WHERE owner_user_id = sqlc.arg(user_id)::uuid;
+
+-- BlankOAuthClientRevisionDetailsOf removes the same from the revisions of those clients.
+-- name: BlankOAuthClientRevisionDetailsOf :exec
+UPDATE oauth_client_revisions SET name = '', website = NULL WHERE oauth_client_id IN (
+  SELECT c.id FROM oauth_clients c WHERE c.owner_user_id = sqlc.arg(user_id)::uuid);

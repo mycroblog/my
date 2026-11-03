@@ -17,7 +17,7 @@ FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aa
 # once on the build host's platform. The build reads generated files that are not committed (ADR-0081):
 # the client pseudo-locales from tools/i18n and the theme token list of @my/ui are generated first, and
 # the Vite plugin generates the route tree.
-FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:1653c74b30c27b26f68c2d21279be12139d2ba723e3a682c425ec4bfb6070422 AS web
+FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS web
 # The SBOM of a released image covers this stage too: its npm packages reach the image only through the Go embed.
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
@@ -47,7 +47,7 @@ FROM scratch AS web-dist
 COPY --from=web /src/app/web/dist /
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
-FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS build
 ARG TARGETOS TARGETARCH
 # Version stamped into `my version` and NodeInfo.
 ARG VERSION=dev
@@ -72,7 +72,7 @@ RUN --mount=type=bind,target=. \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3 AS app
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329 AS app
 COPY --from=build /out/my /usr/local/bin/my
 COPY --from=build --chown=nonroot:nonroot /out/data /data
 WORKDIR /data

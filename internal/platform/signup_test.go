@@ -22,10 +22,11 @@ import (
 var loggedLink = regexp.MustCompile(`https://example\.test(/auth/verify_email\?token=[A-Za-z0-9_%-]+)`)
 
 // TestSignUpScreens drives registration in each mode on the real database, with mail = none:
-// verification emails go to the log, and a moderator's approval stands in for verification.
+// verification emails go to the log of a development instance, and a moderator's approval stands
+// in for verification.
 func TestSignUpScreens(t *testing.T) {
 	t.Parallel()
-	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_PROFILE": "development"})
 	s := start(t, cfg, platform.ServeOptions{}, nil)
 	ctx := t.Context()
 	setMode := func(mode instance.RegistrationMode) {

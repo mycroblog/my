@@ -23,7 +23,7 @@ import (
 // emails), the same in every locale and without a restart, while handles and URLs keep the
 // domain; without a name, the domain names it.
 func TestInstanceNameAndDomain(t *testing.T) {
-	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": "inline", "MY_MAIL": "none"})
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": "inline", "MY_MAIL": "none", "MY_PROFILE": "development"})
 	build := fstest.MapFS{
 		".vite/manifest.json":  {Data: []byte(`{"index.html": {"file": "assets/index-AAAA.js", "isEntry": true}}`)},
 		"assets/index-AAAA.js": {Data: []byte("export {}")},

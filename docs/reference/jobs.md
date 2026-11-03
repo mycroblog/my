@@ -86,7 +86,7 @@ A job type can also be registered or do its work only with some settings; **Need
 
 ## Email
 
-Mail jobs run only when `mail` is set to a provider. If the address or the state they check has changed, they end without sending.
+Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identity.verification_email` and `identity.password_notice_email` run: they send nothing and log the category of the message, or, with `profile = development`, the whole message. If the address or the state they check has changed, they end without sending.
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 | --- | --- | --- | --- | --- |
 | `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
 | `moderation.expire_restrictions` | Removes expired account restrictions, and tells other servers when a suspension ends. | Schedule | Default | Next run |
-| `moderation.purge_records` | Erases the moderation records past their retention. | Schedule | Default | Next run |
+| `moderation.purge_records` | Erases the moderation records past their retention, including released retention holds. | Schedule | Default | Next run |
 | `identity.closure_rejections` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |
 | `instance.closure_fanout` | Records the `Delete` of one page of local accounts and passes them to the fan-out. | The closure being recorded, then itself | Default | Safe |
 | `instance.closure_completion` | Records that the closure's deletes have all been delivered. | Schedule | Default | Next run |
@@ -226,4 +226,4 @@ Most job types exist on every server. These do not:
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, the emails of the identity module without `mail`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

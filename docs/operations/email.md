@@ -51,7 +51,7 @@ The setting `mail` chooses how email is sent.
 
 | `mail` | Behavior |
 | --- | --- |
-| `none` (default) | Sends nothing and writes the body, links included, to the server log as `mail not sent (mail = none)`. For setups that do not use email, and for development |
+| `none` (default) | Sends nothing and writes `mail not sent (mail = none)` to the server log with the category of the message. With `profile = development`, the line also holds the addresses, the subject, and the body, links included. For setups that do not use email, and for development |
 | `smtp` | Sends by SMTP submission. It requires STARTTLS and verifies the certificate before authenticating and sending |
 | `ses` | Sends with the Amazon SES v2 API (`SendEmail` with raw content). It authenticates through the AWS SDK's default credential chain (an IAM role, for example) and holds no SMTP password |
 
@@ -285,8 +285,8 @@ List-Unsubscribe=One-Click` (RFC 8058). The "unsubscribe" button of email client
 
 ## The HTML version
 
-Every email is `multipart/alternative` with the same content as `text/plain` and `text/html` (both UTF-8). With `mail = none`,
-only the text version is written to the log.
+Every email is `multipart/alternative` with the same content as `text/plain` and `text/html` (both UTF-8). With `mail = none`
+in the `development` profile, only the text version is written to the log.
 
 - There is one outer layout, with paragraphs, buttons, and a signature (server name, URL, contact, the reason for the email,
   and the unsubscribe link). `<html lang dir>` comes from the recipient's locale, and languages such as `ar` are laid out right to
@@ -307,8 +307,8 @@ only the text version is written to the log.
 
 ## Development
 
-With `mail = none` (the default), nothing is sent and the email goes to the log, so you can take the confirmation link from the
-log.
+With `mail = none` (the default) and `profile = development`, nothing is sent and the email goes to the log, so you can take the
+confirmation link from the log.
 To look at every email the server sends without running it, `scripts/task.sh mail:preview` renders each one from sample values
 in English, Japanese, and the pseudo-locales `en-XA` and `ar-XB` (right to left), writes them to `.tmp/mail/preview/`, and prints
 the path of its `index.html`. Open that file in a browser: it shows each email's subject, headers, HTML version (at phone or

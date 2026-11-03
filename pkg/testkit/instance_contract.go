@@ -138,7 +138,7 @@ func instanceReadsDefaults(t *testing.T, e *instanceEnv) {
 		}
 	}
 	if s.RegistrationMode() != instance.RegistrationApproval || s.MaxStatusLength() != 500 || s.DefaultLocale() != "en" ||
-		s.LocalTimelineVisibility() != instance.AudienceEveryone || s.FederatedTimelineVisibility() != instance.AudienceEveryone {
+		s.LocalTimelineVisibility() != instance.AudienceEveryone || s.FederatedTimelineVisibility() != instance.AudienceSignedIn {
 		t.Errorf("typed defaults = %v %d %q %v %v", s.RegistrationMode(), s.MaxStatusLength(), s.DefaultLocale(),
 			s.LocalTimelineVisibility(), s.FederatedTimelineVisibility())
 	}

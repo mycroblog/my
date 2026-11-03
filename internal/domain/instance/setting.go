@@ -378,7 +378,7 @@ var definitions = []Definition{
 		Doc: "Who may read the local timeline: nobody, signed-in users, or everyone (FR-202).",
 	},
 	{
-		Key: SettingFederatedTimelineVisibility, Kind: KindEnum, Default: string(AudienceEveryone), Choices: audienceChoices,
+		Key: SettingFederatedTimelineVisibility, Kind: KindEnum, Default: string(AudienceSignedIn), Choices: audienceChoices,
 		Doc: "Who may read the federated timeline: nobody, signed-in users, or everyone (FR-202).",
 	},
 	{

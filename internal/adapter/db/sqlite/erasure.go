@@ -89,6 +89,28 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 		q.EraseRegistrationDecisions, q.EraseRegistrationApplications, q.EraseRegistrationState, q.EraseServiceClosureEmails)
 }
 
+// ListOwnedOAuthClientIDs implements identity.ErasureRepository.
+func (r *IdentityRepository) ListOwnedOAuthClientIDs(ctx context.Context, tx uow.Tx, userID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListOAuthClientIDsOwnedBy(ctx, toNullString(userID))
+	return ids, wrap(err, "list owned oauth clients")
+}
+
+// BlankOwnedOAuthClientDetails implements identity.ErasureRepository.
+func (r *IdentityRepository) BlankOwnedOAuthClientDetails(ctx context.Context, tx uow.Tx, userID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.BlankOAuthClientRevisionDetailsOf(ctx, toNullString(userID)); err != nil {
+		return wrap(err, "blank owned oauth client revisions")
+	}
+	return wrap(q.BlankOAuthClientDetailsOf(ctx, toNullString(userID)), "blank owned oauth clients")
+}
+
 // ListAuthorStatusesToErase implements content.ErasureRepository.
 func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow.Tx, authorAccountID, after string, limit int) ([]appcontent.ErasableStatus, error) {
 	q, err := r.db.queries(tx)
