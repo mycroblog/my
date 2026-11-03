@@ -41,6 +41,30 @@ operator:
   # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
   - "!docs/reference/commands.md"
 
+# Written for people who run an instance, so they use none of these words of the project's own development, in
+# prose or in code; HTML comments do not count. A passage that needs one belongs in a contributor document.
+maintainer-terms:
+  files:
+    - "README.md"
+    - "docs/operations/**"
+    - "docs/reference/**"
+    # The development tasks, for contributors.
+    - "!docs/reference/commands.md"
+    # SECURITY.md tells a reporter not to open a public pull request, which is the word it needs; it is not in the
+    # list above for that reason.
+  terms:
+    - "the decider"
+    - "scripts/task.sh"
+    - "scripts/agentkit.sh"
+    - "agentkit"
+    - "go-task"
+    - "merge queue"
+    - "pull request"
+    - "preflight"
+    - "slow suite"
+    - "slow-suite.yml"
+    - "orchestrator"
+
 # The index of the documents for users and operators: it links every file of the list.
 index:
   file: docs/README.md

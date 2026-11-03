@@ -79,6 +79,8 @@ than a document that every change of a wide area flags.
   blocks, and link destinations; a line with `docs-lint: allow-japanese` in a comment, or the line after one, may;
 - the files for users and operators neither link to `docs/adr/`, `docs/requirements/`, `docs/architecture/`, or the
   repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
+- the files of `maintainer-terms.files` use none of its `terms`, the words of the development of the project, in prose or
+  in code;
 - the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`).
 
 [docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
