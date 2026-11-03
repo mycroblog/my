@@ -47,7 +47,7 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	ban := func(who testUser) clientapi.AdminAccountAction {
 		t.Helper()
 		var a clientapi.AdminAccountAction
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+who.id+"/actions", mod.token, map[string]any{"kind": "ban"}, &a), http.StatusOK, "ban")
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+who.id+"/actions", mod.token, map[string]any{"kind": "ban"}, &a), http.StatusCreated, "ban")
 		return a
 	}
 	alice, aliceUser := member("alice")

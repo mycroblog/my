@@ -49,7 +49,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateReportRequest.yaml
   responses:
-    "200":
+    "201":
       description: The filed report.
       headers:
         Cache-Control:

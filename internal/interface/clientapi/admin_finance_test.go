@@ -115,7 +115,7 @@ func TestCostItems(t *testing.T) {
 		{http.MethodGet, "/admin/cost_items", "admin-read", "", http.StatusOK},
 		{http.MethodGet, "/admin/cost_items/" + id, "admin-read", "", http.StatusOK},
 		{http.MethodGet, "/admin/cost_items/0199f0e0-0000-7000-8000-0000000000ff", "admin-read", "", http.StatusNotFound},
-		{http.MethodPost, "/admin/cost_items", "admin", newItem, http.StatusOK},
+		{http.MethodPost, "/admin/cost_items", "admin", newItem, http.StatusCreated},
 		{http.MethodPatch, "/admin/cost_items/" + id, "admin", `{"provider":"Other registrar"}`, http.StatusOK},
 		{http.MethodPost, "/admin/cost_items/" + id + "/price_revisions", "admin", `{"effective_on":"2027-04-10","price":{"amount":"1800","currency":"JPY"}}`, http.StatusOK},
 		{http.MethodPut, "/admin/cost_items/" + id + "/end", "admin", `{"ends_on":"2028-04-09"}`, http.StatusOK},

@@ -38,7 +38,7 @@ post:
         schema:
           $ref: ../components/schemas/AdminSupporterPlanCreateRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminSupporterPlan.yaml
     "422":
       $ref: ../components/responses/SupporterPlanProblem.yaml

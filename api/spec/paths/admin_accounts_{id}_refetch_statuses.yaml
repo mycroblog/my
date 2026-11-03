@@ -19,7 +19,7 @@ post:
       schema:
         $ref: ../components/schemas/Id.yaml
   responses:
-    "204":
+    "202":
       description: The refetch is queued.
     default:
       $ref: ../components/responses/Problem.yaml

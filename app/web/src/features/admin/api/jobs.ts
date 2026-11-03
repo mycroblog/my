@@ -73,7 +73,7 @@ export function retryJobMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/jobs/{id}/retry"] as const,
     mutationFn: async (id: string): Promise<void> => {
-      // The middleware throws for every error status; a 204 has no body to read.
+      // The middleware throws for every error status; a 202 has no body to read.
       await api.fetch.POST("/admin/jobs/{id}/retry", { params: { path: { id } } });
     },
   };

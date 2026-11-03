@@ -185,9 +185,9 @@ func (s *Server) CreateWebhook(ctx context.Context, req CreateWebhookRequestObje
 		return nil, fmt.Errorf("clientapi: create webhook: %w", err)
 	}
 	cache := cacheNoStore
-	return CreateWebhook200JSONResponse{
+	return CreateWebhook201JSONResponse{
 		Body:    AdminWebhookCreated{Webhook: newAdminWebhook(c.Endpoint), Secret: c.Secret},
-		Headers: CreateWebhook200ResponseHeaders{CacheControl: &cache},
+		Headers: CreateWebhook201ResponseHeaders{CacheControl: &cache},
 	}, nil
 }
 

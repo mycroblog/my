@@ -250,7 +250,7 @@ func (s *Server) CreateAdminAnnouncement(ctx context.Context, req CreateAdminAnn
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create an announcement: %w", err)
 	}
-	return CreateAdminAnnouncement200JSONResponse{s.adminAnnouncementResponse(a)}, nil
+	return CreateAdminAnnouncement201JSONResponse{s.adminAnnouncementResponse(a)}, nil
 }
 
 // GetAdminAnnouncement serves GET /api/v1/admin/announcements/{id}.

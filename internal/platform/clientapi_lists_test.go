@@ -51,7 +51,7 @@ func TestListsAPI(t *testing.T) {
 	e.follow(t, alice, bob)
 
 	res := e.listCall(t, alice, http.MethodPost, "/lists", `{"name":"friends"}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /lists = %d", res.StatusCode)
 	}
 	list := decodeJSON[clientapi.List](t, res)
@@ -112,7 +112,7 @@ func TestListsAPI(t *testing.T) {
 
 	// The limit of lists.
 	for i := 1; i < timeline.MaxLists; i++ {
-		if res := e.listCall(t, alice, http.MethodPost, "/lists", fmt.Sprintf(`{"name":"list %d"}`, i)); res.StatusCode != http.StatusOK {
+		if res := e.listCall(t, alice, http.MethodPost, "/lists", fmt.Sprintf(`{"name":"list %d"}`, i)); res.StatusCode != http.StatusCreated {
 			t.Fatalf("POST /lists #%d = %d", i, res.StatusCode)
 		}
 	}

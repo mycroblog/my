@@ -273,7 +273,7 @@ func (s *Server) CreateCustomEmoji(ctx context.Context, req CreateCustomEmojiReq
 	if err != nil {
 		return nil, err
 	}
-	return CreateCustomEmoji200JSONResponse{adminCustomEmojiResponse(out)}, nil
+	return CreateCustomEmoji201JSONResponse{adminCustomEmojiResponse(out)}, nil
 }
 
 // UpdateCustomEmoji serves PATCH /api/v1/admin/custom_emojis/{id}.
@@ -370,7 +370,7 @@ func (s *Server) CopyCustomEmoji(ctx context.Context, req CopyCustomEmojiRequest
 	if err != nil {
 		return nil, err
 	}
-	return CopyCustomEmoji200JSONResponse{adminCustomEmojiResponse(out)}, nil
+	return CopyCustomEmoji201JSONResponse{adminCustomEmojiResponse(out)}, nil
 }
 
 // DeleteCustomEmoji serves DELETE /api/v1/admin/custom_emojis/{id}.

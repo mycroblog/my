@@ -30,6 +30,32 @@ rules:
     assertions:
       ref: /^\.\.\/components\/responses\/Problem\.yaml$/
     message: The `default` response refers to `../components/responses/Problem.yaml` (ADR-0016).
+  # The status of what an operation does (client-api.md section 2.3): 201 for a resource it
+  # created, 202 for work it queued.
+  rule/create-answers-201:
+    subject:
+      type: Responses
+    where:
+      - subject:
+          type: Operation
+          property: operationId
+        assertions:
+          pattern: /^create/
+    assertions:
+      required: ["201"]
+    message: An operation that creates a resource answers 201.
+  rule/queue-answers-202:
+    subject:
+      type: Responses
+    where:
+      - subject:
+          type: Operation
+          property: operationId
+        assertions:
+          pattern: /^(refetch|retry|run)[A-Z]/
+    assertions:
+      required: ["202"]
+    message: An operation that queues work answers 202.
   # snake_case property and parameter names, like the rest of the API.
   rule/property-snake-case:
     subject:

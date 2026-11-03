@@ -233,7 +233,7 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	if err != nil {
 		return nil, err
 	}
-	return CreateAccountAction200JSONResponse{res}, nil
+	return CreateAccountAction201JSONResponse{res}, nil
 }
 
 // GetAccountAction serves GET /api/v1/admin/account_actions/{id}.

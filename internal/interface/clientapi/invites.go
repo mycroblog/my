@@ -150,7 +150,7 @@ func (s *Server) CreateOwnInvite(ctx context.Context, req CreateOwnInviteRequest
 		}
 		return nil, fmt.Errorf("clientapi: create the invite of %s: %w", v.UserID, err)
 	}
-	return CreateOwnInvite200JSONResponse{s.ownInviteResponse(st)}, nil
+	return CreateOwnInvite201JSONResponse{s.ownInviteResponse(st)}, nil
 }
 
 // RevokeOwnInvite serves POST /api/v1/invites/{id}/revoke.

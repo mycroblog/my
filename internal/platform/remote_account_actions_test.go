@@ -187,7 +187,7 @@ func TestClientAPIRemoteAccountActions(t *testing.T) {
 
 	// suspend: what bob sends is dropped, and his profile and posts are hidden.
 	var a clientapi.AdminAccountAction
-	e.want(e.do(http.MethodPost, "/admin/accounts/"+bobID+"/actions", mod.token, map[string]any{"kind": "suspend", "reason_category": "spam"}, &a), http.StatusOK, "suspend bob")
+	e.want(e.do(http.MethodPost, "/admin/accounts/"+bobID+"/actions", mod.token, map[string]any{"kind": "suspend", "reason_category": "spam"}, &a), http.StatusCreated, "suspend bob")
 	if a.AccountId != bobID || a.Kind != clientapi.AdminAccountActionKindSuspend || a.State != clientapi.ModerationActionStateActive || a.NotifyTarget {
 		t.Errorf("suspension = %+v, want an active suspend of bob without a notice", a)
 	}
@@ -208,7 +208,7 @@ func TestClientAPIRemoteAccountActions(t *testing.T) {
 
 	// limit and force_sensitive are taken too.
 	for _, kind := range []string{"limit", "force_sensitive"} {
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+bobID+"/actions", mod.token, map[string]any{"kind": kind, "expires_in": 3600}, nil), http.StatusOK, "remote "+kind)
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+bobID+"/actions", mod.token, map[string]any{"kind": kind, "expires_in": 3600}, nil), http.StatusCreated, "remote "+kind)
 	}
 
 	// The actions are local: nothing is sent to bob's server.

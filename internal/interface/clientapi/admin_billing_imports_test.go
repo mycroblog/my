@@ -87,7 +87,7 @@ func TestBillingImports(t *testing.T) {
 		method, path, token string
 		status              int
 	}{
-		{http.MethodPost, "/admin/billing_imports/aws/runs", "admin", http.StatusNoContent},
+		{http.MethodPost, "/admin/billing_imports/aws/runs", "admin", http.StatusAccepted},
 		{http.MethodPost, "/admin/billing_imports/aws/runs", "admin", http.StatusTooManyRequests},
 		{http.MethodPost, "/admin/billing_imports/gcp/runs", "admin", http.StatusNotFound},
 		{http.MethodPost, "/admin/billing_imports/azure/runs", "admin", http.StatusNotFound},

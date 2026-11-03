@@ -96,7 +96,7 @@ func TestManageInvites(t *testing.T) {
 	e, f := newInvitesEnv(t)
 	res := e.sendJSON(t, http.MethodPost, "/admin/invites", "admin", `{"max_uses":5,"expires_in":86400}`)
 	got := decodeJSON[clientapi.AdminInvite](t, res)
-	if res.StatusCode != http.StatusOK || got.Code != "ABCDEFGHIJKLMNOP" || got.Url != "https://social.example/auth/sign_up?invite=ABCDEFGHIJKLMNOP" ||
+	if res.StatusCode != http.StatusCreated || got.Code != "ABCDEFGHIJKLMNOP" || got.Url != "https://social.example/auth/sign_up?invite=ABCDEFGHIJKLMNOP" ||
 		got.MaxUses == nil || *got.MaxUses != 5 || got.Uses != 0 || got.State != clientapi.AdminInviteStateUsable ||
 		got.ExpiresAt == nil || !got.ExpiresAt.Equal(adminNow.Add(24*time.Hour)) {
 		t.Fatalf("create = %d %+v", res.StatusCode, got)
