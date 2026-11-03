@@ -36,12 +36,12 @@ export function createRuleMutation(api: Api) {
   };
 }
 
-/** Replaces the text and the hint of a rule (PATCH /admin/rules/{id}), as the options of useMutation. */
+/** Replaces the text and the hint of a rule (PUT /admin/rules/{id}), as the options of useMutation. */
 export function updateRuleMutation(api: Api) {
   return {
-    mutationKey: ["patch", "/admin/rules/{id}"] as const,
+    mutationKey: ["put", "/admin/rules/{id}"] as const,
     mutationFn: async ({ id, input }: { id: string; input: RuleInput }): Promise<Rule> => {
-      const { data, error } = await api.fetch.PATCH("/admin/rules/{id}", { params: { path: { id } }, body: input });
+      const { data, error } = await api.fetch.PUT("/admin/rules/{id}", { params: { path: { id } }, body: input });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;

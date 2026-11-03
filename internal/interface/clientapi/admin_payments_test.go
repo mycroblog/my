@@ -78,8 +78,12 @@ func TestPaymentStatus(t *testing.T) {
 		{http.MethodPost, "/admin/payment_reconciles", "bob-admin", http.StatusForbidden},
 		{http.MethodGet, "/admin/payment_status", "bob-admin", http.StatusForbidden},
 	} {
-		if res := e.admin(t, tc.method, tc.path, tc.token, nil); res.StatusCode != tc.status {
+		res := e.admin(t, tc.method, tc.path, tc.token, nil)
+		if res.StatusCode != tc.status {
 			t.Errorf("%s %s with %s = %d, want %d", tc.method, tc.path, tc.token, res.StatusCode, tc.status)
+		}
+		if got := res.Header.Get("Retry-After"); tc.status == http.StatusTooManyRequests && (got == "" || got == "0") {
+			t.Errorf("%s %s = 429 with Retry-After %q", tc.method, tc.path, got)
 		}
 	}
 	if want := userOf(aliceAccountID); len(payments.requested) != 1 || payments.requested[0] != want {

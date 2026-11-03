@@ -4712,7 +4712,7 @@ export interface paths {
          *     from reaching users who do not follow them; `reject_media` stops fetching its media;
          *     `reject_reports` drops the reports it sends; `force_sensitive` marks its media
          *     sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-         *     dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+         *     dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
          *     `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
          *     `manage_domains` permission.
          */
@@ -5191,18 +5191,18 @@ export interface paths {
          *     `manage_rules` permission.
          */
         get: operations["getInstanceRule"];
-        put?: never;
+        /**
+         * Revise the text of an instance rule
+         * @description Records a revision whose text and hint replace those of the rule, so that an omitted hint
+         *     removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
+         *     and an unknown ID a 404. Needs the `manage_rules` permission.
+         */
+        put: operations["updateInstanceRule"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Revise the text of an instance rule
-         * @description Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-         *     and position. They are checked as for a new rule (422). A retired rule is a 409
-         *     and an unknown ID a 404. Needs the `manage_rules` permission.
-         */
-        patch: operations["updateInstanceRule"];
+        patch?: never;
         trace?: never;
     };
     "/admin/rules/{id}/move": {
@@ -6823,9 +6823,9 @@ export interface paths {
         /**
          * Lift the denial of a host
          * @description The Client ID Metadata Documents on the host are accepted again. The tokens that the
-         *     denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-         *     is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-         *     permission.
+         *     denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+         *     cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+         *     log. Needs the `manage_oauth_apps` permission.
          */
         delete: operations["allowOAuthClientHost"];
         options?: never;
@@ -8762,8 +8762,13 @@ export interface components {
             confidential: boolean;
             /** @description The most that the client may be granted, as space-separated scopes. */
             scope: string;
-            /** @description The ID of the user who registered the client; omitted for the other routes. */
-            owner_id?: components["schemas"]["Id"];
+            /**
+             * @description The account of the user who registered the client; omitted for the other routes and
+             *     when that account is deleted (`owner_deleted`).
+             */
+            owner?: components["schemas"]["Account"];
+            /** @description Whether a user registered the client whose account no longer exists. */
+            owner_deleted: boolean;
             /** @description Whether an administrator has disabled the client and not lifted it. */
             disabled: boolean;
             /** Format: date-time */
@@ -8774,8 +8779,13 @@ export interface components {
             id: components["schemas"]["Id"];
             /** @description The host name in lowercase, without a port. */
             host: string;
-            /** @description The ID of the administrator's user; omitted for a denial from the command line. */
-            denied_by?: components["schemas"]["Id"];
+            /**
+             * @description The account of the administrator; omitted for a denial from the command line and when
+             *     that account is deleted (`denied_by_deleted`).
+             */
+            denied_by?: components["schemas"]["Account"];
+            /** @description Whether an administrator denied the host whose account no longer exists. */
+            denied_by_deleted: boolean;
             /** Format: date-time */
             denied_at: string;
         };
@@ -10920,10 +10930,10 @@ export interface components {
          *     `already_applied`: an action in effect of each of the row's kinds covers the domain
          *     already, on it or on a parent domain. `no_action`: the row stands for no action (a
          *     `noop` without rejections). `duplicate`: an earlier row has the same domain once
-         *     normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+         *     normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
          * @enum {string}
          */
-        DomainBlockImportStatus: "importable" | "already_applied" | "no_action" | "duplicate" | "invalid";
+        DomainBlockImportStatus: "importable" | "already_applied" | "no_action" | "duplicate" | "own_domain" | "invalid";
         /**
          * @description The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
          *     `silence`: Mastodon's name of the action `limit`. `noop`: no action but the rejections.
@@ -15196,7 +15206,10 @@ export interface components {
         IdempotencyKey: string;
         /** @description The kind of the document. */
         InstanceDocumentKind: components["schemas"]["InstanceDocumentKind"];
-        /** @description The domain of the remote server, such as `mastodon.example`. */
+        /**
+         * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+         *     lower case without a trailing dot. A value that is not a host name is a 400.
+         */
         InstanceDomain: string;
         /** @description The key of the text. */
         InstanceTextKey: components["schemas"]["InstanceTextKey"];
@@ -19974,7 +19987,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The domain of the remote server, such as `mastodon.example`. */
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
                 domain: components["parameters"]["InstanceDomain"];
             };
             cookie?: never;
@@ -19995,7 +20011,10 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The domain of the remote server, such as `mastodon.example`. */
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
                 domain: components["parameters"]["InstanceDomain"];
             };
             cookie?: never;
@@ -20020,7 +20039,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The domain of the remote server, such as `mastodon.example`. */
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
                 domain: components["parameters"]["InstanceDomain"];
             };
             cookie?: never;
@@ -23062,7 +23084,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The domain of the remote server, such as `mastodon.example`. */
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
                 domain: components["parameters"]["InstanceDomain"];
             };
             cookie?: never;

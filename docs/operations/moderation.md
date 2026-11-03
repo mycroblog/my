@@ -193,6 +193,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
+A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
 In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
 
 | CSV row | Action on this server |

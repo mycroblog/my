@@ -1878,6 +1878,7 @@ const (
 	DomainBlockImportStatusImportable     DomainBlockImportStatus = "importable"
 	DomainBlockImportStatusInvalid        DomainBlockImportStatus = "invalid"
 	DomainBlockImportStatusNoAction       DomainBlockImportStatus = "no_action"
+	DomainBlockImportStatusOwnDomain      DomainBlockImportStatus = "own_domain"
 )
 
 // Valid indicates whether the value is a known member of the DomainBlockImportStatus enum.
@@ -1892,6 +1893,8 @@ func (e DomainBlockImportStatus) Valid() bool {
 	case DomainBlockImportStatusInvalid:
 		return true
 	case DomainBlockImportStatusNoAction:
+		return true
+	case DomainBlockImportStatusOwnDomain:
 		return true
 	default:
 		return false
@@ -5581,8 +5584,12 @@ type AdminOAuthClient struct {
 	// document declares; every other name is a claim of whoever registered the client.
 	Name string `json:"name"`
 
-	// OwnerId The ID of the user who registered the client; omitted for the other routes.
-	OwnerId *Id `json:"owner_id,omitempty"`
+	// Owner The account of the user who registered the client; omitted for the other routes and
+	// when that account is deleted (`owner_deleted`).
+	Owner *Account `json:"owner,omitempty"`
+
+	// OwnerDeleted Whether a user registered the client whose account no longer exists.
+	OwnerDeleted bool `json:"owner_deleted"`
 
 	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
@@ -5601,8 +5608,12 @@ type AdminOAuthClient struct {
 type AdminOAuthClientHostDenial struct {
 	DeniedAt time.Time `json:"denied_at"`
 
-	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
-	DeniedBy *Id `json:"denied_by,omitempty"`
+	// DeniedBy The account of the administrator; omitted for a denial from the command line and when
+	// that account is deleted (`denied_by_deleted`).
+	DeniedBy *Account `json:"denied_by,omitempty"`
+
+	// DeniedByDeleted Whether an administrator denied the host whose account no longer exists.
+	DeniedByDeleted bool `json:"denied_by_deleted"`
 
 	// Host The host name in lowercase, without a port.
 	Host string `json:"host"`
@@ -8250,7 +8261,7 @@ type DomainBlockImportRow struct {
 	// `already_applied`: an action in effect of each of the row's kinds covers the domain
 	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
 	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 	Status DomainBlockImportStatus `json:"status"`
 
 	// WrittenDomain The domain as written in the row.
@@ -8270,7 +8281,7 @@ type DomainBlockImportSkipped struct {
 // `already_applied`: an action in effect of each of the row's kinds covers the domain
 // already, on it or on a parent domain. `no_action`: the row stands for no action (a
 // `noop` without rejections). `duplicate`: an earlier row has the same domain once
-// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 type DomainBlockImportStatus string
 
 // DomainBlockSeverity The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
@@ -17408,7 +17419,7 @@ type ClientInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -17426,7 +17437,7 @@ type ClientInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -18041,9 +18052,9 @@ type ClientInterface interface {
 	// AllowOAuthClientHost Lift the denial of a host
 	//
 	// The Client ID Metadata Documents on the host are accepted again. The tokens that the
-	// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-	// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-	// permission.
+	// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+	// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+	// log. Needs the `manage_oauth_apps` permission.
 	//
 	// Corresponds with DELETE /admin/oauth_client_host_denials/{host} (the `AllowOAuthClientHost` operationId).
 	AllowOAuthClientHost(ctx context.Context, host OAuthClientHost, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -18465,24 +18476,24 @@ type ClientInterface interface {
 
 	// UpdateInstanceRuleWithBody Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateInstanceRule Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRule(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MoveInstanceRuleWithBody Move an instance rule
@@ -24012,7 +24023,7 @@ func (c *Client) ListDomainActions(ctx context.Context, params *ListDomainAction
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -24040,7 +24051,7 @@ func (c *Client) CreateDomainActionWithBody(ctx context.Context, contentType str
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -25175,9 +25186,9 @@ func (c *Client) DenyOAuthClientHost(ctx context.Context, body DenyOAuthClientHo
 // AllowOAuthClientHost Lift the denial of a host
 //
 // The Client ID Metadata Documents on the host are accepted again. The tokens that the
-// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-// permission.
+// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+// log. Needs the `manage_oauth_apps` permission.
 //
 // Corresponds with DELETE /admin/oauth_client_host_denials/{host} (the `AllowOAuthClientHost` operationId).
 func (c *Client) AllowOAuthClientHost(ctx context.Context, host OAuthClientHost, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -25969,13 +25980,13 @@ func (c *Client) GetInstanceRule(ctx context.Context, id RuleId, reqEditors ...R
 
 // UpdateInstanceRuleWithBody Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *Client) UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateInstanceRuleRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
@@ -25990,13 +26001,13 @@ func (c *Client) UpdateInstanceRuleWithBody(ctx context.Context, id RuleId, cont
 
 // UpdateInstanceRule Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *Client) UpdateInstanceRule(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateInstanceRuleRequest(c.Server, id, body)
 	if err != nil {
@@ -38433,7 +38444,7 @@ func NewUpdateInstanceRuleRequestWithBody(server string, id RuleId, contentType 
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -48468,7 +48479,7 @@ type ClientWithResponsesInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -48486,7 +48497,7 @@ type ClientWithResponsesInterface interface {
 	// from reaching users who do not follow them; `reject_media` stops fetching its media;
 	// `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 	// sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-	// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+	// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 	// `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 	// `manage_domains` permission.
 	//
@@ -49163,9 +49174,9 @@ type ClientWithResponsesInterface interface {
 	// AllowOAuthClientHostWithResponse Lift the denial of a host
 	//
 	// The Client ID Metadata Documents on the host are accepted again. The tokens that the
-	// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-	// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-	// permission.
+	// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+	// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+	// log. Needs the `manage_oauth_apps` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -49629,24 +49640,24 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateInstanceRuleWithBodyWithResponse Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithBodyWithResponse(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error)
 
 	// UpdateInstanceRuleWithResponse Revise the text of an instance rule
 	//
-	// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-	// and position. They are checked as for a new rule (422). A retired rule is a 409
+	// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+	// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 	// and an unknown ID a 404. Needs the `manage_rules` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+	// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 	UpdateInstanceRuleWithResponse(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error)
 
 	// MoveInstanceRuleWithBodyWithResponse Move an instance rule
@@ -77811,7 +77822,7 @@ func (c *ClientWithResponses) ListDomainActionsWithResponse(ctx context.Context,
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -77835,7 +77846,7 @@ func (c *ClientWithResponses) CreateDomainActionWithBodyWithResponse(ctx context
 // from reaching users who do not follow them; `reject_media` stops fetching its media;
 // `reject_reports` drops the reports it sends; `force_sensitive` marks its media
 // sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-// dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+// dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
 // `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
 // `manage_domains` permission.
 //
@@ -78824,9 +78835,9 @@ func (c *ClientWithResponses) DenyOAuthClientHostWithResponse(ctx context.Contex
 // AllowOAuthClientHostWithResponse Lift the denial of a host
 //
 // The Client ID Metadata Documents on the host are accepted again. The tokens that the
-// denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-// is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-// permission.
+// denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+// cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+// log. Needs the `manage_oauth_apps` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -79512,13 +79523,13 @@ func (c *ClientWithResponses) GetInstanceRuleWithResponse(ctx context.Context, i
 
 // UpdateInstanceRuleWithBodyWithResponse Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *ClientWithResponses) UpdateInstanceRuleWithBodyWithResponse(ctx context.Context, id RuleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error) {
 	rsp, err := c.UpdateInstanceRuleWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
@@ -79529,13 +79540,13 @@ func (c *ClientWithResponses) UpdateInstanceRuleWithBodyWithResponse(ctx context
 
 // UpdateInstanceRuleWithResponse Revise the text of an instance rule
 //
-// Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-// and position. They are checked as for a new rule (422). A retired rule is a 409
+// Records a revision whose text and hint replace those of the rule, so that an omitted hint
+// removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
 // and an unknown ID a 404. Needs the `manage_rules` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with PATCH /admin/rules/{id} (the `UpdateInstanceRule` operationId).
+// Corresponds with PUT /admin/rules/{id} (the `UpdateInstanceRule` operationId).
 func (c *ClientWithResponses) UpdateInstanceRuleWithResponse(ctx context.Context, id RuleId, body UpdateInstanceRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceRuleResponse, error) {
 	rsp, err := c.UpdateInstanceRule(ctx, id, body, reqEditors...)
 	if err != nil {

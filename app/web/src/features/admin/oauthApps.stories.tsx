@@ -2,7 +2,7 @@
 // The OAuth apps (/admin/oauth-apps; web-client/screens/admin-oauth-apps.md) in the states of ADR-0112 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import type { Schemas } from "../../test/fixtures";
+import { accountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import { inLocale, narrow } from "../../test/stories";
 import { hostDenialFixture, oauthClientFixture } from "./test/handlers";
@@ -17,12 +17,12 @@ const clients: Schemas["AdminOAuthClient"][] = [
     scope: "read write follow push",
   }),
   oauthClientFixture("0199f0e0-0000-7000-8000-0000000000a1", {
-    owner_id: "0192f0c4-7a8e-7000-8000-000000000002",
+    owner: accountFixture(2, "dave"),
     website: "https://tootle.example",
   }),
   oauthClientFixture("0199f0e0-0000-7000-8000-0000000000a2", {
     name: "A third-party client with a name long enough to wrap on a phone screen",
-    owner_id: "0192f0c4-7a8e-7000-8000-000000000002",
+    owner_deleted: true,
     confidential: true,
     scope: "read",
   }),
@@ -42,7 +42,7 @@ const clients: Schemas["AdminOAuthClient"][] = [
 const hosts: Schemas["AdminOAuthClientHostDenial"][] = [
   hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "spam.example"),
   hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f2", "a-very-long-subdomain.of-an-abusive-host.example", {
-    denied_by: "0192f0c4-7a8e-7000-8000-000000000001",
+    denied_by: accountFixture(1, "alice"),
   }),
 ];
 

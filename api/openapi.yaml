@@ -6530,7 +6530,7 @@ paths:
         from reaching users who do not follow them; `reject_media` stops fetching its media;
         `reject_reports` drops the reports it sends; `force_sensitive` marks its media
         sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-        dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+        dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
         `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
         `manage_domains` permission.
       tags:
@@ -7127,12 +7127,12 @@ paths:
           $ref: '#/components/responses/AdminRule'
         default:
           $ref: '#/components/responses/Problem'
-    patch:
+    put:
       operationId: updateInstanceRule
       summary: Revise the text of an instance rule
       description: |
-        Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-        and position. They are checked as for a new rule (422). A retired rule is a 409
+        Records a revision whose text and hint replace those of the rule, so that an omitted hint
+        removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
         and an unknown ID a 404. Needs the `manage_rules` permission.
       tags:
         - admin-server
@@ -9295,9 +9295,9 @@ paths:
       summary: Lift the denial of a host
       description: |
         The Client ID Metadata Documents on the host are accepted again. The tokens that the
-        denial revoked stay revoked. Lifting a host that is not denied changes nothing. The lift
-        is recorded in the audit log. A malformed host is a 422. Needs the `manage_oauth_apps`
-        permission.
+        denial revoked stay revoked. Lifting a host that is not denied, or a malformed host that
+        cannot be, changes nothing and answers 204 all the same. The lift is recorded in the audit
+        log. Needs the `manage_oauth_apps` permission.
       tags:
         - admin-server
       security:
@@ -10496,7 +10496,9 @@ components:
       name: domain
       in: path
       required: true
-      description: The domain of the remote server, such as `mastodon.example`.
+      description: |
+        The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+        lower case without a trailing dot. A value that is not a host name is a 400.
       schema:
         type: string
         minLength: 1
@@ -13109,6 +13111,7 @@ components:
         - registration
         - confidential
         - scope
+        - owner_deleted
         - disabled
         - created_at
       properties:
@@ -13133,10 +13136,15 @@ components:
         scope:
           description: The most that the client may be granted, as space-separated scopes.
           type: string
-        owner_id:
-          description: The ID of the user who registered the client; omitted for the other routes.
+        owner:
+          description: |
+            The account of the user who registered the client; omitted for the other routes and
+            when that account is deleted (`owner_deleted`).
           allOf:
-            - $ref: '#/components/schemas/Id'
+            - $ref: '#/components/schemas/Account'
+        owner_deleted:
+          description: Whether a user registered the client whose account no longer exists.
+          type: boolean
         disabled:
           description: Whether an administrator has disabled the client and not lifted it.
           type: boolean
@@ -13149,6 +13157,7 @@ components:
       required:
         - id
         - host
+        - denied_by_deleted
         - denied_at
       properties:
         id:
@@ -13157,9 +13166,14 @@ components:
           description: The host name in lowercase, without a port.
           type: string
         denied_by:
-          description: The ID of the administrator's user; omitted for a denial from the command line.
+          description: |
+            The account of the administrator; omitted for a denial from the command line and when
+            that account is deleted (`denied_by_deleted`).
           allOf:
-            - $ref: '#/components/schemas/Id'
+            - $ref: '#/components/schemas/Account'
+        denied_by_deleted:
+          description: Whether an administrator denied the host whose account no longer exists.
+          type: boolean
         denied_at:
           type: string
           format: date-time
@@ -16808,13 +16822,14 @@ components:
         `already_applied`: an action in effect of each of the row's kinds covers the domain
         already, on it or on a parent domain. `no_action`: the row stands for no action (a
         `noop` without rejections). `duplicate`: an earlier row has the same domain once
-        normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+        normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
       type: string
       enum:
         - importable
         - already_applied
         - no_action
         - duplicate
+        - own_domain
         - invalid
     DomainBlockSeverity:
       description: |

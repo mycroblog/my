@@ -383,6 +383,24 @@ func TestListInstanceHealth(t *testing.T) {
 	}
 }
 
+// A domain of a path that is not a host is a 400 on every operation of a remote server.
+func TestInstanceOperationsRefuseAMalformedDomain(t *testing.T) {
+	e, health, _ := newAdminEnv(t)
+	for _, op := range []struct{ method, path, token string }{
+		{http.MethodGet, "/admin/instances/bad%20host", "admin-read"},
+		{http.MethodGet, "/admin/instances/bad%20host/availability_events", "admin-read"},
+		{http.MethodPost, "/admin/instances/bad%20host/mark_available", "admin"},
+	} {
+		res := e.admin(t, op.method, op.path, op.token, nil)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "domain") {
+			t.Errorf("%s %s = %d %+v, want 400 naming domain", op.method, op.path, res.StatusCode, p)
+		}
+	}
+	if len(health.markedBy) != 0 {
+		t.Errorf("marked = %v, want none", health.markedBy)
+	}
+}
+
 func TestGetInstanceHealth(t *testing.T) {
 	e, _, _ := newAdminEnv(t)
 	res := e.admin(t, http.MethodGet, "/admin/instances/B.Example", "admin-read", nil)
