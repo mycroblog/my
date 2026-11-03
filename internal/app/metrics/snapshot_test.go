@@ -147,7 +147,7 @@ type database struct {
 func (d *database) Backlog(_ context.Context, now time.Time) (queue.Backlog, error) {
 	d.backlogs.Add(1)
 	return queue.Backlog{
-		Ready:         map[string]int64{"delivery.deliver": 4, "media.process": 1, "retired.type": 2},
+		Ready:         map[string]int64{"federation.deliver": 4, "media.process": 1, "retired.type": 2},
 		OldestReadyAt: now.Add(-90 * time.Second),
 		Dead:          3,
 	}, nil
@@ -253,7 +253,7 @@ func (w *gaugeWriter) WriteGauges(context.Context) error {
 var start = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 
 var want = map[string]float64{
-	"my.queue.ready{my.job.type=delivery.deliver}":        4,
+	"my.queue.ready{my.job.type=federation.deliver}":        4,
 	"my.queue.ready{my.job.type=media.process}":           1,
 	"my.queue.ready{my.job.type=other}":                   2,
 	"my.queue.oldest_ready_age":                           90,
@@ -421,7 +421,7 @@ func TestTheJobLogsTheSnapshot(t *testing.T) {
 	stored, _ := line["my.media.stored_bytes"].(map[string]any)
 	instances, _ := line["my.federation.instances"].(map[string]any)
 	failing, _ := line["my.billing.import.failing"].(map[string]any)
-	if line["msg"] != "metrics snapshot" || ready["delivery.deliver"] != 4.0 || ready["other"] != 2.0 ||
+	if line["msg"] != "metrics snapshot" || ready["federation.deliver"] != 4.0 || ready["other"] != 2.0 ||
 		line["my.queue.dead"] != 3.0 || line["my.instance.users"] != 10.0 || stored["remote_cache"] != 400.0 ||
 		line["my.db.size"] != 50000.0 || instances["unavailable"] != 2.0 || failing["aws"] != true {
 		t.Errorf("log line = %v", line)
