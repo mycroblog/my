@@ -4326,7 +4326,8 @@ type AIUsage string
 
 // Account An account, as clients show it (FR-006).
 type Account struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
 	// Avatar The avatar image, square; omitted when the account has none, or its image is not
@@ -4397,7 +4398,7 @@ type Account struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -4789,7 +4790,7 @@ type AdminAccountRegistration struct {
 type AdminAccountRegistrationState string
 
 // AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
-// API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,
+// API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
 // `public_discovery`: posts stay off the public timelines and search.
 // `unsolicited_reach`: notifications reach followers only. `media_sensitive`: media shows
@@ -4840,7 +4841,7 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
-	// Title The heading, in plain text; empty for an announcement without one.
+	// Title The heading, in plain text.
 	Title string `json:"title"`
 
 	// UpdatedAt When its text or window last changed.
@@ -4994,7 +4995,7 @@ type AdminAppealPage struct {
 // the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 // `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 // the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 // (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 // and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 // name.
@@ -5069,7 +5070,7 @@ type AdminAuditEntry struct {
 	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-	// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+	// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 	// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 	// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 	// name.
@@ -5093,9 +5094,8 @@ type AdminAuditEntry struct {
 	Id         Id        `json:"id"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// SourceEventId The ID of the record of the operation (the domain action, the assignment, the
-	// resolution, the reopening, the note, the decision, the revision), which holds its
-	// reasons and notes; omitted when the operation has none.
+	// SourceEventId An opaque ID that relates the entries of one operation; omitted when the operation has
+	// no record of its own.
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
@@ -5105,9 +5105,11 @@ type AdminAuditEntry struct {
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
-	// TargetId The target: the ID of an account, a report, an appeal, a user, a role, a rule, a
-	// sign-up block, a custom emoji, a webhook, or an invite, the domain of a domain action,
-	// or the key of a setting or a text.
+	// TargetId The target: the ID of an account, a status, a report, an appeal, a user, a role, a rule,
+	// a sign-up block, a custom emoji or a request for one, a webhook, an announcement, an
+	// invite, a relay, a cost item, a supporter plan or subscription, an OAuth client, a voice
+	// room, or a login provider; the domain of a domain action or a link card rule; the host of
+	// a denied OAuth client; the source of a billing import; or the key of a setting or a text.
 	TargetId string `json:"target_id"`
 
 	// TargetKind The kind of what an audited operation acted on.
@@ -6178,7 +6180,9 @@ type AdminRole struct {
 
 	// Permissions The permissions that the role grants, in the order of `Permission`.
 	Permissions []Permission `json:"permissions"`
-	Position    int          `json:"position"`
+
+	// Position The rank of the role, from 0 to 999, and 1000 for `admin`.
+	Position int `json:"position"`
 }
 
 // AdminRoleList Roles, highest position first.
@@ -6908,7 +6912,7 @@ type AppealModerationActionRequest struct {
 }
 
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
-// work. The name, the website and the logo are what the app says about itself; `registration`,
+// work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
 type AuthorizedApp struct {
 	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
@@ -7917,7 +7921,8 @@ type CreateWebhookRequest struct {
 
 // CredentialAccount The authenticated user's own account, with what only its owner sees.
 type CredentialAccount struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
 	// AiOptOut Whether the account's pages state that AI may neither train on nor use them
@@ -8027,7 +8032,7 @@ type CredentialAccount struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -8875,7 +8880,7 @@ type ImportSignupBlocksRequest struct {
 	Severity AdminSignupBlockSeverity `json:"severity"`
 
 	// Text The list: one value per line, or a CSV row whose first field is the value; blank
-	// lines and lines starting with `#` are ignored. At most 10,000 values.
+	// lines and lines starting with `#` are ignored. At most 10,000 values; the request body is at most 1 MiB, past which the answer is 413.
 	Text string `json:"text"`
 }
 
@@ -11105,7 +11110,7 @@ type Preferences struct {
 
 // PreviewDomainBlockImportRequest A domain block CSV to preview.
 type PreviewDomainBlockImportRequest struct {
-	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows.
+	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows, and the request body at most 1 MiB, past which the answer is 413.
 	Csv string `json:"csv"`
 }
 
@@ -11219,7 +11224,7 @@ type PreviewDomainBlockImportRequest struct {
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
 //     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
 //     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
 //     this problem; signing in and resetting a password stay available outside the client API.
@@ -12092,18 +12097,10 @@ type StatusMention struct {
 	// Acct The username for local accounts, `username@domain` for remote ones.
 	Acct string `json:"acct"`
 
-	// Domain The domain of the account: the domain of its handle, which for local accounts is the
-	// instance's account domain, or the host of its `uri` when a remote account has no
-	// confirmed handle.
-	Domain *string `json:"domain,omitempty"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
-
-	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
-	Uri *string `json:"uri,omitempty"`
 
 	// Url The account's profile page.
 	Url string `json:"url"`
@@ -13596,7 +13593,7 @@ type StatusAfterAction = Status
 
 // LookupAccountParams defines parameters for LookupAccount.
 type LookupAccountParams struct {
-	// Acct The handle, `username` or `username@domain`, or the `https` URL of an actor.
+	// Acct The handle, `username` or `username@domain`, or the `https` or `http` URL of an actor.
 	Acct string `form:"acct" json:"acct"`
 
 	// Resolve Fetch a remote account that the instance does not know yet.
@@ -42189,15 +42186,25 @@ type CreatePasskeyResponseObject interface {
 	VisitCreatePasskeyResponse(w http.ResponseWriter) error
 }
 
-type CreatePasskey201JSONResponse Passkey
+type CreatePasskey201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreatePasskey201JSONResponse struct {
+	Body    Passkey
+	Headers CreatePasskey201ResponseHeaders
+}
 
 func (response CreatePasskey201JSONResponse) VisitCreatePasskeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -51738,10 +51745,13 @@ func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 
 	var body CreateInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateInvite(ctx, request.(CreateInviteRequestObject))
@@ -55033,10 +55043,13 @@ func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request)
 
 	var body CreateOwnInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateOwnInvite(ctx, request.(CreateOwnInviteRequestObject))
