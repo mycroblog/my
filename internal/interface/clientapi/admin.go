@@ -96,7 +96,7 @@ func newAdminInstanceHealth(h federation.InstanceHealth) AdminInstanceHealth {
 	out := AdminInstanceHealth{Domain: h.Domain, State: AdminInstanceState(h.State), FailureDays: h.FailureDays}
 	if !h.Since.IsZero() {
 		since := h.Since.UTC()
-		out.Since = &since
+		out.StateChangedAt = &since
 	}
 	if day, err := time.Parse("20060102", h.LastFailureDay); err == nil {
 		out.LastFailureDay = &openapi_types.Date{Time: day}

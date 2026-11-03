@@ -44,7 +44,7 @@ export function MutedAccounts() {
               })}
             </span>
           )}
-          {mute.notifications && <span>{t("client:settings.mutes.notifications")}</span>}
+          {mute.hide_notifications && <span>{t("client:settings.mutes.notifications")}</span>}
         </>
       )}
       actions={(account, removed) => (

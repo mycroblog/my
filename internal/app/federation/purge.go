@@ -15,7 +15,7 @@ import (
 // Retention of the inbox and delivery records (ADR-0034, data-model §4.8, FR-803).
 const (
 	// JobPurge deletes the inbox and delivery records past their retention; no payload.
-	JobPurge = "federation.purge"
+	JobPurge = "federation.purge_records"
 	// PurgeInterval is the period of the purge's schedule.
 	PurgeInterval = time.Hour
 	// ReceivedDocumentRetention is how long a received document is kept, for investigation and

@@ -334,7 +334,7 @@ describe("the table", () => {
         withViewer(request, () =>
           HttpResponse.json({
             ...preferencesFixture,
-            email_suppression: { kind: "complaint", since: "2026-10-10T09:30:00Z" },
+            email_suppression: { kind: "complaint", state_changed_at: "2026-10-10T09:30:00Z" },
           }),
         ),
       ),

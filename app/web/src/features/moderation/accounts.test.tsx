@@ -701,7 +701,10 @@ describe("an account's admin page", () => {
 
   test("shows the email suppression of a local account and lifts it after its confirmation, keeping focus in its region", async () => {
     const requests = recordAccountRequests();
-    let detail: Detail = { ...bobDetail, email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } };
+    let detail: Detail = {
+      ...bobDetail,
+      email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" },
+    };
     server.use(
       operatorHandler(["manage_accounts", "manage_reports", "view_audit"]),
       http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(detail)),

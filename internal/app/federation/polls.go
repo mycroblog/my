@@ -21,7 +21,7 @@ const (
 	// JobPollUpdate records the Update of a local status with a poll, which carries the poll's
 	// counts as they are when the job runs (FR-112, federation.md §7.1). Its payload is
 	// pollUpdatePayload.
-	JobPollUpdate = "federation.poll_update"
+	JobPollUpdate = "federation.update_poll"
 	// PollUpdateDelay is how long after a vote in a local poll its Update is sent: the votes of
 	// that time share one Update, as Mastodon gathers them.
 	PollUpdateDelay = 3 * time.Minute

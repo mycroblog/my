@@ -217,10 +217,10 @@ func (s *Service) CloseService(ctx context.Context, byUserID string) (instance.C
 const (
 	// JobClosureFanOut records the Delete of one page of local accounts and passes them to the
 	// fan-out; the federation module enqueues the first page in the transaction of the closure.
-	JobClosureFanOut = "instance.closure_fanout"
+	JobClosureFanOut = "instance.closure_delete_actors"
 	// JobClosureCompletion is the periodic check that records delivery_completed once the
 	// closure's Deletes have all been delivered.
-	JobClosureCompletion = "instance.closure_completion"
+	JobClosureCompletion = "instance.check_closure_delivery"
 )
 
 // CompleteClosureDelivery records that the Delete of every local account has been delivered

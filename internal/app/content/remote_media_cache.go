@@ -45,7 +45,7 @@ type ProxySettings struct {
 const (
 	// JobCleanupRemoteMedia deletes the copies of the remote media cache past their expiry and
 	// those over the size limit (FR-803); no payload.
-	JobCleanupRemoteMedia = "media.cleanup_remote"
+	JobCleanupRemoteMedia = "media.purge_remote_cache"
 	// DefaultRemoteMediaCacheMaxSize is the default size limit of the remote media cache.
 	DefaultRemoteMediaCacheMaxSize int64 = 1 << 30
 	// remoteMediaPrefix starts the private blob keys of the cached copies.

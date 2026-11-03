@@ -144,7 +144,7 @@ async function moderatorServer(
   const locale = test.info().project.use.locale ?? "en";
   let actions = [limit];
   let suppression: Schemas["EmailSuppression"] | undefined = suppressed
-    ? { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" }
+    ? { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" }
     : undefined;
   let blocks: Schemas["AdminSignupBlock"][] = [];
   let slowSearch = false;

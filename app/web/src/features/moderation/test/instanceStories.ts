@@ -12,16 +12,22 @@ function day(hours: number): string {
 
 /** The servers, unavailable ones first. */
 export const storyInstances: Schemas["AdminInstanceHealth"][] = [
-  { domain: "gone.example", state: "unavailable", since: hoursAgo(24 * 9), failure_days: 9, last_failure_day: day(2) },
+  {
+    domain: "gone.example",
+    state: "unavailable",
+    state_changed_at: hoursAgo(24 * 9),
+    failure_days: 9,
+    last_failure_day: day(2),
+  },
   {
     domain: longDomainAccountFixture.domain,
     state: "unavailable",
-    since: hoursAgo(24 * 7),
+    state_changed_at: hoursAgo(24 * 7),
     failure_days: 7,
     last_failure_day: day(1),
   },
   { domain: "flaky.example", state: "available", failure_days: 3, last_failure_day: day(4) },
-  { domain: "remote.example", state: "available", since: hoursAgo(24 * 2), failure_days: 0 },
+  { domain: "remote.example", state: "available", state_changed_at: hoursAgo(24 * 2), failure_days: 0 },
   { domain: "mastodon.example", state: "available", failure_days: 0 },
   { domain: "xn--r8jz45g.example", state: "available", failure_days: 1, last_failure_day: day(30) },
 ];

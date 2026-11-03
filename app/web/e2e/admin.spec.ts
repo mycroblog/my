@@ -57,7 +57,7 @@ async function operatorServer(page: Page) {
   let paused: Record<string, unknown> = {
     domain: longDomain,
     state: "unavailable",
-    since: "2026-10-10T08:00:00Z",
+    state_changed_at: "2026-10-10T08:00:00Z",
     failure_days: 7,
     last_failure_day: "2026-10-10",
   };
@@ -86,7 +86,7 @@ async function operatorServer(page: Page) {
     },
     {
       id: "0192f0c4-7a8e-7000-8000-0000000000d0",
-      type: "kv.cleanup",
+      type: "kv.purge_expired",
       state: "dead",
       payload: "null",
       attempts: 3,
@@ -170,7 +170,7 @@ async function operatorServer(page: Page) {
     if (key === `GET /admin/instances/${longDomain}/availability_events`) return json(route, { items: events });
     if (key === `POST /admin/instances/${longDomain}/mark_available`) {
       actions.push(key);
-      paused = { domain: longDomain, state: "available", since: "2026-10-17T00:00:00Z", failure_days: 0 };
+      paused = { domain: longDomain, state: "available", state_changed_at: "2026-10-17T00:00:00Z", failure_days: 0 };
       events = [
         {
           id: "0192f0c4-7a8e-7000-8000-0000000000e2",
@@ -305,7 +305,7 @@ test.describe("queue dashboard", () => {
           - heading "federation.deliver" [level=3]
           - button
         - listitem:
-          - heading "kv.cleanup" [level=3]
+          - heading "kv.purge_expired" [level=3]
           - button
     `);
 
@@ -313,7 +313,7 @@ test.describe("queue dashboard", () => {
       panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 3, name: type }) });
     await row("federation.deliver").getByRole("button").first().click();
     await expect(panel.getByRole("heading", { level: 3, name: "federation.deliver" })).toBeHidden();
-    await expect(row("kv.cleanup").getByRole("button").first()).toBeFocused();
+    await expect(row("kv.purge_expired").getByRole("button").first()).toBeFocused();
     expect(actions).toEqual(["POST /admin/jobs/0192f0c4-7a8e-7000-8000-0000000000d1/retry"]);
     await expectNoAxeViolations(makeAxeBuilder);
   });

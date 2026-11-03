@@ -33,7 +33,7 @@ func TestSchedulerEnqueuesOncePerSlot(t *testing.T) {
 	clock := &stepClock{now: time.Date(2026, 10, 16, 12, 0, 30, 0, time.UTC)}
 	q := &recordingQueue{}
 	s := queue.NewScheduler(q, clock, nil)
-	s.Add(queue.Schedule{Name: "cleanup", Every: time.Hour, Job: queue.NewJob{Type: "media.cleanup"}})
+	s.Add(queue.Schedule{Name: "cleanup", Every: time.Hour, Job: queue.NewJob{Type: "media.purge_unattached"}})
 	s.Add(queue.Schedule{Name: "often", Every: time.Minute, Job: queue.NewJob{Type: "x"}})
 
 	s.Tick(t.Context())
@@ -41,7 +41,7 @@ func TestSchedulerEnqueuesOncePerSlot(t *testing.T) {
 		t.Fatalf("first Tick enqueued %d jobs, want 2", len(q.jobs))
 	}
 	slot := clock.now.UnixMilli() / time.Hour.Milliseconds()
-	if got, want := q.jobs[0].IdempotencyKey, "schedule:cleanup:"+strconv.FormatInt(slot, 10); got != want || q.jobs[0].Type != "media.cleanup" {
+	if got, want := q.jobs[0].IdempotencyKey, "schedule:cleanup:"+strconv.FormatInt(slot, 10); got != want || q.jobs[0].Type != "media.purge_unattached" {
 		t.Errorf("job = %+v, want key %q", q.jobs[0], want)
 	}
 
@@ -65,7 +65,7 @@ func TestSchedulerRetriesAFailedEnqueue(t *testing.T) {
 	clock := &stepClock{now: time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC)}
 	q := &recordingQueue{err: errors.New("database is down")}
 	s := queue.NewScheduler(q, clock, nil)
-	s.Add(queue.Schedule{Name: "cleanup", Every: time.Hour, Job: queue.NewJob{Type: "media.cleanup"}})
+	s.Add(queue.Schedule{Name: "cleanup", Every: time.Hour, Job: queue.NewJob{Type: "media.purge_unattached"}})
 	s.Tick(t.Context())
 	q.err = nil
 	s.Tick(t.Context())

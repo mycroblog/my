@@ -279,7 +279,7 @@ CREATE UNIQUE INDEX favourites_uri ON favourites (uri);
 CREATE INDEX favourites_account_id_id ON favourites (account_id, id);
 CREATE INDEX favourites_status_id_id ON favourites (status_id, id);
 
--- Resource: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
+-- Current value: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
 -- back (content.unreacted). emoji_key is the Unicode emoji, fully qualified, or the
 -- custom_emojis.id of custom_emoji_id, NULL for a Unicode emoji. uri is the IRI of the Like or
 -- EmojiReact.
@@ -428,7 +428,7 @@ CREATE INDEX media_blob_deletions_delete_after ON media_blob_deletions (delete_a
 -- Current value (cache): the link card of a URL (ADR-0062), read from the page's head and shared
 -- by every status that links the URL. url is the requested URL, normalized; card_url is where the
 -- card links (the final URL, or its og:url of the same origin). A fetch upserts the row;
--- content.cleanup_link_cards deletes the rows that no status refers to 14 days after their fetch.
+-- content.purge_link_cards deletes the rows that no status refers to 14 days after their fetch.
 -- author_name is empty when the page names no author.
 CREATE TABLE link_cards (
   url TEXT NOT NULL PRIMARY KEY,

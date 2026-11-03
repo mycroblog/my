@@ -32,7 +32,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 		t.Helper()
 		var a clientapi.AdminAccountAction
 		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice.id+"/actions", mod.token, map[string]any{"kind": kind, "public_reason": "rules"}, &a), http.StatusCreated, "issue "+kind)
-		if a.Kind != clientapi.AdminAccountActionKind(kind) || a.State != clientapi.AdminAccountActionStateActive || a.AccountId != alice.id {
+		if a.Kind != clientapi.AdminAccountActionKind(kind) || a.State != clientapi.ModerationActionStateActive || a.AccountId != alice.id {
 			t.Fatalf("issued %s = %+v", kind, a)
 		}
 		return a
@@ -41,7 +41,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 		t.Helper()
 		var got clientapi.AdminAccountAction
 		e.want(e.do(http.MethodPost, "/admin/account_actions/"+a.Id+"/lift", mod.token, map[string]any{"reason": "appealed"}, &got), http.StatusOK, "lift "+string(a.Kind))
-		if got.State != clientapi.AdminAccountActionStateLifted {
+		if got.State != clientapi.ModerationActionStateLifted {
 			t.Fatalf("lifted %s = %+v", a.Kind, got)
 		}
 	}

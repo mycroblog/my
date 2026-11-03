@@ -12,7 +12,7 @@ import (
 
 const (
 	// JobCleanupKV deletes the expired entries of the key-value store (FR-803); no payload.
-	JobCleanupKV = "kv.cleanup"
+	JobCleanupKV = "kv.purge_expired"
 	// kvCleanupInterval is the period of the key-value store's cleanup schedule.
 	kvCleanupInterval = time.Hour
 	// kvCleanupBatch is the number of entries one DeleteExpired call (one short transaction)

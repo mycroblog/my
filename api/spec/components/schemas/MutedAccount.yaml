@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: MIT
 description: An account that the viewer mutes, with the mute's settings.
 type: object
-required: [account, notifications]
+required: [account, hide_notifications]
 properties:
   account:
     $ref: ./Account.yaml
-  notifications:
+  hide_notifications:
     description: Whether the mute also hides the account's notifications.
     type: boolean
   expires_at:

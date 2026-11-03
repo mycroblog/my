@@ -1,5 +1,7 @@
 ### 4.10 基盤（アダプタ所有）
 
+ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_attempts`・`data_upgrade_runs` がイベントです。
+
 | テーブル | カラム | 一意 | インデックス |
 | --- | --- | --- | --- |
 | `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(type, run_at, id)`（種類を選ぶワーカーの claim、ADR-0138）, `(ordering_key, run_at)` |
@@ -23,12 +25,12 @@
   dead job の再実行は試行回数を数え直すので、同じ `attempt` が 2 回現れることがあり、`finished_at` を主キーに含めて区別します。同じ試行を繰り返し記録しても 1 行です。
   `finished_at` から設定 `job_attempt_retention`（既定 30 日）を過ぎた行は、`queue.purge_dead_jobs` が dead job と同じ上限で古い順に消します。
 - ジョブの状態（待ち・実行中・リトライ待ち）は列を持たず、`jobs` の今の値から導きます（`locked_until > now` なら実行中、そうでなく `attempt = 0` なら待ち、`attempt > 0` ならリトライ待ち）。
-- `kv_entries` は `KeyValueStore` ポートの値です。`expires_at` を過ぎた行は無いものとして扱い、1 時間ごとの消去ジョブ `kv.cleanup` が `DeleteExpired` で物理削除します。
+- `kv_entries` は `KeyValueStore` ポートの値です。`expires_at` を過ぎた行は無いものとして扱い、1 時間ごとの消去ジョブ `kv.purge_expired` が `DeleteExpired` で物理削除します。
   `DeleteExpired` は 1 回（1 トランザクション）で消す件数に上限を取り、ジョブは上限の回数まで繰り返して、残りを次の回に回します（FR-803）。
   カウンタ（`IncrBy`、レート制限）は値を 10 進の文字列で持ち、1 文の upsert で加算します。
   `CompareAndSwap` は、期待した値（または期限内の行が無いこと）のときだけ書き換えか削除をし、PostgreSQL では条件付きの 1 文、SQLite では `BEGIN IMMEDIATE` の中の読み取りと書き込みで行います。
 - `kv = memory` と `kv = valkey` は `kv_entries` を使わず、同じポートの値をプロセスのメモリか Valkey に持ちます。
-  `kv/valkey` は 1 件を値と期限のハッシュにし、TTL のある件をサーバーの TTL と期限順のソート済み集合にも入れて、`kv.cleanup` がサーバーの消し残しを消します。
+  `kv/valkey` は 1 件を値と期限のハッシュにし、TTL のある件をサーバーの TTL と期限順のソート済み集合にも入れて、`kv.purge_expired` がサーバーの消し残しを消します。
 - `locked_by` と `locked_until` はワーカーのリース（ADR-0004）で、取得時に両方を設定し、結果の記録時に両方を NULL に戻します（`CHECK` で同時性を保証）。
   リースが切れた（`locked_until <= now`）ジョブは他のワーカーが取り直します。結果の記録は `(id, locked_by, attempt)` が一致するときだけ有効です。
 - `ordering_key` が同じジョブは 1 件ずつ、投入順（`(created_at, id)`）に実行します（`internal/app/queue` の「Ordering keys」）。

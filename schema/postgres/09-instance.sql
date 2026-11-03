@@ -11,7 +11,8 @@
 -- ---------------------------------------------------------------------------------------------
 
 -- Event (revision): one change of a setting. value is the canonical string form of the key's
--- scalar type. revised_by_user_id is NULL for a change from the CLI.
+-- type: a scalar, or an ordered list of usernames for featured_accounts, which no query filters
+-- by item (ADR-0020 rule 4). revised_by_user_id is NULL for a change from the CLI.
 CREATE TABLE instance_setting_revisions (
   id uuid NOT NULL PRIMARY KEY,
   key text COLLATE "C" NOT NULL CHECK (key IN (

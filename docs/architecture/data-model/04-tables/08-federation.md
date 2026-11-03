@@ -14,13 +14,13 @@
 | `deliveries` | イベント | `id`, `outbound_activity_id`, `inbox_url`（shared inbox に集約済み）, `domain`, `created_at` | 一意 `(outbound_activity_id, inbox_url)` |
 | `delivery_attempts` | イベント | `id`, `delivery_id`, `outcome`（`enum(succeeded, retryable_failure, permanent_failure, skipped)`）, `signature_scheme`（`enum(rfc9421, cavage)`、NULL 可 = 応答が無い）, `status_code`（`int`、NULL 可）, `error`（`text`、NULL 可）, `attempted_at` | インデックス `(delivery_id, id)`。保持期間（30 日）後に削除（NFR-OPS-3） |
 | `outbound_fanout_completions` | イベント | `outbound_activity_id`（PK）, `completed_at` | 展開が最後のバッチを積んだ（送らずに終えた展開を含む）。ローカルの Actor の `Delete` と `Move` だけ記録する（サービスのクローズが待ち、点検が数える。[federation.md §15](../../federation.md#15-サービスの終了)） |
-| `closure_deletes` | イベント | `account_id`（PK）, `outbound_activity_id`（一意）, `recorded_at` | サービスのクローズの `Delete`（Actor）。アカウントごとに 1 行で、ページの再実行でも増えない（[ADR-0088](../../../adr/0088-service-shutdown-modes.md) §3） |
+| `closure_deletes` | イベント | `account_id`（PK）, `outbound_activity_id`（一意）, `recorded_at` | サービスのクローズの `Delete`（Actor）。アカウントごとに 1 行で、ページの再実行でも増えない（[ADR-0088](../../../adr/0088-service-shutdown-modes.md) §3）。一意 `(outbound_activity_id)` |
 | `remote_instances` | リソース | `domain`（PK）, `first_seen_at` | |
 | `instance_nodeinfo_observations` | イベント | `id`, `domain`, `software_name`, `software_version`, `observed_at` | インデックス `(domain, id DESC)` |
 | `instance_availability_events` | イベント | `id`, `domain`, `kind`（`enum(marked_unavailable, marked_available)`）, `reason`（`enum(failure_days, delivery_succeeded, inbound_request, probe_succeeded, operator)`）, `occurred_at` | インデックス `(domain, id DESC)`。配送先として扱うかの判断の記録（管理画面で理由を示す） |
 | `instance_health` | 現在値 | `domain`（PK）, `state`（`enum(available, unavailable)`）, `since`, `failure_days`（`int`。直近の連続した失敗の、異なる UTC の日の数）, `last_failure_day`（`string(8)`、`YYYYMMDD`。失敗が無ければ空文字） | インデックス `(state)`。`delivery_attempts` と `instance_availability_events` から更新する。成功時の更新は、`failure_days > 0` か `state = unavailable` のときだけ行う |
 | `relays` | リソース | `id`, `protocol`（`enum(mastodon, litepub)`）, `url`（登録した URL。`mastodon` は inbox、`litepub` は Actor）, `inbox_url`（配送先）, `receive`（`bool`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | 一意 `(url)`。`left` か `rejected` のときだけ、子の行と一緒に消せる（[ADR-0061](../../../adr/0061-federation-relays.md)） |
-| `relay_events` | イベント | `id`, `relay_id`, `kind`（`enum(follow_sent, accepted, rejected, left)`）, `follow_activity_uri`（`follow_sent` が送った `Follow` の `id`。ほかは対象の `Follow`）, `relay_actor_uri`（`accepted` の主体。ほかは NULL）, `actor_user_id`（NULL 可 = CLI か受信）, `occurred_at` | 一意 `(relay_id, follow_activity_uri, kind)`（同じ答えの再処理で増えない）。インデックス `(relay_id, id DESC)`。CHECK `(kind = 'accepted') = (relay_actor_uri IS NOT NULL)` |
+| `relay_events` | イベント | `id`, `relay_id`, `kind`（`enum(follow_sent, accepted, rejected, left)`）, `follow_activity_uri`（`follow_sent` が送った `Follow` の `id`。ほかは対象の `Follow`）, `relay_actor_uri`（NULL 可。`accepted` の主体。ほかは NULL）, `actor_user_id`（NULL 可 = CLI か受信）, `occurred_at` | 一意 `(relay_id, follow_activity_uri, kind)`（同じ答えの再処理で増えない）。インデックス `(relay_id, id DESC)`。CHECK `(kind = 'accepted') = (relay_actor_uri IS NOT NULL)` |
 | `relay_states` | 投影 | `relay_id`（PK）, `state`（`enum(pending, accepted, rejected, left)`）, `follow_activity_uri`, `relay_actor_uri`（NULL 可）, `since` | `relay_events` の最新の行から作る。インデックス `(follow_activity_uri)`（`Accept` / `Reject` の照合）、`(relay_actor_uri)`（受信の署名者の照合） |
 
 - **配送先の記録** は `deliveries` が兼ねます。
@@ -38,11 +38,11 @@
 - `delivery_attempts.signature_scheme` が NULL の行は、応答を得ていない試行です（送らなかった `skipped` とサーキットブレーカーが開いていた `retryable_failure`、接続・TLS・タイムアウトの失敗、`HTTPClient` が拒否した宛先）。
 - `trust = refetch` の受信の記録は、オリジンで確かめられずに捨てたとき、原本とともに消します（[federation §3.2](../../federation.md#32-非同期の部分)）。同じアクティビティが後から届けば、もう一度記録します。
 - 受信の記録（`received_activities`）は 30 日、原本は 7 日で削除します（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)、FR-803）。
-  1 時間ごとの消去ジョブ `federation.purge` が、原本、受信の記録、`received_activity_answers`（30 日）、`remote_follow_tombstones`（30 日）、`remote_object_tombstones`（30 日）、`outbound_activity_documents`（30 日）、`delivery_attempts`（30 日）の順に、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。続きは次の回が消します。
+  1 時間ごとの消去ジョブ `federation.purge_records` が、原本、受信の記録、`received_activity_answers`（30 日）、`remote_follow_tombstones`（30 日）、`remote_object_tombstones`（30 日）、`outbound_activity_documents`（30 日）、`delivery_attempts`（30 日）の順に、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。続きは次の回が消します。
   受信の記録は原本が消えたものだけを消すので、原本が受信の記録より長く残ることはありません。`outbound_activity_documents` と `delivery_attempts` の走査は、主キーの UUIDv7 の範囲（期限の下限より前）で止まります。
-- 送信のアクティビティ（`outbound_activities`）は配送（`deliveries`）・試行・本文・`outbound_fanout_completions` とともに、`federation.purge` が 1 トランザクションあたり 100 件・20 回まで消します。
+- 送信のアクティビティ（`outbound_activities`）は配送（`deliveries`）・試行・本文・`outbound_fanout_completions` とともに、`federation.purge_records` が 1 トランザクションあたり 100 件・20 回まで消します。
   - 記録から 30 日で消します。読み返すのは投稿の `Create` の配送先だけで（投稿の `Update` と `Delete` の宛先）、`Like`・`Follow`・`Undo` などを読み返す処理はありません。
   - 投稿の `Create` は、その投稿の `Delete` か Actor の `Delete` の記録から 30 日で消します。その `Delete` の展開が配送先を読み終えるまで残すためです。`Delete` は、頼っている `Create` が残るあいだ残します。
   - アカウントの消去は投稿ごとの `Delete` を送らないので、Actor の `Delete` が目印です。サービスのクローズの `Delete`（`closure_deletes`）は何も消さないので目印にならず、クローズが数えるので自分も消しません。
-- サーバーの観測（`instance_nodeinfo_observations`、`instance_availability_events`）は、`federation.purge` が 90 日で消します。サーバーごとの最新の行は、変化の検出と履歴の表示のため、古くても残します。
+- サーバーの観測（`instance_nodeinfo_observations`、`instance_availability_events`）は、`federation.purge_records` が 90 日で消します。サーバーごとの最新の行は、変化の検出と履歴の表示のため、古くても残します。
   `remote_follow_tombstones` を `remote_object_tombstones` より先に消すので、使い終えた tombstone が、使い終えた印（同じ `activity_uri` の `remote_object_tombstones`。tombstone より新しい）より長く残って `Follow` をもう一度捨てることはありません。
