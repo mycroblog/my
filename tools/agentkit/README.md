@@ -138,4 +138,5 @@ dependency check (only module versions the server's `go.sum` has, so `scripts/ta
 `map check`. Bump `extract.Version` when an extractor's output changes, so that indexes are rebuilt.
 
 `cmd/releasenotes` is not part of agentkit: it is the reader behind `scripts/release-notes.sh`, in this module for its YAML parser,
-and is tested with that script by `scripts/task.sh shell:test`.
+and is tested with that script by `scripts/task.sh shell:test`. `cmd/releaseprose` is that script's step that asks Claude for the
+prose around those facts and checks it; its tests here use a fake model, and the script's tests a fake `claude`.
