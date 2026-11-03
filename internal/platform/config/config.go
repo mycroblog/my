@@ -81,9 +81,13 @@ type Config struct {
 	// most one of them set (ADR-0138).
 	WorkerJobTypes       []string
 	WorkerJobTypesExcept []string
-	QueueSQSQueueURL     string
-	QueueSQSEventsPath   string
-	QueueSQSEventsBudget time.Duration
+	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
+	// own queue (ADR-0139); read them with QueueRoutes.
+	QueueSQSRoutes        []QueueRoute
+	QueueCloudTasksRoutes []QueueRoute
+	QueueSQSQueueURL      string
+	QueueSQSEventsPath    string
+	QueueSQSEventsBudget  time.Duration
 
 	Blob  string
 	Media string

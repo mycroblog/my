@@ -360,7 +360,7 @@ func (s sqliteStore) jobLease(ctx context.Context, tx uow.Tx, id string) (lease,
 	if err != nil {
 		return lease{}, false, err
 	}
-	l := lease{orderingKey: r.OrderingKey.String, runAt: fromMillis(r.RunAt)}
+	l := lease{jobType: r.Type, orderingKey: r.OrderingKey.String, runAt: fromMillis(r.RunAt)}
 	if r.LockedUntil.Valid {
 		l.lockedUntil = fromMillis(r.LockedUntil.Int64)
 	}
@@ -400,14 +400,60 @@ func (s sqliteStore) claimID(ctx context.Context, tx uow.Tx, id, _, worker strin
 	}, true, nil
 }
 
-func (s sqliteStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]string, error) {
+func (s sqliteStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
 	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
-	return q.ListDueJobs(ctx, sqlitequeue.ListDueJobsParams{
+	rows, err := q.ListDueJobs(ctx, sqlitequeue.ListDueJobsParams{
 		DueBefore: millis(dueBefore), Now: sql.NullInt64{Int64: millis(now), Valid: true}, BatchLimit: int64(limit),
 	})
+	return wakesOfRows(rows, err, func(r sqlitequeue.ListDueJobsRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: fromMillis(r.RunAt)}
+	})
+}
+
+func (s sqliteStore) dueJobsOfType(ctx context.Context, tx uow.Tx, jobType string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListDueJobsOfType(ctx, sqlitequeue.ListDueJobsOfTypeParams{
+		JobType: jobType, DueBefore: millis(dueBefore), Now: sql.NullInt64{Int64: millis(now), Valid: true}, BatchLimit: int64(limit),
+	})
+	return wakesOfRows(rows, err, func(r sqlitequeue.ListDueJobsOfTypeRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: fromMillis(r.RunAt)}
+	})
+}
+
+func (s sqliteStore) dueJobsExceptTypes(ctx context.Context, tx uow.Tx, types []string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := json.Marshal(types)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListDueJobsExceptTypes(ctx, sqlitequeue.ListDueJobsExceptTypesParams{
+		Types: string(list), DueBefore: millis(dueBefore), Now: sql.NullInt64{Int64: millis(now), Valid: true}, BatchLimit: int64(limit),
+	})
+	return wakesOfRows(rows, err, func(r sqlitequeue.ListDueJobsExceptTypesRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: fromMillis(r.RunAt)}
+	})
+}
+
+// deadJobType returns the type of the dead job id, or "" when there is no such job.
+func (s sqliteStore) deadJobType(ctx context.Context, tx uow.Tx, id string) (string, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return "", err
+	}
+	t, err := q.GetDeadJobType(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return t, err
 }
 
 func (s sqliteStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey string) (queue.Wake, bool, error) {
@@ -422,5 +468,5 @@ func (s sqliteStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey strin
 	if err != nil {
 		return queue.Wake{}, false, err
 	}
-	return queue.Wake{JobID: r.ID, At: fromMillis(r.RunAt)}, true, nil
+	return queue.Wake{JobID: r.ID, Type: r.Type, At: fromMillis(r.RunAt)}, true, nil
 }

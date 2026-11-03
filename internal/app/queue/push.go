@@ -58,7 +58,7 @@ func (p *PushReceiver) Receive(ctx context.Context, id string) error {
 	case Claimed:
 	case ClaimNotDue:
 		// Delivered early by a queue with a delay limit: the re-enqueue chain.
-		WakeJobs(ctx, p.waker, r.opts.Logger, Wake{JobID: id, At: c.Job.RunAt})
+		WakeJobs(ctx, p.waker, r.opts.Logger, Wake{JobID: id, Type: c.Job.Type, At: c.Job.RunAt})
 		return nil
 	default:
 		// Held back: the job before it signals it once it settles. Leased or gone: nothing to do.
@@ -78,7 +78,7 @@ func (p *PushReceiver) Receive(ctx context.Context, id string) error {
 	signalCtx, cancel := r.recordContext(ctx)
 	defer cancel()
 	if s.released {
-		WakeJobs(signalCtx, p.waker, r.opts.Logger, Wake{JobID: j.ID, At: s.runAt})
+		WakeJobs(signalCtx, p.waker, r.opts.Logger, Wake{JobID: j.ID, Type: j.Type, At: s.runAt})
 		return nil
 	}
 	if j.OrderingKey == "" {

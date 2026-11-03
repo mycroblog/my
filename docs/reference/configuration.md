@@ -66,6 +66,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
 | [`database_dev_url`](#database_dev_url) | `MY_DATABASE_DEV_URL` | a temporary schema in the database of `database_url` | no | yes |
 | [`queue`](#queue) | `MY_QUEUE` | `db` | no | no |
+| [`queue_sqs_routes`](#queue_sqs_routes) | `MY_QUEUE_SQS_ROUTES` | none | no | no |
+| [`queue_cloudtasks_routes`](#queue_cloudtasks_routes) | `MY_QUEUE_CLOUDTASKS_ROUTES` | none | no | no |
 | [`queue_sqs_queue_url`](#queue_sqs_queue_url) | `MY_QUEUE_SQS_QUEUE_URL` | none | when `queue = sqs` | no |
 | [`queue_sqs_events_path`](#queue_sqs_events_path) | `MY_QUEUE_SQS_EVENTS_PATH` | `/events` | no | no |
 | [`queue_sqs_events_budget`](#queue_sqs_events_budget) | `MY_QUEUE_SQS_EVENTS_BUDGET` | `10m` | no | no |
@@ -390,6 +392,22 @@ Job queue adapter.
 | `inline` | yes | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
 | `sqs` | yes | The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
 | `cloudtasks` | yes | The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
+
+### `queue_sqs_routes`
+
+Comma-separated routes of `queue = sqs`, each `type=queue URL`, that send the wake-up signals of those job types to their own standard queue. A type is a name such as `notification.email` or a prefix such as `federation.*`; a name wins over a prefix, and a longer prefix over a shorter one. The others go to `queue_sqs_queue_url`. Give every process, `role = web` included, the same value: a process without it sends its signals to the default queue, which loses no job but undoes the split without an error. A type that matches no job type fails at startup.
+
+- Environment variable: `MY_QUEUE_SQS_ROUTES`
+- Default: none
+- Required: no
+
+### `queue_cloudtasks_routes`
+
+Comma-separated routes of `queue = cloudtasks`, each `type=queue resource name` with an optional `@receiver URL`, that send the wake-up signals of those job types to their own queue, and to a separate service when the URL is given (`queue_cloudtasks_url` otherwise). A type is a name such as `notification.email` or a prefix such as `federation.*`; a name wins over a prefix, and a longer prefix over a shorter one. The others go to `queue_cloudtasks_queue`. Give every process, `role = web` included, the same value: a process without it sends its signals to the default queue, which loses no job but undoes the split without an error. A type that matches no job type fails at startup.
+
+- Environment variable: `MY_QUEUE_CLOUDTASKS_ROUTES`
+- Default: none
+- Required: no
 
 ### `queue_sqs_queue_url`
 

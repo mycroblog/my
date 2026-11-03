@@ -410,6 +410,65 @@ With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), 
   The schedule's role needs `sqs:SendMessage` on the queue; the function's execution role needs `sqs:ReceiveMessage`, `sqs:DeleteMessage`, and
   `sqs:GetQueueAttributes` on it for the event source mapping.
 
+### Routing job types to their own queues
+
+With `queue = sqs` or `queue = cloudtasks`, a worker cannot choose the jobs it runs: `worker_job_types` works only with `queue = db`, because the platform decides who receives a signal.
+To give some job types their own capacity, send their signals to their own queue, and set the capacity of that queue on the platform.
+Nothing changes unless you set a route.
+
+- [`queue_sqs_routes`](../reference/configuration.md#queue_sqs_routes): `federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-federation,notification.email=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-mail`
+- [`queue_cloudtasks_routes`](../reference/configuration.md#queue_cloudtasks_routes): `federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com,notification.email=projects/p/locations/l/queues/my-mail`.
+  A route without `@` and a URL calls `queue_cloudtasks_url`.
+
+The left side is a job type from the [job reference](../reference/jobs.md) or a prefix. A name wins over a prefix, and a longer prefix over a shorter one.
+Types that match no route, including those a later release adds, use the default queue (`queue_sqs_queue_url` or `queue_cloudtasks_queue`), so they keep running.
+`my config check` checks the form of the routes; a left side that matches no job type stops `my serve` at startup.
+
+**Give every process the same routes, `role = web` included.** A signal is sent by the process that stores the job: a web process for most of what users do, such as the
+first job of a post, and a worker for the jobs that a job stores, retries, the next job of an ordering key, and the sweep of lost signals.
+Where each role has its own settings, as Cloud Run services and Lambda functions do, pass the same value to all of them:
+
+```sh
+routes='federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com'
+gcloud run services update my-web --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
+gcloud run services update my-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
+gcloud run services update my-federation-worker --update-env-vars "^|^MY_QUEUE_CLOUDTASKS_ROUTES=$routes"
+```
+
+A process with other routes raises no error and loses no job: its signals go to another queue, and the jobs run there, outside the capacity you set.
+`my.queue.oldest_ready_age` does not show this, because those jobs do not wait. To compare the processes, each logs at startup a line with its `routes` and their `routes_hash`:
+the hash has to be the same everywhere. To see where signals go, read the platform's own metrics of each queue.
+
+**Permissions.** The credentials of every process need to send to every queue of the routes: `sqs:SendMessage`, or `roles/cloudtasks.enqueuer`.
+A send that fails is logged and not tried on another queue, so that a type you limit does not overflow to the others. Those jobs start late, once the sweep sends their signals again after 2 minutes.
+
+**Capacity.** Any receiver runs any job, so you choose how far to separate them:
+
+| Platform | One receiver | Separate receivers |
+| --- | --- | --- |
+| AWS | One function with an event source mapping per queue, each with its own maximum concurrency. Keep the function's reserved concurrency at or above their sum | One function per queue, each with its own memory, timeout and reserved concurrency |
+| Google Cloud | One service. Each queue has its own `maxConcurrentDispatches` and `maxDispatchesPerSecond`; the service's instance limit is shared | A service per queue, named by the URL in the route, each with its own instance limit and concurrency. Each sets `queue_cloudtasks_url` to its own URL |
+
+A queue needs the same setup as the default one: on AWS the event source mapping with `ReportBatchItemFailures` and the visibility timeout, on Google Cloud the role on the queue.
+Only the default queue needs the tick.
+On SQS the tick shares the default queue with the jobs left there: if those can pile up, route them away or give the tick a queue of its own, or the periodic jobs and the sweep are delayed with them.
+
+**What a queue adds.** Each queue is one more thing to create, watch, and pay for, and how much that matters depends on the size of your instance.
+An SQS event source mapping polls its queue even while the queue is empty, and those requests count towards your SQS usage whatever the traffic. Check your own bill after adding one.
+Split what you have seen waiting in `my.job.wait`, not everything.
+
+**The sweep.** Every minute the sweep looks for jobs that have been due for over 2 minutes without running, up to 500 per route and 500 for the default queue, and signals them again.
+So a queue that cannot keep up gets up to 500 duplicate signals a minute. They do not run a job twice, but they are messages you pay for, and they stop once the backlog clears.
+
+**Ordering keys** still hold: the database decides what may run. Jobs of one key may be on different queues, but a stalled queue also delays the later jobs of its keys.
+
+**Adding, moving and removing a queue.**
+
+1. Create the queue and its receiver, and give every process permission to send to it.
+2. Change the routes on every process. While they differ, signals go to either queue and the jobs run in both places.
+3. To remove a queue, take it out of the routes everywhere first, and wait until it is empty before deleting it. A signal in a deleted queue is lost, not its job: the sweep signals the job again once it has been due for 2 minutes.
+   A Cloud Tasks task can hold a signal for a job up to 30 days ahead, so a job due later than the wait is simply signaled by the sweep when its time comes.
+
 ## Health checks
 
 | Path | Kind | When it returns 200 |

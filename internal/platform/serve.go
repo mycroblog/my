@@ -145,6 +145,12 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })
 		}
 	}
+	if a.wakeRouter != nil {
+		// Every process that sends signals needs the same routes; the hash makes them comparable.
+		routes, hash := a.Config.QueueRoutesSummary()
+		a.Logger.InfoContext(ctx, "wake-up signals are routed by job type; every process needs the same routes",
+			slog.String("routes", routes), slog.String("routes_hash", hash))
+	}
 	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()))
 
 	select {
