@@ -35,8 +35,8 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    On a failure, fix the cause on `main` and run the workflow again with the same version.
    If only the `npm` job or an `image` job fails after `release` passed, fix the cause (for `npm`, usually the trusted publisher registration) and rerun the failed jobs of that run
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
-4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page), tidy the generated list of changes,
-   review the sections that [Release notes](#release-notes) requires, and fill in what the draft's comments ask for.
+4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page) and read its [notes](#release-notes):
+   the prose is a draft from a model, and the facts after it come from the repository. Fill in what the draft's comments ask for.
 5. [Review the image](#review-the-image-in-the-draft): run its digest, read the `image-scan` report, and write the digest in the notes.
 6. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
 
@@ -85,27 +85,66 @@ Fix it on `main` before releasing: [Versions](#versions) promises this upgrade.
 
 ## Release notes
 
-Besides the generated list of changes, every Release has the sections below. Write "None" in a section that has nothing to say;
-an empty section and a missing one mean different things to an operator.
+Every Release has the prose for its three readers, the sections below, and a link to the comparison with the previous release, which stands for the list of changes.
+Write "None" in a section that has nothing to say; an empty section and a missing one mean different things to an operator.
 
-The `release` job writes a starting draft of them from the repository, with `scripts/release-notes.sh` (tested by `scripts/release-notes-test.sh`,
-run with `scripts/task.sh shell:test`). It compares this release with the previous one, picked as for [the upgrade test](#the-upgrade-test): `previous` when
-a prerelease names it, otherwise the latest patch release of the previous minor version, ignoring prerelease tags and the libraries' `pkg/...` tags.
-The generated list of changes is cut by whole lines to fit GitHub's limit of 125,000 characters on a Release's body, which a release with no earlier one passes, and its Full Changelog link stays.
-The decider still reviews every section before publishing. HTML comments in the draft name what a script cannot fill:
+The notes are made in two steps, and the decider reads the result and publishes it:
 
-| Section | The draft says | Left to the decider |
+1. **The facts** come from the repository, never from a model. The `release` job writes them with `scripts/release-notes.sh` (tested by `scripts/release-notes-test.sh`,
+   run with `scripts/task.sh shell:test`) and creates the draft with them. It compares this release with the previous one, picked as for [the upgrade test](#the-upgrade-test): `previous` when
+   a prerelease names it, otherwise the latest patch release of the previous minor version, ignoring prerelease tags and the libraries' `pkg/...` tags.
+2. **The prose** comes from Claude. The `release-notes-prose` job gives it the facts, the Summary of every PR merged since the previous release, and the titles of the closed issues,
+   and asks for three sections: Main changes, For operators, and For API and library users. A program checks the answer, and the `release-notes-edit` job puts the prose before the facts in the draft.
+
+**The check.** Every data upgrade, removed or changed setting, breaking client API change, and commit marked `!` must have a line in the prose with its name in backticks and a PR number.
+Every PR number must be of a PR merged in this release, as both `git log` and GitHub's list of merged PRs have it. The three headings must be exactly those, and the prose must have no HTML, no image, no @mention outside backticks, and no link outside this repository.
+The model is asked again with what failed, up to three attempts. The check does not tell whether what the prose says is true, and it does not tell that a PR is the right one for an item: that is why the decider reads it.
+
+**When the prose fails.** The draft keeps the facts alone, with a comment that starts `release-notes: facts only` and says why; the log of the job has the details. The release does not stop, because the tags exist by then.
+This covers a failed call, a failed check after three attempts, missing configuration, and the job itself failing. To add the prose then, rerun the job
+(`gh run rerun <run-id> -R mycroblog/my --failed`, or the job from the run's page); it replaces only a draft that still has that comment, so it never overwrites an edit or a published release.
+A prerelease run on a branch other than `main` has the facts alone, because the job's environment deploys only from `main`.
+
+**The bound of the input.** A PR's Summary is what goes in, cut at 4,000 bytes, and the Summaries together at 600,000 bytes. Above that, the PRs whose titles are marked `!` come first and then the newest, and every other PR goes in by its title alone.
+The titles of those PRs and of the closed issues together stop at 300,000 bytes: the oldest PR titles and then the oldest issue titles are left out. The check still accepts every merged PR, and the draft's first comment and the job's summary say how much was left out.
+A release with no earlier one, as `v0.1.0`, passes the bound of the Summaries, so its prose rests mostly on the newest PRs.
+
+**PR text is untrusted.** Anyone who opens a PR writes its Summary. That text goes to the model in an element it cannot close, marked as material and never as instructions, and the model has no tools.
+What the check requires comes from the repository and GitHub's list of merged PRs, so no PR text can change it. A PR can still mislead the prose within the check, so never publish the prose unread.
+
+The model is named once, by `claudeModel` in `tools/agentkit/cmd/releaseprose/claude.go`; the `Install Claude Code` step of `release.yml` pins the Claude Code that must know it.
+To see what the model would get, without calling it, run the commands below on a checkout with the tags (`gh` reads the PRs); the output goes to the given directory and the terminal:
+
+```sh
+scripts/release-notes.sh facts v0.1.0 "" .tmp/notes
+scripts/release-notes.sh prs .tmp/notes
+scripts/release-notes.sh prompt v0.1.0 .tmp/notes
+```
+
+The facts, and what the decider adds:
+
+| Section | The facts say | Left to the prose and the decider |
 | --- | --- | --- |
 | Upgrading | The data upgrade steps new since the previous release, the projections they rebuild, the releases to upgrade from and through, new required settings | How long each step takes on a large instance; anything else to do by hand; the result of `my schema apply -dry-run` |
 | Breaking changes | Renamed and removed settings, changed defaults and requirements, what the client API removed or changed, the schema files that changed, the commits marked `!` by area (their Conventional Commits scope) | What each one means for an operator or a client; whether a schema change removes data, and which release carried it over; which commits matter outside the repository |
 | API changes | The difference of `api/openapi.yaml`: added and removed operations, fields, and scopes, changed fields, deprecations with their dates and description, the operations that may be removed | The replacement of a deprecated operation when its description does not name one; the reason for a change made without the deprecation period |
 | mykit, mybot | The commits marked `!` with the library's scope or on its hand-written files; for `mykit`, the operations deprecated or removed | What each change means for a user of the library |
 
-Without any earlier release, as for `v0.1.0`, the draft is that of a first release: "None" in Upgrading, Breaking changes, and the libraries, because nothing can
-break yet, and the size of the client API. A patch release is compared with the previous minor version too, so remove what an earlier patch of its minor version already announced.
+Without any earlier release, as for `v0.1.0`, the facts are those of a first release: "None" in Upgrading, Breaking changes, and the libraries, because nothing can
+break yet, and the size of the client API; the link goes to the commits of the tag. A patch release is compared with the previous minor version too, so remove what an earlier patch of its minor version already announced.
 
-The draft reads the literals in `dataUpgrades` and `retiredKeys`, the generated [configuration reference](../reference/configuration.md), and `api/openapi.yaml`,
-as they are at each release. If it cannot read them, the job still creates the release, with a warning, and the sections hold a request to write them by hand.
+The facts read the literals in `dataUpgrades` and `retiredKeys`, the generated [configuration reference](../reference/configuration.md), and `api/openapi.yaml`,
+as they are at each release. If they cannot be read, or they pass GitHub's limit of 125,000 characters on a Release's body, the job still creates the release, with a warning, and the sections hold a request to write them by hand. There is then no prose either.
+
+### Set up the prose (the decider, once)
+
+Without these, the call fails and the draft has the facts alone. The job authenticates to the Claude API with Workload Identity Federation, as the nightly L4 job does, and no API key exists.
+
+1. In the Claude Console, under Workload identity, add a federation rule for the service account and workspace of the `ux-nightly` rule: `subject_prefix` `repo:mycroblog@346242925/my@1421587381:environment:release-notes`,
+   `audience` `https://api.anthropic.com`, `claims` `repository_owner: mycroblog` and `ref: refs/heads/main`, and a short token lifetime (600 seconds). The workspace's spend limit then covers both jobs, so check that it leaves room for a release.
+2. In the repository's settings, under Environments, create `release-notes` with deployments from `main` only and no required reviewers, which would hold the job for hours after the tags exist.
+3. Give that environment four variables, not secrets: `ANTHROPIC_FEDERATION_RULE_ID` (of the new rule), and `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`, and `ANTHROPIC_WORKSPACE_ID` (as in `ux-nightly`).
+4. Check it on the next prerelease from `main`: `release-notes-prose` passes, its summary says that the prose passed the check, and the draft has the three sections. A failed exchange shows in the Claude Console's authentication history.
 
 ### Upgrading
 
@@ -150,7 +189,7 @@ The client API (`/api/v1`) grows by addition. A breaking change first marks the 
 
 ### mykit and mybot
 
-The `release` job puts both sections in the draft, with how to install each from Go and npm and the changes it found. Before publishing, check them against:
+The facts have both sections, with how to install each from Go and npm and the changes it found. Before publishing, check them against:
 
 - **mykit**: breaking changes to the hand-written layer (retries, paging, streaming, tokens), taken from the commits marked `!` in Conventional Commits
   (allowed during v0), and the types and functions of the generated client deprecated or removed in this release (the same operations as in [API changes](#api-changes)).
@@ -324,7 +363,8 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
 
 | When | Workflow | What |
 | --- | --- | --- |
-| The slow suite passed | `release.yml` | The tags (the server's and the libraries'), the draft Release with the starting draft of [its notes](#release-notes), and the npm packages, which are public from then on |
+| The slow suite passed | `release.yml` | The tags (the server's and the libraries'), the draft Release with the facts of [its notes](#release-notes), and the npm packages, which are public from then on |
+| After the tags | `release.yml` | The prose of [the notes](#release-notes) in the draft, or the facts alone when it fails |
 | The slow suite passed | `release.yml` | The [container image](#the-container-image) by digest, with no tag, its signed provenance and SBOM, and `image-digest.txt` on the draft |
 | The decider published the draft | `release-image.yml` | The image's tags `X.Y.Z` and, for the latest patch of a minor version, `X.Y` |
 

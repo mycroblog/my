@@ -20,7 +20,7 @@ func Reference() string {
 The server reads each setting from these sources, highest precedence first:
 
 1. The environment variable ` + "`" + EnvPrefix + "<KEY>`" + ` (the key in upper case).
-2. The TOML file named by ` + "`" + EnvConfigFile + "`" + ` (or ` + "`my config check -config <path>`" + `), with the keys below at the top level. A value may be a string, a whole number, or a boolean; ` + "`smtp_port = 587`" + ` and ` + "`smtp_port = \"587\"`" + ` mean the same.
+2. The TOML file named by ` + "`" + EnvConfigFile + "`" + ` (or ` + "`my config check -config <path>`" + `), with the keys below at the top level. A value may be a string, a whole number, or a boolean; ` + "`mail_smtp_port = 587`" + ` and ` + "`mail_smtp_port = \"587\"`" + ` mean the same.
 3. The default.
 
 Secrets are read only from the environment: either the variable itself or ` + "`<NAME>_FILE`" + `, the path of a file that holds the value
@@ -39,7 +39,7 @@ An unknown key in the config file is an error too. An environment variable that 
 is ignored with a warning, in the log of ` + "`my serve`" + ` and in the output of ` + "`my config check`" + `, because the platform may add such variables:
 Kubernetes adds ` + "`" + EnvPrefix + "SERVICE_HOST`, `" + EnvPrefix + "PORT`" + ` and the like for a Service named ` + "`my`" + `, and those are ignored without a warning.
 
-A Kubernetes Service named ` + "`my-smtp`" + ` is the exception: the variable ` + "`" + EnvPrefix + "SMTP_PORT=tcp://...`" + ` that it adds is the name of a setting, so the value fails its check and the server does not start.
+A Kubernetes Service named ` + "`my-mail-smtp`" + ` is the exception: the variable ` + "`" + EnvPrefix + "MAIL_SMTP_PORT=tcp://...`" + ` that it adds is the name of a setting, so the value fails its check and the server does not start.
 Rename the Service, or set ` + "`enableServiceLinks: false`" + ` on the pod.
 
 In the ` + "`production`" + ` profile, ` + "`my config check`" + ` then checks that the valid settings suit a production instance:

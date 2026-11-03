@@ -104,7 +104,7 @@ func (r *AccountRepository) ListMoveRecords(ctx context.Context, tx uow.Tx) ([]a
 				ID: row.ID, AccountID: row.AccountID, TargetAccountID: row.TargetAccountID, InitiatedBy: row.InitiatedBy,
 				ActivityUri: row.ActivityUri, OccurredAt: row.OccurredAt,
 			}),
-			Cancelled: row.Cancelled,
+			Canceled: row.Canceled,
 		}
 	}
 	return out, nil
@@ -142,7 +142,7 @@ func (r *AccountRepository) InsertMoveCancellation(ctx context.Context, tx uow.T
 	if err != nil {
 		return false, err
 	}
-	n, err := q.InsertAccountMoveCancellation(ctx, postgresgen.InsertAccountMoveCancellationParams{MoveID: c.MoveID, CancelledAt: c.CancelledAt})
+	n, err := q.InsertAccountMoveCancellation(ctx, postgresgen.InsertAccountMoveCancellationParams{MoveID: c.MoveID, CanceledAt: c.CanceledAt})
 	return n > 0, wrap(err, "insert account move cancellation")
 }
 

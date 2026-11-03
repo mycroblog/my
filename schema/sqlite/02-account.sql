@@ -42,7 +42,7 @@ CREATE UNIQUE INDEX account_handles_username_normalized_domain ON account_handle
 CREATE TABLE account_profile_revisions (
   id TEXT NOT NULL PRIMARY KEY,
   account_id TEXT NOT NULL,
-  seq INTEGER NOT NULL,
+  seq INTEGER NOT NULL CHECK (seq >= 1),
   display_name TEXT NOT NULL,
   note_html TEXT NOT NULL,
   locked INTEGER NOT NULL CHECK (locked IN (0, 1)),
@@ -106,7 +106,7 @@ CREATE TABLE account_lifecycle_events (
   id TEXT NOT NULL PRIMARY KEY,
   account_id TEXT NOT NULL,
   kind TEXT NOT NULL CHECK (kind IN (
-    'deactivated', 'reactivated', 'deletion_scheduled', 'deletion_cancelled', 'deleted', 'remote_deleted'
+    'deactivated', 'reactivated', 'deletion_scheduled', 'deletion_canceled', 'deleted', 'remote_deleted'
   )),
   initiated_by TEXT NOT NULL CHECK (initiated_by IN ('self', 'moderator', 'system', 'remote')),
   moderation_action_id TEXT,
@@ -141,14 +141,14 @@ CREATE TABLE account_moves (
 CREATE UNIQUE INDEX account_moves_account_id_target_account_id ON account_moves (account_id, target_account_id);
 CREATE INDEX account_moves_account_id_occurred_at ON account_moves (account_id, occurred_at DESC, id DESC);
 
--- Event: a local account cancelled its move (ADR-0089). A move is cancelled at most once.
+-- Event: a local account canceled its move (ADR-0089). A move is canceled at most once.
 CREATE TABLE account_move_cancellations (
   move_id TEXT NOT NULL PRIMARY KEY,
-  cancelled_at INTEGER NOT NULL
+  canceled_at INTEGER NOT NULL
 ) STRICT;
 
 -- Projection of account_moves and account_move_cancellations: the move in force of an account,
--- its newest move unless that is cancelled. An account without a row has not moved. It is an
+-- its newest move unless that is canceled. An account without a row has not moved. It is an
 -- axis of its own, apart from account_lifecycle_states (ADR-0020 rule 2).
 CREATE TABLE account_move_states (
   account_id TEXT NOT NULL PRIMARY KEY,

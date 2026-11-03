@@ -262,7 +262,7 @@ type DeliveryAttempt struct {
 	DeliveryID      string
 	Outcome         string
 	SignatureScheme *string
-	HttpStatus      *int32
+	StatusCode      *int32
 	Error           *string
 	AttemptedAt     time.Time
 }

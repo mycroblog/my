@@ -30,7 +30,7 @@ The limits keep the cost of a paid media server bounded. `0` removes any of them
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | The longest a room stays open. A room that reaches it is ended. |
 | `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. |
-| `voice_max_participants` | `50` | The room size for `livekit` and `sora`. |
+| `voice_sfu_max_participants` | `50` | The room size for `livekit` and `sora`. |
 | `voice_p2p_max_participants` | `10` | The room size for `p2p`, from 2 to 50. |
 
 Who may open rooms is the instance setting `voice_room_starters` ([instance settings](instance-settings.md)): by default only holders of the permission `start_voice_rooms` (the built-in `admin` role has it); `everyone` lets every signed-in local user who is not suspended or limited open rooms.
@@ -44,7 +44,7 @@ layer the override [`compose.voice.yaml`](../../deploy/docker/compose.voice.yaml
 
 ```sh
 cd deploy/docker
-docker compose -f compose.yaml -f compose.voice.yaml up -d --build
+docker compose -f compose.yaml -f compose.voice.yaml up -d
 ```
 
 - Open the instance at `http://localhost:8080` (the `MY_WEB_ORIGIN` of `.env.example`). Browsers let a page use the microphone only on
@@ -53,7 +53,7 @@ docker compose -f compose.yaml -f compose.voice.yaml up -d --build
   server. To reach browsers on other machines, put the instance behind HTTPS and set `MY_VOICE_STUN_URLS` in `.env`.
 - Only the `admin` role may open rooms by default. Sign in as the administrator you created, or set `voice_room_starters` to `everyone`
   under the server settings to let every user open rooms.
-- To combine it with Mailpit, list both overrides: `docker compose -f compose.yaml -f compose.mailpit.yaml -f compose.voice.yaml up -d --build`.
+- To combine it with Mailpit, list both overrides: `docker compose -f compose.yaml -f compose.mailpit.yaml -f compose.voice.yaml up -d`.
 
 ### Size and bandwidth
 
@@ -75,13 +75,13 @@ The server hands each participant short-lived TURN credentials, never a shared p
 
 #### coturn
 
-Set `voice_turn = coturn`, `voice_turn_urls` and `voice_turn_secret`. The server computes the credentials itself (the username is the expiry time and the session ID, the password is an HMAC-SHA1 of it with the secret), so it makes no request to the TURN server.
+Set `voice_turn = coturn`, `voice_turn_coturn_urls` and `voice_turn_coturn_secret`. The server computes the credentials itself (the username is the expiry time and the session ID, the password is an HMAC-SHA1 of it with the secret), so it makes no request to the TURN server.
 Configure coturn to match, in `turnserver.conf`:
 
 ```conf
 # Time-limited credentials signed with a shared secret.
 use-auth-secret
-static-auth-secret=<the same value as voice_turn_secret>
+static-auth-secret=<the same value as voice_turn_coturn_secret>
 realm=turn.example.org
 
 listening-port=3478
@@ -102,7 +102,7 @@ denied-peer-ip=192.168.0.0-192.168.255.255
 
 - `denied-peer-ip` matters. Without it, anyone with a credential can use the TURN server to reach hosts on its internal network (cloud metadata services, databases, other VMs). Deny every private, loopback and link-local range; allow an internal address (`allowed-peer-ip`) only if you really need to relay to it.
 - Open UDP and TCP 3478, TCP 5349 for `turns:`, and coturn's relay port range (`min-port` / `max-port`, by default 49152-65535).
-- List a `turns:` URL or one with `?transport=tcp` in `voice_turn_urls` as well, so users on networks that block UDP can still connect.
+- List a `turns:` URL or one with `?transport=tcp` in `voice_turn_coturn_urls` as well, so users on networks that block UDP can still connect.
 - coturn checks a credential's expiry only when an allocation is first created. An allocation that already exists keeps working past it, and the new credentials take effect for the next allocation, which the web client creates by restarting ICE.
 
 #### Cloudflare TURN
@@ -181,7 +181,7 @@ The free Build plan gives 5,000 minutes and 50 GB per month and 100 concurrent c
 
 **The Sora adapter is tested only against a simulated Sora that follows Sora's documentation, not against a real Sora server.** Try it on a staging instance with a real Sora before you depend on it.
 
-Set `voice = sora`, `voice_sora_signaling_urls` (comma-separated `wss:` URLs browsers connect to), `voice_join_secret` (at least 32 bytes, for example from `openssl rand -base64 32`; it signs the values with which participants join) and `voice_sora_mode` (`self_hosted` or `cloud`).
+Set `voice = sora`, `voice_sora_signaling_urls` (comma-separated `wss:` URLs browsers connect to), `voice_sora_join_secret` (at least 32 bytes, for example from `openssl rand -base64 32`; it signs the values with which participants join) and `voice_sora_mode` (`self_hosted` or `cloud`).
 The instance must be served over HTTPS, because Sora calls back to `https://<your domain>`.
 
 ### Webhooks

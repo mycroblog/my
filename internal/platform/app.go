@@ -187,7 +187,7 @@ type App struct {
 	// Finance records the instance's costs and totals them by week, month, and year (ADR-0067).
 	Finance *finance.Service
 	// Payments carries the payment provider's facts to the supporters (ADR-0074); nil with
-	// payments_provider = none.
+	// payments = none.
 	Payments *supporters.Payments
 	// Supporters runs the supporter program, its plans, and their subscriptions (ADR-0072).
 	Supporters *supporters.Service
@@ -362,7 +362,7 @@ type AppOptions struct {
 	// BillingSources, by name, stand in for the adapters of the names of cfg.BillingSources.
 	// Tests only, to import from testkit.FakeBillingSource.
 	BillingSources map[string]finance.BillingSource
-	// PaymentProvider stands in for the adapter of payments_provider, and SupporterSync, when
+	// PaymentProvider stands in for the adapter of payments, and SupporterSync, when
 	// set, for the subscriptions of the supporters module that apply its facts. Tests only, with
 	// the fake adapter of internal/adapter/payment/fake.
 	PaymentProvider supporters.PaymentProvider

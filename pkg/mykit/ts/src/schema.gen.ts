@@ -655,6 +655,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/deactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get what deactivating the authenticated user's account would do now
+         * @description The date the account would be deleted if the user deactivated it now, and why it cannot
+         *     be deactivated now, if so. It changes nothing.
+         */
+        get: operations["getDeactivationPreview"];
+        put?: never;
+        /**
+         * Deactivate the authenticated user's account
+         * @description Deactivates the user's own account, after checking the user's current `password`, a
+         *     `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+         *     login provider. The account and its posts are hidden from everyone, every session and
+         *     token of the user ends, and the other servers get an `Update` of the actor marked
+         *     `suspended`. Where the server sends mail, one email states the date of the deletion.
+         *
+         *     The user signs in again to reactivate it, on a page of the server, within 30 days;
+         *     after that the account is deleted, and the other servers get a `Delete` of the actor.
+         *     While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+         *     emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+         *     hours after its reactivation.
+         *
+         *     A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+         *     `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+         *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+         *     `/api/v1/problems/passkey-confirmation-expired` or
+         *     `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+         *     now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+         *     keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+         *     review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+         *     less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+         */
+        post: operations["deactivateOwnAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/delete": {
         parameters: {
             query?: never;
@@ -711,7 +756,7 @@ export interface paths {
          *     `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
          *     cannot be fetched, or is suspended here (it or its server), and
          *     `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-         *     move was cancelled, or for a target the account moved to before. An account that may not
+         *     move was canceled, or for a target the account moved to before. An account that may not
          *     move (under a moderation action that stops it, say) is a 403
          *     `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
          *     hour for the user, past which the answer is 429.
@@ -751,7 +796,7 @@ export interface paths {
          * @description Cancels the move of the user's account: the account no longer names the target,
          *     can post, boost, react, follow, and vote again, and the other servers get an `Update` of
          *     its actor without `movedTo`. The followers that moved stay with the target, and the next
-         *     move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+         *     move still waits 30 days from the canceled one. An account that has not moved gets a 409
          *     `/api/v1/problems/account-not-moved`.
          */
         post: operations["cancelOwnAccountMove"];
@@ -8184,12 +8229,12 @@ export interface components {
         };
         /**
          * @description The state of an account, the first that applies: `deleted` (deleted here or on its
-         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-         *     and `pending` (the registration of a local account), `limited` (a `limit`), and
+         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+         *     `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
          *     `active`.
          * @enum {string}
          */
-        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "suspended" | "deleted";
+        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "deactivated" | "suspended" | "deleted";
         /** @description An announcement with its Markdown text and its state. */
         AdminAnnouncement: {
             id: components["schemas"]["Id"];
@@ -8311,7 +8356,7 @@ export interface components {
         };
         /**
          * @description The kind of an audited operation, each on one kind of target. On an `account`:
-         *     `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+         *     `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
          *     `revealed_private_data` (a moderator was shown the account's email address and IP
          *     addresses), `two_factor_disabled` (an administrator removed the account's two-factor
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -8331,7 +8376,7 @@ export interface components {
          *     `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
          *     an `appeal`:
          *     `appeal_upheld`, `appeal_overturned` (which also records the action's
-         *     `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+         *     `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
          *     `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
          *     `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
          *     `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -8378,7 +8423,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -9123,7 +9168,7 @@ export interface components {
             taken_last_day: number;
             /**
              * @description The activities it brought in during the last 24 hours that were dropped over the
-             *     hourly limit (`relay_ingest_hourly_limit`).
+             *     hourly limit (`relay_max_activities_per_hour`).
              */
             dropped_last_day: number;
             /**
@@ -10111,11 +10156,11 @@ export interface components {
         /**
          * @description An operation that the user confirms: registering a passkey (`passkey_registration`),
          *     changing or setting the password (`password_change`), removing it (`password_removal`),
-         *     deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+         *     deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
          *     account at a login provider (`link`).
          * @enum {string}
          */
-        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_move" | "link";
+        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_deactivation" | "account_move" | "link";
         /** @description The local custom emoji that a copy of a remote one becomes. */
         CopyCustomEmojiRequest: {
             /**
@@ -10797,6 +10842,49 @@ export interface components {
         DecideAppealRequest: {
             /** @description Shown to the user who appealed, as plain text. */
             public_reason?: string;
+        };
+        /** @description The deactivation of the user's own account. */
+        Deactivation: {
+            /**
+             * Format: date-time
+             * @description When the account is deleted unless the user reactivates it first.
+             */
+            deletion_due_at: string;
+        };
+        /** @description What deactivating the user's own account would do now. */
+        DeactivationPreview: {
+            /**
+             * Format: date-time
+             * @description When the account would be deleted if it were deactivated now.
+             */
+            deletion_due_at: string;
+            /**
+             * @description Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+             *     logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+             *     deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+             *     (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+             *     administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+             *     ago (`recently_reactivated`).
+             * @enum {string}
+             */
+            refusal?: "login_restricted" | "deletion_scheduled" | "already_deactivated" | "moved" | "registration_pending" | "paid_subscription" | "last_administrator" | "recently_reactivated";
+            /**
+             * Format: date-time
+             * @description When the account can be deactivated again, for `recently_reactivated`.
+             */
+            available_at?: string;
+        };
+        /**
+         * @description The confirmation of the deactivation of the user's own account: `password`,
+         *     `two_factor_code`, `passkey`, or `external_confirmation`.
+         */
+        DeactivateOwnAccountRequest: {
+            /** @description The user's current password. */
+            password?: string;
+            /** @description A code of the user's authenticator app, or a recovery code. */
+            two_factor_code?: string;
+            passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /**
          * @description The confirmation of the deletion of the user's own account: `password`, `passkey`, or
@@ -12639,7 +12727,7 @@ export interface components {
         };
         /** @description The state of the payment provider. */
         PaymentStatus: {
-            /** @description The provider of `payments_provider` (`stripe`, `payjp`). */
+            /** @description The provider of `payments` (`stripe`, `payjp`). */
             provider: string;
             /**
              * @description `test` for test credentials, with which nothing is charged, and `live` for live
@@ -12892,6 +12980,8 @@ export interface components {
          *     - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
          *     - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
          *       not the user's current password.
+         *     - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+         *       now; the detail says why.
          *     - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
          *       built. Wait for it to end.
          *     - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -15988,6 +16078,53 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getDeactivationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What deactivating the account would do now. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeactivationPreview"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    deactivateOwnAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateOwnAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The account is deactivated, and its sessions and tokens have ended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deactivation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     deleteOwnAccount: {
         parameters: {
             query?: never;
@@ -16043,7 +16180,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The move is cancelled. */
+            /** @description The move is canceled. */
             204: {
                 headers: {
                     [name: string]: unknown;

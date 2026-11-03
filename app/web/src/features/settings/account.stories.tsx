@@ -47,6 +47,31 @@ export const WithoutPassword: Story = answering(
   ),
 );
 
+/** The account cannot be deactivated while a paid subscription goes on. */
+export const DeactivationRefused: Story = answering(
+  http.get(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        deletion_due_at: "2026-12-03T09:00:00Z",
+        refusal: "paid_subscription",
+      } satisfies Schemas["DeactivationPreview"]),
+    ),
+  ),
+);
+
+/** The account was reactivated less than a day ago, with the date it can be deactivated again. */
+export const RecentlyReactivated: Story = answering(
+  http.get(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        deletion_due_at: "2026-12-03T09:00:00Z",
+        refusal: "recently_reactivated",
+        available_at: "2026-11-04T09:00:00Z",
+      } satisfies Schemas["DeactivationPreview"]),
+    ),
+  ),
+);
+
 /** The archives have not arrived yet. */
 export const Loading: Story = loadingOn("get", "/exports");
 

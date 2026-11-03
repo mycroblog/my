@@ -260,7 +260,7 @@ type DeliveryAttempt struct {
 	DeliveryID      string
 	Outcome         string
 	SignatureScheme sql.NullString
-	HttpStatus      sql.NullInt64
+	StatusCode      sql.NullInt64
 	Error           sql.NullString
 	AttemptedAt     int64
 }

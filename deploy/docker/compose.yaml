@@ -11,19 +11,18 @@
 # The same order initializes an empty volume and upgrades an existing one to a new MY_VERSION.
 # Copy .env.example to .env and fill it in first (README.md, "Quick start").
 #
-#   docker compose up -d --build
+# It runs the published image of MY_VERSION. There is no `latest`: name a version, as 0.1.0 (for good), 0.1 (the latest
+# patch of v0.1, on the next `docker compose pull`), or 0.1.0@sha256:... (the digest in the release's notes).
+# To build the image from this checkout instead, add the override compose.build.yaml.
+#
+#   docker compose up -d
 #   docker compose exec -T my my admin create -username alice -email alice@example.com < password.txt
 
 name: my
 
 # The server image and its settings, shared by the server and the one-off services.
 x-app: &app
-  build:
-    context: ../..
-    target: app
-    args:
-      VERSION: ${MY_VERSION:-dev}
-  image: my:${MY_VERSION:-dev}
+  image: ghcr.io/mycroblog/my:${MY_VERSION:?set MY_VERSION in .env to a version such as 0.1.0; there is no latest}
   environment:
     MY_HOST: ${MY_HOST:?set MY_HOST in .env}
     # The origin browsers open: http://{MY_HOST} serves sign-in, the client API and media over plain HTTP on
@@ -32,7 +31,7 @@ x-app: &app
     # Reverse proxies whose X-Forwarded-For tells the client IP for the rate limits; empty trusts none.
     MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-}
     MY_ROLE: all
-    MY_DB: sqlite
+    MY_DATABASE: sqlite
     MY_DATABASE_URL: /data/my.db
     # Uploaded and processed media, in the same volume as the database (back them up together).
     MY_BLOB_FS_DIR: /data/blobs

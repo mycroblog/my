@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -359,15 +360,15 @@ func (r *WebhookRepository) DeleteMessagesBefore(ctx context.Context, tx uow.Tx,
 }
 
 // statusCode returns the status_code column of an attempt: NULL for none.
-func statusCode(code int) *int64 {
+func statusCode(code int) *int32 {
 	if code == 0 {
 		return nil
 	}
-	n := int64(code)
+	n := int32(min(code, math.MaxInt32)) //nolint:gosec // G115: bounded by min
 	return &n
 }
 
-func derefInt(n *int64) int64 {
+func derefInt[T int32 | int64](n *T) T {
 	if n == nil {
 		return 0
 	}

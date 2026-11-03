@@ -125,6 +125,14 @@ type Repository interface {
 	// ListDueDeletions returns up to limit lifecycle states in deletion_scheduled whose
 	// deletion is due at or before now, earliest due first.
 	ListDueDeletions(ctx context.Context, now time.Time, limit int) ([]account.LifecycleState, error)
+	// ListDueDeactivations returns up to limit lifecycle states in deactivated that began at or
+	// before cutoff, longest deactivated first.
+	ListDueDeactivations(ctx context.Context, cutoff time.Time, limit int) ([]account.LifecycleState, error)
+	// FindLatestReactivation returns when the account was last reactivated; ErrNotFound when
+	// it never was.
+	FindLatestReactivation(ctx context.Context, accountID string) (time.Time, error)
+	// FindLatestReactivationTx is FindLatestReactivation inside tx.
+	FindLatestReactivationTx(ctx context.Context, tx uow.Tx, accountID string) (time.Time, error)
 	// FindRemoteHead returns the head of a remote actor; ErrNotFound means the account is local
 	// or has never been fetched.
 	FindRemoteHead(ctx context.Context, accountID string) (account.RemoteHead, error)

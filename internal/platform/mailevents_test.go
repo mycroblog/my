@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// POST /mail/events/ses exists only with ses_sns_topic_arn (ADR-0086 §5).
+// POST /mail/events/ses exists only with mail_ses_sns_topic_arn (ADR-0086 §5).
 func TestMailEventsEndpoint(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -28,7 +28,7 @@ func TestMailEventsEndpoint(t *testing.T) {
 			t.Parallel()
 			env := map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"}
 			if tc.topic != "" {
-				env["MY_SES_SNS_TOPIC_ARN"] = tc.topic
+				env["MY_MAIL_SES_SNS_TOPIC_ARN"] = tc.topic
 			}
 			app, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 			if err != nil {

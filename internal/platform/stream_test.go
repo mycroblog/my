@@ -55,7 +55,7 @@ func TestStreamsAcrossProcesses(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			env := map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin}
+			env := map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin}
 			for k, v := range tt.env {
 				env[k] = v
 			}
@@ -237,7 +237,7 @@ func TestServerStartsOnEachStreamBroker(t *testing.T) {
 		sweep bool
 	}{
 		{name: "postgres", env: func(t *testing.T) map[string]string {
-			return map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_STREAM": "postgres", "MY_ROLE": "web"}
+			return map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_STREAM": "postgres", "MY_ROLE": "web"}
 		}},
 		{name: "valkey", env: func(t *testing.T) map[string]string {
 			v := valkeytest.New(t)
@@ -248,7 +248,7 @@ func TestServerStartsOnEachStreamBroker(t *testing.T) {
 		{name: "sns", sweep: true, env: func(t *testing.T) map[string]string {
 			return map[string]string{
 				"MY_DATABASE_URL": newDatabase(t, true), "MY_STREAM": "sns",
-				"MY_STREAM_SNS_TOPIC_ARN": "arn:aws:sns:us-east-1:123456789012:my-stream", "MY_STREAM_SQS_QUEUE_PREFIX": "my-stream",
+				"MY_STREAM_SNS_TOPIC_ARN": "arn:aws:sns:us-east-1:123456789012:my-stream", "MY_STREAM_SNS_QUEUE_PREFIX": "my-stream",
 			}
 		}},
 	}
@@ -306,7 +306,7 @@ func TestStreamsAcrossProcessesOnPubSub(t *testing.T) {
 		t.Fatalf("CreateTopic: %v", err)
 	}
 	env := map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin,
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin,
 		"MY_STREAM": "pubsub", "MY_STREAM_PUBSUB_TOPIC": topic, "MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX": "my-stream",
 	}
 	web := newRoleApp(t, env, "web", nil)

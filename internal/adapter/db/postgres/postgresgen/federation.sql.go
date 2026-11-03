@@ -630,7 +630,7 @@ func (q *Queries) InsertDelivery(ctx context.Context, arg InsertDeliveryParams) 
 }
 
 const insertDeliveryAttempt = `-- name: InsertDeliveryAttempt :exec
-INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at)
+INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
@@ -639,7 +639,7 @@ type InsertDeliveryAttemptParams struct {
 	DeliveryID      string
 	Outcome         string
 	SignatureScheme *string
-	HttpStatus      *int32
+	StatusCode      *int32
 	Error           *string
 	AttemptedAt     time.Time
 }
@@ -650,7 +650,7 @@ func (q *Queries) InsertDeliveryAttempt(ctx context.Context, arg InsertDeliveryA
 		arg.DeliveryID,
 		arg.Outcome,
 		arg.SignatureScheme,
-		arg.HttpStatus,
+		arg.StatusCode,
 		arg.Error,
 		arg.AttemptedAt,
 	)
@@ -978,7 +978,7 @@ func (q *Queries) ListDeliveriesOfOutboundActivity(ctx context.Context, arg List
 }
 
 const listDeliveryAttempts = `-- name: ListDeliveryAttempts :many
-SELECT id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at FROM delivery_attempts
+SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
 WHERE delivery_id = $1::uuid ORDER BY id
 `
 
@@ -996,7 +996,7 @@ func (q *Queries) ListDeliveryAttempts(ctx context.Context, deliveryID string) (
 			&i.DeliveryID,
 			&i.Outcome,
 			&i.SignatureScheme,
-			&i.HttpStatus,
+			&i.StatusCode,
 			&i.Error,
 			&i.AttemptedAt,
 		); err != nil {

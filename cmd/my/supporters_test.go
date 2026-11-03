@@ -25,14 +25,14 @@ func TestAdminSupportersCommands(t *testing.T) {
 	newAdminEnv(t)
 	t.Setenv(config.EnvPrefix+"MAIL", "smtp")
 	t.Setenv(config.EnvPrefix+"MAIL_FROM", "noreply@social.example")
-	t.Setenv(config.EnvPrefix+"SMTP_HOST", "127.0.0.1")
-	t.Setenv(config.EnvPrefix+"SMTP_PORT", "1")
-	t.Setenv(config.EnvPrefix+"PAYMENTS_PROVIDER", "stripe")
+	t.Setenv(config.EnvPrefix+"MAIL_SMTP_HOST", "127.0.0.1")
+	t.Setenv(config.EnvPrefix+"MAIL_SMTP_PORT", "1")
+	t.Setenv(config.EnvPrefix+"PAYMENTS", "stripe")
 	t.Setenv(config.EnvPrefix+"PAYMENTS_STRIPE_SECRET_KEY", "sk_test_cli")
 	t.Setenv(config.EnvPrefix+"PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_cli")
 
 	if code, stdout, stderr := runCmd(t, adminCmd, "supporters", "status"); code != 0 ||
-		!strings.Contains(stdout, "program: disabled\n") || !strings.Contains(stdout, "payments_provider: stripe\n") {
+		!strings.Contains(stdout, "program: disabled\n") || !strings.Contains(stdout, "payments: stripe\n") {
 		t.Fatalf("supporters status = %d %q %q", code, stdout, stderr)
 	}
 	if code, stdout, stderr := runCmd(t, adminCmd, "supporters", "enable"); code != 0 || stdout != "enabled the supporter program with stripe\n" {

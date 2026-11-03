@@ -81,7 +81,7 @@ func TestReadiness(t *testing.T) {
 		},
 		{
 			name: "SQLite path is not checked for PostgreSQL",
-			env:  with(ready(), "MY_DB", "postgres", "MY_DATABASE_URL", "postgres:///tmp"),
+			env:  with(ready(), "MY_DATABASE", "postgres", "MY_DATABASE_URL", "postgres:///tmp"),
 			want: base,
 		},
 		{
@@ -105,7 +105,7 @@ func TestReadiness(t *testing.T) {
 		},
 		{
 			name: "mail and Web Push configured",
-			env: with(ready(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "noreply@social.example.org", "MY_SMTP_HOST", "smtp.example.org",
+			env: with(ready(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "noreply@social.example.org", "MY_MAIL_SMTP_HOST", "smtp.example.org",
 				"MY_VAPID_PRIVATE_KEY", "kJpUOWsBf0s0ReN3iZK9WLmCnxwcZr2dsHWWUJGGqVM"),
 			want: nil,
 		},
@@ -113,21 +113,21 @@ func TestReadiness(t *testing.T) {
 	for _, key := range []string{"sk_test_abc", "rk_test_abc"} {
 		tests = append(tests, readinessCase{
 			name: "Stripe test key " + key,
-			env: with(ready(), "MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
+			env: with(ready(), "MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
 				"MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
 			want:        append(slices.Clone(base), "warning payments_stripe_secret_key"),
 			wantMessage: "test-mode key",
 		}, readinessCase{
 			name: "Stripe test key " + key + " in the development profile",
 			env: with(minimal(), "MY_PROFILE", "development", "MY_HOST", "localhost:8080", "MY_DATABASE_URL", ":memory:",
-				"MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key, "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
+				"MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key, "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
 			want: nil,
 		})
 	}
 	for _, key := range []string{"sk_live_abc", "rk_live_abc"} {
 		tests = append(tests, readinessCase{
 			name: "Stripe live key " + key,
-			env: with(ready(), "MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
+			env: with(ready(), "MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", key,
 				"MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc"),
 			want: base,
 		})
@@ -189,14 +189,14 @@ func TestReadinessWarnsAboutSettingsOfOneProcess(t *testing.T) {
 
 // TestLoadedValuesOfConvenience covers the TOML forms and the defaults that follow other settings.
 func TestLoadedValuesOfConvenience(t *testing.T) {
-	src := source(minimal(), map[string]string{"my.toml": "smtp_port = 2525\nmaintenance = false\n"})
+	src := source(minimal(), map[string]string{"my.toml": "mail_smtp_port = 2525\nmaintenance = false\n"})
 	src.File = "my.toml"
 	cfg, _, err := Load(src)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.SMTPPort != 2525 || cfg.Maintenance {
-		t.Errorf("smtp_port = %d, maintenance = %v; want 2525 and false", cfg.SMTPPort, cfg.Maintenance)
+		t.Errorf("mail_smtp_port = %d, maintenance = %v; want 2525 and false", cfg.SMTPPort, cfg.Maintenance)
 	}
 	dev, _, err := Load(source(with(minimal(), "MY_PROFILE", "development"), nil))
 	if err != nil {

@@ -20,11 +20,11 @@ FROM account_moves WHERE account_id = ?
 ORDER BY occurred_at DESC, id DESC
 LIMIT 1;
 
--- ListAccountMoveRecords returns every move with whether it is cancelled, the source of
+-- ListAccountMoveRecords returns every move with whether it is canceled, the source of
 -- account_move_states.
 -- name: ListAccountMoveRecords :many
 SELECT m.id, m.account_id, m.target_account_id, m.initiated_by, m.activity_uri, m.occurred_at,
-  EXISTS (SELECT 1 FROM account_move_cancellations c WHERE c.move_id = m.id) AS cancelled
+  EXISTS (SELECT 1 FROM account_move_cancellations c WHERE c.move_id = m.id) AS canceled
 FROM account_moves m
 ORDER BY m.account_id, m.occurred_at, m.id;
 
@@ -38,9 +38,9 @@ ON CONFLICT (account_id) DO UPDATE SET
   target_account_id = excluded.target_account_id,
   since = excluded.since;
 
--- InsertAccountMoveCancellation inserts nothing when the move is cancelled already.
+-- InsertAccountMoveCancellation inserts nothing when the move is canceled already.
 -- name: InsertAccountMoveCancellation :execrows
-INSERT INTO account_move_cancellations (move_id, cancelled_at) VALUES (?, ?)
+INSERT INTO account_move_cancellations (move_id, canceled_at) VALUES (?, ?)
 ON CONFLICT (move_id) DO NOTHING;
 
 -- name: DeleteAccountMoveState :exec

@@ -380,7 +380,7 @@ func TestVoiceSora(t *testing.T) {
 		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "sora", "MY_VOICE_SORA_MODE": "self_hosted",
 		"MY_VOICE_SORA_SIGNALING_URLS": "wss://sora.example.org/signaling", "MY_VOICE_SORA_API_URL": "https://sora-api.example.org",
 		"MY_VOICE_SORA_WEBHOOK_USERNAME": "sora", "MY_VOICE_SORA_WEBHOOK_PASSWORD": "hunter2",
-		"MY_VOICE_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
+		"MY_VOICE_SORA_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 	if err != nil {

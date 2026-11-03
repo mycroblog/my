@@ -41,7 +41,7 @@ type DB struct {
 var _ uow.UnitOfWork = (*DB)(nil)
 
 // Open connects to the PostgreSQL database at url (the database_url setting for
-// db = "postgres"), in any form pgx accepts: a postgres:// URL or a keyword/value string.
+// database = "postgres"), in any form pgx accepts: a postgres:// URL or a keyword/value string.
 //
 // Open does not apply the schema; Atlas does (ADR-0023).
 func Open(ctx context.Context, url string, opts uow.Options) (*DB, error) {

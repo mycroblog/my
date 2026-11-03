@@ -38,7 +38,7 @@ func TestEmailLinksThroughMailpit(t *testing.T) {
 	}
 	cfg := loadConfig(t, map[string]string{
 		"MY_DATABASE_URL": newDatabase(t, true), "MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test",
-		"MY_SMTP_HOST": mp.Host, "MY_SMTP_PORT": strconv.Itoa(mp.Port), "MY_SMTP_USERNAME": "mailer", "MY_SMTP_PASSWORD": "s3cret",
+		"MY_MAIL_SMTP_HOST": mp.Host, "MY_MAIL_SMTP_PORT": strconv.Itoa(mp.Port), "MY_MAIL_SMTP_USERNAME": "mailer", "MY_MAIL_SMTP_PASSWORD": "s3cret",
 	})
 	s := startApp(t, cfg, platform.AppOptions{Mailer: mailer}, platform.ServeOptions{}, nil)
 	if _, err := s.app.Instance.SetSetting(t.Context(), appinstance.SetSettingInput{

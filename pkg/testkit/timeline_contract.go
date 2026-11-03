@@ -104,7 +104,7 @@ func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
 	appcontent.RegisterProjectors(projectors, h.Statuses)
 	appcontent.RegisterInteractionProjectors(projectors, h.Interactions)
 	appgraph.RegisterProjectors(projectors, h.Graph)
-	apptimeline.RegisterProjectors(projectors, h.Timeline)
+	apptimeline.RegisterProjectors(projectors, h.Timeline, nil)
 	clock := NewClock(time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC))
 	ids := NewIDGenerator(clock)
 	e := &timelineEnv{
@@ -793,8 +793,13 @@ func timelineHidesDeletedAuthors(t *testing.T, e *timelineEnv) {
 		p, err := e.svc.Local(t.Context(), anonymous, apptimeline.Query{Limit: apptimeline.MaxLimit})
 		expectPage(t, "Local", p, err, carols.ID)
 	}
-	// Other lifecycle events leave the timelines as they are.
+	// A deactivation hides the author too, and the reactivation brings the posts back.
 	e.deleteAccount(t, carol, account.LifecycleDeactivated)
+	e.home(t, alice)
+	e.deleteAccount(t, carol, account.LifecycleReactivated)
+	e.home(t, alice, carols.ID)
+	// Other lifecycle events leave the timelines as they are.
+	e.deleteAccount(t, carol, account.LifecycleDeletionCanceled)
 	e.home(t, alice, carols.ID)
 }
 

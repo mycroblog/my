@@ -15,7 +15,7 @@
 
 - 単一の型付き設定スキーマを `core` に定義し、起動時に検証（NFR-PORT-5）。
 - ソース: 環境変数（`MY_` プレフィックス、名称はプロダクト名確定時に変更）→ 任意の設定ファイル（TOML / JSON）→ 既定値。
-- アダプタ選択は明示的なキー（例: `MY_DB=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=sqs`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
+- アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=sqs`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
 - 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。
 
 ### パッケージング

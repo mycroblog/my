@@ -15,7 +15,7 @@
   期限は処分の `issued_at` に、申し立ての時点の `appeal_window_days` を足した時刻です（期限ちょうどまで申し立てられる）。`ban` は `appeal_window_days` と `moderation.BanDeletionDelay`（30 日）の短い方で、アカウントが削除済み（`account_lifecycle_states.state = deleted`）なら申し立てられません（決定者の判断「30 日のあいだは、BAN への異議申し立てを受け付ける」）。解除済み・期限切れの処分にも、期限内なら申し立てられます。
 - 審査（`moderation.Service.DecideAppeal`）は、`moderation_appeal_decisions` と `appeal_states` と監査ログ（`appeal_upheld` / `appeal_overturned`）を 1 つのトランザクションで書き、`moderation.appeal_decided` を発行します（`appeal_decided` の通知）。
   覆す（`overturned`）と、同じトランザクションで処分の解除（`moderation_action_lifts`、`lifted_by_user_id` は審査した人、`reason` は NULL）とその効果と監査ログ（`account_action_lifted`）を記録します。すでに解除されていた処分には何もしません。
-  `ban` を覆すときは、その前に `account.Service.CancelDeletionByModeration` が `deletion_cancelled`（`initiated_by = moderator`、`moderation_action_id` は BAN）を記録し（監査ログ `account_deletion_cancelled`、`source_event_id` はその行）、解除で凍結が終わって `moderation.account_suspension_changed` が出ます。削除済みのアカウントの BAN は覆せません。`ban` を解除するのはこの経路だけで、`LiftAccountAction` は拒否します。
+  `ban` を覆すときは、その前に `account.Service.CancelDeletionByModeration` が `deletion_canceled`（`initiated_by = moderator`、`moderation_action_id` は BAN）を記録し（監査ログ `account_deletion_canceled`、`source_event_id` はその行）、解除で凍結が終わって `moderation.account_suspension_changed` が出ます。削除済みのアカウントの BAN は覆せません。`ban` を解除するのはこの経路だけで、`LiftAccountAction` は拒否します。
   審査は 1 回で、同じ結果の再審査は何もせず、反対の結果は拒否します（`moderation_appeal_decisions` の PK で、同時の審査も 1 つだけが記録される）。
 - 本人には、自分の処分（§4.7 の `GET /api/v1/moderation/actions` と `moderation_notice`）に申し立ての期限・今申し立てられるか・申し立ての本文と状態・審査の `public_reason` を見せます。審査した人は見せません。
 

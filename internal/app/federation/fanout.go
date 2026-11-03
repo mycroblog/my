@@ -539,8 +539,9 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 // moderation suspends it. The Update of an actor that is no longer active, or no longer local,
 // has nothing to send: a later Delete supersedes it. A suspended actor that is not deleted is
 // the exception: its Update tells that it is suspended, also while a ban schedules its
-// deletion (federation.md §11.1). The Delete of an actor goes out whatever its state, since
-// the account row stays after the purge (data-model §8).
+// deletion (federation.md §11.1), and so is one that its owner deactivated, which publishes the
+// same document (ADR-0145 §7). The Delete of an actor goes out whatever its state, since the
+// account row stays after the purge (data-model §8).
 func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act
 	if act.ObjectID != act.ActorAccountID || (act.Type != federation.ActivityUpdate && act.Type != federation.ActivityDelete) {
@@ -562,6 +563,7 @@ func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error)
 	if s.suspended, err = f.d.Suspensions.AccountFederationSuspended(ctx, act.ObjectID); err != nil {
 		return subject{}, err
 	}
+	s.suspended = s.suspended || a.Lifecycle.Deactivated()
 	if !a.Lifecycle.Active() && (!s.suspended || a.Deleted()) {
 		return subject{}, fmt.Errorf("%w: account %s is not active", errGone, act.ObjectID)
 	}
@@ -572,7 +574,7 @@ func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error)
 }
 
 // moveSubject loads the move of a Move, its local actor, and the actor it moves to. The Move of
-// an actor that is no longer active has nothing to send; a cancelled move is still sent, since
+// an actor that is no longer active has nothing to send; a canceled move is still sent, since
 // its Update came first and the cancellation's Update follows it.
 func (f *FanOut) moveSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act

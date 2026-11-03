@@ -16,8 +16,8 @@ func everyJobType(t *testing.T) []string {
 	t.Helper()
 	cfg := loadConfig(t, map[string]string{
 		"MY_DATABASE_URL": newDatabase(t, true),
-		"MY_MAIL":         "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "smtp.example.test",
-		"MY_PAYMENTS_PROVIDER": "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY": "rk_test_x", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET": "whsec_x",
+		"MY_MAIL":         "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "smtp.example.test",
+		"MY_PAYMENTS": "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY": "rk_test_x", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET": "whsec_x",
 		"MY_VAPID_PRIVATE_KEY": "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{})

@@ -49,7 +49,7 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 				dbURL = newPostgresDatabase(t)
 			}
 			cfg := loadConfig(t, map[string]string{
-				"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
+				"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
 			})
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},
@@ -68,6 +68,34 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 	}
 }
 
+// fillDeactivations leaves an account deactivated and another that came back, with a post each, for
+// the feed restrictions and the search terms (ADR-0145 §5).
+func fillDeactivations(t *testing.T, a *platform.App) {
+	t.Helper()
+	ctx := t.Context()
+	for _, name := range []string{"gwen", "hana"} {
+		reg, err := a.Identity.RegisterLocalUser(ctx, identity.RegisterInput{
+			Username: name, Password: "correct horse battery staple", DisplayName: name, Locale: "en",
+		})
+		if err != nil {
+			t.Fatalf("RegisterLocalUser(%s): %v", name, err)
+		}
+		if _, err := a.Content.Create(ctx, appcontent.CreateInput{
+			AuthorAccountID: reg.AccountID, TextInput: appcontent.TextInput{Text: "before leaving"}, Visibility: domcontent.VisibilityPublic,
+		}); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if _, err := a.Identity.DeactivateOwnAccount(ctx, reg.User.ID, identity.Confirmation{Password: "correct horse battery staple"}); err != nil {
+			t.Fatalf("DeactivateOwnAccount(%s): %v", name, err)
+		}
+		if name == "hana" {
+			if err := a.Identity.ReactivateOwnAccount(ctx, reg.User.ID); err != nil {
+				t.Fatalf("ReactivateOwnAccount: %v", err)
+			}
+		}
+	}
+}
+
 func fillProjections(t *testing.T, a *platform.App) {
 	t.Helper()
 	ctx := t.Context()
@@ -82,6 +110,7 @@ func fillProjections(t *testing.T, a *platform.App) {
 		ids[name] = reg.AccountID
 	}
 	alice, bob, carol := ids["alice"], ids["bob"], ids["carol"]
+	fillDeactivations(t, a)
 	var dave string
 	err := a.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		d, err := a.Accounts.UpsertRemoteActor(ctx, tx, appaccount.RemoteActorInput{

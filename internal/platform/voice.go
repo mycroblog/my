@@ -202,7 +202,7 @@ func (m voiceMembers) Member(ctx context.Context, accountID string) (appvoice.Me
 	if err != nil {
 		return appvoice.Member{}, err
 	}
-	return appvoice.Member{Local: true, Active: !act.Deleted() && !suspended, Limited: limited, MayStart: mayStart}, nil
+	return appvoice.Member{Local: true, Active: !act.Deleted() && !act.Lifecycle.Deactivated() && !suspended, Limited: limited, MayStart: mayStart}, nil
 }
 
 func (m voiceMembers) EveryoneStarts(ctx context.Context) (bool, error) {

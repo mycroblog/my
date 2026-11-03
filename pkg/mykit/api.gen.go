@@ -208,19 +208,22 @@ func (e AdminAccountRestriction) Valid() bool {
 
 // Defines values for AdminAccountState.
 const (
-	AdminAccountStateActive    AdminAccountState = "active"
-	AdminAccountStateDeleted   AdminAccountState = "deleted"
-	AdminAccountStateDisabled  AdminAccountState = "disabled"
-	AdminAccountStateLimited   AdminAccountState = "limited"
-	AdminAccountStatePending   AdminAccountState = "pending"
-	AdminAccountStateRejected  AdminAccountState = "rejected"
-	AdminAccountStateSuspended AdminAccountState = "suspended"
+	AdminAccountStateActive      AdminAccountState = "active"
+	AdminAccountStateDeactivated AdminAccountState = "deactivated"
+	AdminAccountStateDeleted     AdminAccountState = "deleted"
+	AdminAccountStateDisabled    AdminAccountState = "disabled"
+	AdminAccountStateLimited     AdminAccountState = "limited"
+	AdminAccountStatePending     AdminAccountState = "pending"
+	AdminAccountStateRejected    AdminAccountState = "rejected"
+	AdminAccountStateSuspended   AdminAccountState = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountState enum.
 func (e AdminAccountState) Valid() bool {
 	switch e {
 	case AdminAccountStateActive:
+		return true
+	case AdminAccountStateDeactivated:
 		return true
 	case AdminAccountStateDeleted:
 		return true
@@ -264,7 +267,7 @@ func (e AdminAnnouncementState) Valid() bool {
 const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -367,7 +370,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountActionLifted:
 		return true
-	case AdminAuditActionAccountDeletionCancelled:
+	case AdminAuditActionAccountDeletionCanceled:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -1399,6 +1402,7 @@ func (e ClientErrorReportKind) Valid() bool {
 
 // Defines values for ConfirmedOperation.
 const (
+	ConfirmedOperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
 	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
 	ConfirmedOperationLink                ConfirmedOperation = "link"
@@ -1410,6 +1414,8 @@ const (
 // Valid indicates whether the value is a known member of the ConfirmedOperation enum.
 func (e ConfirmedOperation) Valid() bool {
 	switch e {
+	case ConfirmedOperationAccountDeactivation:
+		return true
 	case ConfirmedOperationAccountDeletion:
 		return true
 	case ConfirmedOperationAccountMove:
@@ -1760,6 +1766,42 @@ func (e DataImportSkippedReason) Valid() bool {
 	case DataImportSkippedReasonDuplicate:
 		return true
 	case DataImportSkippedReasonInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeactivationPreviewRefusal.
+const (
+	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
+	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
+	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
+	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
+	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
+	DeactivationPreviewRefusalRecentlyReactivated DeactivationPreviewRefusal = "recently_reactivated"
+	DeactivationPreviewRefusalRegistrationPending DeactivationPreviewRefusal = "registration_pending"
+)
+
+// Valid indicates whether the value is a known member of the DeactivationPreviewRefusal enum.
+func (e DeactivationPreviewRefusal) Valid() bool {
+	switch e {
+	case DeactivationPreviewRefusalAlreadyDeactivated:
+		return true
+	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
+		return true
+	case DeactivationPreviewRefusalLoginRestricted:
+		return true
+	case DeactivationPreviewRefusalMoved:
+		return true
+	case DeactivationPreviewRefusalPaidSubscription:
+		return true
+	case DeactivationPreviewRefusalRecentlyReactivated:
+		return true
+	case DeactivationPreviewRefusalRegistrationPending:
 		return true
 	default:
 		return false
@@ -4452,8 +4494,8 @@ type AdminAccount struct {
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 }
@@ -4583,8 +4625,8 @@ type AdminAccountDetail struct {
 	Roles []string `json:"roles"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 
@@ -4687,8 +4729,8 @@ type AdminAccountSignIn struct {
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
-// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-// and `pending` (the registration of a local account), `limited` (a `limit`), and
+// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 // `active`.
 type AdminAccountState string
 
@@ -4812,7 +4854,7 @@ type AdminAppealPage struct {
 }
 
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
-// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4832,7 +4874,7 @@ type AdminAppealPage struct {
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
-// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -4887,7 +4929,7 @@ type AdminAuditActorKind string
 // AdminAuditEntry One operation of a moderator or an administrator.
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
-	// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4907,7 +4949,7 @@ type AdminAuditEntry struct {
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
-	// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -5759,7 +5801,7 @@ type AdminRelay struct {
 	DomainSuspended bool `json:"domain_suspended"`
 
 	// DroppedLastDay The activities it brought in during the last 24 hours that were dropped over the
-	// hourly limit (`relay_ingest_hourly_limit`).
+	// hourly limit (`relay_max_activities_per_hour`).
 	DroppedLastDay int `json:"dropped_last_day"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -7232,7 +7274,7 @@ type CloseServiceRequest struct {
 
 // ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
 // changing or setting the password (`password_change`), removing it (`password_removal`),
-// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
@@ -8215,6 +8257,54 @@ type DataImportSkipped struct {
 // `duplicate`: an earlier line names the same account, post, or domain.
 type DataImportSkippedReason string
 
+// DeactivateOwnAccountRequest The confirmation of the deactivation of the user's own account: `password`,
+// `two_factor_code`, `passkey`, or `external_confirmation`.
+type DeactivateOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TwoFactorCode A code of the user's authenticator app, or a recovery code.
+	TwoFactorCode *string `json:"two_factor_code,omitempty"`
+}
+
+// Deactivation The deactivation of the user's own account.
+type Deactivation struct {
+	// DeletionDueAt When the account is deleted unless the user reactivates it first.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+}
+
+// DeactivationPreview What deactivating the user's own account would do now.
+type DeactivationPreview struct {
+	// AvailableAt When the account can be deactivated again, for `recently_reactivated`.
+	AvailableAt *time.Time `json:"available_at,omitempty"`
+
+	// DeletionDueAt When the account would be deleted if it were deactivated now.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+
+	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
+	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
+}
+
+// DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
+type DeactivationPreviewRefusal string
+
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
 type DecideAppealRequest struct {
 	// PublicReason Shown to the user who appealed, as plain text.
@@ -8592,7 +8682,7 @@ type ExternalAuthorizationStart struct {
 type ExternalConfirmationRequest struct {
 	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
 	// changing or setting the password (`password_change`), removing it (`password_removal`),
-	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 	// account at a login provider (`link`).
 	Operation ConfirmedOperation `json:"operation"`
 
@@ -10777,7 +10867,7 @@ type PaymentStatus struct {
 	// credentials.
 	Mode PaymentStatusMode `json:"mode"`
 
-	// Provider The provider of `payments_provider` (`stripe`, `payjp`).
+	// Provider The provider of `payments` (`stripe`, `payjp`).
 	Provider string `json:"provider"`
 
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.
@@ -11035,6 +11125,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
 //   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
 //     not the user's current password.
+//   - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+//     now; the detail says why.
 //   - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
 //     built. Wait for it to end.
 //   - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -14231,6 +14323,9 @@ type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 // RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
 type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
 
+// DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
+type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
+
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
@@ -16063,6 +16158,72 @@ type ClientInterface interface {
 	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
 	RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	//
+	// The date the account would be deleted if the user deactivated it now, and why it cannot
+	// be deactivated now, if so. It changes nothing.
+	//
+	// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+	GetDeactivationPreview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeactivateOwnAccountWithBody Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccount(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteOwnAccountWithBody Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
@@ -16155,7 +16316,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -16193,7 +16354,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -16222,7 +16383,7 @@ type ClientInterface interface {
 	// Cancels the move of the user's account: the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -21648,6 +21809,102 @@ func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAlias
 	return c.Client.Do(req)
 }
 
+// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+//
+// The date the account would be deleted if the user deactivated it now, and why it cannot
+// be deactivated now, if so. It changes nothing.
+//
+// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+func (c *Client) GetDeactivationPreview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDeactivationPreviewRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeactivateOwnAccountWithBody Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *Client) DeactivateOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeactivateOwnAccountRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeactivateOwnAccount Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *Client) DeactivateOwnAccount(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeactivateOwnAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // DeleteOwnAccountWithBody Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
@@ -21780,7 +22037,7 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -21828,7 +22085,7 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -21867,7 +22124,7 @@ func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequ
 // Cancels the move of the user's account: the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -31680,6 +31937,73 @@ func NewRemoveAccountAliasRequestWithBody(server string, contentType string, bod
 	}
 
 	operationPath := fmt.Sprintf("/accounts/aliases/remove")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetDeactivationPreviewRequest constructs an http.Request for the GetDeactivationPreview method
+func NewGetDeactivationPreviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/deactivation")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeactivateOwnAccountRequest calls the generic DeactivateOwnAccount builder with application/json body
+func NewDeactivateOwnAccountRequest(server string, body DeactivateOwnAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeactivateOwnAccountRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDeactivateOwnAccountRequestWithBody constructs an http.Request for the DeactivateOwnAccount method, with any body, and a specified content type
+func NewDeactivateOwnAccountRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/deactivation")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -47042,6 +47366,74 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
 	RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
 
+	// GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
+	//
+	// The date the account would be deleted if the user deactivated it now, and why it cannot
+	// be deactivated now, if so. It changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+	GetDeactivationPreviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDeactivationPreviewResponse, error)
+
+	// DeactivateOwnAccountWithBodyWithResponse Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error)
+
+	// DeactivateOwnAccountWithResponse Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithResponse(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error)
+
 	// DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
@@ -47138,7 +47530,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -47176,7 +47568,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -47205,7 +47597,7 @@ type ClientWithResponsesInterface interface {
 	// Cancels the move of the user's account: the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -53194,6 +53586,129 @@ func (r RemoveAccountAliasResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RemoveAccountAliasResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetDeactivationPreviewResponse200Headers the declared response headers of an HTTP 200 response for GetDeactivationPreview
+type GetDeactivationPreviewResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetDeactivationPreviewResponseDefaultHeaders the declared response headers of an HTTP default response for GetDeactivationPreview
+type GetDeactivationPreviewResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetDeactivationPreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DeactivationPreview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetDeactivationPreviewResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetDeactivationPreviewResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetDeactivationPreviewResponse) GetJSON200() *DeactivationPreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetDeactivationPreviewResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetDeactivationPreviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDeactivationPreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDeactivationPreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetDeactivationPreviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeactivateOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for DeactivateOwnAccount
+type DeactivateOwnAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeactivateOwnAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Deactivation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeactivateOwnAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DeactivateOwnAccountResponse) GetJSON200() *Deactivation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeactivateOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeactivateOwnAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeactivateOwnAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeactivateOwnAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeactivateOwnAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75813,6 +76328,92 @@ func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context
 	return ParseRemoveAccountAliasResponse(rsp)
 }
 
+// GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
+//
+// The date the account would be deleted if the user deactivated it now, and why it cannot
+// be deactivated now, if so. It changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+func (c *ClientWithResponses) GetDeactivationPreviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDeactivationPreviewResponse, error) {
+	rsp, err := c.GetDeactivationPreview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDeactivationPreviewResponse(rsp)
+}
+
+// DeactivateOwnAccountWithBodyWithResponse Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *ClientWithResponses) DeactivateOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error) {
+	rsp, err := c.DeactivateOwnAccountWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeactivateOwnAccountResponse(rsp)
+}
+
+// DeactivateOwnAccountWithResponse Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *ClientWithResponses) DeactivateOwnAccountWithResponse(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error) {
+	rsp, err := c.DeactivateOwnAccount(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeactivateOwnAccountResponse(rsp)
+}
+
 // DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
@@ -75933,7 +76534,7 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -75977,7 +76578,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -76012,7 +76613,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, bo
 // Cancels the move of the user's account: the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84660,6 +85261,150 @@ func ParseRemoveAccountAliasResponse(rsp *http.Response) (*RemoveAccountAliasRes
 		response.Headers200 = &headers
 	case true:
 		var headers RemoveAccountAliasResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetDeactivationPreviewResponse parses an HTTP response from a GetDeactivationPreviewWithResponse call
+func ParseGetDeactivationPreviewResponse(rsp *http.Response) (*GetDeactivationPreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDeactivationPreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeactivationPreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetDeactivationPreviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetDeactivationPreviewResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeactivateOwnAccountResponse parses an HTTP response from a DeactivateOwnAccountWithResponse call
+func ParseDeactivateOwnAccountResponse(rsp *http.Response) (*DeactivateOwnAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeactivateOwnAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Deactivation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeactivateOwnAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

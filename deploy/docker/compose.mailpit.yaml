@@ -5,7 +5,7 @@
 # http://127.0.0.1:8025 instead of reaching anyone (docs/operations/email.md, development setup). Never use it in production.
 #
 #   scripts/mailpit-cert.sh
-#   docker compose -f compose.yaml -f compose.mailpit.yaml up -d --build
+#   docker compose -f compose.yaml -f compose.mailpit.yaml up -d
 
 include:
   - mailpit/compose.yaml
@@ -18,8 +18,8 @@ services:
     environment:
       MY_MAIL: smtp
       MY_MAIL_FROM: ${MY_MAIL_FROM:-noreply@localhost}
-      MY_SMTP_HOST: mailpit
-      MY_SMTP_PORT: "1025"
+      MY_MAIL_SMTP_HOST: mailpit
+      MY_MAIL_SMTP_PORT: "1025"
       # mail = smtp verifies Mailpit's certificate: trust the CA of scripts/mailpit-cert.sh instead of the system roots.
       SSL_CERT_FILE: /run/mailpit/ca.pem
     volumes:

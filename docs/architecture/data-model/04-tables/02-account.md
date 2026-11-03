@@ -31,7 +31,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at` | 一意 `(account_id, seq)`。インデックス `(avatar_media_id)`、インデックス `(header_media_id)` |
+| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`（1 以上）, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at` | 一意 `(account_id, seq)`。インデックス `(avatar_media_id)`、インデックス `(header_media_id)` |
 | `account_profile_revision_sources` | イベント（部分型） | `revision_id`（PK）, `note_source` | ローカルのみ。入力されたままの自己紹介 |
 | `account_profile_fields` | イベント（版の子） | `revision_id`, `position`（`int`）, `name`, `value_html` | PK `(revision_id, position)`（FR-006） |
 | `account_profile_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去）。表示名・自己紹介・補足情報のカスタム絵文字（ADR-0051）。`emoji_id` は `content` の `custom_emojis` の行で、`content` の公開 API で得る |
@@ -70,22 +70,23 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `account_lifecycle_events` | イベント | `id`, `account_id`, `kind`（`enum(deactivated, reactivated, deletion_scheduled, deletion_cancelled, deleted, remote_deleted)`）, `initiated_by`（`enum(self, moderator, system, remote)`）, `moderation_action_id`（NULL 可）, `deletion_due_at`（NULL 可。`deletion_scheduled` のみ）, `occurred_at` | |
+| `account_lifecycle_events` | イベント | `id`, `account_id`, `kind`（`enum(deactivated, reactivated, deletion_scheduled, deletion_canceled, deleted, remote_deleted)`）, `initiated_by`（`enum(self, moderator, system, remote)`）, `moderation_action_id`（NULL 可）, `deletion_due_at`（NULL 可。`deletion_scheduled` のみ）, `occurred_at` | |
 | `account_lifecycle_states` | 投影 | `account_id`（PK）, `state`（`enum(active, deactivated, deletion_scheduled, deleted)`）, `since`, `deletion_due_at`（NULL 可） | インデックス `(state, deletion_due_at)`（削除の実行） |
 | `account_erasures` | イベント | `account_id`（PK）, `erased_at` | 消去ジョブがアカウントのデータを消し終えた記録（§8）。1 アカウントにつき 1 回 |
 
 - **ライフサイクルは本人とシステムの軸** です。モデレーションの処分は別の軸（§4.3）に置きます。
-  - BAN のように処分が削除を伴う場合は、処分が `deletion_scheduled` イベントを `initiated_by = moderator` で発生させます（`moderation_action_id` で根拠を辿れる）。BAN への異議申し立てを覆すと、`deletion_cancelled`（`initiated_by = moderator`、同じ `moderation_action_id`）で取り消します（`account.Service.CancelDeletionByModeration`）。
+  - BAN のように処分が削除を伴う場合は、処分が `deletion_scheduled` イベントを `initiated_by = moderator` で発生させます（`moderation_action_id` で根拠を辿れる）。BAN への異議申し立てを覆すと、`deletion_canceled`（`initiated_by = moderator`、同じ `moderation_action_id`）で取り消します（`account.Service.CancelDeletionByModeration`）。
     期日は処分から 30 日後（`moderation.BanDeletionDelay`）で、処分と同じトランザクションで記録します（`account.Service.ScheduleDeletionByModeration`）。
     削除済みのアカウントと、それより早い期日の削除がすでに予定されているアカウントには記録しません。
 - 本人による削除（FR-008、`POST /api/v1/accounts/delete`）は、現在のパスワードかその利用者のパスキーで確かめてから、猶予を置かずに `deleted`（`initiated_by = self`）を記録します（`account.Service.DeleteBySelf`）。
   本人による削除の予約はログインできない（§4.1）ので、予約しても本人には取り消せないためです。データの消去は、ほかの削除と同じく `deleted` から 7 日後です（下記）。削除済みのアカウントには記録しません。
-- 期日を過ぎた `deletion_scheduled` は、1 時間ごとのジョブ `account.execute_deletions` が `deleted`（`initiated_by = system`）にします（`account.Service.ExecuteDueDeletions`）。
-  1 回で 100 件まで、アカウントごとに短いトランザクションで、状態を読み直してから記録するので、再実行しても二重に削除しません。
+- 本人による無効化（[§5.6](../05-states-and-policies.md)、ADR-0145）は `deactivated`（`initiated_by = self`）を記録し、戻るときは `reactivated` を記録します。削除の日付は `since` の 30 日後で、`deletion_due_at` は使いません。
+- 期日を過ぎた `deletion_scheduled` と、30 日を過ぎた `deactivated` は、1 時間ごとのジョブ `account.execute_deletions` が `deleted`（`initiated_by = system`）にします（`account.Service.ExecuteDueDeletions`）。
+  種類ごとに 1 回で 100 件まで、アカウントごとに短いトランザクションで、状態を読み直してから記録するので、再実行しても二重に削除しません。
   `deleted` は既存の購読者を通して、アカウントと投稿を表示から外し、`Delete`（Actor）を送ります（[federation.md §7.1](../../federation.md)）。
 - `deleted` から 7 日（`account.ErasureDelay`。`Delete`（Actor）の配送のリトライが終わるまで、鍵とフォローが要る）を過ぎたローカルのアカウントは、1 時間ごとのジョブ `account.erase_deleted` がデータを消します（§8）。
 - 行が無いアカウントは `active` とみなします。作成時には行を作らず、最初のライフサイクルイベントで作ります（イベントからの再構築と一致させるため）。
-- 投影はイベントを `id` 順に畳み込んで作ります: `deactivated` → `deactivated`、`reactivated` / `deletion_cancelled` → `active`、`deletion_scheduled` → `deletion_scheduled`（`deletion_due_at` を写す）、`deleted` / `remote_deleted` → `deleted`。`deleted` は最終状態で、以後のイベントでは変わりません。`since` は最後に状態を変えたイベントの `occurred_at` です。
+- 投影はイベントを `id` 順に畳み込んで作ります: `deactivated` → `deactivated`、`reactivated` / `deletion_canceled` → `active`、`deletion_scheduled` → `deletion_scheduled`（`deletion_due_at` を写す）、`deleted` / `remote_deleted` → `deleted`。`deleted` は最終状態で、以後のイベントでは変わりません。`since` は最後に状態を変えたイベントの `occurred_at` です。
 - `deletion_due_at` は、イベントでは `kind = deletion_scheduled` のとき、投影では `state = deletion_scheduled` のときだけ値を持ちます（`CHECK` 制約）。
 
 #### 移転（ADR-0089）
@@ -93,14 +94,14 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `account_moves` | イベント | `id`, `account_id`（移転元）, `target_account_id`, `initiated_by`（`enum(self, remote)`）, `activity_uri`（NULL 可。受けた `Move`）, `occurred_at` | 一意 `(account_id, target_account_id)`、インデックス `(account_id, occurred_at DESC, id DESC)`、`CHECK (account_id <> target_account_id)` |
-| `account_move_cancellations` | イベント | `move_id`（PK）, `cancelled_at` | ローカルの移転だけ |
+| `account_move_cancellations` | イベント | `move_id`（PK）, `canceled_at` | ローカルの移転だけ |
 | `account_move_states` | 投影 | `account_id`（PK）, `move_id`, `target_account_id`, `since` | |
 | `account_aliases` | 現在値 | `account_id`, `alias_uri`, `added_at` | PK `(account_id, alias_uri)`。ローカルのアカウントだけ。1 アカウント 5 件まで（`account.MaxAliases`） |
 
 - **移転はライフサイクルと直交する軸** です（ADR-0020 規約 2）。移転済みでも `account_lifecycle_states` は変わりません。
 - リモートのアカウントの移転は、検証を通った `Move` を `account.Service.RecordRemoteMove` が `initiated_by = remote` で記録します（[federation.md §3.4](../../federation.md)）。同じ移転先への 2 度目の `Move` は一意制約で何も記録せず、別の移転先への `Move` は最新の行の `occurred_at` から 7 日（`account.RemoteMoveInterval`）以内なら記録しません（待ち時間は状態の列を持たず、読み取りのときに判定します）。
 - ローカルのアカウントの移転は、`federation.LocalMoves` が移転先を確かめた後に `account.Service.RecordLocalMove` が `initiated_by = self` で記録します。最新の行の `occurred_at` から 30 日（`account.LocalMoveInterval`）以内は、その移転が取り消されていても記録せず、前に移った移転先へは一意制約のため移れません。移転元が制限中で移転先がローカルのとき、`account.moved` は監査ログ `account_moved` の ID を運び、`moderation` がその記録を書きます。
-- 取り消し（`account.Service.CancelMove`）は `account_move_cancellations` を記録し、ドメインイベント `account.move_cancelled` で projector が `account_move_states` の行を消します。`federation` は `movedTo` の無い `Update(Actor)` を送ります。
+- 取り消し（`account.Service.CancelMove`）は `account_move_cancellations` を記録し、ドメインイベント `account.move_canceled` で projector が `account_move_states` の行を消します。`federation` は `movedTo` の無い `Update(Actor)` を送ります。
 - 記録は同じトランザクションでドメインイベント `account.moved` を出し、projector が `account_move_states` をその移転に向けます。`moderation` が移転元を `limit` しているかを運び（`SourceLimited`）、`notification` がモデレーターに知らせます。`graph` はこのイベントからジョブ `graph.migrate_follows` を積みます（§4.5）。
 - 投影はアカウントごとの最新の移転（`occurred_at`、`id` の順）で、それが取り消されていれば行を作りません（`account.MoveStates`）。取り消しは行を消します。
 - 移転先は client API のアカウントの表現の `moved`（アカウント自身のエンドポイント）に出します（`account.Service.MoveState`）。

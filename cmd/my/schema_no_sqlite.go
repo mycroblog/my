@@ -13,5 +13,5 @@ import (
 
 // applySQLiteSchema reports that the build tag no_sqlite left the SQLite adapter out.
 func applySQLiteSchema(context.Context, string, schemaapply.Options) (schemaapply.Result, error) {
-	return schemaapply.Result{}, config.ExcludedError("db", "sqlite", "no_sqlite")
+	return schemaapply.Result{}, config.ExcludedError("database", "sqlite", "no_sqlite")
 }

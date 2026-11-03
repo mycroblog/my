@@ -134,12 +134,12 @@ func TestRunConfig(t *testing.T) {
 		{
 			name:     "invalid lists every issue",
 			args:     []string{"config", "check"},
-			env:      map[string]string{"MY_DB": "mysql", "LC_ALL": "C"},
+			env:      map[string]string{"MY_DATABASE": "mysql", "LC_ALL": "C"},
 			wantCode: 1,
 			wantStderr: []string{
 				"The required setting MY_HOST is not set.",
-				"The setting MY_DB has an invalid value.",
-				`db: unknown value "mysql"`,
+				"The setting MY_DATABASE has an invalid value.",
+				`database: unknown value "mysql"`,
 				"The required setting MY_DATABASE_URL is not set.",
 			},
 		},
@@ -157,7 +157,7 @@ func TestRunConfig(t *testing.T) {
 		{
 			name:       "maintenance leaves the adapters unread",
 			args:       []string{"config", "check", "-maintenance"},
-			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DB": "mysql", "MY_MAINTENANCE_UNTIL": "2026-10-24T03:00:00Z"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE": "mysql", "MY_MAINTENANCE_UNTIL": "2026-10-24T03:00:00Z"},
 			wantCode:   0,
 			wantStdout: []string{"maintenance_until", "configuration OK"},
 			wantAbsent: []string{"database_url", "mysql"},
@@ -174,7 +174,7 @@ func TestRunConfig(t *testing.T) {
 			args:       []string{"config", "check"},
 			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_MAINTENANCE_RETRY_AFTER": "0", "LC_ALL": "C"},
 			wantCode:   1,
-			wantStderr: []string{"maintenance_retry_after: must be a whole number of seconds"},
+			wantStderr: []string{"maintenance_retry_after: must be a Go duration"},
 		},
 		{name: "no subcommand", args: []string{"config"}, wantCode: 2, wantStderr: []string{"Usage: my config check"}},
 		{name: "unknown subcommand", args: []string{"config", "nope"}, wantCode: 2, wantStderr: []string{`unknown subcommand "nope"`}},
@@ -183,7 +183,7 @@ func TestRunConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LANGUAGE", "")
-			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DB", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
+			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DATABASE", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
 				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN", "MY_WORKER_JOB_TYPES"} {
 				t.Setenv(k, tt.env[k]) // restores the original value after the test
 				if _, ok := tt.env[k]; !ok {

@@ -65,7 +65,7 @@ func New(client Client, o Options) (*Mailer, error) {
 // client, and endpoint). It fails when cfg has no region.
 func NewFromConfig(cfg aws.Config, o Options) (*Mailer, error) {
 	if cfg.Region == "" {
-		return nil, errors.New("ses: no AWS region: set ses_region or AWS_REGION")
+		return nil, errors.New("ses: no AWS region: set mail_ses_region or AWS_REGION")
 	}
 	return New(sesv2.NewFromConfig(cfg), o)
 }

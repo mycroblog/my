@@ -18,7 +18,7 @@ import (
 )
 
 // setUpSupporters builds the supporter program (ADR-0072): the service of the plans and the
-// subscriptions on the payment provider of payments_provider (none keeps the program from being
+// subscriptions on the payment provider of payments (none keeps the program from being
 // enabled), its projectors on the accounts' deletions and suspensions, and its jobs. It comes
 // after the identity, account, moderation, and instance services, and before the erasure, which
 // erases the subscribers' listings and customers. It returns the provider for setUpPayments.

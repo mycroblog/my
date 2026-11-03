@@ -26,8 +26,8 @@ func (r *InstanceRepository) InsertBrandRevision(ctx context.Context, tx uow.Tx,
 	}
 	for _, f := range rev.Files {
 		err := q.InsertInstanceBrandFile(ctx, sqlitegen.InsertInstanceBrandFileParams{
-			BrandRevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
-			Width: int64(f.Width), Height: int64(f.Height), ByteSize: f.Size, Sha256: f.SHA256,
+			RevisionID: rev.ID, Rendition: string(f.Rendition), BlobKey: f.Key, ContentType: f.ContentType,
+			Width: int64(f.Width), Height: int64(f.Height), FileSize: f.Size, Sha256: f.SHA256,
 		})
 		if err != nil {
 			return wrap(err, "insert instance brand file")
@@ -132,7 +132,7 @@ func findBrandRevision(ctx context.Context, q *sqlitegen.Queries, id string) (in
 	for _, f := range files {
 		rev.Files = append(rev.Files, instance.BrandFile{
 			Rendition: instance.BrandRendition(f.Rendition), Key: f.BlobKey, ContentType: f.ContentType,
-			Width: int(f.Width), Height: int(f.Height), Size: f.ByteSize, SHA256: f.Sha256,
+			Width: int(f.Width), Height: int(f.Height), Size: f.FileSize, SHA256: f.Sha256,
 		})
 	}
 	return rev, nil

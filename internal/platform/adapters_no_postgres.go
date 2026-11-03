@@ -13,5 +13,5 @@ import (
 
 // openPostgres reports that the build tag no_postgres left the PostgreSQL adapter out.
 func (a *App) openPostgres(context.Context, *config.Config, queuedb.Options) (*repositories, error) {
-	return nil, config.ExcludedError("db", "postgres", "no_postgres")
+	return nil, config.ExcludedError("database", "postgres", "no_postgres")
 }

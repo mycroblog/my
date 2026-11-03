@@ -9,7 +9,7 @@
 
 M6（AWS のテンプレートと各系統のアダプタ、#29）の DB の既定を決めるには、Amazon Aurora DSQL に対応するかを先に決める必要がある。関連する要件は NFR-COST-1（アイドル時のコンピュートをほぼゼロにする）、NFR-COST-2（RDB 1 つで全機能が動く）、G2（同じコードで各系統が動く）である。
 
-今の `db = postgres` は DSQL では動かない。次の事実は AWS の DSQL ユーザーガイドと料金表（2026-11-02 に確認）と、この ADR の時点の `main` のコードから取った。実際のクラスタでは確かめていない。調査の詳細は [#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)にある。
+今の `database = postgres` は DSQL では動かない。次の事実は AWS の DSQL ユーザーガイドと料金表（2026-11-02 に確認）と、この ADR の時点の `main` のコードから取った。実際のクラスタでは確かめていない。調査の詳細は [#1846 の報告](https://github.com/mycroblog/my/issues/1846#issuecomment-6494456875)にある。
 
 | 分野 | DSQL | このサーバー |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ DSQL は外部キー、シーケンス、`jsonb`、`DROP COLUMN`、式インデ�
 
 範囲は次のとおりとする。
 
-- `db = postgres` の接続先として DSQL を検出して拒むことはしない。運用文書と設計文書の対応する DB に載せず、動作を保証しない。
+- `database = postgres` の接続先として DSQL を検出して拒むことはしない。運用文書と設計文書の対応する DB に載せず、動作を保証しない。
 - ADR の本文は書き換えないので、次の DSQL についての記述はこの ADR で置き換える。
   - [ADR-0003](0003-database-abstraction.md) の対応表の「検証次第で Aurora DSQL」、Open Questions の DSQL の検証、DSQL の nightly の契約テスト、DSQL から来た「1 トランザクションの変更は 3,000 行まで」の上限。一括処理を短いトランザクションのジョブに分ける方針は変えない。
   - [ADR-0023](0023-declarative-schema-management.md) の DSQL の未検証の記述、[ADR-0034](0034-remote-content-scope-and-retention.md) と [ADR-0078](0078-postgres-uuid-columns.md) の課金の例と M6 の対象、[ADR-0050](0050-stream-pubsub-across-processes.md) の `LISTEN` の可否、[ADR-0120](0120-external-queue-wake-up-signals.md) の見直す条件、[ADR-0126](0126-embedded-schema-apply.md) の書き換えの案。

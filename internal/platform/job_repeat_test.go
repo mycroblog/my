@@ -80,7 +80,7 @@ func TestInboxAnswersOnce(t *testing.T) {
 }
 
 // TestMigrationRunsAgain runs the migration of a moved account again: a follower that moved stays
-// moved and is told once, and a move that was cancelled moves nobody more.
+// moved and is told once, and a move that was canceled moves nobody more.
 func TestMigrationRunsAgain(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{}, "alice", "bob", "carol", "dan")
@@ -114,7 +114,7 @@ func TestMigrationRunsAgain(t *testing.T) {
 		t.Errorf("after running it again carol follows bob = %q, alice = %q", following(carol, bob), following(carol, alice))
 	}
 
-	// Once the move is cancelled, a follower of the account stays with it.
+	// Once the move is canceled, a follower of the account stays with it.
 	if err := c.app.Accounts.CancelMove(ctx, alice); err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestMigrationRunsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if following(dan, alice) != graph.StateActive || following(dan, bob) != graph.StateNone {
-		t.Errorf("after running a cancelled move dan follows alice = %q, bob = %q", following(dan, alice), following(dan, bob))
+		t.Errorf("after running a canceled move dan follows alice = %q, bob = %q", following(dan, alice), following(dan, bob))
 	}
 }
 

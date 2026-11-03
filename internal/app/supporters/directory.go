@@ -107,7 +107,7 @@ func (s *Service) SubscriptionUsers(ctx context.Context, ids []string) ([]Subscr
 }
 
 // ProviderLocation returns the name of the configured payment provider and the time zone in
-// which its money movements fall on their dates (ADR-0073 §3); false with payments_provider =
+// which its money movements fall on their dates (ADR-0073 §3); false with payments =
 // none.
 func (s *Service) ProviderLocation() (string, *time.Location, bool) {
 	if s.d.Provider == nil {

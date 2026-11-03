@@ -378,7 +378,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.aliases_changed`（ローカルのアカウントの別名の追加・削除。ADR-0089。連合の向きが `publish` を通すときだけ積む） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
-| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1。本人が無効化している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `account.lifecycle_event_recorded`（ローカルのアカウントの `deactivated` / `reactivated`。§11.2。凍結している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
 | `account.move_cancelled`（ローカルのアカウントの移転の取り消し） | `Update`（Actor の文書。`movedTo` なし） | リモートフォロワーの inbox |
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
@@ -695,6 +696,24 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 処分を解除しても、切ったフォローは戻しません。
 - 受信した Actor の `suspended: true` は、リモートのアカウントの表示に出すだけで、このサーバーの処分にはしません。
 
+### 11.2 本人による無効化
+
+本人による無効化（[ADR-0145](../adr/0145-self-deactivation.md)）は、処分ではありませんが、連合では凍結と同じ文書で表します。
+
+| 契機 | 送るもの | 宛先 |
+| --- | --- | --- |
+| `deactivated` | `Update(Actor)`（`suspended: true`、プロフィールを空にする） | `Delete`（Actor）と同じ（§7.2） |
+| `reactivated` | `Update(Actor)`（元のプロフィール） | 同上 |
+| 30 日後の `deleted` | `Delete`（Actor）。§7.1 のアカウント削除と同じ経路 | 同上 |
+
+- Actor の GET は `federation.ActorDocument.Suspend` の文書を返し、`id`・コレクション・inbox・鍵を残します。WebFinger と `/@name` のリダイレクトは答えます。コレクションと投稿の GET は `404` です（`410` にしない）。投稿ごとの `Delete` は送りません。
+- アカウントが「見えない」状態は、無効化と凍結のどちらかが続く間は変わらないので、片方の変化だけでは何も送りません。`deactivated` と `reactivated` の projector は凍結を、`moderation.account_suspension_changed` の projector は無効化を、同じトランザクションで確かめます。
+- 個人の inbox は受け付けます（`202`）。受信の扱いは次のとおりです。shared inbox も同じです。
+  - 新しい `Follow` は `Reject` し、記録しません（`FollowRefusals`）。戻っても復元しません。すでにあるフォローか申請について届き直した `Follow` は、何も答えずに落とします。`Reject` を返すと、相手のサーバーで関係が切れるためです。
+  - `Undo(Follow)`・`Accept`・`Reject` と Actor についての活動は、処理します。
+  - `Create` の `Mention` と宛先からこの人を除きます。宛先がこの人だけの `direct` の投稿は保存しません。ほかの人に見える投稿は残ります。
+  - `Like`（`_misskey_reaction` を含む）と `Announce` は数として記録し、通知しません。
+
 ## 12. テスト
 
 | 種類 | 内容 | 実行 |
@@ -742,7 +761,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 同期の部分（§3.1）は変えません。`refetch` のアクティビティと `Announce` だけ、署名者がどれかの参加中のリレーの Actor（`relay_states.relay_actor_uri`）かを引き、そうならジョブに `relay_id` を付けます。
 - 非同期の部分は、`relay_id` の付いたアクティビティを、何かを取得する前にリレーの関門（`federation.Relays.Admit`）に通します。
   1. 登録が `receive = false`、またはリレーが `accepted` でなければ捨てる。
-  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_ingest_hourly_limit`（既定 1,000）を超えたら捨てる。
+  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_max_activities_per_hour`（既定 1,000）を超えたら捨てる。
   3. `Create` / `Update` の `actor`、`Announce` の `object` のホストのドメインか、保存済みのアカウントに `federation` か `public_discovery` の制限があれば捨てる（`moderation.FederationPolicy.DiscoveryRestricted`）。`Delete` / `Undo` は捨てない。
 - 通ったものは、`trust = refetch` のとおりオリジンから取り直して（§3.2）、ほかの受信と同じハンドラで扱います。
   - `Create`（と、§3.3 で `Create` として扱う `Update`）は、取り込み範囲（§6.3）に入らなくても、`public` なら取り込みます。返信先と未知のメンション先は取得せず、取り込みのトランザクションで `relayed_statuses` に記録します。

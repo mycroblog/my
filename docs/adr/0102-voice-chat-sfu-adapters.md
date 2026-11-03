@@ -72,7 +72,7 @@ M4.3（Voice Chat、epic #1345）は、通話の音声を P2P のほかに SFU �
 | 操作（ADR-0101 §2） | LiveKit | Sora |
 | --- | --- | --- |
 | `Capabilities` | `ServerEnforced`・`Events` | `ServerEnforced`・`ConnectCallback`・`Events` |
-| `Open` | `CreateRoom`（名前はルームの ID、`max_participants` は `voice_max_participants`、`empty_timeout`・`departure_timeout` は短く）。冪等 | 何もしない（最初の接続でセッションができる） |
+| `Open` | `CreateRoom`（名前はルームの ID、`max_participants` は `voice_sfu_max_participants`、`empty_timeout`・`departure_timeout` は短く）。冪等 | 何もしない（最初の接続でセッションができる） |
 | `Grant` | アクセストークン（JWT、寿命 60 秒。`roomJoin`・`room`・`canSubscribe: true`・`canPublishData: false`。話者は `canPublish: true` と `canPublishSources: ["microphone"]`、聞き手は `canPublish: false`）と、クライアント向けの URL | my が署名した寿命 60 秒の参加の値（ルーム・セッション・役割）を `metadata` に入れさせる。Sora Cloud は加えて Cloud の `access_token`（JWT、HS256、`channel_id`・`role`・`exp`）。`Options` に `role`（`sendrecv` / `recvonly`）と `channel_id` |
 | `SetSpeaking`（許可） | `UpdateParticipant` の `permission`。再接続なし（`reconnect` は偽） | 役割を変えられないので `reconnect` を真で返す。クライアントは `sendrecv` の新しい `Grant` で入り直す（回答 40） |
 | `SetSpeaking`（取り消し） | `UpdateParticipant` で `canPublish: false`（公開中のトラックは自動で非公開になる） | 転送フィルター（そのコネクションの `audio` を `block`）ですぐ止め、`reconnect` を真で返して `recvonly` で入り直させる |
@@ -124,7 +124,7 @@ ADR-0101 §1 の表に足す。秘密は `_FILE` でも渡せ、TOML には書�
 | `voice_sora_api_header_name` / `voice_sora_api_header_value` | `self_hosted`: API の呼び出しに付けるヘッダー（値は秘密。例 `Authorization: Basic …`） |
 | `voice_sora_webhook_username` / `voice_sora_webhook_password` | `self_hosted`: Sora の Webhook の Basic 認証（パスワードは秘密）。必須 |
 | `voice_sora_cloud_project_id` / `voice_sora_cloud_api_key` | `cloud`: プロジェクトの ID と API キー（秘密）。`access_token` の署名、API の Bearer、Webhook の署名（`sora-cloud-signature`、HMAC-SHA256）の検証に使う |
-| `voice_join_secret` | Sora の参加の値（§3）の署名の秘密。`voice = sora` で必須 |
+| `voice_sora_join_secret` | Sora の参加の値（§3）の署名の秘密。`voice = sora` で必須 |
 
 - セルフホストの Sora の HTTP API には認証がなく、ループバックだけで受ける設定が勧められている。my はそのまま呼ばず、運営者が API の前に認証つきのリバースプロキシを置き、my はそのヘッダーを付ける（回答 41）。Webhook は HTTPS と Basic 認証を必須にし、どちらかが欠けた設定では起動しない。
   Lambda の Function URL と Cloud Run は受け側で mTLS を終端できないので、mTLS は使わない。

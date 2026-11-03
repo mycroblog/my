@@ -91,7 +91,34 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
   (for `ban`, the number of days until the account is deleted), and they can appeal from that page ([appeals](#appeals)). The authorization endpoint (`/oauth/authorize`) answers with `403` and issues no token.
   A user under `ban` can sign in until the account is deleted, and the deletion revokes that session too. A user whose own deletion is scheduled, and an account that has been disabled, cannot sign in even on the sign-in page.
 
-### Appeals
+### Accounts that their owners deactivated
+
+A user can deactivate their own account from the account settings, after entering their password or a
+two-factor code again, or confirming with a passkey (a user with none of these signs in again at a linked
+login provider). The account is not a moderation action and moderators cannot deactivate anyone:
+
+- The profile and posts are hidden from everyone but moderators, and other servers receive an `Update` of the
+  actor marked `suspended`, so they may show the account as suspended. Every session and token of the user ends.
+  Where the server sends mail, one email states the date of the deletion; no other email is sent before it.
+- Nothing reaches the account: mentions and direct messages are dropped, no notifications, emails, or Web Push are
+  made, and new followers are refused. Favourites and boosts are counted. Existing follows stay.
+- The user signs in to a server page, which shows the date of the deletion and lets them reactivate or delete the
+  account. Reactivating brings everything back. The next deactivation has to wait 24 hours.
+- Thirty days after the deactivation, the hourly job deletes the account. A reactivation after that date is refused
+  even if the job has not run yet. The username is not released.
+
+Moderators see the state `deactivated` in the account list (`state=deactivated`), and can still read reports about
+the account and act on it. A moderation action does not change the date of the deletion, except a `ban`, which
+replaces it with its own: from then on the user cannot reactivate. A suspension sends nothing to other servers while the
+account is deactivated, and it stays in effect after the user reactivates. A user cannot deactivate an account while
+moderation keeps it from signing in, while its deletion is scheduled, after it moved, while its registration waits
+for review, while a paid subscription is still running (including one set to end at the end of its period), or when
+it is the only administrator who can sign in. A deactivated administrator does not count as one who can. If a
+deactivated administrator's date passes while no other administrator can sign in, the hourly job does not delete the
+account and logs a warning. That administrator can no longer sign in either, so create another administrator with
+`my admin create`; the next run then deletes the account.
+
+## Appeals
 
 A local user can appeal an action against them.
 A moderator reviews the appeal and either upholds it (`uphold`) or overturns it (`overturn`).
@@ -113,7 +140,7 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 - A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window_days` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
 - When a user appeals, people with `manage_accounts` get a notification (`admin_appeal`). When it is reviewed, the user gets a notification (`appeal_decided`) and can see the outcome and `public_reason`. The reviewer is not shown.
 - Overturning lifts the action in the same transaction (the same effect as `lift`, with an empty lift reason). Overturning `delete_statuses` does not bring back the deleted posts. An action already lifted before the review stays as it is.
-- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_cancelled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
+- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_canceled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
   If the account was deleted before the review, it cannot be overturned (`422`, `/api/v1/problems/not-appealable`; upholding is still possible).
 - A review happens once. Reviewing again with the same outcome changes nothing, and the opposite outcome gives `409` (`/api/v1/problems/appeal-decided`).
 
@@ -334,7 +361,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 
 | Target kind | Operations |
 | --- | --- |
-| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_cancelled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
+| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
 | `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
@@ -342,7 +369,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (instance rules) |
 | `role` | `role_granted`, `role_revoked` (granting and revoking a role for a user), `role_created`, `role_updated`, `role_deleted` (creating, changing and deleting a role) |
-| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_cancelled` for a `ban`) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_canceled` for a `ban`) |
 | `signup_block` | `signup_block_added`, `signup_block_lifted` (adding and lifting a sign-up block) |
 | `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |

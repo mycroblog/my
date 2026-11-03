@@ -71,7 +71,7 @@ A job type can also be registered or do its work only with some settings; **Need
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `account.execute_deletions` | Deletes the accounts whose scheduled deletion is due, from a ban or from the owner's request. A deletion cancelled meanwhile is left alone. | Schedule | Default | Next run |
+| `account.execute_deletions` | Deletes the accounts whose scheduled deletion is due, from a ban or from the owner's request, and the accounts that their owners deactivated 30 days ago. An account that came back, or whose deletion was cancelled meanwhile, is left alone, and so is a deactivated account that is the last administrator, with a warning in the log. | Schedule | Default | Next run |
 | `account.erase_deleted` | Erases the data of deleted accounts, local and remote, in bounded batches. | Schedule, then itself | Default | Next run |
 | `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches, and deletes checks of remote handles after 90 days, keeping the newest of each account. | Schedule, then itself | Default | Next run |
 | `graph.expire_mutes` | Deletes the mutes that have expired. | Schedule | Default | Next run |
@@ -93,6 +93,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `identity.verification_email` | Issues a token and sends the verification link. Sends nothing more than an hour after the request. | Registration, or a request to send the link again | Transactional mail | Sends again, within the hour, with a new link |
 | `identity.password_reset_email` | Issues a token and sends a password reset link. Sends nothing more than 15 minutes after the request, or while sign-in is limited to login providers. | A password reset request | Transactional mail | Sends again, within the 15 minutes, with a new link |
 | `identity.password_notice_email` | Tells a user that their password changed or was removed. | A password change or removal | Mail | Sends again |
+| `identity.deactivation_email` | Tells a user that their account is deactivated, with the date of its deletion. Sends nothing once the user has come back. | A user deactivating their account | Mail | Sends again |
 | `notification.email` | Sends the email of one notification that stayed unread for 15 minutes. Checks the read position, the user's setting, and that the notification is still shown. | A notification with email on, due 15 minutes later | Mail | Sends again |
 | `notification.moderator_email` | Sends a moderator notification by email, without waiting. | A moderator notification | Mail | Sends again |
 | `notification.supporter_email` | Sends a supporter notification by email. | A subscription's transition, or a plan being retired | Mail | Sends again |
@@ -222,9 +223,9 @@ Most job types exist on every server. These do not:
 | `vapid_private_key` set | `notification.push` |
 | `metrics_exporter` set (not `none`) | `metrics.snapshot` |
 | `stream = sns` or `pubsub` | `stream.sweep` |
-| `payments_provider` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
+| `payments` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
 | `billing_sources` set | The `finance.billing_import` schedules. The job type itself always exists. |
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments_provider`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

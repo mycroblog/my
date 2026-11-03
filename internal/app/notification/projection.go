@@ -23,6 +23,9 @@ type Accounts interface {
 	IsLocal(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
 	// DomainOf returns the domain of a remote account, "" for a local or unknown one.
 	DomainOf(ctx context.Context, tx uow.Tx, accountID string) (string, error)
+	// DeactivatedTx reports whether a local account's owner deactivated it: nothing reaches it
+	// until it comes back, and what it missed is not delivered then (ADR-0145 §6).
+	DeactivatedTx(ctx context.Context, tx uow.Tx, id string) (bool, error)
 }
 
 // Relationships is the part of the graph module's public API that the projectors read: whether
@@ -98,8 +101,8 @@ type ProjectorDeps struct {
 //     the instance and has no source account; its dedupe key is the request's
 //     (notification.CustomEmojiRequestDecidedKey). A withdrawal and a lapse notify nobody.
 //
-// A notification goes only to a local recipient other than its source, and not when either
-// blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
+// A notification goes only to a local recipient other than its source, and not to a deactivated
+// recipient (ADR-0145 §6), or when either blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
 // (FR-304), the source has unsolicited_reach (a limit on it or its domain) and the recipient
 // does not follow it, or the recipient turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
@@ -397,8 +400,8 @@ func (p *projector) interaction(ctx context.Context, tx uow.Tx, t notification.T
 	})
 }
 
-// notify inserts n, with its source's domain, unless its recipient is its source or not local,
-// the relationship between them hides it, the source may reach only its followers and the
+// notify inserts n, with its source's domain, unless its recipient is its source, not local, or
+// deactivated, the relationship between them hides it, the source may reach only its followers and the
 // recipient is none, the recipient mutes the source's domain, or the recipient turned its group
 // off in the app. A notification with the same dedupe key leaves n out.
 func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notification) error {
@@ -407,6 +410,10 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 	}
 	local, err := p.d.Accounts.IsLocal(ctx, tx, n.RecipientAccountID)
 	if err != nil || !local {
+		return err
+	}
+	deactivated, err := p.d.Accounts.DeactivatedTx(ctx, tx, n.RecipientAccountID)
+	if err != nil || deactivated {
 		return err
 	}
 	if n.SourceAccountID != "" {

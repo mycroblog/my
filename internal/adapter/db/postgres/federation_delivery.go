@@ -29,7 +29,7 @@ func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow
 	}
 	err = q.InsertDeliveryAttempt(ctx, postgresgen.InsertDeliveryAttemptParams{
 		ID: a.ID, DeliveryID: a.DeliveryID, Outcome: string(a.Outcome), SignatureScheme: toNullString(a.Scheme),
-		HttpStatus: status, Error: toNullString(a.Error), AttemptedAt: a.AttemptedAt,
+		StatusCode: status, Error: toNullString(a.Error), AttemptedAt: a.AttemptedAt,
 	})
 	return wrap(err, "insert delivery attempt")
 }
@@ -80,8 +80,8 @@ func (r *FederationRepository) ListDeliveryAttempts(ctx context.Context, deliver
 	out := make([]federation.DeliveryAttempt, len(rows))
 	for i, row := range rows {
 		status := 0
-		if row.HttpStatus != nil {
-			status = int(*row.HttpStatus)
+		if row.StatusCode != nil {
+			status = int(*row.StatusCode)
 		}
 		out[i] = federation.DeliveryAttempt{
 			ID: row.ID, DeliveryID: row.DeliveryID, Outcome: federation.DeliveryOutcome(row.Outcome),

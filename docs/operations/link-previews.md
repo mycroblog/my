@@ -20,7 +20,7 @@ A request for HTML is always treated as signed out, so a preview shows only what
 | The pages of published documents (`/about/terms`, `/about/privacy`, `/about/commerce`) | 200. The shell with meta tags that introduce the instance, titled "document name \| instance name". The page of a document that is not published gets the generic shell |
 | A `public` post, the profile of an active local account | 200. The shell with meta tags |
 | An `unlisted` post | 200. The shell with meta tags, plus `<meta name="robots" content="noindex, noarchive">` and `X-Robots-Tag: noindex, noarchive` |
-| A `local`, `private`, `direct`, deleted, or nonexistent post, and the profile and posts of a suspended, deleted, or limited account | 404. The generic shell and `X-Robots-Tag: noindex, noarchive`. The body and headers are the same whatever the reason |
+| A `local`, `private`, `direct`, deleted, or nonexistent post, and the profile and posts of a suspended, deactivated, deleted, or limited account | 404. The generic shell and `X-Robots-Tag: noindex, noarchive`. The body and headers are the same whatever the reason |
 | `/@<old username>/status/<post ID>` | 301, to the URL with the current username |
 
 Every page also carries the statements to search engines and AI crawlers (meta tags such as `noindex` and `noai`, and

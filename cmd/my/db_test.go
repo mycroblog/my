@@ -136,9 +136,9 @@ func TestDBBackup(t *testing.T) {
 		t.Errorf("db backup of a missing database = %d %q", code, stderr)
 	}
 
-	t.Setenv(config.EnvPrefix+"DB", "postgres")
+	t.Setenv(config.EnvPrefix+"DATABASE", "postgres")
 	t.Setenv(config.EnvPrefix+"DATABASE_URL", "postgres://my@db.invalid/my")
 	if code, _, stderr := runCmd(t, dbCmd, "backup", filepath.Join(t.TempDir(), "b.db")); code != 1 || !strings.Contains(stderr, "pg_dump") {
-		t.Errorf("db backup with db = postgres = %d %q", code, stderr)
+		t.Errorf("db backup with database = postgres = %d %q", code, stderr)
 	}
 }

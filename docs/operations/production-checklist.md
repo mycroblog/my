@@ -97,7 +97,7 @@ for example as a step of the deployment before the new version takes traffic.
 ### Other secrets stay out of the repository and the image
 
 - **Why**: a secret in a repository, a container image, or a config file is copied to every place those go.
-- **Verify**: `database_url`, `smtp_password`, `captcha_secret_key`, the payment provider's keys, `valkey_url`, and every other
+- **Verify**: `database_url`, `mail_smtp_password`, `captcha_secret_key`, the payment provider's keys, `valkey_url`, and every other
   setting marked secret in the configuration reference come from environment variables or `<NAME>_FILE` files that the platform's
   secret store fills (Docker or Kubernetes secrets, Secret Manager, Parameter Store). The config file cannot hold them:
   `my config check` refuses a secret there. Search the repository and the image for the values to make sure no copy is left.
@@ -161,6 +161,9 @@ or with `my instance set`. `my config check -instance` warns about the texts, co
   See [key management](key-management.md) (backing up the KEK) and [database](database.md).
 - **Monitoring and alerts**: an external monitor checks `/healthz` and alerts someone who can act, and the job queue's dead jobs
   are watched. See [monitoring](monitoring.md) and [running the server](running.md) (health checks, metrics, and the job queue).
+- **The image**: the instance runs a released image pinned by digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, from the release's notes), not one
+  that changes on a restart, and [its provenance has been verified](running.md#verify-an-image). There is no `latest` tag.
+  An upgrade changes that version on purpose and follows [Upgrading](database.md#upgrading), one minor version at a time.
 - **Source code (AGPL-3.0)**: the server must offer its source code to everyone who uses it. Leave
   [`source_url`](../reference/configuration.md#source_url) at its default for an unmodified release; point it at your own
   source when you run a fork or a modified version. Verify the link on `/about`.

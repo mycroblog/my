@@ -112,7 +112,7 @@
 - 署名者の Actor が `accepted` のリレーの Actor（`mastodon` は Actor の inbox か shared inbox が登録の inbox の URL と一致するもの）なら、ジョブに `relay_id` を付ける。中継は `trust = refetch` のまま扱う（ADR-0033 は変えない）。
 - 非同期の部分では、`relay_id` の付いたアクティビティを次の順に扱う。
   1. 登録の `receive` が `false`、またはリレーが `accepted` でなければ捨てる。
-  2. リレーごとの 1 時間の取り込みの上限（設定 `relay_ingest_hourly_limit`、既定 1,000 件。KV で数える）を超えたら、取得せずに捨てる。捨てた件数はメトリクスに出す。
+  2. リレーごとの 1 時間の取り込みの上限（設定 `relay_max_activities_per_hour`、既定 1,000 件。KV で数える）を超えたら、取得せずに捨てる。捨てた件数はメトリクスに出す。
   3. 作者（`Create` の `actor`、`Announce` の `object` の作者のホスト）のアカウントかドメインに `federation` か `public_discovery` の制限があれば、取得せずに捨てる（連合タイムラインにも検索にも出ないので取り込まない）。
   4. `Create` / `Update` / `Delete` は ADR-0033 のとおりオリジンから取り直す。リレーの `Announce` は、`object` をオリジンから取得して取り込み、**ブーストとしては記録しない**（Mastodon と同じ）。
   5. 取り込むのは取得した投稿が `public` のときだけ。
@@ -178,7 +178,7 @@
   3. 受信の `relay_id`、上限と処分の判定、リレーの `Announce`、`relayed_statuses` と保持期間
   4. 管理画面（Web クライアント）
   5. federation.md・data-model.md・docs/operations の更新と、federation-live への Activity-Relay の場面の追加
-  6. 設定 `relay_ingest_hourly_limit`・`relay_status_retention` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
+  6. 設定 `relay_max_activities_per_hour`・`relay_status_retention` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
 
 ## Pros and Cons of the Options（詳細比較・任意）
 

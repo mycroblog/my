@@ -553,7 +553,7 @@ func diagnosticsClose(t *testing.T, e *diagnosticsEnv) {
 }
 
 func diagnosticsEndedContext(t *testing.T, e *diagnosticsEnv) {
-	// An HTTP report can arrive after the response, with the request's context cancelled; the
+	// An HTTP report can arrive after the response, with the request's context canceled; the
 	// flush itself may run with an ended context too.
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()

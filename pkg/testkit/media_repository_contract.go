@@ -405,10 +405,10 @@ func mediaRetriesTransient(t *testing.T, e *mediaEnv) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if res := e.service.Process(ctx, m.File.ID, ""); !res.IsRetry() {
-		t.Errorf("Process with a cancelled context = %+v, want Retry", res)
+		t.Errorf("Process with a canceled context = %+v, want Retry", res)
 	}
 	if got := e.media(t, m.File.ID); got.Result != nil {
-		t.Errorf("a cancelled run recorded %+v", got.Result)
+		t.Errorf("a canceled run recorded %+v", got.Result)
 	}
 }
 

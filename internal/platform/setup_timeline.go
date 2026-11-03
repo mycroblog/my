@@ -3,8 +3,12 @@
 package platform
 
 import (
+	"context"
+
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/app/uow"
 )
 
 // setUpTimeline registers the timeline module's projectors and builds its service. It comes
@@ -12,8 +16,17 @@ import (
 // timelines (data-model §4.6). It also builds the prefix search of hashtags over the tags of
 // statuses and the tag_usage projection (ADR-0092 §1).
 func (a *App) setUpTimeline(repo timeline.Repository, statuses appcontent.Repository) {
-	timeline.RegisterProjectors(a.Projectors, repo)
+	timeline.RegisterProjectors(a.Projectors, repo, moderatedEffects{a})
 	timeline.RegisterModerationProjectors(a.Projectors, repo, a.Accounts)
 	a.Timeline = timeline.NewService(timeline.Deps{UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs})
 	a.TagSearch = timeline.NewTagSearch(statuses, repo)
+}
+
+// moderatedEffects reads the restrictions in effect on an account for the timeline projectors. The
+// moderation policy is built after them; it is read when they run.
+type moderatedEffects struct{ a *App }
+
+// AccountEffectsTx implements timeline.ModeratedEffects.
+func (m moderatedEffects) AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.Effect, error) {
+	return m.a.AccountPolicy.AccountEffectsTx(ctx, tx, accountID)
 }

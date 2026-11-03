@@ -23,9 +23,13 @@ With Docker and Docker Compose v2, start the smallest setup, backed by SQLite
 cd deploy/docker
 cp .env.example .env
 # Set MY_KEK in .env to the output of `openssl rand -base64 32` (and back it up apart from the database)
-docker compose up -d --build
+# Set MY_VERSION in .env to a version from the releases page, such as 0.1.0
+docker compose up -d
 ```
 
+- Compose pulls the image `ghcr.io/mycroblog/my` of `MY_VERSION`. There is no `latest` tag, so the version has to be named:
+  a release can need steps that a silent update would skip ([the image's tags](docs/operations/running.md#get-the-image)).
+  To build the image from this checkout instead, add the override: `docker compose -f compose.yaml -f compose.build.yaml up -d --build`.
 - The `schema` service runs `my schema apply` of the server image, which brings the database in a named volume to the
   schema of that release, and exits; the server (`role=all`) starts once it has succeeded. The schema is applied again
   on every `up`, so after an upgrade you start the server the same way.

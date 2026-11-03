@@ -1,13 +1,13 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
 -- name: InsertServiceClosureEvent :exec
-INSERT INTO service_closure_events (id, kind, by_user_id, occurred_at) VALUES ($1, $2, $3, $4);
+INSERT INTO service_closure_events (id, kind, changed_by_user_id, occurred_at) VALUES ($1, $2, $3, $4);
 
 -- name: InsertServiceClosureSchedule :exec
 INSERT INTO service_closure_schedules (event_id, closes_at, export_until, message) VALUES ($1, $2, $3, $4);
 
 -- name: ListServiceClosureEvents :many
-SELECT e.id, e.kind, e.by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
+SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
 FROM service_closure_events e
 LEFT JOIN service_closure_schedules s ON s.event_id = e.id
 ORDER BY e.id;
@@ -32,7 +32,7 @@ JOIN service_closure_schedules s ON s.event_id = h.announcement_event_id
 WHERE h.id = 1;
 
 -- name: GetServiceClosureEvent :one
-SELECT e.id, e.kind, e.by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
+SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
 FROM service_closure_events e
 LEFT JOIN service_closure_schedules s ON s.event_id = e.id
 WHERE e.id = $1;

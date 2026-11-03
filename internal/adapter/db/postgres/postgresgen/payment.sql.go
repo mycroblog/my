@@ -13,9 +13,9 @@ import (
 )
 
 const claimPaymentCheckout = `-- name: ClaimPaymentCheckout :execrows
-INSERT INTO payment_checkout_claims (provider, checkout_id, holder, claimed_at, expires_at)
+INSERT INTO payment_checkout_claims (provider, provider_checkout_id, holder, claimed_at, expires_at)
 VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (provider, checkout_id) DO UPDATE SET
+ON CONFLICT (provider, provider_checkout_id) DO UPDATE SET
   holder = excluded.holder,
   claimed_at = excluded.claimed_at,
   expires_at = excluded.expires_at
@@ -23,11 +23,11 @@ WHERE payment_checkout_claims.expires_at <= excluded.claimed_at
 `
 
 type ClaimPaymentCheckoutParams struct {
-	Provider   string
-	CheckoutID string
-	Holder     string
-	ClaimedAt  time.Time
-	ExpiresAt  time.Time
+	Provider           string
+	ProviderCheckoutID string
+	Holder             string
+	ClaimedAt          time.Time
+	ExpiresAt          time.Time
 }
 
 // ClaimPaymentCheckout takes the claim of a checkout when no one holds it or its claim has
@@ -35,7 +35,7 @@ type ClaimPaymentCheckoutParams struct {
 func (q *Queries) ClaimPaymentCheckout(ctx context.Context, arg ClaimPaymentCheckoutParams) (int64, error) {
 	result, err := q.db.Exec(ctx, claimPaymentCheckout,
 		arg.Provider,
-		arg.CheckoutID,
+		arg.ProviderCheckoutID,
 		arg.Holder,
 		arg.ClaimedAt,
 		arg.ExpiresAt,
@@ -237,17 +237,17 @@ func (q *Queries) PurgePaymentWebhookReceipts(ctx context.Context, arg PurgePaym
 }
 
 const releasePaymentCheckout = `-- name: ReleasePaymentCheckout :exec
-DELETE FROM payment_checkout_claims WHERE provider = $1 AND checkout_id = $2 AND holder = $3
+DELETE FROM payment_checkout_claims WHERE provider = $1 AND provider_checkout_id = $2 AND holder = $3
 `
 
 type ReleasePaymentCheckoutParams struct {
-	Provider   string
-	CheckoutID string
-	Holder     string
+	Provider           string
+	ProviderCheckoutID string
+	Holder             string
 }
 
 // ReleasePaymentCheckout deletes the claim of a checkout when holder still holds it.
 func (q *Queries) ReleasePaymentCheckout(ctx context.Context, arg ReleasePaymentCheckoutParams) error {
-	_, err := q.db.Exec(ctx, releasePaymentCheckout, arg.Provider, arg.CheckoutID, arg.Holder)
+	_, err := q.db.Exec(ctx, releasePaymentCheckout, arg.Provider, arg.ProviderCheckoutID, arg.Holder)
 	return err
 }

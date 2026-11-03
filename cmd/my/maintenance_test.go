@@ -43,7 +43,7 @@ func TestMaintenanceExportOffline(t *testing.T) {
 	t.Setenv("MY_HOST", "social.example")
 	t.Setenv("MY_MAINTENANCE_MESSAGE", "Moving to a new database.")
 	t.Setenv("MY_STATUS_PAGE_URL", "https://status.example.org/")
-	t.Setenv("MY_DB", "nosuchdb") // not read with -offline
+	t.Setenv("MY_DATABASE", "nosuchdb") // not read with -offline
 	dir := filepath.Join(t.TempDir(), "out")
 	code, stdout, stderr := runMaintenanceCmd(t, "export", "-out", dir, "-lang", "en,ja", "-offline")
 	if code != 0 || stderr != "" {

@@ -17,7 +17,7 @@ import (
 
 func init() { paymentProviderAdapters[paymentstripe.Name] = newStripePaymentProvider }
 
-// newStripePaymentProvider returns the PaymentProvider of payments_provider = stripe (ADR-0074
+// newStripePaymentProvider returns the PaymentProvider of payments = stripe (ADR-0074
 // §2, §7). The SDK reaches only api.stripe.com, the endpoint of the key that the operator
 // configured, so its HTTP client is not the SSRF-guarded kernel.HTTPClient; a request has 30
 // seconds in all.
