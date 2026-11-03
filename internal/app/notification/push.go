@@ -112,6 +112,9 @@ type PushAudience interface {
 	// it is neither revoked nor expired (counting its refresh token), so that signing out of an
 	// app, or a revocation by a moderator or a password change, ends its subscription.
 	GrantActive(ctx context.Context, tokenFamilyID string) (bool, error)
+	// Deactivated reports whether the owner of a local account deactivated it: nothing reaches it
+	// until it comes back (ADR-0145 §6). An unknown account is not deactivated.
+	Deactivated(ctx context.Context, accountID string) (bool, error)
 	// Locale returns the UI locale of the user of a local account; "" when the user has none.
 	Locale(ctx context.Context, accountID string) (string, error)
 	// Account returns how a message names an account; ErrNotFound when the account is gone.
@@ -325,8 +328,8 @@ func (s *PushService) delete(ctx context.Context, id string) error {
 }
 
 // RegisterPushJobs registers the handler of JobPush on reg. The handler is idempotent: it
-// sends nothing when the subscription is gone, no longer takes the type, or its grant has
-// ended (deleting it then); a message sent again after a crash carries the same Topic, which
+// sends nothing when the subscription is gone, no longer takes the type, its grant has ended
+// (deleting it then), or the recipient has deactivated the account since; a message sent again after a crash carries the same Topic, which
 // replaces it at the push service while undelivered, and the same notification ID, which the
 // Service Worker uses as the tag that replaces it on screen. A subscription that the push
 // service reports gone (404, 410) is deleted.
@@ -399,10 +402,14 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 }
 
 // stillShown reports whether job's notification may still reach its recipient at the time of
-// sending, which can be long after the notification was created: the notification list still
-// shows it (no block, mute, or dismissal since), and the recipient may still see its status.
-// A nil notifications skips the check of the list. The email of a notification checks the same.
+// sending, which can be long after the notification was created: the recipient has not
+// deactivated the account since, the notification list still shows it (no block, mute, or
+// dismissal since), and the recipient may still see its status. A nil notifications skips the
+// check of the list. The email of a notification checks the same.
 func stillShown(ctx context.Context, notifications PushNotifications, audience PushAudience, job pushJob) (bool, error) {
+	if deactivated, err := audience.Deactivated(ctx, job.AccountID); err != nil || deactivated {
+		return false, err
+	}
 	if notifications != nil {
 		listed, err := notifications.Listed(ctx, job.AccountID, job.NotificationID)
 		if err != nil || !listed {

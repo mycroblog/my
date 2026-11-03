@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Deactivating the account through the whole app (web-client/README.md T4): the date before and after confirming,
-// confirming with the password or a code, what a wrong one says, and the refusals; MSW plays the API.
+// confirming with the password, a code or a linked provider, what a wrong one says, and the refusals; MSW plays the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -10,6 +10,7 @@ import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 
 const due = "2026-12-03T09:00:00Z";
+const corp = "019a0000-0000-7000-8000-0000000000c1";
 
 beforeEach(() => {
   server.use(signedInHandler);
@@ -111,5 +112,114 @@ describe("/settings/account, deactivating", () => {
     await renderApp({ path: "/settings/account" });
     expect(await screen.findByText(/You can deactivate it again from .*2026/u)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Deactivate account…" })).not.toBeInTheDocument();
+  });
+});
+
+describe("/settings/account, deactivating with a linked provider", () => {
+  /** A user with neither a password nor a passkey and a linked account at Corp SSO; returns the requests. */
+  function providerUser() {
+    const bodies = deactivationServer({ deletion_due_at: due });
+    const confirmations: Schemas["ExternalConfirmationRequest"][] = [];
+    server.use(
+      http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: false })),
+      http.get(`${apiBase}/passkeys`, () => HttpResponse.json({ items: [] })),
+      http.get(`${apiBase}/linked_identities`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              id: "019a0000-0000-7000-8000-0000000000d1",
+              provider_id: corp,
+              provider_kind: "oidc",
+              provider_name: "Corp SSO",
+              linked_at: "2026-10-01T09:00:00Z",
+              available: true,
+            },
+          ],
+          providers: [],
+        } satisfies Schemas["LinkedIdentityList"]),
+      ),
+      http.post(`${apiBase}/linked_identities/confirmation`, async ({ request }) => {
+        confirmations.push((await request.json()) as Schemas["ExternalConfirmationRequest"]);
+        return HttpResponse.json({ start_url: `https://social.example/auth/external/${corp}/start?intent=d` });
+      }),
+    );
+    return { bodies, confirmations };
+  }
+  const section = () => screen.findByRole("region", { name: "Deactivate your account" });
+  const back = `#external_confirmation=tok-1&operation=account_deactivation&provider=${corp}`;
+
+  test("signs in again at the provider first, and comes back to deactivate with the confirmation", async () => {
+    const { bodies, confirmations } = providerUser();
+    const view = await renderApp({ path: "/settings/account" });
+    const before = await section();
+    expect(within(before).queryByRole("button", { name: "Deactivate account…" })).not.toBeInTheDocument();
+    await view.user.click(within(before).getByRole("button", { name: "Sign in again with Corp SSO" }));
+    await waitFor(() => {
+      expect(view.leftTo.map(String)).toEqual([`https://social.example/auth/external/${corp}/start?intent=d`]);
+    });
+    expect(confirmations).toEqual([
+      { provider_id: corp, operation: "account_deactivation", return_to: "/settings/account" },
+    ]);
+    view.unmount();
+
+    const { user, router } = await renderApp({ path: `/settings/account${back}` });
+    const after = await section();
+    expect(within(after).getByText("You signed in again with Corp SSO. Finish within 10 minutes.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.hash).toBe("");
+    });
+    await user.click(within(after).getByRole("button", { name: "Deactivate account…" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Deactivate your account?" });
+    expect(within(dialog).getByText(/The sign-in at your linked account confirms this/u)).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText(/password/iu)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/deactivated");
+    });
+    expect(bodies).toEqual([{ external_confirmation: "tok-1" }]);
+  });
+
+  test("the confirmation of another operation does not open the dialog", async () => {
+    providerUser();
+    await renderApp({
+      path: `/settings/account#external_confirmation=tok-1&operation=account_deletion&provider=${corp}`,
+    });
+    const before = await section();
+    expect(within(before).queryByRole("button", { name: "Deactivate account…" })).not.toBeInTheDocument();
+    expect(within(before).getByRole("button", { name: "Sign in again with Corp SSO" })).toBeInTheDocument();
+  });
+
+  test("says why the sign-in at the provider did not confirm", async () => {
+    providerUser();
+    await renderApp({
+      path: `/settings/account#external_error=mismatch&operation=account_deactivation&provider=${corp}`,
+    });
+    expect(await within(await section()).findByRole("alert")).toHaveTextContent(
+      "You signed in with an account that is not linked to yours. Try again with your linked account.",
+    );
+  });
+
+  test("a confirmation that expired leads back to the provider", async () => {
+    const { bodies } = providerUser();
+    server.use(
+      http.post(`${apiBase}/accounts/deactivation`, async ({ request }) => {
+        bodies.push((await request.json()) as Schemas["DeactivateOwnAccountRequest"]);
+        return problem(422, "/api/v1/problems/external-confirmation-expired", "The confirmation expired.");
+      }),
+    );
+    const { user } = await renderApp({ path: `/settings/account${back}` });
+    const after = await section();
+    await user.click(within(after).getByRole("button", { name: "Deactivate account…" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(await within(after).findByRole("alert")).toHaveTextContent(
+      "The confirmation took too long or was already used. Try again.",
+    );
+    expect(within(after).getByRole("button", { name: "Sign in again with Corp SSO" })).toBeInTheDocument();
+    expect(within(after).queryByRole("button", { name: "Deactivate account…" })).not.toBeInTheDocument();
+    expect(bodies).toEqual([{ external_confirmation: "tok-1" }]);
   });
 });

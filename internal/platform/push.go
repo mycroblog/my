@@ -62,6 +62,18 @@ func (p pushAudience) GrantActive(ctx context.Context, tokenFamilyID string) (bo
 	return p.a.Identity.TokenFamilyActive(ctx, tokenFamilyID)
 }
 
+// Deactivated implements notification.PushAudience.
+func (p pushAudience) Deactivated(ctx context.Context, accountID string) (bool, error) {
+	actor, err := p.a.Accounts.FindByID(ctx, accountID)
+	if errors.Is(err, account.ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return actor.Lifecycle.Deactivated(), nil
+}
+
 // Locale implements notification.PushAudience.
 func (p pushAudience) Locale(ctx context.Context, accountID string) (string, error) {
 	userID, err := moderatorStaff(p).userOf(ctx, accountID)

@@ -112,6 +112,7 @@ const (
 
 // pcAuthenticator is a software passkey: one P-256 key of one credential.
 type pcAuthenticator struct {
+	rpID   string
 	key    *ecdsa.PrivateKey
 	credID []byte
 	flags  byte
@@ -128,7 +129,7 @@ func newPCAuthenticator(t *testing.T) *pcAuthenticator {
 	if _, err := rand.Read(id); err != nil {
 		t.Fatal(err)
 	}
-	return &pcAuthenticator{key: key, credID: id, flags: pcSynced}
+	return &pcAuthenticator{rpID: pcRP.ID, key: key, credID: id, flags: pcSynced}
 }
 
 func (a *pcAuthenticator) coseKey(t *testing.T) []byte {
@@ -143,7 +144,7 @@ func (a *pcAuthenticator) coseKey(t *testing.T) []byte {
 
 func (a *pcAuthenticator) authData(t *testing.T, flags byte, attested bool) []byte {
 	t.Helper()
-	rp := sha256.Sum256([]byte(pcRP.ID))
+	rp := sha256.Sum256([]byte(a.rpID))
 	d := append(rp[:], flags)
 	a.count++
 	d = binary.BigEndian.AppendUint32(d, a.count)
@@ -219,6 +220,39 @@ func (a *pcAuthenticator) signIn(t *testing.T, options, handle []byte, flags byt
 		},
 		"clientExtensionResults": map[string]any{}, "authenticatorAttachment": "platform",
 	})
+}
+
+// SoftwarePasskey is a software authenticator for a test through a real server: one credential of
+// the relying party, whose answers verify on the real WebAuthn ceremonies (the adapter of
+// PasskeyCeremoniesContract), as a browser at Origin would send them.
+type SoftwarePasskey struct {
+	a      *pcAuthenticator
+	origin string
+}
+
+// NewSoftwarePasskey returns a new credential of the relying party rpID, at origin.
+func NewSoftwarePasskey(t *testing.T, rpID, origin string) *SoftwarePasskey {
+	t.Helper()
+	a := newPCAuthenticator(t)
+	a.rpID = rpID
+	return &SoftwarePasskey{a: a, origin: origin}
+}
+
+// At returns the same credential answering from another origin.
+func (p *SoftwarePasskey) At(origin string) *SoftwarePasskey {
+	return &SoftwarePasskey{a: p.a, origin: origin}
+}
+
+// Register answers the options of a registration with the credential.
+func (p *SoftwarePasskey) Register(t *testing.T, options []byte) []byte {
+	t.Helper()
+	return p.a.register(t, options, p.origin)
+}
+
+// SignIn answers the options of a sign-in or a confirmation as the user with handle.
+func (p *SoftwarePasskey) SignIn(t *testing.T, options, handle []byte) []byte {
+	t.Helper()
+	return p.a.signIn(t, options, handle, p.a.flags, p.origin)
 }
 
 // pcRegister registers a's credential for alice from origin and returns it as the identity

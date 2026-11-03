@@ -29,7 +29,7 @@ import (
 // email. The composition root implements it on the identity and account modules.
 type SupporterMailboxes interface {
 	// SupporterMailbox returns the primary address and the locale of the user of a local
-	// account; ok is false without a usable address.
+	// account; ok is false without a usable address, or when the account is deactivated.
 	SupporterMailbox(ctx context.Context, accountID string) (m Mailbox, ok bool, err error)
 }
 
@@ -43,10 +43,17 @@ type supporterEmail struct {
 	SupporterMail
 }
 
+// SupporterAccounts tells whether the recipient of a supporter notification deactivated the
+// account: nothing reaches it until it comes back (ADR-0145 §6). *appaccount.Service implements it.
+type SupporterAccounts interface {
+	DeactivatedTx(ctx context.Context, tx uow.Tx, id string) (bool, error)
+}
+
 // SupporterDeps are the ports of the supporter notifications.
 type SupporterDeps struct {
 	Repository Repository
 	IDs        kernel.IDGenerator
+	Accounts   SupporterAccounts
 	// Outbox enqueues the emails in the transaction of the notifications; nil sends none.
 	Outbox queue.Outbox
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
@@ -68,7 +75,7 @@ type SupporterDeps struct {
 //     subscription and announcement (notification.SupporterServiceClosureKey).
 //
 // They come from the instance and have no source account; a subscriber without a local account
-// gets nothing. Each new notification enqueues its Web Push messages and, with d.Outbox,
+// or who deactivated it gets nothing, then or on coming back. Each new notification enqueues its Web Push messages and, with d.Outbox,
 // JobSupporterEmail.
 func RegisterSupporterProjectors(r *uow.Projectors, d SupporterDeps) {
 	p := &supporterProjector{d: d}
@@ -126,6 +133,10 @@ func (p *supporterProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 	if n.RecipientAccountID == "" {
 		return nil
 	}
+	deactivated, err := p.d.Accounts.DeactivatedTx(ctx, tx, n.RecipientAccountID)
+	if err != nil || deactivated {
+		return err
+	}
 	n.ID = p.d.IDs.NewID()
 	if err := n.Validate(); err != nil {
 		return err
@@ -167,7 +178,7 @@ type SupporterMailDeps struct {
 }
 
 // RegisterSupporterJobs registers the handler of JobSupporterEmail on reg. It sends nothing to a
-// user without a usable address; a permanent rejection of the email fails the job and any
+// user without a usable address, which includes one who deactivated the account since; a permanent rejection of the email fails the job and any
 // other failure is retried (queue.MailResult). The email of a failed payment links to the
 // supporter page of the web client, where the payment method is fixed; the others link to the
 // notifications.

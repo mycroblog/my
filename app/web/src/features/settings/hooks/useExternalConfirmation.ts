@@ -7,12 +7,13 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useApi, useLeaveApp } from "../../../lib/auth/SessionProvider";
-import { errorMessage } from "../../../lib/errors";
+import { ApiError, errorMessage } from "../../../lib/errors";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import {
   beginExternalConfirmationMutation,
   type ConfirmedOperation,
   type ExternalFailure,
+  externalConfirmationExpiredType,
   type ExternalOutcome,
   type LinkedIdentity,
   linkedIdentitiesQueryOptions,
@@ -69,6 +70,11 @@ export type ExternalConfirmation = {
   error: string | undefined;
   /** Marks the confirmation used: an operation took it, which the server accepts once. */
   markUsed: () => void;
+  /**
+   * Takes back a confirmation that the server answers is expired or used, if `error` says so, and offers the provider
+   * again with why. Returns whether it did.
+   */
+  takeBackIfExpired: (error: unknown) => boolean;
 };
 
 /**
@@ -85,6 +91,7 @@ export function useExternalConfirmation(operation: ConfirmedOperation, hasPasswo
   const links = useSuspenseQuery(linkedIdentitiesQueryOptions(api)).data.items;
   const hasPasskey = useSuspenseQuery(passkeysQueryOptions(api)).data.items.length > 0;
   const [used, setUsed] = useState(false);
+  const [expired, setExpired] = useState(false);
   const begin = useMutation({
     ...beginExternalConfirmationMutation(api),
     onSuccess: (url) => {
@@ -102,6 +109,7 @@ export function useExternalConfirmation(operation: ConfirmedOperation, hasPasswo
   let error: string | undefined;
   if (begin.isError)
     error = t("client:settings.external_confirmation.start_failed", { reason: errorMessage(begin.error) });
+  else if (expired) error = t(confirmationFailureMessages.expired);
   else if (mine?.kind === "failed" && mine.failure !== "linked_elsewhere" && mine.failure !== "already_linked") {
     error = t(confirmationFailureMessages[mine.failure]);
   }
@@ -117,6 +125,12 @@ export function useExternalConfirmation(operation: ConfirmedOperation, hasPasswo
     error,
     markUsed: () => {
       setUsed(true);
+    },
+    takeBackIfExpired: (failure) => {
+      if (!(failure instanceof ApiError) || failure.type !== externalConfirmationExpiredType) return false;
+      setUsed(true);
+      setExpired(true);
+      return true;
     },
   };
 }

@@ -193,6 +193,30 @@ describe("a user who signs in only with a linked account", () => {
     expect(bodies).toEqual([{ external_confirmation: "tok-1" }]);
   });
 
+  test("a confirmation that expired leads back to the provider", async () => {
+    linkServer([corpLink]);
+    server.use(
+      http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: false })),
+      http.post(`${apiBase}/accounts/delete`, () =>
+        problem(422, "/api/v1/problems/external-confirmation-expired", "The confirmation expired."),
+      ),
+    );
+    const { user } = await renderApp({
+      path: `/settings/account#external_confirmation=tok-1&operation=account_deletion&provider=${corp}`,
+    });
+    const back = await screen.findByRole("region", { name: "Delete your account" });
+    await user.click(within(back).getByRole("button", { name: "Delete account…" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Delete your account?" });
+    await user.click(within(dialog).getByRole("button", { name: "Delete account" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(await within(back).findByRole("alert")).toHaveTextContent(
+      "The confirmation took too long or was already used. Try again.",
+    );
+    expect(within(back).getByRole("button", { name: "Sign in again with Corp SSO" })).toBeInTheDocument();
+  });
+
   test("says why the confirmation failed", async () => {
     linkServer([corpLink]);
     server.use(http.get(`${apiBase}/accounts/password`, () => HttpResponse.json({ has_password: false })));

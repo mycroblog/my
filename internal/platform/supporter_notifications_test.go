@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
+	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/supporters"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/internal/platform"
 )
 
 // TestSupporterNotifications tells a subscriber of their subscription (ADR-0072 §16), on both
@@ -117,5 +119,72 @@ func testSupporterNotifications(t *testing.T, dialect string) {
 		if n.SupporterSubscription != nil {
 			t.Errorf("the administrator's notification %+v", n)
 		}
+	}
+}
+
+// TestSupporterNotificationsSkipADeactivatedAccount has the provider change the subscription of an
+// account that its owner deactivated: nothing is created, and nothing is there on coming back
+// (ADR-0145 §6). The refusal of a deactivation with a live subscription leaves this to a race and
+// to what a provider sends late, so the test records the deactivation through the account module.
+func TestSupporterNotificationsSkipADeactivatedAccount(t *testing.T) {
+	t.Parallel()
+	e, prov := newSupportersEnvOn(t, "sqlite")
+	ctx := t.Context()
+	admin := e.user("alice")
+	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
+		http.StatusCreated, "POST /admin/roles")
+	var plan clientapi.AdminSupporterPlan
+	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
+		"role": "supporter", "name": "Gold", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
+		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
+	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
+	carol := e.user("carol")
+	subID := subscribeOnFake(t, e.app, prov, carol.id, plan.Id, "sub_n")
+	p, err := e.app.Supporters.Plan(ctx, plan.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := platform.SupporterMailbox(ctx, e.app, carol.id); err != nil || !ok {
+		t.Fatalf("SupporterMailbox before the deactivation = %v, %v", ok, err)
+	}
+	if err := e.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		_, err := e.app.Accounts.DeactivateTx(ctx, tx, carol.id, e.app.IDs.NewID())
+		return err
+	}); err != nil {
+		t.Fatalf("DeactivateTx: %v", err)
+	}
+	// An email that a transition queued before the deactivation finds no mailbox.
+	if _, ok, err := platform.SupporterMailbox(ctx, e.app, carol.id); err != nil || ok {
+		t.Errorf("SupporterMailbox of a deactivated account = %v, %v", ok, err)
+	}
+
+	sync := func(status supporters.SubscriptionStatus, failed time.Time) {
+		t.Helper()
+		prov.PutSubscription(supporters.SubscriptionSnapshot{
+			Ref: "sub_n", Customer: "cus_sub_n", LocalID: subID, Price: p.Prices[domain.IntervalMonth].Ref, Status: status,
+			PeriodStart: time.Now(), PeriodEnd: time.Now().Add(30 * 24 * time.Hour), LatestPaymentFailed: failed,
+		})
+		if r := e.app.Supporters.Sync(ctx, subID); !r.IsDone() {
+			t.Fatalf("Sync(%s) = %v", status, r.Err())
+		}
+	}
+	sync(supporters.StatusPastDue, time.Now().Add(-time.Hour))
+	if err := e.app.Supporters.RetirePlan(ctx, plan.Id, ""); err != nil {
+		t.Fatalf("RetirePlan = %v", err)
+	}
+	sync(supporters.StatusCanceled, time.Time{})
+
+	if err := e.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.app.Accounts.ReactivateTx(ctx, tx, carol.id) }); err != nil {
+		t.Fatalf("ReactivateTx: %v", err)
+	}
+	actor, err := e.app.Accounts.FindByID(ctx, carol.id)
+	if err != nil || actor.Local == nil {
+		t.Fatalf("FindByID = %+v, %v", actor, err)
+	}
+	var page clientapi.NotificationPage
+	e.want(e.do(http.MethodGet, "/notifications", issueAccessToken(t, e.app, actor.Local.UserID, ""), nil, &page), http.StatusOK, "GET /notifications")
+	if len(page.Items) != 0 {
+		t.Errorf("notifications after coming back: %+v", page.Items)
 	}
 }

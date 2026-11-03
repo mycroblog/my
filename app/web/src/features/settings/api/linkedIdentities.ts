@@ -136,6 +136,9 @@ const confirmedOperations: readonly ConfirmedOperation[] = [
   "link",
 ];
 
+/** The problem type of a confirmation with a linked provider that expired or was used (api/openapi.yaml, Problem). */
+export const externalConfirmationExpiredType = "/api/v1/problems/external-confirmation-expired";
+
 /**
  * What the provider's round trip ended with, as the server wrote it in the fragment of the page it went back to. A
  * failure of a confirmation names its operation; that of a link names none.

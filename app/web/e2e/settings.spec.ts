@@ -708,6 +708,54 @@ test("deactivating the account states the date and ends on its own page", async 
   await expectNoHorizontalScroll(page);
 });
 
+// A user who signs in only at a linked provider comes back from it to deactivate, with the confirmation of the
+// fragment; passing through the provider is the server's and the app's own test.
+test("a linked provider confirms the deactivation of the account", async ({ page, makeAxeBuilder }) => {
+  await signedInServer(page, projectLocale());
+  const provider = "0192f0c4-7a8e-7000-8000-000000000ab9";
+  const sent: unknown[] = [];
+  await page.route("**/api/v1/accounts/password", (route) => json(route, { has_password: false }));
+  await page.route("**/api/v1/passkeys", (route) => json(route, { items: [] }));
+  await page.route("**/api/v1/linked_identities", (route) =>
+    json(route, {
+      items: [
+        {
+          id: "0192f0c4-7a8e-7000-8000-000000000aba",
+          provider_id: provider,
+          provider_kind: "oidc",
+          provider_name: "Corp SSO",
+          linked_at: "2026-10-01T09:00:00Z",
+          available: true,
+        },
+      ],
+      providers: [],
+    }),
+  );
+  await page.route("**/api/v1/accounts/deactivation", (route) => {
+    if (route.request().method() === "POST") sent.push(route.request().postDataJSON());
+    return json(route, { deletion_due_at: "2031-03-14T09:00:00Z" });
+  });
+
+  await page.goto("/settings/account");
+  const main = page.getByRole("main");
+  const section = main.getByRole("region", { name: message("settings.account.deactivate.title") });
+  await expect(section.getByRole("button", { name: /Corp SSO/u })).toBeVisible();
+  await expect(section.getByRole("button", { name: message("settings.account.deactivate.open") })).toHaveCount(0);
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+
+  // The browser comes back from another site: a new load of the app, not a change of the fragment.
+  await page.goto("about:blank");
+  await page.goto(`/settings/account#external_confirmation=tok-1&operation=account_deactivation&provider=${provider}`);
+  await section.getByRole("button", { name: message("settings.account.deactivate.open") }).click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog.locator('input[type="password"]')).toHaveCount(0);
+  await expectNoAxeViolations(makeAxeBuilder);
+  await dialog.getByRole("button", { name: message("settings.account.deactivate.confirm"), exact: true }).click();
+  await expect(page).toHaveURL(/\/deactivated\?/u);
+  expect(sent).toEqual([{ external_confirmation: "tok-1" }]);
+});
+
 for (const path of pages) {
   test.describe(`page ${path}`, () => {
     test.beforeEach(async ({ page }) => {
