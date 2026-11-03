@@ -4,6 +4,7 @@ package clientapi_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/url"
 	"slices"
@@ -29,6 +30,8 @@ type fakeAccountAdmin struct {
 	queries  []appidentity.AccountSearch
 	reveals  []string // "account by user"
 	reports  []moderation.ReportRecord
+	// decisionNote is the note of the decision on the registration.
+	decisionNote string
 	// twoFactor holds the accounts whose users have two-factor authentication, and
 	// twoFactorRemovals the removals ("account by user").
 	twoFactor         map[string]bool
@@ -84,6 +87,7 @@ func (f *fakeAccountAdmin) Detail(_ context.Context, id string) (appidentity.Adm
 		d.Application = &identity.RegistrationApplication{UserID: a.Local.UserID, Reason: "hi", InviteID: adminInviteID, SubmittedAt: adminNow.Add(-time.Hour)}
 		// Bob invited the user (ADR-0108 §5).
 		d.Invite = &identity.Invite{ID: adminInviteID, Code: "ABCDEFGHIJKLMNOP", CreatedByUserID: userOf(bobAccountID), CreatorKind: identity.InviteByMember, CreatedAt: adminNow}
+		d.DecisionNote = f.decisionNote
 		d.HasEmail, d.EmailVerified = true, true
 		d.Roles = []identity.Role{{Key: identity.RoleAdmin}}
 		d.TwoFactorEnabled = f.twoFactor[id]
@@ -284,7 +288,7 @@ func TestGetAdminAccount(t *testing.T) {
 		t.Errorf("the registration's invite = %+v", d.Registration)
 	}
 	// The reports of the account, newest first.
-	if len(d.Reports) != len(admin.reports) || d.Reports[0].Id != reportThree {
+	if d.Reports == nil || len(*d.Reports) != len(admin.reports) || (*d.Reports)[0].Id != reportThree {
 		t.Errorf("reports = %+v", d.Reports)
 	}
 
@@ -292,7 +296,7 @@ func TestGetAdminAccount(t *testing.T) {
 	remote := decodeJSON[clientapi.AdminAccountDetail](t, res)
 	if res.StatusCode != http.StatusOK || remote.Local || remote.Registration != nil || remote.EmailVerified != nil || remote.TwoFactorEnabled != nil ||
 		remote.EmailSuppression != nil ||
-		len(remote.Roles) != 0 || len(remote.Actions) != 0 || len(remote.Reports) != 0 {
+		len(remote.Roles) != 0 || len(remote.Actions) != 0 || remote.Reports == nil || len(*remote.Reports) != 0 {
 		t.Errorf("remote = %d %+v", res.StatusCode, remote)
 	}
 	res = e.send(t, http.MethodGet, "/admin/accounts/"+reportThree, "admin-read", "")
@@ -302,6 +306,29 @@ func TestGetAdminAccount(t *testing.T) {
 	// Neither the search nor the details reveal anything.
 	if len(admin.reveals) != 0 {
 		t.Errorf("reveals = %v", admin.reveals)
+	}
+}
+
+// manage_accounts alone does not show the reports of an account, whose comments and reporters the
+// report operations gate behind manage_reports.
+func TestGetAdminAccountOmitsReportsWithoutManageReports(t *testing.T) {
+	e, admin, _ := newAccountAdminEnv(t)
+	admin.perms[userOf(aliceAccountID)] = []identity.Permission{identity.PermManageAccounts}
+	res := e.send(t, http.MethodGet, "/admin/accounts/"+aliceAccountID, "admin-read", "")
+	body, err := io.ReadAll(res.Body)
+	if err != nil || res.StatusCode != http.StatusOK || strings.Contains(string(body), `"reports"`) {
+		t.Errorf("account = %d %s, %v; want no reports", res.StatusCode, body, err)
+	}
+}
+
+// The moderators read the note of the decision on the registration in the account's details.
+func TestGetAdminAccountShowsTheDecisionNote(t *testing.T) {
+	e, admin, _ := newAccountAdminEnv(t)
+	admin.decisionNote = "known spammer"
+	res := e.send(t, http.MethodGet, "/admin/accounts/"+aliceAccountID, "admin-read", "")
+	d := decodeJSON[clientapi.AdminAccountDetail](t, res)
+	if d.Registration == nil || d.Registration.DecisionNote == nil || *d.Registration.DecisionNote != "known spammer" {
+		t.Errorf("registration = %+v", d.Registration)
 	}
 }
 

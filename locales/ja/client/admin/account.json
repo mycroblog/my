@@ -199,6 +199,10 @@
     "defaultMessage": "プロフィールを開く",
     "description": "Link from an account's admin page to its profile."
   },
+  "admin.account.registration.decision_note": {
+    "defaultMessage": "判断のメモ",
+    "description": "Label of the note a moderator wrote when deciding on the account's registration."
+  },
   "admin.account.registration.invite": {
     "defaultMessage": "招待",
     "description": "Term of a local account: whether it registered with an invite."
