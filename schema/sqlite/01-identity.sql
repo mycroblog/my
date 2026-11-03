@@ -229,6 +229,7 @@ CREATE TABLE sessions (
 ) STRICT;
 CREATE UNIQUE INDEX sessions_token_hash ON sessions (token_hash);
 CREATE INDEX sessions_user_id ON sessions (user_id);
+CREATE INDEX sessions_expires_at ON sessions (expires_at);
 
 -- Event: a session ended before it expired.
 CREATE TABLE session_revocations (
@@ -561,6 +562,7 @@ CREATE TABLE user_tokens (
   CHECK ((purpose = 'email_unsubscribe') = (unsubscribe_category IS NOT NULL))
 ) STRICT;
 CREATE UNIQUE INDEX user_tokens_token_hash ON user_tokens (token_hash);
+CREATE INDEX user_tokens_expires_at ON user_tokens (expires_at);
 
 -- Event: a token was used; the primary key makes every token single-use.
 CREATE TABLE user_token_redemptions (
@@ -723,6 +725,8 @@ CREATE TABLE login_provider_revision_guilds (
   guild_id TEXT NOT NULL CHECK (length(guild_id) BETWEEN 1 AND 20),
   PRIMARY KEY (revision_id, guild_id)
 );
+CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
+CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
 
 -- Event: the client secret of a provider, sealed with kernel.Sealer (ADR-0019 §6). A rotation adds
 -- a row; the newest one is current. created_by_user_id is NULL for the CLI.

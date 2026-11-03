@@ -228,6 +228,7 @@ CREATE TABLE sessions (
 );
 CREATE UNIQUE INDEX sessions_token_hash ON sessions (token_hash);
 CREATE INDEX sessions_user_id ON sessions (user_id);
+CREATE INDEX sessions_expires_at ON sessions (expires_at);
 
 -- Event: a session ended before it expired.
 CREATE TABLE session_revocations (
@@ -366,6 +367,8 @@ CREATE TABLE oauth_authorization_codes (
   issued_at timestamptz NOT NULL,
   expires_at timestamptz NOT NULL
 );
+CREATE INDEX oauth_authorization_codes_session_id ON oauth_authorization_codes (session_id);
+CREATE INDEX oauth_authorization_codes_expires_at ON oauth_authorization_codes (expires_at);
 
 -- Event: a code was exchanged; the primary key makes it one-time. token_id is the first token
 -- of the family it started.
@@ -560,6 +563,7 @@ CREATE TABLE user_tokens (
   CHECK ((purpose = 'email_unsubscribe') = (unsubscribe_category IS NOT NULL))
 );
 CREATE UNIQUE INDEX user_tokens_token_hash ON user_tokens (token_hash);
+CREATE INDEX user_tokens_expires_at ON user_tokens (expires_at);
 
 -- Event: a token was used; the primary key makes every token single-use.
 CREATE TABLE user_token_redemptions (
