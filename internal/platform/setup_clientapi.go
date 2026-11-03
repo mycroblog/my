@@ -5,6 +5,8 @@ package platform
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/federation"
@@ -20,15 +22,37 @@ import (
 
 // clientLimits returns the clientapi.Options.ClientLimit of the per-client caps of
 // oauth_client_rate_limits (ADR-0090 §7): 5-minute windows like the per-account limit.
-func clientLimits(caps map[string]int64) func(string) (kernel.Limit, bool) {
-	if len(caps) == 0 {
-		return nil
-	}
-	return func(clientID string) (kernel.Limit, bool) {
-		n, ok := caps[clientID]
+func clientLimits(read func(ctx context.Context) (map[string]int64, error), clock kernel.Clock, logger *slog.Logger) func(context.Context, string) (kernel.Limit, bool) {
+	var (
+		mu      sync.Mutex
+		caps    map[string]int64
+		expires time.Time
+	)
+	return func(ctx context.Context, clientID string) (kernel.Limit, bool) {
+		now := clock.Now()
+		mu.Lock()
+		current, fresh := caps, now.Before(expires)
+		mu.Unlock()
+		if !fresh {
+			// A failed read keeps the caps it has, and does not fail the request.
+			next, err := read(ctx)
+			if err != nil {
+				logger.WarnContext(ctx, "reading the OAuth client rate limits failed", slog.Any("error", err))
+				next = current
+			}
+			mu.Lock()
+			caps, expires = next, now.Add(clientLimitsTTL)
+			mu.Unlock()
+			current = next
+		}
+		n, ok := current[clientID]
 		return kernel.Limit{Name: "api.client", Max: n, Window: 5 * time.Minute}, ok
 	}
 }
+
+// clientLimitsTTL is how long a process uses the caps it read: every authenticated request
+// consults them, so a change of the setting takes up to this long to apply.
+const clientLimitsTTL = time.Minute
 
 // setUpClientAPI registers the client API on every module, and makes the data of the webhook
 // messages the admin API's representation (ADR-0060). It comes after every module it serves.
@@ -97,7 +121,10 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Supporters: a.Supporters, OwnSupporters: a.Supporters, CommerceDisclosurePath: web.PathAboutCommerceDisclosure,
 		// The payment provider's state and the reconciliation by hand (ADR-0074 §4).
 		Payments:    a.paymentsAPI(),
-		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(cfg.OAuthClientRateLimits),
+		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(func(ctx context.Context) (map[string]int64, error) {
+			s, err := a.Instance.Settings(ctx)
+			return s.OAuthClientRateLimits(), err
+		}, a.Clock, a.Logger),
 		Locales: a.Locales, RequestID: RequestID, Logger: a.Logger, Meter: a.Meter,
 		ErrorReporter: a.ErrorReporter,
 	})

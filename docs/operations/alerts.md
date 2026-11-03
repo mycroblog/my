@@ -429,7 +429,7 @@ limit of your database plan, or of the volume that holds the SQLite file, which 
 Fix:
 
 - Raise the plan or the volume.
-- Remote posts are removed after `remote_status_retention`; lowering it slows the growth.
+- Remote posts are removed after the instance setting `remote_status_retention_days`; lowering it slows the growth.
 - Deleted rows free space that both databases reuse, but the size rarely goes down: PostgreSQL keeps the space of its tables, and SQLite keeps the free
   pages in the file until a `VACUUM` (run with `sqlite3` while the server is stopped).
 

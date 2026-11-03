@@ -15,8 +15,8 @@ import (
 )
 
 // The remote statuses that only a relay brought in (ADR-0061): the federation module records
-// them in relayed_statuses when it takes them in, and they are kept for relay_status_retention
-// instead of remote_status_retention, unless something local refers to them or a local account
+// them in relayed_statuses when it takes them in, and they are kept for relay_status_retention_days
+// instead of remote_status_retention_days, unless something local refers to them or a local account
 // follows their author.
 
 const (
@@ -24,7 +24,7 @@ const (
 	// the cursor of the run (none for the first job of a run).
 	JobPurgeRelayedStatuses = "content.purge_relayed_statuses"
 	// DefaultRelayedStatusRetention is how long a relayed status is kept after its publication
-	// (the relay_status_retention setting).
+	// (the relay_status_retention_days setting).
 	DefaultRelayedStatusRetention = 7 * 24 * time.Hour
 )
 
@@ -63,9 +63,10 @@ type RelayedRetentionDeps struct {
 	// Jobs enqueues the next job of a run, outside any transaction.
 	Jobs  queue.JobQueue
 	Clock kernel.Clock
-	// Period is how long a relayed status is kept after its publication; zero means
+	// Period returns how long a relayed status is kept after its publication (the instance
+	// setting relay_status_retention_days), read per run; zero means
 	// DefaultRelayedStatusRetention.
-	Period time.Duration
+	Period func(ctx context.Context) (time.Duration, error)
 	// Batch is the number of statuses per transaction; zero means RetentionBatch.
 	Batch int
 }
@@ -78,9 +79,6 @@ type RelayedRetention struct{ d RelayedRetentionDeps }
 
 // NewRelayedRetention returns the purge of the relayed statuses on d.
 func NewRelayedRetention(d RelayedRetentionDeps) *RelayedRetention {
-	if d.Period <= 0 {
-		d.Period = DefaultRelayedStatusRetention
-	}
 	if d.Batch <= 0 {
 		d.Batch = RetentionBatch
 	}
@@ -125,7 +123,14 @@ func (r *RelayedRetention) handle(ctx context.Context, j queue.Job) queue.Result
 // when it reached the end. It is safe to repeat.
 func (r *RelayedRetention) Run(ctx context.Context, after string) (next string, purged int, err error) {
 	now := r.d.Clock.Now()
-	q := RelayedPurgeQuery{After: after, Before: now.Add(-r.d.Period), Limit: r.d.Batch}
+	period, err := r.d.Period(ctx)
+	if err != nil {
+		return after, 0, fmt.Errorf("content: relayed retention period: %w", err)
+	}
+	if period <= 0 {
+		period = DefaultRelayedStatusRetention
+	}
+	q := RelayedPurgeQuery{After: after, Before: now.Add(-period), Limit: r.d.Batch}
 	for range retentionMaxBatches {
 		var candidates []content.Status
 		err := r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
