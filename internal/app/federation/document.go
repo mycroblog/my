@@ -22,12 +22,13 @@ type NoteParts interface {
 }
 
 // NoteQuotes reads what the Note of a status says of quotes (ADR-0069 §3): its quote, who may
-// quote it, and the page of the quoted status that the fallback links. *appcontent.Service
+// quote it, the page of the quoted status that the fallback links, and whether the Note may name
+// that status at all. *appcontent.Service
 // implements it.
 type NoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
 	FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error)
-	QuotedPageURL(ctx context.Context, uri string) (string, error)
+	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
 }
 
 // Relationships reads the relationship of an account with another; *appgraph.Service
@@ -82,8 +83,8 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 	return n.withQuotes(ctx, note, st, author, vis)
 }
 
-// withQuotes adds to the Note of the local status st its quote, unless the author took it away,
-// and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
+// withQuotes adds to the Note of the local status st its quote, unless the author took it away or
+// the quoted status is local-visibility (ADR-0144 §4), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
 // the author alone for the others, which remote servers see as followers-only.
 func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
 	switch q, state, err := n.quotes.FindQuote(ctx, st.ID); {
@@ -91,9 +92,12 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 	case err != nil:
 		return federation.NoteDocument{}, err
 	case state.Approval != appcontent.QuoteApprovalDetached:
-		page, err := n.quotes.QuotedPageURL(ctx, q.QuotedURI)
+		page, ok, err := n.quotes.FederatedQuotePage(ctx, q.QuotedURI)
 		if err != nil {
 			return federation.NoteDocument{}, err
+		}
+		if !ok {
+			break
 		}
 		auth := ""
 		if state.Approval == appcontent.QuoteApprovalAccepted {

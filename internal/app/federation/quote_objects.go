@@ -34,7 +34,8 @@ func (c ContentQuotes) FindQuoteAuthorization(ctx context.Context, id string) (a
 // QuoteAuthorization answers a GET of the IRI of a QuoteAuthorization of this server
 // (ADR-0069 §1): the approval of a quote of a local status by its author, to anyone, since the
 // quoting post shows it already. A revoked one is a Tombstone, served with 410 Gone; a missing
-// one fails with ErrNotFound.
+// one, and one of a local-visibility status, whose IRI and author it would name (ADR-0144 §4), fail
+// with ErrNotFound.
 func (o *Objects) QuoteAuthorization(ctx context.Context, id string) (Object, error) {
 	if o.d.Quotes == nil {
 		return Object{}, fmt.Errorf("quote authorization %s: %w", id, ErrNotFound)
@@ -54,6 +55,8 @@ func (o *Objects) QuoteAuthorization(ctx context.Context, id string) (Object, er
 		deleted = true
 	case err != nil:
 		return Object{}, err
+	case quoted.Visibility == appcontent.VisibilityLocal:
+		return Object{}, fmt.Errorf("quote authorization %s: %w", id, ErrNotFound)
 	}
 	if auth.RevokedAt != nil || deleted {
 		out.Gone = true

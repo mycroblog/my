@@ -10504,7 +10504,9 @@ export interface components {
             poll?: components["schemas"]["PollInput"];
             /**
              * @description The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+             *     `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+             *     is created (ADR-0144 §4). Quoting a
              *     remote status while the instance does not send posts out (`Instance.federation.mode`
              *     `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
              */

@@ -615,7 +615,9 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 投稿の表示用 URL `/@{username}/status/{uuid}`（[ADR-0053](../adr/0053-status-page-url.md)）に ActivityPub の `Accept` で来たリクエストは、未ログインで閲覧できる削除されていないローカルの投稿だけ、その `id` へ `302` でリダイレクトし、それ以外は 404 です（`federation.Objects.PageStatusURI`）。
   URL を貼った検索（FR-305）で、ほかのサーバーが投稿を引けるようにするためです。`id` の GET は上の規則で改めて判定します。
   ローカルの投稿の `url`（`Note` とクライアント API）は保存せず、読むときに作者の現在のユーザー名と投稿 ID から作ります。
+- 引用先が `local` の投稿のとき、連合する `Note` は `quote`・その別名・`quoteAuthorization`・代替リンクを持ちません。公開範囲が `local`・`private`・`direct` のローカルの投稿は、リモートの投稿を引用できないので、`QuoteRequest` も送りません（ADR-0144 §4）。
 - `GET /ap/quote_authorizations/{uuid}` は、このサーバーが出した引用の承認の `QuoteAuthorization`（`attributedTo` は引用先の作者、`interactingObject` は引用元、`interactionTarget` は引用先）を `@context` 付きで返します（ADR-0069 §1）。
+  引用先が `local` の投稿の承認は、取り消しや削除の後も含めて `404` です（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用元がすでに示しているものなので、だれにでも返し、`public, max-age=60` です（Authorized Fetch のときは署名を求める）。取り消した承認と、引用先が削除された承認は `410 Gone` と `Tombstone`、無いものは 404 です。
 - `GET /ap/emojis/{uuid}` は、有効なローカルのカスタム絵文字の `Emoji` を `@context` 付きで返します（Mastodon は `id` を引いて絵文字を解決する。ADR-0051 §3）。存在しない・削除した・無効の絵文字と、HTML を求めるリクエストは同じ 404 です。絵文字と画像は公開のものなので、Authorized Fetch は当てず、`public, max-age=60` です。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。

@@ -479,6 +479,10 @@
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ẏǿǿŭŭ ȧȧřḗḗ ɋŭŭǿǿŧīƞɠ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "[Ȧ ŀǿǿƈȧȧŀ, ƒǿǿŀŀǿǿẇḗḗřş-ǿǿƞŀẏ, ǿǿř ḓīřḗḗƈŧ ƥǿǿşŧ ƈȧȧƞƞǿǿŧ ɋŭŭǿǿŧḗḗ ȧȧ ƥǿǿşŧ ƒřǿǿḿ ȧȧƞǿǿŧħḗḗř şḗḗřṽḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.reply_not_found": {
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ẏǿǿŭŭ ȧȧřḗḗ řḗḗƥŀẏīƞɠ ŧǿǿ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

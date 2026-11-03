@@ -479,6 +479,10 @@
     "defaultMessage": "‮⊥ɥǝ dosʇ ʎon ɐɹǝ bnoʇıuƃ ʍɐs uoʇ ɟonup.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "‮∀ ʅoɔɐʅ, ɟoʅʅoʍǝɹs-ouʅʎ, oɹ pıɹǝɔʇ dosʇ ɔɐuuoʇ bnoʇǝ ɐ dosʇ ɟɹoɯ ɐuoʇɥǝɹ sǝɹʌǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.reply_not_found": {
     "defaultMessage": "‮⊥ɥǝ dosʇ ʎon ɐɹǝ ɹǝdʅʎıuƃ ʇo ʍɐs uoʇ ɟonup.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -153,6 +153,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusQuoteNotFound())
 	case errors.Is(err, appcontent.ErrQuoteNotAllowed):
 		return unprocessable(l.ServerErrorsStatusQuoteNotAllowed())
+	case errors.Is(err, appcontent.ErrQuoteRemoteAudience):
+		return unprocessable(l.ServerErrorsStatusQuoteRemoteAudience())
 	case errors.Is(err, appcontent.ErrInvalidQuotePolicy):
 		return unprocessable(l.ServerErrorsInvalidValue("quote_policy"))
 	case errors.Is(err, appcontent.ErrTooManyMedia):

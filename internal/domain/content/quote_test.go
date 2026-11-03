@@ -127,6 +127,17 @@ func TestMayQuote(t *testing.T) {
 	}
 }
 
+func TestQuotesRemotePosts(t *testing.T) {
+	for v, want := range map[content.Visibility]bool{
+		content.VisibilityPublic: true, content.VisibilityUnlisted: true,
+		content.VisibilityLocal: false, content.VisibilityPrivate: false, content.VisibilityDirect: false,
+	} {
+		if got := content.QuotesRemotePosts(v); got != want {
+			t.Errorf("QuotesRemotePosts(%s) = %v, want %v", v, got, want)
+		}
+	}
+}
+
 func TestQuoteApprovalShown(t *testing.T) {
 	for a, want := range map[content.QuoteApproval]bool{
 		content.QuoteApprovalAccepted: true, content.QuoteApprovalLegacy: true, content.QuoteApprovalPending: false,
