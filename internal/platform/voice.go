@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -64,19 +63,14 @@ func (v Voice) RoomCapacity() int {
 	return v.MaxParticipants
 }
 
-// newVoice returns the Voice of cfg and logs the voice settings that work but were likely not
-// meant (config.VoiceWarnings).
-func newVoice(cfg *config.Config, logger *slog.Logger) Voice {
+// newVoice returns the Voice of cfg.
+func newVoice(cfg *config.Config) Voice {
 	v := Voice{
 		Method: cfg.Voice, P2PMaxParticipants: cfg.VoiceP2PMaxParticipants, MaxParticipants: cfg.VoiceMaxParticipants,
 		MaxRoomDuration: cfg.VoiceMaxRoomDuration, MaxOpenRooms: cfg.VoiceMaxOpenRooms,
 	}
 	if v.Method == "" {
 		v.Method = VoiceOff
-	}
-	for _, f := range config.VoiceWarnings(cfg) {
-		logger.Warn("a voice chat setting is likely not what was meant",
-			slog.String("env", f.Env()), slog.String("detail", f.Key+" "+f.Message))
 	}
 	return v
 }

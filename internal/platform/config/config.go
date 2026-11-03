@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -334,7 +335,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue", c.Queue),
 		slog.String("worker_job_types", strings.Join(c.WorkerJobTypes, ",")),
 		slog.String("worker_job_types_except", strings.Join(c.WorkerJobTypesExcept, ",")),
-		slog.Int("worker_job_concurrency", c.WorkerJobConcurrency),
+		slog.Int("worker_job_concurrency", max(c.WorkerJobConcurrency, 1)),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
@@ -700,6 +701,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	if cfg.AccountDomain == "" {
 		cfg.AccountDomain = cfg.Host
 	}
+	if cfg.ErrorsEnvironment == "" {
+		cfg.ErrorsEnvironment = cfg.Profile
+	}
 	if cfg.WebOrigin == "" {
 		cfg.WebOrigin = "https://" + cfg.Host
 	}
@@ -752,11 +756,15 @@ func resolve(f *field, src Source, file map[string]any) (string, Origin, []Issue
 		return v, OriginEnv, nil
 	}
 	if inFile {
-		s, ok := fileVal.(string)
-		if !ok {
-			return "", OriginFile, []Issue{{Key: f.key, Message: fmt.Sprintf("must be a string in the config file, got %T", fileVal)}}
+		switch v := fileVal.(type) {
+		case string:
+			return v, OriginFile, nil
+		case int64:
+			return strconv.FormatInt(v, 10), OriginFile, nil
+		case bool:
+			return strconv.FormatBool(v), OriginFile, nil
 		}
-		return s, OriginFile, nil
+		return "", OriginFile, []Issue{{Key: f.key, Message: fmt.Sprintf("must be a string, a whole number, or a boolean in the config file, got %T", fileVal)}}
 	}
 	if f.def != "" {
 		return f.def, OriginDefault, nil
@@ -766,12 +774,8 @@ func resolve(f *field, src Source, file map[string]any) (string, Origin, []Issue
 
 func validate(f *field, v string) error {
 	if len(f.choices) > 0 {
-		i := slices.IndexFunc(f.choices, func(c choice) bool { return c.value == v })
-		if i < 0 {
-			return fmt.Errorf("unknown value %q; want one of %s", v, strings.Join(v0Values(f), ", "))
-		}
-		if !f.choices[i].inV0 {
-			return fmt.Errorf("%q is not available in v0; want one of %s", v, strings.Join(v0Values(f), ", "))
+		if !slices.ContainsFunc(f.choices, func(c choice) bool { return c.value == v }) {
+			return fmt.Errorf("unknown value %q; want one of %s", v, strings.Join(allowedValues(f), ", "))
 		}
 		if tag, ok := excludedValues[f.key][v]; ok {
 			return excludedError(v, tag)
@@ -798,10 +802,10 @@ func redactSecret(msg, v string) string {
 	return msg
 }
 
-func v0Values(f *field) []string {
+func allowedValues(f *field) []string {
 	var vs []string
 	for _, c := range f.choices {
-		if _, testOnly := testOnlyValues[f.key][c.value]; c.inV0 && !testOnly {
+		if _, testOnly := testOnlyValues[f.key][c.value]; !testOnly {
 			vs = append(vs, c.value)
 		}
 	}

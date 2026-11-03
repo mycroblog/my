@@ -221,6 +221,7 @@ Most job types exist on every server. These do not:
 | --- | --- |
 | `mail` set to a provider (not `none`) | `notification.email`, `notification.moderator_email`, `notification.supporter_email` |
 | `vapid_private_key` set | `notification.push` |
+| `metrics_exporter` set (not `none`) | `metrics.snapshot` |
 | `stream = sns` or `pubsub` | `stream.sweep` |
 | `payments` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
 | `billing_sources` set | The `finance.billing_import` schedules. The job type itself always exists. |

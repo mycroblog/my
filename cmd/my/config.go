@@ -78,7 +78,7 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stdout, "configuration OK")
 		return 0
 	}
-	findings := config.Readiness(cfg)
+	findings := append(platform.JobTypeFindings(cfg), config.Readiness(cfg)...)
 	if *inst {
 		findings = append(findings, instanceFindings(context.Background(), cfg)...)
 	}
@@ -101,6 +101,9 @@ func instanceFindings(ctx context.Context, cfg *config.Config) []config.Finding 
 	var mismatch *instance.DomainMismatchError
 	if errors.As(err, &mismatch) {
 		return []config.Finding{{Severity: config.SeverityError, Message: mismatch.Error()}}
+	}
+	if errors.Is(err, platform.ErrWorkerJobConcurrency) {
+		return []config.Finding{{Severity: config.SeverityError, Key: "worker_job_concurrency", Message: err.Error()}}
 	}
 	if err != nil {
 		return []config.Finding{warn("the instance settings were not checked: %v", err)}

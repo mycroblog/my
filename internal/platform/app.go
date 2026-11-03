@@ -433,7 +433,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if opts.Version == "" {
 		opts.Version = "dev"
 	}
-	a.Voice = newVoice(cfg, a.Logger)
+	a.Voice = newVoice(cfg)
 	if err := a.setUpTracer(ctx, cfg, opts); err != nil {
 		return nil, err
 	}

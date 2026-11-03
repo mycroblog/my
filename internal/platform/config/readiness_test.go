@@ -4,6 +4,7 @@ package config
 
 import (
 	"encoding/base64"
+	"log/slog"
 	"slices"
 	"strings"
 	"testing"
@@ -157,5 +158,67 @@ func TestReadiness(t *testing.T) {
 func TestFindingEnv(t *testing.T) {
 	if got := (Finding{Key: "kek"}).Env(); got != "MY_KEK" {
 		t.Errorf("Env() = %q, want MY_KEK", got)
+	}
+}
+
+// TestReadinessWarnsAboutSettingsOfOneProcess covers the settings that work in one process and not
+// across several, and the voice settings that were likely not meant.
+func TestReadinessWarnsAboutSettingsOfOneProcess(t *testing.T) {
+	has := func(findings []Finding, key string) bool {
+		return slices.ContainsFunc(findings, func(f Finding) bool { return f.Key == key && f.Severity == SeverityWarning })
+	}
+	load := func(env map[string]string) []Finding {
+		t.Helper()
+		cfg, _, err := Load(source(env, nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return Readiness(cfg)
+	}
+	if f := load(ready()); has(f, "stream") || has(f, "kv") || has(f, "voice") {
+		t.Errorf("Readiness of one process = %v, want no warning about stream, kv, or voice", f)
+	}
+	worker := load(with(ready(), "MY_ROLE", "web", "MY_KV", "memory"))
+	if !has(worker, "stream") || !has(worker, "kv") {
+		t.Errorf("Readiness with role web = %v, want warnings about stream and kv", worker)
+	}
+	if f := load(with(ready(), "MY_VOICE", "p2p")); !has(f, "voice") {
+		t.Errorf("Readiness with p2p alone = %v, want a warning about voice", f)
+	}
+}
+
+// TestLoadedValuesOfConvenience covers the TOML forms and the defaults that follow other settings.
+func TestLoadedValuesOfConvenience(t *testing.T) {
+	src := source(minimal(), map[string]string{"my.toml": "mail_smtp_port = 2525\nmaintenance = false\n"})
+	src.File = "my.toml"
+	cfg, _, err := Load(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SMTPPort != 2525 || cfg.Maintenance {
+		t.Errorf("mail_smtp_port = %d, maintenance = %v; want 2525 and false", cfg.SMTPPort, cfg.Maintenance)
+	}
+	dev, _, err := Load(source(with(minimal(), "MY_PROFILE", "development"), nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dev.ErrorsEnvironment != "development" {
+		t.Errorf("errors_environment = %q, want the profile", dev.ErrorsEnvironment)
+	}
+	prod, _, err := Load(source(minimal(), nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if prod.ErrorsEnvironment != "production" {
+		t.Errorf("errors_environment = %q, want production", prod.ErrorsEnvironment)
+	}
+	var logged slog.Value
+	for _, a := range prod.LogValue().Group() {
+		if a.Key == "worker_job_concurrency" {
+			logged = a.Value
+		}
+	}
+	if logged.Int64() != 1 {
+		t.Errorf("logged worker_job_concurrency = %v, want the effective 1", logged)
 	}
 }

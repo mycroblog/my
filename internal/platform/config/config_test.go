@@ -267,7 +267,7 @@ listen = "127.0.0.1:9000"
 				PushAllowedPrefixes: []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")},
 				MetricsExporter:     "none", MetricsListen: "127.0.0.1:9464", MetricsEMFNamespace: "my",
 				TracesExporter: "none", TracesSampleRatio: 0.01, TracesFlush: "batch",
-				ErrorsExporter: "none", ErrorsEnvironment: "production",
+				ErrorsExporter: "none", ErrorsEnvironment: "development",
 			},
 		},
 		{
@@ -1002,12 +1002,12 @@ func TestLoadInvalid(t *testing.T) {
 			file: "my.toml",
 			files: map[string]string{"my.toml": `
 hots = "typo.example"
-role = 1
+role = 1.5
 kek = "nope"
 `},
 			want: []string{
 				`config file my.toml: unknown key "hots"`,
-				"role (MY_ROLE): must be a string in the config file, got int64",
+				"role (MY_ROLE): must be a string, a whole number, or a boolean in the config file, got float64",
 				"kek (MY_KEK): is a secret; set MY_KEK or MY_KEK_FILE instead of the config file",
 			},
 		},

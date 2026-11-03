@@ -139,9 +139,6 @@ func TestAppVoice(t *testing.T) {
 	if app.Voice != want || !app.Voice.Enabled() || app.Voice.RoomCapacity() != 6 {
 		t.Errorf("Voice = %+v, want %+v, enabled, rooms of 6", app.Voice, want)
 	}
-	if !strings.Contains(logs.String(), "env=MY_VOICE ") || !strings.Contains(logs.String(), "only browsers on the same network connect") {
-		t.Errorf("logs = %s, want the warning of p2p without STUN and TURN", logs.String())
-	}
 
 	off := platform.Voice{Method: platform.VoiceOff}
 	if off.Enabled() || (platform.Voice{}).Enabled() {
