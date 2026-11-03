@@ -121,7 +121,7 @@ Commands:
             after a rotation (my kek status|rewrap)
   login-provider
             Set up the external providers that users sign in with
-            (my login-provider list|add|set|rotate-secret|enable|disable|delete)
+            (my login-provider list|create|set|rotate-secret|enable|disable|delete)
   maintenance
             Write the maintenance page as static HTML (my maintenance export)
   projection

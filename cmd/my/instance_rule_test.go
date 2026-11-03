@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-var ruleOutput = regexp.MustCompile(`^(added|revised|moved|retired) rule ([0-9a-f-]{36}) at position (\d+) \(revision [0-9a-f-]{36}\)\n$`)
+var ruleOutput = regexp.MustCompile(`^(created|revised|moved|retired) rule ([0-9a-f-]{36}) at position (\d+) \(revision [0-9a-f-]{36}\)\n$`)
 
 // mustRule runs `my instance rule` and returns the rule ID and position that it prints.
 func mustRule(t *testing.T, args ...string) (id, position string) {
@@ -23,11 +23,11 @@ func mustRule(t *testing.T, args ...string) (id, position string) {
 
 func TestInstanceRules(t *testing.T) {
 	newAdminEnv(t)
-	kind, pos := mustRule(t, "add", "-hint", "No harassment.", "Be kind")
+	kind, pos := mustRule(t, "create", "-hint", "No harassment.", "Be kind")
 	if pos != "1" {
 		t.Errorf("first rule position = %s, want 1", pos)
 	}
-	spam, _ := mustRule(t, "add", "No spam")
+	spam, _ := mustRule(t, "create", "No spam")
 	if id, _ := mustRule(t, "edit", kind, "親切に"); id != kind {
 		t.Errorf("edit changed the rule ID to %s, want %s", id, kind)
 	}
@@ -58,11 +58,11 @@ func TestInstanceRules(t *testing.T) {
 		{[]string{"rule"}, 2, "Usage:"},
 		{[]string{"rule", "frobnicate"}, 2, "unknown subcommand"},
 		{[]string{"rule", "move", spam, "0"}, 2, "not a number from 1"},
-		{[]string{"rule", "add", "two\nlines"}, 1, "line break"},
+		{[]string{"rule", "create", "two\nlines"}, 1, "line break"},
 		{[]string{"rule", "edit", kind, "x"}, 1, "retired"},
 		{[]string{"rule", "retire", "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f"}, 1, "not found"},
 		{[]string{"rule", "edit", spam, ""}, 1, "is blank"},
-		{[]string{"rule", "add", "-locale", "ja", "x"}, 2, "flag provided but not defined: -locale"},
+		{[]string{"rule", "create", "-locale", "ja", "x"}, 2, "flag provided but not defined: -locale"},
 	} {
 		code, _, stderr := runInstanceCmd(t, "", tc.args...)
 		if code != tc.code || !strings.Contains(stderr, tc.want) {

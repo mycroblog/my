@@ -12,7 +12,7 @@ The CLI is `my admin relay` (`my admin relay -help`):
 
 ```sh
 my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
-my admin relay add [-protocol mastodon|litepub] [-send-only] <url>  # register a relay and send it the Follow
+my admin relay create [-protocol mastodon|litepub] [-send-only] <url>  # register a relay and send it the Follow
 my admin relay unfollow <relay id>                                # leave a pending or joined relay
 my admin relay follow <relay id>                                  # join again a relay that the instance left or that rejected it
 my admin relay remove <relay id>                                  # delete a relay that the instance left or that rejected it

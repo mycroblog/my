@@ -157,7 +157,7 @@ func adminDomainUsage(w io.Writer) {
   my admin domain import [-apply] [-only <domains>] [-private-note <text>]
                          [-config <file>] <file | ->
 
-Moderation actions on remote domains and their subdomains (FR-702), in effect at
+Moderation actions on remote domains and their subdomains, in effect at
 once for federation and the timelines:
 
   suspend          no deliveries to the domain, no fetches from it, and no
@@ -419,7 +419,7 @@ func adminReportUsage(w io.Writer) {
   my admin report note [-config <file>] <report id> <text>
   my admin report reopen [-config <file>] <report id>
 
-The reports in the moderators' queue (FR-701), including those received from
+The reports in the moderators' queue, including those received from
 other servers. list shows them newest first; show adds the moderators' notes
 and the number of the target's other reports and actions. assign makes a local
 user whose roles grant manage_reports handle a report; unassign leaves it to

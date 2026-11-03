@@ -163,7 +163,7 @@ func adminRetentionUsage(w io.Writer) {
   my admin retention release [-config <file>] <hold id>
   my admin retention list [-account <account>] [-config <file>]
 
-Holds on the erasure of an account's records after their retention (ADR-0038):
+Holds on the erasure of an account's records after their retention:
 while a hold is in effect, the purges keep the account's moderation records
 (the actions on it and their appeals, the reports of it or by it, and the audit
 log entries on them), its sign-in and registration IP addresses, and its posts.

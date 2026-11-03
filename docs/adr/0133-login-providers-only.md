@@ -85,7 +85,7 @@ Decider の依頼と回答（Issue #1955）:
 
 - 有効にするときは断らず、警告する（Decider の「警告して管理者に任せる」）。管理画面の確認のダイアログと `my instance set` の出力が、ログインに使える IdP へのひも付けのない有効なローカルの利用者の数を言う。管理画面は、そこに管理者自身が含まれることをはっきり言う。数は `GET /api/v1/admin/settings/login_providers_only/impact`（`manage_settings`）が返す。
 - 設定がオンで使える IdP がないときは、IdP の設定（作ると同時に有効になる）と有効化が制限をその場で始める。管理画面は、その操作のときだけ実行の前に確認のダイアログを出し、その IdP へのひも付けのない有効な利用者の数と、管理者自身が含まれることを言う。数と始まるかどうかは同じ API が返す（`provider_id` で有効にする IdP を指定する。権限は `manage_settings` か `manage_login_providers`）。断らない。
-- `my login-provider add`・`enable`・`disable`・`delete` は、設定がオンのときに制限の今の状態を出す。
+- `my login-provider create`・`enable`・`disable`・`delete` は、設定がオンのときに制限の今の状態を出す。
 - 締め出された管理者は、サーバーのホストで `my instance set login_providers_only false` を実行して戻す。
 - 有効な IdP がなくなると制限は自動で働かなくなる。パスワードもパスキーもない利用者は、今までどおりリセットのリンクがいる。
 
