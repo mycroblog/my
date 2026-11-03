@@ -426,8 +426,8 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 	}
 	viewer := viewerOf(ctx)
 	switch settings.SupporterListVisibility() {
-	case instance.SupporterListPublic:
-	case instance.SupporterListSignedIn:
+	case instance.AudienceEveryone:
+	case instance.AudienceSignedIn:
 		if viewer == nil {
 			body, headers := s.NewProblem(ctx, http.StatusUnauthorized, ProblemTypeUnauthenticated, s.Localizer(ctx).ServerErrorsUnauthenticated(), "")
 			challenge := "Bearer"
@@ -493,7 +493,7 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 	// locale like any anonymous operation (client-api.md §2.4).
 	cache, robots := cachePublic, supporterListRobots
 	switch {
-	case settings.SupporterListVisibility() == instance.SupporterListSignedIn:
+	case settings.SupporterListVisibility() == instance.AudienceSignedIn:
 		cache = cachePrivateNoStore
 	case viewer != nil:
 		cache = cachePrivate

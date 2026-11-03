@@ -56,7 +56,7 @@ func (k AppealDecisionKind) State() AppealState { return AppealState(k) }
 const MaxAppealText = 2000
 
 // DefaultAppealWindow is how long after an action it can be appealed when nothing sets the
-// window: the default of the instance setting appeal_window (ADR-0038).
+// window: the default of the instance setting appeal_window_days (ADR-0038).
 const DefaultAppealWindow = 180 * 24 * time.Hour
 
 // AppealDeadline returns the last moment action a can be appealed in a window of window from the

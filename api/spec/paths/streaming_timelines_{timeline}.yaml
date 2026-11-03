@@ -15,7 +15,7 @@ get:
     (`local`) or the federated timeline (`federated`), from the moment it opens. Read it with
     `fetch` and send the access token in `Authorization`, like every other operation
     (`EventSource` cannot send it). Only logged-in users open it, whatever the instance setting
-    `local_timeline_access` or `federated_timeline_access` allows anonymous visitors; while the
+    `local_timeline_visibility` or `federated_timeline_visibility` allows anonymous visitors; while the
     setting of the timeline is `off` it is a 404.
 
     Events:

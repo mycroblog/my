@@ -525,21 +525,21 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
     同じ URL を別の所有者が別の焦点で宣言しても、大きさの設定を変えても、別の入力から作った版を返しません。M / L は作らず、`full` を使います。
   - クライアント API はリモートの画像の `small` にこの URL を、`medium` / `large` に `full` を載せます。リモートのアカウントのアイコン・ヘッダーと添付の `preview_url` が小さくなり、アニメーションを止めて表示できます。
 - プロキシ（`content.MediaProxy` と `internal/interface/media`）は、`HTTPClient` で元の URL を取得し、形式を中身の先頭のバイトで判定して（ADR-0019 §8。許可リストは JPEG / PNG / GIF / WebP / AVIF / MP4 / WebM / MP3 / Ogg で、SVG は拒否）、
-  判定した `Content-Type`、`Cache-Control: public, max-age={remote_media_cache_ttl}`、`X-Content-Type-Options: nosniff`、`Content-Security-Policy: default-src 'none'; sandbox`、`Cross-Origin-Resource-Policy: cross-origin` を付けて中継します。
+  判定した `Content-Type`、`Cache-Control: public, max-age={remote_media_cache_ttl_seconds}`、`X-Content-Type-Options: nosniff`、`Content-Security-Policy: default-src 'none'; sandbox`、`Cross-Origin-Resource-Policy: cross-origin` を付けて中継します。
   リモートのヘッダ（`Content-Type` など）と利用者のリクエストのヘッダは使いません。CDN がキャッシュします（NFR-COST-4）。
 - サイズの上限は、中身で判定した種類ごとに画像 16 MiB、動画・音声 100 MiB です（ADR-0019 §1）。`Content-Length` が上限を超えるものは本文を読まずに断ります。
   長さのない画像は上限まで読んでから返し、長さのない動画・音声は中継の途中で上限を超えたらレスポンスを中断します（CDN が途中までのファイルをキャッシュしないように）。
 - カスタム絵文字の画像（`remote_media.purpose = emoji`、`custom_emoji_images` が指すもの）は、形式を PNG / GIF / WebP に絞り、上限を設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）にします（ADR-0051 §2）。
   超えるもの・ほかの形式のものは 404 で、上限を下げる前に保存したキャッシュの複製も同じです。
 - 署名がない・合わない URL、記録のないメディア、`media_fetch` の制限、SSRF ガードが拒否した宛先、リモートの 4xx、許可リストにない形式、上限を超えるものは、どれも 404 です。リモートに届かないときと 5xx は 502 です。エラーのレスポンスは `Cache-Control: no-store` です。
-- インスタンス設定 `remote_media_policy`（`none` / `avatars` / `all`、既定 `none`）と `remote_media_cache_ttl`（秒、既定 86400）で、TTL 付きのキャッシュを選べます（FR-409）。
+- インスタンス設定 `remote_media_policy`（`none` / `avatars` / `all`、既定 `none`）と `remote_media_cache_ttl_seconds`（秒、既定 86400）で、TTL 付きのキャッシュを選べます（FR-409）。
   - `none` では、プロキシは毎回取得して中継し、キャッシュを読みも書きもしません。
   - `all` ではすべてのリモートのメディアを、`avatars` ではプロフィールのアバター・ヘッダー（`account` モジュールの `IsMediaReferenced`）とカスタム絵文字の画像（`custom_emoji_images`）だけを、キャッシュします。
   - キャッシュは URL ごとに 1 つで、Blob の非公開のキー `remote/{URL の SHA-256 の 16 進}-{乱数}` に置き、`remote_media_cache` に記録します。
     取得し直すたびに新しいキーに書くので、期限切れの複製を消すクリーンアップが、取得し直した複製の Blob を消すことはありません。
     キーは書く前に `media_blob_deletions`（data-model §4.4）に猶予付きで記録し、行を記録するトランザクションで外します。置き換えた前の複製の Blob は同じトランザクションで削除待ちに記録し、次のクリーンアップが消します。
     同じ URL を同時に取得し直したときは、前の行を読んでロックしてから置き換えるので、どちらの Blob も記録から漏れません。
-    期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
+    期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl_seconds`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
     取得したファイルは中身で判定した形式とサイズの上限の検査を通したうえで Blob に最後まで書いてから返すので、上限を超えるもの・途中で切れたものは残りも返りもしません。
   - 返した時刻（`last_accessed_at`）は 1 時間より細かくは書きません。返すたびにデータベースへ書かないためです。
   - 1 時間ごとのジョブ `media.purge_remote_cache` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
@@ -595,7 +595,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - **クローラーのルール**: 管理者がドメインごとに置くルール（`link_card_domain_rules`、[ADR-0132](../adr/0132-link-card-domain-rules.md)）は、処分と同じホストに当たり、親ドメインにも効きます。`no_fetch` は `suspend` と同じく取得せず既存のカードを出さず、`no_images` は `reject_media` と同じく画像を取得せず既存の画像を出しません。
   リダイレクトの各段にも当て、飛ばした取得は失敗の記憶に書きません。メディアプロキシは止めたホストのカードの画像を配りません。ルールは連合とカード以外のメディアに効きません。
 - **保持**: 1 日 1 回のジョブ `content.purge_link_cards` が、どの投稿からも参照されず取得から 14 日を過ぎたカードと、どのカードも使わない画像（`link_card_media` と `media_files`）を消します（FR-803）。
-- インスタンス設定 `link_cards_enabled`（既定 `true`）が偽のとき、ジョブは何もせず、API はカードを返しません。
+- インスタンス設定 `link_cards`（既定 `true`）が偽のとき、ジョブは何もせず、API はカードを返しません。
 
 ## 10. コレクションとオブジェクトの GET
 

@@ -21,7 +21,7 @@ CREATE TABLE moderation_actions (
   public_reason text,
   private_note text,
   report_id uuid,
-  issuer text NOT NULL CHECK (issuer IN ('moderator', 'system', 'remote')),
+  issuer text NOT NULL CHECK (issuer IN ('moderator')),
   issued_by_user_id uuid,
   notify_target boolean NOT NULL,
   expires_at timestamptz,
@@ -290,7 +290,7 @@ CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a local account's appeal of an action on it, at most one per action, within the
--- appeal window (instance setting appeal_window) from the action.
+-- appeal window (instance setting appeal_window_days) from the action.
 CREATE TABLE moderation_appeals (
   id uuid NOT NULL PRIMARY KEY,
   action_id uuid NOT NULL,

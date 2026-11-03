@@ -29,19 +29,19 @@ const policyKeys = [
   "invite_creators",
   "member_invite_max_active",
   "member_invite_max_uses",
-  "member_invite_max_expires_in",
+  "member_invite_max_lifetime_seconds",
   "user_app_registration",
   "oauth_metadata_document_clients",
   "dynamic_client_registration",
   "default_locale",
-  "local_timeline_access",
-  "federated_timeline_access",
+  "local_timeline_visibility",
+  "federated_timeline_visibility",
   "require_media_description",
   "federation_mode",
   "authorized_fetch",
   "remote_media_policy",
-  "remote_media_cache_ttl",
-  "link_cards_enabled",
+  "remote_media_cache_ttl_seconds",
+  "link_cards",
   "link_cards_ignore_robots_txt",
   "domain_actions_visibility",
   "domain_actions_rationale_visibility",
@@ -54,7 +54,7 @@ const policyKeys = [
   "security_contact",
   "voice_room_starters",
   "voice_public_summary",
-  "retention_voice_participants",
+  "voice_participants_retention_days",
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PolicyKey = (typeof policyKeys)[number];
@@ -79,7 +79,7 @@ const inviteExpiryChoices: readonly number[] = [
  * (ADR-0108 §2).
  */
 const numberFields = {
-  retention_voice_participants: { min: 30, max: 3650 },
+  voice_participants_retention_days: { min: 30, max: 3650 },
   member_invite_max_active: { min: 0, max: 100 },
   member_invite_max_uses: { min: 1, max: 1000 },
 } as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
@@ -88,7 +88,7 @@ const numberFields = {
 export type NumberPolicyKey = keyof typeof numberFields;
 
 const numberKeys: readonly NumberPolicyKey[] = [
-  "retention_voice_participants",
+  "voice_participants_retention_days",
   "member_invite_max_active",
   "member_invite_max_uses",
 ];
@@ -172,7 +172,7 @@ export function useServerPolicies() {
     if (seconds % 3600 === 0) return t("client:admin.settings.duration.hours", { count: seconds / 3600 });
     return t("client:admin.settings.duration.seconds", { count: seconds });
   };
-  const currentTtl = Number(savedValue("remote_media_cache_ttl"));
+  const currentTtl = Number(savedValue("remote_media_cache_ttl_seconds"));
   // A whole number within the bounds the server gives. Only what the operator typed is checked: the saved value is
   // the server's.
   const numberField = (key: NumberPolicyKey): NumberField => {
@@ -186,7 +186,7 @@ export function useServerPolicies() {
       ...bounds,
       error: valid
         ? undefined
-        : key === "retention_voice_participants"
+        : key === "voice_participants_retention_days"
           ? t("client:admin.settings.voice.retention.invalid", range)
           : t("client:admin.settings.invites.number.invalid", range),
     };
@@ -195,7 +195,7 @@ export function useServerPolicies() {
   const ttlChoices = [
     ...new Set([...cacheTtlChoices, ...(Number.isInteger(currentTtl) && currentTtl > 0 ? [currentTtl] : [])]),
   ].toSorted((a, b) => a - b);
-  const currentInviteExpiry = Number(savedValue("member_invite_max_expires_in"));
+  const currentInviteExpiry = Number(savedValue("member_invite_max_lifetime_seconds"));
   const inviteExpiries = [
     ...new Set([
       ...inviteExpiryChoices,

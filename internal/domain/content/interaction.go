@@ -77,10 +77,8 @@ type BoostRetractionOrigin string
 
 // Boost retraction origins (boost_retractions.origin).
 const (
-	RetractedByBooster       BoostRetractionOrigin = "booster"
-	RetractedByStatusDeleted BoostRetractionOrigin = "status_deleted"
-	RetractedByModeration    BoostRetractionOrigin = "moderation"
-	RetractedByRemote        BoostRetractionOrigin = "remote"
+	RetractedByBooster BoostRetractionOrigin = "booster"
+	RetractedByRemote  BoostRetractionOrigin = "remote"
 )
 
 // BoostRetraction is the retraction of a boost (Undo Announce). A boost is retracted at most

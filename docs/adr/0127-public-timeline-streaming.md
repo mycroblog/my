@@ -47,7 +47,7 @@
 
 ### 2. 誰が受け取れるか
 
-- ログインした利用者だけ。インスタンス設定 `local_timeline_access` / `federated_timeline_access` が `off` なら 404 にする（REST のタイムラインと同じ）。
+- ログインした利用者だけ。インスタンス設定 `local_timeline_visibility` / `federated_timeline_visibility` が `off` なら 404 にする（REST のタイムラインと同じ）。
 - ログインしていない人には、`everyone` の設定でも届けない（401）。ログインしていない人のつながりは数を抑えられず、長く開いたつながりは Cloud Run などで費用になるからである（Driver 3）。ログインしていない人は、開き直して読む（今のまま）。
 
 ### 3. 何を届けるか

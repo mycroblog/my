@@ -20,7 +20,7 @@ import (
 // The cases of VoiceRoomsContract for the moderation of the rooms and the retention of their
 // records (ADR-0100 §11, §13).
 
-// roomsRetention is the instance setting retention_voice_participants, the rooms that reports
+// roomsRetention is the instance setting voice_participants_retention_days, the rooms that reports
 // point at, and the accounts that holds preserve, as the moderation module answers them.
 type roomsRetention struct {
 	mu       sync.Mutex

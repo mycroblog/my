@@ -73,7 +73,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 投稿の一覧は `#/components/responses/StatusPage`（`items` が `#/components/schemas/Status` の配列）を返し、ハンドラは `Server.statuses` で投稿とブーストを詰め替えます（投稿は `Server.newStatus`）。
   ブーストは、ブーストした人の `Status` の `boost` に元の投稿を入れて表します。
 - 投稿のリンクのカード（`Status.card`、`LinkCard`）は、`StatusView.Card`（`content.LinkCards.View`）を `Server.newLinkCard` で詰め替えます。
-  カードは投稿の後にジョブが取得するので、投稿の直後の応答には無く、添付・投票のある投稿と `link_cards_enabled` が偽のときも省きます。
+  カードは投稿の後にジョブが取得するので、投稿の直後の応答には無く、添付・投票のある投稿と `link_cards` が偽のときも省きます。
   画像はメディアプロキシの `small` の URL だけを返します（[federation.md §9.1](federation.md#91-リンクのカード)、ADR-0062 §8）。
 - 投稿の引用（`Status.quote`、`StatusQuote`）は、`StatusView.Quote`（`content.Reader` が閲覧者ごとに決める `QuoteView`）を `Server.newStatus` で詰め替えます（ADR-0069 §5）。
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
@@ -129,10 +129,10 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 
   | 操作 | 設定 | 値（見せない / サインインした人 / 誰にでも） | `Cache-Control` |
   | --- | --- | --- | --- |
-  | `GET /instance/domain_actions` | `domain_actions_visibility` | `none` / `users` / `all` | 匿名は `public, max-age=60`、トークン付きは `private, max-age=60` |
+  | `GET /instance/domain_actions` | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | 匿名は `public, max-age=60`、トークン付きは `private, max-age=60` |
   | `GET /instance/cost_totals` | `finance_visibility` | `private`（404。ほかの値は公開する範囲） | 同上 |
   | `GET /instance/income_totals` | `income_visibility`（ADR-0073 §7） | `private`（404。ほかの値は公開する範囲） | 同上 |
-  | `GET /instance/supporters` | `supporter_list_visibility`（ADR-0071 §4） | `off` / `signed_in` / `public` | `public` は同上、`signed_in` は `private, no-store` |
+  | `GET /instance/supporters` | `supporter_list_visibility`（ADR-0071 §4） | `off` / `signed_in` / `everyone` | `everyone` は同上、`signed_in` は `private, no-store` |
 
   サポーターの一覧（`GET /instance/supporters`）の応答は、問題の応答も含め、`search_indexing` に関わらずいつも `X-Robots-Tag: noindex, noarchive` です（`platform` の `noArchivePaths`、ADR-0057）。
 - 投稿フォームの補完の前方一致の検索（`GET /accounts/search`・`GET /tags/search`、ADR-0092）はトークン必須で、アカウントの結果が閲覧者のブロック・ミュート・フォローで変わり、同じ接頭辞を打ち直すと同じ問い合わせが続くので、`Cache-Control: private, max-age=30` を付けます。
@@ -335,7 +335,7 @@ strict server は SSE を返せないので、`oapi-codegen.yaml` の `exclude-o
 `GET /api/v1/streaming/timelines/{timeline}`（`streamTimeline`、`timeline` は `local` か `federated`）は、ローカル・連合のタイムラインの新着を送る SSE です（ADR-0127）。
 `GET /streaming` と同じく生成から除き、`timeline_stream.go` に手で書いて `guard`（スコープ `read:statuses`）を通します。接続・ハートビート・後始末・503 は `GET /streaming` と同じ `Server.runStream` と `Server.subscribeRefused` で扱います。
 
-- ログインした利用者だけが開けます（spec の `security` に匿名を入れないので、未ログインは `guard` が 401 にします）。`local_timeline_access` / `federated_timeline_access` が `off` なら 404 で、
+- ログインした利用者だけが開けます（spec の `security` に匿名を入れないので、未ログインは `guard` が 401 にします）。`local_timeline_visibility` / `federated_timeline_visibility` が `off` なら 404 で、
   開いているストリームも次のハートビートで閉じます。`local` / `federated` 以外の `timeline` も 404 です。
 - イベントは `update`（`data` は `Status`）だけで、何も再送しません。つなぎ直したら、クライアントはそのタイムラインの最初のページを読み直します。
 - 投稿の作成（ローカルの投稿と、受信箱のジョブが保存したリモートの投稿の `content.status_created`）で、`timeline.RegisterCommitHooks` がホームの新着とは別に

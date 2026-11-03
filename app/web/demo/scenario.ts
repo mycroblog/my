@@ -233,7 +233,7 @@ export const instanceSettings: Readonly<Record<string, string>> = {
   contact_email: "contact@demo.test",
   finance_visibility: "breakdown",
   income_visibility: "totals",
-  supporter_list_visibility: "public",
+  supporter_list_visibility: "everyone",
   public_counts: "true",
 };
 

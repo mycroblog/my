@@ -11,7 +11,7 @@
 
 投稿中のリンクのカード（FR-117、[ADR-0062](0062-link-preview-cards.md)）は、サーバーがリンクの先のページと画像を取得して作る。これを運用者が止める手段は 2 つある。
 
-- インスタンス設定 `link_cards_enabled`: サーバー全体でカードを止める。ドメインを選べない。
+- インスタンス設定 `link_cards`: サーバー全体でカードを止める。ドメインを選べない。
 - ドメインへの処分（ADR-0062 §7）: `suspend`（`federation` の制限）で取得を止めてカードを隠し、`reject_media`（`media_fetch` の制限）で画像なしにする。
 
 処分はそのドメインとの **連合** と **投稿のメディア** も止める（federation.md §11）。「画像が重いサイト」「取得をやめるよう頼んできたサイト」のように、連合の相手ではないニュースサイトやブログにも、連合の相手にも、カードの取得だけを止めたい場面で処分は使えない。連合の相手に使えば投稿が届かなくなり、処分の一覧と公開の一覧（FR-706）にも載る。
@@ -27,7 +27,7 @@
 
 1. **カードの取得だけに効く、ドメインごとのルールを新しく持つ**
 2. ドメインへの処分に新しい種類（`no_link_cards` など）を足す
-3. `link_cards_enabled` と同じインスタンス設定に、ドメインの一覧を文字列で持つ
+3. `link_cards` と同じインスタンス設定に、ドメインの一覧を文字列で持つ
 
 ## Decision（決定）
 
@@ -67,14 +67,14 @@
 
 `instance` モジュールの【現在値】`link_card_domain_rules`（`domain` PK, `mode`, `note`, `updated_at`）。
 
-- 所有は `instance`。`link_cards_enabled` と同じくサーバーの設定で、`content` は監査の `moderation` に依存できない（`moderation` が `content` に依存している）。`content` は `LinkCardDomains` ポートで読み、プラットフォームがつなぐ。
+- 所有は `instance`。`link_cards` と同じくサーバーの設定で、`content` は監査の `moderation` に依存できない（`moderation` が `content` に依存している）。`content` は `LinkCardDomains` ポートで読み、プラットフォームがつなぐ。
 - イベントと投影にしない。ルールそのものの履歴に意味はなく、誰がいつ何に変えたかは同じトランザクションで書く監査ログ（ADR-0037）に残るので、規約 5 の現在値に当たる。投影と違い再構築の対象でない。
 - メモ（`note`）は処分の非公開のメモと同じ 5,000 文字まで。ルールの数の上限は 1,000 で、一覧はページングしない。
 
 ### 6. API と権限
 
 - `GET /admin/link_card_domains`、`POST /admin/link_card_domains`（ドメインのルールを設定。あれば置き換える）、`DELETE /admin/link_card_domains/{domain}`。ルールのないドメインの削除は何もしない。
-- 権限は `manage_settings`（`link_cards_enabled` と同じ、ADR-0058 のサーバー管理）。`manage_domains`（処分）にしない。モデレーションの権限ではなく、サーバーの外への取得の設定なので。
+- 権限は `manage_settings`（`link_cards` と同じ、ADR-0058 のサーバー管理）。`manage_domains`（処分）にしない。モデレーションの権限ではなく、サーバーの外への取得の設定なので。
 - 監査の種類は対象 `link_card_domain` に `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`。
 
 ### この決定を見直す条件

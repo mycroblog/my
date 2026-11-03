@@ -183,7 +183,7 @@ The requests send no cookies and no `Referer`, and nothing says which account or
 
 `https://<host>/about/crawler` tells the operators of linked sites what the crawler requests, what it sends, how often, and how to opt out, and that they can ask you to stop fetching from their domain. Anyone can read it without an account. The "Search engines and AI" section of the instance information page (`/about`) links to it; the `User-Agent` names only `https://<host>/`.
 
-It says what this server does, from `link_cards_enabled` and `link_cards_ignore_robots_txt`, and it shows the contact of the instance (`contact_account`, `contact_email`). Set a contact, so that a site has somewhere to ask: without one, the page says that this server publishes none.
+It says what this server does, from `link_cards` and `link_cards_ignore_robots_txt`, and it shows the contact of the instance (`contact_account`, `contact_email`). Set a contact, so that a site has somewhere to ask: without one, the page says that this server publishes none.
 With `link_cards_ignore_robots_txt` on, the page says that a site cannot refuse this server in `robots.txt`.
 
 ### robots.txt

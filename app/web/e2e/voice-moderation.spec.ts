@@ -148,7 +148,7 @@ const voiceSettings = {
     },
     { key: "voice_public_summary", kind: "bool", default: "false", value: "false", stored: false },
     {
-      key: "retention_voice_participants",
+      key: "voice_participants_retention_days",
       kind: "int",
       default: "90",
       minimum: 30,

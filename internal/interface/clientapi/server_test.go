@@ -60,18 +60,18 @@ func TestGetInstance(t *testing.T) {
 		Domain: "social.example", Name: "social.example", Version: "1.2.3", SourceUrl: "https://git.example/my",
 		Registrations: clientapi.InstanceRegistrations{Mode: clientapi.InstanceRegistrationsModeApproval},
 		Limits:        clientapi.InstanceLimits{MaxPostCharacters: 500},
-		Timelines:     clientapi.InstanceTimelines{Local: clientapi.TimelineAccessEveryone, Federated: clientapi.TimelineAccessLoggedIn},
+		Timelines:     clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn},
 		Rules:         []clientapi.InstanceRule{},
 		// Unset, the instance federates both ways (ADR-0076).
 		Federation: clientapi.InstanceFederation{Mode: clientapi.InstanceFederationModeBoth},
 		// Unset, the instance denies search engines and AI (ADR-0057).
 		SearchIndexing: clientapi.SearchIndexingDeny, AiUsage: clientapi.AIUsageDeny,
 		// Unset, link cards are fetched and obey robots.txt (ADR-0131).
-		LinkCardsEnabled: true,
+		LinkCards: true,
 		// Unset, the costs are private (ADR-0067 §8).
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,
-		SupporterListVisibility: clientapi.SupporterListVisibilityOff,
+		SupporterListVisibility: clientapi.InstanceAudienceOff,
 		VoiceRoomStarters:       clientapi.InstanceVoiceRoomStartersPermitted,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -106,7 +106,7 @@ func TestGetInstanceFromSettings(t *testing.T) {
 		settings: []instance.CurrentSetting{
 			{Key: instance.SettingMaxStatusLength, RevisionID: testkit.NamedID("revision-1"), Value: "1200"},
 			{Key: instance.SettingRegistrationMode, RevisionID: testkit.NamedID("revision-2"), Value: "invite"},
-			{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-3"), Value: "logged_in"},
+			{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-3"), Value: "signed_in"},
 			{Key: instance.SettingFederationMode, RevisionID: testkit.NamedID("revision-4"), Value: "inbound"},
 		},
 		texts: map[instance.TextKey]string{
@@ -140,7 +140,7 @@ func TestGetInstanceFromSettings(t *testing.T) {
 			}
 			if got.Name != tt.wantName || got.ShortDescription == nil || *got.ShortDescription != "A small instance." ||
 				got.Description != nil || got.Limits.MaxPostCharacters != 1200 || got.Registrations.Mode != clientapi.InstanceRegistrationsModeInvite ||
-				got.Timelines != (clientapi.InstanceTimelines{Local: clientapi.TimelineAccessEveryone, Federated: clientapi.TimelineAccessLoggedIn}) || !got.SendsEmail ||
+				got.Timelines != (clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn}) || !got.SendsEmail ||
 				got.Federation.Mode != clientapi.InstanceFederationModeInbound {
 				t.Errorf("instance = %+v, want name %q, the stored settings and email", got, tt.wantName)
 			}

@@ -37,7 +37,7 @@ const (
 // ProxySettings are the instance settings of the media proxy.
 type ProxySettings struct {
 	Policy RemoteMediaPolicy
-	// CacheTTL is remote_media_cache_ttl: how long a copy is kept, and the max-age of the
+	// CacheTTL is remote_media_cache_ttl_seconds: how long a copy is kept, and the max-age of the
 	// proxy's responses.
 	CacheTTL time.Duration
 }

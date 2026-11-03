@@ -44,7 +44,7 @@ my instance set registration_mode invite
   An OpenID Connect provider is asked to authenticate the user again (`max_age=0` and `prompt=login`), and an earlier authentication is refused.
   The confirmation works once, for that operation only, within 10 minutes; signing in with an account that is not the linked one counts as a wrong attempt, against the same limit as a wrong password.
 - On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days
-  (the instance settings `retention_session_origins` and `retention_registration_origins`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
+  (the instance settings `session_origins_retention_days` and `registration_origins_retention_days`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
   State this retention period in your privacy policy.
 
 ## When a user can use the app
@@ -140,7 +140,7 @@ Administrators change them, and `invite_creators`, under "Member invites" on the
 | --- | --- | --- | --- |
 | `member_invite_max_active` | How many usable invites (not revoked, expired or used up) one member may hold at once | `5` | 0-100 (0: members cannot create invites) |
 | `member_invite_max_uses` | How many people may sign up with one invite | `10` | 1-1,000 |
-| `member_invite_max_expires_in` | How long one invite may work, in seconds | `2592000` (30 days) | 3,600 (1 hour) to 31,536,000 (365 days) |
+| `member_invite_max_lifetime_seconds` | How long one invite may work, in seconds | `2592000` (30 days) | 3,600 (1 hour) to 31,536,000 (365 days) |
 
 - A member chooses the uses and the lifetime within the limits; without a choice, an invite allows 1 sign-up and works for 7 days (or less, when a limit is lower). An invite without a limit on uses or time cannot be created.
 - Lowering a limit does not change existing invites; it applies to the next invite created.

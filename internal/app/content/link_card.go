@@ -149,7 +149,7 @@ type LinkCardsDeps struct {
 	Accounts LinkCardAccounts
 	// Creators verifies the fediverse:creator of pages; nil records none.
 	Creators LinkCardCreators
-	// Enabled returns the link_cards_enabled instance setting; nil means enabled.
+	// Enabled returns the link_cards instance setting; nil means enabled.
 	Enabled func(ctx context.Context) (bool, error)
 	// IgnoreRobotsTxt returns the link_cards_ignore_robots_txt instance setting; nil means that
 	// robots.txt is obeyed.

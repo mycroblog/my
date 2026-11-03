@@ -248,9 +248,9 @@ const timelineAccessChoices = [
     description: "client:admin.settings.timelines.access.everyone.description",
   },
   {
-    value: "logged_in",
-    label: "client:admin.settings.timelines.access.logged_in",
-    description: "client:admin.settings.timelines.access.logged_in.description",
+    value: "signed_in",
+    label: "client:admin.settings.timelines.access.signed_in",
+    description: "client:admin.settings.timelines.access.signed_in.description",
   },
   {
     value: "off",
@@ -324,40 +324,40 @@ const choices = {
   ],
   domain_actions_visibility: [
     {
-      value: "none",
-      label: "client:admin.settings.audience.none",
-      description: "client:admin.settings.domain_actions.list.none",
+      value: "off",
+      label: "client:admin.settings.audience.off",
+      description: "client:admin.settings.domain_actions.list.off",
     },
     {
-      value: "users",
-      label: "client:admin.settings.audience.users",
-      description: "client:admin.settings.domain_actions.list.users",
+      value: "signed_in",
+      label: "client:admin.settings.audience.signed_in",
+      description: "client:admin.settings.domain_actions.list.signed_in",
     },
     {
-      value: "all",
-      label: "client:admin.settings.audience.all",
-      description: "client:admin.settings.domain_actions.list.all",
+      value: "everyone",
+      label: "client:admin.settings.audience.everyone",
+      description: "client:admin.settings.domain_actions.list.everyone",
     },
   ],
   domain_actions_rationale_visibility: [
     {
-      value: "none",
-      label: "client:admin.settings.audience.none",
-      description: "client:admin.settings.domain_actions.comments.none",
+      value: "off",
+      label: "client:admin.settings.audience.off",
+      description: "client:admin.settings.domain_actions.comments.off",
     },
     {
-      value: "users",
-      label: "client:admin.settings.audience.users",
-      description: "client:admin.settings.domain_actions.comments.users",
+      value: "signed_in",
+      label: "client:admin.settings.audience.signed_in",
+      description: "client:admin.settings.domain_actions.comments.signed_in",
     },
     {
-      value: "all",
-      label: "client:admin.settings.audience.all",
-      description: "client:admin.settings.domain_actions.comments.all",
+      value: "everyone",
+      label: "client:admin.settings.audience.everyone",
+      description: "client:admin.settings.domain_actions.comments.everyone",
     },
   ],
-  local_timeline_access: timelineAccessChoices,
-  federated_timeline_access: timelineAccessChoices,
+  local_timeline_visibility: timelineAccessChoices,
+  federated_timeline_visibility: timelineAccessChoices,
   search_indexing: [
     {
       value: "allow",
@@ -539,9 +539,9 @@ function PoliciesForm() {
         <Select
           label={t("client:admin.settings.invites.max_expires_in")}
           description={t("client:admin.settings.invites.max_expires_in.description")}
-          value={form.value("member_invite_max_expires_in")}
+          value={form.value("member_invite_max_lifetime_seconds")}
           onChange={(key) => {
-            if (typeof key === "string") form.change("member_invite_max_expires_in", key);
+            if (typeof key === "string") form.change("member_invite_max_lifetime_seconds", key);
           }}
           items={form.inviteExpiryChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
         >
@@ -593,13 +593,13 @@ function PoliciesForm() {
       <Section surface="card" title={t("client:admin.settings.timelines.title")}>
         <PolicyRadios
           form={form}
-          setting="local_timeline_access"
+          setting="local_timeline_visibility"
           label={t("client:admin.settings.timelines.local")}
           description={t("client:admin.settings.timelines.local.description")}
         />
         <PolicyRadios
           form={form}
-          setting="federated_timeline_access"
+          setting="federated_timeline_visibility"
           label={t("client:admin.settings.timelines.federated")}
           description={t("client:admin.settings.timelines.federated.description")}
         />
@@ -633,9 +633,9 @@ function PoliciesForm() {
         <Select
           label={t("client:admin.settings.remote_media.ttl")}
           description={t("client:admin.settings.remote_media.ttl.description")}
-          value={form.value("remote_media_cache_ttl")}
+          value={form.value("remote_media_cache_ttl_seconds")}
           onChange={(key) => {
-            if (typeof key === "string") form.change("remote_media_cache_ttl", key);
+            if (typeof key === "string") form.change("remote_media_cache_ttl_seconds", key);
           }}
           items={form.cacheTtlChoices.map((choice) => ({ id: choice.value, name: choice.label }))}
         >
@@ -647,7 +647,7 @@ function PoliciesForm() {
         </Select>
         <PolicyCheckbox
           form={form}
-          setting="link_cards_enabled"
+          setting="link_cards"
           label={t("client:admin.settings.federation.link_cards")}
           description={t("client:admin.settings.federation.link_cards.description")}
         />
@@ -725,7 +725,7 @@ function PoliciesForm() {
           />
           <NumberPolicyField
             form={form}
-            setting="retention_voice_participants"
+            setting="voice_participants_retention_days"
             label={t("client:admin.settings.voice.retention")}
             description={(range) => t("client:admin.settings.voice.retention.description", range)}
           />

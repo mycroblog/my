@@ -54,7 +54,7 @@ const (
 )
 
 // MemberInviteCaps bound the invites of one member (ADR-0108 §2): the instance settings
-// member_invite_max_active, member_invite_max_uses, and member_invite_max_expires_in.
+// member_invite_max_active, member_invite_max_uses, and member_invite_max_lifetime_seconds.
 type MemberInviteCaps struct {
 	// MaxActive is how many usable invites a member may hold at once; 0 lets nobody create
 	// one.

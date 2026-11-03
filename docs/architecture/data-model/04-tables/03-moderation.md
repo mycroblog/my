@@ -4,15 +4,15 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `moderation_actions` | イベント | `id`, `target_account_id`, `kind`（§5.2 の enum）, `reason_category`（`enum(spam, legal, violation, other)`）, `public_reason`（`text`、NULL 可。5,000 文字まで。本人に見せる理由）, `private_note`（`text`、NULL 可。5,000 文字まで）, `report_id`（NULL 可）, `issuer`（`enum(moderator, system, remote)`）, `issued_by_user_id`（NULL 可）, `notify_target`（`bool`）, `expires_at`（NULL 可 = 無期限）, `issued_at` | インデックス `(target_account_id, id DESC)`, `(report_id)` |
+| `moderation_actions` | イベント | `id`, `target_account_id`, `kind`（§5.2 の enum）, `reason_category`（`enum(spam, legal, violation, other)`）, `public_reason`（`text`、NULL 可。5,000 文字まで。本人に見せる理由）, `private_note`（`text`、NULL 可。5,000 文字まで）, `report_id`（NULL 可）, `issuer`（`enum(moderator)`）, `issued_by_user_id`（NULL 可）, `notify_target`（`bool`）, `expires_at`（NULL 可 = 無期限）, `issued_at` | インデックス `(target_account_id, id DESC)`, `(report_id)` |
 | `moderation_action_statuses` | イベント（子） | `action_id`, `status_id` | PK `(action_id, status_id)`。投稿単位の処分（`delete_statuses` / `mark_statuses_sensitive`）の対象。処分 1 件につき 1〜100 件で、処分の対象のアカウントの削除されていない投稿だけ（処分のユースケースが検査する）。ほかの種類の処分は持たない。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `moderation_action_lifts` | イベント | `action_id`（PK）, `lifted_by_user_id`（NULL 可 = システム）, `reason`（`text`、NULL 可。5,000 文字まで）, `lifted_at` | 期限切れは「解除」ではないので記録しない（投影の読み取り時に期限で判定） |
-| `moderation_appeals` | リソース | `id`, `action_id`, `account_id`（申し立てた本人 = 処分の対象）, `body`（1〜2,000 文字。空白だけは不可）, `submitted_at` | 一意 `(action_id)`。ローカルのアカウントへの処分だけが対象。期間（ADR-0038、インスタンス設定 `appeal_window`、既定は処分から 180 日。`ban` はアカウントの削除の期日 = 処分から 30 日も過ぎない）を過ぎた処分と、アカウントが削除された `ban` には申し立てられない |
+| `moderation_appeals` | リソース | `id`, `action_id`, `account_id`（申し立てた本人 = 処分の対象）, `body`（1〜2,000 文字。空白だけは不可）, `submitted_at` | 一意 `(action_id)`。ローカルのアカウントへの処分だけが対象。期間（ADR-0038、インスタンス設定 `appeal_window_days`、既定は処分から 180 日。`ban` はアカウントの削除の期日 = 処分から 30 日も過ぎない）を過ぎた処分と、アカウントが削除された `ban` には申し立てられない |
 | `moderation_appeal_decisions` | イベント | `appeal_id`（PK）, `decision`（`enum(upheld, overturned)`）, `public_reason`（`text`、NULL 可。2,000 文字まで。本人に見せる）, `decided_by_user_id`（NULL 可 = CLI）, `decided_at` | 覆った場合は同じトランザクションで `moderation_action_lifts` も記録する。`delete_statuses` を覆しても投稿は戻らない |
 | `appeal_states` | 投影 | `appeal_id`（PK）, `state`（`enum(pending, upheld, overturned)`）, `since` | インデックス `(state, appeal_id)`（審査待ち一覧） |
 
 - 異議申し立ては `moderation.Service.FileAppeal` が記録し、同じトランザクションで `appeal_states` に `pending` を書いて `moderation.appeal_filed` を発行します（`admin_appeal` の通知、§4.7）。
-  期限は処分の `issued_at` に、申し立ての時点の `appeal_window` を足した時刻です（期限ちょうどまで申し立てられる）。`ban` は `appeal_window` と `moderation.BanDeletionDelay`（30 日）の短い方で、アカウントが削除済み（`account_lifecycle_states.state = deleted`）なら申し立てられません（決定者の判断「30 日のあいだは、BAN への異議申し立てを受け付ける」）。解除済み・期限切れの処分にも、期限内なら申し立てられます。
+  期限は処分の `issued_at` に、申し立ての時点の `appeal_window_days` を足した時刻です（期限ちょうどまで申し立てられる）。`ban` は `appeal_window_days` と `moderation.BanDeletionDelay`（30 日）の短い方で、アカウントが削除済み（`account_lifecycle_states.state = deleted`）なら申し立てられません（決定者の判断「30 日のあいだは、BAN への異議申し立てを受け付ける」）。解除済み・期限切れの処分にも、期限内なら申し立てられます。
 - 審査（`moderation.Service.DecideAppeal`）は、`moderation_appeal_decisions` と `appeal_states` と監査ログ（`appeal_upheld` / `appeal_overturned`）を 1 つのトランザクションで書き、`moderation.appeal_decided` を発行します（`appeal_decided` の通知）。
   覆す（`overturned`）と、同じトランザクションで処分の解除（`moderation_action_lifts`、`lifted_by_user_id` は審査した人、`reason` は NULL）とその効果と監査ログ（`account_action_lifted`）を記録します。すでに解除されていた処分には何もしません。
   `ban` を覆すときは、その前に `account.Service.CancelDeletionByModeration` が `deletion_cancelled`（`initiated_by = moderator`、`moderation_action_id` は BAN）を記録し（監査ログ `account_deletion_cancelled`、`source_event_id` はその行）、解除で凍結が終わって `moderation.account_suspension_changed` が出ます。削除済みのアカウントの BAN は覆せません。`ban` を解除するのはこの経路だけで、`LiftAccountAction` は拒否します。
@@ -189,9 +189,9 @@
 
 | 記録 | 設定（既定・下限） | 起点 | 消すもの |
 | --- | --- | --- | --- |
-| 処分 | `retention_moderation_actions`（365 日・180 日） | 処分の終わり: `warn`・`delete_statuses` は `issued_at`、ほかは解除と期限の早い方（どちらも無ければ消さない）。異議申し立てがあれば審査の `decided_at` より前には消さず、審査待ちの間は消さない | `moderation_actions` と `moderation_action_statuses`・`moderation_action_lifts`・`moderation_appeals`・`moderation_appeal_decisions`・`appeal_states`・`account_restrictions` の行 |
-| 通報 | `retention_reports`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_states` |
-| 監査ログ | `retention_audit_log`（730 日・365 日） | `occurred_at` | `audit_log_entries` の行 |
+| 処分 | `moderation_actions_retention_days`（365 日・180 日） | 処分の終わり: `warn`・`delete_statuses` は `issued_at`、ほかは解除と期限の早い方（どちらも無ければ消さない）。異議申し立てがあれば審査の `decided_at` より前には消さず、審査待ちの間は消さない | `moderation_actions` と `moderation_action_statuses`・`moderation_action_lifts`・`moderation_appeals`・`moderation_appeal_decisions`・`appeal_states`・`account_restrictions` の行 |
+| 通報 | `reports_retention_days`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_states` |
+| 監査ログ | `audit_log_retention_days`（730 日・365 日） | `occurred_at` | `audit_log_entries` の行 |
 | 登録の拒否 | なし（30 日に固定） | 拒否の終わり: 解除（`signup_block_lifts.lifted_at`）と期限（`expires_at`）の早い方。どちらも無ければ消さない | `signup_blocks` と `signup_block_lifts` の行 |
 
 - 処分が参照する通報は、処分が消えた同じ回に、通報自身の期限を過ぎていれば消えます（処分を先に消すため）。

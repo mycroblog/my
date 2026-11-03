@@ -55,8 +55,6 @@ const (
 	RevokedPasswordChanged RevocationReason = "password_changed"
 	// RevokedModeration: a moderator suspended the user's login.
 	RevokedModeration RevocationReason = "moderation"
-	// RevokedExpiredCleanup: the cleanup job ended an expired session.
-	RevokedExpiredCleanup RevocationReason = "expired_cleanup"
 	// RevokedAccountDeleted: the user's local account was deleted.
 	RevokedAccountDeleted RevocationReason = "account_deleted"
 )

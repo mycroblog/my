@@ -22,12 +22,12 @@ import (
 // The moderation of the rooms and the retention of their records (ADR-0100 §11, §13): the
 // target of a report of a room, the end of a room by a moderator with its audit log entry, the
 // records that the moderators read from a report, the hourly JobPurgeRecords that erases the
-// records of the participants after retention_voice_participants, and the erasure of the names
+// records of the participants after voice_participants_retention_days, and the erasure of the names
 // and descriptions of the revisions that a deleted account wrote.
 
 const (
 	// JobPurgeRecords erases the records of the participants of the rooms that ended longer
-	// than retention_voice_participants ago, except the rooms that a report points at and the
+	// than voice_participants_retention_days ago, except the rooms that a report points at and the
 	// records that name an account a retention hold preserves (ADR-0100 §13); no payload.
 	JobPurgeRecords = "voice.purge_records"
 	// RecordPurgeInterval is the period of the purge's schedule.
@@ -49,7 +49,7 @@ var ErrInvalidEndNote = errors.New("voice: the reason for ending the room is too
 // implements it on the instance and moderation modules, so that a change applies at the next
 // run.
 type Retention interface {
-	// ParticipantRetention is the instance setting retention_voice_participants.
+	// ParticipantRetention is the instance setting voice_participants_retention_days.
 	ParticipantRetention(ctx context.Context) (time.Duration, error)
 	// ReportedVoiceRooms returns which of roomIDs a report points at.
 	ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error)
@@ -218,7 +218,7 @@ const (
 )
 
 // PurgeRecords erases the records of the participants of the rooms that ended longer than
-// retention_voice_participants ago (ADR-0100 §13), and returns how many rooms it erased them
+// voice_participants_retention_days ago (ADR-0100 §13), and returns how many rooms it erased them
 // of. It keeps the records of a room that a report points at, until the moderation module
 // erases the report after its retention, and those of a room whose records name an account
 // that a retention hold preserves. Each batch is one short transaction that locks its rooms and

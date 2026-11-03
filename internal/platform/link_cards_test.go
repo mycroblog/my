@@ -233,12 +233,12 @@ func TestLinkCardsThroughTheAPI(t *testing.T) {
 		t.Errorf("card of a suspended domain = %+v after %d fetches", got.Card, web.count("https://blocked.example/a"))
 	}
 
-	// link_cards_enabled off hides every card.
-	if _, err := c.app.Instance.SetSetting(ctx, instance.SetSettingInput{Key: domaininstance.SettingLinkCardsEnabled, Value: "false"}); err != nil {
+	// link_cards off hides every card.
+	if _, err := c.app.Instance.SetSetting(ctx, instance.SetSettingInput{Key: domaininstance.SettingLinkCards, Value: "false"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := fetch(again); got.Card != nil {
-		t.Errorf("card with link_cards_enabled off = %+v", got.Card)
+		t.Errorf("card with link_cards off = %+v", got.Card)
 	}
 }
 

@@ -111,7 +111,7 @@ describe("the page about the link card crawler", () => {
   });
 
   test("says that the crawler fetches nothing while link cards are off", async () => {
-    serveInstance({ link_cards_enabled: false });
+    serveInstance({ link_cards: false });
     await renderApp({ path: "/about/crawler" });
 
     expect(await screen.findByText(off)).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe("the page about the link card crawler", () => {
   });
 
   test("while link cards are off, still says that robots.txt would not count when the server ignores it", async () => {
-    serveInstance({ link_cards_enabled: false, link_cards_ignore_robots_txt: true });
+    serveInstance({ link_cards: false, link_cards_ignore_robots_txt: true });
     await renderApp({ path: "/about/crawler" });
 
     expect(await screen.findByText(off)).toBeInTheDocument();
