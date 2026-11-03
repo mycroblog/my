@@ -30,7 +30,7 @@ CREATE INDEX statuses_conversation_uri_id ON statuses (conversation_uri, id);
 CREATE TABLE local_statuses (
   status_id uuid NOT NULL PRIMARY KEY,
   author_account_id uuid NOT NULL,
-  client_id text COLLATE "C",
+  oauth_client_id uuid,
   idempotency_key text
 );
 CREATE UNIQUE INDEX local_statuses_author_account_id_idempotency_key ON local_statuses (author_account_id, idempotency_key);

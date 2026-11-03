@@ -48,13 +48,13 @@ func (r *IdentityRepository) ReplaceOAuthClientRedirectURIs(ctx context.Context,
 		if slices.Contains(uris, u) {
 			continue
 		}
-		err := q.DeleteOAuthClientRedirectURI(ctx, postgresgen.DeleteOAuthClientRedirectURIParams{ClientID: clientID, RedirectUri: u})
+		err := q.DeleteOAuthClientRedirectURI(ctx, postgresgen.DeleteOAuthClientRedirectURIParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "delete oauth client redirect uri")
 		}
 	}
 	for _, u := range uris {
-		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, postgresgen.InsertOAuthClientRedirectURIIfAbsentParams{ClientID: clientID, RedirectUri: u})
+		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, postgresgen.InsertOAuthClientRedirectURIIfAbsentParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "insert oauth client redirect uri")
 		}
@@ -69,7 +69,7 @@ func (r *IdentityRepository) InsertAuthorizationCode(ctx context.Context, tx uow
 		return err
 	}
 	err = q.InsertAuthorizationCode(ctx, postgresgen.InsertAuthorizationCodeParams{
-		CodeHash: c.CodeHash, ClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
+		CodeHash: c.CodeHash, OauthClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
 		CodeChallenge: c.CodeChallenge, SessionID: toNullString(c.SessionID), IssuedAt: c.IssuedAt, ExpiresAt: c.ExpiresAt,
 	})
 	return wrap(err, "insert authorization code")
@@ -98,7 +98,7 @@ func (r *IdentityRepository) InsertAccessToken(ctx context.Context, tx uow.Tx, t
 		refreshExpires = &t.RefreshExpiresAt
 	}
 	err = q.InsertAccessToken(ctx, postgresgen.InsertAccessTokenParams{
-		ID: t.ID, FamilyID: t.FamilyID, ClientID: t.ClientID, UserID: t.UserID,
+		ID: t.ID, FamilyID: t.FamilyID, OauthClientID: t.ClientID, UserID: t.UserID,
 		AccessTokenHash: t.AccessTokenHash, RefreshTokenHash: t.RefreshTokenHash, Scope: string(t.Scope),
 		RotatedFromTokenID: toNullString(t.RotatedFromTokenID), IssuedAt: t.IssuedAt,
 		ExpiresAt: t.ExpiresAt, RefreshExpiresAt: refreshExpires,
@@ -208,7 +208,7 @@ func (r *IdentityRepository) FindAuthorizationCode(ctx context.Context, codeHash
 		return identity.AuthorizationCode{}, notFound(err, appidentity.ErrNotFound, "authorization code")
 	}
 	return identity.AuthorizationCode{
-		CodeHash: row.CodeHash, ClientID: row.ClientID, UserID: row.UserID, RedirectURI: row.RedirectUri,
+		CodeHash: row.CodeHash, ClientID: row.OauthClientID, UserID: row.UserID, RedirectURI: row.RedirectUri,
 		Scope: identity.Scope(row.Scope), CodeChallenge: row.CodeChallenge, SessionID: fromNullString(row.SessionID),
 		IssuedAt: utc(row.IssuedAt), ExpiresAt: utc(row.ExpiresAt),
 	}, nil
@@ -257,7 +257,7 @@ func oauthClientFromRow(row postgresgen.OauthClient) identity.OAuthClient {
 
 func accessTokenFromRow(row postgresgen.GetAccessTokenByAccessHashRow) identity.AccessToken {
 	t := identity.AccessToken{
-		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.ClientID, UserID: row.UserID,
+		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.OauthClientID, UserID: row.UserID,
 		AccessTokenHash: row.AccessTokenHash, RefreshTokenHash: row.RefreshTokenHash, Scope: identity.Scope(row.Scope),
 		RotatedFromTokenID: fromNullString(row.RotatedFromTokenID), IssuedAt: utc(row.IssuedAt), ExpiresAt: utc(row.ExpiresAt),
 	}
@@ -304,7 +304,7 @@ func (r *IdentityRepository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokensOfClient(ctx, postgresgen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: at, ClientID: clientID})
+	err = q.RevokeTokensOfClient(ctx, postgresgen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: at, OauthClientID: clientID})
 	return wrap(err, "revoke the tokens of a client")
 }
 
@@ -340,7 +340,7 @@ func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, t
 		return false, err
 	}
 	n, err := q.InsertOAuthClientDisablementIfEnabled(ctx, postgresgen.InsertOAuthClientDisablementIfEnabledParams{
-		ID: dis.ID, ClientID: dis.ClientID, DisabledByUserID: toNullString(dis.DisabledByUserID), DisabledAt: dis.DisabledAt,
+		ID: dis.ID, OauthClientID: dis.ClientID, DisabledByUserID: toNullString(dis.DisabledByUserID), DisabledAt: dis.DisabledAt,
 	})
 	return n == 1, wrap(err, "insert oauth client disablement")
 }
@@ -352,7 +352,7 @@ func (r *IdentityRepository) LiftOAuthClientDisablements(ctx context.Context, tx
 		return false, err
 	}
 	n, err := q.LiftOAuthClientDisablements(ctx, postgresgen.LiftOAuthClientDisablementsParams{
-		LiftedByUserID: toNullString(byUserID), LiftedAt: at, ClientID: clientID,
+		LiftedByUserID: toNullString(byUserID), LiftedAt: at, OauthClientID: clientID,
 	})
 	return n > 0, wrap(err, "lift oauth client disablements")
 }
@@ -364,7 +364,7 @@ func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx u
 		return false, err
 	}
 	n, err := q.InsertOAuthClientDeletionIfAbsent(ctx, postgresgen.InsertOAuthClientDeletionIfAbsentParams{
-		ClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: toNullString(del.DeletedByUserID), DeletedAt: del.DeletedAt,
+		OauthClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: toNullString(del.DeletedByUserID), DeletedAt: del.DeletedAt,
 	})
 	return n == 1, wrap(err, "insert oauth client deletion")
 }
@@ -409,7 +409,7 @@ func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.RevokeTokensOfUserAndClient(ctx, postgresgen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, ClientID: clientID})
+	n, err := q.RevokeTokensOfUserAndClient(ctx, postgresgen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: at, UserID: userID, OauthClientID: clientID})
 	return n, wrap(err, "revoke the tokens of a user and a client")
 }
 

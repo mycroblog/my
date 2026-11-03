@@ -24,7 +24,7 @@ func TestTokenGrantsLockSerializesRotationAndRevocation(t *testing.T) {
 	userID, familyID, rotatedID := testkit.NamedID("user"), testkit.NamedID("family"), testkit.NamedID("rotated")
 	token := func(id, name string) identity.AccessToken {
 		return identity.AccessToken{
-			ID: id, FamilyID: familyID, ClientID: "client", UserID: userID, Scope: "read",
+			ID: id, FamilyID: familyID, ClientID: testkit.NamedID("client"), UserID: userID, Scope: "read",
 			AccessTokenHash: appidentity.HashToken("at-" + name), RefreshTokenHash: appidentity.HashToken("rt-" + name),
 			IssuedAt: now, ExpiresAt: now.Add(time.Hour), RefreshExpiresAt: now.Add(24 * time.Hour),
 		}

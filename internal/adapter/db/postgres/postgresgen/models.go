@@ -552,7 +552,7 @@ type LocalPostCounter struct {
 type LocalStatus struct {
 	StatusID        string
 	AuthorAccountID string
-	ClientID        *string
+	OauthClientID   *string
 	IdempotencyKey  *string
 }
 
@@ -707,7 +707,7 @@ type NotificationSetting struct {
 
 type OauthAuthorizationCode struct {
 	CodeHash      []byte
-	ClientID      string
+	OauthClientID string
 	UserID        string
 	RedirectUri   string
 	Scope         string
@@ -743,29 +743,29 @@ type OauthClientHostDenial struct {
 }
 
 type OauthClientMetadataDocument struct {
-	ClientID   string
-	ClientName string
-	ClientUri  string
-	LogoUri    string
-	Scope      string
-	FetchedAt  time.Time
-	ExpiresAt  time.Time
+	OauthClientID string
+	ClientName    string
+	ClientUri     string
+	LogoUri       string
+	Scope         string
+	FetchedAt     time.Time
+	ExpiresAt     time.Time
 }
 
 type OauthClientRevision struct {
-	ID        string
-	ClientID  string
-	Name      string
-	Website   *string
-	Scope     string
-	RevisedAt time.Time
+	ID            string
+	OauthClientID string
+	Name          string
+	Website       *string
+	Scope         string
+	RevisedAt     time.Time
 }
 
 type OauthClientSecretRotation struct {
-	ID         string
-	ClientID   string
-	SecretHash []byte
-	RotatedAt  time.Time
+	ID            string
+	OauthClientID string
+	SecretHash    []byte
+	RotatedAt     time.Time
 }
 
 type OutboundActivity struct {

@@ -245,7 +245,7 @@ CREATE TABLE session_activity (
 
 -- ---------------------------------------------------------------------------------------------
 -- identity: OAuth 2.0 authorization server (data-model/04-tables/01-identity.md §4.1, ADR-0019 §4, ADR-0030).
--- Every client_id column except oauth_clients.client_id refers to oauth_clients.id.
+-- Every oauth_client_id column refers to oauth_clients.id; oauth_clients.client_id is the public identifier.
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a registered client. client_secret_hash is NULL for public clients. registration is the
@@ -268,11 +268,11 @@ CREATE INDEX oauth_clients_owner_user_id ON oauth_clients (owner_user_id);
 -- NULL for the CLI. A client is disabled while one of its disablements has no lift.
 CREATE TABLE oauth_client_disablements (
   id TEXT NOT NULL PRIMARY KEY,
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   disabled_by_user_id TEXT,
   disabled_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX oauth_client_disablements_client_id ON oauth_client_disablements (client_id);
+CREATE INDEX oauth_client_disablements_oauth_client_id ON oauth_client_disablements (oauth_client_id);
 
 -- Event: a disablement was lifted, at most once. lifted_by_user_id is NULL for the CLI.
 CREATE TABLE oauth_client_disablement_lifts (
@@ -285,7 +285,7 @@ CREATE TABLE oauth_client_disablement_lifts (
 -- user who registered it (owner) or the clean-up of unused dynamically registered clients
 -- (unused). deleted_by_user_id is NULL for the clean-up.
 CREATE TABLE oauth_client_deletions (
-  client_id TEXT NOT NULL PRIMARY KEY,
+  oauth_client_id TEXT NOT NULL PRIMARY KEY,
   reason TEXT NOT NULL CHECK (reason IN ('owner', 'unused')),
   deleted_by_user_id TEXT,
   deleted_at INTEGER NOT NULL
@@ -293,9 +293,9 @@ CREATE TABLE oauth_client_deletions (
 
 -- Current value: the redirect URIs a client may use, matched exactly.
 CREATE TABLE oauth_client_redirect_uris (
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   redirect_uri TEXT NOT NULL,
-  PRIMARY KEY (client_id, redirect_uri)
+  PRIMARY KEY (oauth_client_id, redirect_uri)
 ) STRICT;
 
 -- Event: the user who registered a client changed it (ADR-0090 §1). The newest revision (by id)
@@ -303,31 +303,31 @@ CREATE TABLE oauth_client_redirect_uris (
 -- with.
 CREATE TABLE oauth_client_revisions (
   id TEXT NOT NULL PRIMARY KEY,
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   name TEXT NOT NULL,
   website TEXT,
   scope TEXT NOT NULL,
   revised_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX oauth_client_revisions_client_id ON oauth_client_revisions (client_id, id);
+CREATE INDEX oauth_client_revisions_oauth_client_id ON oauth_client_revisions (oauth_client_id, id);
 
 -- Event: the user who registered a confidential client issued it a new secret (ADR-0090 §2). Only
 -- the newest secret (by id) works; a client without a rotation has the secret it was registered
 -- with.
 CREATE TABLE oauth_client_secret_rotations (
   id TEXT NOT NULL PRIMARY KEY,
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   secret_hash BLOB NOT NULL,
   rotated_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX oauth_client_secret_rotations_client_id ON oauth_client_secret_rotations (client_id, id);
+CREATE INDEX oauth_client_secret_rotations_oauth_client_id ON oauth_client_secret_rotations (oauth_client_id, id);
 -- Current value (cache): the Client ID Metadata Document of a client whose registration is
 -- metadata_document (ADR-0090 §1), as last fetched from its client_id URL. Every fetch replaces the
 -- row and the client's oauth_client_redirect_uris; refetching rebuilds it. client_uri and logo_uri
 -- are '' when the document has none. expires_at is when the HTTP cache directives of the response
 -- let the document be reused until (fetched_at for no-store and no-cache).
 CREATE TABLE oauth_client_metadata_documents (
-  client_id TEXT NOT NULL PRIMARY KEY,
+  oauth_client_id TEXT NOT NULL PRIMARY KEY,
   client_name TEXT NOT NULL,
   client_uri TEXT NOT NULL,
   logo_uri TEXT NOT NULL,
@@ -358,7 +358,7 @@ CREATE TABLE oauth_client_host_denial_lifts (
 -- that authorized it (NULL when it was issued outside one).
 CREATE TABLE oauth_authorization_codes (
   code_hash BLOB NOT NULL PRIMARY KEY,
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
   redirect_uri TEXT NOT NULL,
   scope TEXT NOT NULL,
@@ -382,7 +382,7 @@ CREATE UNIQUE INDEX oauth_authorization_code_redemptions_token_id ON oauth_autho
 CREATE TABLE oauth_access_tokens (
   id TEXT NOT NULL PRIMARY KEY,
   family_id TEXT NOT NULL,
-  client_id TEXT NOT NULL,
+  oauth_client_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
   access_token_hash BLOB NOT NULL,
   refresh_token_hash BLOB,
@@ -397,7 +397,7 @@ CREATE UNIQUE INDEX oauth_access_tokens_access_token_hash ON oauth_access_tokens
 CREATE UNIQUE INDEX oauth_access_tokens_refresh_token_hash ON oauth_access_tokens (refresh_token_hash);
 CREATE INDEX oauth_access_tokens_family_id ON oauth_access_tokens (family_id);
 CREATE INDEX oauth_access_tokens_user_id ON oauth_access_tokens (user_id);
-CREATE INDEX oauth_access_tokens_client_id ON oauth_access_tokens (client_id);
+CREATE INDEX oauth_access_tokens_oauth_client_id ON oauth_access_tokens (oauth_client_id);
 
 -- Event: a token row (its access and refresh token) stopped working.
 CREATE TABLE oauth_token_revocations (
