@@ -73,7 +73,7 @@ func (s *Server) MoveOwnAccount(ctx context.Context, req MoveOwnAccountRequestOb
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
-		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	err = s.o.MoveConfirmations.ConfirmMove(ctx, v.UserID, c)
 	if p := s.passkeyProblem(ctx, err); p != nil {

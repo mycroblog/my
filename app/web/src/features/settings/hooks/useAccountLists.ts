@@ -110,7 +110,7 @@ export function useBlocks(): { list: AccountList<Account>; unblock: AccountActio
     onSuccess: useCacheListChange("unblock"),
   });
   return {
-    list: toList(query, (page) => page.accounts),
+    list: toList(query, (page) => page.items),
     unblock: useListAction({
       mutate: (id, callbacks) => {
         unblock.mutate(id, callbacks);
@@ -132,7 +132,7 @@ export function useMutes(): { list: AccountList<MutedAccount>; unmute: AccountAc
     onSuccess: useCacheListChange("unmute"),
   });
   return {
-    list: toList(query, (page) => page.mutes),
+    list: toList(query, (page) => page.items),
     unmute: useListAction({
       mutate: (id, callbacks) => {
         unmute.mutate(id, callbacks);
@@ -159,7 +159,7 @@ export function useFollowRequests(): { list: AccountList<Account>; accept: Accou
     onSuccess: useCacheListChange("reject"),
   });
   return {
-    list: toList(query, (page) => page.accounts),
+    list: toList(query, (page) => page.items),
     accept: useListAction({
       mutate: (id, callbacks) => {
         accept.mutate(id, callbacks);

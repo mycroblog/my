@@ -28,9 +28,7 @@ const old: Alias = {
 function aliases(initial: Alias[]) {
   let items = initial;
   return [
-    http.get(`${apiBase}/accounts/aliases`, ({ request }) =>
-      withViewer(request, () => HttpResponse.json({ aliases: items })),
-    ),
+    http.get(`${apiBase}/accounts/aliases`, ({ request }) => withViewer(request, () => HttpResponse.json({ items }))),
     http.post(`${apiBase}/accounts/aliases`, async ({ request }) => {
       const { acct } = (await request.clone().json()) as { acct: string };
       return withViewer(request, () => {
@@ -40,14 +38,14 @@ function aliases(initial: Alias[]) {
           ...items,
           { uri: `https://${host ?? ""}/users/${user ?? ""}`, acct: name, created_at: "2026-10-29T09:00:00Z" },
         ];
-        return HttpResponse.json({ aliases: items });
+        return HttpResponse.json({ items });
       });
     }),
     http.post(`${apiBase}/accounts/aliases/remove`, async ({ request }) => {
       const { uri } = (await request.clone().json()) as { uri: string };
       return withViewer(request, () => {
         items = items.filter((alias) => alias.uri !== uri);
-        return HttpResponse.json({ aliases: items });
+        return HttpResponse.json({ items });
       });
     }),
   ];

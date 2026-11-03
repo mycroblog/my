@@ -96,11 +96,12 @@ describe("the completion after @", () => {
     const eve = accountFixture(5, "Eve", "other.example");
     server.use(
       http.get(`${apiBase}/accounts/search`, ({ request }) =>
-        HttpResponse.json(
-          new URL(request.url).searchParams.get("q")?.startsWith("eve") === true
-            ? [eve, otherAccountFixture]
-            : [otherAccountFixture],
-        ),
+        HttpResponse.json({
+          items:
+            new URL(request.url).searchParams.get("q")?.startsWith("eve") === true
+              ? [eve, otherAccountFixture]
+              : [otherAccountFixture],
+        }),
       ),
     );
     const { user } = await renderApp();

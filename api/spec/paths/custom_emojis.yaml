@@ -8,9 +8,7 @@ get:
     first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
     is not paginated.
   tags: [instance]
-  security:
-    - {}
-    - oauth2: ["read"]
+  security: []
   responses:
     "200":
       description: The custom emoji.

@@ -37,8 +37,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/TagSuggestion.yaml
+            $ref: ../components/schemas/TagSuggestionList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

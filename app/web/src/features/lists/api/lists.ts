@@ -92,14 +92,14 @@ export function followingSearchQueryOptions(api: Api, q: string) {
         signal,
       });
       if (found.data === undefined) throw new ApiError(found.error);
-      if (found.data.length === 0) return [];
+      if (found.data.items.length === 0) return [];
       const relationships = await api.fetch.GET("/accounts/relationships", {
-        params: { query: { id: found.data.map((account) => account.id) } },
+        params: { query: { id: found.data.items.map((account) => account.id) } },
         signal,
       });
       if (relationships.data === undefined) throw new ApiError(relationships.error);
-      const followed = new Set(relationships.data.filter((r) => r.following).map((r) => r.id));
-      return found.data.filter((account) => followed.has(account.id));
+      const followed = new Set(relationships.data.items.filter((r) => r.following).map((r) => r.id));
+      return found.data.items.filter((account) => followed.has(account.id));
     },
     retry: false,
   });

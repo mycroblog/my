@@ -46,7 +46,7 @@ function listsServer(initial: Schemas["List"][]) {
       return new HttpResponse(null, { status: 204 });
     }),
     http.get(`${apiBase}/lists/:id/accounts`, ({ params }) =>
-      HttpResponse.json({ accounts: members.get(String(params["id"])) ?? [] }),
+      HttpResponse.json({ items: members.get(String(params["id"])) ?? [] }),
     ),
     http.post(`${apiBase}/lists/:id/accounts/:accountId`, ({ params }) => {
       const id = String(params["id"]);
@@ -70,13 +70,15 @@ function listsServer(initial: Schemas["List"][]) {
       }),
     ),
     // The search finds Bob, whom the viewer follows, and Carol, whom the viewer does not.
-    http.get(`${apiBase}/accounts/search`, () => HttpResponse.json([otherAccountFixture, remoteAccountFixture])),
+    http.get(`${apiBase}/accounts/search`, () =>
+      HttpResponse.json({ items: [otherAccountFixture, remoteAccountFixture] }),
+    ),
     http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-      HttpResponse.json(
-        new URL(request.url).searchParams
+      HttpResponse.json({
+        items: new URL(request.url).searchParams
           .getAll("id")
           .map((id) => relationshipFixture(id, { following: id === otherAccountFixture.id })),
-      ),
+      }),
     ),
   );
 }
@@ -212,7 +214,9 @@ describe("Add to list on a profile", () => {
     server.use(
       resumableSession(),
       http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-        HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id))),
+        HttpResponse.json({
+          items: new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id)),
+        }),
       ),
     );
     const { user } = await renderApp({ path: "/@bob" });

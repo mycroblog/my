@@ -135,10 +135,10 @@ func TestClientAPIAccountImages(t *testing.T) {
 
 	var following clientapi.AccountPage
 	get("/accounts/"+bob.accountID+"/following", bob.token, &following)
-	if len(following.Accounts) != 1 {
-		t.Fatalf("following = %+v, want alice", following.Accounts)
+	if len(following.Items) != 1 {
+		t.Fatalf("following = %+v, want alice", following.Items)
 	}
-	check("following", &following.Accounts[0])
+	check("following", &following.Items[0])
 
 	var notifications clientapi.NotificationPage
 	get("/notifications", bob.token, &notifications)

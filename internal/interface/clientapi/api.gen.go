@@ -4487,7 +4487,7 @@ type AccountAlias struct {
 
 // AccountAliasList The aliases of the user, oldest first; at most 5.
 type AccountAliasList struct {
-	Aliases []AccountAlias `json:"aliases"`
+	Items []AccountAlias `json:"items"`
 }
 
 // AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -4518,6 +4518,11 @@ type AccountFieldSource struct {
 	Value string `json:"value"`
 }
 
+// AccountList The accounts, best match first.
+type AccountList struct {
+	Items []Account `json:"items"`
+}
+
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
 // `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
 // its posts stay where they are.
@@ -4542,7 +4547,7 @@ type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
-	Accounts []Account `json:"accounts"`
+	Items []Account `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -4591,6 +4596,11 @@ type AccountSuggestion struct {
 // AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
 // `recently_active` when it posted recently.
 type AccountSuggestionSource string
+
+// AccountSuggestionList The suggested accounts.
+type AccountSuggestionList struct {
+	Items []AccountSuggestion `json:"items"`
+}
 
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
@@ -8112,7 +8122,7 @@ type CustomEmojiProblem struct {
 	Detail *string `json:"detail,omitempty"`
 
 	// Reason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-	// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+	// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 	// alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 	// the category is longer than 64 characters or not text. `media_not_found`: the media
 	// file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -8141,7 +8151,7 @@ type CustomEmojiProblem struct {
 }
 
 // CustomEmojiProblemReason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 // alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 // the category is longer than 64 characters or not text. `media_not_found`: the media
 // file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -8545,7 +8555,7 @@ type DomainMute struct {
 
 // DomainMutePage A page of domain mutes.
 type DomainMutePage struct {
-	DomainMutes []DomainMute `json:"domain_mutes"`
+	Items []DomainMute `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -10238,7 +10248,7 @@ type MuteDomainRequest struct {
 
 // MutePage A page of mutes.
 type MutePage struct {
-	Mutes []MutedAccount `json:"mutes"`
+	Items []MutedAccount `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -11397,6 +11407,23 @@ type PreviewDomainBlockImportRequest struct {
 //     each present only when the operator set it: `message`, the administrators' notice in
 //     plain text; `until`, when the maintenance is expected to end (RFC 3339); and
 //     `status_page_url`, the instance's status page.
+//   - `/api/v1/problems/custom-emoji-request-conflict` (409): a request for a custom emoji
+//     is not in the state the operation needs, or was decided meanwhile.
+//   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
+//     confirmed, so no confirmation mail is sent.
+//   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
+//     suppressed, so there is nothing to lift.
+//   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
+//     `reason` says which.
+//   - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+//   - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
+//   - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
+//   - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
+//   - `/api/v1/problems/voice-invalid-participant` (422): the account is not a participant that
+//     the operation can act on.
+//   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
+//     co-hosts of the room.
+//   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -11587,6 +11614,11 @@ type Relationship struct {
 
 	// ShowBoosts Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
+}
+
+// RelationshipList The relationships, in the order of the request.
+type RelationshipList struct {
+	Items []Relationship `json:"items"`
 }
 
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
@@ -12547,6 +12579,11 @@ type TagSuggestion struct {
 
 	// StatusesCount How many posts of visibility `public`, `local`, or `unlisted` carry the hashtag now.
 	StatusesCount int64 `json:"statuses_count"`
+}
+
+// TagSuggestionList The tags that match.
+type TagSuggestionList struct {
+	Items []TagSuggestion `json:"items"`
 }
 
 // ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
@@ -27528,7 +27565,7 @@ type GetRelationships200ResponseHeaders struct {
 }
 
 type GetRelationships200JSONResponse struct {
-	Body    []Relationship
+	Body    RelationshipList
 	Headers GetRelationships200ResponseHeaders
 }
 
@@ -27590,7 +27627,7 @@ type SearchAccounts200ResponseHeaders struct {
 }
 
 type SearchAccounts200JSONResponse struct {
-	Body    []Account
+	Body    AccountList
 	Headers SearchAccounts200ResponseHeaders
 }
 
@@ -27652,7 +27689,7 @@ type ListAccountSuggestions200ResponseHeaders struct {
 }
 
 type ListAccountSuggestions200JSONResponse struct {
-	Body    []AccountSuggestion
+	Body    AccountSuggestionList
 	Headers ListAccountSuggestions200ResponseHeaders
 }
 
@@ -45554,7 +45591,7 @@ type SearchTags200ResponseHeaders struct {
 }
 
 type SearchTags200JSONResponse struct {
-	Body    []TagSuggestion
+	Body    TagSuggestionList
 	Headers SearchTags200ResponseHeaders
 }
 

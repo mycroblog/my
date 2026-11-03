@@ -3,9 +3,9 @@ description: A page of mutes.
 allOf:
   - $ref: ./PageInfo.yaml
   - type: object
-    required: [mutes]
+    required: [items]
     properties:
-      mutes:
+      items:
         type: array
         items:
           $ref: ./MutedAccount.yaml

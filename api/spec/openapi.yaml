@@ -28,8 +28,8 @@ info:
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.
   license:
-    name: AGPL-3.0-only
-    identifier: AGPL-3.0-only
+    name: MIT
+    identifier: MIT
 servers:
   - url: /api/v1
 security:
@@ -967,6 +967,14 @@ components:
       $ref: ./components/schemas/AccountAlias.yaml
     AccountAliasList:
       $ref: ./components/schemas/AccountAliasList.yaml
+    AccountList:
+      $ref: ./components/schemas/AccountList.yaml
+    AccountSuggestionList:
+      $ref: ./components/schemas/AccountSuggestionList.yaml
+    RelationshipList:
+      $ref: ./components/schemas/RelationshipList.yaml
+    TagSuggestionList:
+      $ref: ./components/schemas/TagSuggestionList.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:

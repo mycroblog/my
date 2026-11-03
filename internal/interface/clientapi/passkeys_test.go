@@ -110,8 +110,8 @@ func TestPasskeyRegistration(t *testing.T) {
 		status    int
 	}{
 		{`{"name":"phone","password":"wrong"}`, clientapi.ProblemTypeWrongPassword, http.StatusUnprocessableEntity},
-		{`{"name":"phone","password":""}`, clientapi.ProblemTypeBlank, http.StatusBadRequest},
-		{`{"name":"phone"}`, clientapi.ProblemTypeBlank, http.StatusBadRequest},
+		{`{"name":"phone","password":""}`, clientapi.ProblemTypeBlank, http.StatusUnprocessableEntity},
+		{`{"name":"phone"}`, clientapi.ProblemTypeBlank, http.StatusUnprocessableEntity},
 		{`{"name":"phone","passkey":{"confirmation_token":"old","credential":{"id":"ok"}}}`, clientapi.ProblemTypePasskeyConfirmationExpired, http.StatusUnprocessableEntity},
 	} {
 		res := e.send(t, http.MethodPost, "/passkeys/registration", "write", tc.body)
@@ -132,7 +132,7 @@ func TestPasskeyRegistration(t *testing.T) {
 	}{
 		{`{"registration_token":"reg-1","credential":{"id":"bad"}}`, clientapi.ProblemTypeInvalidPasskey, http.StatusUnprocessableEntity},
 		{`{"registration_token":"old","credential":{"id":"ok"}}`, clientapi.ProblemTypePasskeyRegistrationExpired, http.StatusUnprocessableEntity},
-		{`{"registration_token":"reg-1","credential":{}}`, clientapi.ProblemTypeBlank, http.StatusBadRequest},
+		{`{"registration_token":"reg-1","credential":{}}`, clientapi.ProblemTypeBlank, http.StatusUnprocessableEntity},
 	} {
 		res := e.send(t, http.MethodPost, "/passkeys", "write", tc.body)
 		if p := decodeProblem(t, res); res.StatusCode != tc.status || p.Type != tc.typ {
@@ -167,7 +167,7 @@ func TestPasskeyRegistration(t *testing.T) {
 	}
 	f.err = identity.ErrInvalidPasskeyName
 	res = e.send(t, http.MethodPost, "/passkeys/registration", "write", `{"name":"phone","password":"secret"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Type != clientapi.ProblemTypeBlank {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeBlank {
 		t.Errorf("begin with a bad name = %d %+v, want 400", res.StatusCode, p)
 	}
 	res = e.send(t, http.MethodPost, "/passkeys/registration", "read-accounts", `{"name":"phone","password":"secret"}`)

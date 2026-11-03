@@ -29,7 +29,7 @@ export function useDomainMuteList(): AccountList<DomainMute> {
   const api = useApi();
   const query = useSuspenseInfiniteQuery(domainMutesQueryOptions(api));
   return {
-    items: query.data.pages.flatMap((page) => page.domain_mutes),
+    items: query.data.pages.flatMap((page) => page.items),
     hasMore: query.hasNextPage,
     isLoadingMore: query.isFetchingNextPage,
     loadMore: () => {

@@ -9,7 +9,10 @@ post:
     current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
     subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
     that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
-    current plan and interval.
+    current plan and interval. An unknown plan is a 404, no subscription a 409
+    `/api/v1/problems/supporter-subscription-state`, and an interval that is neither `month`
+    nor `year` a 422. While the supporter program is off, the operation answers the 404 or the
+    503 `/api/v1/problems/supporters-unavailable` that says what is missing.
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]

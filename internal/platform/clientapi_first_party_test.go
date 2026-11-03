@@ -281,10 +281,13 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 	}
 	read := func(user string) map[string]any {
 		t.Helper()
-		var rs []map[string]any
-		if res := c.do(user, http.MethodGet, "/accounts/relationships?id="+bob, nil, &rs); res.StatusCode != http.StatusOK {
+		var list struct {
+			Items []map[string]any `json:"items"`
+		}
+		if res := c.do(user, http.MethodGet, "/accounts/relationships?id="+bob, nil, &list); res.StatusCode != http.StatusOK {
 			t.Fatalf("GET /accounts/relationships as %s = %d", user, res.StatusCode)
 		}
+		rs := list.Items
 		if len(rs) != 1 {
 			t.Fatalf("relationships as %s = %v", user, rs)
 		}

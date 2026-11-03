@@ -55,7 +55,9 @@ async function cancellable<T>(
 /** The accounts that GET /accounts/search finds for `q`, from the cache while it is fresh. */
 export function searchAccounts(api: Api, queryClient: QueryClient, q: string, signal: AbortSignal): Promise<Account[]> {
   const options = accountSearchQueryOptions(api, q);
-  return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options));
+  return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options)).then(
+    (list) => list.items,
+  );
 }
 
 /** The hashtags that GET /tags/search finds for `q`, from the cache while it is fresh. */
@@ -66,7 +68,9 @@ export function searchTags(
   signal: AbortSignal,
 ): Promise<TagSuggestion[]> {
   const options = tagSearchQueryOptions(api, q);
-  return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options));
+  return cancellable(queryClient, options.queryKey, signal, () => queryClient.query(options)).then(
+    (list) => list.items,
+  );
 }
 
 /**

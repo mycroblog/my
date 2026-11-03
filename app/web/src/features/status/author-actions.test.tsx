@@ -42,7 +42,9 @@ function serve(...statuses: Status[]) {
 function serveRelationship(overrides: Partial<Schemas["Relationship"]>) {
   server.use(
     http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-      HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, overrides))),
+      HttpResponse.json({
+        items: new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, overrides)),
+      }),
     ),
   );
 }
@@ -106,7 +108,7 @@ describe("reading the relationship", () => {
     server.use(
       http.get(`${apiBase}/accounts/relationships`, async () => {
         await delay("infinite");
-        return HttpResponse.json([]);
+        return HttpResponse.json({ items: [] });
       }),
     );
     const { user } = await renderApp({ path: bobPath });
@@ -126,9 +128,11 @@ describe("reading the relationship", () => {
       http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
         isDown
           ? problem(503, "about:blank", "Service Unavailable")
-          : HttpResponse.json(
-              new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { muting: true })),
-            ),
+          : HttpResponse.json({
+              items: new URL(request.url).searchParams
+                .getAll("id")
+                .map((id) => relationshipFixture(id, { muting: true })),
+            }),
       ),
     );
     const { user } = await renderApp({ path: bobPath });
@@ -148,7 +152,7 @@ describe("reading the relationship", () => {
 
   test("an account that the server leaves out offers nothing about its author", async () => {
     serve(bobPost);
-    server.use(http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([])));
+    server.use(http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json({ items: [] })));
     const { user } = await renderApp({ path: bobPath });
 
     await openMenu(user);

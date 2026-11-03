@@ -131,7 +131,7 @@ func (s *Server) RemovePassword(ctx context.Context, req RemovePasswordRequestOb
 	}
 	c, param, ok := confirmationOf(nil, req.Body.Passkey, req.Body.ExternalConfirmation, "passkey")
 	if !ok {
-		return RemovePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return RemovePassworddefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	err = s.o.OwnAccount.RemovePassword(ctx, appidentity.RemovePasswordInput{
 		UserID: v.UserID, Passkey: c.Passkey, External: c.External, KeepFamilyID: v.FamilyID,
@@ -160,10 +160,10 @@ func (s *Server) ChangePassword(ctx context.Context, req ChangePasswordRequestOb
 	}
 	c, param, ok := confirmationOf(req.Body.CurrentPassword, req.Body.Passkey, req.Body.ExternalConfirmation, "current_password")
 	if !ok {
-		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	if identity.ValidatePassword(req.Body.NewPassword) != nil {
-		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "new_password")), nil
+		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "new_password")), nil
 	}
 	err = s.o.OwnAccount.ChangePassword(ctx, appidentity.ChangePasswordInput{
 		UserID: v.UserID, Confirmation: c, NewPassword: req.Body.NewPassword, KeepFamilyID: v.FamilyID,
@@ -173,7 +173,7 @@ func (s *Server) ChangePassword(ctx context.Context, req ChangePasswordRequestOb
 	}
 	switch {
 	case errors.Is(err, identity.ErrInvalidPassword):
-		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "new_password")), nil
+		return ChangePassworddefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "new_password")), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: change the password of user %s: %w", v.UserID, err)
 	}
@@ -205,7 +205,7 @@ func (s *Server) DeleteOwnAccount(ctx context.Context, req DeleteOwnAccountReque
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
-		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	err = s.o.OwnAccount.DeleteOwnAccount(ctx, v.UserID, c)
 	if errors.Is(err, appidentity.ErrLastAdmin) {

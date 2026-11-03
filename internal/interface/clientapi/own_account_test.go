@@ -213,8 +213,8 @@ func TestDeleteOwnAccount(t *testing.T) {
 		t.Fatalf("deleted = %v, want none yet", own.deleted)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "password") {
-		t.Errorf("no confirmation = %d %+v, want 400 on password", res.StatusCode, p)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "password") {
+		t.Errorf("no confirmation = %d %+v, want 422 on password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{"passkey":{"confirmation_token":"bad","credential":{"id":"x"}}}`)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeInvalidPasskey {
@@ -247,8 +247,8 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("wrong password = %d %+v, want 422 wrong-password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
-		t.Errorf("short new password = %d %+v, want 400 on new_password", res.StatusCode, p)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
+		t.Errorf("short new password = %d %+v, want 422 on new_password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"limited","new_password":"new password"}`)
 	if res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") != "90" {
@@ -274,8 +274,8 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("expired passkey confirmation = %d %+v, want 422 passkey-confirmation-expired", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"","credential":{}},"new_password":"new password"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "passkey") {
-		t.Errorf("empty passkey = %d %+v, want 400 on passkey", res.StatusCode, p)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "passkey") {
+		t.Errorf("empty passkey = %d %+v, want 422 on passkey", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}},"new_password":"new password"}`)
 	if res.StatusCode != http.StatusNoContent || len(own.changed) != 2 || own.changed[1].Confirmation.Passkey.Token != "good" ||
@@ -299,8 +299,8 @@ func TestRemovePassword(t *testing.T) {
 		t.Errorf("wrong passkey = %d %+v, want 422 invalid-passkey", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password/remove", "write", `{"passkey":{"confirmation_token":"","credential":{}}}`)
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("an empty passkey = %d, want 400", res.StatusCode)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("an empty passkey = %d, want 422", res.StatusCode)
 	}
 	own.noPasskey = true
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password/remove", "write", `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}}}`)

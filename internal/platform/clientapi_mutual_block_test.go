@@ -24,8 +24,8 @@ func TestBlockedUserManagesTheirOwnEdges(t *testing.T) {
 	if r := e.relate("block", alice, bob, nil); !set(r.Blocking) {
 		t.Errorf("blocking back = %+v, want blocking", r)
 	}
-	if page := e.page("/blocks", alice.token); len(page.Accounts) != 1 || page.Accounts[0].Id != bob.id {
-		t.Errorf("blocks = %+v, want bob", page.Accounts)
+	if page := e.page("/blocks", alice.token); len(page.Items) != 1 || page.Items[0].Id != bob.id {
+		t.Errorf("blocks = %+v, want bob", page.Items)
 	}
 	if r := e.relate("unblock", alice, bob, nil); set(r.Blocking) {
 		t.Errorf("unblocking in a mutual block = %+v, want not blocking", r)

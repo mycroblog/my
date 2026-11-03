@@ -47,5 +47,5 @@ func (s *Server) SearchTags(ctx context.Context, req SearchTagsRequestObject) (S
 		}
 	}
 	cache := cacheSearch
-	return SearchTags200JSONResponse{Body: tags, Headers: SearchTags200ResponseHeaders{CacheControl: &cache}}, nil
+	return SearchTags200JSONResponse{Body: TagSuggestionList{Items: tags}, Headers: SearchTags200ResponseHeaders{CacheControl: &cache}}, nil
 }

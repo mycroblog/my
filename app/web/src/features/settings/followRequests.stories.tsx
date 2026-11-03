@@ -21,7 +21,7 @@ import { listedAccounts } from "./test/storyFixtures";
 /** GET /follow_requests answering `accounts`, with a next page when `more`. */
 function requesting(accounts: Schemas["Account"][], more = false) {
   return http.get(`${apiBase}/follow_requests`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(more ? { accounts, next_cursor: "next" } : { accounts })),
+    withViewer(request, () => HttpResponse.json(more ? { items: accounts, next_cursor: "next" } : { items: accounts })),
   );
 }
 

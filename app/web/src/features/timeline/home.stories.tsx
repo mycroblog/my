@@ -29,7 +29,7 @@ function homeTimeline(items: Schemas["Status"][]) {
 /** GET /accounts/suggestions answering `suggestions`. */
 function suggestions(items: Schemas["AccountSuggestion"][]) {
   return http.get(`${apiBase}/accounts/suggestions`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(items)),
+    withViewer(request, () => HttpResponse.json({ items: items })),
   );
 }
 

@@ -24,7 +24,7 @@ function followServer() {
       HttpResponse.json({ ...otherAccountFixture, followers_count: following ? 1 : 0, following_count: 0 }),
     ),
     http.get(`${apiBase}/accounts/relationships`, () =>
-      HttpResponse.json([relationshipFixture(otherAccountFixture.id, { following })]),
+      HttpResponse.json({ items: [relationshipFixture(otherAccountFixture.id, { following })] }),
     ),
     http.post(`${apiBase}/accounts/:id/follow`, () => {
       following = true;

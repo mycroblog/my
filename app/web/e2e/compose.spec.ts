@@ -180,16 +180,15 @@ async function serveApi(page: Page): Promise<Posted[]> {
       });
     }
     // The completion's searches (ADR-0092 §1) find Carol and one hashtag whatever is typed.
-    if (path === "/api/v1/accounts/search") return json(route, [carol]);
-    if (path === "/api/v1/tags/search") return json(route, [{ name: "caturday", statuses_count: 3 }]);
+    if (path === "/api/v1/accounts/search") return json(route, { items: [carol] });
+    if (path === "/api/v1/tags/search") return json(route, { items: [{ name: "caturday", statuses_count: 3 }] });
     // Carol is found only by resolving her handle, as the server resolves the mentions of a post.
     const query = new URL(request.url()).searchParams;
     if (path === "/api/v1/accounts/lookup" && query.get("acct") === carol.acct && query.get("resolve") === "true")
       return json(route, carol);
     if (path === "/api/v1/accounts/relationships") {
-      return json(
-        route,
-        query.getAll("id").map((id) => ({
+      return json(route, {
+        items: query.getAll("id").map((id) => ({
           id,
           following: false,
           requested: false,
@@ -201,7 +200,7 @@ async function serveApi(page: Page): Promise<Posted[]> {
           muting: false,
           muting_notifications: false,
         })),
-      );
+      });
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });

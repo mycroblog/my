@@ -136,7 +136,7 @@ func (s *Server) CreateOAuthApp(ctx context.Context, req CreateOAuthAppRequestOb
 		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	if !req.Body.ClientType.Valid() {
-		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "client_type")), nil
+		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "client_type")), nil
 	}
 	if p, h, limited := s.LimitProblem(ctx, OAuthAppRegisterLimit, v.UserID); limited {
 		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil

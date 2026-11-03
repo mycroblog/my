@@ -21,7 +21,7 @@ function mutedDomains(initial: string[], next_cursor?: string) {
   let domains = initial;
   const page = () =>
     HttpResponse.json({
-      domain_mutes: domains.map((domain): Schemas["DomainMute"] => ({ domain, created_at: "2026-10-21T09:30:00Z" })),
+      items: domains.map((domain): Schemas["DomainMute"] => ({ domain, created_at: "2026-10-21T09:30:00Z" })),
       ...(next_cursor === undefined ? {} : { next_cursor }),
     } satisfies Schemas["DomainMutePage"]);
   return [

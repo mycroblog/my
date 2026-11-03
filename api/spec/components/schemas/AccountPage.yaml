@@ -3,9 +3,9 @@ description: A page of accounts.
 allOf:
   - $ref: ./PageInfo.yaml
   - type: object
-    required: [accounts]
+    required: [items]
     properties:
-      accounts:
+      items:
         type: array
         items:
           $ref: ./Account.yaml

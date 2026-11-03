@@ -8,7 +8,7 @@ import { apiBase, withViewer } from "../../../test/msw/http";
 /** GET /accounts/suggestions answering `suggestions`. */
 export function suggestionsHandler(suggestions: Schemas["AccountSuggestion"][]) {
   return http.get(`${apiBase}/accounts/suggestions`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(suggestions)),
+    withViewer(request, () => HttpResponse.json({ items: suggestions })),
   );
 }
 
