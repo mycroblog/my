@@ -7154,7 +7154,7 @@ type ClientErrorReport struct {
 	// Name The error's `name`, such as `TypeError`.
 	Name string `json:"name"`
 
-	// Release The version of the web client's build.
+	// Release The version of the server, from the page that started the web client.
 	Release *string `json:"release,omitempty"`
 
 	// Route The ID of the route that was shown (a pattern such as `/_app/statuses/$id`, never the

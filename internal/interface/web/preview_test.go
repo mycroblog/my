@@ -419,6 +419,23 @@ func TestPostPageRedirectsToTheCurrentUsername(t *testing.T) {
 	}
 }
 
+// TestPreviewETagFollowsVersion checks that a new version of the server, whose version is in the page's
+// runtime config, does not revalidate the page of the version before: the ETag of a preview does not
+// come from the page's body.
+func TestPreviewETagFollowsVersion(t *testing.T) {
+	s := status(alice("Alice", ""), content.VisibilityPublic, "<p>hi</p>")
+	p := &fakePreviews{statuses: map[string]appcontent.StatusPreview{statusID: s}}
+	path := "/@alice/status/" + statusID
+	first := get(previewHandler(t, p, web.Options{Version: "v1"}), path, nil)
+	second := get(previewHandler(t, p, web.Options{Version: "v2"}), path, nil)
+	if !strings.Contains(second.Body.String(), `"version":"v2"`) {
+		t.Errorf("the page does not name the version:\n%s", second.Body.String())
+	}
+	if first.Header().Get("ETag") == second.Header().Get("ETag") {
+		t.Errorf("the ETag did not change with the version: %s", first.Header().Get("ETag"))
+	}
+}
+
 // TestPreviewETag checks that the ETag follows the post's revision, visibility, and language,
 // and that a conditional request revalidates the page.
 func TestPreviewETag(t *testing.T) {

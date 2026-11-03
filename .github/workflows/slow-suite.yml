@@ -86,6 +86,8 @@ jobs:
             run: scripts/task.sh docker:smoke
           - name: docker:build-arm64
             run: scripts/task.sh docker:build-arm64
+      - name: docker:web-reproducible
+        run: scripts/task.sh docker:web-reproducible
 
   upgrade:
     # A database made and filled by the previous release's images, upgraded with this commit's server image in the order

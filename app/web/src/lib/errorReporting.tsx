@@ -47,16 +47,6 @@ const maxRouteLength = 256;
 const chunkLoadFailure =
   /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/;
 
-/** The version of the build (VITE_MY_RELEASE, which the image build sets from its VERSION), if it has one. */
-const buildRelease: string | undefined = import.meta.env.VITE_MY_RELEASE || undefined;
-
-declare global {
-  interface ImportMetaEnv {
-    /** The version of the build, which the image build sets (Dockerfile). */
-    readonly VITE_MY_RELEASE?: string;
-  }
-}
-
 /** The origin the app's own scripts are loaded from: this module's. */
 const ownScriptOrigin = new URL(import.meta.url).origin;
 
@@ -64,7 +54,7 @@ export type ErrorReporterOptions = {
   api: Pick<Api, "fetch">;
   /** The origin of the client API, where a beacon goes. */
   apiOrigin: string;
-  /** The version of the build; `buildRelease` by default. */
+  /** The server's version, from the shell (RuntimeConfig.version), if it gave one. */
   release?: string | undefined;
   /**
    * Whether a stack has a frame of the app's own scripts; by default whether it names a URL of the origin the app's
@@ -88,7 +78,7 @@ export class ErrorReporter {
   /** Whether the page is being left (between `pagehide` and `pageshow`). */
   #leaving = false;
 
-  constructor({ api, apiOrigin, release = buildRelease, isOwnStack }: ErrorReporterOptions) {
+  constructor({ api, apiOrigin, release, isOwnStack }: ErrorReporterOptions) {
     this.#api = api;
     this.#beaconURL = new URL("/api/v1/client_errors", apiOrigin).href;
     this.#release = release;

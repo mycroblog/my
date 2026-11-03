@@ -21,7 +21,7 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		opts.WebBuild = web.Embedded()
 	}
 	h, err := web.New(web.Options{
-		Build: opts.WebBuild, DevViteOrigin: opts.DevViteOrigin,
+		Build: opts.WebBuild, DevViteOrigin: opts.DevViteOrigin, Version: opts.Version,
 		Host: a.Config.Host, AccountDomain: a.Config.AccountDomain, WebOrigin: a.Config.WebOrigin,
 		// Images and media may come from the CDN in front of /media/ (media_origin).
 		MediaOrigin: a.Config.MediaOrigin,

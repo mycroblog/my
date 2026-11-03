@@ -30,6 +30,10 @@ type runtimeConfig struct {
 	Icon     *runtimeBrandImage `json:"icon,omitempty"`
 	Logo     *runtimeBrandImage `json:"logo,omitempty"`
 	LogoDark *runtimeBrandImage `json:"logoDark,omitempty"`
+	// Version is the server's version, which the client's error reports name. It lives here and not in
+	// the build, so that the files of the build, and so the Service Worker, are the same for every
+	// version of the server with the same client; left out when there is none.
+	Version string `json:"version,omitempty"`
 }
 
 type shellData struct {

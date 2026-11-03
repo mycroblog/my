@@ -25,6 +25,12 @@ tasks:
         done
         exit "$status"
 
+  # Not part of `check`, which needs no Docker: CI runs it after the smoke test, which has built the web stage already.
+  web-reproducible:
+    desc: Fail when two builds of the Dockerfile's web stage with different VERSIONs differ in any file (needs docker)
+    cmds:
+      - scripts/docker-web-reproducible.sh
+
   # Not part of `check`, which needs no Docker: CI runs it in the docker-smoke job.
   alert-rules:
     desc: Check and unit-test the Prometheus alerting rules of deploy/monitoring/prometheus with promtool (needs docker)

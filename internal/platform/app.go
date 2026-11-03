@@ -326,7 +326,7 @@ type route struct {
 type AppOptions struct {
 	// Logger is the process logger; the default is slog.Default().
 	Logger *slog.Logger
-	// Version is the server version that NodeInfo reports; the default is "dev".
+	// Version is the server version that NodeInfo and the web client's error reports name; the default is "dev".
 	Version string
 	// WebBuild is the build of the web client; the default is the one embedded in the binary.
 	WebBuild fs.FS

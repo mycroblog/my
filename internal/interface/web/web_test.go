@@ -184,6 +184,19 @@ func TestShellCSP(t *testing.T) {
 	}
 }
 
+// TestRuntimeConfigVersion checks that the shell gives the client the server's version, for its error
+// reports, and leaves it out when there is none.
+func TestRuntimeConfigVersion(t *testing.T) {
+	_, mux := newHandler(t, web.Options{Version: "v1.2.3-4-gabc"})
+	if body := get(mux, "/home", nil).Body.String(); !strings.Contains(body, `"version":"v1.2.3-4-gabc"`) {
+		t.Errorf("the shell does not name the version:\n%s", body)
+	}
+	_, mux = newHandler(t, web.Options{})
+	if body := get(mux, "/home", nil).Body.String(); strings.Contains(body, `"version"`) {
+		t.Errorf("the shell of a server without a version names one:\n%s", body)
+	}
+}
+
 // TestRuntimeConfigIsEscaped is a regression test: instance settings reach the shell's JSON
 // data block through html/template, which must keep them from ending the script element.
 func TestRuntimeConfigIsEscaped(t *testing.T) {

@@ -30,6 +30,11 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig(shellWith(JSON.stringify(brand)))).toEqual(brand);
   });
 
+  test("reads the server's version", () => {
+    const versioned = { ...valid, version: "v1.2.3-4-gabc" };
+    expect(readRuntimeConfig(shellWith(JSON.stringify(versioned)))).toEqual(versioned);
+  });
+
   test("ignores fields the client does not know", () => {
     expect(readRuntimeConfig(shellWith(JSON.stringify({ ...valid, future: true })))).toEqual(valid);
   });

@@ -65,7 +65,9 @@ clientsClaim();
 /**
  * A revision of the shell for the precache: it changes whenever any file of the build changes, since the
  * shell names the build's hashed entry files. FNV-1a over the manifest, which is the same in every build of
- * the same sources.
+ * the same sources. A new version of the server with the same build keeps the revision, so the precached shell
+ * keeps the version it was fetched with (RuntimeConfig.version, on error reports of a page opened from it) and the
+ * shell the server rendered then: it names the same files, which is what the offline start needs.
  */
 function shellRevision(entries: readonly (PrecacheEntry | string)[]): string {
   let hash = 0x811c9dc5;

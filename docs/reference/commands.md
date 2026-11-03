@@ -66,6 +66,7 @@ Coding agents run the workflow steps through agentkit ([tools/agentkit/README.md
 | `db:up` / `db:down` | Start / remove the dev PostgreSQL container (`my`, and Atlas's dev DBs `my_dev` and `my_lint`, bootstrapped) |
 | `db:atlas` | Install the pinned Atlas Community Edition into `bin/atlas` |
 | `docker:check` | `docker:dockerfile-check`: the Dockerfile's Go, Node.js, and Bun images match `.tool-versions` |
+| `docker:web-reproducible` | Build the `web` stage of the `Dockerfile` twice with different `VERSION`s, the second time without its layer cache, and fail when any file differs, naming the files: a version in the bundle changes every asset and `sw.js`, so every browser would offer an update ([web-client §11](../architecture/web-client/11-pwa.md)). Not part of `check` (CI: after `docker:smoke`, in the jobs `docker-smoke` and the slow suite's `docker`) |
 | `docker:alert-rules` | Check `deploy/monitoring/prometheus/alerts.yml` and run its unit tests `alerts.test.yml` with promtool in the pinned Prometheus image ([alerts](../operations/alerts.md)). Not part of `check` (CI job `docker-smoke`) |
 | `docker:build` [`VERSION=...`] | Build the server image `my:<version>` (`Dockerfile` target `app`, which also applies the schema with `my schema apply`) |
 | `docker:smoke` | Build and start `deploy/docker/compose.yaml`, create an admin, check WebFinger / Actor / NodeInfo, tear down (CI job `docker-smoke`: pull requests that touch the docker context; and the slow suite) |

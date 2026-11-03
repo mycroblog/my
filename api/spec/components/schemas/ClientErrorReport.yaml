@@ -16,7 +16,7 @@ properties:
     type: string
     maxLength: 16384
   release:
-    description: The version of the web client's build.
+    description: The version of the server, from the page that started the web client.
     type: string
     maxLength: 64
   route:
