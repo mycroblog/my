@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: The state of the imports of a billing source (ADR-0068 §9).
+description: The state of the imports of a billing source.
 type: object
 required: [source, provider, time_zone, method, requests_today, requests_this_month, bytes_billed_this_month, months]
 properties:
@@ -10,7 +10,7 @@ properties:
     type: string
   method:
     description: |
-      How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+      How the source reads the provider's data: `cost_explorer` (AWS Cost
       Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
       bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
       `billing_gcp_method = budget`) an approximation, one estimated total per budget and month

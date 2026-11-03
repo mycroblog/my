@@ -4,8 +4,7 @@ post:
   summary: Start a subscription to a supporter plan
   description: |
     Starts a subscription to a plan at an interval and returns the payment provider's hosted
-    checkout, which the client opens in the same tab; no card details reach this server
-    (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+    checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
     Starting again while the subscription is `pending` makes a new checkout of the same
     subscription. Only a local user with a verified primary address and without another
     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409

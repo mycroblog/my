@@ -3,7 +3,7 @@ get:
   operationId: getAdminServiceClosureCheck
   summary: Check the server before its closure
   description: |
-    What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+    What the closure of the server would end: the estimate of the `Delete`
     deliveries, the supporter subscriptions that it cancels, the account migrations that have
     not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
     permission.

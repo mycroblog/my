@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  How the instance federates with other servers (FR-413), so that clients offer only the
+  How the instance federates with other servers, so that clients offer only the
   operations on remote accounts and posts that can work.
 type: object
 required: [mode]

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+  The unit of a cost item's payment schedule: `once` (one payment on the start
   date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
   monthly payment on a day that a month does not have falls on the month's last day.
 type: string

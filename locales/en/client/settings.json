@@ -2578,5 +2578,121 @@
   "settings.password.login_providers_only": {
     "defaultMessage": "This server signs in only through its login providers, so a password cannot be set or changed here. Your password still confirms changes to your account.",
     "description": "On the password settings page while the instance limits sign-in to login providers."
+  },
+  "settings.account.deactivate.title": {
+    "defaultMessage": "Deactivate your account",
+    "description": "Heading of the part of the account page that deactivates the user's account."
+  },
+  "settings.account.deactivate.description": {
+    "defaultMessage": "Take time away without losing anything: for 30 days your profile and posts are hidden from everyone. Sign in within 30 days to reactivate, and your posts, follows, and followers are as you left them. After 30 days your account is deleted.",
+    "description": "What deactivating the account does."
+  },
+  "settings.account.deactivate.effects": {
+    "defaultMessage": "While it is deactivated, nothing reaches you: mentions and direct messages are lost, and new followers are turned away. Other servers may show your account as suspended. You are signed out everywhere, and apps must be authorized again.",
+    "description": "What the user gives up while the account is deactivated, including that other servers may show it as suspended."
+  },
+  "settings.account.deactivate.open": {
+    "defaultMessage": "Deactivate account…",
+    "description": "Button that opens the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "Deactivate your account?",
+    "description": "Title of the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.deletion": {
+    "defaultMessage": "It will be deleted on {date} unless you sign in and reactivate it before then.",
+    "description": "Sentence of the deactivation dialog with the date of the deletion. {date} is a formatted date and time."
+  },
+  "settings.account.deactivate.confirm.password": {
+    "defaultMessage": "Enter your password to confirm.",
+    "description": "Asks for the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.confirm.passkey": {
+    "defaultMessage": "Your passkey confirms this.",
+    "description": "Tells that a passkey confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.external": {
+    "defaultMessage": "The sign-in at your linked account confirms this.",
+    "description": "Tells that the sign-in at a linked provider confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.code": {
+    "defaultMessage": "Enter a code from your authenticator app, or a recovery code, to confirm.",
+    "description": "Asks for a code of the second factor in the deactivation dialog."
+  },
+  "settings.account.deactivate.password": {
+    "defaultMessage": "Current password",
+    "description": "Label of the field with the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.password.required": {
+    "defaultMessage": "Enter your password.",
+    "description": "Error of the empty password field in the deactivation dialog."
+  },
+  "settings.account.deactivate.code": {
+    "defaultMessage": "Authentication code",
+    "description": "Label of the field with the code in the deactivation dialog."
+  },
+  "settings.account.deactivate.code.required": {
+    "defaultMessage": "Enter the code.",
+    "description": "Error of the empty code field in the deactivation dialog."
+  },
+  "settings.account.deactivate.use_code": {
+    "defaultMessage": "Use an authentication code instead",
+    "description": "Button in the deactivation dialog that confirms with a code in place of the password or the passkey."
+  },
+  "settings.account.deactivate.use_sign_in": {
+    "defaultMessage": "Confirm the other way",
+    "description": "Button in the deactivation dialog that goes back from the code to the password, the passkey, or the linked account."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "Deactivate",
+    "description": "Button of the dialog that deactivates the account."
+  },
+  "settings.account.deactivate.cancel": {
+    "defaultMessage": "Keep my account active",
+    "description": "Button that closes the deactivation dialog without deactivating."
+  },
+  "settings.account.deactivate.wrong_password": {
+    "defaultMessage": "The password is not correct.",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.wrong_code": {
+    "defaultMessage": "The code is not correct.",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.refused.login_restricted": {
+    "defaultMessage": "A moderation action keeps this account from signing in, so it cannot be deactivated.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.deletion_scheduled": {
+    "defaultMessage": "This account is waiting to be deleted, so it cannot be deactivated.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.already_deactivated": {
+    "defaultMessage": "This account is deactivated.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.moved": {
+    "defaultMessage": "This account moved to another account, so it cannot be deactivated.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.registration_pending": {
+    "defaultMessage": "Your registration is waiting for review, so this account cannot be deactivated.",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.paid_subscription": {
+    "defaultMessage": "Your supporter subscription is still running. Cancel it first; you can deactivate once it has ended.",
+    "description": "Why the account cannot be deactivated, followed by a link to the subscription."
+  },
+  "settings.account.deactivate.refused.subscription_link": {
+    "defaultMessage": "Manage your subscription",
+    "description": "Link from the refused deactivation to the page of the supporter subscription."
+  },
+  "settings.account.deactivate.refused.recently_reactivated": {
+    "defaultMessage": "You reactivated this account recently. You can deactivate it again from {date}.",
+    "description": "Why the account cannot be deactivated. {date} is a formatted date and time, 24 hours after the reactivation."
+  },
+  "settings.account.deactivate.refused.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in, so it cannot be deactivated. Make someone else an administrator first.",
+    "description": "Why the account cannot be deactivated."
   }
 }

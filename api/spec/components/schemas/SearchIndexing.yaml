@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   Whether the instance lets search engines index its pages (the instance setting
-  `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+  `search_indexing`). `allow`: the profiles and public posts of the accounts
   that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
   the reverse.
 type: string

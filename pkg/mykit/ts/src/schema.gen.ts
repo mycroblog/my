@@ -31,7 +31,7 @@ export interface paths {
         };
         /**
          * List the custom emoji of the picker
-         * @description The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+         * @description The custom emoji of the instance that the picker offers: every
          *     enabled local emoji that is not hidden from the picker, by category (those without one
          *     first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
          *     is not paginated.
@@ -54,10 +54,10 @@ export interface paths {
         };
         /**
          * List the custom emoji that the user made
-         * @description The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
+         * @description The local custom emoji that the user made, newest first, with what the user
          *     used of their monthly limit: the approved and pending requests to create an emoji that they
          *     submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
-         *     limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+         *     limit, and when the count resets. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
          */
         get: operations["listOwnCustomEmojis"];
         put?: never;
@@ -94,7 +94,7 @@ export interface paths {
         /**
          * Change a custom emoji that the user made
          * @description Changes the aliases, the category, and the place in the picker of a local emoji that the
-         *     user made, and keeps the rest (ADR-0070 §3); a new image is a request
+         *     user made, and keeps the rest; a new image is a request
          *     (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
          *     the change is recorded in the audit log. An emoji that is not one the user made is a 404.
          *     Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -111,7 +111,7 @@ export interface paths {
         };
         /**
          * List the user's custom emoji requests
-         * @description The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+         * @description The user's requests for new custom emoji and new images of their own,
          *     newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
          */
         get: operations["listCustomEmojiRequests"];
@@ -119,8 +119,7 @@ export interface paths {
         /**
          * Request a custom emoji or a new image of one
          * @description Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-         *     made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-         *     §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+         *     made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
          *     request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
          *     A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
          *     pending request reserves, a `create` request once the approved and pending `create`
@@ -200,16 +199,16 @@ export interface paths {
         /**
          * Get the health of the server
          * @description Whether the server can serve requests, for uptime monitors, status pages, and clients that
-         *     tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+         *     tell a server outage from their own network. The check is the readiness
          *     check's: the database is reachable and its schema is applied. Each process caches the
          *     result for 60 seconds and runs one check for concurrent requests, so the database is
          *     checked at most once a minute however often the endpoint is called. The endpoint takes no
          *     access token and counts against no rate limit.
          *
          *     The body holds only the fixed words of `status`, never the reason of a failure. During the
-         *     maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+         *     maintenance mode the answer is a 503 with `Retry-After` and
          *     `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
-         *     maintenance from an outage by the body (ADR-0085 §4).
+         *     maintenance from an outage by the body.
          */
         get: operations["getServerHealth"];
         put?: never;
@@ -255,8 +254,7 @@ export interface paths {
         };
         /**
          * List the domains that the instance moderates
-         * @description The moderation actions in effect on remote domains that the instance lists publicly
-         *     (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+         * @description The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
          *     setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
          *     `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
          *     token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
@@ -282,7 +280,7 @@ export interface paths {
         /**
          * Total the instance's public costs by period
          * @description The totals of the instance's costs that the instance setting `finance_visibility`
-         *     publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+         *     publishes. It takes the query of `GET /admin/cost_totals` and
          *     answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
          *     and the `rules` without `sources`, which would name the providers; `breakdown` gives the
          *     breakdown by provider, category, and currency, and the providers' rules. No level returns
@@ -309,8 +307,7 @@ export interface paths {
         };
         /**
          * Total the instance's public income by period
-         * @description The net income that the instance setting `income_visibility` publishes (FR-917,
-         *     ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+         * @description The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
          *     404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
          *     of members of each supporter plan now. Each period carries `balance`, the net less the
          *     costs, only while `finance_visibility` is not `private` either, since the balance would
@@ -339,7 +336,7 @@ export interface paths {
         /**
          * List the supporter plans
          * @description The supporter plans that take subscriptions, by rank, with their monthly and yearly
-         *     prices (ADR-0072 §18). A 404 while the supporter program is disabled
+         *     prices. A 404 while the supporter program is disabled
          *     (`Instance.supporters_enabled`).
          */
         get: operations["listSupporterPlans"];
@@ -362,7 +359,7 @@ export interface paths {
          * List the supporters who chose to be listed
          * @description The members of the supporter plans who chose to be listed (`PUT
          *     /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-         *     plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+         *     plan, with the plans that are not retired for the headings. Only each
          *     member's account is listed: never an amount, an interval, a date, or a count. Accounts
          *     that the viewer may not see are left out, so a page may be shorter than `limit`. The
          *     instance setting `supporter_list_visibility` decides who may read it: `off` makes it a
@@ -428,14 +425,14 @@ export interface paths {
         };
         /**
          * List the authenticated user's aliases
-         * @description The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+         * @description The accounts that the user moves from, which the user's actor names in
          *     `alsoKnownAs`, oldest first.
          */
         get: operations["listAccountAliases"];
         put?: never;
         /**
          * Add an alias to the authenticated user
-         * @description Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+         * @description Adds the account that the user moves from as an alias: the user's actor
          *     names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
          *     actor's `Update` goes to the user's followers as a profile change does. An alias alone
          *     changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -467,7 +464,7 @@ export interface paths {
         put?: never;
         /**
          * Remove an alias of the authenticated user
-         * @description Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+         * @description Removes an alias; the actor's `Update` goes to the user's followers as a
          *     profile change does. Removing an alias that the user does not have changes nothing.
          */
         post: operations["removeAccountAlias"];
@@ -509,7 +506,7 @@ export interface paths {
         };
         /**
          * Get the authenticated user's automatic deletion of old posts
-         * @description The policy that deletes the user's own posts some days after their publication (FR-118).
+         * @description The policy that deletes the user's own posts some days after their publication.
          *     A user who has never saved one gets the default policy, which is disabled.
          */
         get: operations["getAutoDeletePolicy"];
@@ -565,7 +562,7 @@ export interface paths {
         /**
          * List the badges that the authenticated user may show
          * @description The roles that the user holds and that have a badge, highest position first, with whether
-         *     the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+         *     the user shows each badge on their profile. Every badge is hidden until the user
          *     shows it.
          */
         get: operations["listBadgeChoices"];
@@ -590,7 +587,7 @@ export interface paths {
         get?: never;
         /**
          * Show or hide the badge of a role on the authenticated user's profile
-         * @description Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+         * @description Shows or hides the badge of a role that the user holds on their profile. The
          *     badge appears in `Account.badges` of the user's own account endpoints only, never on
          *     posts, in lists of accounts, or to other servers. A role that the user does not hold, or
          *     that has no badge, is a 404.
@@ -638,8 +635,7 @@ export interface paths {
         };
         /**
          * Get whether the authenticated user is on the supporter list
-         * @description Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-         *     ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+         * @description Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
          *     subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
          *     or `past_due` subscription) and while the program is disabled.
          */
@@ -659,6 +655,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/deactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get what deactivating the authenticated user's account would do now
+         * @description The date the account would be deleted if the user deactivated it now, and why it cannot
+         *     be deactivated now, if so. It changes nothing.
+         */
+        get: operations["getDeactivationPreview"];
+        put?: never;
+        /**
+         * Deactivate the authenticated user's account
+         * @description Deactivates the user's own account, after checking the user's current `password`, a
+         *     `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+         *     login provider. The account and its posts are hidden from everyone, every session and
+         *     token of the user ends, and the other servers get an `Update` of the actor marked
+         *     `suspended`. Where the server sends mail, one email states the date of the deletion.
+         *
+         *     The user signs in again to reactivate it, on a page of the server, within 30 days;
+         *     after that the account is deleted, and the other servers get a `Delete` of the actor.
+         *     While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+         *     emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+         *     hours after its reactivation.
+         *
+         *     A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+         *     `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+         *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+         *     `/api/v1/problems/passkey-confirmation-expired` or
+         *     `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+         *     now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+         *     keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+         *     review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+         *     less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+         */
+        post: operations["deactivateOwnAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/delete": {
         parameters: {
             query?: never;
@@ -671,7 +712,7 @@ export interface paths {
         /**
          * Delete the authenticated user's account
          * @description Deletes the user's own account at once, after checking the user's current `password`
-         *     or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+         *     or a `passkey` of the user; a user without a password confirms with a passkey.
          *     The account and its posts disappear, every session and token of the user ends, and the
          *     other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
          *     undone, and the username is never reused. The only administrator of the instance gets a
@@ -703,7 +744,7 @@ export interface paths {
         put?: never;
         /**
          * Move the authenticated user's account to another account
-         * @description Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+         * @description Moves the user's account to the account `target_account_id`, after
          *     checking the user's current `password` or a `passkey` of the user; a user without a
          *     password confirms with a passkey. Find the target's ID with
          *     `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -752,7 +793,7 @@ export interface paths {
         put?: never;
         /**
          * Cancel the move of the authenticated user's account
-         * @description Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+         * @description Cancels the move of the user's account: the account no longer names the target,
          *     can post, boost, react, follow, and vote again, and the other servers get an `Update` of
          *     its actor without `movedTo`. The followers that moved stay with the target, and the next
          *     move still waits 30 days from the cancelled one. An account that has not moved gets a 409
@@ -774,8 +815,7 @@ export interface paths {
         };
         /**
          * Get whether the authenticated user has a password
-         * @description Whether the user signs in with a password, or with passkeys only after removing it
-         *     (FR-004).
+         * @description Whether the user signs in with a password, or with passkeys only after removing it.
          */
         get: operations["getPasswordStatus"];
         put?: never;
@@ -785,7 +825,7 @@ export interface paths {
          *     (`login_providers_only` of `GET /instance`), it is a 403
          *     `/api/v1/problems/login-providers-only`: a new password could not sign in.
          *     Replaces the user's password with `new_password` after checking `current_password` or
-         *     a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+         *     a `passkey` of the user; a user without a password sets one with a passkey.
          *     Every other session and grant of the user ends: the user is signed out of the server's
          *     sign-in pages and of every app but the one that makes the request, whose tokens keep
          *     working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -819,8 +859,7 @@ export interface paths {
         /**
          * Remove the authenticated user's password
          * @description Removes the password of a user who has a passkey or a linked account, after checking a
-         *     `passkey` of the user or an `external_confirmation` from a linked login provider
-         *     (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+         *     `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
          *     authentication still enters a code after one. A password reset link or
          *     `POST /accounts/password` with a passkey sets a password again. Every other session and
          *     grant of the user ends, as a change of the password does, and the user is told by email
@@ -851,7 +890,7 @@ export interface paths {
         put?: never;
         /**
          * Send the authenticated user a new verification email
-         * @description Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+         * @description Sends a new verification email to the user's primary email address,
          *     such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
          *     following its link shows that the address works and lifts the suppression. Earlier links
          *     keep working until they expire. The email is queued and sent in the background, so a 202
@@ -883,7 +922,7 @@ export interface paths {
         put?: never;
         /**
          * Request an archive of the authenticated user's data
-         * @description Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+         * @description Starts building a ZIP archive of the user's data: `actor.json` (the actor),
          *     `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
          *     activities), `moderation.json` (the moderation actions on the account, its appeals, and
          *     the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
@@ -930,7 +969,7 @@ export interface paths {
         /**
          * Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
          * @description Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-         *     Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+         *     Mastodon and this server import: `following` is `following_accounts.csv`
          *     (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
          *     `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
          *     `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
@@ -966,7 +1005,7 @@ export interface paths {
         put?: never;
         /**
          * Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
-         * @description Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+         * @description Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
          *     entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
          *     `overwrite` also removes what the user has of `kind` that the file does not list. The
          *     server carries the import out in the background: it resolves remote accounts and posts
@@ -1339,7 +1378,7 @@ export interface paths {
          * @description One entry per browser session that still works or from which a grant of the server's own web
          *     client still works, the browser that asks first, then the most recently used first. The apps
          *     the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-         *     may call it (ADR-0090 §4).
+         *     may call it.
          */
         get: operations["listSessions"];
         put?: never;
@@ -1362,8 +1401,7 @@ export interface paths {
         /**
          * Sign out every browser but the one that asks
          * @description Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-         *     succeeds when there is no other browser. Only the server's own clients may call it
-         *     (ADR-0090 §4).
+         *     succeeds when there is no other browser. Only the server's own clients may call it.
          */
         post: operations["revokeOtherSessions"];
         delete?: never;
@@ -1389,7 +1427,7 @@ export interface paths {
          *     password, two-factor authentication, and the apps the user authorized stay. An ID that is not
          *     in the user's list is a 404, and the browser that asks is a 409 with the type
          *     `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-         *     call it (ADR-0090 §4).
+         *     call it.
          */
         delete: operations["revokeSession"];
         options?: never;
@@ -1409,7 +1447,7 @@ export interface paths {
          * @description One entry per client for which the user holds a grant that still works, most recently used
          *     first (an app without a recorded use after those with one, newest authorization first). A
          *     revoked or expired grant is not listed. The server's own web client is listed too
-         *     (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+         *     (`first_party`). Only the server's own clients may call it.
          */
         get: operations["listAuthorizedApps"];
         put?: never;
@@ -1435,7 +1473,7 @@ export interface paths {
          * @description Revokes every grant of the app that the user holds, so that its access and refresh tokens
          *     stop working at once (the next request with one is a 401). Revoking the server's own web
          *     client signs the user out of every browser, this one included. An app the user holds no
-         *     working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+         *     working grant of is a 404. Only the server's own clients may call it.
          */
         delete: operations["revokeAuthorizedApp"];
         options?: never;
@@ -1459,7 +1497,7 @@ export interface paths {
         /**
          * Register an OAuth app
          * @description Registers a public or confidential app of the user for a bot, a script, or a client of
-         *     their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+         *     their own. A confidential app's `client_secret` is in this response only.
          *     Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
          *     may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
          *     stops working while the user cannot use the server (suspended or deleted).
@@ -1554,7 +1592,7 @@ export interface paths {
         /**
          * Issue tokens of an OAuth app to the authenticated user
          * @description Issues an access token and a refresh token of the app for the user's own account,
-         *     without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+         *     without the consent screen and a redirect: the usual pair with the usual
          *     lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
          *     app's is a 422 naming `scope`, and an app that an administrator disabled a 409
          *     `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -1582,7 +1620,7 @@ export interface paths {
          *     deactivated, or is deleted is a 404, the same as an unknown one.
          *
          *     With `resolve=true`, a remote account that the instance does not know yet is fetched
-         *     from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+         *     from its server: a handle through WebFinger, a URL directly. Only accounts
          *     whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
          *     is a 404. Resolving needs an access token (anonymous requests get the 401 of
          *     `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every
@@ -1634,8 +1672,7 @@ export interface paths {
          * Search accounts by name
          * @description The accounts whose username, `username@domain`, or a word of the display name starts
          *     with `q`, and the accounts of this server whose username or display name contains `q`,
-         *     for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-         *     ADR-0092). The search covers the local accounts and the remote accounts that the
+         *     for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
          *     instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
          *     (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
          *     `resolve=true`).
@@ -1671,7 +1708,7 @@ export interface paths {
         };
         /**
          * Suggest accounts to follow
-         * @description Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+         * @description Accounts of this server for the viewer to follow: first the accounts that the
          *     administrators feature (the instance setting `featured_accounts`), in the order they gave,
          *     then the accounts that published a public or local post in the last 30 days, the one that
          *     posted last first. Each account comes once.
@@ -1722,7 +1759,7 @@ export interface paths {
         /**
          * Block an account
          * @description Ends the follows between the viewer and the account in both directions and keeps
-         *     either from following the other until the block is lifted (FR-303). Blocking an
+         *     either from following the other until the block is lifted. Blocking an
          *     account that the viewer already blocks changes nothing, and an account that blocks the
          *     viewer can be blocked back. Blocking a remote account
          *     also sends a Block to its server.
@@ -1751,7 +1788,7 @@ export interface paths {
         /**
          * Follow an account
          * @description Follows the account at once, or sends a follow request when the account is locked:
-         *     then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+         *     then `requested` is true until the account accepts it. Following an
          *     account that the viewer already follows or has requested to follow changes only the
          *     preferences in the body. Following an account that the viewer blocks is a 409
          *     `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -1846,7 +1883,7 @@ export interface paths {
         /**
          * Mute an account
          * @description Hides the account's posts, and unless `notifications` is false its notifications,
-         *     from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+         *     from the viewer. Muting an account that the viewer already mutes replaces the
          *     settings and the expiry.
          */
         post: operations["muteAccount"];
@@ -1985,7 +2022,7 @@ export interface paths {
         put?: never;
         /**
          * Accept a follow request
-         * @description Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+         * @description Makes the account's pending follow of the viewer active. Accepting a follow
          *     that is already active changes nothing; without a follow it is a 404.
          */
         post: operations["acceptFollowRequest"];
@@ -2006,7 +2043,7 @@ export interface paths {
         put?: never;
         /**
          * Reject a follow request
-         * @description Declines the account's pending follow request (FR-302); without one it is a 404.
+         * @description Declines the account's pending follow request; without one it is a 404.
          */
         post: operations["rejectFollowRequest"];
         delete?: never;
@@ -2052,7 +2089,7 @@ export interface paths {
         /**
          * Mute a domain
          * @description Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-         *     other than home, their boosts from home, and their notifications (FR-304). The accounts
+         *     other than home, their boosts from home, and their notifications. The accounts
          *     of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
          *     domain. Muting a domain that the viewer already mutes changes nothing. The domain is
          *     normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -2273,7 +2310,7 @@ export interface paths {
         };
         /**
          * List the moderation actions on the authenticated user's account
-         * @description The actions that moderators took on the user's own account (FR-715), newest first,
+         * @description The actions that moderators took on the user's own account, newest first,
          *     lifted and expired ones included unless `active` is set, also those that the user was
          *     not notified of. Each carries what the moderators chose to tell the user; never their
          *     private note, the report the action follows from, or who filed it. `kind_label` and
@@ -2299,7 +2336,7 @@ export interface paths {
         put?: never;
         /**
          * Appeal a moderation action on the authenticated user's account
-         * @description Asks the moderators to reconsider an action on the user's own account (FR-707), once
+         * @description Asks the moderators to reconsider an action on the user's own account, once
          *     per action and until its `appeal_deadline` (the instance's appeal window from the
          *     action, 180 days by default; for a `ban`, also no later than the deletion of the
          *     account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -2455,7 +2492,7 @@ export interface paths {
          *     returns the status posted with it, before the post rate limit and the other checks of
          *     a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
          *     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-         *     poll outside the limits of `PollInput` is a 422 (FR-112).
+         *     poll outside the limits of `PollInput` is a 422.
          */
         post: operations["createStatus"];
         delete?: never;
@@ -2671,7 +2708,7 @@ export interface paths {
         put?: never;
         /**
          * Vote in the poll of a status
-         * @description Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+         * @description Votes for one or more choices of the poll of a status. `poll_id` names the poll
          *     the user saw: a poll that an edit of the status replaced is a 409. A status without a
          *     poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
          *     unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -2756,7 +2793,7 @@ export interface paths {
         get?: never;
         /**
          * Change who may quote the authenticated user's status
-         * @description Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+         * @description Changes the `quote_policy` of a status of the user; the approvals given
          *     before stay, and each is revoked on its own. Another account's status is a 403 when the
          *     user may see it and a 404 otherwise.
          */
@@ -2781,7 +2818,7 @@ export interface paths {
         /**
          * List the statuses that quote the authenticated user's status
          * @description The statuses that quote a status of the user, newest first, each with its `quote` and
-         *     its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+         *     its state. Statuses the user may not see, and quotes taken away, are left
          *     out, so a page may hold fewer than `limit` statuses before the last. Another account's
          *     status is a 404, and so is the user's own `direct` status without `read:direct`, which
          *     also leaves out the `direct` statuses that quote one.
@@ -2811,7 +2848,7 @@ export interface paths {
         put?: never;
         /**
          * Revoke the approval of a quote of the authenticated user's status
-         * @description Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+         * @description Withdraws this server's approval of the quote: the quote shows the quoted
          *     status no more, and the quoting server is told. A quote without this server's approval
          *     (from software without approvals, or of the user's own status) is a 404, as is one revoked
          *     already.
@@ -2890,7 +2927,7 @@ export interface paths {
         /**
          * Search hashtags by prefix
          * @description The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-         *     form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+         *     form and the hashtag search. `q` and the names are compared
          *     under NFKC and lowercase.
          *
          *     Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now
@@ -2961,7 +2998,7 @@ export interface paths {
         /**
          * Get the federated timeline
          * @description The public posts of the instance's accounts and of the remote accounts whose posts the
-         *     instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+         *     instance holds, newest first, in the viewer's timeline languages. Posts of other
          *     visibilities, `local` ones included, and boosts never appear on it. The instance setting
          *     `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
          *     is `signed_in` an anonymous request is a 401.
@@ -3029,7 +3066,7 @@ export interface paths {
         /**
          * List the reports that the authenticated user filed
          * @description The reports that the user filed, newest first, each with whether it is still open or
-         *     resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+         *     resolved. A report reopened by the moderators is open again. It never tells how
          *     a report was resolved, which actions it led to, the reasons given to the account, or
          *     who handles it. A report stays listed when the user may no longer see its target (the
          *     account is suspended, deleted, or blocks the user), without `target_account`. A report
@@ -3040,7 +3077,7 @@ export interface paths {
         put?: never;
         /**
          * Report an account
-         * @description Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+         * @description Reports an account, and optionally some of its posts, to the moderators. The
          *     report waits, open, in the moderators' queue; nothing tells the account of it, and
          *     nothing that the account can read names the reporter. 422 when the account does not
          *     exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -3064,7 +3101,7 @@ export interface paths {
         };
         /**
          * List the announcements
-         * @description The server's announcements that every local user sees now (FR-726): published, and
+         * @description The server's announcements that every local user sees now: published, and
          *     within their window. The ones whose `published_at` is the latest come first, each with
          *     whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
          *     through the past ones too.
@@ -3087,7 +3124,7 @@ export interface paths {
         };
         /**
          * Get an announcement
-         * @description One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+         * @description One announcement of `listAnnouncementHistory`: a published one whose `published_at`
          *     has passed, one whose window has ended included (`ended`), with whether the user has read
          *     it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
          */
@@ -3131,7 +3168,7 @@ export interface paths {
         };
         /**
          * List the announcements, past ones included
-         * @description The server's announcements that have started to show to the local users (FR-726): the
+         * @description The server's announcements that have started to show to the local users: the
          *     published ones whose `published_at` has passed, those whose window has ended included
          *     (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
          *     first, each with whether the user has read it. Only the announcements that show now can be
@@ -3260,7 +3297,7 @@ export interface paths {
         };
         /**
          * Total the costs by period for the finance viewers
-         * @description The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+         * @description The totals of the instance's costs for the holders of `view_finance`. It
          *     takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
          *     by provider, category, and currency, and the rules that cut the periods. Each period adds
          *     `items`, the amount of each cost item and each service of the imported costs, only while
@@ -3291,7 +3328,7 @@ export interface paths {
         };
         /**
          * Total the income by period for the finance viewers
-         * @description The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+         * @description The income totals for the holders of `view_finance`. It takes
          *     the query of `GET /admin/cost_totals` and always answers the net of each currency by
          *     period with its `balance` against the costs, whatever `income_visibility` and
          *     `finance_visibility` publish. `plans`, the number of members of each supporter plan now,
@@ -3321,7 +3358,7 @@ export interface paths {
         /**
          * Get the authenticated user's supporter subscription
          * @description The user's subscription that goes on (any state but `expired`, `revoked`, and
-         *     `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+         *     `abandoned`), and why the user cannot subscribe when they cannot. A 404
          *     while the supporter program is disabled (`Instance.supporters_enabled`).
          */
         get: operations["getOwnSupporterSubscription"];
@@ -3345,8 +3382,7 @@ export interface paths {
         /**
          * Start a subscription to a supporter plan
          * @description Starts a subscription to a plan at an interval and returns the payment provider's hosted
-         *     checkout, which the client opens in the same tab; no card details reach this server
-         *     (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+         *     checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
          *     Starting again while the subscription is `pending` makes a new checkout of the same
          *     subscription. Only a local user with a verified primary address and without another
          *     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -3375,7 +3411,7 @@ export interface paths {
          * Re-read the authenticated user's subscription from the payment provider
          * @description What the web client sends when the payment provider's checkout or portal returns to it:
          *     it queues a re-read of the user's subscription from the provider, without waiting for its
-         *     webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+         *     webhook, and answers the subscription as it is now. Read it again to see the
          *     result. A 404 while the program is disabled.
          */
         post: operations["syncOwnSupporterSubscription"];
@@ -3396,7 +3432,7 @@ export interface paths {
         put?: never;
         /**
          * Change the plan or the interval of the authenticated user's subscription
-         * @description Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+         * @description Changes an `active` subscription to another plan or interval: to a higher
          *     plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
          *     or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
          *     current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -3426,7 +3462,7 @@ export interface paths {
         /**
          * Cancel the authenticated user's subscription at the end of its period
          * @description Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-         *     stays until then (`canceling`, ADR-0072 §7). A 409
+         *     stays until then (`canceling`). A 409
          *     `/api/v1/problems/supporter-subscription-state` in another state.
          */
         post: operations["cancelOwnSupporterSubscription"];
@@ -3469,7 +3505,7 @@ export interface paths {
         /**
          * Withdraw the scheduled change of the authenticated user's subscription
          * @description Withdraws the change to a lower plan or to the monthly price that waits for the end of
-         *     the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+         *     the period; the subscription renews at its current plan and interval. A 409
          *     `/api/v1/problems/supporter-subscription-state` without a scheduled change.
          */
         post: operations["cancelOwnSupporterScheduledChange"];
@@ -3491,7 +3527,7 @@ export interface paths {
         /**
          * Open the payment provider's portal of the authenticated user
          * @description The payment provider's portal of the user's payment methods and invoices, which returns
-         *     to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+         *     to `/settings/supporter` of the web client. Plans change on this server, not in
          *     the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
          *     know.
          */
@@ -4195,7 +4231,7 @@ export interface paths {
         /**
          * Get the state of the job queue
          * @description The jobs of the job queue by state and type, when the oldest due job has been waiting
-         *     since, and what the queue can list (ADR-0064). The database queue and the inline queue
+         *     since, and what the queue can list. The database queue and the inline queue
          *     list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
          *     (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
          *     backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
@@ -4382,7 +4418,7 @@ export interface paths {
         };
         /**
          * List the audit log
-         * @description The operations of the moderators and administrators (FR-704), newest first: who did
+         * @description The operations of the moderators and administrators, newest first: who did
          *     what to which target and when. Each entry keeps the target's display name as it was
          *     (`target_label`), so it stays readable after the target is gone; the reasons and notes
          *     stay with the operation itself (`source_event_id`). The audit log cannot be changed or
@@ -4407,7 +4443,7 @@ export interface paths {
         };
         /**
          * List the state of the billing imports
-         * @description The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+         * @description The state of the imports of every cloud provider of `billing_sources`, in its
          *     order: the last attempt and its failure, the last success, the billed requests of the UTC
          *     day and month with their caps, the bytes billed this month, and the billing months of the
          *     last year with imported costs, each an estimate, final, or corrected, with its totals. The
@@ -4433,7 +4469,7 @@ export interface paths {
         put?: never;
         /**
          * Import a provider's usage charges now
-         * @description Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+         * @description Queues an import of the billing source now, besides the daily one. Its
          *     billed requests count toward the caps like the others. One import per source and UTC
          *     hour: another request in the hour after its import ran is a 429. A source that
          *     `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -4455,7 +4491,7 @@ export interface paths {
         };
         /**
          * List the cost items
-         * @description The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+         * @description The instance's cost items that are not canceled, newest first.
          *     Needs the `manage_finance` permission.
          */
         get: operations["listCostItems"];
@@ -4463,7 +4499,7 @@ export interface paths {
         /**
          * Record a cost item
          * @description Records a cost of the instance: once, or every N weeks, months, or years from the start
-         *     date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+         *     date. A value the server rejects is a 422 naming it: `interval` outside 1
          *     to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
          *     `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
          *     amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -4579,7 +4615,7 @@ export interface paths {
         /**
          * Total the costs by period
          * @description The totals of the cost items and the imported usage charges for each week, month, or
-         *     year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+         *     year from the one that holds `from` to the one that holds `to`, by
          *     currency and broken down by provider and category, with the rules that cut the periods.
          *     The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
          *     `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.
@@ -4603,7 +4639,7 @@ export interface paths {
         /**
          * Total the income by period
          * @description The totals of the payment provider's money movements for each week, month, or year from
-         *     the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+         *     the one that holds `from` to the one that holds `to`: the gross, the
          *     provider's fees, and the net of each currency, the balance against the costs of
          *     `GET /admin/cost_totals` under the same basis, the number of members of each supporter
          *     plan now, and the rules that cut the periods. The totals are computed on every read. More
@@ -4628,7 +4664,7 @@ export interface paths {
         };
         /**
          * List the money movements of the income
-         * @description The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+         * @description The payment provider's money movements that the income records keep, newest
          *     first by the time the provider booked them, narrowed to the dates they fall on and a
          *     kind, with the subscriber's account of each. Only this operation and the admin screen
          *     show individual movements and their subscribers. Needs the `manage_finance` permission.
@@ -4651,14 +4687,14 @@ export interface paths {
         };
         /**
          * List the moderation actions on domains
-         * @description The actions that moderators took on remote domains (FR-702), newest first, lifted and
+         * @description The actions that moderators took on remote domains, newest first, lifted and
          *     expired ones included unless `active` is set. Needs the `manage_domains` permission.
          */
         get: operations["listDomainActions"];
         put?: never;
         /**
          * Take a moderation action on a domain
-         * @description Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+         * @description Records an action on a remote domain and its subdomains, in effect at once and
          *     until it expires or is lifted. A `suspend` stops every delivery to the domain, every
          *     fetch from it, and every activity received from it, and hides its accounts and posts
          *     from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -4705,7 +4741,7 @@ export interface paths {
         };
         /**
          * List the error groups
-         * @description The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+         * @description The groups of the errors that the server and the web client reported, the
          *     most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
          *     and `source` keep the groups of that state and source. Needs the `manage_errors`
          *     permission.
@@ -4844,7 +4880,7 @@ export interface paths {
         };
         /**
          * List the reports
-         * @description The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+         * @description The reports in the moderators' queue, newest first unless `order` is `oldest`.
          *     Needs the `manage_reports` permission.
          */
         get: operations["listReports"];
@@ -4951,7 +4987,7 @@ export interface paths {
         put?: never;
         /**
          * Write a note on a report
-         * @description Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+         * @description Adds an internal note to the report. Notes are shown to the moderators only,
          *     never to the target or the reporter, and cannot be edited or removed. An unknown ID is
          *     a 404. Needs the `manage_reports` permission.
          */
@@ -5016,7 +5052,7 @@ export interface paths {
         };
         /**
          * List the moderation actions on an account
-         * @description The actions that moderators took on an account (FR-703), newest first, lifted and
+         * @description The actions that moderators took on an account, newest first, lifted and
          *     expired ones included unless `active` is set. An unknown account is a 404. Needs the
          *     `manage_accounts` permission.
          */
@@ -5024,7 +5060,7 @@ export interface paths {
         put?: never;
         /**
          * Take a moderation action on an account
-         * @description Records an action on an account (FR-703), in effect at once and until it expires or is
+         * @description Records an action on an account, in effect at once and until it expires or is
          *     lifted; several actions on one account add up. On a local account: `warn` only tells
          *     the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
          *     past ones included, followers-only and keeps them off the public timelines;
@@ -5111,7 +5147,7 @@ export interface paths {
         };
         /**
          * List the instance rules
-         * @description Every rule (FR-705): the rules in effect by position, followed, when
+         * @description Every rule: the rules in effect by position, followed, when
          *     `include_retired` is set, by the retired ones. The list is not paginated; at most 100
          *     rules are in effect. Needs the `manage_rules` permission.
          */
@@ -5211,7 +5247,7 @@ export interface paths {
         };
         /**
          * List the announcements
-         * @description Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+         * @description Every announcement, drafts and withdrawn ones included, newest first. The
          *     list is not paginated. Needs the `manage_announcements` permission.
          */
         get: operations["listAdminAnnouncements"];
@@ -5318,7 +5354,7 @@ export interface paths {
         };
         /**
          * Read the instance theme
-         * @description The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+         * @description The current theme of the web client: the overridden design tokens and the
          *     custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
          *     `manage_settings` permission.
          */
@@ -5329,7 +5365,7 @@ export interface paths {
          *     pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
          *     few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
          *     their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-         *     change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+         *     change are kept (the audit log's `setting_changed` of `theme`).
          *
          *     The overridable tokens are the web client's design tokens except the primitive palette
          *     (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -5429,7 +5465,7 @@ export interface paths {
          *     `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
          *     the PNGs show the same picture as the SVG.
          *
-         *     The revision and the change are kept (`instance_brand_revisions`, the audit log's
+         *     The revision and the change are kept (the audit log's
          *     `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
          *     revision stay at their URLs. Needs the `manage_settings` permission.
          */
@@ -5455,7 +5491,7 @@ export interface paths {
         };
         /**
          * List the custom emoji
-         * @description The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+         * @description The custom emoji, local and remote, newest first. `local` keeps the
          *     emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
          *     one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
          *     Needs the `manage_custom_emojis` permission.
@@ -5581,7 +5617,7 @@ export interface paths {
         };
         /**
          * List the custom emoji requests
-         * @description The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+         * @description The custom emoji requests of the holders of `create_custom_emojis`, newest
          *     first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
          */
         get: operations["listAdminCustomEmojiRequests"];
@@ -5607,7 +5643,7 @@ export interface paths {
         put?: never;
         /**
          * Approve a custom emoji request
-         * @description Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+         * @description Approves a pending request: a `create` request makes the local emoji,
          *     without a category, in the picker, and enabled, whose creator is the requester; an `image`
          *     request gives the emoji the requested image. The image is copied as an upload of the
          *     instance. The approval and the emoji's registration or new image are recorded in the
@@ -5639,7 +5675,7 @@ export interface paths {
         /**
          * Reject a custom emoji request
          * @description Rejects a pending request, with an optional reason that the requester sees, which frees
-         *     its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+         *     its shortcode. The rejection is recorded in the audit log, and the requester
          *     is notified. A reason longer than 500 characters is a 422 with the reason
          *     `invalid_reason`; a request that is not pending is a 409
          *     `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -5661,7 +5697,7 @@ export interface paths {
         };
         /**
          * List the instance texts
-         * @description The current text of every key that has one (FR-705): the name, the descriptions, the
+         * @description The current text of every key that has one: the name, the descriptions, the
          *     terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
          *     the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
          *     texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
@@ -5688,7 +5724,7 @@ export interface paths {
          * @description Records a revision of the text of `key`, which becomes its current text in every locale:
          *     the administrator writes it once, in any language, and readers of every locale see the
          *     same value. An empty `body` clears the text. The revision and the change are kept
-         *     (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+         *     (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
          *     sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
          *     `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
          *     the other texts are plain text. The display name (`name`) names the instance to people
@@ -5720,7 +5756,7 @@ export interface paths {
          * Count what awaits the moderators
          * @description The number of open reports (with the `manage_reports` permission), and of registrations
          *     that await approval and appeals that await a decision (with the `manage_accounts`
-         *     permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+         *     permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
          *     user without either gets an empty object.
          */
         get: operations["getAdminCounts"];
@@ -5741,7 +5777,7 @@ export interface paths {
         };
         /**
          * Search the accounts
-         * @description The local and remote accounts (FR-714), newest first, without the instance actor:
+         * @description The local and remote accounts, newest first, without the instance actor:
          *     those whose handle's username starts with `username` (case-insensitively; a remote
          *     account whose handle is not verified has none), on a `domain`, local or remote
          *     (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,
@@ -5772,7 +5808,7 @@ export interface paths {
         };
         /**
          * Get the details of an account
-         * @description An account as the moderators see it (FR-714): its state, the restrictions of its own
+         * @description An account as the moderators see it: its state, the restrictions of its own
          *     actions, and, for a local account, its registration, whether its email address is
          *     verified, and its roles, with its newest 20 actions and, for a viewer who also has the
          *     `manage_reports` permission, its newest 20 reports. The email address and the IP
@@ -5800,10 +5836,9 @@ export interface paths {
         /**
          * Show the email address and the IP addresses of a local account
          * @description The primary email address of a local account, where it registered and its newest 20
-         *     sign-ins came from, and up to 20 other accounts per IP address that used the same one
-         *     (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
+         *     sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
          *     anything is returned; it changes nothing else. IP addresses are kept for the retention
-         *     of the sign-in and registration origins only (ADR-0038). A remote account or the
+         *     of the sign-in and registration origins only. A remote account or the
          *     instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
          *     user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
@@ -5827,7 +5862,7 @@ export interface paths {
         /**
          * Remove the two-factor authentication of a local account
          * @description Ends the TOTP enrollment of a local account's user, who lost their authenticator app
-         *     and recovery codes, so that they sign in with the password alone (FR-005). It is
+         *     and recovery codes, so that they sign in with the password alone. It is
          *     recorded in the audit log as `two_factor_disabled`. A remote account or the instance
          *     actor is a 422 naming `id`, an account without two-factor authentication a 409
          *     `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
@@ -5854,7 +5889,7 @@ export interface paths {
          * Issue a password reset link for a local account
          * @description Issues a link that sets a new password for a local account's user, for an
          *     administrator to hand to the user, such as when the server sends no email or the
-         *     email does not arrive (FR-002). The link works once, for an hour, and stops working
+         *     email does not arrive. The link works once, for an hour, and stops working
          *     when the password changes otherwise; only its hash is stored, so this response is the
          *     only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
          *     Whoever holds the link can set the password: confirm who the user is through another
@@ -5882,7 +5917,7 @@ export interface paths {
         /**
          * Lift the suppression of the email address of a local account
          * @description Lets the server send email again to the primary address of a local account's user, which
-         *     a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+         *     a hard bounce or a complaint suppressed, such as after the user fixed their
          *     mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
          *     the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
          *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
@@ -5906,8 +5941,7 @@ export interface paths {
         };
         /**
          * List the roles
-         * @description The roles of the instance, highest position first, with the permissions they grant
-         *     (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+         * @description The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
          *     and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
          *     `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
          */
@@ -5960,7 +5994,7 @@ export interface paths {
          *     `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
          *     `moderator` takes a new position and permissions like any other role. A change that would
          *     break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-         *     hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+         *     hides it from every holder's profile. A role, or a new position, above every
          *     role of the viewer is a 403. A position, permissions, or badge that break a rule, or
          *     adding or removing a permission that the viewer's roles do not grant, is a 422
          *     `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -6035,7 +6069,7 @@ export interface paths {
         };
         /**
          * List the appeals of moderation actions
-         * @description The appeals that local users made of the actions on their accounts (FR-707), newest
+         * @description The appeals that local users made of the actions on their accounts, newest
          *     first, each with its action. Needs the `manage_accounts` permission.
          */
         get: operations["listAppeals"];
@@ -6134,7 +6168,7 @@ export interface paths {
         };
         /**
          * List the registrations that await approval
-         * @description The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+         * @description The sign-ups that wait for a moderator's decision, with the reasons their
          *     applicants gave, longest waiting first. Needs the `manage_accounts` permission.
          */
         get: operations["listPendingRegistrations"];
@@ -6206,14 +6240,14 @@ export interface paths {
         };
         /**
          * List the sign-up blocks
-         * @description The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+         * @description The blocks on sign-ups from the registration page, newest first, lifted and
          *     expired ones included unless `active` is set. Needs the `manage_accounts` permission.
          */
         get: operations["listSignupBlocks"];
         put?: never;
         /**
          * Block sign-ups
-         * @description Records a block on sign-ups from the registration page (FR-719), in effect at once and
+         * @description Records a block on sign-ups from the registration page, in effect at once and
          *     until it expires or is lifted; the block is audited. A sign-up whose email address or
          *     client address it matches is refused (`reject`) or starts pending for a moderator
          *     whatever the registration mode (`require_approval`); the page does not tell the
@@ -6283,7 +6317,7 @@ export interface paths {
         put?: never;
         /**
          * Block sign-ups from a list
-         * @description Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+         * @description Adds a block on sign-ups for each value of a list, such as a public list of
          *     disposable email domains, all with the same kind, severity, comment, and duration. The
          *     list has one value per line in any form that `createSignupBlock` takes, or a CSV row
          *     whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -6312,7 +6346,7 @@ export interface paths {
         };
         /**
          * Export the domain actions as Mastodon's domain block CSV
-         * @description The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+         * @description The domain actions in effect as the CSV that Mastodon's moderation screens
          *     import, with the header
          *     `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
          *     per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on
@@ -6342,7 +6376,7 @@ export interface paths {
         put?: never;
         /**
          * Preview the import of a Mastodon domain block CSV
-         * @description Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+         * @description Reads a domain block CSV that Mastodon exported and says what importing each
          *     row would do, without changing anything. A file whose first field is `#domain` has a
          *     header naming the columns; any other file is a list of domains, one per row, each
          *     suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -6369,7 +6403,7 @@ export interface paths {
         put?: never;
         /**
          * Import the chosen rows of a Mastodon domain block CSV
-         * @description Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+         * @description Issues the domain actions of each block, as the preview names them: the kinds
          *     of the block that no action in effect on the domain or a parent domain has already. The
          *     actions last until they are lifted, carry the block's public comment and obfuscation
          *     and the request's private note, and are audited like actions issued one at a time. A
@@ -6395,7 +6429,7 @@ export interface paths {
         };
         /**
          * List the instance settings
-         * @description Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+         * @description Every instance setting: its current
          *     value, or its default when it has never been set, with what it accepts. The policies
          *     that administrators change at run time live here; the deployment configuration does
          *     not. Needs the `manage_settings` permission.
@@ -6453,7 +6487,7 @@ export interface paths {
         };
         /**
          * List the user's own invites
-         * @description The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+         * @description The invites that the user created as a member, newest first, with how they
          *     have been used, and what the user may do: whether they may create an invite now
          *     (`can_create`), the caps of the instance settings, and how many usable invites they hold.
          *     A user who may no longer create invites still lists and revokes the ones they made; an
@@ -6465,7 +6499,7 @@ export interface paths {
         /**
          * Create an invite of the user's own
          * @description Creates an invite with a new random code that people use to sign up while the
-         *     registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+         *     registration mode is `open`, `approval`, or `invite`. In `approval` mode a
          *     person who signs up with it is approved at once. The user may create one when the
          *     instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
          *     their account is neither suspended nor limited, their registration is approved, and the
@@ -6519,7 +6553,7 @@ export interface paths {
         /**
          * List the invites
          * @description The invites that let people sign up while the registration mode is `open`, `approval`,
-         *     or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+         *     or `invite`, newest first, with how they have been used and who
          *     created them: the staff's and the members' own invites. Needs the `manage_invites`
          *     permission.
          */
@@ -6572,9 +6606,9 @@ export interface paths {
         };
         /**
          * Read the service closure
-         * @description The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+         * @description The state of the closure of the service with the schedule in effect,
          *     and whether its notice is short; once the server is closed, the progress of the closure's
-         *     `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
+         *     `Delete`s. Needs the `manage_service_closure` permission.
          */
         get: operations["getAdminServiceClosure"];
         put?: never;
@@ -6595,7 +6629,7 @@ export interface paths {
         get?: never;
         /**
          * Announce the closure of the service
-         * @description Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+         * @description Announces that the server closes at `closes_at`, or changes the dates
          *     of the announcement in effect. Each call records a new announcement, kept with the earlier
          *     ones, and the audit log's `service_closure_announced`. The announcement shows in
          *     `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -6608,7 +6642,7 @@ export interface paths {
         post?: never;
         /**
          * Withdraw the announcement of the closure
-         * @description Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+         * @description Withdraws the announcement in effect: the server runs on as before, and the
          *     audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
          *     server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
          *     `manage_service_closure` permission.
@@ -6628,7 +6662,7 @@ export interface paths {
         };
         /**
          * Check the server before its closure
-         * @description What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+         * @description What the closure of the server would end: the estimate of the `Delete`
          *     deliveries, the supporter subscriptions that it cancels, the account migrations that have
          *     not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
          *     permission.
@@ -6653,7 +6687,7 @@ export interface paths {
         put?: never;
         /**
          * Close the server
-         * @description Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+         * @description Closes the server for good: it cannot be undone. Only an announced
          *     closure whose `closes_at` has passed can close; before it, without an announcement, or once
          *     closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
          *     server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -6678,7 +6712,7 @@ export interface paths {
         /**
          * List the OAuth clients
          * @description Every OAuth client that is not deleted, newest first, the server's own and the clients of
-         *     every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+         *     every other route. `registration` keeps the clients of one route. Needs the
          *     `manage_oauth_apps` permission.
          */
         get: operations["listAdminOAuthClients"];
@@ -6702,8 +6736,7 @@ export interface paths {
         /**
          * Disable an OAuth client
          * @description Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-         *     its authorization requests, token exchanges and refreshes until the disablement is lifted
-         *     (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+         *     its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
          *     new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
          *     is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
          *     `manage_oauth_apps` permission.
@@ -6747,7 +6780,7 @@ export interface paths {
         };
         /**
          * List the denied hosts of client metadata documents
-         * @description The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+         * @description The hosts whose Client ID Metadata Documents are denied, newest denial
          *     first. Needs the `manage_oauth_apps` permission.
          */
         get: operations["listOAuthClientHostDenials"];
@@ -6938,7 +6971,7 @@ export interface paths {
         };
         /**
          * List the webhooks
-         * @description The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+         * @description The webhook endpoints of the instance that are not deleted, newest first.
          *     Needs the `manage_webhooks` permission.
          */
         get: operations["listAdminWebhooks"];
@@ -6946,7 +6979,7 @@ export interface paths {
         /**
          * Set up a webhook
          * @description Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-         *     to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+         *     to, signed with Standard Webhooks v1. The answer carries
          *     its secret, which is shown only now. The user needs the permission of every event
          *     besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
          *     break a rule, or an event whose permission the user lacks, is a 422
@@ -7196,7 +7229,7 @@ export interface paths {
         };
         /**
          * List the relays
-         * @description The relays that the instance joins or joined (ADR-0061), in registration order, with
+         * @description The relays that the instance joins or joined, in registration order, with
          *     the state of the membership and what each brought in during the last 24 hours. Needs the
          *     `manage_settings` permission.
          */
@@ -7305,7 +7338,7 @@ export interface paths {
         put?: never;
         /**
          * Refetch a remote post from its origin
-         * @description Queues a fetch of the remote post from its server (FR-407). The job records what the
+         * @description Queues a fetch of the remote post from its server. The job records what the
          *     server serves now, as a received `Update` would: a newer revision, the counts of its
          *     poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
          *     deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is
@@ -7376,7 +7409,7 @@ export interface paths {
         };
         /**
          * Get the state of the payment provider
-         * @description The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+         * @description The payment provider of the deployment's configuration: its name and mode
          *     (test or live), when it last delivered a webhook, and the last attempt of the
          *     reconciliation with its failure. `warnings` names the signs of a webhook that is not set
          *     up right: no delivery is recorded, or the last reconciliation corrected subscriptions
@@ -7403,8 +7436,7 @@ export interface paths {
         put?: never;
         /**
          * Reconcile with the payment provider now
-         * @description Queues a reconciliation with the payment provider now, besides the periodic one
-         *     (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+         * @description Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
          *     others. One per UTC hour: another request in the hour after its reconciliation ran is a
          *     429. A deployment without a payment provider is a 404. The request is recorded in the
          *     audit log. Needs the `manage_supporters` permission.
@@ -7430,7 +7462,7 @@ export interface paths {
         get: operations["getSupporterProgram"];
         /**
          * Enable or disable the supporter program
-         * @description Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+         * @description Enables or disables the supporter program. Enabling it without a payment
          *     provider in the deployment's configuration or without email is a 409
          *     `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
          *     409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -7460,8 +7492,7 @@ export interface paths {
         put?: never;
         /**
          * Create a supporter plan
-         * @description Creates a supporter plan on a role, which then only the plan's subscriptions grant
-         *     (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+         * @description Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
          *     plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
          *     `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
          *     payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -7489,8 +7520,7 @@ export interface paths {
         head?: never;
         /**
          * Change a supporter plan
-         * @description Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-         *     §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+         * @description Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
          *     breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
          *     `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
          *     audit log. Needs the `manage_supporters` permission.
@@ -7509,7 +7539,7 @@ export interface paths {
         put?: never;
         /**
          * Retire a supporter plan
-         * @description Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+         * @description Retires a supporter plan for good: it takes no subscriptions any more, and
          *     every subscription of it ends at the end of its period (a pending one at once). A
          *     retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
          *     404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -7553,7 +7583,7 @@ export interface paths {
         put?: never;
         /**
          * Cancel a subscription at once
-         * @description Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+         * @description Ends a subscription at once, without a refund: the role goes now, and the
          *     payment provider stops billing. A refund is the operator's to make at the provider. A
          *     subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
          *     unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -7588,14 +7618,14 @@ export interface components {
             logo_dark?: components["schemas"]["AdminBrandImage"];
         };
         /**
-         * @description What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+         * @description What the instance states to AI crawlers (the instance setting `ai_usage`).
          *     `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
          *     and no use by AI search, assistants, and agents. An account can opt out of what the
          *     instance allows (`ai_opt_out`), never the reverse.
          * @enum {string}
          */
         AIUsage: "allow" | "deny_training" | "deny";
-        /** @description An account, as clients show it (FR-006). */
+        /** @description An account, as clients show it. */
         Account: {
             id: components["schemas"]["Id"];
             /** @description The username, without the domain; empty for a remote account without a confirmed handle. */
@@ -7638,13 +7668,12 @@ export interface components {
             /** @description The profile's metadata fields, in their order; empty when there are none. */
             fields: components["schemas"]["ProfileField"][];
             /**
-             * @description The custom emoji of the display name, the note, and the fields' names and values
-             *     (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+             * @description The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
              *     image, and the rest as text.
              */
             emojis: components["schemas"]["CustomEmoji"][];
             /**
-             * @description The role badges that the account shows on its profile, highest role first (ADR-0071).
+             * @description The role badges that the account shows on its profile, highest role first.
              *     Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
              *     `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
              *     notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -7667,7 +7696,7 @@ export interface components {
             /** @description The number of accounts that the account actively follows; present where `followers_count` is. */
             following_count?: number;
             /**
-             * @description The account that the account moved to (ADR-0089), when it moved: clients show that it
+             * @description The account that the account moved to, when it moved: clients show that it
              *     moved, with a link to this one. Present on the account's own endpoints, where
              *     `followers_count` is, and without a `moved` of its own (moves are not followed in
              *     chains).
@@ -7680,7 +7709,7 @@ export interface components {
             voice_room?: components["schemas"]["VoiceRoomEntry"];
         };
         /**
-         * @description An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+         * @description An account that the user moves from: the user's actor names it in
          *     `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
          */
         AccountAlias: {
@@ -7718,7 +7747,7 @@ export interface components {
             items: components["schemas"]["TagSuggestion"][];
         };
         /**
-         * @description A badge that the account shows on its profile (ADR-0071): the badge of a role that the
+         * @description A badge that the account shows on its profile: the badge of a role that the
          *     account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
          *     never translated.
          */
@@ -7730,7 +7759,7 @@ export interface components {
         };
         /**
          * @description The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-         *     `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+         *     `account` moved to `target`. Only the user's follows of the moved account move;
          *     its posts stay where they are.
          */
         AccountMove: {
@@ -7772,7 +7801,7 @@ export interface components {
         AccountStatusPage: components["schemas"]["StatusPage"] & {
             /**
              * @description `true` when this request started fetching the remote account's recent public
-             *     posts from its server (ADR-0044). The fetch runs in the background; read the
+             *     posts from its server. The fetch runs in the background; read the
              *     first page again a few seconds later to see what it stored. Absent otherwise,
              *     including when a fetch started in the last day.
              */
@@ -7796,7 +7825,7 @@ export interface components {
              */
             acct: string;
         };
-        /** @description An account as the moderators see it (FR-714). It never includes an email or IP address. */
+        /** @description An account as the moderators see it. It never includes an email or IP address. */
         AdminAccount: {
             id: components["schemas"]["Id"];
             account: components["schemas"]["Account"];
@@ -7804,7 +7833,7 @@ export interface components {
             local: boolean;
             state: components["schemas"]["AdminAccountState"];
             /**
-             * @description What the account's own actions take away now (data-model §5.2), in a fixed order.
+             * @description What the account's own actions take away now, in a fixed order.
              *     The domain actions on its domain are listed apart.
              */
             restrictions: components["schemas"]["AdminAccountRestriction"][];
@@ -7814,7 +7843,7 @@ export interface components {
              */
             registration_state?: components["schemas"]["RegistrationState"];
         };
-        /** @description A moderation action on an account (FR-703). */
+        /** @description A moderation action on an account. */
         AdminAccountAction: {
             id: components["schemas"]["Id"];
             /** @description The account the action is on. */
@@ -7879,7 +7908,7 @@ export interface components {
         AdminAccountActionPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAccountAction"][];
         };
-        /** @description The details of an account (FR-714). */
+        /** @description The details of an account. */
         AdminAccountDetail: components["schemas"]["AdminAccount"] & {
             registration?: components["schemas"]["AdminAccountRegistration"];
             /**
@@ -7913,7 +7942,7 @@ export interface components {
             items: components["schemas"]["AdminAccount"][];
         };
         /**
-         * @description The email address and the IP addresses of a local account (FR-714). Showing them is
+         * @description The email address and the IP addresses of a local account. Showing them is
          *     recorded in the audit log.
          */
         AdminAccountPrivateData: {
@@ -8163,7 +8192,7 @@ export interface components {
             client_secret?: string;
         };
         /**
-         * @description The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+         * @description The suppression of the primary email address: the server stops sending to it
          *     after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
          *     email) stops every email but the verification email that the user asks for; verifying the
          *     address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
@@ -8179,7 +8208,7 @@ export interface components {
             state_changed_at: string;
         };
         /**
-         * @description A capability that an action takes away (data-model §5.2). `login`: logging in and the
+         * @description A capability that an action takes away. `login`: logging in and the
          *     API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
          *     boosting, voting. `visibility_ceiling_private`: posts are followers-only.
          *     `public_discovery`: posts stay off the public timelines and search.
@@ -8200,12 +8229,12 @@ export interface components {
         };
         /**
          * @description The state of an account, the first that applies: `deleted` (deleted here or on its
-         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-         *     and `pending` (the registration of a local account), `limited` (a `limit`), and
+         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+         *     `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
          *     `active`.
          * @enum {string}
          */
-        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "suspended" | "deleted";
+        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "deactivated" | "suspended" | "deleted";
         /** @description An announcement with its Markdown text and its state. */
         AdminAnnouncement: {
             id: components["schemas"]["Id"];
@@ -8402,7 +8431,7 @@ export interface components {
          * @enum {string}
          */
         AdminAuditActorKind: "user" | "cli" | "system" | "remote";
-        /** @description One operation of a moderator or an administrator (FR-704). */
+        /** @description One operation of a moderator or an administrator. */
         AdminAuditEntry: {
             id: components["schemas"]["Id"];
             actor_kind: components["schemas"]["AdminAuditActorKind"];
@@ -8498,7 +8527,7 @@ export interface components {
             oldest_open_report_filed_at?: string;
         };
         /**
-         * @description A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
+         * @description A custom emoji as the administrators manage it: a local one, or a remote
          *     one recorded from the posts and profiles of another server.
          */
         AdminCustomEmoji: {
@@ -8535,7 +8564,7 @@ export interface components {
             /** @description The other names of a local emoji that the picker finds it by. */
             aliases: string[];
             /**
-             * @description The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+             * @description The account of the user who made a local emoji: the requester of an
              *     approved request, or the administrator who registered or copied it. Absent for an emoji
              *     made with the CLI, a remote one, and one whose creator's account is deleted
              *     (`created_by_deleted`).
@@ -8567,7 +8596,7 @@ export interface components {
         AdminCustomEmojiRequestPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminCustomEmojiRequest"][];
         };
-        /** @description A moderation action on a remote domain and its subdomains (FR-702). */
+        /** @description A moderation action on a remote domain and its subdomains. */
         AdminDomainAction: {
             id: components["schemas"]["Id"];
             /** @description The domain, in IDNA A-labels. */
@@ -8622,7 +8651,7 @@ export interface components {
         /**
          * @description The income totals as the administrators see them over the periods from the one that holds
          *     `from` to the one that holds `to`, oldest first, with the number of members of each
-         *     supporter plan now (ADR-0073 §6).
+         *     supporter plan now.
          */
         AdminIncomeTotals: {
             granularity: components["schemas"]["CostGranularity"];
@@ -8631,7 +8660,7 @@ export interface components {
             plans: components["schemas"]["IncomePlanCount"][];
             rules: components["schemas"]["IncomeTotalsRules"];
         };
-        /** @description Whether deliveries go to a remote server (federation.md §7.3). */
+        /** @description Whether deliveries go to a remote server. */
         AdminInstanceHealth: {
             domain: string;
             state: components["schemas"]["AdminInstanceState"];
@@ -8853,7 +8882,7 @@ export interface components {
          */
         LoginProviderProblemReason: "kind" | "display_name" | "issuer" | "client_id" | "client_secret" | "scopes" | "conditions";
         /**
-         * @description The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+         * @description The route by which an OAuth client was registered: `first_party` is one of the
          *     server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
          *     client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
          *     that registered itself (RFC 7591).
@@ -9016,7 +9045,7 @@ export interface components {
          */
         AdminJobState: "queued" | "running" | "retrying" | "dead";
         /**
-         * @description A password reset link that an administrator issued for a local account (FR-002). It is
+         * @description A password reset link that an administrator issued for a local account. It is
          *     shown once.
          */
         AdminPasswordResetLink: {
@@ -9058,7 +9087,7 @@ export interface components {
              */
             starts_limit: boolean;
         };
-        /** @description The state of the job queue (ADR-0064). */
+        /** @description The state of the job queue. */
         AdminQueue: {
             /** @description The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`). */
             adapter: string;
@@ -9081,7 +9110,7 @@ export interface components {
              */
             oldest_ready_at?: string;
         };
-        /** @description A user's registration as the moderators review it (FR-721). */
+        /** @description A user's registration as the moderators review it. */
         AdminRegistration: {
             user_id: components["schemas"]["Id"];
             /** @description The user's local account; omitted when it is gone. */
@@ -9120,7 +9149,7 @@ export interface components {
         AdminRegistrationPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminRegistration"][];
         };
-        /** @description A relay that the instance joins or joined (ADR-0061). */
+        /** @description A relay that the instance joins or joined. */
         AdminRelay: {
             id: components["schemas"]["Id"];
             protocol: components["schemas"]["RelayProtocol"];
@@ -9154,7 +9183,7 @@ export interface components {
         AdminRelayList: {
             items: components["schemas"]["AdminRelay"][];
         };
-        /** @description A report of an account to the moderators (FR-701). */
+        /** @description A report of an account to the moderators. */
         AdminReport: {
             id: components["schemas"]["Id"];
             /**
@@ -9349,7 +9378,7 @@ export interface components {
             actions_count: number;
         };
         /**
-         * @description A role (FR-720): a named set of permissions. A higher position outranks a lower one;
+         * @description A role: a named set of permissions. A higher position outranks a lower one;
          *     a user may grant, revoke, create, change, and delete only the roles at or below their
          *     highest one, and give or take only the permissions they hold.
          */
@@ -9369,7 +9398,7 @@ export interface components {
             items: components["schemas"]["AdminRole"][];
         };
         /**
-         * @description A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
+         * @description A rule of the instance. Its ID stays the same across revisions, so reports keep
          *     citing it.
          */
         AdminRule: {
@@ -9429,7 +9458,7 @@ export interface components {
         AdminSettingList: {
             items: components["schemas"]["AdminSetting"][];
         };
-        /** @description A block on sign-ups from the registration page (FR-719). */
+        /** @description A block on sign-ups from the registration page. */
         AdminSignupBlock: {
             id: components["schemas"]["Id"];
             kind: components["schemas"]["AdminSignupBlockKind"];
@@ -9476,7 +9505,7 @@ export interface components {
          */
         AdminSignupBlockSeverity: "reject" | "require_approval";
         /**
-         * @description A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
+         * @description A supporter plan as the administrators see it. The yearly price is the
          *     monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
          *     subscriptions while it is public, not retired, and `prices_ready` (the provider has the
          *     prices of its current terms).
@@ -9555,7 +9584,7 @@ export interface components {
             role_permissions?: components["schemas"]["Permission"][];
         };
         /**
-         * @description The supporter program (ADR-0072 §2). It is disabled by default; enabling it needs a
+         * @description The supporter program. It is disabled by default; enabling it needs a
          *     payment provider in the deployment's configuration (`configured_provider`) and a server
          *     that sends email (`sends_email`). `warnings` lists what an administrator should look at.
          */
@@ -9632,7 +9661,7 @@ export interface components {
              */
             revised_at?: string;
         };
-        /** @description The service closure as its administrators see it (ADR-0088 §1). */
+        /** @description The service closure as its administrators see it. */
         AdminServiceClosure: {
             state: components["schemas"]["ServiceClosureState"];
             /**
@@ -9666,7 +9695,7 @@ export interface components {
             progress?: components["schemas"]["AdminServiceClosureProgress"];
         };
         /**
-         * @description What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+         * @description What the administrator reviews before closing the server. The admin
          *     screen and the CLI show it with the confirmation of the closure.
          */
         AdminServiceClosureCheck: {
@@ -9679,13 +9708,12 @@ export interface components {
             /** @description The supporter subscriptions that go on, which the closure cancels at once without a refund. */
             live_supporter_subscriptions: number;
             /**
-             * @description The account migrations (the sending of a `Move` and the jobs that move the followers,
-             *     ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+             * @description The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
              *     the admin screen and the CLI warn while it is not 0.
              */
             pending_migrations: number;
             /**
-             * @description The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+             * @description The accounts under a retention hold. While it is not 0, the operator exports
              *     their records with the CLI before discarding the data of the closed server.
              */
             retention_holds: number;
@@ -9704,7 +9732,7 @@ export interface components {
             dead: number;
         };
         /**
-         * @description How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+         * @description How far the closure's `Delete` of every local actor has gone, in `GET
          *     /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
          *     `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
          */
@@ -9774,7 +9802,7 @@ export interface components {
             svg: string;
         };
         /**
-         * @description Where the server is in its closure (ADR-0088 §1):
+         * @description Where the server is in its closure:
          *
          *     - `none`: no closure is announced.
          *     - `announced`: the closure is announced; the server runs as before until it closes.
@@ -9786,7 +9814,7 @@ export interface components {
         ServiceClosureState: "none" | "announced" | "closed" | "delivery_completed";
         /**
          * @description What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-         *     tells of the closure of the service (ADR-0088). `change` is what the event of a
+         *     tells of the closure of the service. `change` is what the event of a
          *     `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
          *     changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
          *     for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -9806,7 +9834,7 @@ export interface components {
              */
             export_until?: string;
         };
-        /** @description A webhook endpoint (ADR-0060). Its secret is never shown again after it is made. */
+        /** @description A webhook endpoint. Its secret is never shown again after it is made. */
         AdminWebhook: {
             id: components["schemas"]["Id"];
             /** @description Where the messages are posted. */
@@ -9908,7 +9936,7 @@ export interface components {
          * @enum {string}
          */
         AdminWebhookStateReason: "admin" | "gone" | "failing";
-        /** @description An announcement of the server to every local user (FR-726), as the user sees it. */
+        /** @description An announcement of the server to every local user, as the user sees it. */
         Announcement: {
             id: components["schemas"]["Id"];
             /**
@@ -9958,7 +9986,7 @@ export interface components {
             text: string;
         };
         /**
-         * @description The authenticated user's automatic deletion of their own old posts (FR-118). A post is
+         * @description The authenticated user's automatic deletion of their own old posts. A post is
          *     deleted once it was published more than `min_age_days` days ago, unless one of the
          *     exceptions (the `keep_` properties) keeps it.
          */
@@ -9998,7 +10026,7 @@ export interface components {
         };
         /**
          * @description A role that the authenticated user holds and that has a badge, with whether the user shows
-         *     the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
+         *     the badge on their profile. A badge is hidden until the user shows it; losing the
          *     role or its badge hides it again.
          */
         BadgeChoice: {
@@ -10014,20 +10042,20 @@ export interface components {
             items: components["schemas"]["BadgeChoice"][];
         };
         /**
-         * @description The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+         * @description The color of a role badge: the name of a pair of the web client's design tokens
          *     for its background and its text, which keep their contrast in the light and the dark theme.
          *     Server themes do not change them. The color is decoration; the badge's `label` carries its
          *     meaning.
          * @enum {string}
          */
         BadgeColor: "neutral" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink";
-        /** @description The state of the imports of a billing source (ADR-0068 §9). */
+        /** @description The state of the imports of a billing source. */
         BillingImport: {
             source: components["schemas"]["BillingSourceName"];
             /** @description The provider's name, as the breakdown of the totals shows it. */
             provider: string;
             /**
-             * @description How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+             * @description How the source reads the provider's data: `cost_explorer` (AWS Cost
              *     Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
              *     bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
              *     `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -10109,7 +10137,7 @@ export interface components {
          */
         BillingSourceName: "aws" | "gcp";
         /**
-         * @description A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+         * @description A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
          *     of a payment on a card statement or an invoice.
          */
         CalendarDate: string;
@@ -10128,11 +10156,11 @@ export interface components {
         /**
          * @description An operation that the user confirms: registering a passkey (`passkey_registration`),
          *     changing or setting the password (`password_change`), removing it (`password_removal`),
-         *     deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+         *     deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
          *     account at a login provider (`link`).
          * @enum {string}
          */
-        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_move" | "link";
+        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_deactivation" | "account_move" | "link";
         /** @description The local custom emoji that a copy of a remote one becomes. */
         CopyCustomEmojiRequest: {
             /**
@@ -10142,7 +10170,7 @@ export interface components {
             shortcode?: string;
         };
         /**
-         * @description How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+         * @description How the totals place a payment. `amortized` (the default) spreads each
          *     payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
          *     more weeks) by day over the days up to the next payment, with the cumulative rounding;
          *     the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -10156,7 +10184,7 @@ export interface components {
          */
         CostBreakdownLine: {
             /**
-             * @description The provider as entered (ADR-0098), one spelling for every line of the same grouped provider
+             * @description The provider as entered, one spelling for every line of the same grouped provider
              *     in the period: the provider of the cost item whose current label was revised last among the
              *     items with payments in the period (the larger revision ID on a tie), or, for a provider of
              *     imported costs only, the import's provider name (`AWS`, `Google Cloud`).
@@ -10166,18 +10194,18 @@ export interface components {
             amount: components["schemas"]["Money"];
         };
         /**
-         * @description The fixed category of a cost (ADR-0067 §2); clients translate its name.
+         * @description The fixed category of a cost; clients translate its name.
          * @enum {string}
          */
         CostCategory: "compute" | "database" | "storage" | "network" | "domain" | "email" | "software" | "other";
         /**
          * @description The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-         *     years, cut by date (ADR-0067 §5).
+         *     years, cut by date.
          * @enum {string}
          */
         CostGranularity: "week" | "month" | "year";
         /**
-         * @description A cost of the instance that is not canceled (ADR-0067 §2), with its current label and end
+         * @description A cost of the instance that is not canceled, with its current label and end
          *     and every price revision. Never published: the public totals carry no item.
          */
         CostItem: {
@@ -10244,10 +10272,10 @@ export interface components {
         };
         /**
          * @description A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
-         *     of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown
+         *     of each currency, never converted, sorted by currency code, and the breakdown
          *     by provider, category, and currency. A currency appears when a cost meets the period, even
          *     with a zero amount. `estimated` reports that an imported usage charge of a billing month
-         *     that its provider has not closed meets the period (ADR-0068 §3): its amount may still
+         *     that its provider has not closed meets the period: its amount may still
          *     change.
          */
         CostPeriodTotal: {
@@ -10278,7 +10306,7 @@ export interface components {
             price: components["schemas"]["Money"];
         };
         /**
-         * @description The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+         * @description The unit of a cost item's payment schedule: `once` (one payment on the start
          *     date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
          *     monthly payment on a day that a month does not have falls on the month's last day.
          * @enum {string}
@@ -10304,7 +10332,7 @@ export interface components {
             rules: components["schemas"]["CostTotalsRules"];
         };
         /**
-         * @description How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+         * @description How the totals cut the periods, to show next to them: by calendar date
          *     without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
          *     billing months in its own time zone (`billing_sources`, in its order).
          */
@@ -10344,7 +10372,7 @@ export interface components {
             status_ids?: components["schemas"]["Id"][];
             /**
              * @description Whether a `ban` also blocks sign-ups with the email address of the account's user (a
-             *     `reject` sign-up block of kind `email_hash`, FR-719); only a `ban` of a local
+             *     `reject` sign-up block of kind `email_hash`); only a `ban` of a local
              *     account takes it, and a user without an email address is a 422. Omitted, nothing is
              *     blocked.
              */
@@ -10505,10 +10533,10 @@ export interface components {
             media?: components["schemas"]["StatusMediaInput"];
             poll?: components["schemas"]["PollInput"];
             /**
-             * @description The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
+             * @description The status to quote. It must be one the user may see and may quote
              *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
              *     `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
-             *     is created (ADR-0144 §4). Quoting a
+             *     is created. Quoting a
              *     remote status while the instance does not send posts out (`Instance.federation.mode`
              *     `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
              */
@@ -10533,19 +10561,18 @@ export interface components {
         CredentialAccount: components["schemas"]["Account"] & {
             /**
              * @description Whether the account is suggested to others and found by the middle of its names in
-             *     the account search (FR-307, FR-308); when `false`, the search finds it only by its
+             *     the account search; when `false`, the search finds it only by its
              *     whole username. New accounts are discoverable.
              */
             discoverable: boolean;
             /**
              * @description Whether the account's profile and public posts may be indexed for search: by this
              *     instance's search and, when the instance's `search_indexing` is `allow`, by search
-             *     engines (FR-412, ADR-0057). New accounts take the instance's default.
+             *     engines. New accounts take the instance's default.
              */
             indexable: boolean;
             /**
-             * @description Whether the account's pages state that AI may neither train on nor use them
-             *     (FR-412, ADR-0057), whatever the instance's `ai_usage`. The statement is made by the
+             * @description Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
              *     pages of this instance only; other servers and the media files do not carry it.
              */
             ai_opt_out: boolean;
@@ -10576,9 +10603,9 @@ export interface components {
         /** @description An opaque pagination cursor. Clients pass it back unchanged and never parse it. */
         Cursor: string;
         /**
-         * @description A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
+         * @description A custom emoji that a text uses. The text has it as `:shortcode:`.
          *     An emoji that is disabled or deleted, or whose images come from a domain whose media the
-         *     instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
+         *     instance rejects, is not listed, and its `:shortcode:` stays text. Clients show
          *     `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
          *     otherwise.
          */
@@ -10623,8 +10650,7 @@ export interface components {
         CustomEmojiProblemReason: "invalid_shortcode" | "shortcode_taken" | "invalid_alias" | "invalid_category" | "media_not_found" | "media_not_ready" | "unsupported_format" | "too_large" | "too_big" | "remote_emoji" | "local_emoji" | "fetch_failed" | "limit_reached" | "request_pending" | "invalid_reason";
         /**
          * @description A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-         *     image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-         *     (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
+         *     image of one they made, which a holder of `manage_custom_emojis` approves or rejects. A request is not an emoji: no picker, post, reaction, or other server shows
          *     its image until it is approved.
          */
         CustomEmojiRequest: {
@@ -10675,7 +10701,7 @@ export interface components {
          */
         CustomEmojiRequestConflictReason: "not_pending" | "requester_cannot_create" | "shortcode_taken";
         /**
-         * @description What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+         * @description What a custom emoji request asks for: `create` a new local custom emoji,
          *     or `image` a new image of a local emoji that the requester made.
          * @enum {string}
          */
@@ -10761,7 +10787,7 @@ export interface components {
         /**
          * @description What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
          *     accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-         *     domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+         *     domains the user mutes; Mastodon's `blocked_domains.csv` with the header
          *     `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
          *     posts the user bookmarked).
          * @enum {string}
@@ -10816,6 +10842,49 @@ export interface components {
         DecideAppealRequest: {
             /** @description Shown to the user who appealed, as plain text. */
             public_reason?: string;
+        };
+        /** @description The deactivation of the user's own account. */
+        Deactivation: {
+            /**
+             * Format: date-time
+             * @description When the account is deleted unless the user reactivates it first.
+             */
+            deletion_due_at: string;
+        };
+        /** @description What deactivating the user's own account would do now. */
+        DeactivationPreview: {
+            /**
+             * Format: date-time
+             * @description When the account would be deleted if it were deactivated now.
+             */
+            deletion_due_at: string;
+            /**
+             * @description Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+             *     logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+             *     deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+             *     (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+             *     administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+             *     ago (`recently_reactivated`).
+             * @enum {string}
+             */
+            refusal?: "login_restricted" | "deletion_scheduled" | "already_deactivated" | "moved" | "registration_pending" | "paid_subscription" | "last_administrator" | "recently_reactivated";
+            /**
+             * Format: date-time
+             * @description When the account can be deactivated again, for `recently_reactivated`.
+             */
+            available_at?: string;
+        };
+        /**
+         * @description The confirmation of the deactivation of the user's own account: `password`,
+         *     `two_factor_code`, `passkey`, or `external_confirmation`.
+         */
+        DeactivateOwnAccountRequest: {
+            /** @description The user's current password. */
+            password?: string;
+            /** @description A code of the user's authenticator app, or a recovery code. */
+            two_factor_code?: string;
+            passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /**
          * @description The confirmation of the deletion of the user's own account: `password`, `passkey`, or
@@ -10921,7 +10990,7 @@ export interface components {
             language?: components["schemas"]["StatusLanguageInput"];
             media?: components["schemas"]["StatusMediaInput"];
             /**
-             * @description Takes the status's quote away for good (ADR-0069 §3). A status keeps the status it
+             * @description Takes the status's quote away for good. A status keeps the status it
              *     quotes otherwise: an edit cannot change it.
              */
             remove_quote?: boolean;
@@ -10934,7 +11003,7 @@ export interface components {
             code: string;
         };
         /**
-         * @description An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+         * @description An error group: the reported errors of one fingerprint, with its state,
          *     what its first occurrence told about the error, and how often it happened. The text is
          *     scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
          *     `error_group.created` and `error_group.regressed` carry it as their `data`.
@@ -11062,7 +11131,7 @@ export interface components {
          */
         ErrorGroupSource: "server" | "web";
         /**
-         * @description The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+         * @description The state of an error group: `open` (new, unmuted, or regressed),
          *     `resolved` (an administrator marked it fixed; an occurrence on another version regresses
          *     it to `open`), or `muted` (it notifies nobody until it is unmuted).
          * @enum {string}
@@ -11139,7 +11208,7 @@ export interface components {
         /**
          * @description The totals of the instance's costs as the holders of `view_finance` read them over the
          *     periods from the one that holds `from` to the one that holds `to`, oldest first, and the
-         *     instance settings that decide what they read (ADR-0070 §5).
+         *     instance settings that decide what they read.
          */
         FinanceCostTotals: {
             granularity: components["schemas"]["CostGranularity"];
@@ -11150,7 +11219,7 @@ export interface components {
         };
         /**
          * @description How much of the income the holders of `view_finance` read (the instance setting
-         *     `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+         *     `finance_viewer_income`). `totals`: the total of each currency by period;
          *     `plans`: also the number of members of each plan. No value shows the amounts of each plan or
          *     who paid.
          * @enum {string}
@@ -11158,7 +11227,7 @@ export interface components {
         FinanceViewerIncome: "totals" | "plans";
         /**
          * @description What the holders of `view_finance` read of the instance's finances beyond the totals and
-         *     their breakdown (the instance settings of ADR-0070 §5): `item_names`
+         *     their breakdown, by instance settings: `item_names`
          *     (`finance_viewer_item_names`) shows the names of the cost items and the services of the
          *     imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
          *     `income` (`finance_viewer_income`) the income as totals only or with the number of members
@@ -11171,7 +11240,7 @@ export interface components {
         };
         /**
          * @description How much of the instance's costs everyone may read (the instance setting
-         *     `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+         *     `finance_visibility`). `private`: nothing, and
          *     `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
          *     `breakdown`: the totals and their breakdown by provider and category. No level publishes
          *     the names, memos, or individual payments of the cost items.
@@ -11219,7 +11288,7 @@ export interface components {
             expires_in?: number;
         };
         /**
-         * @description The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+         * @description The kind of a money movement of the payment provider: `payment` of a
          *     subscription, `refund` and `chargeback` of a payment (a negative gross), the
          *     `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
          *     belongs to no payment (a zero gross and a negative net).
@@ -11227,7 +11296,7 @@ export interface components {
          */
         IncomeKind: "payment" | "refund" | "chargeback" | "chargeback_reversal" | "fee";
         /**
-         * @description A money movement of the payment provider as the income records keep it (ADR-0073 §2, §6):
+         * @description A money movement of the payment provider as the income records keep it:
          *     recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a
          *     date in the provider's reporting time zone. A payment carries the billing period it pays
          *     for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
@@ -11275,7 +11344,7 @@ export interface components {
             balance?: components["schemas"]["Money"][];
         };
         /**
-         * @description The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
+         * @description The number of members of a supporter plan now: the subscriptions that hold
          *     the plan's role (active, canceling, or past due within the grace period). A retired plan
          *     appears while it has members. Never the plan's amounts.
          */
@@ -11287,8 +11356,7 @@ export interface components {
         };
         /**
          * @description The IANA time zone (`UTC`, `Asia/Tokyo`) in which a payment provider's money movements fall
-         *     on their dates: the provider's reporting time zone, or `UTC` when it could not be read
-         *     (ADR-0073 §3).
+         *     on their dates: the provider's reporting time zone, or `UTC` when it could not be read.
          */
         IncomeProviderRule: {
             provider: string;
@@ -11296,7 +11364,7 @@ export interface components {
         };
         /**
          * @description The income totals over the periods from the one that holds `from` to the one that holds
-         *     `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan
+         *     `to`, oldest first. `plans`, the number of members of each supporter plan
          *     now, is present only where the plans are shown. No answer carries individual payments, the
          *     subscribers, the amounts of each plan, or the gross and the fees.
          */
@@ -11308,7 +11376,7 @@ export interface components {
             rules: components["schemas"]["IncomeTotalsRules"];
         };
         /**
-         * @description How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+         * @description How the income totals cut the periods and place the payments, to show
          *     next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
          *     each money movement on its date in its payment provider's reporting time zone
          *     (`providers`), and under the `amortized` basis a payment that covers more than
@@ -11324,7 +11392,7 @@ export interface components {
         };
         /**
          * @description How much of the instance's income everyone may read (the instance setting
-         *     `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+         *     `income_visibility`), apart from `finance_visibility`. `private`:
          *     nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
          *     currency by period; `plans`: also the number of members of each supporter plan now. No
          *     level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -11358,7 +11426,7 @@ export interface components {
             source_url: string;
             /**
              * Format: uri
-             * @description The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+             * @description The https address of the instance's status page, on a service apart from the server. Absent when the operator has not set one.
              */
             status_page_url?: string;
             limits: components["schemas"]["InstanceLimits"];
@@ -11483,7 +11551,7 @@ export interface components {
         InstanceOverview: {
             counts?: components["schemas"]["InstanceCounts"];
         };
-        /** @description A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718). */
+        /** @description A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly. */
         InstanceDomainAction: {
             /**
              * @description The domain, in IDNA A-labels. When the moderators chose to obfuscate it, the
@@ -11506,7 +11574,7 @@ export interface components {
             items: components["schemas"]["InstanceDomainAction"][];
         };
         /**
-         * @description How the instance federates with other servers (FR-413), so that clients offer only the
+         * @description How the instance federates with other servers, so that clients offer only the
          *     operations on remote accounts and posts that can work.
          */
         InstanceFederation: {
@@ -11529,7 +11597,7 @@ export interface components {
             mode: "off" | "inbound" | "outbound" | "both";
         };
         /**
-         * @description The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+         * @description The closure of the service, present while a closure is announced and after
          *     the server closes; absent when none is announced. Clients show it on every screen with the
          *     way to export the data and to move the account.
          */
@@ -11554,7 +11622,7 @@ export interface components {
             max_post_characters: number;
             /**
              * @description Whether every media file attached to a post needs an alternative text (the instance
-             *     setting `require_media_description`, FR-105). While it is on, a post or an edit with
+             *     setting `require_media_description`). While it is on, a post or an edit with
              *     a media file without one is a 422, so clients ask for it before sending.
              */
             require_media_description: boolean;
@@ -11572,7 +11640,7 @@ export interface components {
             mode: "open" | "approval" | "invite" | "closed";
         };
         /**
-         * @description A rule of the instance (FR-705). Its text and hint hold one value each, written in any
+         * @description A rule of the instance. Its text and hint hold one value each, written in any
          *     language and the same in every locale. Reports cite it by `id`.
          */
         InstanceRule: {
@@ -11628,7 +11696,7 @@ export interface components {
          */
         InstanceAudience: "off" | "signed_in" | "everyone";
         /**
-         * @description The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+         * @description The key of an instance setting. New keys may be
          *     added; clients show the ones they know.
          * @enum {string}
          */
@@ -11653,7 +11721,7 @@ export interface components {
          */
         InstanceTextKey: "name" | "short_description" | "description" | "terms" | "privacy_policy" | "preview_image_alt" | "thumbnail_alt" | "commerce_disclosure";
         /**
-         * @description The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+         * @description The instance's theme, for clients that do not load the server's HTML shell: the
          *     stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
          *     instance has no theme.
          */
@@ -11676,7 +11744,7 @@ export interface components {
             alt?: string;
         };
         /**
-         * @description Who may read the public timelines the instance serves (FR-202): `local` is the instance
+         * @description Who may read the public timelines the instance serves: `local` is the instance
          *     setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
          *     setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
          *     timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
@@ -11716,7 +11784,7 @@ export interface components {
             allow_link: boolean;
         };
         /**
-         * @description The card of the first link in a status (ADR-0062): the title, description, and image
+         * @description The card of the first link in a status: the title, description, and image
          *     that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
          *     after the status was posted or received. Omitted from a status with attachments or a
          *     poll, from a status whose link has no card yet, from a status whose link is on a domain
@@ -11845,7 +11913,7 @@ export interface components {
          *     attachment has none.
          *
          *     A file of a remote status is always `ready`: the instance does not process it, so it has
-         *     no `variants`; `url` and `preview_url` are its media proxy URLs (federation.md §9),
+         *     no `variants`; `url` and `preview_url` are its media proxy URLs,
          *     `remote_url` its URL on the remote server, and `meta`, `blurhash`, and `type` what the
          *     remote server declared.
          */
@@ -11987,7 +12055,7 @@ export interface components {
             animated?: components["schemas"]["MediaAnimatedVariants"];
         };
         /**
-         * @description A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
+         * @description A moderation action on the authenticated user's own account, as the
          *     user sees it. It never carries the moderators' private note, the report the action
          *     follows from, or who filed the report or issued the action.
          */
@@ -12061,7 +12129,7 @@ export interface components {
          */
         ModerationAppealState: "pending" | "upheld" | "overturned";
         /**
-         * @description An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+         * @description An amount of money: a decimal string in the major unit with the digits of
          *     its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
          */
         Money: {
@@ -12338,7 +12406,7 @@ export interface components {
          */
         NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement";
         /**
-         * @description An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+         * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
          */
         OAuthApp: {
@@ -12410,7 +12478,7 @@ export interface components {
             /** @description The granted scopes, space-separated. */
             scope: string;
         };
-        /** @description A local custom emoji that the user made (ADR-0070 §3). */
+        /** @description A local custom emoji that the user made. */
         OwnCustomEmoji: {
             id: components["schemas"]["Id"];
             /** @description The shortcode, without the colons around it. */
@@ -12448,8 +12516,7 @@ export interface components {
             updated_at: string;
         };
         /**
-         * @description A page of the custom emoji that the user made, with what the user used of their monthly limit
-         *     (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+         * @description A page of the custom emoji that the user made, with what the user used of their monthly limit: `used` counts the requests to create an emoji that the user submitted this UTC
          *     calendar month and that are approved or pending (deleting an emoji does not lower it),
          *     `pending` is the part of `used` that the pending requests take, `limit` is how many they may
          *     submit in a month, absent for no limit, and `resets_at` is when the count resets.
@@ -12548,7 +12615,7 @@ export interface components {
         /**
          * @description An app the authenticated user authorized: the user's grants of one OAuth client that still
          *     work. The name and the website are what the app says about itself; `registration`,
-         *     `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+         *     `client_id` and `registered_by` are what the server knows.
          */
         AuthorizedApp: {
             /** @description The ID of the client, which `DELETE /authorized_apps/{id}` takes. */
@@ -12658,7 +12725,7 @@ export interface components {
             /** Format: date-time */
             occurred_at: string;
         };
-        /** @description The state of the payment provider (ADR-0074 §4). */
+        /** @description The state of the payment provider. */
         PaymentStatus: {
             /** @description The provider of `payments` (`stripe`, `payjp`). */
             provider: string;
@@ -12697,29 +12764,29 @@ export interface components {
          *     server's announcements to every local user. `manage_finance`: the instance's costs and
          *     the state of the billing imports (only the built-in admin role by default). `view_finance`:
          *     reading the totals of the instance's costs on `GET /finance/cost_totals`, a member
-         *     permission outside the staff's areas (ADR-0070). `manage_supporters`: the supporter program, its plans, and their
+         *     permission outside the staff's areas. `manage_supporters`: the supporter program, its plans, and their
          *     subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
          *     new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
          *     deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-         *     member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+         *     member permission. `manage_oauth_apps`: all the OAuth clients, disabling them,
          *     and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-         *     `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+         *     `/admin/oauth_client_host_denials`. `manage_service_closure`: announcing the closure
          *     of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-         *     admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+         *     admin role by default). `start_voice_rooms`: opening voice chat rooms while the
          *     instance setting `voice_room_starters` is `permitted`, a member permission (only the
-         *     built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+         *     built-in admin role by default). `manage_errors`: the error groups of the server
          *     and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-         *     the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+         *     the webhook events `error_group.*` (only the built-in admin role by default).
          *     `manage_login_providers`: the external identity providers that users sign in with (only the
-         *     built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+         *     built-in admin role by default). `create_invites`: creating, listing, and revoking
          *     invites of one's own on `/invites` while the instance setting `invite_creators` is
-         *     `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+         *     `permitted`, a member permission (only the built-in admin role by default). The
          *     others guard no client API operation yet.
          * @enum {string}
          */
         Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites";
         /**
-         * @description A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
+         * @description A local custom emoji that the picker offers. Picking it inserts
          *     `:shortcode:` into the text.
          */
         PickerCustomEmoji: {
@@ -12745,7 +12812,7 @@ export interface components {
             items: components["schemas"]["PickerCustomEmoji"][];
         };
         /**
-         * @description The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+         * @description The poll of a status; omitted when the status has none. The counts of a poll of
          *     another server are those its server last reported. A poll whose author hides the votes of
          *     each option until it ends leaves out `votes_count` of its options until then. `voted` and
          *     `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -12776,7 +12843,7 @@ export interface components {
             own_votes?: number[];
         };
         /**
-         * @description A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+         * @description A poll of a new status. It ends `expires_in` seconds after the status is
          *     posted; the author and the users who voted are notified then.
          */
         PollInput: {
@@ -12800,7 +12867,7 @@ export interface components {
             votes_count?: number;
         };
         /**
-         * @description What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+         * @description What the account's current moderation restrictions let it post. The
          *     server applies the same policy when it posts: a status asked for with a visibility that is
          *     not in `visibilities` gets `visibility_ceiling` instead.
          */
@@ -12849,7 +12916,7 @@ export interface components {
             readonly email_suppression?: components["schemas"]["EmailSuppression"];
             /**
              * @description Whether the web client inserts new timeline posts without asking, instead of offering them
-             *     behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
+             *     behind a "show new posts" button. On for a new user; the same on every device.
              */
             timeline_auto_insert: boolean;
             /**
@@ -12913,6 +12980,8 @@ export interface components {
          *     - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
          *     - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
          *       not the user's current password.
+         *     - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+         *       now; the detail says why.
          *     - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
          *       built. Wait for it to end.
          *     - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -12969,10 +13038,10 @@ export interface components {
          *       server whose closure is not announced or whose `closes_at` has not come
          *       (`POST /admin/closure/close`).
          *     - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-         *       stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+         *       stops new registrations and supporter subscriptions: approving a pending
          *       registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
          *       (`POST /supporter/checkout`).
-         *     - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+         *     - `/api/v1/problems/service-closed` (403): the server is closed. A closed
          *       server serves only the operations with which the users take their data away: their own
          *       account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
          *       `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
@@ -13047,8 +13116,7 @@ export interface components {
          *       account.
          *     - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
          *       an administrator. Make another user an administrator first.
-         *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-         *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+         *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`POST /accounts/move/cancel`).
          *     - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
          *       `DELETE /sessions/{id}`; signing out ends it.
@@ -13061,7 +13129,7 @@ export interface components {
          *       own, is not found, cannot be fetched from its server, or is suspended here.
          *     - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
          *       or moved to that account before.
-         *     - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+         *     - `/api/v1/problems/maintenance` (503): the server is under maintenance and
          *       answers every operation with this problem and `Retry-After`. Keep the tokens, show the
          *       maintenance, and retry after `Retry-After`. Its members besides the standard ones,
          *       each present only when the operator set it: `message`, the administrators' notice in
@@ -13158,7 +13226,7 @@ export interface components {
          */
         LinkCardSize: "large" | "small";
         /**
-         * @description Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+         * @description Who may quote a status: `public` anyone who may see it, `followers`
          *     the author's followers, `nobody` the author alone. A followers-only status is quoted only
          *     by its author, in a followers-only or direct status, and a direct one by nobody, whatever
          *     its policy.
@@ -13166,7 +13234,7 @@ export interface components {
          */
         QuotePolicy: "public" | "followers" | "nobody";
         /**
-         * @description The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+         * @description The state of a quote as the viewer sees it, with the values of Mastodon's
          *     `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
          *     behind the reason for `muted_account` and `blocked_domain`:
          *
@@ -13306,7 +13374,7 @@ export interface components {
          */
         RelayProblemReason: "url" | "exists" | "domain_suspended" | "not_actor" | "state";
         /**
-         * @description How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+         * @description How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
          *     collection. `litepub`: at its actor, by a `Follow` of the actor.
          * @enum {string}
          */
@@ -13393,7 +13461,7 @@ export interface components {
          */
         ReturnTo: string;
         /**
-         * @description The badge of a role (ADR-0071), which its holders may show on their profile. The label is
+         * @description The badge of a role, which its holders may show on their profile. The label is
          *     the staff's own text, the same in every locale: clients show it as user content
          *     (`dir="auto"`), never translated.
          */
@@ -13424,20 +13492,20 @@ export interface components {
         RoleProblemReason: "key" | "key_taken" | "position" | "permissions" | "builtin" | "held" | "missing_permission" | "badge_label" | "badge_color";
         /**
          * @description Whether the instance lets search engines index its pages (the instance setting
-         *     `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+         *     `search_indexing`). `allow`: the profiles and public posts of the accounts
          *     that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
          *     the reverse.
          * @enum {string}
          */
         SearchIndexing: "allow" | "deny";
         /**
-         * @description The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+         * @description The health of the server. The values are fixed, machine-readable words, never
          *     localized.
          */
         ServerHealth: {
             /**
              * @description `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-             *     schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+             *     schema is not applied, `maintenance` during the maintenance mode.
              * @enum {string}
              */
             status: "ok" | "unavailable" | "maintenance";
@@ -13553,7 +13621,7 @@ export interface components {
             account: components["schemas"]["Account"];
             /**
              * @description The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-             *     remote status is what the server's sanitizer kept of the received document (ADR-0019 §2).
+             *     remote status is what the server's sanitizer kept of the received document.
              */
             content: string;
             /** @description The content warning; empty when there is none. */
@@ -13589,8 +13657,7 @@ export interface components {
             /** @description The hashtags of the text. */
             tags: components["schemas"]["StatusTag"][];
             /**
-             * @description The custom emoji of the text, the content warning, and the poll's choices
-             *     (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+             * @description The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
              *     image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
              */
             emojis: components["schemas"]["CustomEmoji"][];
@@ -13692,7 +13759,7 @@ export interface components {
             items: components["schemas"]["Status"][];
         };
         /**
-         * @description The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
+         * @description The status that a status quotes. Quotes are shown one level deep:
          *     `quoted_status` has no `quote` of its own, and clients link to it instead.
          */
         StatusQuote: {
@@ -13755,7 +13822,7 @@ export interface components {
             redirect_url: string;
         };
         /**
-         * @description Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+         * @description Why the user may not subscribe to a supporter plan: `not_local`, not a user
          *     of this server; `email_unverified`, the primary email address is not verified;
          *     `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
          *     the user may subscribe.
@@ -13909,7 +13976,7 @@ export interface components {
             started_at: string;
         };
         /**
-         * @description The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+         * @description The state of a subscription. `pending`: started, not paid yet. `active`:
          *     paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
          *     than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
          *     paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -13917,7 +13984,7 @@ export interface components {
          * @enum {string}
          */
         SupporterSubscriptionState: "pending" | "active" | "canceling" | "past_due" | "lapsed" | "expired" | "revoked" | "abandoned";
-        /** @description A hashtag that the prefix search of hashtags found (ADR-0092). */
+        /** @description A hashtag that the prefix search of hashtags found. */
         TagSuggestion: {
             /** @description The hashtag as first written on this server, without `#`. */
             name: string;
@@ -14023,13 +14090,13 @@ export interface components {
             bot?: boolean;
             /**
              * @description Whether the account is suggested to others and found by the middle of its names in the
-             *     account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+             *     account search; when `false`, the search finds it only by its whole
              *     username. New accounts are discoverable.
              */
             discoverable?: boolean;
-            /** @description Whether the account's profile and public posts may be indexed for search (FR-412). */
+            /** @description Whether the account's profile and public posts may be indexed for search. */
             indexable?: boolean;
-            /** @description Whether the account's pages state that AI may neither train on nor use them (FR-412). */
+            /** @description Whether the account's pages state that AI may neither train on nor use them. */
             ai_opt_out?: boolean;
         };
         /** @description The settings of a custom emoji to change; absent ones stay. */
@@ -14134,7 +14201,7 @@ export interface components {
             position?: number;
             /** @description The new permissions of the role, each once; empty removes them all. */
             permissions?: components["schemas"]["Permission"][];
-            /** @description The new badge of the role (ADR-0071). Its holders keep their choice to show it. */
+            /** @description The new badge of the role. Its holders keep their choice to show it. */
             badge?: components["schemas"]["RoleBadge"];
             /**
              * @description `true` removes the badge of the role, and every holder's choice to show it; a new badge
@@ -14150,7 +14217,7 @@ export interface components {
             events?: components["schemas"]["WebhookEventType"][];
         };
         /**
-         * @description Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+         * @description Who may see a status: `public` everyone, listed on public timelines;
          *     `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
          *     public timelines; `private` followers and mentioned accounts; `direct` mentioned
          *     accounts.
@@ -14534,7 +14601,7 @@ export interface components {
             operation: string;
         };
         /**
-         * @description An event that a webhook subscribes to (ADR-0060). Subscribing needs, besides
+         * @description An event that a webhook subscribes to. Subscribing needs, besides
          *     `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
          *     `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
          *     `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
@@ -14555,7 +14622,7 @@ export interface components {
          */
         WebhookEventType: "report.created" | "report.resolved" | "report.reopened" | "registration.pending" | "account.created" | "account.updated" | "moderation_action.created" | "moderation_action.lifted" | "appeal.created" | "domain_moderation_action.created" | "domain_moderation_action.lifted" | "status.created" | "custom_emoji.created" | "custom_emoji.updated" | "custom_emoji.deleted" | "error_group.created" | "error_group.regressed";
         /**
-         * @description The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
+         * @description The body of a message that a webhook receives (Standard Webhooks), posted as
          *     `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
          *     `webhook-signature`. `data` is what the admin API answers for the object of the event,
          *     presented in the transaction of the event: `AdminReport` for `report.*`,
@@ -14564,8 +14631,7 @@ export interface components {
          *     for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
          *     `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
          *     `WebhookStatus` for `status.created`, and
-         *     `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
-         *     describes it.
+         *     `WebhookTest` for `webhook.test`. No operation returns it.
          */
         WebhookMessage: {
             type: components["schemas"]["WebhookMessageType"];
@@ -15214,7 +15280,7 @@ export interface components {
         RoleKey: string;
         /** @description The ID of the rule. */
         RuleId: components["schemas"]["Id"];
-        /** @description The maximum number of results of a prefix search for the autocomplete (ADR-0092). */
+        /** @description The maximum number of results of a prefix search for the autocomplete. */
         SearchLimit: number;
         /** @description The ID of the sign-up block. */
         SignupBlockId: components["schemas"]["Id"];
@@ -15233,9 +15299,9 @@ export interface components {
     };
     requestBodies: never;
     headers: {
-        /** @description The caching policy. Anonymous public GETs are cacheable by shared caches (ADR-0016). */
+        /** @description The caching policy. Anonymous public GETs are cacheable by shared caches. */
         CacheControl: string;
-        /** @description The statement to search engines (ADR-0057) of a response that states more than the default `noindex`. */
+        /** @description The statement to search engines of a response that states more than the default `noindex`. */
         XRobotsTag: string;
     };
     pathItems: never;
@@ -16007,6 +16073,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupporterListing"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDeactivationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What deactivating the account would do now. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeactivationPreview"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    deactivateOwnAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateOwnAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The account is deactivated, and its sessions and tokens have ended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deactivation"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -16990,7 +17103,7 @@ export interface operations {
                  *     characters after a leading `@`, which is ignored. Anything else is a 400.
                  */
                 q: string;
-                /** @description The maximum number of results of a prefix search for the autocomplete (ADR-0092). */
+                /** @description The maximum number of results of a prefix search for the autocomplete. */
                 limit?: components["parameters"]["SearchLimit"];
             };
             header?: never;
@@ -18448,7 +18561,7 @@ export interface operations {
                  *     Anything else is a 400.
                  */
                 q: string;
-                /** @description The maximum number of results of a prefix search for the autocomplete (ADR-0092). */
+                /** @description The maximum number of results of a prefix search for the autocomplete. */
                 limit?: components["parameters"]["SearchLimit"];
             };
             header?: never;

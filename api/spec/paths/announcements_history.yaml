@@ -3,7 +3,7 @@ get:
   operationId: listAnnouncementHistory
   summary: List the announcements, past ones included
   description: |
-    The server's announcements that have started to show to the local users (FR-726): the
+    The server's announcements that have started to show to the local users: the
     published ones whose `published_at` has passed, those whose window has ended included
     (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
     first, each with whether the user has read it. Only the announcements that show now can be

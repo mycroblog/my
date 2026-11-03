@@ -3,7 +3,7 @@ get:
   operationId: listCostItems
   summary: List the cost items
   description: |
-    The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+    The instance's cost items that are not canceled, newest first.
     Needs the `manage_finance` permission.
   tags: [admin-server]
   security:
@@ -28,7 +28,7 @@ post:
   summary: Record a cost item
   description: |
     Records a cost of the instance: once, or every N weeks, months, or years from the start
-    date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+    date. A value the server rejects is a 422 naming it: `interval` outside 1
     to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
     `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
     amount with more digits than its currency (`price`). Recorded in the audit log.

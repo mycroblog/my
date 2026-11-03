@@ -34,5 +34,6 @@ func (a *App) setUpAuthPages(cfg *config.Config) {
 		MailUnsubscribe: a.Identity,
 		// Users sign in and sign up with the login providers that administrators set up (FR-010).
 		ExternalLogins: a.Identity,
+		Deactivation:   a.Identity,
 	}).Register(surfaceRouter{a, surfaceOAuth})
 }

@@ -23,7 +23,8 @@ nothing is left to apply (`db:check`). Never write migration SQL by hand.
 ## Conventions
 
 Tables follow [the logical data model](../docs/architecture/data-model/README.md), mapping logical types per its
-[§1.2](../docs/architecture/data-model/01-conventions.md#12-論理型).
+[§1.2](../docs/architecture/data-model/01-conventions.md#12-論理型). There are no foreign keys: references between tables are
+logical, and contract tests keep them consistent.
 
 SQLite:
 

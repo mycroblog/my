@@ -4,7 +4,7 @@ get:
   summary: Search hashtags by prefix
   description: |
     The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-    form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+    form and the hashtag search. `q` and the names are compared
     under NFKC and lowercase.
 
     Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now

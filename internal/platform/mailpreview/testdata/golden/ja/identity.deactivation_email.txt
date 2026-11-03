@@ -1,0 +1,13 @@
+Example Social のアカウントを無効化しました。2026-12-03 09:00 (UTC) までに再有効化しないと、アカウントは削除されます。
+
+再有効化するには、ログインしてください。削除の前にこの件のメールをもう一度送ることはありません。心当たりがない場合は、ログインして再有効化し、パスワードを変更してください。
+
+ログイン
+https://social.example/auth/sign_in
+
+-- 
+Example Social
+https://social.example
+連絡先: admin@social.example
+
+Example Social のアカウントのメールアドレスに送っています。

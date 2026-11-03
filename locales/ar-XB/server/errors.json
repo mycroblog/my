@@ -63,6 +63,42 @@
     "defaultMessage": "‮{reason,select,not_pending{⊥ɥǝ ɹǝbnǝsʇ ʍɐs ɐʅɹǝɐpʎ ɐddɹoʌǝp, ɹǝɾǝɔʇǝp, oɹ ʍıʇɥpɹɐʍu.} other{⊥ɥǝ ɹǝbnǝsʇ ɔɐuuoʇ qǝ pǝɔıpǝp ɐs ıʇ ıs.} requester_cannot_create{⊥ɥǝ ɹǝbnǝsʇǝɹ ɔɐu uo ʅouƃǝɹ ɔɹǝɐʇǝ ɔnsʇoɯ ǝɯoɾı. ᴚǝɾǝɔʇ ʇɥǝ ɹǝbnǝsʇ ıusʇǝɐp.} shortcode_taken{∀ ɔnsʇoɯ ǝɯoɾı oɟ ʇɥıs sǝɹʌǝɹ ɐʅɹǝɐpʎ ɥɐs ʇɥıs sɥoɹʇɔopǝ. ᴚǝɾǝɔʇ ʇɥǝ ɹǝbnǝsʇ ıusʇǝɐp.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ıs pǝɐɔʇıʌɐʇǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ıs ʍɐıʇıuƃ ʇo qǝ pǝʅǝʇǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "‮⊥ɥıs ıs ʇɥǝ ouʅʎ ɐpɯıuısʇɹɐʇoɹ ɐɔɔonuʇ ʇɥɐʇ ɔɐu sıƃu ıu. Wɐʞǝ soɯǝouǝ ǝʅsǝ ɐu ɐpɯıuısʇɹɐʇoɹ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʇɥıs ɐɔɔonuʇ ɟɹoɯ sıƃuıuƃ ıu.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ɯoʌǝp ʇo ɐuoʇɥǝɹ ɐɔɔonuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "‮Ↄɐuɔǝʅ ʎonɹ snddoɹʇǝɹ snqsɔɹıdʇıou ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ʍɐs ɹǝɐɔʇıʌɐʇǝp ʅǝss ʇɥɐu 24 ɥonɹs ɐƃo.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ɔɐuuoʇ qǝ pǝɐɔʇıʌɐʇǝp uoʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "‮⊥ɥǝ ɹǝƃısʇɹɐʇıou oɟ ʇɥıs ɐɔɔonuʇ ıs ʍɐıʇıuƃ ɟoɹ ɹǝʌıǝʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.domain_mutes.too_many": {
     "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɯnʇǝ ʇɥǝ ɯosʇ poɯɐıus ɐʅʅoʍǝp. ∩uɯnʇǝ ouǝ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -53,7 +53,7 @@ import (
 
 // Paths of the screens.
 const (
-	PathSignIn = "/auth/sign_in"
+	PathSignIn = appidentity.PathSignIn
 	// PathSignInTwoFactor is the second step of a sign-in, which asks a user with two-factor
 	// authentication for a code (twofactor.go).
 	PathSignInTwoFactor = "/auth/sign_in/two_factor"
@@ -71,6 +71,10 @@ const (
 	// PathAppeal takes the status page's appeals of the moderation actions that keep the user
 	// out of the app (moderation.go).
 	PathAppeal = "/auth/appeal"
+	// PathReactivate brings back the deactivated account of the signed-in user (ADR-0145 §4).
+	PathReactivate = "/auth/reactivate"
+	// PathDeleteDeactivated deletes the deactivated account of the signed-in user.
+	PathDeleteDeactivated = "/auth/deactivated/delete"
 	// PathAuthorize is the OAuth authorization endpoint.
 	PathAuthorize = "/oauth/authorize"
 )
@@ -148,6 +152,9 @@ type Options struct {
 	Identity Identity
 	// OAuth serves the authorization endpoint; nil leaves it out.
 	OAuth OAuth
+	// Deactivation reactivates and deletes a deactivated account from the status page; nil leaves
+	// them out.
+	Deactivation Deactivation
 	// Issuer is the authorization server's identifier, sent as the iss parameter of the
 	// authorization response (RFC 9207), e.g. https://social.example.
 	Issuer string
@@ -220,15 +227,16 @@ var templateFS embed.FS
 
 // Page templates, each rendered inside templates/layout.html.
 const (
-	pageSignIn      = "sign_in"
-	pageTwoFactor   = "two_factor"
-	pageSignedIn    = "signed_in"
-	pageError       = "error"
-	pageSignUp      = "sign_up"
-	pageStatus      = "status"
-	pageVerifyEmail = "verify_email"
-	pageVerified    = "verified"
-	pageAuthorize   = "authorize"
+	pageSignIn         = "sign_in"
+	pageTwoFactor      = "two_factor"
+	pageSignedIn       = "signed_in"
+	pageError          = "error"
+	pageSignUp         = "sign_up"
+	pageStatus         = "status"
+	pageVerifyEmail    = "verify_email"
+	pageVerified       = "verified"
+	pageAccountDeleted = "account_deleted"
+	pageAuthorize      = "authorize"
 	// The pages of password_reset.go.
 	pageForgotPassword = "forgot_password"
 	pageResetPassword  = "reset_password"
@@ -251,7 +259,7 @@ func New(o Options) *Handler {
 	}
 	h := &Handler{o: o, pages: map[string]*template.Template{}, cop: http.NewCrossOriginProtection()}
 	for _, name := range []string{pageSignIn, pageTwoFactor, pageSignedIn, pageError, pageSignUp, pageStatus, pageVerifyEmail, pageVerified, pageAuthorize,
-		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed} {
+		pageForgotPassword, pageResetPassword, pagePasswordReset, pageMailUnsubscribe, pageMailUnsubscribed, pageAccountDeleted} {
 		h.pages[name] = template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/human_check.html", "templates/external_logins.html", "templates/"+name+".html"))
 	}
 	h.cop.SetDenyHandler(http.HandlerFunc(h.crossOrigin))
@@ -279,6 +287,10 @@ func (h *Handler) Register(r Router) {
 	r.Handle("POST "+PathVerifyEmail, h.cop.Handler(http.HandlerFunc(h.verifyEmail)))
 	r.Handle("POST "+PathResendVerification, h.cop.Handler(http.HandlerFunc(h.resendVerification)))
 	r.Handle("POST "+PathAppeal, h.cop.Handler(http.HandlerFunc(h.appeal)))
+	if h.o.Deactivation != nil {
+		r.Handle("POST "+PathReactivate, h.cop.Handler(http.HandlerFunc(h.reactivate)))
+		r.Handle("POST "+PathDeleteDeactivated, h.cop.Handler(http.HandlerFunc(h.deleteDeactivated)))
+	}
 	if h.passwordResetEnabled() {
 		r.Handle("GET "+PathForgotPassword, http.HandlerFunc(h.forgotPasswordPage))
 		r.Handle("POST "+PathForgotPassword, h.cop.Handler(http.HandlerFunc(h.forgotPassword)))

@@ -326,7 +326,8 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 
 // RegisterEligibilityProjectors subscribes the rooms to the events of the other modules that
 // change who may be in a room or host it (ADR-0100 §1, §2, §11): the suspensions of
-// moderation.account_suspension_changed, the deletions of account.lifecycle_event_recorded,
+// moderation.account_suspension_changed, the deletions and the deactivations of
+// account.lifecycle_event_recorded,
 // and the restrictions of moderation.account_restrictions_changed enqueue JobCheckAccount for an
 // account in a room; the role changes of moderation.audit_recorded and the revisions of
 // voice_room_starters enqueue JobCheckHosts while rooms are open; and the blocks of
@@ -343,7 +344,7 @@ func (s *Service) RegisterEligibilityProjectors(r *uow.Projectors) {
 	})
 	r.Register(account.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(account.LifecycleEventRecorded)
-		if !ev.ClosesLocalAccount() {
+		if !ev.ClosesLocalAccount() && !ev.Deactivates() {
 			return nil
 		}
 		return s.enqueueCheckAccount(ctx, tx, ev.Event.AccountID, "lifecycle:"+ev.Event.ID)

@@ -7,7 +7,7 @@ delete:
     Revokes every grant of the app that the user holds, so that its access and refresh tokens
     stop working at once (the next request with one is a 401). Revoking the server's own web
     client signs the user out of every browser, this one included. An app the user holds no
-    working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+    working grant of is a 404. Only the server's own clients may call it.
   tags: [authorized_apps]
   security:
     - oauth2: ["write:accounts"]

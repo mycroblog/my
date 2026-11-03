@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A user's registration as the moderators review it (FR-721).
+description: A user's registration as the moderators review it.
 type: object
 required: [user_id, state, state_changed_at, submitted_at]
 properties:

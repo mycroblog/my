@@ -86,6 +86,32 @@ func PasswordNoticeEmailDraft(w MailWording, to string, notice PasswordNotice, f
 	return d, true
 }
 
+// DeactivationEmailDraft is the email to to that tells that their account is deactivated: the date
+// of its deletion, deletionDate as the user reads it (DeletionDateText), and signInLink, the URL of
+// the page that signs in to undo it.
+func DeactivationEmailDraft(w MailWording, to, deletionDate, signInLink string) kernel.MailDraft {
+	return kernel.MailDraft{
+		Category: kernel.MailTransactional, To: to,
+		Subject: w.L.ServerMailAccountDeactivatedSubject(w.Name),
+		Paragraphs: []string{
+			w.L.ServerMailAccountDeactivatedBody(i18n.ServerMailAccountDeactivatedBodyArgs{Date: deletionDate, Instance: w.Name}),
+			w.L.ServerMailAccountDeactivatedDetail(),
+		},
+		Action: &kernel.MailAction{Label: w.L.ServerMailActionSignIn(), URL: signInLink},
+		Reason: w.L.ServerMailReasonAccount(w.Name),
+	}
+}
+
+// DeletionDateText writes the date of a deletion in the time zone zone (UTC when it is "" or
+// unknown), as the user reads it in the deactivation email and on the status page.
+func DeletionDateText(t time.Time, zone string) string {
+	loc, err := time.LoadLocation(zone)
+	if zone == "" || err != nil {
+		loc, zone = time.UTC, identity.DefaultTimeZone
+	}
+	return t.In(loc).Format(closureMailLayout) + " (" + zone + ")"
+}
+
 // ClosureEmailDraft is the email e to to about the service closure view, with its dates in the
 // time zone zone (UTC when it is "" or unknown) and exportLink, the URL of the web client's page
 // that exports the user's data. ok is false for an unknown e.

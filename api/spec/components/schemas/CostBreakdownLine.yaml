@@ -8,7 +8,7 @@ properties:
   provider:
     type: string
     description: |
-      The provider as entered (ADR-0098), one spelling for every line of the same grouped provider
+      The provider as entered, one spelling for every line of the same grouped provider
       in the period: the provider of the cost item whose current label was revised last among the
       items with payments in the period (the larger revision ID on a tie), or, for a provider of
       imported costs only, the import's provider name (`AWS`, `Google Cloud`).

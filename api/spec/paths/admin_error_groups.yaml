@@ -3,7 +3,7 @@ get:
   operationId: listErrorGroups
   summary: List the error groups
   description: |
-    The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+    The groups of the errors that the server and the web client reported, the
     most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
     and `source` keep the groups of that state and source. Needs the `manage_errors`
     permission.

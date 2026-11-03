@@ -3,7 +3,7 @@ get:
   operationId: listDomainActions
   summary: List the moderation actions on domains
   description: |
-    The actions that moderators took on remote domains (FR-702), newest first, lifted and
+    The actions that moderators took on remote domains, newest first, lifted and
     expired ones included unless `active` is set. Needs the `manage_domains` permission.
   tags: [admin-moderation]
   security:
@@ -43,7 +43,7 @@ post:
   operationId: createDomainAction
   summary: Take a moderation action on a domain
   description: |
-    Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+    Records an action on a remote domain and its subdomains, in effect at once and
     until it expires or is lifted. A `suspend` stops every delivery to the domain, every
     fetch from it, and every activity received from it, and hides its accounts and posts
     from the timelines; `limit` keeps its posts off the public timelines and its accounts

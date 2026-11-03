@@ -698,5 +698,41 @@
   "errors.login_providers_only": {
     "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードやパスキーはここでは設定できません。",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "このアカウントはいま無効化できません。",
+    "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "モデレーションの処分により、このアカウントはログインできません。",
+    "description": "API error detail: the account cannot be deactivated because a moderation action disables its login."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "このアカウントは削除を待っています。",
+    "description": "API error detail: the account cannot be deactivated because its deletion is scheduled."
+  },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "このアカウントはすでに無効化されています。",
+    "description": "API error detail: the account cannot be deactivated because it is deactivated already."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "このアカウントは別のアカウントへ移転しました。",
+    "description": "API error detail: the account cannot be deactivated because it moved to another account."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "このアカウントの登録は審査を待っています。",
+    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "先にサポーターの登録を解約してください。",
+    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "このアカウントは再有効化から 24 時間たっていません。",
+    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてください。",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

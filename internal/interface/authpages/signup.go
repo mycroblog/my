@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
@@ -314,6 +315,13 @@ type statusView struct {
 	// (moderation.go).
 	Restricted bool
 	Actions    []statusAction
+	// Deactivated tells that the user deactivated the account, which is deleted at DeletionAt,
+	// DeletionDate as the user reads it. The page offers to reactivate or delete it
+	// (deactivation.go), with the password when the user has one.
+	Deactivated           bool
+	DeletionDate          string
+	DeletionAt            string
+	DeleteAsksForPassword bool
 }
 
 // renderStatus shows the status page of userID, in the user's saved locale. notice and alert
@@ -329,6 +337,9 @@ func (h *Handler) renderStatusPage(w http.ResponseWriter, r *http.Request, statu
 	title := (*i18n.Localizer).ServerAuthStatusTitle
 	if access.LoginRestricted {
 		title = (*i18n.Localizer).ServerAuthStatusRestrictedTitle
+	}
+	if access.Deactivated {
+		title = (*i18n.Localizer).ServerAuthStatusDeactivatedTitle
 	}
 	actions, err := h.restrictionActions(r.Context(), l, access, draft)
 	if err != nil {
@@ -348,6 +359,16 @@ func (h *Handler) renderStatusPage(w http.ResponseWriter, r *http.Request, statu
 		Rejected:   access.Registration == identity.RegistrationRejected,
 		Restricted: access.LoginRestricted,
 		Actions:    actions,
+	}
+	if access.Deactivated && h.o.Deactivation != nil {
+		v.Deactivated, v.DeletionDate = true, access.DeletionDate
+		if access.DeletionDueAt != nil {
+			v.DeletionAt = access.DeletionDueAt.UTC().Format(time.RFC3339)
+		}
+		if v.DeleteAsksForPassword, err = h.o.Deactivation.HasPassword(r.Context(), userID); err != nil {
+			h.internalError(w, r, err)
+			return
+		}
 	}
 	if access.AwaitingVerification() && !v.Rejected {
 		v.VerifyEmail = l.ServerAuthStatusVerifyEmail(access.Email)

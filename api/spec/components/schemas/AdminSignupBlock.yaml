@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A block on sign-ups from the registration page (FR-719).
+description: A block on sign-ups from the registration page.
 type: object
 required: [id, kind, value, severity, state, created_at]
 properties:

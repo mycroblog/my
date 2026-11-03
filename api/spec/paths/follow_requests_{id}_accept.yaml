@@ -3,7 +3,7 @@ post:
   operationId: acceptFollowRequest
   summary: Accept a follow request
   description: |
-    Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+    Makes the account's pending follow of the viewer active. Accepting a follow
     that is already active changes nothing; without a follow it is a 404.
   tags: [accounts]
   security:

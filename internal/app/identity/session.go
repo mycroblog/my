@@ -356,13 +356,13 @@ func (s *Service) verifyPassword(ctx context.Context, normalizedEmail, password 
 }
 
 // checkActive fails with ErrInvalidCredentials unless the user's local account is active, so
-// that a deactivated, deleted, or deletion-scheduled account cannot sign in and the response
-// does not tell that the password was right. An account that moderation forbids to log in
-// (disable_login, suspend, ban) signs in to the server-rendered screens only, which show the
-// user the actions that keep them out (Access.LoginRestricted); it gets no access token. So
-// does an account whose deletion is scheduled while a ban is in effect on it, until the
-// deletion, so that the user can appeal the ban (FR-707); an account whose owner scheduled
-// its deletion or deactivated it still cannot sign in.
+// that a deleted or deletion-scheduled account cannot sign in and the response does not tell that
+// the password was right. An account that moderation forbids to log in (disable_login, suspend,
+// ban) signs in to the server-rendered screens only, which show the user the actions that keep
+// them out (Access.LoginRestricted); it gets no access token. So does an account whose deletion
+// is scheduled while a ban is in effect on it, until the deletion, so that the user can appeal the
+// ban (FR-707), and an account that its owner deactivated, until the date of its deletion, so that
+// the user can reactivate or delete it (Access.Deactivated, ADR-0145 §4).
 func (s *Service) checkActive(ctx context.Context, userID string) error {
 	st, err := s.d.Accounts.UserLifecycle(ctx, userID)
 	if errors.Is(err, account.ErrNotFound) {
@@ -372,6 +372,9 @@ func (s *Service) checkActive(ctx context.Context, userID string) error {
 		return err
 	}
 	if st.Active() {
+		return nil
+	}
+	if st.Deactivated() && !st.DeactivationExpired(s.d.Clock.Now()) {
 		return nil
 	}
 	if st.DeletionScheduled() {

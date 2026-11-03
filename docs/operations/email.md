@@ -14,6 +14,7 @@ the user is told "we sent a confirmation email", and asks for it again if it doe
 | Transactional (`transactional`) | Email address confirmation | `identity.verification_email` | No |
 | Transactional | Password reset | `identity.password_reset_email` | No |
 | Transactional | Notice of a password change or deletion | `identity.password_notice_email` | No |
+| Transactional | Notice of the deactivation of the account, with the date of its deletion | `identity.deactivation_email` | No |
 | Transactional | Service shutdown (the announcement, a change of date, a cancellation, 7 days and 1 day before the closing date, the closing, and 7 days before the export deadline) | `identity.closure_email` | No |
 | Notification (`notification`) | Notice to moderators (on by default, per kind of notice) | `notification.moderator_email` | Yes |
 | Notification (`notification`) | A notification that stayed unread for 15 minutes: mentions, follows, boosts, and the other notifications from other users, and notices from the moderators (off by default, per kind) | `notification.email` | Yes |

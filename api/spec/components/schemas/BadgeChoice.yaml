@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   A role that the authenticated user holds and that has a badge, with whether the user shows
-  the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
+  the badge on their profile. A badge is hidden until the user shows it; losing the
   role or its badge hides it again.
 type: object
 required: [role_id, label, color, displayed]

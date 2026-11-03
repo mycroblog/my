@@ -4,7 +4,7 @@ post:
   summary: Withdraw the scheduled change of the authenticated user's subscription
   description: |
     Withdraws the change to a lower plan or to the monthly price that waits for the end of
-    the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+    the period; the subscription renews at its current plan and interval. A 409
     `/api/v1/problems/supporter-subscription-state` without a scheduled change.
   tags: [supporters]
   security:

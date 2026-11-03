@@ -275,6 +275,15 @@ type FollowHandlerDeps struct {
 	// Moves tells the local accounts that moved, which refuse new followers; nil means that none
 	// moved.
 	Moves MoveStates
+	// Relationships tells whether a remote account follows a local one or asked to: a Follow sent
+	// again to a deactivated account changes nothing and gets no answer (ADR-0145 §6); nil means
+	// that none does.
+	Relationships FollowRelationships
+}
+
+// FollowRelationships reads how an account stands to another; *appgraph.Service implements it.
+type FollowRelationships interface {
+	Relationship(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
 }
 
 // MoveStates reads the move in force of an account, appaccount.ErrNotFound when it has not
@@ -405,6 +414,8 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 				return fmt.Errorf("%w: a Follow of the instance actor", ErrDropActivity)
 			}
 			return h.d.Relays.ReceiveFollow(ctx, in, a)
+		case err == nil && a.Account.IsLocal() && a.Lifecycle.Deactivated():
+			return h.followOfDeactivated(ctx, in, a)
 		case err == nil && a.Account.IsLocal():
 			switch m, err := moved(ctx, h.d.Moves, a.Account.ID); {
 			case err != nil:
@@ -432,6 +443,26 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	return graphError(h.d.Graph.ReceiveFollow(ctx, appgraph.ReceiveFollowInput{
 		URI: string(uri), FollowerID: in.Actor.Account.ID, FolloweeID: followee,
 	}))
+}
+
+// followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0145 §6):
+// a new one gets a Reject and is not recorded, so it does not come back with the account. The
+// sender of one that is already there, active or pending, gets no answer, since a Reject would end
+// on its server a follow that stays here.
+func (h followHandlers) followOfDeactivated(ctx context.Context, in *InboxActivity, a appaccount.Actor) error {
+	if h.d.Relationships != nil {
+		r, err := h.d.Relationships.Relationship(ctx, in.Actor.Account.ID, a.Account.ID)
+		if err != nil {
+			return err
+		}
+		if r.ActivelyFollowing() || r.RequestedFollow() {
+			return fmt.Errorf("%w: a Follow of %s, which is deactivated, sent again", ErrDropActivity, a.Account.URI)
+		}
+	}
+	if h.d.Refusals == nil {
+		return fmt.Errorf("%w: a Follow of %s, which is deactivated", ErrDropActivity, a.Account.URI)
+	}
+	return h.d.Refusals.Refuse(ctx, in, a)
 }
 
 // respond returns the handler of an Accept (accepted) or Reject: the answer of a relay to its

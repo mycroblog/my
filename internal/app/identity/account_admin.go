@@ -25,8 +25,8 @@ import (
 
 // AdminAccountState is the state of an account as moderators see it, derived from the account's
 // lifecycle, its own moderation actions, and its registration, in this order of precedence:
-// deleted, suspended (suspend, ban), disabled (disable_login), rejected and pending (the
-// registration), limited (limit), and active.
+// deleted, suspended (suspend, ban), disabled (disable_login), deactivated (by its owner,
+// ADR-0145 §5), rejected and pending (the registration), limited (limit), and active.
 type AdminAccountState string
 
 // States of accounts.
@@ -38,13 +38,15 @@ const (
 	AdminAccountDisabled  AdminAccountState = "disabled"
 	AdminAccountSuspended AdminAccountState = "suspended"
 	AdminAccountDeleted   AdminAccountState = "deleted"
+	// AdminAccountDeactivated is an account that its owner deactivated.
+	AdminAccountDeactivated AdminAccountState = "deactivated"
 )
 
 // Valid reports whether s is one of the states.
 func (s AdminAccountState) Valid() bool {
 	switch s {
 	case AdminAccountActive, AdminAccountPending, AdminAccountRejected, AdminAccountLimited, AdminAccountDisabled,
-		AdminAccountSuspended, AdminAccountDeleted:
+		AdminAccountSuspended, AdminAccountDeleted, AdminAccountDeactivated:
 		return true
 	}
 	return false
@@ -344,6 +346,10 @@ func (s *AccountAdmin) source(q AccountSearch) (source, error) {
 		return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
 			return s.d.Accounts.DeletedAccounts(ctx, before, limit)
 		}), nil
+	case AdminAccountDeactivated:
+		return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
+			return s.d.Accounts.DeactivatedAccounts(ctx, before, limit)
+		}), nil
 	}
 	return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
 		return s.d.Accounts.Search(ctx, account.SearchQuery{
@@ -461,6 +467,8 @@ func adminState(a AdminAccount) AdminAccountState {
 		return AdminAccountSuspended
 	case has(appmoderation.RestrictLogin):
 		return AdminAccountDisabled
+	case a.Actor.Lifecycle.Deactivated():
+		return AdminAccountDeactivated
 	case a.Registration != nil && a.Registration.State == identity.RegistrationRejected:
 		return AdminAccountRejected
 	case a.Registration != nil && a.Registration.State == identity.RegistrationPending:

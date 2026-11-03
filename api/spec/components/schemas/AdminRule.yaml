@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
+  A rule of the instance. Its ID stays the same across revisions, so reports keep
   citing it.
 type: object
 required: [id, position, text, created_at, revised_at]

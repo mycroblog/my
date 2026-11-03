@@ -31,12 +31,11 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at` | 一意 `(account_id, seq)` |
+| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at` | 一意 `(account_id, seq)`。インデックス `(avatar_media_id)`、インデックス `(header_media_id)` |
 | `account_profile_revision_sources` | イベント（部分型） | `revision_id`（PK）, `note_source` | ローカルのみ。入力されたままの自己紹介 |
 | `account_profile_fields` | イベント（版の子） | `revision_id`, `position`（`int`）, `name`, `value_html` | PK `(revision_id, position)`（FR-006） |
 | `account_profile_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去）。表示名・自己紹介・補足情報のカスタム絵文字（ADR-0051）。`emoji_id` は `content` の `custom_emojis` の行で、`content` の公開 API で得る |
 | `account_profile_field_sources` | イベント（部分型） | `revision_id`, `position`, `value_source` | PK `(revision_id, position)`。ローカルのみ。入力されたままの補足情報の値 |
-| `account_profile_field_verifications` | イベント | `revision_id`, `position`, `verified_at` | PK `(revision_id, position)`。`rel="me"` リンクの検証結果 |
 | `remote_profile_revisions` | イベント（部分型） | `revision_id`（PK）, `snapshot_id`, `html_policy_version`（`int`） | リモートのみ。版を作った取得と、`note_html` / `value_html` をサニタイズしたポリシーの版（ADR-0019 §2） |
 | `account_profile_heads` | 投影 | `account_id`（PK）, `revision_id` | `seq` が最大の版を指す |
 
@@ -81,8 +80,9 @@
     削除済みのアカウントと、それより早い期日の削除がすでに予定されているアカウントには記録しません。
 - 本人による削除（FR-008、`POST /api/v1/accounts/delete`）は、現在のパスワードかその利用者のパスキーで確かめてから、猶予を置かずに `deleted`（`initiated_by = self`）を記録します（`account.Service.DeleteBySelf`）。
   本人による削除の予約はログインできない（§4.1）ので、予約しても本人には取り消せないためです。データの消去は、ほかの削除と同じく `deleted` から 7 日後です（下記）。削除済みのアカウントには記録しません。
-- 期日を過ぎた `deletion_scheduled` は、1 時間ごとのジョブ `account.execute_deletions` が `deleted`（`initiated_by = system`）にします（`account.Service.ExecuteDueDeletions`）。
-  1 回で 100 件まで、アカウントごとに短いトランザクションで、状態を読み直してから記録するので、再実行しても二重に削除しません。
+- 本人による無効化（[§5.6](../05-states-and-policies.md)、ADR-0145）は `deactivated`（`initiated_by = self`）を記録し、戻るときは `reactivated` を記録します。削除の日付は `since` の 30 日後で、`deletion_due_at` は使いません。
+- 期日を過ぎた `deletion_scheduled` と、30 日を過ぎた `deactivated` は、1 時間ごとのジョブ `account.execute_deletions` が `deleted`（`initiated_by = system`）にします（`account.Service.ExecuteDueDeletions`）。
+  種類ごとに 1 回で 100 件まで、アカウントごとに短いトランザクションで、状態を読み直してから記録するので、再実行しても二重に削除しません。
   `deleted` は既存の購読者を通して、アカウントと投稿を表示から外し、`Delete`（Actor）を送ります（[federation.md §7.1](../../federation.md)）。
 - `deleted` から 7 日（`account.ErasureDelay`。`Delete`（Actor）の配送のリトライが終わるまで、鍵とフォローが要る）を過ぎたローカルのアカウントは、1 時間ごとのジョブ `account.erase_deleted` がデータを消します（§8）。
 - 行が無いアカウントは `active` とみなします。作成時には行を作らず、最初のライフサイクルイベントで作ります（イベントからの再構築と一致させるため）。

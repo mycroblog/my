@@ -75,7 +75,8 @@ func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 //
 // A local actor that moderation suspends (suspend, ban) is served, not hidden, until it is
 // deleted: its document is emptied and marked suspended, with its key, so that other servers
-// show the suspension and can verify the actor's Delete (federation.md §11, ADR-0036).
+// show the suspension and can verify the actor's Delete (federation.md §11, ADR-0036). So is a
+// local actor that its owner deactivated, until it comes back or is deleted (ADR-0145 §7).
 //
 // A deleted local actor answers 410 with a Tombstone from its deleted event on, also after the
 // erasure, so that a server that missed the Delete can tell gone from missing (ADR-0144 §1). A
@@ -158,11 +159,15 @@ func (h *Handler) closedActor(w http.ResponseWriter, r *http.Request) {
 // answers it with 410.
 var errActorGone = errors.New("activitypub: the local actor is deleted")
 
-// findPresented is findVisible for the lookups that tell a deleted local actor from a missing one:
-// the actor document, the redirect of its profile page, and WebFinger. A remote actor stays missing.
+// findPresented is findVisible for the lookups that tell a deleted local actor from a missing one
+// and that still answer for a deactivated one: the redirect of the profile page and WebFinger. A
+// remote actor stays missing.
 func findPresented(a appaccount.Actor, err error) (appaccount.Actor, error) {
 	if err == nil && a.Account.IsLocal() && a.Deleted() {
 		return appaccount.Actor{}, errActorGone
+	}
+	if err == nil && answers(a) {
+		return a, nil
 	}
 	return findVisible(a, err)
 }
@@ -175,8 +180,8 @@ func (h *Handler) lookupID(r *http.Request, id string) (appaccount.Actor, error)
 	return findVisible(h.o.Accounts.FindByID(r.Context(), id))
 }
 
-// lookupResource finds the actor that a WebFinger resource names by its id: as lookupID, and
-// errActorGone for a deleted local actor.
+// lookupResource finds the actor that a WebFinger resource names by its id: as lookupID, also one
+// that its owner deactivated, and errActorGone for a deleted local actor.
 func (h *Handler) lookupResource(r *http.Request, id string) (appaccount.Actor, error) {
 	if !kernel.ValidID(id) {
 		return appaccount.Actor{}, appaccount.ErrNotFound
@@ -185,8 +190,9 @@ func (h *Handler) lookupResource(r *http.Request, id string) (appaccount.Actor, 
 }
 
 // lookupActor finds the local actor with an id from a URI that GET of the actor presents: a
-// visible one, or a suspended one that is not deleted, whatever its lifecycle (a ban schedules
-// its deletion). suspended tells the latter. A deleted local actor fails with errActorGone.
+// visible one, a suspended one that is not deleted, whatever its lifecycle (a ban schedules its
+// deletion), or one that its owner deactivated. suspended tells the latter two. A deleted local
+// actor fails with errActorGone.
 func (h *Handler) lookupActor(r *http.Request, id string) (a appaccount.Actor, suspended bool, err error) {
 	if !kernel.ValidID(id) {
 		return appaccount.Actor{}, false, appaccount.ErrNotFound
@@ -203,13 +209,14 @@ func (h *Handler) lookupActor(r *http.Request, id string) (a appaccount.Actor, s
 			return appaccount.Actor{}, false, err
 		}
 	}
+	suspended = suspended || (a.Account.IsLocal() && a.Lifecycle.Deactivated())
 	if !suspended && !visible(a) {
 		return appaccount.Actor{}, false, appaccount.ErrNotFound
 	}
 	return a, suspended, nil
 }
 
-// lookupUsername finds the visible local actor with a username: a user, or the instance actor
+// lookupUsername finds the local actor with a username that answers: a user, or the instance actor
 // under instanceActorUsername. A deleted local actor fails with errActorGone.
 func (h *Handler) lookupUsername(r *http.Request, username string) (appaccount.Actor, error) {
 	a, err := h.o.Accounts.FindByHandle(r.Context(), username, account.LocalDomain)

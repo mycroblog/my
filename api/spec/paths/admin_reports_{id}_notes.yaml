@@ -3,7 +3,7 @@ post:
   operationId: addReportNote
   summary: Write a note on a report
   description: |
-    Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+    Adds an internal note to the report. Notes are shown to the moderators only,
     never to the target or the reporter, and cannot be edited or removed. An unknown ID is
     a 404. Needs the `manage_reports` permission.
   tags: [admin-moderation]

@@ -131,6 +131,7 @@ const confirmedOperations: readonly ConfirmedOperation[] = [
   "password_change",
   "password_removal",
   "account_deletion",
+  "account_deactivation",
   "account_move",
   "link",
 ];
