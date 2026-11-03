@@ -120,7 +120,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 	e, blocks := newSignupBlocksEnv(t, identity.PermManageAccounts)
 	res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write",
 		`{"kind":"email_domain","value":"spam.example","severity":"reject","comment":"wave","expires_in":60}`)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("POST /admin/signup_blocks = %d", res.StatusCode)
 	}
 	b := decodeJSON[clientapi.AdminSignupBlock](t, res)
@@ -132,7 +132,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 		t.Errorf("added = %+v, want one by alice for a minute", blocks.added)
 	}
 	res = e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write", `{"kind":"ip_range","value":"192.0.2.0/24","severity":"require_approval"}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST a second block = %d", res.StatusCode)
 	}
 	second := decodeJSON[clientapi.AdminSignupBlock](t, res)

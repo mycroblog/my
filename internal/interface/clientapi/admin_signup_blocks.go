@@ -145,7 +145,7 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: signup block %s: %w", block.ID, err)
 	}
-	return CreateSignupBlock200JSONResponse{signupBlockResponse(view)}, nil
+	return CreateSignupBlock201JSONResponse{signupBlockResponse(view)}, nil
 }
 
 // GetSignupBlock serves GET /api/v1/admin/signup_blocks/{id}.

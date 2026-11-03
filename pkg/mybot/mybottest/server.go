@@ -552,7 +552,7 @@ func (s *Server) createStatus(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if i, ok := s.keys[key]; ok && key != "" {
-		writeJSON(w, s.posts[i].Status)
+		writeCreated(w, s.posts[i].Status)
 		return
 	}
 	me := s.me
@@ -579,7 +579,7 @@ func (s *Server) createStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	s.posts = append(s.posts, Post{IdempotencyKey: key, Request: req, Status: st})
 	s.notifyLocked()
-	writeJSON(w, st)
+	writeCreated(w, st)
 }
 
 func (s *Server) reactToStatus(w http.ResponseWriter, r *http.Request) {
@@ -637,6 +637,14 @@ func (s *Server) statusLocked(w http.ResponseWriter, id string) (mykit.Status, b
 		writeProblem(w, http.StatusNotFound, "about:blank", "No status "+id+".")
 	}
 	return st, ok
+}
+
+// writeCreated answers 201 with v, as the server does for a resource that an operation created.
+func writeCreated(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

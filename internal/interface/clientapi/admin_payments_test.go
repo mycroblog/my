@@ -72,7 +72,7 @@ func TestPaymentStatus(t *testing.T) {
 		method, path, token string
 		status              int
 	}{
-		{http.MethodPost, "/admin/payment_reconciles", "admin", http.StatusNoContent},
+		{http.MethodPost, "/admin/payment_reconciles", "admin", http.StatusAccepted},
 		{http.MethodPost, "/admin/payment_reconciles", "admin", http.StatusTooManyRequests},
 		{http.MethodPost, "/admin/payment_reconciles", "admin-read", http.StatusForbidden},
 		{http.MethodPost, "/admin/payment_reconciles", "bob-admin", http.StatusForbidden},

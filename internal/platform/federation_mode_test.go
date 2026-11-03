@@ -147,7 +147,7 @@ func TestFederationMode(t *testing.T) {
 	// outbound sends it the public posts and drops what it relays, and off does neither.
 	const relayInbox = "https://relay.example/inbox"
 	relay := newRemoteActor(t, network, "https://relay.example/actor", "Application", relayInbox)
-	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": relayInbox, "protocol": "mastodon"}, nil); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": relayInbox, "protocol": "mastodon"}, nil); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /admin/relays = %d", res.StatusCode)
 	}
 	joins := network.taken()[relayInbox]

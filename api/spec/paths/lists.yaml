@@ -28,7 +28,7 @@ post:
         schema:
           $ref: ../components/schemas/ListRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/List.yaml
     default:
       $ref: ../components/responses/Problem.yaml

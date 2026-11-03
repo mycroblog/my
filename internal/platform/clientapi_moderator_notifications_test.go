@@ -44,7 +44,7 @@ func TestModeratorNotificationsThroughTheAPI(t *testing.T) {
 	counts(clientapi.AdminCounts{OpenReports: n(0), PendingRegistrations: n(0)})
 
 	var report clientapi.Report
-	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	got := types("carol")
@@ -58,7 +58,7 @@ func TestModeratorNotificationsThroughTheAPI(t *testing.T) {
 		t.Errorf("the target's notifications = %+v, want none", got)
 	}
 	// Another report of bob while the first is open notifies nobody.
-	if res := c.do("carol", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, nil); res.StatusCode != http.StatusOK {
+	if res := c.do("carol", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, nil); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	if got := types("alice"); len(got) != 0 {

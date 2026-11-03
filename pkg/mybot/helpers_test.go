@@ -109,7 +109,9 @@ func newFakeServer(t *testing.T) *fakeServer {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.posts = append(f.posts, posted{key: r.Header.Get("Idempotency-Key"), req: req})
-		writeJSON(w, mykit.Status{Id: id(9000 + len(f.posts)), Account: mykit.Account{Id: f.me.Id}, Content: req.Text, Visibility: req.Visibility})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(mykit.Status{Id: id(9000 + len(f.posts)), Account: mykit.Account{Id: f.me.Id}, Content: req.Text, Visibility: req.Visibility})
 	})
 	mux.HandleFunc("PUT /api/v1/statuses/{id}/reaction", func(w http.ResponseWriter, r *http.Request) {
 		var req mykit.ReactToStatusRequest

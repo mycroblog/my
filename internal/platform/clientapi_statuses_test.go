@@ -121,7 +121,7 @@ func (c *statusesClient) do(user, method, path string, body any, out any) *http.
 func (c *statusesClient) post(user string, body map[string]any) clientapi.Status {
 	c.t.Helper()
 	var s clientapi.Status
-	if res := c.do(user, http.MethodPost, "/statuses", body, &s); res.StatusCode != http.StatusOK {
+	if res := c.do(user, http.MethodPost, "/statuses", body, &s); res.StatusCode != http.StatusCreated {
 		c.t.Fatalf("POST /statuses %v as %s = %d", body, user, res.StatusCode)
 	}
 	return s

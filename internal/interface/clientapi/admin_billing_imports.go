@@ -130,5 +130,5 @@ func (s *Server) RunBillingImport(ctx context.Context, req RunBillingImportReque
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: run billing import of %s: %w", req.Source, err)
 	}
-	return RunBillingImport204Response{}, nil
+	return RunBillingImport202Response{}, nil
 }

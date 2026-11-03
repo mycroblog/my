@@ -43,7 +43,7 @@ func TestReportsThroughTheAPI(t *testing.T) {
 		"account_id": c.ids["bob"], "status_ids": []string{public.Id}, "category": "violation",
 		"rule_ids": []string{rule.ID}, "comment": "Please look", "forward": true,
 	}, &raw)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	data, err := json.Marshal(raw)
@@ -113,7 +113,7 @@ func TestReportResolutionReachesTheReporter(t *testing.T) {
 	c := newStatusesClient(t, "alice", "bob", "carol")
 	var report clientapi.Report
 	res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report)
-	if res.StatusCode != http.StatusOK || report.State != clientapi.ReportStateOpen {
+	if res.StatusCode != http.StatusCreated || report.State != clientapi.ReportStateOpen {
 		t.Fatalf("POST /reports = %d, %+v; want it open", res.StatusCode, report)
 	}
 	for _, outcome := range []string{"actioned", "dismissed"} {

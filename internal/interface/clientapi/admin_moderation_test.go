@@ -260,7 +260,7 @@ func TestCreateAndLiftDomainAction(t *testing.T) {
 	res := e.sendJSON(t, http.MethodPost, "/admin/domain_actions", "admin",
 		`{"domain":"Bad.Example.","kind":"suspend","public_comment":"spam","private_note":"see #12","obfuscate":true,"expires_in":3600}`)
 	got := decodeJSON[clientapi.AdminDomainAction](t, res)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("create = %d (%s)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
 	if got.Domain != "bad.example" || got.Kind != clientapi.AdminDomainActionKindSuspend || got.State != clientapi.AdminDomainActionStateActive ||

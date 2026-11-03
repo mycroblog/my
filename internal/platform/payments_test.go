@@ -184,7 +184,7 @@ func TestPaymentReconcileByHand(t *testing.T) {
 		t.Errorf("status before = %+v", st)
 	}
 
-	if code := api(http.MethodPost, "/admin/payment_reconciles", nil); code != http.StatusNoContent {
+	if code := api(http.MethodPost, "/admin/payment_reconciles", nil); code != http.StatusAccepted {
 		t.Fatalf("POST /admin/payment_reconciles = %d, want 204", code)
 	}
 	if code := api(http.MethodPost, "/admin/payment_reconciles", nil); code != http.StatusTooManyRequests {

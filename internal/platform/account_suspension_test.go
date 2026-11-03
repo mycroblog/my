@@ -79,7 +79,7 @@ func TestAccountSuspensionFederates(t *testing.T) {
 	issue := func(body map[string]any) clientapi.AdminAccountAction {
 		t.Helper()
 		var a clientapi.AdminAccountAction
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice+"/actions", mod.token, body, &a), http.StatusOK, "issue")
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice+"/actions", mod.token, body, &a), http.StatusCreated, "issue")
 		return a
 	}
 

@@ -66,7 +66,7 @@ func (s *Server) RefetchStatus(ctx context.Context, req RefetchStatusRequestObje
 		}
 		return nil, fmt.Errorf("clientapi: refetch status %s: %w", req.Id, err)
 	}
-	return RefetchStatus204Response{}, nil
+	return RefetchStatus202Response{}, nil
 }
 
 // RefetchAccountStatuses serves POST /api/v1/admin/accounts/{id}/refetch_statuses.
@@ -84,7 +84,7 @@ func (s *Server) RefetchAccountStatuses(ctx context.Context, req RefetchAccountS
 		}
 		return nil, fmt.Errorf("clientapi: refetch the statuses of account %s: %w", req.Id, err)
 	}
-	return RefetchAccountStatuses204Response{}, nil
+	return RefetchAccountStatuses202Response{}, nil
 }
 
 // RefetchInstanceStatuses serves POST /api/v1/admin/instances/{domain}/refetch_statuses.
@@ -102,5 +102,5 @@ func (s *Server) RefetchInstanceStatuses(ctx context.Context, req RefetchInstanc
 		}
 		return nil, fmt.Errorf("clientapi: refetch the statuses of %s: %w", req.Domain, err)
 	}
-	return RefetchInstanceStatuses204Response{}, nil
+	return RefetchInstanceStatuses202Response{}, nil
 }

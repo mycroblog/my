@@ -200,8 +200,8 @@ func (c *Context) Post(text string) (*mykit.Status, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.JSON200 == nil {
+	if resp.JSON201 == nil {
 		return nil, fmt.Errorf("mybot: createStatus answered %s", resp.Status())
 	}
-	return resp.JSON200, nil
+	return resp.JSON201, nil
 }

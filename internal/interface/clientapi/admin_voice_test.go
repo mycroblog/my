@@ -70,8 +70,8 @@ func TestCreateReportOfAVoiceRoom(t *testing.T) {
 	reports := &fakeReports{}
 	e := newReportsEnvWith(t, reports, &fakeVoiceModeration{})
 	res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "voice_room_id": reportedRoomID, "category": "spam", "forward": true})
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want 200", res.StatusCode)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", res.StatusCode)
 	}
 	got := decodeJSON[clientapi.Report](t, res)
 	if got.VoiceRoomId == nil || *got.VoiceRoomId != reportedRoomID {

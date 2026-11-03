@@ -137,7 +137,7 @@ func TestServiceMetricsLabels(t *testing.T) {
 		t.Errorf("my.timeline.delivery.lag has %d values, want 1", got)
 	}
 	if got := m.Measurements("http.server.request.duration", map[string]string{
-		"http.route": "/api/v1/statuses", "http.request.method": "POST", "my.surface": "client_api", "http.response.status_code": "200",
+		"http.route": "/api/v1/statuses", "http.request.method": "POST", "my.surface": "client_api", "http.response.status_code": "201",
 	}); len(got) != 1 {
 		t.Errorf("http.server.request.duration of POST /api/v1/statuses: %v", got)
 	}

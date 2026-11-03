@@ -246,5 +246,5 @@ func (s *Server) RetryAdminJob(ctx context.Context, req RetryAdminJobRequestObje
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: requeue dead job %s: %w", req.Id, err)
 	}
-	return RetryAdminJob204Response{}, nil
+	return RetryAdminJob202Response{}, nil
 }
