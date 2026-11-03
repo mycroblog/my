@@ -60,14 +60,14 @@ export type NotificationsViewProps = {
 export function NotificationsView({ filter, onFilterChange, headingId }: NotificationsViewProps) {
   const t = useT();
   const signedIn = useSessionStatus() === "signed-in";
-  const tabList = useRef<HTMLDivElement>(null);
+  const tabListRef = useRef<HTMLDivElement>(null);
   return (
     <Stack>
       {signedIn && (
         <PushPrompt
           onGone={() => {
             // The prompt's buttons go with it: the focus stays in the page, on the tab the list is filtered by.
-            tabList.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+            tabListRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
           }}
         />
       )}
@@ -77,7 +77,7 @@ export function NotificationsView({ filter, onFilterChange, headingId }: Notific
           if (isFilter(key)) onFilterChange(key);
         }}
       >
-        <TabList ref={tabList} aria-label={t("client:notifications.filter.label")}>
+        <TabList ref={tabListRef} aria-label={t("client:notifications.filter.label")}>
           {notificationFilters.map((item) => (
             <Tab key={item} id={item} icon={<NotificationKindIcon kind={filterKinds[item]} />}>
               {t(filterLabels[item])}

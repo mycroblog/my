@@ -6,7 +6,6 @@ import { expect, vi } from "vitest";
 import { instanceFixture, type Schemas } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
 import { server } from "../../../test/msw/server";
-import type { PushSubscriptionRequest } from "../api/push";
 import { pushServerKey } from "./handlers";
 
 function keyBytes(text: string): Uint8Array<ArrayBuffer> {
@@ -59,7 +58,7 @@ export function pushBrowser({
 /** The server: an instance that sends Web Push, and the grant's subscription with the requests it received. */
 export function pushServer(initial: Schemas["PushSubscription"] | null = null) {
   let saved = initial;
-  const puts: PushSubscriptionRequest[] = [];
+  const puts: Schemas["PushSubscriptionRequest"][] = [];
   let deletes = 0;
   let reads = 0;
   server.use(
@@ -76,7 +75,7 @@ export function pushServer(initial: Schemas["PushSubscription"] | null = null) {
       }),
     ),
     http.put(`${apiBase}/push/subscription`, async ({ request }) => {
-      const body = (await request.clone().json()) as PushSubscriptionRequest;
+      const body = (await request.clone().json()) as Schemas["PushSubscriptionRequest"];
       puts.push(body);
       saved = {
         id: "01900000-0000-7000-8000-0000000000f1",

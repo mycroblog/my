@@ -5,7 +5,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { clearUserStorage, pushPromptDismissedKey } from "../../lib/storage";
-import { viewerFixture } from "../../test/fixtures";
+import { type Schemas, viewerFixture } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler, withViewer } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -14,12 +14,12 @@ import { pushBrowser, pushServer } from "./test/push";
 
 const everyUserType = notificationSettingsFixture.rows.flatMap((row) => row.types);
 
-const subscription = {
+const subscription: Schemas["PushSubscription"] = {
   id: "01900000-0000-7000-8000-0000000000f1",
   endpoint: "https://push.example.net/send/1",
   alerts: ["mention"],
   server_key: pushServerKey,
-} as const;
+};
 
 beforeEach(() => {
   server.use(
@@ -198,7 +198,7 @@ describe("the flow of the prompt (ADR-0137 §2)", () => {
     expect(push.puts).toEqual([]);
   });
 
-  test("the session's end keeps that it was closed", async () => {
+  test("the session's end keeps that it was closed", () => {
     pushPromptDismissedKey.write([viewerFixture.id]);
 
     clearUserStorage();
