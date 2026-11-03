@@ -343,3 +343,11 @@ func roomsErasure(t *testing.T, e *roomsEnv) {
 		t.Errorf("the room of another account = %+v, want it untouched", rec.Revisions)
 	}
 }
+
+func (r *roomsRetention) ReportedVoiceRoomsTx(ctx context.Context, _ uow.Tx, ids []string) (map[string]bool, error) {
+	return r.ReportedVoiceRooms(ctx, ids)
+}
+
+func (r *roomsRetention) HeldAccountIDsTx(ctx context.Context, _ uow.Tx) ([]string, error) {
+	return r.HeldAccountIDs(ctx)
+}

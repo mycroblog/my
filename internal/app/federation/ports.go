@@ -122,8 +122,11 @@ func (c ContentStatuses) FindBoost(ctx context.Context, id string) (appcontent.B
 // instance. *appaccount.Service implements it.
 type Accounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	FindByIDTx(ctx context.Context, tx uow.Tx, id string) (appaccount.Actor, error)
 	// RemoteInbox fails with appaccount.ErrNotFound for a local account.
 	RemoteInbox(ctx context.Context, accountID string) (appaccount.RemoteInbox, error)
+	// RemoteInboxTx is RemoteInbox inside tx.
+	RemoteInboxTx(ctx context.Context, tx uow.Tx, accountID string) (appaccount.RemoteInbox, error)
 	// KnownSharedInboxes returns at most limit distinct shared inboxes that remote actors
 	// declare, in order, after the shared inbox after ("" for the first batch).
 	KnownSharedInboxes(ctx context.Context, after string, limit int) ([]string, error)

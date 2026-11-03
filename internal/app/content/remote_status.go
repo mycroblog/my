@@ -201,7 +201,7 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, st.PublishedAt, now)
 	if !revisedAt.After(head.LastRevisedAt) {
-		current, err := s.d.Repository.FindRevision(ctx, head.RevisionID)
+		current, err := s.d.Repository.FindRevisionTx(ctx, tx, head.RevisionID)
 		if err != nil {
 			return false, err
 		}
@@ -234,7 +234,7 @@ func (s *Service) DeleteRemoteStatus(ctx context.Context, tx uow.Tx, uri, author
 	st, err := s.d.Repository.FindLiveStatusByURI(ctx, tx, uri)
 	if errors.Is(err, ErrNotFound) {
 		// A deletion by retention is not the author's: the Delete still leaves its tombstone.
-		if d, derr := s.d.Repository.FindDeletionByURI(ctx, uri); derr == nil && d.Tombstone() {
+		if d, derr := s.d.Repository.FindDeletionByURITx(ctx, tx, uri); derr == nil && d.Tombstone() {
 			return nil // deleted before
 		} else if derr != nil && !errors.Is(derr, ErrNotFound) {
 			return derr
@@ -267,6 +267,11 @@ func (s *Service) LiveRemoteStatusIDs(ctx context.Context, authorAccountID, befo
 // there is none.
 func (s *Service) FindStatusByURI(ctx context.Context, uri string) (Status, error) {
 	return s.d.Repository.FindStatusByURI(ctx, uri)
+}
+
+// FindStatusByURITx is FindStatusByURI inside tx.
+func (s *Service) FindStatusByURITx(ctx context.Context, tx uow.Tx, uri string) (Status, error) {
+	return s.d.Repository.FindStatusByURITx(ctx, tx, uri)
 }
 
 // Tombstoned reports whether a deletion keeps a URI from being ingested again

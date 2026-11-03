@@ -873,3 +873,7 @@ func remoteFollowOrder(t *testing.T, newHarness RemoteFollowFactory) {
 		})
 	}
 }
+
+func (m *contractMode) FederationModeTx(ctx context.Context, _ uow.Tx) (federation.Mode, error) {
+	return m.FederationMode(ctx)
+}

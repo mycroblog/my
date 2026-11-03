@@ -818,7 +818,7 @@ func (r *contractReach) set(accountID string, restricted bool) {
 }
 
 // UnsolicitedReachRestricted implements appnotification.ReachPolicy.
-func (r *contractReach) UnsolicitedReachRestricted(_ context.Context, accountID string) (bool, error) {
+func (r *contractReach) UnsolicitedReachRestrictedTx(_ context.Context, _ uow.Tx, accountID string) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.restricted[accountID], nil

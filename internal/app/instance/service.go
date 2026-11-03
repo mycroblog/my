@@ -152,6 +152,15 @@ func (s *Service) FederationMode(ctx context.Context) (instance.FederationMode, 
 	return settings.FederationMode(), nil
 }
 
+// FederationModeTx is FederationMode inside tx.
+func (s *Service) FederationModeTx(ctx context.Context, tx uow.Tx) (instance.FederationMode, error) {
+	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	return instance.NewSettings(cur).FederationMode(), nil
+}
+
 // SetSettingInput describes a change of a setting.
 type SetSettingInput struct {
 	Key   instance.SettingKey

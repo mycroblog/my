@@ -38,6 +38,9 @@ ADR-0003（短く再実行可能なトランザクション、内部で外部 I/
 `identity` のコマンドが `account` のアプリケーション層の公開 API（`PrepareLocalAccount` / `WriteLocalAccount`）を同じトランザクションの中で呼び、`account` のテーブルは `account` のコードだけが書きます。
 鍵の生成・暗号化とパスワードのハッシュ計算は、トランザクションの前に済ませます。
 
+トランザクションの中の読み取りは、そのトランザクションの接続で行います（`...Tx` の読み取り）。トランザクションを持ったまま別の接続を取ると、同時に動く処理がプールの接続をすべて持ったとき、全員が次の接続を待って止まります。
+`internal/platform` のテストは SQLite の上で別の接続の読み取りを検出すると失敗し（`sqlite.ReportSecondConnections`）、PostgreSQL では接続 1 本のプールで主な経路を動かします（`TestOneConnectionIsEnough`）。
+
 PostgreSQL の並行性の挙動（READ COMMITTED、`SELECT ... FOR UPDATE`、`FOR UPDATE SKIP LOCKED`、トランザクションスコープのアドバイザリロック、デッドロック（40P01）の再実行）は、
 同じコントラクトテストが確かめます。毎 PR では pgmem（PGlite のフォークの PostgreSQL 18）の上で、遅い検査（リリースの関門・nightly・手動）では本物の PostgreSQL のコンテナの上で流します（[ADR-0041](../../adr/0041-postgres-tests-on-pgmem.md)、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md)）。
 

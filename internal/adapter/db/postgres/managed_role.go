@@ -15,14 +15,14 @@ import (
 
 // ListManagedRoles implements identity.ManagedRoleRepository.
 func (r *IdentityRepository) ListManagedRoles(ctx context.Context, tx uow.Tx) ([]identity.ManagedRole, error) {
-	q := r.db.reader()
+	db := r.db
 	if tx != nil {
 		var err error
-		if q, err = r.db.queries(tx); err != nil {
+		if db, err = r.db.in(tx); err != nil {
 			return nil, err
 		}
 	}
-	rows, err := q.ListManagedRoles(ctx)
+	rows, err := db.reader().ListManagedRoles(ctx)
 	if err != nil {
 		return nil, wrap(err, "list managed roles")
 	}

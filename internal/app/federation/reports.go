@@ -23,11 +23,17 @@ type ReportReader interface {
 	FindReport(ctx context.Context, id string) (appmoderation.Report, error)
 }
 
-// InstanceActorReader returns the instance actor, which sends the Flags;
-// *appaccount.Service implements it.
+// InstanceActorReader returns the instance actor; *appaccount.Service implements it.
 type InstanceActorReader interface {
 	// InstanceActor fails with appaccount.ErrNotFound before the instance actor exists.
 	InstanceActor(ctx context.Context) (appaccount.Actor, error)
+}
+
+// InstanceActorTxReader returns the instance actor inside a transaction, which sends the Flags;
+// *appaccount.Service implements it.
+type InstanceActorTxReader interface {
+	// InstanceActorTx fails with appaccount.ErrNotFound before the instance actor exists.
+	InstanceActorTx(ctx context.Context, tx uow.Tx) (appaccount.Actor, error)
 }
 
 // RegisterReportProjectors subscribes the federation module to moderation.report_filed: a local
@@ -37,16 +43,16 @@ type InstanceActorReader interface {
 // Flag) are not.
 //
 // The instance actor exists whenever a remote account does: it signs the fetch that stored the
-// account (InstanceKey). It is read from committed data; when it is missing, filing the report
-// fails rather than leaving a forwarded report unsent.
-func RegisterReportProjectors(r *uow.Projectors, d RecorderDeps, instance InstanceActorReader) {
+// account (InstanceKey). When it is missing, filing the report fails rather than leaving a
+// forwarded report unsent.
+func RegisterReportProjectors(r *uow.Projectors, d RecorderDeps, instance InstanceActorTxReader) {
 	rec := recorder{d: d}
 	r.Register(appmoderation.EventReportFiled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appmoderation.ReportFiled)
 		if !ok || !ev.Report.Forwarded {
 			return nil
 		}
-		ia, err := instance.InstanceActor(ctx)
+		ia, err := instance.InstanceActorTx(ctx, tx)
 		if err != nil {
 			return fmt.Errorf("the instance actor that forwards report %s: %w", ev.Report.ID, err)
 		}

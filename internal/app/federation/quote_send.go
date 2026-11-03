@@ -38,6 +38,7 @@ type QuoteApprovals interface {
 type QuoteStatuses interface {
 	FindStatus(ctx context.Context, id string) (appcontent.Status, error)
 	FindStatusByURI(ctx context.Context, uri string) (appcontent.Status, error)
+	FindStatusByURITx(ctx context.Context, tx uow.Tx, uri string) (appcontent.Status, error)
 }
 
 // QuoteHandlersDeps are the ports of QuoteHandlers.
@@ -133,11 +134,11 @@ func (h *QuoteHandlers) recordUpdate(ctx context.Context, tx uow.Tx, st appconte
 // recordQuoteRequest records the QuoteRequest of the local status st's quote q of a remote
 // status, to its author's inbox: object is the quoted status, instrument the quoting one.
 func (h *QuoteHandlers) recordQuoteRequest(ctx context.Context, tx uow.Tx, st appcontent.StatusRef, q appcontent.Quote) error {
-	quoted, err := h.d.Statuses.FindStatusByURI(ctx, q.QuotedURI)
+	quoted, err := h.d.Statuses.FindStatusByURITx(ctx, tx, q.QuotedURI)
 	if err != nil {
 		return err
 	}
-	inbox, author, ok, err := h.remoteInbox(ctx, quoted.AuthorAccountID)
+	inbox, author, ok, err := h.remoteInbox(ctx, tx, quoted.AuthorAccountID)
 	if err != nil || !ok {
 		return err
 	}
@@ -157,7 +158,7 @@ func (h *QuoteHandlers) recordQuoteRequest(ctx context.Context, tx uow.Tx, st ap
 // recordRevocation records the Delete of a revoked QuoteAuthorization to the quoting author's
 // inbox and the quoted author's followers (ADR-0069 §3); a local quoting author gets none.
 func (h *QuoteHandlers) recordRevocation(ctx context.Context, tx uow.Tx, ev appcontent.QuoteAuthorizationRevoked) error {
-	inbox, quoter, ok, err := h.remoteInbox(ctx, ev.Authorization.QuotingAccountID)
+	inbox, quoter, ok, err := h.remoteInbox(ctx, tx, ev.Authorization.QuotingAccountID)
 	if err != nil || !ok {
 		return err
 	}
@@ -176,16 +177,26 @@ func (h *QuoteHandlers) recordRevocation(ctx context.Context, tx uow.Tx, ev appc
 }
 
 // remoteInbox returns the inbox of the remote account accountID, its own inbox before its
-// shared one, with its actor IRI; ok is false for a local account or one never fetched.
-func (h *QuoteHandlers) remoteInbox(ctx context.Context, accountID string) (federation.IRI, federation.IRI, bool, error) {
-	a, err := h.d.Accounts.FindByID(ctx, accountID)
+// shared one, with its actor IRI; ok is false for a local account or one never fetched. It reads
+// inside tx, or outside any transaction when tx is nil.
+func (h *QuoteHandlers) remoteInbox(ctx context.Context, tx uow.Tx, accountID string) (federation.IRI, federation.IRI, bool, error) {
+	findActor, findInbox := h.d.Accounts.FindByID, h.d.Accounts.RemoteInbox
+	if tx != nil {
+		findActor = func(ctx context.Context, id string) (appaccount.Actor, error) {
+			return h.d.Accounts.FindByIDTx(ctx, tx, id)
+		}
+		findInbox = func(ctx context.Context, id string) (appaccount.RemoteInbox, error) {
+			return h.d.Accounts.RemoteInboxTx(ctx, tx, id)
+		}
+	}
+	a, err := findActor(ctx, accountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		return "", "", false, nil
 	}
 	if err != nil || a.Account.IsLocal() {
 		return "", "", false, err
 	}
-	inbox, err := h.d.Accounts.RemoteInbox(ctx, accountID)
+	inbox, err := findInbox(ctx, accountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
 		return "", "", false, nil
 	}
@@ -280,7 +291,7 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 	case err != nil:
 		return err
 	}
-	inbox, requester, ok, err := h.remoteInbox(ctx, in.Actor.Account.ID)
+	inbox, requester, ok, err := h.remoteInbox(ctx, nil, in.Actor.Account.ID)
 	if err != nil {
 		return err
 	}

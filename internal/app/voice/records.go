@@ -55,6 +55,9 @@ type Retention interface {
 	ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error)
 	// HeldAccountIDs returns the accounts that a retention hold in effect preserves.
 	HeldAccountIDs(ctx context.Context) ([]string, error)
+	// ReportedVoiceRoomsTx and HeldAccountIDsTx are the reads above inside tx.
+	ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error)
+	HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error)
 }
 
 // ParticipationRecord is a participation with its end, nil while it has not ended.
@@ -279,7 +282,7 @@ func (s *Service) purgeBatch(ctx context.Context, ids, heldIDs []string) (int, e
 	}
 	n := 0
 	err = s.roomTx(ctx, candidates, func(tx uow.Tx, _ RoomRecord) error {
-		held, err := r.HeldAccountIDs(ctx)
+		held, err := r.HeldAccountIDsTx(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -300,7 +303,13 @@ func (s *Service) purgeBatch(ctx context.Context, ids, heldIDs []string) (int, e
 // purgeable returns the rooms of ids that no report points at and whose records name none of
 // heldIDs, reading the records in tx (outside any transaction when tx is nil).
 func (s *Service) purgeable(ctx context.Context, tx uow.Tx, ids, heldIDs []string) ([]string, error) {
-	reported, err := s.d.Retention.ReportedVoiceRooms(ctx, ids)
+	var reported map[string]bool
+	var err error
+	if tx == nil {
+		reported, err = s.d.Retention.ReportedVoiceRooms(ctx, ids)
+	} else {
+		reported, err = s.d.Retention.ReportedVoiceRoomsTx(ctx, tx, ids)
+	}
 	if err != nil {
 		return nil, err
 	}

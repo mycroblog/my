@@ -72,7 +72,7 @@ func (s *Service) banned(ctx context.Context, accountID string) (bool, error) {
 
 // Accounts finds the local account of a restricted account. *account.Service implements it.
 type Accounts interface {
-	FindByID(ctx context.Context, id string) (account.Actor, error)
+	FindByIDTx(ctx context.Context, tx uow.Tx, id string) (account.Actor, error)
 }
 
 // RegisterModerationProjectors subscribes the end of a user's sessions and tokens to the
@@ -87,7 +87,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 		if !slices.ContainsFunc(ev.Effects, func(e appmoderation.Effect) bool { return e.Restriction == appmoderation.RestrictLogin }) {
 			return nil
 		}
-		a, err := accounts.FindByID(ctx, ev.AccountID)
+		a, err := accounts.FindByIDTx(ctx, tx, ev.AccountID)
 		switch {
 		case errors.Is(err, account.ErrNotFound):
 			return nil
@@ -121,7 +121,7 @@ func RegisterLifecycleProjectors(r *uow.Projectors, repo Repository, accounts Ac
 		if !ev.Deletes() {
 			return nil
 		}
-		a, err := accounts.FindByID(ctx, ev.Event.AccountID)
+		a, err := accounts.FindByIDTx(ctx, tx, ev.Event.AccountID)
 		switch {
 		case errors.Is(err, account.ErrNotFound):
 			return nil

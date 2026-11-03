@@ -473,6 +473,15 @@ func (s *Service) RemoteInbox(ctx context.Context, accountID string) (RemoteInbo
 	return RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}, nil
 }
 
+// RemoteInboxTx is RemoteInbox inside tx.
+func (s *Service) RemoteInboxTx(ctx context.Context, tx uow.Tx, accountID string) (RemoteInbox, error) {
+	h, err := s.d.Repository.FindRemoteHeadTx(ctx, tx, accountID)
+	if err != nil {
+		return RemoteInbox{}, err
+	}
+	return RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}, nil
+}
+
 // KnownSharedInboxes returns at most limit distinct shared inboxes that remote actors not
 // deleted declare in their newest documents, in order, after the shared inbox after ("" for
 // the first batch). A local account's deletion reaches every known server through them
@@ -490,6 +499,15 @@ func (s *Service) CountKnownSharedInboxes(ctx context.Context) (int, error) {
 // fails with ErrNotFound when there is none.
 func (s *Service) AccountDomain(ctx context.Context, id string) (string, error) {
 	a, err := s.d.Repository.FindAccount(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return a.Domain, nil
+}
+
+// AccountDomainTx is AccountDomain inside tx.
+func (s *Service) AccountDomainTx(ctx context.Context, tx uow.Tx, id string) (string, error) {
+	a, err := s.d.Repository.FindAccountTx(ctx, tx, id)
 	if err != nil {
 		return "", err
 	}
@@ -570,6 +588,15 @@ func (s *Service) InstanceActor(ctx context.Context) (Actor, error) {
 		return Actor{}, err
 	}
 	return s.actor(ctx, a)
+}
+
+// InstanceActorTx is InstanceActor inside tx.
+func (s *Service) InstanceActorTx(ctx context.Context, tx uow.Tx) (Actor, error) {
+	a, err := s.d.Repository.FindInstanceActorTx(ctx, tx)
+	if err != nil {
+		return Actor{}, err
+	}
+	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
 }
 
 func (s *Service) actor(ctx context.Context, a account.Account) (Actor, error) {

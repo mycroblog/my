@@ -33,6 +33,7 @@ func (d *DB) reader() *sqlitegen.Queries {
 	if d.tx != nil {
 		return sqlitegen.New(dbtrace.Wrap(d.tx, d.tracer, dbtrace.SystemSQLite))
 	}
+	checkSecondConnection(d.db)
 	return sqlitegen.New(dbtrace.Wrap(d.db, d.tracer, dbtrace.SystemSQLite))
 }
 
