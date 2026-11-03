@@ -387,6 +387,25 @@ git rm -q internal/platform/setup_dbupgrade.go
 commit "chore: move the steps"
 if draft v0.3.0 > /dev/null 2>&1; then fail "a moved file: want an error"; fi
 
+# fit: the generated list is cut by whole lines under the limit, and keeps its Full Changelog line.
+printf '## Upgrading\n\nNone\n' > "$work/notes.md"
+{
+  echo "## What's Changed"
+  for i in $(seq 100); do echo "* change $i by someone"; done
+  echo
+  echo "**Full Changelog**: https://example.org/compare"
+} > "$work/generated.md"
+fitted="$("$script" fit "$work/notes.md" "$work/generated.md")"
+expect_has "fit under the limit" "$fitted" "## Upgrading" "* change 100 by someone" "**Full Changelog**"
+case "$fitted" in *"is cut at the limit"*) fail "fit under the limit: the list is cut" ;; esac
+fitted="$(RELEASE_NOTES_BODY_LIMIT=1000 "$script" fit "$work/notes.md" "$work/generated.md")"
+expect_has "fit over the limit" "$fitted" "## Upgrading" "* change 1 by someone" "is cut at the limit" "**Full Changelog**"
+case "$fitted" in *"* change 100 by someone"*) fail "fit over the limit: the list is whole" ;; esac
+[ "${#fitted}" -le 1000 ] || fail "fit over the limit: ${#fitted} characters"
+if RELEASE_NOTES_BODY_LIMIT=10 "$script" fit "$work/notes.md" "$work/generated.md" > /dev/null 2>&1; then
+  fail "fit with notes over the limit: want an error"
+fi
+
 skeleton="$("$script" skeleton v0.3.0)"
 expect_has "skeleton" "$skeleton" "## Upgrading" "## Breaking changes" "## API changes" "## mykit" "## mybot" \
   "release-notes.sh failed" "pkg/mykit@v0.3.0"

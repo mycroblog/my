@@ -1,0 +1,114 @@
+name: Release image
+
+# Gives the image of a published release its tags (ADR-0142 §1, §6), so that the tags move with the notes that tell
+# operators how to upgrade. It never builds: it reads the digest that release.yml attached to the Release as
+# image-digest.txt, checks that the digest's signed provenance comes from release.yml on the tag's commit, and tags it.
+# A failure before the tagging leaves no tag; the last check, the anonymous pull, fails until the package is public.
+#
+# Run it again by hand after a failure, which changes nothing that is already right, or to move X.Y back to an earlier
+# patch when the latest one proved faulty (docs/operations/releasing.md, "The container image"):
+#
+#   gh workflow run release-image.yml --ref main -f version=v0.1.4 [-f roll_back=true]
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The published release whose image to tag: vX.Y.Z or vX.Y.Z-<pre-release>."
+        type: string
+        required: true
+      roll_back:
+        description: "Move the tag X.Y to this version even when a later patch exists."
+        type: boolean
+        default: false
+
+permissions: {}
+
+# One at a time: X.Y must not move on a stale list of tags.
+concurrency:
+  group: release-image
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      attestations: read
+      contents: read
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ inputs.version || github.event.release.tag_name }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Read the digest of the release
+        id: digest
+        run: |
+          if [ "$(gh release view "$VERSION" --json isDraft --jq .isDraft)" != false ]; then
+            echo "::error::$VERSION is not a published release: tags must not come before the notes."
+            exit 1
+          fi
+          digest="$(gh release download "$VERSION" --pattern image-digest.txt --output -)"
+          if ! [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::image-digest.txt of $VERSION holds no digest: $digest"
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Check the provenance against the tag's commit
+        env:
+          DIGEST: ${{ steps.digest.outputs.digest }}
+        run: |
+          commit="$(gh api "repos/$GH_REPO/commits/$VERSION" --jq .sha)"
+          signed="$(gh attestation verify "oci://ghcr.io/mycroblog/my@$DIGEST" -R "$GH_REPO" \
+            --signer-workflow "$GH_REPO/.github/workflows/release.yml" --format json |
+            jq -r '.[].verificationResult.signature.certificate.sourceRepositoryDigest' | sort -u)"
+          if [ "$signed" != "$commit" ]; then
+            echo "::error::The provenance of $DIGEST names the commits '$signed', not $commit, the commit of $VERSION."
+            exit 1
+          fi
+          echo "Provenance of \`$DIGEST\`: release.yml on $commit." >> "$GITHUB_STEP_SUMMARY"
+      - name: Tag the image
+        id: tag
+        env:
+          DIGEST: ${{ steps.digest.outputs.digest }}
+          ROLL_BACK: ${{ inputs.roll_back && '--roll-back' || '' }}
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          # shellcheck disable=SC2086 # ROLL_BACK is empty or one flag.
+          list="$(scripts/release-image.sh list-tags | scripts/release-image.sh tags "$VERSION" $ROLL_BACK)"
+          for tag in $list; do
+            scripts/release-image.sh tag "$DIGEST" "$tag" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          echo "tags=$(tr '\n' ' ' <<<"$list")" >> "$GITHUB_OUTPUT"
+      - name: Check that anyone can pull it
+        env:
+          DIGEST: ${{ steps.digest.outputs.digest }}
+          TAGS: ${{ steps.tag.outputs.tags }}
+        run: |
+          # A configuration without the login above, as an operator's.
+          export DOCKER_CONFIG="$RUNNER_TEMP/anonymous"
+          mkdir -p "$DOCKER_CONFIG"
+          for tag in $TAGS; do
+            if ! docker pull -q "ghcr.io/mycroblog/my:$tag" > /dev/null; then
+              echo "::error::Anonymous pull of ghcr.io/mycroblog/my:$tag failed. Make the package public (docs/operations/releasing.md) and run this workflow again."
+              exit 1
+            fi
+            have="$(scripts/release-image.sh digest "ghcr.io/mycroblog/my:$tag")"
+            if [ "$have" != "$DIGEST" ]; then
+              echo "::error::ghcr.io/mycroblog/my:$tag is at $have, not $DIGEST."
+              exit 1
+            fi
+          done
+          echo "Anyone can pull: $TAGS." >> "$GITHUB_STEP_SUMMARY"

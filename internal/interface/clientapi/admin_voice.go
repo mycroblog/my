@@ -78,7 +78,7 @@ func (s *Server) reportVoiceRoom(ctx context.Context, r moderation.Report) (*Adm
 		Bans:           make([]AdminVoiceRoomBan, 0, len(rec.Bans)),
 	}
 	if e := rec.Ending; e != nil {
-		at, reason := e.EndedAt.UTC(), string(e.Reason)
+		at, reason := e.EndedAt.UTC(), VoiceEndReason(e.Reason)
 		out.EndedAt, out.EndReason = &at, &reason
 		if e.EndedByAccountID != "" {
 			by := e.EndedByAccountID
@@ -103,7 +103,7 @@ func (s *Server) reportVoiceRoom(ctx context.Context, r moderation.Report) (*Adm
 	for _, p := range rec.Participations {
 		item := AdminVoiceRoomParticipation{AccountId: p.AccountID, JoinedAt: p.JoinedAt.UTC()}
 		if p.End != nil {
-			at, reason := p.End.EndedAt.UTC(), string(p.End.Reason)
+			at, reason := p.End.EndedAt.UTC(), AdminVoiceRoomParticipationLeaveReason(p.End.Reason)
 			item.LeftAt, item.LeaveReason = &at, &reason
 		}
 		out.Participations = append(out.Participations, item)

@@ -5,7 +5,9 @@ post:
   description: |
     Rejects a pending registration, so that its user cannot sign in, with an optional note
     for the moderators; the decision is audited. Deciding a decided registration changes
-    nothing and keeps its decision. A user without a registration is a 404. Needs the
+    nothing and keeps its decision. The answer on a decided registration has no email address:
+    only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+    A user without a registration is a 404. Needs the
     `manage_accounts` permission.
   tags: [admin-moderation]
   security:

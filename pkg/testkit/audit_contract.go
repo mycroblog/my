@@ -359,10 +359,12 @@ func auditTellsGoneTargets(t *testing.T, e *auditEnv) {
 		return moderation.AuditEntry{TargetKind: kind, TargetID: id}
 	}
 	missing := e.ids.NewID()
-	role, emoji, hook := e.ids.NewID(), e.ids.NewID(), e.ids.NewID()
+	role, emoji, hook, provider := e.ids.NewID(), e.ids.NewID(), e.ids.NewID(), e.ids.NewID()
 	e.others[moderation.AuditTargetRole] = []string{role}
 	e.others[moderation.AuditTargetCustomEmoji] = []string{emoji}
 	e.others[moderation.AuditTargetWebhook] = []string{hook}
+	e.others[moderation.AuditTargetLoginProvider] = []string{provider}
+	e.others[moderation.AuditTargetLinkCardDomain] = []string{"ruled.example"}
 	entries := []moderation.AuditEntry{
 		entry(moderation.AuditTargetAccount, e.remote), entry(moderation.AuditTargetAccount, missing),
 		entry(moderation.AuditTargetReport, report.ID), entry(moderation.AuditTargetReport, missing),
@@ -377,19 +379,23 @@ func auditTellsGoneTargets(t *testing.T, e *auditEnv) {
 		entry(moderation.AuditTargetRole, role), entry(moderation.AuditTargetRole, missing),
 		entry(moderation.AuditTargetCustomEmoji, emoji), entry(moderation.AuditTargetCustomEmoji, missing),
 		entry(moderation.AuditTargetWebhook, hook), entry(moderation.AuditTargetWebhook, missing),
+		entry(moderation.AuditTargetLoginProvider, provider), entry(moderation.AuditTargetLoginProvider, missing),
+		entry(moderation.AuditTargetLinkCardDomain, "ruled.example"), entry(moderation.AuditTargetLinkCardDomain, "lifted.example"),
 	}
 	got, err := e.svc.GoneAuditTargets(ctx, entries)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := map[appmoderation.AuditTarget]bool{
-		{Kind: moderation.AuditTargetAccount, ID: missing}:     true,
-		{Kind: moderation.AuditTargetReport, ID: missing}:      true,
-		{Kind: moderation.AuditTargetAppeal, ID: missing}:      true,
-		{Kind: moderation.AuditTargetSignupBlock, ID: missing}: true,
-		{Kind: moderation.AuditTargetRole, ID: missing}:        true,
-		{Kind: moderation.AuditTargetCustomEmoji, ID: missing}: true,
-		{Kind: moderation.AuditTargetWebhook, ID: missing}:     true,
+		{Kind: moderation.AuditTargetAccount, ID: missing}:                 true,
+		{Kind: moderation.AuditTargetReport, ID: missing}:                  true,
+		{Kind: moderation.AuditTargetAppeal, ID: missing}:                  true,
+		{Kind: moderation.AuditTargetSignupBlock, ID: missing}:             true,
+		{Kind: moderation.AuditTargetRole, ID: missing}:                    true,
+		{Kind: moderation.AuditTargetCustomEmoji, ID: missing}:             true,
+		{Kind: moderation.AuditTargetWebhook, ID: missing}:                 true,
+		{Kind: moderation.AuditTargetLoginProvider, ID: missing}:           true,
+		{Kind: moderation.AuditTargetLinkCardDomain, ID: "lifted.example"}: true,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("GoneAuditTargets = %v, want %v", got, want)

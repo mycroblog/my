@@ -38,6 +38,8 @@ type fakeHealth struct {
 	servers []federation.InstanceHealth
 	events  []federation.AvailabilityEvent
 	now     time.Time
+	// markedBy are the users who cleared a server.
+	markedBy []string
 }
 
 func (f *fakeHealth) Find(_ context.Context, domain string) (federation.InstanceHealth, error) {
@@ -72,7 +74,8 @@ func (f *fakeHealth) Events(_ context.Context, domain, before string, limit int)
 	return out, nil
 }
 
-func (f *fakeHealth) MarkAvailable(ctx context.Context, domain string) (federation.InstanceHealth, error) {
+func (f *fakeHealth) MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error) {
+	f.markedBy = append(f.markedBy, byUserID)
 	for i, h := range f.servers {
 		if h.Domain != domain {
 			continue
@@ -418,6 +421,9 @@ func TestMarkInstanceAvailable(t *testing.T) {
 	if res.StatusCode != http.StatusOK || got.State != clientapi.AdminInstanceStateAvailable || got.FailureDays != 0 || got.LastFailureDay != nil ||
 		got.Since == nil || !got.Since.Equal(adminNow) {
 		t.Fatalf("marked = %d %+v", res.StatusCode, got)
+	}
+	if want := []string{userOf(aliceAccountID)}; !slices.Equal(health.markedBy, want) {
+		t.Errorf("cleared by %v, want %v, for the audit log", health.markedBy, want)
 	}
 	if last := health.events[len(health.events)-1]; last.Reason != federation.ReasonOperator || last.Kind != federation.MarkedAvailable {
 		t.Errorf("last event = %+v, want marked_available (operator)", last)

@@ -3,6 +3,7 @@
 package testkit
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -19,6 +20,12 @@ import (
 
 // block records a block of blocked by blocker, as the graph module does: the relation and the
 // graph.blocked event, whose projector enqueues voice.check_block.
+// remove is Service.Remove for the contracts that check only whether it succeeds.
+func (e *roomsEnv) remove(ctx context.Context, by, roomID, accountID string) error {
+	_, err := e.svc.Remove(ctx, by, roomID, accountID)
+	return err
+}
+
 func (e *roomsEnv) block(t *testing.T, blocker, blocked string) {
 	t.Helper()
 	e.members.set(func() { e.members.blocks[[2]string{blocker, blocked}] = true })
@@ -175,11 +182,11 @@ func roomsRemove(t *testing.T, e *roomsEnv) {
 		t.Errorf("transport calls = %v, want the session muted", e.transport.calls)
 	}
 
-	wantErr(t, "Remove by a participant", e.svc.Remove(ctx, other, r, listener), appvoice.ErrNotHostOrCohost)
-	wantErr(t, "Remove of the host", e.svc.Remove(ctx, cohost, r, host), appvoice.ErrInvalidParticipant)
-	wantErr(t, "Remove of a co-host by the host", e.svc.Remove(ctx, host, r, cohost), appvoice.ErrInvalidParticipant)
-	wantErr(t, "Remove of a co-host by a co-host", e.svc.Remove(ctx, cohost2, r, cohost), appvoice.ErrInvalidParticipant)
-	if err := e.svc.Remove(ctx, cohost, r, listener); err != nil {
+	wantErr(t, "Remove by a participant", e.remove(ctx, other, r, listener), appvoice.ErrNotHostOrCohost)
+	wantErr(t, "Remove of the host", e.remove(ctx, cohost, r, host), appvoice.ErrInvalidParticipant)
+	wantErr(t, "Remove of a co-host by the host", e.remove(ctx, host, r, cohost), appvoice.ErrInvalidParticipant)
+	wantErr(t, "Remove of a co-host by a co-host", e.remove(ctx, cohost2, r, cohost), appvoice.ErrInvalidParticipant)
+	if err := e.remove(ctx, cohost, r, listener); err != nil {
 		t.Fatal(err)
 	}
 	e.wantParticipant(t, r, listener, false)
@@ -194,8 +201,8 @@ func roomsRemove(t *testing.T, e *roomsEnv) {
 	wantErr(t, "Join after a removal", err, appvoice.ErrNotFound)
 	_, err = e.svc.Get(ctx, listener, r)
 	wantErr(t, "Get after a removal", err, appvoice.ErrNotFound)
-	wantErr(t, "Remove of an account not in the room", e.svc.Remove(ctx, host, r, listener), appvoice.ErrInvalidParticipant)
-	if err := e.svc.Remove(ctx, host, r, other); err != nil {
+	wantErr(t, "Remove of an account not in the room", e.remove(ctx, host, r, listener), appvoice.ErrInvalidParticipant)
+	if err := e.remove(ctx, host, r, other); err != nil {
 		t.Errorf("Remove by the host: %v", err)
 	}
 }
@@ -324,7 +331,7 @@ func roomsInvitations(t *testing.T, e *roomsEnv) {
 		t.Fatal(err)
 	}
 	e.join(t, banned, r)
-	if err := e.svc.Remove(ctx, host, r, banned); err != nil {
+	if err := e.remove(ctx, host, r, banned); err != nil {
 		t.Fatal(err)
 	}
 	if err := e.svc.RevokeInvitation(ctx, host, r, banned); err != nil {
@@ -504,7 +511,7 @@ func roomsRaces(t *testing.T, e *roomsEnv) {
 	done = false
 	e.members.after("blocked", 1, func() {
 		done = true
-		if err := e.svc.Remove(ctx, host, r, invitee); err != nil {
+		if err := e.remove(ctx, host, r, invitee); err != nil {
 			t.Error(err)
 		}
 	})

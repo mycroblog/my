@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -38,7 +37,8 @@ type Relationships interface {
 }
 
 // notes builds the Note of a local status, the one place that the fan-out (the object of Create
-// and Update) and object fetches (GET of the status's IRI) build it (federation.md §7.4).
+// and Update), object fetches (GET of the status's IRI), and the outbox and featured collections
+// build it (federation.md §7.4).
 type notes struct {
 	parts NoteParts
 	graph Relationships
@@ -76,17 +76,17 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 		}
 		parts.Mentions = kept
 	}
-	note := statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain)
-	if n.quotes == nil {
-		return note, nil
-	}
-	return n.withQuotes(ctx, note, st, author, vis)
+	return n.withQuotes(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st, author, vis)
 }
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or
 // the quoted status is local-visibility (ADR-0144 §4), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
-// the author alone for the others, which remote servers see as followers-only.
+// the author alone for the others, which remote servers see as followers-only. Without quotes it
+// returns note as it is.
 func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
+	if n.quotes == nil {
+		return note, nil
+	}
 	switch q, state, err := n.quotes.FindQuote(ctx, st.ID); {
 	case errors.Is(err, appcontent.ErrNotFound):
 	case err != nil:
@@ -178,7 +178,7 @@ func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount
 	}
 	for _, t := range parts.Tags {
 		note.Tag = append(note.Tag, federation.TagDocument{
-			Type: federation.TagHashtag, Href: "https://" + host + "/tags/" + url.PathEscape(t.Name), Name: "#" + t.Name,
+			Type: federation.TagHashtag, Href: appcontent.TagURL(host, t.NameNormalized), Name: "#" + t.Name,
 		})
 	}
 	for _, e := range parts.Emojis {

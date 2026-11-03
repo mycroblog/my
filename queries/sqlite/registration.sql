@@ -21,6 +21,9 @@ SELECT id, user_id, reason, invite_id, submitted_at FROM registration_applicatio
 INSERT INTO registration_decisions (id, application_id, decision, decided_by, decided_by_user_id, note, decided_at)
 VALUES (?, ?, ?, ?, ?, ?, ?);
 
+-- name: FindRegistrationDecisionNote :one
+SELECT note FROM registration_decisions WHERE application_id = ? ORDER BY id DESC LIMIT 1;
+
 -- name: UpsertRegistrationState :exec
 INSERT INTO user_registration_states (user_id, state, since) VALUES (?, ?, ?)
 ON CONFLICT (user_id) DO UPDATE SET state = excluded.state, since = excluded.since;

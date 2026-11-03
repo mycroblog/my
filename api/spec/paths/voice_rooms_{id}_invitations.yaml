@@ -6,7 +6,7 @@ get:
   summary: List the invitations of a voice chat room
   description: |
     Lists the invitations of the room that were not revoked, oldest first, for the host and
-    the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+    the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
   tags: [voice]
   security:
     - oauth2: ["read:voice"]
@@ -35,7 +35,7 @@ post:
     also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
     a local, active user, is the host or the user, is in a block relation with the host or a
     co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-    with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+    with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

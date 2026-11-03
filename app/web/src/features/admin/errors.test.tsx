@@ -292,7 +292,7 @@ describe("the page of an error group", () => {
           message: "x is undefined",
           stack: "TypeError: x is undefined",
           version: "0.3.1",
-          role: "web",
+          role: "web" as const,
           occurred_at: "2026-10-21T05:30:00Z",
         };
         return HttpResponse.json(errorGroupDetailFixture(groupId, { sample, hourly_counts: [] }));

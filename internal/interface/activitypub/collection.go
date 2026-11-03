@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
@@ -30,7 +31,7 @@ const (
 // and following collections hold the total and link to their first page, whose pages link to
 // the next one; the featured and featured-tags collections hold their few items inline.
 type orderedCollection struct {
-	Context      string `json:"@context"`
+	Context      any    `json:"@context"`
 	ID           string `json:"id"`
 	Type         string `json:"type"`
 	TotalItems   int64  `json:"totalItems"`
@@ -97,6 +98,11 @@ func (h *Handler) collection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c.Context = contextActivityStreams
+	// Embedded documents have no context of their own, so a collection that embeds Notes or
+	// activities defines their terms. Followers and following hold ids alone.
+	if name == collFeatured || (name == collOutbox && paged) {
+		c.Context = federation.LDContext()
+	}
 	h.writeJSONCache(w, r, typeActivityJSON, acc.cache(true), c)
 }
 

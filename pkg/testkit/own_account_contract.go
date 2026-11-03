@@ -8,9 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,6 +26,39 @@ import (
 
 // The cases of AccountRepositoryContract about a user's own account (FR-008): its deletion at the
 // user's request and the exports of its data.
+
+// accountKeepsOneAdministratorInConcurrentDeletions has two administrators delete their accounts at
+// once, in several rounds: each round exactly one succeeds and the other is ErrLastAdmin.
+func accountKeepsOneAdministratorInConcurrentDeletions(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	const password = "correct horse battery staple"
+	admin := func(name string) string {
+		t.Helper()
+		r, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: name, Email: name + "@example.com", Password: password})
+		if err != nil {
+			t.Fatalf("CreateAdmin(%s) = %v", name, err)
+		}
+		return r.User.ID
+	}
+	survivor := admin("root")
+	for round := range 8 {
+		pair := [2]string{survivor, admin(fmt.Sprintf("second%d", round))}
+		var errs [2]error
+		var wg sync.WaitGroup
+		for i, id := range pair {
+			wg.Go(func() { errs[i] = e.identity.DeleteOwnAccount(ctx, id, appidentity.Confirmation{Password: password}) })
+		}
+		wg.Wait()
+		switch {
+		case errs[0] == nil && errors.Is(errs[1], appidentity.ErrLastAdmin):
+			survivor = pair[1]
+		case errs[1] == nil && errors.Is(errs[0], appidentity.ErrLastAdmin):
+			survivor = pair[0]
+		default:
+			t.Fatalf("round %d: DeleteOwnAccount = %v, %v; want one success and one ErrLastAdmin", round, errs[0], errs[1])
+		}
+	}
+}
 
 // accountDeletesAtTheOwnersRequest checks that a user deletes their account with their password:
 // a wrong password changes nothing, the right one records a deleted lifecycle event initiated by

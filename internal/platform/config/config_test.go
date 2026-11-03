@@ -1322,3 +1322,29 @@ func TestDatabaseAcquireTimeout(t *testing.T) {
 		})
 	}
 }
+
+// TestVersionedSourceURL checks that only the default source_url follows the version, and only for a release's tag.
+func TestVersionedSourceURL(t *testing.T) {
+	const fork = "https://git.example.org/fork/my"
+	root, tree := DefaultSourceURL, DefaultSourceURL+"/tree/"
+	for _, tt := range []struct{ source, version, want string }{
+		{root, "v0.1.0", tree + "v0.1.0"},
+		{root, "v0.1.0-rc.1", tree + "v0.1.0-rc.1"},
+		{root, "v0.0.0-test.2", tree + "v0.0.0-test.2"},
+		{root, "v1.20.3", tree + "v1.20.3"},
+		{root, "dev", root},
+		{root, "", root},
+		{root, "0.1.0", root},
+		{root, "v0.1", root},
+		{root, "v0.1.0-3-gabcdef0", root},
+		{root, "v0.1.0-dirty", root},
+		{root, "v0.1.0-3-gabcdef0-dirty", root},
+		{root, "abcdef0", root},
+		{fork, "v0.1.0", fork},
+		{"mailto:source@example.org", "v0.1.0", "mailto:source@example.org"},
+	} {
+		if got := VersionedSourceURL(tt.source, tt.version); got != tt.want {
+			t.Errorf("VersionedSourceURL(%q, %q) = %q, want %q", tt.source, tt.version, got, tt.want)
+		}
+	}
+}

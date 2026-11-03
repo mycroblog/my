@@ -3,8 +3,8 @@ name: Nightly
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too
 # slow for the merge queue is found within a day, the web E2E of the demo server (ADR-0117), and the L4 task tests of
 # the screens (ADR-0114). A scheduled run is skipped when main has not moved since the last successful Nightly run; a
-# run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, or
-# `-f jobs=slow-suite` for one of them).
+# run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`,
+# or `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 
 on:
   schedule:
@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       jobs:
-        description: "The jobs to run: `all`, `slow-suite`, `demo-e2e` (the web E2E of the demo server), or `l4` (the L4 task tests)."
+        description: "The jobs to run: `all`, `slow-suite`, `demo-e2e` (the web E2E of the demo server), `l4` (the L4 task tests), or `image-scan` (the published images)."
         type: choice
-        options: [all, slow-suite, demo-e2e, l4]
+        options: [all, slow-suite, demo-e2e, l4, image-scan]
         default: all
       screens:
         description: "L4: the screens to measure, by the names of their L1 files (`badges,settings-menu`); empty for every screen."
@@ -68,13 +68,38 @@ jobs:
 
   slow-suite:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'demo-e2e'
+    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'demo-e2e' && inputs.jobs != 'image-scan'
     uses: ./.github/workflows/slow-suite.yml
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
       actions: read
       contents: read
       security-events: write
+
+  # The published images of the two latest minor versions, which operators upgrade through: a failure means a fixable
+  # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0142 §5). It runs
+  # without a token, so it reads only what an operator can pull, and passes while no image is public.
+  image-scan:
+    if: inputs.jobs == '' || inputs.jobs == 'all' || inputs.jobs == 'image-scan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scan the latest patch of each minor version
+        run: |
+          list="$(scripts/release-image.sh list-tags | scripts/release-image.sh series)"
+          if [ -z "$list" ]; then
+            echo "No public image to scan." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          status=0
+          for tag in $list; do
+            scripts/release-image.sh scan --fail "ghcr.io/mycroblog/my:$tag" || status=1
+          done
+          exit "$status"
 
   # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0117 §4): the demo
   # scenario signs in, a second run of the seed adds nothing, a password reset arrives in Mailpit, and a reply reaches
@@ -85,7 +110,7 @@ jobs:
   # l4 job alike. The test build stays in the job and is never uploaded.
   demo-e2e:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'slow-suite'
+    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'slow-suite' && inputs.jobs != 'image-scan'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The Playwright image of the l4 job below (`scripts/task.sh web:playwright-image-check`).

@@ -473,7 +473,8 @@ func TestDeadJobIsReported(t *testing.T) {
 		}
 	}
 	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) && strings.Count(s.logs.String(), `"my.outcome":"dead"`) < 2 {
+	// The report of a dead job comes after the line of its outcome, so wait for the reports themselves.
+	for time.Now().Before(deadline) && strings.Count(s.logs.String(), `"my.error.where":"test.dead"`) < 2 {
 		time.Sleep(10 * time.Millisecond)
 	}
 	reports := errorReportLines(t, s.logs.String())

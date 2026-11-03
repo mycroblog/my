@@ -5,6 +5,7 @@ package instance
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -34,6 +35,22 @@ type LinkCardDomainRepository interface {
 // LinkCardDomainRules returns every rule of the link card crawler, by domain.
 func (s *Service) LinkCardDomainRules(ctx context.Context) ([]instance.LinkCardDomainRule, error) {
 	return s.d.Repository.ListLinkCardDomainRules(ctx)
+}
+
+// ExistingLinkCardDomains returns, sorted, the domains among domains that have a rule, in one lookup.
+func (s *Service) ExistingLinkCardDomains(ctx context.Context, domains []string) ([]string, error) {
+	rules, err := s.d.Repository.ListLinkCardDomainRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(domains))
+	for _, r := range rules {
+		if slices.Contains(domains, r.Domain) {
+			out = append(out, r.Domain)
+		}
+	}
+	slices.Sort(out)
+	return out, nil
 }
 
 // SetLinkCardDomainRule records the rule of a canonical domain, replacing the one it had. It fails
