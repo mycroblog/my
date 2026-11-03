@@ -601,6 +601,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 連合の向きが `publish` を通さないとき、投稿・`/activity`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
+削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0144 §1）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
+
 クローズしたサーバー（[§15](#15-サービスの終了)）では、これらの GET は連合の向きによらず `410 Gone` と `Tombstone`（`id` は要求された URI）です。ローカルの Actor は配送の間だけ凍結と同じ最小の文書を返します。
 
 - 移転したローカルの Actor（`account_move_states` に行がある。ADR-0089）の文書は、移転を記録したトランザクションの後から取り消しまで、`movedTo`（移転先の Actor の `id`。`@context` の `as:movedTo`）を持ちます。Misskey は `Move` を受けると Actor を取り直し、この `movedTo` で移転を処理するので、`Move` より先に GET が返します。最小の文書（Authorized Fetch の署名なし、連合の向きが `inbound`）にも載せます。`inbound` でも `Move` を送るためです（§14.1）。エクスポートの Actor の文書も同じです。

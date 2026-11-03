@@ -297,7 +297,6 @@ func TestNotFoundParity(t *testing.T) {
 		"actor": {
 			"/ap/actors/" + missingID,
 			"/ap/actors/" + carolID,
-			"/ap/actors/" + daveID,
 			"/ap/actors/" + remoteID,
 			"/ap/actors/0192F3A4-7B1C-7D2E-9F00-1A2B3C4D5E6F", // not the canonical form
 			"/ap/actors/not-a-uuid",
@@ -314,7 +313,6 @@ func TestNotFoundParity(t *testing.T) {
 		"profile page": {
 			"/@nobody",
 			"/@carol",
-			"/@dave",
 			"/@erin",
 			"/@" + accountDomain,
 			"/@bad-name",
@@ -322,7 +320,6 @@ func TestNotFoundParity(t *testing.T) {
 		"webfinger": {
 			"/.well-known/webfinger?resource=acct:nobody@" + accountDomain,
 			"/.well-known/webfinger?resource=acct:carol@" + accountDomain,
-			"/.well-known/webfinger?resource=acct:dave@" + accountDomain,
 			"/.well-known/webfinger?resource=acct:erin@remote.example",
 			"/.well-known/webfinger?resource=acct:alice@remote.example",
 			"/.well-known/webfinger?resource=https://" + host + "/ap/actors/" + carolID,
