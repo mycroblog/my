@@ -3,6 +3,7 @@
 // other people, from the server to the user, and from the server to its staff.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
+import { expect, within } from "storybook/test";
 import { instanceFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import {
@@ -349,11 +350,19 @@ const pushPrompt: Story = {
   ),
 };
 
+/** The page shows the prompt's button named `name`, so that the story does show the prompt. */
+function promptShown(name: string) {
+  return async (context: Parameters<typeof settled>[0]) => {
+    await settled(context);
+    await expect(await within(context.canvasElement).findByRole("button", { name })).toBeEnabled();
+  };
+}
+
 /** The prompt to turn on Web Push above the tabs. */
-export const PushPrompt: Story = pushPrompt;
+export const PushPrompt: Story = { ...pushPrompt, play: promptShown("Turn on") };
 
 /** The prompt to turn on Web Push in Japanese. */
-export const PushPromptJapanese: Story = { ...pushPrompt, ...inLocale("ja") };
+export const PushPromptJapanese: Story = { ...pushPrompt, ...inLocale("ja"), play: promptShown("オンにする") };
 
 /** The prompt to turn on Web Push at 320 CSS px. */
-export const PushPromptNarrow: Story = { ...pushPrompt, ...narrow };
+export const PushPromptNarrow: Story = { ...pushPrompt, ...narrow, play: promptShown("Turn on") };
