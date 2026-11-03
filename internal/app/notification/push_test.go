@@ -43,7 +43,7 @@ func (stubAudience) GrantActive(context.Context, string) (bool, error) { return 
 func (a stubAudience) Deactivated(context.Context, string) (bool, error) {
 	return a.deactivated, nil
 }
-func (stubAudience) Locale(context.Context, string) (string, error)    { return "en", nil }
+func (stubAudience) Locale(context.Context, string) (string, error) { return "en", nil }
 func (stubAudience) Account(_ context.Context, id string) (PushAccount, error) {
 	return PushAccount{Acct: id}, nil
 }
