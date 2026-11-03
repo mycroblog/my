@@ -199,9 +199,11 @@ func TestSelfDeactivationThroughTheAPI(t *testing.T) {
 		}
 	}
 	wantHome("while deactivated", false)
-	var found []clientapi.Account
+	var found struct {
+		Items []clientapi.Account `json:"items"`
+	}
 	e.do("bob", http.MethodGet, "/accounts/search?q=alice", nil, &found)
-	for _, a := range found {
+	for _, a := range found.Items {
 		if a.Id == aliceID {
 			t.Error("the search finds the deactivated account")
 		}
@@ -269,7 +271,7 @@ func TestSelfDeactivationThroughTheAPI(t *testing.T) {
 	}
 	wantHome("after the reactivation", true)
 	e.do("bob", http.MethodGet, "/accounts/search?q=alice", nil, &found)
-	if len(found) == 0 {
+	if len(found.Items) == 0 {
 		t.Error("the search does not find the account after the reactivation")
 	}
 	var notifications clientapi.NotificationPage
@@ -564,8 +566,8 @@ func TestSelfDeactivationFederates(t *testing.T) {
 	}
 	var followers clientapi.AccountPage
 	e.do("alice", http.MethodGet, "/accounts/"+aliceID+"/followers", nil, &followers)
-	if len(followers.Accounts) != 1 || followers.Accounts[0].Uri != carol.id {
-		t.Errorf("followers after the reactivation = %+v, want carol alone: frank undid, dave was refused", followers.Accounts)
+	if len(followers.Items) != 1 || followers.Items[0].Uri != carol.id {
+		t.Errorf("followers after the reactivation = %+v, want carol alone: frank undid, dave was refused", followers.Items)
 	}
 	var back clientapi.Status
 	e.do("alice", http.MethodGet, "/statuses/"+post.Id, nil, &back)
@@ -815,22 +817,24 @@ func TestSelfDeactivationKeepsFollowRequests(t *testing.T) {
 	e.freshToken("alice")
 	var requests clientapi.AccountPage
 	e.do("alice", http.MethodGet, "/follow_requests", nil, &requests)
-	if len(requests.Accounts) != 1 || requests.Accounts[0].Uri != carol.id {
-		t.Errorf("follow requests after the reactivation = %+v, want the one that waited, not the refused bob", requests.Accounts)
+	if len(requests.Items) != 1 || requests.Items[0].Uri != carol.id {
+		t.Errorf("follow requests after the reactivation = %+v, want the one that waited, not the refused bob", requests.Items)
 	}
-	var rel []clientapi.Relationship
+	var rel struct {
+		Items []clientapi.Relationship `json:"items"`
+	}
 	e.do("alice", http.MethodGet, "/accounts/relationships?id="+daveAccount.Account.ID+"&id="+frankAccount.Account.ID, nil, &rel)
 	following := map[string]bool{}
 	requested := map[string]bool{}
-	for _, r := range rel {
+	for _, r := range rel.Items {
 		following[r.Id] = r.Following != nil && *r.Following
 		requested[r.Id] = r.Requested != nil && *r.Requested
 	}
 	if !following[daveAccount.Account.ID] {
-		t.Errorf("relationships = %+v, want the Accept received while deactivated in effect", rel)
+		t.Errorf("relationships = %+v, want the Accept received while deactivated in effect", rel.Items)
 	}
 	if following[frankAccount.Account.ID] || requested[frankAccount.Account.ID] {
-		t.Errorf("relationships = %+v, want the Reject received while deactivated in effect", rel)
+		t.Errorf("relationships = %+v, want the Reject received while deactivated in effect", rel.Items)
 	}
 }
 
