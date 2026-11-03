@@ -1103,7 +1103,7 @@ describe("blocks, mutes and follow requests", () => {
     const unblocked: string[] = [];
     server.use(
       http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: blocked })),
-      http.post(`${apiBase}/accounts/:id/unblock`, ({ params }) => {
+      http.delete(`${apiBase}/accounts/:id/block`, ({ params }) => {
         const id = String(params["id"]);
         unblocked.push(id);
         blocked = blocked.filter((account) => account.id !== id);
@@ -1160,7 +1160,7 @@ describe("blocks, mutes and follow requests", () => {
         HttpResponse.json({ ...viewerFixture, follow_requests_count: pending.length }),
       ),
       http.get(`${apiBase}/follow_requests`, () => HttpResponse.json({ items: pending })),
-      http.post(`${apiBase}/follow_requests/:id/authorize`, ({ params }) => {
+      http.post(`${apiBase}/follow_requests/:id/accept`, ({ params }) => {
         answered.push(`accept ${String(params["id"])}`);
         answer(String(params["id"]));
         return HttpResponse.json({ ...relationshipFixture(String(params["id"])), followed_by: true });
@@ -1190,7 +1190,7 @@ describe("blocks, mutes and follow requests", () => {
   test("a failed action keeps the account and says why", async () => {
     server.use(
       http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: [bob] })),
-      http.post(`${apiBase}/accounts/:id/unblock`, () => problem(404, "about:blank", "Not found")),
+      http.delete(`${apiBase}/accounts/:id/block`, () => problem(404, "about:blank", "Not found")),
     );
     const { user } = await renderApp({ path: "/settings/blocks" });
 

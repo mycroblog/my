@@ -1513,7 +1513,7 @@ export interface paths {
         patch: operations["updateOAuthApp"];
         trace?: never;
     };
-    "/oauth_apps/{id}/secret": {
+    "/oauth_apps/{id}/rotate_secret": {
         parameters: {
             query?: never;
             header?: never;
@@ -1728,7 +1728,12 @@ export interface paths {
          *     also sends a Block to its server.
          */
         post: operations["blockAccount"];
-        delete?: never;
+        /**
+         * Unblock an account
+         * @description The follows that the block ended stay ended. Without a block it changes nothing. It also
+         *     works on an account that blocks the user.
+         */
+        delete: operations["unblockAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1756,7 +1761,11 @@ export interface paths {
          *     `/api/v1/problems/federation-restricted`.
          */
         post: operations["followAccount"];
-        delete?: never;
+        /**
+         * Unfollow an account
+         * @description Ends the follow or withdraws the follow request. Without one it changes nothing.
+         */
+        delete: operations["unfollowAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1841,7 +1850,11 @@ export interface paths {
          *     settings and the expiry.
          */
         post: operations["muteAccount"];
-        delete?: never;
+        /**
+         * Unmute an account
+         * @description Without a mute it changes nothing. It also works on an account that blocks the user.
+         */
+        delete: operations["unmuteAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1868,67 +1881,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/accounts/{id}/unblock": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unblock an account
-         * @description The follows that the block ended stay ended. Without a block it changes nothing. It also
-         *     works on an account that blocks the user.
-         */
-        post: operations["unblockAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/unfollow": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unfollow an account
-         * @description Ends the follow or withdraws the follow request. Without one it changes nothing.
-         */
-        post: operations["unfollowAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/unmute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unmute an account
-         * @description Without a mute it changes nothing. It also works on an account that blocks the user.
-         */
-        post: operations["unmuteAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/accounts/{id}/subscribe": {
         parameters: {
             query?: never;
@@ -1949,28 +1901,12 @@ export interface paths {
          *     account on another server ends the subscription; a block ends it either way.
          */
         post: operations["subscribeAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/unsubscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
          * Stop being notified of an account's new posts
          * @description Ends the viewer's subscription to the account's new posts, and one asked for with a follow
          *     request that awaits the account's server. Without a subscription it changes nothing.
          */
-        post: operations["unsubscribeAccount"];
-        delete?: never;
+        delete: operations["unsubscribeAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2038,7 +1974,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/follow_requests/{id}/authorize": {
+    "/follow_requests/{id}/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -3015,7 +2951,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/timelines/public": {
+    "/timelines/federated": {
         parameters: {
             query?: never;
             header?: never;
@@ -3030,7 +2966,7 @@ export interface paths {
          *     `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
          *     is `signed_in` an anonymous request is a 401.
          */
-        get: operations["getPublicTimeline"];
+        get: operations["getFederatedTimeline"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7213,15 +7149,7 @@ export interface paths {
          */
         get: operations["listLinkCardDomainRules"];
         put?: never;
-        /**
-         * Set the rule of a domain for the link card crawler
-         * @description Records the rule of a domain, replacing the rule it has, and records the change in the
-         *     audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-         *     link cards: federation and other remote media follow the domain actions. A domain that is
-         *     not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-         *     the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-         */
-        post: operations["setLinkCardDomainRule"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7236,7 +7164,15 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Set the rule of a domain for the link card crawler
+         * @description Records the rule of a domain, replacing the rule it has, and records the change in the
+         *     audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+         *     link cards: federation and other remote media follow the domain actions. A domain that is
+         *     not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+         *     422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+         */
+        put: operations["setLinkCardDomainRule"];
         post?: never;
         /**
          * Remove the rule of a domain for the link card crawler
@@ -13569,8 +13505,6 @@ export interface components {
         };
         /** @description The rule to set on a domain. */
         SetLinkCardDomainRuleRequest: {
-            /** @description The domain, a host without a scheme, path, or port; it also covers its subdomains. */
-            domain: string;
             mode: components["schemas"]["LinkCardDomainMode"];
             /** @description What the administrators keep about the rule; empty when omitted. */
             note?: string;
@@ -17152,6 +17086,22 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    unblockAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
     followAccount: {
         parameters: {
             query?: never;
@@ -17167,6 +17117,22 @@ export interface operations {
                 "application/json": components["schemas"]["FollowAccountRequest"];
             };
         };
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unfollowAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: components["responses"]["Relationship"];
             default: components["responses"]["Problem"];
@@ -17250,55 +17216,23 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    removeAccountFromFollowers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The account ID. */
-                id: components["parameters"]["AccountId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["Relationship"];
-            default: components["responses"]["Problem"];
-        };
-    };
-    unblockAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The account ID. */
-                id: components["parameters"]["AccountId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["Relationship"];
-            default: components["responses"]["Problem"];
-        };
-    };
-    unfollowAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The account ID. */
-                id: components["parameters"]["AccountId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["Relationship"];
-            default: components["responses"]["Problem"];
-        };
-    };
     unmuteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeAccountFromFollowers: {
         parameters: {
             query?: never;
             header?: never;
@@ -18588,7 +18522,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    getPublicTimeline: {
+    getFederatedTimeline: {
         parameters: {
             query?: {
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
@@ -22954,7 +22888,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description The domain, a host without a scheme, path, or port; it also covers its subdomains. */
+                domain: string;
+            };
             cookie?: never;
         };
         requestBody: {
@@ -23308,13 +23245,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The plan is retired. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            200: components["responses"]["AdminSupporterPlan"];
             default: components["responses"]["Problem"];
         };
     };

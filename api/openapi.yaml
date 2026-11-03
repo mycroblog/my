@@ -2253,7 +2253,7 @@ paths:
           description: The app is deleted.
         default:
           $ref: '#/components/responses/Problem'
-  /oauth_apps/{id}/secret:
+  /oauth_apps/{id}/rotate_secret:
     parameters:
       - $ref: '#/components/parameters/OAuthAppId'
     post:
@@ -2543,6 +2543,24 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unblockAccount
+      summary: Unblock an account
+      description: |
+        The follows that the block ended stay ended. Without a block it changes nothing. It also
+        works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:blocks
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/follow:
     post:
       operationId: followAccount
@@ -2570,6 +2588,22 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FollowAccountRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unfollowAccount
+      summary: Unfollow an account
+      description: Ends the follow or withdraws the follow request. Without one it changes nothing.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
       responses:
         '200':
           $ref: '#/components/responses/Relationship'
@@ -2663,6 +2697,22 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unmuteAccount
+      summary: Unmute an account
+      description: Without a mute it changes nothing. It also works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/remove_from_followers:
     post:
       operationId: removeAccountFromFollowers
@@ -2675,59 +2725,6 @@ paths:
       security:
         - oauth2:
             - write:follows
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unblock:
-    post:
-      operationId: unblockAccount
-      summary: Unblock an account
-      description: |
-        The follows that the block ended stay ended. Without a block it changes nothing. It also
-        works on an account that blocks the user.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:blocks
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unfollow:
-    post:
-      operationId: unfollowAccount
-      summary: Unfollow an account
-      description: Ends the follow or withdraws the follow request. Without one it changes nothing.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:follows
-      parameters:
-        - $ref: '#/components/parameters/AccountId'
-      responses:
-        '200':
-          $ref: '#/components/responses/Relationship'
-        default:
-          $ref: '#/components/responses/Problem'
-  /accounts/{id}/unmute:
-    post:
-      operationId: unmuteAccount
-      summary: Unmute an account
-      description: Without a mute it changes nothing. It also works on an account that blocks the user.
-      tags:
-        - accounts
-      security:
-        - oauth2:
-            - write:mutes
       parameters:
         - $ref: '#/components/parameters/AccountId'
       responses:
@@ -2759,8 +2756,7 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
-  /accounts/{id}/unsubscribe:
-    post:
+    delete:
       operationId: unsubscribeAccount
       summary: Stop being notified of an account's new posts
       description: |
@@ -2836,7 +2832,7 @@ paths:
           $ref: '#/components/responses/AccountPage'
         default:
           $ref: '#/components/responses/Problem'
-  /follow_requests/{id}/authorize:
+  /follow_requests/{id}/accept:
     post:
       operationId: acceptFollowRequest
       summary: Accept a follow request
@@ -4207,9 +4203,9 @@ paths:
           $ref: '#/components/responses/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
-  /timelines/public:
+  /timelines/federated:
     get:
-      operationId: getPublicTimeline
+      operationId: getFederatedTimeline
       summary: Get the federated timeline
       description: |
         The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -9812,38 +9808,6 @@ paths:
                 $ref: '#/components/schemas/LinkCardDomainRuleList'
         default:
           $ref: '#/components/responses/Problem'
-    post:
-      operationId: setLinkCardDomainRule
-      summary: Set the rule of a domain for the link card crawler
-      description: |
-        Records the rule of a domain, replacing the rule it has, and records the change in the
-        audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-        link cards: federation and other remote media follow the domain actions. A domain that is
-        not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-        the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-      tags:
-        - admin-server
-      security:
-        - oauth2:
-            - admin:write
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetLinkCardDomainRuleRequest'
-      responses:
-        '200':
-          description: The rule.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControl'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LinkCardDomainRule'
-        default:
-          $ref: '#/components/responses/Problem'
   /admin/link_card_domains/{domain}:
     delete:
       operationId: removeLinkCardDomainRule
@@ -9870,6 +9834,47 @@ paths:
       responses:
         '204':
           description: The domain has no rule.
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: setLinkCardDomainRule
+      summary: Set the rule of a domain for the link card crawler
+      description: |
+        Records the rule of a domain, replacing the rule it has, and records the change in the
+        audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+        link cards: federation and other remote media follow the domain actions. A domain that is
+        not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+        422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 253
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetLinkCardDomainRuleRequest'
+      responses:
+        '200':
+          description: The rule.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkCardDomainRule'
         default:
           $ref: '#/components/responses/Problem'
   /admin/relays:
@@ -10261,8 +10266,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SupporterPlanId'
       responses:
-        '204':
-          description: The plan is retired.
+        '200':
+          $ref: '#/components/responses/AdminSupporterPlan'
         default:
           $ref: '#/components/responses/Problem'
   /admin/supporter_subscriptions:
@@ -20933,14 +20938,8 @@ components:
       description: The rule to set on a domain.
       type: object
       required:
-        - domain
         - mode
       properties:
-        domain:
-          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
-          type: string
-          minLength: 1
-          maxLength: 253
         mode:
           $ref: '#/components/schemas/LinkCardDomainMode'
         note:

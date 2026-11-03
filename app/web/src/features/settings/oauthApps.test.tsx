@@ -81,7 +81,7 @@ function appServer(initial: Schemas["OAuthApp"][]) {
       items = items.filter((app) => app.id !== params["id"]);
       return new HttpResponse(null, { status: 204 });
     }),
-    http.post(`${apiBase}/oauth_apps/:id/secret`, ({ params }) => {
+    http.post(`${apiBase}/oauth_apps/:id/rotate_secret`, ({ params }) => {
       rotated.push(String(params["id"]));
       return HttpResponse.json({ client_secret: "my_cs_second" });
     }),

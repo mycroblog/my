@@ -28,3 +28,17 @@ post:
       $ref: ../components/responses/Relationship.yaml
     default:
       $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unfollowAccount
+  summary: Unfollow an account
+  description: Ends the follow or withdraws the follow request. Without one it changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

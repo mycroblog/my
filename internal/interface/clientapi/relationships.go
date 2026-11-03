@@ -261,7 +261,7 @@ func (s *Server) followableRemotely(ctx context.Context, v Viewer, a appaccount.
 	return &p, nil
 }
 
-// UnfollowAccount serves POST /api/v1/accounts/{id}/unfollow.
+// UnfollowAccount serves DELETE /api/v1/accounts/{id}/follow.
 func (s *Server) UnfollowAccount(ctx context.Context, req UnfollowAccountRequestObject) (UnfollowAccountResponseObject, error) {
 	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unfollow(ctx, v.AccountID, req.Id)
@@ -289,7 +289,7 @@ func (s *Server) RemoveAccountFromFollowers(ctx context.Context, req RemoveAccou
 	return RemoveAccountFromFollowers200JSONResponse{*res}, nil
 }
 
-// AcceptFollowRequest serves POST /api/v1/follow_requests/{id}/authorize.
+// AcceptFollowRequest serves POST /api/v1/follow_requests/{id}/accept.
 func (s *Server) AcceptFollowRequest(ctx context.Context, req AcceptFollowRequestRequestObject) (AcceptFollowRequestResponseObject, error) {
 	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.AcceptFollowRequest(ctx, v.AccountID, req.Id)
@@ -331,7 +331,7 @@ func (s *Server) BlockAccount(ctx context.Context, req BlockAccountRequestObject
 	return BlockAccount200JSONResponse{*res}, nil
 }
 
-// UnblockAccount serves POST /api/v1/accounts/{id}/unblock.
+// UnblockAccount serves DELETE /api/v1/accounts/{id}/block.
 func (s *Server) UnblockAccount(ctx context.Context, req UnblockAccountRequestObject) (UnblockAccountResponseObject, error) {
 	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unblock(ctx, v.AccountID, req.Id)
@@ -371,7 +371,7 @@ func (s *Server) MuteAccount(ctx context.Context, req MuteAccountRequestObject) 
 	return MuteAccount200JSONResponse{*res}, nil
 }
 
-// UnmuteAccount serves POST /api/v1/accounts/{id}/unmute.
+// UnmuteAccount serves DELETE /api/v1/accounts/{id}/mute.
 func (s *Server) UnmuteAccount(ctx context.Context, req UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error) {
 	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unmute(ctx, v.AccountID, req.Id)

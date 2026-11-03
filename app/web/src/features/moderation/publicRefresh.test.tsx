@@ -83,7 +83,7 @@ describe("a limit of a domain", () => {
         limited = body.kind === "limit";
         return HttpResponse.json(newDomainAction(body));
       }),
-      http.get(`${apiBase}/timelines/public`, async () => {
+      http.get(`${apiBase}/timelines/federated`, async () => {
         await delay(latency);
         return HttpResponse.json(
           statusPage(limited ? [timelineStatusFixture] : [timelineStatusFixture, remoteStatusFixture]),

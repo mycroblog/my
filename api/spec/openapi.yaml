@@ -238,8 +238,8 @@ paths:
     $ref: ./paths/oauth_apps.yaml
   /oauth_apps/{id}:
     $ref: ./paths/oauth_apps_{id}.yaml
-  /oauth_apps/{id}/secret:
-    $ref: ./paths/oauth_apps_{id}_secret.yaml
+  /oauth_apps/{id}/rotate_secret:
+    $ref: ./paths/oauth_apps_{id}_rotate_secret.yaml
   /oauth_apps/{id}/tokens:
     $ref: ./paths/oauth_apps_{id}_tokens.yaml
   /accounts/lookup:
@@ -266,24 +266,16 @@ paths:
     $ref: ./paths/accounts_{id}_mute.yaml
   /accounts/{id}/remove_from_followers:
     $ref: ./paths/accounts_{id}_remove_from_followers.yaml
-  /accounts/{id}/unblock:
-    $ref: ./paths/accounts_{id}_unblock.yaml
-  /accounts/{id}/unfollow:
-    $ref: ./paths/accounts_{id}_unfollow.yaml
-  /accounts/{id}/unmute:
-    $ref: ./paths/accounts_{id}_unmute.yaml
   /accounts/{id}/subscribe:
     $ref: ./paths/accounts_{id}_subscribe.yaml
-  /accounts/{id}/unsubscribe:
-    $ref: ./paths/accounts_{id}_unsubscribe.yaml
   /subscriptions:
     $ref: ./paths/subscriptions.yaml
   /blocks:
     $ref: ./paths/blocks.yaml
   /follow_requests:
     $ref: ./paths/follow_requests.yaml
-  /follow_requests/{id}/authorize:
-    $ref: ./paths/follow_requests_{id}_authorize.yaml
+  /follow_requests/{id}/accept:
+    $ref: ./paths/follow_requests_{id}_accept.yaml
   /follow_requests/{id}/reject:
     $ref: ./paths/follow_requests_{id}_reject.yaml
   /mutes:
@@ -356,8 +348,8 @@ paths:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
     $ref: ./paths/timelines_local.yaml
-  /timelines/public:
-    $ref: ./paths/timelines_public.yaml
+  /timelines/federated:
+    $ref: ./paths/timelines_federated.yaml
   /timelines/tag/{hashtag}:
     $ref: ./paths/timelines_tag_{hashtag}.yaml
   /timelines/list/{id}:

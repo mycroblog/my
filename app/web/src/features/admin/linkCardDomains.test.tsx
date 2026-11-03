@@ -85,10 +85,11 @@ describe("the link card domains screen", () => {
   });
 
   test("sets a rule, and empties the form", async () => {
-    let sent: Schemas["SetLinkCardDomainRuleRequest"] | undefined;
+    let sent: (Schemas["SetLinkCardDomainRuleRequest"] & { domain: string }) | undefined;
     server.use(
-      http.post(`${apiBase}/admin/link_card_domains`, async ({ request }) => {
-        sent = (await request.json()) as Schemas["SetLinkCardDomainRuleRequest"];
+      http.put(`${apiBase}/admin/link_card_domains/:domain`, async ({ request, params }) => {
+        const body = (await request.json()) as Schemas["SetLinkCardDomainRuleRequest"];
+        sent = { domain: String(params["domain"]), ...body };
         return HttpResponse.json(linkCardDomainRuleFixture(sent.domain, { mode: sent.mode }));
       }),
     );
@@ -108,7 +109,7 @@ describe("the link card domains screen", () => {
   test("refuses a URL before sending it, next to the field", async () => {
     let posts = 0;
     server.use(
-      http.post(`${apiBase}/admin/link_card_domains`, () => {
+      http.put(`${apiBase}/admin/link_card_domains/:domain`, () => {
         posts += 1;
         return new HttpResponse(null, { status: 500 });
       }),
@@ -124,7 +125,7 @@ describe("the link card domains screen", () => {
 
   test("shows why the server refused the domain next to the field, and keeps the draft", async () => {
     server.use(
-      http.post(`${apiBase}/admin/link_card_domains`, () =>
+      http.put(`${apiBase}/admin/link_card_domains/:domain`, () =>
         HttpResponse.json(
           { type: "about:blank", title: "Unprocessable", status: 422, detail: "domain is not a valid value" },
           { status: 422, headers: { "Content-Type": "application/problem+json" } },
@@ -145,11 +146,12 @@ describe("the link card domains screen", () => {
   });
 
   test("changes the mode of a rule in its row, keeping its note", async () => {
-    let sent: Schemas["SetLinkCardDomainRuleRequest"] | undefined;
+    let sent: (Schemas["SetLinkCardDomainRuleRequest"] & { domain: string }) | undefined;
     server.use(
       answering([linkCardDomainRuleFixture("images.example", { note: "Heavy images" })]),
-      http.post(`${apiBase}/admin/link_card_domains`, async ({ request }) => {
-        sent = (await request.json()) as Schemas["SetLinkCardDomainRuleRequest"];
+      http.put(`${apiBase}/admin/link_card_domains/:domain`, async ({ request, params }) => {
+        const body = (await request.json()) as Schemas["SetLinkCardDomainRuleRequest"];
+        sent = { domain: String(params["domain"]), ...body };
         return HttpResponse.json(linkCardDomainRuleFixture(sent.domain, { mode: sent.mode, note: sent.note ?? "" }));
       }),
     );

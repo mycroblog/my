@@ -826,10 +826,12 @@ export const handlers = [
   http.get(`${apiBase}/admin/link_card_domains`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["LinkCardDomainRuleList"])),
   ),
-  http.post(`${apiBase}/admin/link_card_domains`, async ({ request }) => {
+  http.put(`${apiBase}/admin/link_card_domains/:domain`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["SetLinkCardDomainRuleRequest"];
     return withViewer(request, () =>
-      HttpResponse.json(linkCardDomainRuleFixture(body.domain, { mode: body.mode, note: body.note ?? "" })),
+      HttpResponse.json(
+        linkCardDomainRuleFixture(String(params["domain"]), { mode: body.mode, note: body.note ?? "" }),
+      ),
     );
   }),
   http.delete(`${apiBase}/admin/link_card_domains/:domain`, ({ request }) =>

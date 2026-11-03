@@ -320,7 +320,7 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 
 	// The answer of a change shows the list that its own scope covers.
 	var unblocked map[string]any
-	if res := c.do(c.appToken("alice", "write:blocks"), http.MethodPost, "/accounts/"+bob+"/unblock", nil, &unblocked); res.StatusCode != http.StatusOK {
+	if res := c.do(c.appToken("alice", "write:blocks"), http.MethodDelete, "/accounts/"+bob+"/block", nil, &unblocked); res.StatusCode != http.StatusOK {
 		t.Fatalf("unblock = %d", res.StatusCode)
 	}
 	wantFields("write:blocks", unblocked, blocks)

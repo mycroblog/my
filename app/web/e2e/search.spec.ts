@@ -129,7 +129,7 @@ async function serveApi(page: Page) {
       relationship = { ...relationship, requested: true };
       return json(route, relationship);
     }
-    if (path === `/accounts/${carol.id}/unfollow` && route.request().method() === "POST") {
+    if (path === `/accounts/${carol.id}/follow` && route.request().method() === "DELETE") {
       changes.push("unfollow");
       relationship = { ...relationship, requested: false, following: false };
       return json(route, relationship);

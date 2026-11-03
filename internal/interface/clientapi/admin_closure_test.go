@@ -145,8 +145,8 @@ func TestClosedServerRefusesTheClientAPI(t *testing.T) {
 			t.Errorf("%s %s while closed = %d %+v, want 403 service-closed", op.method, op.path, res.StatusCode, p)
 		}
 	}
-	if res := e.get(t, "/timelines/public", nil); res.StatusCode != http.StatusForbidden {
-		t.Errorf("anonymous GET /timelines/public while closed = %d, want 403", res.StatusCode)
+	if res := e.get(t, "/timelines/federated", nil); res.StatusCode != http.StatusForbidden {
+		t.Errorf("anonymous GET /timelines/federated while closed = %d, want 403", res.StatusCode)
 	}
 	if inst := decodeJSON[clientapi.Instance](t, e.get(t, "/instance", nil)); inst.Closure == nil || inst.Closure.State != clientapi.ServiceClosureStateClosed {
 		t.Errorf("GET /instance while closed = %+v", inst.Closure)
