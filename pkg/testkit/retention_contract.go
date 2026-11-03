@@ -47,9 +47,9 @@ type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 
 // RetentionContract verifies the purges of federated data (ADR-0034, FR-803) on a database
 // adapter, with the real content, account, graph, timeline, notification, and federation
-// modules: remote statuses past remote_status_retention that nothing local refers to are
+// modules: remote statuses past remote_status_retention_days that nothing local refers to are
 // deleted with origin retention and their rows purged, while those a local reply, thread, boost,
-// favourite, bookmark, or notification refers to stay; past remote_status_max_retention every
+// favourite, bookmark, or notification refers to stay; past remote_status_max_retention_days every
 // remote status goes, leaving the local accounts' interactions, except those that the moderation
 // records retain (a reported status, a held author); each transaction deletes a
 // bounded batch; a purged status can be fetched and deleted again; the inbox and delivery records
@@ -119,7 +119,10 @@ func (e *retentionEnv) retention(period, maxPeriod time.Duration, batch int) *ap
 func (e *retentionEnv) retentionWith(period, maxPeriod time.Duration, batch int, evidence appcontent.RetainedStatuses) *appcontent.Retention {
 	return appcontent.NewRetention(appcontent.RetentionDeps{
 		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Statuses, Retention: e.rh.Retention, Notifications: e.notifications,
-		Evidence: evidence, Clock: e.clock, Period: period, MaxPeriod: maxPeriod, Batch: batch,
+		Evidence: evidence, Clock: e.clock, Batch: batch,
+		Periods: func(context.Context) (appcontent.RetentionPeriods, error) {
+			return appcontent.RetentionPeriods{Period: period, MaxPeriod: maxPeriod}, nil
+		},
 	})
 }
 
@@ -695,7 +698,8 @@ func retentionRelayed(t *testing.T, e *retentionEnv) {
 	}
 	r := appcontent.NewRelayedRetention(appcontent.RelayedRetentionDeps{
 		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Statuses, Retention: e.rh.Retention, Notifications: e.notifications,
-		Follows: stubFollows{bobID: true}, Clock: e.clock, Period: 7 * 24 * time.Hour, Batch: 1,
+		Follows: stubFollows{bobID: true}, Clock: e.clock, Batch: 1,
+		Period: func(context.Context) (time.Duration, error) { return 7 * 24 * time.Hour, nil },
 	})
 	total, after := 0, ""
 	for range 100 {

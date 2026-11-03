@@ -122,7 +122,7 @@
 
 - ADR-0034 の「取り込む `Create`」の条件に「`receive` が `true` の `accepted` のリレーから届いた `public` の投稿（上限と処分の判定を通ったもの）」を加える。`Announce` の対象の取得の条件にも、主体が `accepted` のリレーであることを加える。
 - リレー経由でだけ取り込んだ投稿は、`content` の `relayed_statuses` に記録する。
-  消去ジョブ `content.purge_remote_statuses` は、`relayed_statuses` にあり、ローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、公開から **7 日**（設定 `relay_status_retention`）で消す（`origin = retention`）。それ以外は ADR-0034 の 90 日のまま。
+  消去ジョブ `content.purge_remote_statuses` は、`relayed_statuses` にあり、ローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、公開から **7 日**（設定 `relay_status_retention_days`）で消す（`origin = retention`）。それ以外は ADR-0034 の 90 日のまま。
 - 脱退しても、取り込んだ投稿はすぐには消さない（保持期間で消える）。
 
 ### データモデル（ADR-0020）
@@ -178,7 +178,7 @@
   3. 受信の `relay_id`、上限と処分の判定、リレーの `Announce`、`relayed_statuses` と保持期間
   4. 管理画面（Web クライアント）
   5. federation.md・data-model.md・docs/operations の更新と、federation-live への Activity-Relay の場面の追加
-  6. 設定 `relay_ingest_hourly_limit`・`relay_status_retention` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
+  6. 設定 `relay_ingest_hourly_limit`・`relay_status_retention_days` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
 
 ## Pros and Cons of the Options（詳細比較・任意）
 

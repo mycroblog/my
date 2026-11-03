@@ -98,7 +98,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`media_max_audio_duration`](#media_max_audio_duration) | `MY_MEDIA_MAX_AUDIO_DURATION` | `10m` | no | no |
 | [`custom_emoji_max_bytes`](#custom_emoji_max_bytes) | `MY_CUSTOM_EMOJI_MAX_BYTES` | `262144` | no | no |
 | [`remote_custom_emoji_max_bytes`](#remote_custom_emoji_max_bytes) | `MY_REMOTE_CUSTOM_EMOJI_MAX_BYTES` | `1048576` | no | no |
-| [`remote_media_cache_max_bytes`](#remote_media_cache_max_bytes) | `MY_REMOTE_MEDIA_CACHE_MAX_BYTES` | `1073741824` | no | no |
 | [`kv`](#kv) | `MY_KV` | `db` | no | no |
 | [`valkey_url`](#valkey_url) | `MY_VALKEY_URL` | none | when `kv = valkey` or `stream = valkey` | yes |
 | [`valkey_tls_ca_file`](#valkey_tls_ca_file) | `MY_VALKEY_TLS_CA_FILE` | none | no | no |
@@ -134,9 +133,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`webhook_allowed_destinations`](#webhook_allowed_destinations) | `MY_WEBHOOK_ALLOWED_DESTINATIONS` | none | no | no |
 | [`login_provider_allowed_destinations`](#login_provider_allowed_destinations) | `MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS` | none | no | no |
 | [`push_allowed_destinations`](#push_allowed_destinations) | `MY_PUSH_ALLOWED_DESTINATIONS` | none | no | no |
-| [`remote_status_retention`](#remote_status_retention) | `MY_REMOTE_STATUS_RETENTION` | `2160h` | no | no |
-| [`remote_status_max_retention`](#remote_status_max_retention) | `MY_REMOTE_STATUS_MAX_RETENTION` | none | no | no |
-| [`relay_status_retention`](#relay_status_retention) | `MY_RELAY_STATUS_RETENTION` | `168h` | no | no |
 | [`relay_ingest_hourly_limit`](#relay_ingest_hourly_limit) | `MY_RELAY_INGEST_HOURLY_LIMIT` | `1000` | no | no |
 | [`billing_sources`](#billing_sources) | `MY_BILLING_SOURCES` | none | no | no |
 | [`billing_aws_max_requests_per_day`](#billing_aws_max_requests_per_day) | `MY_BILLING_AWS_MAX_REQUESTS_PER_DAY` | `4` | no | no |
@@ -192,7 +188,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`job_attempt_retention`](#job_attempt_retention) | `MY_JOB_ATTEMPT_RETENTION` | `720h` | no | no |
 | [`dynamic_client_unredeemed_ttl`](#dynamic_client_unredeemed_ttl) | `MY_DYNAMIC_CLIENT_UNREDEEMED_TTL` | `24h` | no | no |
 | [`dynamic_client_idle_ttl`](#dynamic_client_idle_ttl) | `MY_DYNAMIC_CLIENT_IDLE_TTL` | `2160h` | no | no |
-| [`oauth_client_rate_limits`](#oauth_client_rate_limits) | `MY_OAUTH_CLIENT_RATE_LIMITS` | none | no | no |
 | [`metrics_exporter`](#metrics_exporter) | `MY_METRICS_EXPORTER` | `none` | no | no |
 | [`metrics_listen`](#metrics_listen) | `MY_METRICS_LISTEN` | `127.0.0.1:9464` | no | no |
 | [`metrics_emf_namespace`](#metrics_emf_namespace) | `MY_METRICS_EMF_NAMESPACE` | `my` | no | no |
@@ -668,14 +663,6 @@ Largest image in bytes of a remote custom emoji that the media proxy serves; the
 - Default: `1048576`
 - Required: no
 
-### `remote_media_cache_max_bytes`
-
-Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all`. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit.
-
-- Environment variable: `MY_REMOTE_MEDIA_CACHE_MAX_BYTES`
-- Default: `1073741824`
-- Required: no
-
 ### `kv`
 
 Key-value store adapter for caches and rate limits.
@@ -997,30 +984,6 @@ For development only: destinations on loopback or a private network that the Web
 
 - Environment variable: `MY_PUSH_ALLOWED_DESTINATIONS`
 - Default: none
-- Required: no
-
-### `remote_status_retention`
-
-How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).
-
-- Environment variable: `MY_REMOTE_STATUS_RETENTION`
-- Default: `2160h`
-- Required: no
-
-### `remote_status_max_retention`
-
-The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); empty keeps referred posts without limit.
-
-- Environment variable: `MY_REMOTE_STATUS_MAX_RETENTION`
-- Default: none
-- Required: no
-
-### `relay_status_retention`
-
-How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it. A Go duration such as `168h` (7 days).
-
-- Environment variable: `MY_RELAY_STATUS_RETENTION`
-- Default: `168h`
 - Required: no
 
 ### `relay_ingest_hourly_limit`
@@ -1507,14 +1470,6 @@ How long a dynamically registered OAuth client without a usable token may go unu
 
 - Environment variable: `MY_DYNAMIC_CLIENT_IDLE_TTL`
 - Default: `2160h`
-- Required: no
-
-### `oauth_client_rate_limits`
-
-Caps on the client API requests of OAuth clients, for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.
-
-- Environment variable: `MY_OAUTH_CLIENT_RATE_LIMITS`
-- Default: none
 - Required: no
 
 ### `metrics_exporter`

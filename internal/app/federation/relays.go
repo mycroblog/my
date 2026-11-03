@@ -40,7 +40,7 @@ var (
 
 // DefaultRelayIngestHourlyLimit is how many activities a relay may bring in per hour
 // (relay_ingest_hourly_limit), and DefaultRelayStatusRetention how long a post only a relay
-// brought in is kept (relay_status_retention).
+// brought in is kept (relay_status_retention_days).
 const (
 	DefaultRelayIngestHourlyLimit = 1000
 	DefaultRelayStatusRetention   = 7 * 24 * time.Hour

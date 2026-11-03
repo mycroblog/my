@@ -42,8 +42,8 @@ but nothing is sent to or received from that relay, and the admin area shows a w
 - At most `relay_ingest_hourly_limit` posts per hour (default 1,000) are ingested per relay. Anything above the limit is dropped without being fetched.
   The admin area and `my admin relay list` show how many were ingested in the last 24 hours and how many were dropped over the limit. If many are dropped, raise the limit or reconsider the relay.
 - A post is not ingested when its domain or account has a `suspend` (a federation restriction) or a `limit` (a restriction that removes it from public places).
-- A post that arrived only through a relay is removed from public view after `relay_status_retention` (default 7 days). A post that a local person replied to, boosted, favorited or bookmarked,
-  and the posts of authors that a local person follows, get the same retention as other remote posts (`remote_status_retention`).
+- A post that arrived only through a relay is removed from public view after the instance setting `relay_status_retention_days` (default 7). A post that a local person replied to, boosted, favorited or bookmarked,
+  and the posts of authors that a local person follows, get the same retention as other remote posts (`remote_status_retention_days`).
 - Ingesting costs one fetch from the origin per post (plus a fetch of the actor for an unknown author). At the limit of 1,000 an hour, that is at most 24,000 fetches a day.
 
 The settings are in the [configuration reference](../reference/configuration.md#relay_ingest_hourly_limit). The result of ingesting is also exported as the metric `my.relay.activities` (see [Running the server](running.md)).

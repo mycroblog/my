@@ -644,7 +644,7 @@ CREATE TABLE polls (
 CREATE UNIQUE INDEX polls_revision_id ON polls (revision_id);
 
 -- Event: a remote status taken in only because a relay sent it (ADR-0061), kept for
--- relay_status_retention instead of remote_status_retention. relay_id is the relay it came from,
+-- relay_status_retention_days instead of remote_status_retention_days. relay_id is the relay it came from,
 -- kept as an ID after the relay is deleted. Purged with the status.
 CREATE TABLE relayed_statuses (
   status_id TEXT NOT NULL PRIMARY KEY,

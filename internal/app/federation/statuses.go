@@ -43,7 +43,7 @@ type RemoteStatuses interface {
 }
 
 // RelayedStatuses records the remote posts that only a relay brought in, which are kept for
-// relay_status_retention (ADR-0061); *appcontent.Service implements it.
+// relay_status_retention_days (ADR-0061); *appcontent.Service implements it.
 type RelayedStatuses interface {
 	RecordRelayedStatus(ctx context.Context, tx uow.Tx, statusID, relayID string, at time.Time) error
 }
