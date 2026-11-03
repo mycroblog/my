@@ -84,7 +84,7 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
 ### What the user sees
 
 - An action with `notify_target` true reaches the user as a notification (`moderation_notice`). It carries the kind, the reason category, `public_reason`, the end time and the state. The kind and the category also come back as display names in the user's UI language.
-- The user can check the actions against them with `GET /api/v1/moderation/actions` (scope `read:accounts`, filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
+- The user can check the actions against them with the first-party `GET /api/v1/moderation/actions` (filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
 - `private_note`, the report, who took the action and the reason for lifting are never shown to the user.
 - A user can appeal each action once ([appeals](#appeals)). The action list and the action in a notification include whether it can be appealed (`appealable`), the deadline (`appeal_deadline`), and the appeal and its outcome (`appeal`).
 - A user under `disable_login`, `suspend` or `ban` cannot use the app or the API but can still sign in on the sign-in page (`/auth/sign_in`). There they see the kind, the reason and the end time of the action in effect
@@ -120,6 +120,10 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 ## Account management
 
 Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
+
+Staff act only on lower ranks: issuing or lifting an action, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
+A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
+An action that keeps the only active administrator from signing in (`disable_login`, `suspend`, `ban`) is refused whoever issues it, and that administrator cannot delete their own account (`409` with `/api/v1/problems/last-administrator`). See [admin-cli.md](admin-cli.md) for the roles.
 
 - `GET /api/v1/admin/accounts` returns local and remote accounts, newest first (the instance Actor is excluded).
   You can filter by username prefix (`username`), domain (`domain`), local or remote (`origin`), state (`state`), and, for local accounts, email address (`email`), email domain (`email_domain`) and the IP address used to register or sign in (`ip`).

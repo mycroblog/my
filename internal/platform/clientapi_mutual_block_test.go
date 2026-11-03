@@ -21,16 +21,16 @@ func TestBlockedUserManagesTheirOwnEdges(t *testing.T) {
 	e.relate("mute", alice, bob, nil)
 	e.relate("block", bob, alice, nil)
 
-	if r := e.relate("block", alice, bob, nil); !r.Blocking {
+	if r := e.relate("block", alice, bob, nil); !set(r.Blocking) {
 		t.Errorf("blocking back = %+v, want blocking", r)
 	}
 	if page := e.page("/blocks", alice.token); len(page.Accounts) != 1 || page.Accounts[0].Id != bob.id {
 		t.Errorf("blocks = %+v, want bob", page.Accounts)
 	}
-	if r := e.relate("unblock", alice, bob, nil); r.Blocking {
+	if r := e.relate("unblock", alice, bob, nil); set(r.Blocking) {
 		t.Errorf("unblocking in a mutual block = %+v, want not blocking", r)
 	}
-	if r := e.relate("unmute", alice, bob, nil); r.Muting {
+	if r := e.relate("unmute", alice, bob, nil); set(r.Muting) {
 		t.Errorf("unmuting an account that blocks the user = %+v, want not muting", r)
 	}
 
@@ -53,6 +53,7 @@ func TestListAccountStatusesAnswersLikeGetAccount(t *testing.T) {
 	t.Parallel()
 	e := newAccountsEnv(t)
 	mod, alice, bob, carol := e.user("mod"), e.user("alice"), e.user("bob"), e.user("carol")
+	e.setRole(carol, "") // the moderator suspends her below, which needs a lower rank
 
 	for _, u := range []testUser{alice, carol} {
 		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]any{"text": "hello", "visibility": "public"}, nil), http.StatusOK, "post")
@@ -165,6 +166,7 @@ func TestReportTargetAsTheReporterAndTheModerators(t *testing.T) {
 
 	// A suspended target, until the suspension is lifted, and the resolution's notification.
 	suspended := e.user("suspended")
+	e.setRole(suspended, "") // the moderator suspends the account below, which needs a lower rank
 	report := file(suspended)
 	var action clientapi.AdminAccountAction
 	e.want(e.do(http.MethodPost, "/admin/accounts/"+suspended.id+"/actions", mod.token, map[string]any{"kind": "suspend"}, &action), http.StatusOK, "suspend")

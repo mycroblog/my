@@ -382,11 +382,17 @@ func TestLoginProvidersOnlyClientAPI(t *testing.T) {
 	if code, body := e.jsonRequest(http.MethodGet, "/api/v1/accounts/password", tokens.AccessToken, ""); code != http.StatusOK || !strings.Contains(body, `"has_password":true`) {
 		t.Errorf("password status = %d %s", code, body)
 	}
-	account, err := e.s.app.Accounts.FindByHandle(t.Context(), "root", "")
+	// The link is for a user who ranks below the administrator.
+	member, err := e.s.app.Identity.CreateAdmin(t.Context(), identity.CreateAdminInput{
+		Username: "member", Email: "member@example.com", Password: externalTestPassword,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code, body := e.jsonRequest(http.MethodPost, "/api/v1/admin/accounts/"+account.Account.ID+"/password_reset_link", tokens.AccessToken, ""); code != http.StatusCreated || !strings.Contains(body, `"login_providers_only":true`) {
+	if _, err := e.s.app.Identity.RevokeRole(t.Context(), identity.RoleChangeInput{UserID: member.User.ID, RoleKey: domain.RoleAdmin}); err != nil {
+		t.Fatal(err)
+	}
+	if code, body := e.jsonRequest(http.MethodPost, "/api/v1/admin/accounts/"+member.AccountID+"/password_reset_link", tokens.AccessToken, ""); code != http.StatusCreated || !strings.Contains(body, `"login_providers_only":true`) {
 		t.Errorf("issue a reset link = %d %s", code, body)
 	}
 	code, body := e.jsonRequest(http.MethodPost, "/api/v1/linked_identities", tokens.AccessToken, `{"provider_id":"`+id+`","password":"`+externalTestPassword+`","return_to":"/settings/linked-accounts"}`)

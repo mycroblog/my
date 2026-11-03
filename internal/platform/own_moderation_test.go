@@ -29,6 +29,7 @@ import (
 func TestOwnModerationActions(t *testing.T) {
 	t.Parallel()
 	e := newAccountsEnv(t)
+	e.user("root") // the suspension below is not of the last administrator
 	alice := e.user("alice")
 	issue := func(in appmoderation.AccountActionInput) moderation.Action {
 		t.Helper()

@@ -208,6 +208,10 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	switch {
 	case errors.Is(err, appmoderation.ErrAccountNotFound):
 		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appmoderation.ErrTargetOutranksActor):
+		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
+	case errors.Is(err, appmoderation.ErrLastAdministrator):
+		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.lastAdministrator(ctx)), nil
 	case errors.Is(err, appmoderation.ErrInvalidReportReference):
 		return unprocessable(l.ServerErrorsInvalidValue("report_id"))
 	case errors.Is(err, appmoderation.ErrInvalidStatusReference), errors.Is(err, moderation.ErrInvalidActionStatuses):
@@ -270,6 +274,8 @@ func (s *Server) LiftAccountAction(ctx context.Context, req LiftAccountActionReq
 	switch {
 	case errors.Is(err, appmoderation.ErrNotFound):
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appmoderation.ErrTargetOutranksActor):
+		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appmoderation.ErrNotLiftable):
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil

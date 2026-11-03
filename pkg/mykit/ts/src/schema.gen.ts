@@ -674,7 +674,8 @@ export interface paths {
          *     or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
          *     The account and its posts disappear, every session and token of the user ends, and the
          *     other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
-         *     undone, and the username is never reused. A wrong password is a 422
+         *     undone, and the username is never reused. The only administrator of the instance gets a
+         *     409 `/api/v1/problems/last-administrator` once the confirmation passes. A wrong password is a 422
          *     `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
          *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 5 attempts per account are
@@ -1605,7 +1606,9 @@ export interface paths {
         /**
          * Get the viewer's relationships with accounts
          * @description Returns one relationship per requested account, in the order of the request. Accounts
-         *     that do not exist, are not active, or block the viewer are left out.
+         *     that do not exist, are not active, or block the viewer are left out. `blocking` needs
+         *     `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+         *     them the fields are absent.
          */
         get: operations["getRelationships"];
         put?: never;
@@ -5086,8 +5089,11 @@ export interface paths {
          *     another kind, missing, repeated, or too many on an action on posts, or naming a post
          *     that does not exist, is deleted, or is of another account is a 422 naming `status_ids`;
          *     `expires_in` on a `ban` or an action on posts is a 422 naming `expires_in`. A text that
-         *     is too long or contains U+0000 is a 422 naming it. An unknown account is a 404. Needs
-         *     the `manage_accounts` permission.
+         *     is too long or contains U+0000 is a 422 naming it. An unknown account is a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. A `disable_login`, `suspend`, or `ban`
+         *     that would lock out the only administrator is a 409 `/api/v1/problems/last-administrator`.
+         *     Needs the `manage_accounts` permission.
          */
         post: operations["createAccountAction"];
         delete?: never;
@@ -5132,7 +5138,8 @@ export interface paths {
          *     `delete_statuses` deleted; the posts that `mark_statuses_sensitive` marked are shown as
          *     they were. Lifting a lifted action changes nothing and keeps its first reason. A `ban`
          *     is never lifted: a 422 naming `id`. A `reason` that is too long or contains U+0000 is a
-         *     422 naming `reason`. An unknown ID is a 404. Needs the `manage_accounts` permission.
+         *     422 naming `reason`. An unknown ID is a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_accounts` permission.
          */
         post: operations["liftAccountAction"];
         delete?: never;
@@ -5842,7 +5849,8 @@ export interface paths {
          *     (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
          *     anything is returned; it changes nothing else. IP addresses are kept for the retention
          *     of the sign-in and registration origins only (ADR-0038). A remote account or the
-         *     instance actor is a 422 naming `id`. An unknown account is a 404. Needs the
+         *     instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
+         *     user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["revealAdminAccount"];
@@ -5867,7 +5875,8 @@ export interface paths {
          *     and recovery codes, so that they sign in with the password alone (FR-005). It is
          *     recorded in the audit log as `two_factor_disabled`. A remote account or the instance
          *     actor is a 422 naming `id`, an account without two-factor authentication a 409
-         *     `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+         *     `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_login_recovery` permission, which only the built-in admin role has by default.
          */
         post: operations["disableAdminAccountTwoFactor"];
@@ -5895,7 +5904,8 @@ export interface paths {
          *     only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
          *     Whoever holds the link can set the password: confirm who the user is through another
          *     channel first. A remote account or the instance actor is a 422 naming `id`, and an
-         *     unknown account a 404. Needs the `manage_login_recovery` permission, which only the
+         *     unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the `manage_login_recovery` permission, which only the
          *     built-in admin role has by default.
          */
         post: operations["issueAdminAccountPasswordResetLink"];
@@ -10505,7 +10515,9 @@ export interface components {
             poll?: components["schemas"]["PollInput"];
             /**
              * @description The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+             *     `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+             *     is created (ADR-0144 §4). Quoting a
              *     remote status while the instance does not send posts out (`Instance.federation.mode`
              *     `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
              */
@@ -13026,6 +13038,12 @@ export interface components {
          *       expire or be used up.
          *     - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
          *       takes no invite.
+         *     - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+         *       user to rank above the account: the highest `position` among the user's roles must be above
+         *       that of every role of the account, so it refuses a higher or equal rank and the user's own
+         *       account.
+         *     - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+         *       an administrator. Make another user an administrator first.
          *     - `/api/v1/problems/account-moved` (403): the user's account moved to another account
          *       (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
          *       (`POST /accounts/move/cancel`).
@@ -13098,7 +13116,10 @@ export interface components {
             /** @description The push service URL (`PushSubscription.endpoint`), an `https` URL. */
             endpoint: string;
             keys: components["schemas"]["PushSubscriptionKeys"];
-            /** @description The notification types to push, each at most once; empty pushes none. */
+            /**
+             * @description The notification types to push, each at most once; empty pushes none. A third-party
+             *     client's subscription leaves out the moderator notification types.
+             */
             alerts: components["schemas"]["NotificationType"][];
         };
         /**
@@ -13198,31 +13219,37 @@ export interface components {
         /**
          * @description The viewer's relationship with an account. It never says whether the account blocks
          *     the viewer: such an account is not found at all.
+         *
+         *     A token sees the fields its scopes cover, wherever the relationship comes from, and the
+         *     rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+         *     `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+         *     `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+         *     `read:mutes` or `write:mutes`.
          */
         Relationship: {
             id: components["schemas"]["Id"];
             /** @description Whether the viewer actively follows the account. */
-            following: boolean;
+            following?: boolean;
             /** @description Whether the viewer's follow request awaits the account's approval. */
-            requested: boolean;
+            requested?: boolean;
             /** @description Whether the account actively follows the viewer. */
-            followed_by: boolean;
+            followed_by?: boolean;
             /** @description Whether the account's follow request awaits the viewer's approval. */
-            requested_by: boolean;
+            requested_by?: boolean;
             /** @description Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow). */
-            show_boosts: boolean;
+            show_boosts?: boolean;
             /**
              * @description Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
              *     without a follow. A subscription asked for with a follow request to an account on another
              *     server is false until that server accepts the follow.
              */
-            notify: boolean;
+            notify?: boolean;
             /** @description Whether the viewer blocks the account. */
-            blocking: boolean;
+            blocking?: boolean;
             /** @description Whether the viewer mutes the account (a mute that has not expired). */
-            muting: boolean;
+            muting?: boolean;
             /** @description Whether the viewer's mute also hides the account's notifications. */
-            muting_notifications: boolean;
+            muting_notifications?: boolean;
         };
         /**
          * @description The follows that a `relationships_severed` tells of: the user lost them when the

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listOwnModerationActions
+  x-first-party-only: true
   summary: List the moderation actions on the authenticated user's account
   description: |
     The actions that moderators took on the user's own account (FR-715), newest first,

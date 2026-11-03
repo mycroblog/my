@@ -153,7 +153,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeRead() string {
 
 // ServerAuthAuthorizeScopeReadAccounts formats "server:auth.authorize.scope.read_accounts". Permission (OAuth scope read:accounts) listed on the authorization page.
 //
-//	en: Read accounts and your profile
+//	en: Read accounts, your profile, and your settings
 func (l *Localizer) ServerAuthAuthorizeScopeReadAccounts() string {
 	return l.format("server:auth.authorize.scope.read_accounts", nil)
 }
@@ -184,13 +184,6 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadCustomEmojis() string {
 //	en: Read the direct messages you send and receive
 func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
-}
-
-// ServerAuthAuthorizeScopeReadFavourites formats "server:auth.authorize.scope.read_favourites". Permission (OAuth scope read:favourites) listed on the authorization page.
-//
-//	en: Read your favourites
-func (l *Localizer) ServerAuthAuthorizeScopeReadFavourites() string {
-	return l.format("server:auth.authorize.scope.read_favourites", nil)
 }
 
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.
@@ -1743,6 +1736,13 @@ func (l *Localizer) ServerErrorsInvitesTooMany() string {
 	return l.format("server:errors.invites.too_many", nil)
 }
 
+// ServerErrorsLastAdministrator formats "server:errors.last_administrator". API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account.
+//
+//	en: This is the only administrator of this server. Make another user an administrator first.
+func (l *Localizer) ServerErrorsLastAdministrator() string {
+	return l.format("server:errors.last_administrator", nil)
+}
+
 // ServerErrorsListMembersNotFollowed formats "server:errors.list_members.not_followed". API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending.
 //
 //	en: Only accounts you follow can be added to a list.
@@ -2299,6 +2299,13 @@ func (l *Localizer) ServerErrorsStatusQuoteNotFound() string {
 	return l.format("server:errors.status.quote_not_found", nil)
 }
 
+// ServerErrorsStatusQuoteRemoteAudience formats "server:errors.status.quote_remote_audience". Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server.
+//
+//	en: A local, followers-only, or direct post cannot quote a post from another server.
+func (l *Localizer) ServerErrorsStatusQuoteRemoteAudience() string {
+	return l.format("server:errors.status.quote_remote_audience", nil)
+}
+
 // ServerErrorsStatusReplyNotFound formats "server:errors.status.reply_not_found". Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see.
 //
 //	en: The post you are replying to was not found.
@@ -2458,6 +2465,13 @@ func (l *Localizer) ServerErrorsSupportersUnavailable() string {
 //	en: {reason, select, no_provider {Configure a payment provider in the server's configuration first.} no_email {The server must send email, so that subscribers can verify their address.} provider_mismatch {The configured payment provider is not the one the program was enabled with. Disable the program and enable it again.} other {The supporter program cannot be used now.}}
 func (l *Localizer) ServerErrorsSupportersUnavailableDetail(reason string) string {
 	return l.format("server:errors.supporters.unavailable_detail", map[string]any{"reason": reason})
+}
+
+// ServerErrorsTargetOutranksActor formats "server:errors.target_outranks_actor". API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included.
+//
+//	en: This account's role does not rank below yours, so you cannot do this to it.
+func (l *Localizer) ServerErrorsTargetOutranksActor() string {
+	return l.format("server:errors.target_outranks_actor", nil)
 }
 
 // ServerErrorsTooLongArgs holds the arguments of ServerErrorsTooLong, passed by name.

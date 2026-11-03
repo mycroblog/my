@@ -248,7 +248,6 @@ const (
 	ScopeReadBookmarks      = "read:bookmarks"
 	ScopeReadCustomEmojis   = "read:custom_emojis"
 	ScopeReadDirect         = "read:direct"
-	ScopeReadFavourites     = "read:favourites"
 	ScopeReadFinance        = "read:finance"
 	ScopeReadFollows        = "read:follows"
 	ScopeReadMutes          = "read:mutes"
@@ -279,7 +278,7 @@ var broadScopes = []string{ScopeAdmin, ScopeFollow, ScopePush, ScopeRead, ScopeW
 var knownScopes = []string{
 	ScopeAdmin, ScopeAdminRead, ScopeAdminWrite,
 	ScopeFollow, ScopePush, ScopeRead,
-	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadFavourites, ScopeReadFinance,
+	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadFinance,
 	ScopeReadFollows, ScopeReadMutes, ScopeReadNotifications, ScopeReadReports, ScopeReadStatuses, ScopeReadSupporters, ScopeReadVoice,
 	ScopeWrite,
 	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteFavourites, ScopeWriteFollows,

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: exportCsv
+  x-first-party-only: true
   summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
   description: |
     Returns what the user has of `kind` now as the CSV file that Mastodon exports, which

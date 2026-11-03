@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listOwnInvites
+  x-first-party-only: true
   summary: List the user's own invites
   description: |
     The invites that the user created as a member (ADR-0108 §5), newest first, with how they
@@ -29,6 +30,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createOwnInvite
+  x-first-party-only: true
   summary: Create an invite of the user's own
   description: |
     Creates an invite with a new random code that people use to sign up while the

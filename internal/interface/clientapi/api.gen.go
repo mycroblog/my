@@ -7702,7 +7702,9 @@ type CreateStatusRequest struct {
 	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// QuotedStatusId The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+	// is created (ADR-0144 §4). Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
 	// `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
 	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
@@ -11092,6 +11094,12 @@ type PreviewDomainBlockImportRequest struct {
 //     expire or be used up.
 //   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
 //     takes no invite.
+//   - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+//     user to rank above the account: the highest `position` among the user's roles must be above
+//     that of every role of the account, so it refuses a higher or equal rank and the user's own
+//     account.
+//   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+//     an administrator. Make another user an administrator first.
 //   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
 //     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
@@ -11168,7 +11176,8 @@ type PushSubscriptionKeys struct {
 
 // PushSubscriptionRequest A browser's push subscription and the notification types to push to it.
 type PushSubscriptionRequest struct {
-	// Alerts The notification types to push, each at most once; empty pushes none.
+	// Alerts The notification types to push, each at most once; empty pushes none. A third-party
+	// client's subscription leaves out the moderator notification types.
 	Alerts []NotificationType `json:"alerts"`
 
 	// Endpoint The push service URL (`PushSubscription.endpoint`), an `https` URL.
@@ -11261,15 +11270,21 @@ type RejectCustomEmojiRequestRequest struct {
 
 // Relationship The viewer's relationship with an account. It never says whether the account blocks
 // the viewer: such an account is not found at all.
+//
+// A token sees the fields its scopes cover, wherever the relationship comes from, and the
+// rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+// `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+// `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+// `read:mutes` or `write:mutes`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
-	Blocking bool `json:"blocking"`
+	Blocking *bool `json:"blocking,omitempty"`
 
 	// FollowedBy Whether the account actively follows the viewer.
-	FollowedBy bool `json:"followed_by"`
+	FollowedBy *bool `json:"followed_by,omitempty"`
 
 	// Following Whether the viewer actively follows the account.
-	Following bool `json:"following"`
+	Following *bool `json:"following,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -11277,24 +11292,24 @@ type Relationship struct {
 	Id Id `json:"id"`
 
 	// Muting Whether the viewer mutes the account (a mute that has not expired).
-	Muting bool `json:"muting"`
+	Muting *bool `json:"muting,omitempty"`
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
-	MutingNotifications bool `json:"muting_notifications"`
+	MutingNotifications *bool `json:"muting_notifications,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
 	// server is false until that server accepts the follow.
-	Notify bool `json:"notify"`
+	Notify *bool `json:"notify,omitempty"`
 
 	// Requested Whether the viewer's follow request awaits the account's approval.
-	Requested bool `json:"requested"`
+	Requested *bool `json:"requested,omitempty"`
 
 	// RequestedBy Whether the account's follow request awaits the viewer's approval.
-	RequestedBy bool `json:"requested_by"`
+	RequestedBy *bool `json:"requested_by,omitempty"`
 
 	// ShowBoosts Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
-	ShowBoosts bool `json:"show_boosts"`
+	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the

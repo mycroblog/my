@@ -2,8 +2,14 @@
 description: |
   The viewer's relationship with an account. It never says whether the account blocks
   the viewer: such an account is not found at all.
+
+  A token sees the fields its scopes cover, wherever the relationship comes from, and the
+  rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+  `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+  `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+  `read:mutes` or `write:mutes`.
 type: object
-required: [id, following, requested, followed_by, requested_by, show_boosts, notify, blocking, muting, muting_notifications]
+required: [id]
 properties:
   id:
     $ref: ./Id.yaml

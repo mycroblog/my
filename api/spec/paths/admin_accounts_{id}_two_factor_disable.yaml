@@ -7,7 +7,8 @@ post:
     and recovery codes, so that they sign in with the password alone (FR-005). It is
     recorded in the audit log as `two_factor_disabled`. A remote account or the instance
     actor is a 422 naming `id`, an account without two-factor authentication a 409
-    `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. Needs the
+    `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
+    403 `/api/v1/problems/target-outranks-actor`. Needs the
     `manage_login_recovery` permission, which only the built-in admin role has by default.
   tags: [admin-server]
   security:
