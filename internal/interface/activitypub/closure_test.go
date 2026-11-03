@@ -62,8 +62,8 @@ func TestClosedServer(t *testing.T) {
 	if doc := decode(t, rec.Body.Bytes()); rec.Code != http.StatusOK || doc["suspended"] != nil || doc["publicKey"] == nil {
 		t.Errorf("GET of the instance actor while delivering = %d %s, want it whole", rec.Code, rec.Body)
 	}
-	if rec := s.get(t, "/ap/actors/"+daveID, acceptMastodon); rec.Code != http.StatusNotFound {
-		t.Errorf("GET of the deleted dave while delivering = %d, want 404", rec.Code)
+	if rec := s.get(t, "/ap/actors/"+daveID, acceptMastodon); rec.Code != http.StatusGone {
+		t.Errorf("GET of the deleted dave while delivering = %d, want 410", rec.Code)
 	}
 	if rec := s.get(t, "/nodeinfo/2.1", ""); rec.Code != http.StatusOK {
 		t.Errorf("GET /nodeinfo/2.1 while delivering = %d, want 200", rec.Code)
