@@ -61,12 +61,19 @@ func TestRunConfig(t *testing.T) {
 		wantAbsent []string
 	}{
 		{
+			name:       "a job type that does not exist",
+			args:       []string{"config", "check"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_WORKER_JOB_TYPES": "federation.delivr", "LC_ALL": "C"},
+			wantCode:   1,
+			wantStderr: []string{"MY_WORKER_JOB_TYPES: cannot run: queue: no job type matches federation.delivr"},
+		},
+		{
 			name:       "valid",
 			args:       []string{"config", "check", "-config", file},
 			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "LC_ALL": "C"},
 			wantCode:   0,
 			wantStdout: []string{"web", "file", "(redacted)", "configuration OK"},
-			wantStderr: []string{"Found 2 warnings about running in production.", "MY_MAIL: is none", "MY_VAPID_PRIVATE_KEY: is not set"},
+			wantStderr: []string{"Found 3 warnings about running in production.", "MY_MAIL: is none", "MY_STREAM: is hub with role web", "MY_VAPID_PRIVATE_KEY: is not set"},
 		},
 		{
 			name: "production errors fail the check",
@@ -177,7 +184,7 @@ func TestRunConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LANGUAGE", "")
 			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DB", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
-				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN"} {
+				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN", "MY_WORKER_JOB_TYPES"} {
 				t.Setenv(k, tt.env[k]) // restores the original value after the test
 				if _, ok := tt.env[k]; !ok {
 					if err := os.Unsetenv(k); err != nil {

@@ -26,11 +26,15 @@ detail in English:
   - An SQLite `database_url` that keeps the database in memory.
   - A `kek` that is not random, such as all zeros or a repeated byte.
   - A `captcha` site key or secret key that is one of the test keys the CAPTCHA services publish.
+  - `worker_job_types`, `worker_job_types_except`, or a queue route that names no job type (in every profile; `my job types` lists them).
+  - With `-instance`, a `worker_job_concurrency` that the database's pool cannot serve.
 - **Warnings** leave the exit code at 0. They are settings that are usual in development and may be deliberate in production:
   - `mail = none`.
   - An SQLite database or the `fs` blob store in a temporary directory (`/tmp`, `/var/tmp`, `/dev/shm`, or `$TMPDIR`).
   - `queue = inline`.
   - No `vapid_private_key`.
+  - `stream = hub` or `kv = memory` with a `role` other than `all`: they work within one process only.
+  - Voice settings that were likely not meant, such as `voice = p2p` without STUN or TURN.
   - A test-mode key of the payment provider.
   - With `-instance`: the instance texts `name`, `short_description`, `terms`, and `privacy_policy`, the instance settings
     `contact_account`, `contact_email`, and `security_contact` when they are not set, and a server without rules.

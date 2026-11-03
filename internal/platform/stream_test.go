@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/internal/platform/config"
 	"github.com/mycroblog/my/pkg/testkit/valkeytest"
 )
 
@@ -284,8 +286,8 @@ func TestHubWarnsOutsideRoleAll(t *testing.T) {
 			if _, ok := s.app.Streams.(*stream.Hub); !ok {
 				t.Errorf("streams = %T, want a *stream.Hub", s.app.Streams)
 			}
-			if got := strings.Contains(s.logs.String(), "stream = hub delivers to the streams of this process only"); got != tt.warn {
-				t.Errorf("warned = %v, want %v; logs:\n%s", got, tt.warn, s.logs.String())
+			if got := slices.ContainsFunc(config.Readiness(s.app.Config), func(f config.Finding) bool { return f.Key == "stream" }); got != tt.warn {
+				t.Errorf("warned = %v, want %v", got, tt.warn)
 			}
 		})
 	}

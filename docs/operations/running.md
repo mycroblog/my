@@ -328,6 +328,7 @@ A job whose handler decided it failed for good, and a job that used up its retri
 my job list                  # newest failures first: ID, type, run count, time of failure, last error (-limit sets the count, default 50)
 my job retry <id> [<id>...]  # reset the attempt count and put the job back in the queue to run immediately
 my job delete <id> [<id>...] # remove without running
+my job types                 # print every job type of this release
 ```
 
 - If a job with the same idempotency key is already waiting, that job stands in for the retried one. Job handlers are idempotent, so putting the same job back any number of times is safe.
@@ -342,7 +343,7 @@ By default every worker runs every job type, in the order the jobs fell due, one
 - [`worker_job_types`](../reference/configuration.md#worker_job_types): this process runs only these types.
 - [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except): this process runs every type but these.
 
-Each is a comma-separated list of [job types](../reference/jobs.md), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
+Each is a comma-separated list of [job types](../reference/jobs.md) (`my job types` prints them; `my config check` refuses a name that matches none), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
 
 At the start, a process with one of the settings logs the types it skips. It cannot see the settings of the other processes, so **make sure that some process runs every type**, or those jobs wait forever. Periodic cleanup and email are job types too. Every process still starts the periodic jobs; which process runs them depends on these settings.
 
