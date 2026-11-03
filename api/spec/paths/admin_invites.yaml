@@ -4,7 +4,7 @@ get:
   summary: List the invites
   description: |
     The invites that let people sign up while the registration mode is `open`, `approval`,
-    or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+    or `invite`, newest first, with how they have been used and who
     created them: the staff's and the members' own invites. Needs the `manage_invites`
     permission.
   tags: [admin-moderation]

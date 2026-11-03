@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A moderation action on a remote domain and its subdomains (FR-702).
+description: A moderation action on a remote domain and its subdomains.
 type: object
 required: [id, domain, kind, obfuscate, state, issued_at]
 properties:

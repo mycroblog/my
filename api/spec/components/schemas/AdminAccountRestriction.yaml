@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A capability that an action takes away (data-model §5.2). `login`: logging in and the
+  A capability that an action takes away. `login`: logging in and the
   API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
   boosting, voting. `visibility_ceiling_private`: posts are followers-only.
   `public_discovery`: posts stay off the public timelines and search.

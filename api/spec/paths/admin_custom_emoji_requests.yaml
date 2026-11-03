@@ -3,7 +3,7 @@ get:
   operationId: listAdminCustomEmojiRequests
   summary: List the custom emoji requests
   description: |
-    The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+    The custom emoji requests of the holders of `create_custom_emojis`, newest
     first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
   tags: [admin-server]
   security:

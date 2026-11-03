@@ -64,11 +64,13 @@ func (s *Service) ConfirmMove(ctx context.Context, userID string, c Confirmation
 
 // Confirmation is how a signed-in user confirms an operation: the current password, a passkey
 // when Passkey has a token, or a re-authentication with a linked login provider when External
-// has the token of FinishExternalLogin.
+// has the token of FinishExternalLogin. The deactivation of the account also takes a code of the
+// second factor (DeactivateOwnAccount).
 type Confirmation struct {
-	Password string
-	Passkey  PasskeyAssertion
-	External string
+	Password      string
+	Passkey       PasskeyAssertion
+	External      string
+	TwoFactorCode string
 }
 
 // PasskeyAssertion is the browser's answer to a confirmation with a passkey.

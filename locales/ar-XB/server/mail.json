@@ -1,4 +1,16 @@
 {
+  "mail.account_deactivated.body": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ou {instance} ıs pǝɐɔʇıʌɐʇǝp. Iʇ ʍıʅʅ qǝ pǝʅǝʇǝp ou {date} nuʅǝss ʎon ɹǝɐɔʇıʌɐʇǝ ıʇ qǝɟoɹǝ ʇɥǝu.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.account_deactivated.detail": {
+    "defaultMessage": "‮⊥o ɹǝɐɔʇıʌɐʇǝ ıʇ, sıƃu ıu. Mǝ ʍıʅʅ uoʇ ǝɯɐıʅ ʎon ɐqonʇ ʇɥıs ɐƃɐıu qǝɟoɹǝ ʇɥǝ pǝʅǝʇıou. Iɟ ʎon pıp uoʇ po ʇɥıs, sıƃu ıu, ɹǝɐɔʇıʌɐʇǝ ʇɥǝ ɐɔɔonuʇ, ɐup ɔɥɐuƃǝ ʎonɹ dɐssʍoɹp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.account_deactivated.subject": {
+    "defaultMessage": "‮⅄onɹ ɐɔɔonuʇ ou {instance} ıs pǝɐɔʇıʌɐʇǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.action.open_notification": {
     "defaultMessage": "‮Odǝu‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -9,6 +21,10 @@
   },
   "mail.action.set_new_password": {
     "defaultMessage": "‮Sǝʇ ɐ uǝʍ dɐssʍoɹp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.action.sign_in": {
+    "defaultMessage": "‮Sıƃu ıu‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.admin_account_moved.body": {

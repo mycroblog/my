@@ -59,7 +59,7 @@
 
 1. `account_restrictions`（期限内のもの）
 2. `domain_restrictions`（対象ドメインと親ドメイン、期限内のもの）
-3. ライフサイクル（`deactivated` / `deletion_scheduled` / `deleted` は `login`・`post`・`interact`・`profile_view` 相当として扱います。本人による無効化は再有効化でログインできるため、`login` は除きます）
+3. ライフサイクル（`deactivated` / `deletion_scheduled` / `deleted` は `login`・`post`・`interact`・`profile_view` 相当として扱います。例外はログインで、本人が無効化したアカウントは、削除の日付までは、`ban` が効いている `deletion_scheduled` と同じくサーバーが返す画面にだけログインできます。§5.6）
 4. 登録審査（`approved` 以外は、ログインはできても投稿・交流はできない）
 
 ユースケースは `policy.CanLogin()`、`policy.CanPost()`、`policy.VisibilityCeiling()`、`policy.Discoverable()` などを通じてだけ判定し、テーブルを直接見ません。
@@ -95,3 +95,17 @@
 - `CanSpeakFreely(room, participant, facts)`: 1. ホスト・共同ホストは真、2. 制限（limited）されたアカウントは明示の許可がなければ偽、3. 明示の許可（挙手の許可・ホストの許可・話者としての招待）があれば真、4. `speakers` が `everyone` なら真、`followers` はホストをフォローしていれば真、`mutuals` は相互フォローなら真、`manual` は偽。
 - `CanHost(facts)`: ローカルの有効な（凍結・削除されていない）アカウントで、制限されておらず、`voice_room_starters` が `everyone` か権限 `start_voice_rooms` を持つ。`NextHost` は指名の順の共同ホスト（いまの参加の中で指名された人。§4.14）のうち `CanHost` が真の最初の人を返し、いなければルームは終わります。
 - 「フォロワー」「相互フォロー」の基準はその時のホスト（`voice_room_heads.host_account_id`）です。範囲を狭めても、ホストが交代しても、参加中の人は残ります（ADR-0100 §3）。
+
+### 5.6 本人による無効化
+
+本人による無効化（[ADR-0145](../../adr/0145-self-deactivation.md)）は、ライフサイクルの `deactivated` です。処分の制限と独立で、`initiated_by = self` だけが作ります。
+
+- **操作**: `POST /api/v1/accounts/deactivation`（一次のクライアントだけ）。パスワード・二要素認証のコード（リカバリーコードを含む）・パスキーのどれか、どれも持たない人は連携先のログインで確かめます。`account.DeactivationPeriod`（30 日）後が削除の日付で、`deactivated` の `since` から求めます（カラムはありません）。
+- **断るとき**: ログインを奪う処分、`deletion_scheduled`、すでに `deactivated`、移転済み（`account_move_states`）、登録の審査中、続いている支援（期間の終わりに終わる予定のものも含む）、ログインできるほかの管理者がいない最後の管理者（期限の削除で管理者がいなくなるため）、最後の `reactivated` から `account.DeactivationGap`（24 時間）たっていない。
+- **同じトランザクションで起きること**: `deactivated` の記録、セッションとトークンの失効（`session_revocations.reason = logout`、`oauth_token_revocations.reason = user`。登録したクライアントのトークンは `client_disabled`）、`feed_author_restrictions` の `profile_view`、検索語の削除、`Update(Actor)` の記録（[federation.md §7.1](../federation.md)）、メールを送る構成なら確認のメールのジョブ（`identity.deactivation_email`）、通話の参加者の確認（`voice.check_account`）。
+- **見えるもの**: プロフィール・投稿・検索・おすすめ・メンションの補完から外します。モデレーターの画面には `deactivated` の状態で出し、通報と処分は続けられます。処分は `AdminAccountState` の順で優先します。
+- **届くもの**: 通知・メール・Web Push は作りません（`notification` の projector と、ジョブのメールボックスが判定します）。メンションと DM は宛先に入れません。お気に入り・ブースト・リアクションは数として残します（§4.5 の受信）。
+- **サインイン**: 二要素認証まで通常どおりで、サーバーが返す状態の画面にだけ入れます。アクセストークンは出しません（`Access.Allowed` が偽）。パスワードの再設定は使えます。
+- **再有効化**: 状態の画面のボタンで `reactivated`（`initiated_by = self`）を記録します。削除の日付を過ぎていれば、ジョブが記録する前でも断り、ログインもできません。効いている処分はそのままで、`feed_author_restrictions` はそのときの処分の制限に置き換えます。
+- **削除**: 1 時間ごとの `account.execute_deletions` が、`since` が 30 日より前の `deactivated` を行ロックのもとで読み直して `deleted`（`initiated_by = system`）を記録します。以後は本人の削除と同じ経路です。ログインできるほかの管理者がいなければ、admin ロールのロックのもとで確かめて記録せず、次の実行でもう一度確かめます（`account.Service.SetDeletionHold`、`identity.Service.IsLastAdministratorTx`）。無効化中の管理者は、ログインできる管理者に数えません。
+- **`ban` との順序**: `ban` は `deletion_scheduled` に移るので、その時点から再有効化できず、`ban` の期日に従います。`deletion_canceled` は `active` に戻します。`retention_holds` は消去を止めるだけで、削除は止めません。

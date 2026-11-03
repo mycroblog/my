@@ -698,5 +698,41 @@
   "errors.login_providers_only": {
     "defaultMessage": "This server signs in only through its login providers, so passwords and passkeys cannot be set here.",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "This account cannot be deactivated now.",
+    "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "A moderation action keeps this account from signing in.",
+    "description": "API error detail: the account cannot be deactivated because a moderation action disables its login."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "This account is waiting to be deleted.",
+    "description": "API error detail: the account cannot be deactivated because its deletion is scheduled."
+  },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "This account is deactivated.",
+    "description": "API error detail: the account cannot be deactivated because it is deactivated already."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "This account moved to another account.",
+    "description": "API error detail: the account cannot be deactivated because it moved to another account."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "The registration of this account is waiting for review.",
+    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "Cancel your supporter subscription first.",
+    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "This account was reactivated less than 24 hours ago.",
+    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in. Make someone else an administrator first.",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

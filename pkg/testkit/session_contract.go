@@ -239,24 +239,36 @@ func sessionRejectsInactiveAccounts(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	reg := e.sessionUser(t)
 	_, wrongErr := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: "wrong password"})
-	for _, kind := range []account.LifecycleKind{account.LifecycleDeactivated, account.LifecycleReactivated} {
+	record := func(kind account.LifecycleKind) {
+		t.Helper()
 		e.clock.Advance(time.Second)
 		if _, err := e.accounts.RecordLifecycleEvent(ctx, appaccount.LifecycleInput{
 			AccountID: reg.AccountID, Kind: kind, InitiatedBy: account.InitiatedBySelf,
 		}); err != nil {
 			t.Fatalf("RecordLifecycleEvent(%s) = %v", kind, err)
 		}
-		_, err := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword})
-		if kind == account.LifecycleReactivated {
-			if err != nil {
-				t.Fatalf("SignIn after reactivation = %v", err)
-			}
-			continue
-		}
-		// The right password of an inactive account fails exactly like a wrong one.
-		if !errors.Is(err, appidentity.ErrInvalidCredentials) || err.Error() != wrongErr.Error() {
-			t.Fatalf("SignIn to a deactivated account = %v, want the wrong-password error %v", err, wrongErr)
-		}
+	}
+	// A deactivated account signs in, to the server-rendered status page only.
+	record(account.LifecycleDeactivated)
+	signedIn, err := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword})
+	if err != nil {
+		t.Fatalf("SignIn to a deactivated account = %v", err)
+	}
+	a, err := e.identity.UserAccess(ctx, signedIn.Session.UserID)
+	if err != nil || a.Allowed() || !a.Deactivated || a.DeletionDueAt == nil || a.DeletionDate == "" {
+		t.Fatalf("UserAccess of a deactivated account = %+v, %v", a, err)
+	}
+	record(account.LifecycleReactivated)
+	if _, err := e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword}); err != nil {
+		t.Fatalf("SignIn after reactivation = %v", err)
+	}
+	// Past the date of its deletion, also before the job records the deletion, the right password
+	// fails exactly like a wrong one.
+	record(account.LifecycleDeactivated)
+	e.clock.Advance(account.DeactivationPeriod)
+	_, err = e.identity.SignIn(ctx, appidentity.SignInInput{Email: sessionEmail, Password: sessionPassword})
+	if !errors.Is(err, appidentity.ErrInvalidCredentials) || err.Error() != wrongErr.Error() {
+		t.Fatalf("SignIn past the date = %v, want the wrong-password error %v", err, wrongErr)
 	}
 }
 

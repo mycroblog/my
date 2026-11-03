@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: The state of the job queue (ADR-0064).
+description: The state of the job queue.
 type: object
 required: [adapter, pending_listing, counts, waits]
 properties:

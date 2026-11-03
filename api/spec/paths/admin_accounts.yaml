@@ -3,7 +3,7 @@ get:
   operationId: listAdminAccounts
   summary: Search the accounts
   description: |
-    The local and remote accounts (FR-714), newest first, without the instance actor:
+    The local and remote accounts, newest first, without the instance actor:
     those whose handle's username starts with `username` (case-insensitively; a remote
     account whose handle is not verified has none), on a `domain`, local or remote
     (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,

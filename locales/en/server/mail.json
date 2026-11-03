@@ -370,5 +370,21 @@
   "mail.group.moderation": {
     "defaultMessage": "Notices from the moderators",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.action.sign_in": {
+    "defaultMessage": "Sign in",
+    "description": "Label of the link in an email that opens the sign-in page."
+  },
+  "mail.account_deactivated.subject": {
+    "defaultMessage": "Your account on {instance} is deactivated",
+    "description": "Subject of the one email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.account_deactivated.body": {
+    "defaultMessage": "Your account on {instance} is deactivated. It will be deleted on {date} unless you reactivate it before then.",
+    "description": "First paragraph of the email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none. {date} is the date and time of the deletion with its time zone, such as 2026-12-03 09:00 (UTC)."
+  },
+  "mail.account_deactivated.detail": {
+    "defaultMessage": "To reactivate it, sign in. We will not email you about this again before the deletion. If you did not do this, sign in, reactivate the account, and change your password.",
+    "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
   }
 }

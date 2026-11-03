@@ -50,6 +50,7 @@ export const adminAccountStateLabels: Readonly<Record<AdminAccountState, ClientM
   limited: "client:admin.accounts.state.limited",
   disabled: "client:admin.accounts.state.disabled",
   suspended: "client:admin.accounts.state.suspended",
+  deactivated: "client:admin.accounts.state.deactivated",
   deleted: "client:admin.accounts.state.deleted",
 };
 

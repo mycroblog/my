@@ -58,6 +58,8 @@ var ErrUnusableImage = errors.New("account: the media file is not a processed im
 // Service runs the account module's use cases.
 type Service struct {
 	d Deps
+	// deletionHold is set once, while the server is assembled (SetDeletionHold).
+	deletionHold DeletionHold
 }
 
 // NewService returns a Service on d.

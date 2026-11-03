@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: MIT
-description: The caching policy. Anonymous public GETs are cacheable by shared caches (ADR-0016).
+description: The caching policy. Anonymous public GETs are cacheable by shared caches.
 schema:
   type: string

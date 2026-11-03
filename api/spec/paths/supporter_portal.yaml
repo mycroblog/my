@@ -4,7 +4,7 @@ post:
   summary: Open the payment provider's portal of the authenticated user
   description: |
     The payment provider's portal of the user's payment methods and invoices, which returns
-    to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+    to `/settings/supporter` of the web client. Plans change on this server, not in
     the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
     know.
   tags: [supporters]

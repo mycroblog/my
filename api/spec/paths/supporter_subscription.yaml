@@ -4,7 +4,7 @@ get:
   summary: Get the authenticated user's supporter subscription
   description: |
     The user's subscription that goes on (any state but `expired`, `revoked`, and
-    `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+    `abandoned`), and why the user cannot subscribe when they cannot. A 404
     while the supporter program is disabled (`Instance.supporters_enabled`).
   tags: [supporters]
   security:

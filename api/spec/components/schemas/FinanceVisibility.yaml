@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   How much of the instance's costs everyone may read (the instance setting
-  `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+  `finance_visibility`). `private`: nothing, and
   `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
   `breakdown`: the totals and their breakdown by provider and category. No level publishes
   the names, memos, or individual payments of the cost items.

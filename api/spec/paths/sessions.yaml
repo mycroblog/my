@@ -7,7 +7,7 @@ get:
     One entry per browser session that still works or from which a grant of the server's own web
     client still works, the browser that asks first, then the most recently used first. The apps
     the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-    may call it (ADR-0090 §4).
+    may call it.
   tags: [sessions]
   security:
     - oauth2: ["read:accounts"]

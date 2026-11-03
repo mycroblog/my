@@ -108,6 +108,11 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 	if own.Subscription == nil || own.Subscription.State != clientapi.SupporterSubscriptionStateActive {
 		t.Fatalf("bob's subscription after paying: %+v", own.Subscription)
 	}
+	// A paid subscription keeps the account from being deactivated (ADR-0145 §1).
+	res := e.do(http.MethodPost, "/accounts/deactivation", bob.token, map[string]any{"password": "correct horse battery staple"}, nil)
+	if typ := e.want(res, http.StatusConflict, "deactivate with a subscription"); typ != clientapi.ProblemTypeDeactivationRefused {
+		t.Errorf("deactivate with a subscription: %s", typ)
+	}
 	if roles := e.roleKeys(admin, bob); !slices.Contains(roles, "supporter") {
 		t.Errorf("bob's roles %v, want supporter", roles)
 	}

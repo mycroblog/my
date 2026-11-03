@@ -3,7 +3,7 @@ get:
   operationId: listInstanceRules
   summary: List the instance rules
   description: |
-    Every rule (FR-705): the rules in effect by position, followed, when
+    Every rule: the rules in effect by position, followed, when
     `include_retired` is set, by the retired ones. The list is not paginated; at most 100
     rules are in effect. Needs the `manage_rules` permission.
   tags: [admin-server]

@@ -226,5 +226,9 @@
   "admin.accounts.column.account": {
     "defaultMessage": "Account",
     "description": "Header of the column of the accounts table that names the account and links to it."
+  },
+  "admin.accounts.state.deactivated": {
+    "defaultMessage": "Deactivated",
+    "description": "State of an account: its owner deactivated it, and it is deleted 30 days later unless they come back. Moderators can still act on it and read its reports."
   }
 }

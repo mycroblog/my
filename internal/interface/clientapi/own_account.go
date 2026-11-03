@@ -10,10 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/blob"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The viewer's own account: its password (FR-002) and its removal (FR-004), its deletion, and
@@ -32,12 +34,18 @@ const (
 	// ProblemTypeEmailAlreadyVerified is the problem of a request for a verification email for
 	// an address that is verified and receives email.
 	ProblemTypeEmailAlreadyVerified = "/api/v1/problems/email-already-verified"
+	// ProblemTypeDeactivationRefused is the problem of a deactivation of the own account that
+	// cannot be done now; the detail says why.
+	ProblemTypeDeactivationRefused = "/api/v1/problems/deactivation-refused"
 )
 
 var (
 	// DeleteAccountLimit bounds the attempts to delete the own account, which check a password
 	// or a passkey.
 	DeleteAccountLimit = kernel.Limit{Name: "api.account.delete", Max: 5, Window: time.Hour}
+	// DeactivateAccountLimit bounds the attempts to deactivate the own account, which check a
+	// password, a code, or a passkey.
+	DeactivateAccountLimit = kernel.Limit{Name: "api.account.deactivate", Max: 5, Window: time.Hour}
 	// ExportLimit bounds the requests for data exports.
 	ExportLimit = kernel.Limit{Name: "api.export", Max: 3, Window: 24 * time.Hour}
 )
@@ -49,6 +57,8 @@ type OwnAccount interface {
 	ChangePassword(ctx context.Context, in appidentity.ChangePasswordInput) error
 	RemovePassword(ctx context.Context, in appidentity.RemovePasswordInput) error
 	DeleteOwnAccount(ctx context.Context, userID string, c appidentity.Confirmation) error
+	PreviewDeactivation(ctx context.Context, userID string) (appidentity.DeactivationPreview, error)
+	DeactivateOwnAccount(ctx context.Context, userID string, c appidentity.Confirmation) (time.Time, error)
 }
 
 // VerificationEmails sends the viewer a new verification email; *appidentity.Service implements
@@ -208,6 +218,95 @@ func (s *Server) DeleteOwnAccount(ctx context.Context, req DeleteOwnAccountReque
 		return nil, fmt.Errorf("clientapi: delete the account of user %s: %w", v.UserID, err)
 	}
 	return DeleteOwnAccount204Response{}, nil
+}
+
+// GetDeactivationPreview serves GET /api/v1/accounts/deactivation.
+func (s *Server) GetDeactivationPreview(ctx context.Context, _ GetDeactivationPreviewRequestObject) (GetDeactivationPreviewResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.OwnAccount == nil {
+		return GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	p, err := s.o.OwnAccount.PreviewDeactivation(ctx, v.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: preview the deactivation of user %s: %w", v.UserID, err)
+	}
+	body := DeactivationPreview{DeletionDueAt: p.DeletionDueAt.UTC()}
+	if p.Refused != nil {
+		reason := DeactivationPreviewRefusal(p.Refused.Reason)
+		body.Refusal, body.AvailableAt = &reason, p.Refused.AvailableAt
+	}
+	cache := cacheNoStore
+	return GetDeactivationPreview200JSONResponse{Body: body, Headers: GetDeactivationPreview200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// DeactivateOwnAccount serves POST /api/v1/accounts/deactivation.
+func (s *Server) DeactivateOwnAccount(ctx context.Context, req DeactivateOwnAccountRequestObject) (DeactivateOwnAccountResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.o.OwnAccount == nil {
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	if p, h, limited := s.LimitProblem(ctx, DeactivateAccountLimit, v.AccountID); limited {
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
+	}
+	if req.Body == nil {
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "password")), nil
+	}
+	var c appidentity.Confirmation
+	if code := req.Body.TwoFactorCode; code != nil && *code != "" {
+		c.TwoFactorCode = *code
+	} else {
+		var param string
+		var ok bool
+		if c, param, ok = confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password"); !ok {
+			return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		}
+	}
+	due, err := s.o.OwnAccount.DeactivateOwnAccount(ctx, v.UserID, c)
+	if p := s.passkeyProblem(ctx, err); p != nil {
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if p := s.twoFactorProblem(ctx, err); p != nil {
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	var refused *appaccount.DeactivationRefusedError
+	switch {
+	case errors.As(err, &refused):
+		l := s.Localizer(ctx)
+		return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusConflict,
+			ProblemTypeDeactivationRefused, l.ServerErrorsDeactivationRefused(), deactivationRefusalDetail(l, refused.Reason))), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: deactivate the account of user %s: %w", v.UserID, err)
+	}
+	return DeactivateOwnAccount200JSONResponse{DeletionDueAt: due.UTC()}, nil
+}
+
+// deactivationRefusalDetail says why a deactivation is refused.
+func deactivationRefusalDetail(l *i18n.Localizer, r appaccount.DeactivationRefusal) string {
+	switch r {
+	case appaccount.DeactivationRefusedRestricted:
+		return l.ServerErrorsDeactivationLoginRestricted()
+	case appaccount.DeactivationRefusedDeletionScheduled:
+		return l.ServerErrorsDeactivationDeletionScheduled()
+	case appaccount.DeactivationRefusedAlready:
+		return l.ServerErrorsDeactivationAlreadyDeactivated()
+	case appaccount.DeactivationRefusedMoved:
+		return l.ServerErrorsDeactivationMoved()
+	case appaccount.DeactivationRefusedPending:
+		return l.ServerErrorsDeactivationRegistrationPending()
+	case appaccount.DeactivationRefusedSubscription:
+		return l.ServerErrorsDeactivationPaidSubscription()
+	case appaccount.DeactivationRefusedLastAdministrator:
+		return l.ServerErrorsDeactivationLastAdministrator()
+	case appaccount.DeactivationRefusedRecentlyReactivated:
+		return l.ServerErrorsDeactivationRecentlyReactivated()
+	}
+	return ""
 }
 
 // ListDataExports serves GET /api/v1/exports.

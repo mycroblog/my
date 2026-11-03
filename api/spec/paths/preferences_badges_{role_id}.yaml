@@ -5,7 +5,7 @@ put:
   operationId: updateBadgeChoice
   summary: Show or hide the badge of a role on the authenticated user's profile
   description: |
-    Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+    Shows or hides the badge of a role that the user holds on their profile. The
     badge appears in `Account.badges` of the user's own account endpoints only, never on
     posts, in lists of accounts, or to other servers. A role that the user does not hold, or
     that has no badge, is a 404.

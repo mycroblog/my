@@ -18,7 +18,9 @@ import (
 // where a Delete of the actor goes. The fan-out builds the actor's document as it is then:
 // emptied and marked suspended while a suspension is in effect, the profile otherwise
 // (FanOutDeps.Suspensions). A rolled-back action records nothing. d.Accounts tells local
-// accounts from remote ones; the suspension of a remote account sends nothing here.
+// accounts from remote ones; the suspension of a remote account sends nothing here, and neither
+// does a change on an account that its owner deactivated, which stays hidden either way
+// (ADR-0145 §7).
 func RegisterSuspensionProjectors(r *uow.Projectors, d RecorderDeps) {
 	rec := recorder{d: d}
 	r.Register(appmoderation.EventAccountSuspensionChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -29,6 +31,12 @@ func RegisterSuspensionProjectors(r *uow.Projectors, d RecorderDeps) {
 		local, err := d.Accounts.IsLocal(ctx, tx, ev.AccountID)
 		if err != nil || !local {
 			return err
+		}
+		if d.Hidden != nil {
+			deactivated, err := d.Hidden.DeactivatedTx(ctx, tx, ev.AccountID)
+			if err != nil || deactivated {
+				return err
+			}
 		}
 		return rec.recordWith(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityUpdate, ActorAccountID: ev.AccountID,

@@ -3,7 +3,7 @@ get:
   operationId: getAutoDeletePolicy
   summary: Get the authenticated user's automatic deletion of old posts
   description: |
-    The policy that deletes the user's own posts some days after their publication (FR-118).
+    The policy that deletes the user's own posts some days after their publication.
     A user who has never saved one gets the default policy, which is disabled.
   tags: [preferences]
   security:

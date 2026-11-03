@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -22,6 +23,10 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		return err
 	}
 	identity.RegisterModerationProjectors(a.Projectors, repo, a.Accounts, a.Clock)
+	// The deletion at the end of a deactivation never takes the last administrator.
+	a.Accounts.SetDeletionHold(func(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+		return a.Identity.LastAdministratorAccountTx(ctx, tx, accountID)
+	})
 	identity.RegisterLifecycleProjectors(a.Projectors, repo, a.Accounts, a.Clock)
 	outbox := a.Outbox
 	if outbox == nil {
@@ -32,7 +37,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Passwords: identity.NewPasswordHasher(identity.DefaultArgon2Params, 0), Accounts: a.Accounts,
-		Logins: a.AccountPolicy, LoginsTx: a.AccountPolicy, RateLimiter: a.RateLimiter,
+		Logins: a.AccountPolicy, LoginsTx: a.AccountPolicy, RateLimiter: a.RateLimiter, Subscriptions: liveSubscriptions{a},
 		// TOTP secrets are sealed like actor keys (ADR-0019 §6); sign-in challenges live in the KV store.
 		Sealer: a.Sealer, KV: a.KV,
 		// Passkeys sign in instead of the password (FR-004); their ceremonies' state is sealed too.
@@ -141,4 +146,16 @@ func (a *App) loginProviderDomainRestricted(ctx context.Context, host string) (b
 	}
 	rs, err := a.ModerationPolicy.DomainRestrictions(ctx, canonical)
 	return len(rs) > 0, err
+}
+
+// liveSubscriptions implements identity.LiveSubscriptions on the supporters module, which is built
+// after the identity module; a server without the program has no subscriptions.
+type liveSubscriptions struct{ a *App }
+
+// HasLiveSubscription implements identity.LiveSubscriptions.
+func (l liveSubscriptions) HasLiveSubscription(ctx context.Context, userID string) (bool, error) {
+	if l.a.Supporters == nil {
+		return false, nil
+	}
+	return l.a.Supporters.HasLiveSubscription(ctx, userID)
 }

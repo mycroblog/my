@@ -210,19 +210,22 @@ func (e AdminAccountRestriction) Valid() bool {
 
 // Defines values for AdminAccountState.
 const (
-	AdminAccountStateActive    AdminAccountState = "active"
-	AdminAccountStateDeleted   AdminAccountState = "deleted"
-	AdminAccountStateDisabled  AdminAccountState = "disabled"
-	AdminAccountStateLimited   AdminAccountState = "limited"
-	AdminAccountStatePending   AdminAccountState = "pending"
-	AdminAccountStateRejected  AdminAccountState = "rejected"
-	AdminAccountStateSuspended AdminAccountState = "suspended"
+	AdminAccountStateActive      AdminAccountState = "active"
+	AdminAccountStateDeactivated AdminAccountState = "deactivated"
+	AdminAccountStateDeleted     AdminAccountState = "deleted"
+	AdminAccountStateDisabled    AdminAccountState = "disabled"
+	AdminAccountStateLimited     AdminAccountState = "limited"
+	AdminAccountStatePending     AdminAccountState = "pending"
+	AdminAccountStateRejected    AdminAccountState = "rejected"
+	AdminAccountStateSuspended   AdminAccountState = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountState enum.
 func (e AdminAccountState) Valid() bool {
 	switch e {
 	case AdminAccountStateActive:
+		return true
+	case AdminAccountStateDeactivated:
 		return true
 	case AdminAccountStateDeleted:
 		return true
@@ -1401,6 +1404,7 @@ func (e ClientErrorReportKind) Valid() bool {
 
 // Defines values for ConfirmedOperation.
 const (
+	ConfirmedOperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
 	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
 	ConfirmedOperationLink                ConfirmedOperation = "link"
@@ -1412,6 +1416,8 @@ const (
 // Valid indicates whether the value is a known member of the ConfirmedOperation enum.
 func (e ConfirmedOperation) Valid() bool {
 	switch e {
+	case ConfirmedOperationAccountDeactivation:
+		return true
 	case ConfirmedOperationAccountDeletion:
 		return true
 	case ConfirmedOperationAccountMove:
@@ -1762,6 +1768,42 @@ func (e DataImportSkippedReason) Valid() bool {
 	case DataImportSkippedReasonDuplicate:
 		return true
 	case DataImportSkippedReasonInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeactivationPreviewRefusal.
+const (
+	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
+	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
+	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
+	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
+	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
+	DeactivationPreviewRefusalRecentlyReactivated DeactivationPreviewRefusal = "recently_reactivated"
+	DeactivationPreviewRefusalRegistrationPending DeactivationPreviewRefusal = "registration_pending"
+)
+
+// Valid indicates whether the value is a known member of the DeactivationPreviewRefusal enum.
+func (e DeactivationPreviewRefusal) Valid() bool {
+	switch e {
+	case DeactivationPreviewRefusalAlreadyDeactivated:
+		return true
+	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
+		return true
+	case DeactivationPreviewRefusalLoginRestricted:
+		return true
+	case DeactivationPreviewRefusalMoved:
+		return true
+	case DeactivationPreviewRefusalPaidSubscription:
+		return true
+	case DeactivationPreviewRefusalRecentlyReactivated:
+		return true
+	case DeactivationPreviewRefusalRegistrationPending:
 		return true
 	default:
 		return false
@@ -4207,13 +4249,13 @@ func (e ListReportsParamsOrder) Valid() bool {
 	}
 }
 
-// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
 // instance allows (`ai_opt_out`), never the reverse.
 type AIUsage string
 
-// Account An account, as clients show it (FR-006).
+// Account An account, as clients show it.
 type Account struct {
 	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
 	// account without a confirmed handle.
@@ -4224,7 +4266,7 @@ type Account struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -4244,8 +4286,7 @@ type Account struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -4271,7 +4312,7 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -4295,7 +4336,7 @@ type Account struct {
 	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
-// AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+// AccountAlias An account that the user moves from: the user's actor names it in
 // `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
 type AccountAlias struct {
 	// Acct The handle of the alias, `username` for a local account and `username@domain` for a
@@ -4314,11 +4355,11 @@ type AccountAliasList struct {
 	Items []AccountAlias `json:"items"`
 }
 
-// AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
+// AccountBadge A badge that the account shows on its profile: the badge of a role that the
 // account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
 // never translated.
 type AccountBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -4348,7 +4389,7 @@ type AccountList struct {
 }
 
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+// `account` moved to `target`. Only the user's follows of the moved account move;
 // its posts stay where they are.
 type AccountMove struct {
 	// Outcome What became of the user's follow of the moved account, for an `account_moved` only:
@@ -4401,7 +4442,7 @@ type AccountStatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 
 	// RemoteFetchStarted `true` when this request started fetching the remote account's recent public
-	// posts from its server (ADR-0044). The fetch runs in the background; read the
+	// posts from its server. The fetch runs in the background; read the
 	// first page again a few seconds later to see what it stored. Absent otherwise,
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
@@ -4409,7 +4450,7 @@ type AccountStatusPage struct {
 
 // AccountSuggestion An account suggested to follow, with why it is suggested.
 type AccountSuggestion struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Source Why the account is suggested: `featured` when the administrators feature it,
@@ -4433,9 +4474,9 @@ type AddAccountAliasRequest struct {
 	Acct string `json:"acct"`
 }
 
-// AdminAccount An account as the moderators see it (FR-714). It never includes an email or IP address.
+// AdminAccount An account as the moderators see it. It never includes an email or IP address.
 type AdminAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -4450,18 +4491,18 @@ type AdminAccount struct {
 	// `approved`. Omitted for a remote account.
 	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 }
 
-// AdminAccountAction A moderation action on an account (FR-703).
+// AdminAccountAction A moderation action on an account.
 type AdminAccountAction struct {
 	// AccountId The account the action is on.
 	AccountId Id `json:"account_id"`
@@ -4542,9 +4583,9 @@ type AdminAccountActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountDetail The details of an account (FR-714).
+// AdminAccountDetail The details of an account.
 type AdminAccountDetail struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Actions The newest 20 actions on the account, newest first.
@@ -4578,7 +4619,7 @@ type AdminAccountDetail struct {
 	// the `manage_reports` permission.
 	Reports *[]AdminReport `json:"reports,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
@@ -4586,8 +4627,8 @@ type AdminAccountDetail struct {
 	Roles []string `json:"roles"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 
@@ -4624,7 +4665,7 @@ type AdminAccountPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountPrivateData The email address and the IP addresses of a local account (FR-714). Showing them is
+// AdminAccountPrivateData The email address and the IP addresses of a local account. Showing them is
 // recorded in the audit log.
 type AdminAccountPrivateData struct {
 	// Email The primary email address; omitted when there is none.
@@ -4670,7 +4711,7 @@ type AdminAccountRegistration struct {
 	SubmittedAt    time.Time `json:"submitted_at"`
 }
 
-// AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
+// AdminAccountRestriction A capability that an action takes away. `login`: logging in and the
 // API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
 // `public_discovery`: posts stay off the public timelines and search.
@@ -4690,8 +4731,8 @@ type AdminAccountSignIn struct {
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
-// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-// and `pending` (the registration of a local account), `limited` (a `limit`), and
+// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 // `active`.
 type AdminAccountState string
 
@@ -4779,7 +4820,7 @@ type AdminAppeal struct {
 	// AccountId The account that appealed, which the action is on.
 	AccountId Id `json:"account_id"`
 
-	// Action A moderation action on an account (FR-703).
+	// Action A moderation action on an account.
 	Action AdminAccountAction `json:"action"`
 
 	// DecidedAt When a moderator decided the appeal; omitted while pending.
@@ -4887,7 +4928,7 @@ type AdminAuditAction string
 // `remote`: another server.
 type AdminAuditActorKind string
 
-// AdminAuditEntry One operation of a moderator or an administrator (FR-704).
+// AdminAuditEntry One operation of a moderator or an administrator.
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
 	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
@@ -5097,7 +5138,7 @@ type AdminCounts struct {
 	PendingRegistrations *int64 `json:"pending_registrations,omitempty"`
 }
 
-// AdminCustomEmoji A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
+// AdminCustomEmoji A custom emoji as the administrators manage it: a local one, or a remote
 // one recorded from the posts and profiles of another server.
 type AdminCustomEmoji struct {
 	// Aliases The other names of a local emoji that the picker finds it by.
@@ -5109,7 +5150,7 @@ type AdminCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -5179,7 +5220,7 @@ type AdminCustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -5214,7 +5255,7 @@ type AdminCustomEmojiRequestPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminDomainAction A moderation action on a remote domain and its subdomains (FR-702).
+// AdminDomainAction A moderation action on a remote domain and its subdomains.
 type AdminDomainAction struct {
 	// Domain The domain, in IDNA A-labels.
 	Domain string `json:"domain"`
@@ -5271,7 +5312,7 @@ type AdminDomainActionPage struct {
 type AdminIncomePeriodTotal struct {
 	Balance []Money `json:"balance"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Fee    []Money      `json:"fee"`
@@ -5279,16 +5320,16 @@ type AdminIncomePeriodTotal struct {
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
 // AdminIncomeTotals The income totals as the administrators see them over the periods from the one that holds
 // `from` to the one that holds `to`, oldest first, with the number of members of each
-// supporter plan now (ADR-0073 §6).
+// supporter plan now.
 type AdminIncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -5296,12 +5337,12 @@ type AdminIncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []AdminIncomePeriodTotal `json:"periods"`
 	Plans       []IncomePlanCount        `json:"plans"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -5311,7 +5352,7 @@ type AdminIncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// AdminInstanceHealth Whether deliveries go to a remote server (federation.md §7.3).
+// AdminInstanceHealth Whether deliveries go to a remote server.
 type AdminInstanceHealth struct {
 	Domain string `json:"domain"`
 
@@ -5618,7 +5659,7 @@ type AdminOAuthClient struct {
 	// OwnerDeleted Whether a user registered the client whose account no longer exists.
 	OwnerDeleted bool `json:"owner_deleted"`
 
-	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+	// Registration The route by which an OAuth client was registered: `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 	// client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 	// that registered itself (RFC 7591).
@@ -5667,7 +5708,7 @@ type AdminOAuthClientPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminPasswordResetLink A password reset link that an administrator issued for a local account (FR-002). It is
+// AdminPasswordResetLink A password reset link that an administrator issued for a local account. It is
 // shown once.
 type AdminPasswordResetLink struct {
 	// ExpiresAt When the link stops working.
@@ -5681,7 +5722,7 @@ type AdminPasswordResetLink struct {
 	Url string `json:"url"`
 }
 
-// AdminQueue The state of the job queue (ADR-0064).
+// AdminQueue The state of the job queue.
 type AdminQueue struct {
 	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
 	Adapter string `json:"adapter"`
@@ -5702,7 +5743,7 @@ type AdminQueue struct {
 	Waits []AdminJobWait `json:"waits"`
 }
 
-// AdminRegistration A user's registration as the moderators review it (FR-721).
+// AdminRegistration A user's registration as the moderators review it.
 type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
@@ -5751,7 +5792,7 @@ type AdminRegistrationPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminRelay A relay that the instance joins or joined (ADR-0061).
+// AdminRelay A relay that the instance joins or joined.
 type AdminRelay struct {
 	// ActorUri The relay's actor, which accepted the `Follow`; omitted unless `accepted`.
 	ActorUri  *string   `json:"actor_uri,omitempty"`
@@ -5773,7 +5814,7 @@ type AdminRelay struct {
 	// InboxUrl Where the public posts are delivered.
 	InboxUrl string `json:"inbox_url"`
 
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol RelayProtocol `json:"protocol"`
 
@@ -5799,7 +5840,7 @@ type AdminRelayList struct {
 	Items []AdminRelay `json:"items"`
 }
 
-// AdminReport A report of an account to the moderators (FR-701).
+// AdminReport A report of an account to the moderators.
 type AdminReport struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
 	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
@@ -6042,7 +6083,7 @@ type AdminReportVoiceRoom struct {
 	Revisions []AdminVoiceRoomRevision `json:"revisions"`
 }
 
-// AdminRole A role (FR-720): a named set of permissions. A higher position outranks a lower one;
+// AdminRole A role: a named set of permissions. A higher position outranks a lower one;
 // a user may grant, revoke, create, change, and delete only the roles at or below their
 // highest one, and give or take only the permissions they hold.
 type AdminRole struct {
@@ -6069,7 +6110,7 @@ type AdminRoleList struct {
 	Items []AdminRole `json:"items"`
 }
 
-// AdminRule A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
+// AdminRule A rule of the instance. Its ID stays the same across revisions, so reports keep
 // citing it.
 type AdminRule struct {
 	CreatedAt time.Time `json:"created_at"`
@@ -6107,7 +6148,7 @@ type AdminSameIpAccounts struct {
 	Ip       string         `json:"ip"`
 }
 
-// AdminServiceClosure The service closure as its administrators see it (ADR-0088 §1).
+// AdminServiceClosure The service closure as its administrators see it.
 type AdminServiceClosure struct {
 	// AnnouncedAt When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
 	AnnouncedAt *time.Time `json:"announced_at,omitempty"`
@@ -6124,7 +6165,7 @@ type AdminServiceClosure struct {
 	// Message The operator's message to the users; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// Progress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+	// Progress How far the closure's `Delete` of every local actor has gone, in `GET
 	// /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 	// `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 	Progress *AdminServiceClosureProgress `json:"progress,omitempty"`
@@ -6134,7 +6175,7 @@ type AdminServiceClosure struct {
 	// time to export their data and move their accounts. A short notice is allowed.
 	ShortNotice bool `json:"short_notice"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -6144,7 +6185,7 @@ type AdminServiceClosure struct {
 	State ServiceClosureState `json:"state"`
 }
 
-// AdminServiceClosureCheck What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+// AdminServiceClosureCheck What the administrator reviews before closing the server. The admin
 // screen and the CLI show it with the confirmation of the closure.
 type AdminServiceClosureCheck struct {
 	// DeliveryInboxes The shared inboxes known to the server, which each `Delete` goes to.
@@ -6159,12 +6200,11 @@ type AdminServiceClosureCheck struct {
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
 	LocalAccounts int `json:"local_accounts"`
 
-	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers,
-	// ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
 	// the admin screen and the CLI warn while it is not 0.
 	PendingMigrations int `json:"pending_migrations"`
 
-	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+	// RetentionHolds The accounts under a retention hold. While it is not 0, the operator exports
 	// their records with the CLI before discarding the data of the closed server.
 	RetentionHolds int `json:"retention_holds"`
 }
@@ -6187,7 +6227,7 @@ type AdminServiceClosureDeliveries struct {
 	Succeeded int `json:"succeeded"`
 }
 
-// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone, in `GET
 // /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 // `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 type AdminServiceClosureProgress struct {
@@ -6210,7 +6250,7 @@ type AdminSetting struct {
 	// Default The value of the setting while it has never been set.
 	Default string `json:"default"`
 
-	// Key The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+	// Key The key of an instance setting. New keys may be
 	// added; clients show the ones they know.
 	Key InstanceSettingKey `json:"key"`
 
@@ -6241,7 +6281,7 @@ type AdminSettingList struct {
 	Items []AdminSetting `json:"items"`
 }
 
-// AdminSignupBlock A block on sign-ups from the registration page (FR-719).
+// AdminSignupBlock A block on sign-ups from the registration page.
 type AdminSignupBlock struct {
 	// Comment The moderators' comment; omitted when there is none.
 	Comment   *string   `json:"comment,omitempty"`
@@ -6297,7 +6337,7 @@ type AdminSignupBlockPage struct {
 // for a moderator, whatever the registration mode.
 type AdminSignupBlockSeverity string
 
-// AdminSupporterPlan A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
+// AdminSupporterPlan A supporter plan as the administrators see it. The yearly price is the
 // monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
 // subscriptions while it is public, not retired, and `prices_ready` (the provider has the
 // prices of its current terms).
@@ -6317,7 +6357,7 @@ type AdminSupporterPlan struct {
 	// Members The subscriptions that hold the role (active, canceling, or past due).
 	Members int `json:"members"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -6336,7 +6376,7 @@ type AdminSupporterPlan struct {
 	// its subscriptions go on.
 	Visibility SupporterPlanVisibility `json:"visibility"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -6353,7 +6393,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money `json:"monthly_price"`
 
@@ -6397,7 +6437,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Description           *string `json:"description,omitempty"`
 	EmojiLimit            *int    `json:"emoji_limit,omitempty"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice    *Money        `json:"monthly_price,omitempty"`
 	Name            *string       `json:"name,omitempty"`
@@ -6410,7 +6450,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Visibility *SupporterPlanVisibility `json:"visibility,omitempty"`
 }
 
-// AdminSupporterProgram The supporter program (ADR-0072 §2). It is disabled by default; enabling it needs a
+// AdminSupporterProgram The supporter program. It is disabled by default; enabling it needs a
 // payment provider in the deployment's configuration (`configured_provider`) and a server
 // that sends email (`sends_email`). `warnings` lists what an administrator should look at.
 type AdminSupporterProgram struct {
@@ -6468,7 +6508,7 @@ type AdminSupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -6481,7 +6521,7 @@ type AdminSupporterSubscription struct {
 	ScheduledPlanId *Id       `json:"scheduled_plan_id,omitempty"`
 	StartedAt       time.Time `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -6590,7 +6630,7 @@ type AdminVoiceRoomRevision struct {
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
-// AdminWebhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+// AdminWebhook A webhook endpoint. Its secret is never shown again after it is made.
 type AdminWebhook struct {
 	CreatedAt time.Time `json:"created_at"`
 
@@ -6652,7 +6692,7 @@ type AdminWebhookCreated struct {
 	// Standard Webhooks libraries take it. It is shown only now.
 	Secret string `json:"secret"`
 
-	// Webhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+	// Webhook A webhook endpoint. Its secret is never shown again after it is made.
 	Webhook AdminWebhook `json:"webhook"`
 }
 
@@ -6735,7 +6775,7 @@ type AnnounceServiceClosureRequest struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// Announcement An announcement of the server to every local user (FR-726), as the user sees it.
+// Announcement An announcement of the server to every local user, as the user sees it.
 type Announcement struct {
 	// Content The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
 	// headings from `h2`, and `http`, `https`, and `mailto` links).
@@ -6788,7 +6828,7 @@ type AppealModerationActionRequest struct {
 
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
-// `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+// `client_id` and `registered_by` are what the server knows.
 type AuthorizedApp struct {
 	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
 	AuthorizedAt time.Time `json:"authorized_at"`
@@ -6837,7 +6877,7 @@ type AuthorizedAppList struct {
 	Items []AuthorizedApp `json:"items"`
 }
 
-// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts (FR-118). A post is
+// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts. A post is
 // deleted once it was published more than `min_age_days` days ago, unless one of the
 // exceptions (the `keep_` properties) keeps it.
 type AutoDeletePolicy struct {
@@ -6886,10 +6926,10 @@ type AutoDeletePreview struct {
 }
 
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
-// the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
+// the badge on their profile. A badge is hidden until the user shows it; losing the
 // role or its badge hides it again.
 type BadgeChoice struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -6912,13 +6952,13 @@ type BadgeChoiceList struct {
 	Items []BadgeChoice `json:"items"`
 }
 
-// BadgeColor The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+// BadgeColor The color of a role badge: the name of a pair of the web client's design tokens
 // for its background and its text, which keep their contrast in the light and the dark theme.
 // Server themes do not change them. The color is decoration; the badge's `label` carries its
 // meaning.
 type BadgeColor string
 
-// BillingImport The state of the imports of a billing source (ADR-0068 §9).
+// BillingImport The state of the imports of a billing source.
 type BillingImport struct {
 	// BytesBilledThisMonth The BigQuery bytes billed this UTC month; 0 for the other sources.
 	BytesBilledThisMonth int64 `json:"bytes_billed_this_month"`
@@ -6937,7 +6977,7 @@ type BillingImport struct {
 	// omitted for a source without caps.
 	MaxRequestsPerMonth *int `json:"max_requests_per_month,omitempty"`
 
-	// Method How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+	// Method How the source reads the provider's data: `cost_explorer` (AWS Cost
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -6964,7 +7004,7 @@ type BillingImport struct {
 	TimeZone string `json:"time_zone"`
 }
 
-// BillingImportMethod How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+// BillingImportMethod How the source reads the provider's data: `cost_explorer` (AWS Cost
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -7177,7 +7217,7 @@ type BrowserSessionList struct {
 	Items []BrowserSession `json:"items"`
 }
 
-// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
 
@@ -7235,7 +7275,7 @@ type CloseServiceRequest struct {
 
 // ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
 // changing or setting the password (`password_change`), removing it (`password_removal`),
-// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
@@ -7246,7 +7286,7 @@ type CopyCustomEmojiRequest struct {
 	Shortcode *string `json:"shortcode,omitempty"`
 }
 
-// CostBasis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+// CostBasis How the totals place a payment. `amortized` (the default) spreads each
 // payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 // more weeks) by day over the days up to the next payment, with the cumulative rounding;
 // the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7256,35 +7296,35 @@ type CostBasis string
 // CostBreakdownLine The amount of a provider, category, and currency in a period. The costs group by the provider
 // in NFKC and lower case, so `ConoHa`, `conoha`, and `ＣｏｎｏＨａ` share a line.
 type CostBreakdownLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// Provider The provider as entered (ADR-0098), one spelling for every line of the same grouped provider
+	// Provider The provider as entered, one spelling for every line of the same grouped provider
 	// in the period: the provider of the cost item whose current label was revised last among the
 	// items with payments in the period (the larger revision ID on a tie), or, for a provider of
 	// imported costs only, the import's provider name (`AWS`, `Google Cloud`).
 	Provider string `json:"provider"`
 }
 
-// CostCategory The fixed category of a cost (ADR-0067 §2); clients translate its name.
+// CostCategory The fixed category of a cost; clients translate its name.
 type CostCategory string
 
 // CostGranularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-// years, cut by date (ADR-0067 §5).
+// years, cut by date.
 type CostGranularity string
 
-// CostItem A cost of the instance that is not canceled (ADR-0067 §2), with its current label and end
+// CostItem A cost of the instance that is not canceled, with its current label and end
 // and every price revision. Never published: the public totals carry no item.
 type CostItem struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category  CostCategory `json:"category"`
 	CreatedAt time.Time    `json:"created_at"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7308,12 +7348,12 @@ type CostItem struct {
 	// Provider Who is paid, as written; the breakdown groups it in NFKC and lower case.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7322,10 +7362,10 @@ type CostItem struct {
 // item and record a new one. `ends_on` is the last date a payment can fall on, omitted for
 // no end; `price` is the price of every payment from the start date, 0 or more.
 type CostItemCreateRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7338,19 +7378,19 @@ type CostItemCreateRequest struct {
 	// Name 1 to 100 characters without control characters.
 	Name string `json:"name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
 	// Provider 1 to 100 characters without control characters.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7359,14 +7399,14 @@ type CostItemCreateRequest struct {
 // after the start date, and omitted for no end. The last payment before it still covers the
 // days up to the next payment date.
 type CostItemEndRequest struct {
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 }
 
 // CostItemLabelRequest A change of a cost item's label; an omitted property keeps its value.
 type CostItemLabelRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category *CostCategory `json:"category,omitempty"`
 
 	// Memo The note; empty removes it.
@@ -7384,21 +7424,21 @@ type CostItemPage struct {
 }
 
 // CostPeriodTotal A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
-// of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown
+// of each currency, never converted, sorted by currency code, and the breakdown
 // by provider, category, and currency. A currency appears when a cost meets the period, even
 // with a zero amount. `estimated` reports that an imported usage charge of a billing month
-// that its provider has not closed meets the period (ADR-0068 §3): its amount may still
+// that its provider has not closed meets the period: its amount may still
 // change.
 type CostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate `json:"ends_on"`
 	Estimated bool         `json:"estimated"`
 	Label     string       `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -7407,11 +7447,11 @@ type CostPeriodTotal struct {
 // CostPriceRevision A price of a cost item for its payments on or after `effective_on`, until a later
 // revision; of revisions with the same date, the last recorded wins.
 type CostPriceRevision struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price     Money     `json:"price"`
 	RevisedAt time.Time `json:"revised_at"`
@@ -7421,16 +7461,16 @@ type CostPriceRevision struct {
 // a cut, or the correction of a mistake (`effective_on` = the start date corrects every
 // payment).
 type CostPriceRevisionRequest struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
 
-// CostSchedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+// CostSchedule The unit of a cost item's payment schedule: `once` (one payment on the start
 // date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 // monthly payment on a day that a month does not have falls on the month's last day.
 type CostSchedule string
@@ -7448,7 +7488,7 @@ type CostSourceRule struct {
 // CostTotals The totals of the instance's costs over the periods from the one that holds `from` to the
 // one that holds `to`, oldest first.
 type CostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7456,17 +7496,17 @@ type CostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity   `json:"granularity"`
 	Periods     []CostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 }
 
-// CostTotalsRules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+// CostTotalsRules How the totals cut the periods, to show next to them: by calendar date
 // without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 // billing months in its own time zone (`billing_sources`, in its order).
 type CostTotalsRules struct {
@@ -7480,7 +7520,7 @@ type CostTotalsRulesWeekStart string
 // CreateAccountActionRequest A moderation action to take on an account.
 type CreateAccountActionRequest struct {
 	// BlockEmail Whether a `ban` also blocks sign-ups with the email address of the account's user (a
-	// `reject` sign-up block of kind `email_hash`, FR-719); only a `ban` of a local
+	// `reject` sign-up block of kind `email_hash`); only a `ban` of a local
 	// account takes it, and a user without an email address is a 422. Omitted, nothing is
 	// blocked.
 	BlockEmail *bool `json:"block_email,omitempty"`
@@ -7655,7 +7695,7 @@ type CreatePasskeyRequest struct {
 
 // CreateRelayRequest A relay to register and join.
 type CreateRelayRequest struct {
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol *RelayProtocol `json:"protocol,omitempty"`
 
@@ -7749,17 +7789,17 @@ type CreateStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// Poll A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
 	// posted; the author and the users who voted are notified then.
 	Poll *PollInput `json:"poll,omitempty"`
 
 	// QuotePolicy Who may quote the new status; the user's `default_quote_policy` when left out.
 	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
-	// QuotedStatusId The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
+	// QuotedStatusId The status to quote. It must be one the user may see and may quote
 	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
 	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
-	// is created (ADR-0144 §4). Quoting a
+	// is created. Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
 	// `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
 	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
@@ -7773,7 +7813,7 @@ type CreateStatusRequest struct {
 	// Text The plain text; the server links mentions, hashtags, and URLs.
 	Text StatusText `json:"text"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -7800,8 +7840,7 @@ type CredentialAccount struct {
 	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them
-	// (FR-412, ADR-0057), whatever the instance's `ai_usage`. The statement is made by the
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
 	// pages of this instance only; other servers and the media files do not carry it.
 	AiOptOut bool `json:"ai_opt_out"`
 
@@ -7810,7 +7849,7 @@ type CredentialAccount struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -7823,7 +7862,7 @@ type CredentialAccount struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in
-	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// the account search; when `false`, the search finds it only by its
 	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
@@ -7835,8 +7874,7 @@ type CredentialAccount struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -7867,13 +7905,13 @@ type CredentialAccount struct {
 
 	// Indexable Whether the account's profile and public posts may be indexed for search: by this
 	// instance's search and, when the instance's `search_indexing` is `allow`, by search
-	// engines (FR-412, ADR-0057). New accounts take the instance's default.
+	// engines. New accounts take the instance's default.
 	Indexable bool `json:"indexable"`
 
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -7887,7 +7925,7 @@ type CredentialAccount struct {
 	// the permission of each admin operation regardless.
 	Permissions []Permission `json:"permissions"`
 
-	// Posting What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+	// Posting What the account's current moderation restrictions let it post. The
 	// server applies the same policy when it posts: a status asked for with a visibility that is
 	// not in `visibilities` gets `visibility_ceiling` instead.
 	Posting PostingLimits `json:"posting"`
@@ -7918,9 +7956,9 @@ type CredentialAccount struct {
 // Cursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 type Cursor = string
 
-// CustomEmoji A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
+// CustomEmoji A custom emoji that a text uses. The text has it as `:shortcode:`.
 // An emoji that is disabled or deleted, or whose images come from a domain whose media the
-// instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
+// instance rejects, is not listed, and its `:shortcode:` stays text. Clients show
 // `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
 // otherwise.
 type CustomEmoji struct {
@@ -7986,8 +8024,7 @@ type CustomEmojiProblem struct {
 type CustomEmojiProblemReason string
 
 // CustomEmojiRequest A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-// image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-// (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
+// image of one they made, which a holder of `manage_custom_emojis` approves or rejects. A request is not an emoji: no picker, post, reaction, or other server shows
 // its image until it is approved.
 type CustomEmojiRequest struct {
 	// CreatedAt When the request was made.
@@ -8006,7 +8043,7 @@ type CustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -8036,7 +8073,7 @@ type CustomEmojiRequest struct {
 // emoji has the shortcode of the request. The last two can only be rejected.
 type CustomEmojiRequestConflictReason string
 
-// CustomEmojiRequestKind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+// CustomEmojiRequestKind What a custom emoji request asks for: `create` a new local custom emoji,
 // or `image` a new image of a local emoji that the requester made.
 type CustomEmojiRequestKind string
 
@@ -8129,7 +8166,7 @@ type DataImport struct {
 
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8153,7 +8190,7 @@ type DataImportState string
 
 // DataImportKind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 // accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 // `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 // posts the user bookmarked).
 type DataImportKind string
@@ -8187,7 +8224,7 @@ type DataImportPreview struct {
 type DataImportRequest struct {
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8218,6 +8255,54 @@ type DataImportSkipped struct {
 // domain mutes, no domain).
 // `duplicate`: an earlier line names the same account, post, or domain.
 type DataImportSkippedReason string
+
+// DeactivateOwnAccountRequest The confirmation of the deactivation of the user's own account: `password`,
+// `two_factor_code`, `passkey`, or `external_confirmation`.
+type DeactivateOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TwoFactorCode A code of the user's authenticator app, or a recovery code.
+	TwoFactorCode *string `json:"two_factor_code,omitempty"`
+}
+
+// Deactivation The deactivation of the user's own account.
+type Deactivation struct {
+	// DeletionDueAt When the account is deleted unless the user reactivates it first.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+}
+
+// DeactivationPreview What deactivating the user's own account would do now.
+type DeactivationPreview struct {
+	// AvailableAt When the account can be deactivated again, for `recently_reactivated`.
+	AvailableAt *time.Time `json:"available_at,omitempty"`
+
+	// DeletionDueAt When the account would be deleted if it were deactivated now.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+
+	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
+	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
+}
+
+// DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
+type DeactivationPreviewRefusal string
 
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
 type DecideAppealRequest struct {
@@ -8341,7 +8426,7 @@ type EditStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// RemoveQuote Takes the status's quote away for good (ADR-0069 §3). A status keeps the status it
+	// RemoveQuote Takes the status's quote away for good. A status keeps the status it
 	// quotes otherwise: an edit cannot change it.
 	RemoveQuote *bool `json:"remove_quote,omitempty"`
 
@@ -8355,7 +8440,7 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
-// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// EmailSuppression The suppression of the primary email address: the server stops sending to it
 // after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
 // email) stops every email but the verification email that the user asks for; verifying the
 // address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
@@ -8379,7 +8464,7 @@ type EnableTotpRequest struct {
 	SetupToken string `json:"setup_token"`
 }
 
-// ErrorGroup An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+// ErrorGroup An error group: the reported errors of one fingerprint, with its state,
 // what its first occurrence told about the error, and how often it happened. The text is
 // scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
 // `error_group.created` and `error_group.regressed` carry it as their `data`.
@@ -8423,7 +8508,7 @@ type ErrorGroup struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
@@ -8490,7 +8575,7 @@ type ErrorGroupDetail struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
@@ -8578,7 +8663,7 @@ type ErrorGroupSampleRole string
 // ErrorGroupSource What reported the errors of a group, the server or the web client.
 type ErrorGroupSource string
 
-// ErrorGroupState The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+// ErrorGroupState The state of an error group: `open` (new, unmuted, or regressed),
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
@@ -8596,7 +8681,7 @@ type ExternalAuthorizationStart struct {
 type ExternalConfirmationRequest struct {
 	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
 	// changing or setting the password (`password_change`), removing it (`password_removal`),
-	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 	// account at a login provider (`link`).
 	Operation ConfirmedOperation `json:"operation"`
 
@@ -8622,11 +8707,11 @@ type ExternalConfirmationToken = string
 // `memo` is the item's memo, present only while the instance shows the memos and the item has
 // one (an imported cost has none).
 type FinanceCostItemLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 	Memo     *string      `json:"memo,omitempty"`
 	Name     *string      `json:"name,omitempty"`
@@ -8640,14 +8725,14 @@ type FinanceCostItemLine struct {
 type FinanceCostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate          `json:"ends_on"`
 	Estimated bool                  `json:"estimated"`
 	Items     []FinanceCostItemLine `json:"items"`
 	Label     string                `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -8655,9 +8740,9 @@ type FinanceCostPeriodTotal struct {
 
 // FinanceCostTotals The totals of the instance's costs as the holders of `view_finance` read them over the
 // periods from the one that holds `from` to the one that holds `to`, oldest first, and the
-// instance settings that decide what they read (ADR-0070 §5).
+// instance settings that decide what they read.
 type FinanceCostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8665,17 +8750,17 @@ type FinanceCostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []FinanceCostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 
 	// Viewer What the holders of `view_finance` read of the instance's finances beyond the totals and
-	// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+	// their breakdown, by instance settings: `item_names`
 	// (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 	// imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 	// `income` (`finance_viewer_income`) the income as totals only or with the number of members
@@ -8684,20 +8769,20 @@ type FinanceCostTotals struct {
 }
 
 // FinanceViewerIncome How much of the income the holders of `view_finance` read (the instance setting
-// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+// `finance_viewer_income`). `totals`: the total of each currency by period;
 // `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 // who paid.
 type FinanceViewerIncome string
 
 // FinanceViewerSettings What the holders of `view_finance` read of the instance's finances beyond the totals and
-// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+// their breakdown, by instance settings: `item_names`
 // (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 // imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 // `income` (`finance_viewer_income`) the income as totals only or with the number of members
 // of each plan.
 type FinanceViewerSettings struct {
 	// Income How much of the income the holders of `view_finance` read (the instance setting
-	// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+	// `finance_viewer_income`). `totals`: the total of each currency by period;
 	// `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 	// who paid.
 	Income    FinanceViewerIncome `json:"income"`
@@ -8706,7 +8791,7 @@ type FinanceViewerSettings struct {
 }
 
 // FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+// `finance_visibility`). `private`: nothing, and
 // `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 // `breakdown`: the totals and their breakdown by provider and category. No level publishes
 // the names, memos, or individual payments of the cost items.
@@ -8759,13 +8844,13 @@ type ImportSignupBlocksRequest struct {
 	Text string `json:"text"`
 }
 
-// IncomeKind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+// IncomeKind The kind of a money movement of the payment provider: `payment` of a
 // subscription, `refund` and `chargeback` of a payment (a negative gross), the
 // `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 // belongs to no payment (a zero gross and a negative net).
 type IncomeKind string
 
-// IncomeMovement A money movement of the payment provider as the income records keep it (ADR-0073 §2, §6):
+// IncomeMovement A money movement of the payment provider as the income records keep it:
 // recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a
 // date in the provider's reporting time zone. A payment carries the billing period it pays
 // for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
@@ -8778,19 +8863,19 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversEndsOn *CalendarDate `json:"covers_ends_on,omitempty"`
 
-	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversStartsOn *CalendarDate `json:"covers_starts_on,omitempty"`
 
-	// Fee An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Fee An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Fee Money `json:"fee"`
 
-	// Gross An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Gross An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Gross Money `json:"gross"`
 
@@ -8799,18 +8884,18 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+	// Kind The kind of a money movement of the payment provider: `payment` of a
 	// subscription, `refund` and `chargeback` of a payment (a negative gross), the
 	// `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 	// belongs to no payment (a zero gross and a negative net).
 	Kind IncomeKind `json:"kind"`
 
-	// Net An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Net An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Net        Money     `json:"net"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	OccurredOn       CalendarDate `json:"occurred_on"`
 	ParentProviderId *string      `json:"parent_provider_id,omitempty"`
@@ -8843,18 +8928,18 @@ type IncomeMovementPage struct {
 type IncomePeriodTotal struct {
 	Balance *[]Money `json:"balance,omitempty"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
-// IncomePlanCount The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
+// IncomePlanCount The number of members of a supporter plan now: the subscriptions that hold
 // the plan's role (active, canceling, or past due within the grace period). A retired plan
 // appears while it has members. Never the plan's amounts.
 type IncomePlanCount struct {
@@ -8868,19 +8953,18 @@ type IncomePlanCount struct {
 }
 
 // IncomeProviderRule The IANA time zone (`UTC`, `Asia/Tokyo`) in which a payment provider's money movements fall
-// on their dates: the provider's reporting time zone, or `UTC` when it could not be read
-// (ADR-0073 §3).
+// on their dates: the provider's reporting time zone, or `UTC` when it could not be read.
 type IncomeProviderRule struct {
 	Provider string `json:"provider"`
 	TimeZone string `json:"time_zone"`
 }
 
 // IncomeTotals The income totals over the periods from the one that holds `from` to the one that holds
-// `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan
+// `to`, oldest first. `plans`, the number of members of each supporter plan
 // now, is present only where the plans are shown. No answer carries individual payments, the
 // subscribers, the amounts of each plan, or the gross and the fees.
 type IncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8888,12 +8972,12 @@ type IncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity     `json:"granularity"`
 	Periods     []IncomePeriodTotal `json:"periods"`
 	Plans       *[]IncomePlanCount  `json:"plans,omitempty"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8903,7 +8987,7 @@ type IncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// IncomeTotalsRules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+// IncomeTotalsRules How the income totals cut the periods and place the payments, to show
 // next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 // each money movement on its date in its payment provider's reporting time zone
 // (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8920,7 +9004,7 @@ type IncomeTotalsRules struct {
 type IncomeTotalsRulesWeekStart string
 
 // IncomeVisibility How much of the instance's income everyone may read (the instance setting
-// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+// `income_visibility`), apart from `finance_visibility`. `private`:
 // nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 // currency by period; `plans`: also the number of members of each supporter plan now. No
 // level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -8929,13 +9013,13 @@ type IncomeVisibility string
 
 // Instance Public information about the instance.
 type Instance struct {
-	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 	// `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 	// and no use by AI search, assistants, and agents. An account can opt out of what the
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
-	// Closure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+	// Closure The closure of the service, present while a closure is announced and after
 	// the server closes; absent when none is announced. Clients show it on every screen with the
 	// way to export the data and to move the account.
 	Closure *InstanceClosure `json:"closure,omitempty"`
@@ -8955,12 +9039,12 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
-	// Federation How the instance federates with other servers (FR-413), so that clients offer only the
+	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
 	Federation InstanceFederation `json:"federation"`
 
 	// FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-	// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+	// `finance_visibility`). `private`: nothing, and
 	// `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 	// `breakdown`: the totals and their breakdown by provider and category. No level publishes
 	// the names, memos, or individual payments of the cost items.
@@ -8976,7 +9060,7 @@ type Instance struct {
 	Icon *InstanceBrandImage `json:"icon,omitempty"`
 
 	// IncomeVisibility How much of the instance's income everyone may read (the instance setting
-	// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+	// `income_visibility`), apart from `finance_visibility`. `private`:
 	// nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 	// currency by period; `plans`: also the number of members of each supporter plan now. No
 	// level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -9037,7 +9121,7 @@ type Instance struct {
 	Rules []InstanceRule `json:"rules"`
 
 	// SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-	// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+	// `search_indexing`). `allow`: the profiles and public posts of the accounts
 	// that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 	// the reverse.
 	SearchIndexing SearchIndexing `json:"search_indexing"`
@@ -9053,7 +9137,7 @@ type Instance struct {
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
-	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+	// StatusPageUrl The https address of the instance's status page, on a service apart from the server. Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
 	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
@@ -9072,7 +9156,7 @@ type Instance struct {
 	// so that clients do not link to it.
 	TermsUrl *string `json:"terms_url,omitempty"`
 
-	// Theme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+	// Theme The instance's theme, for clients that do not load the server's HTML shell: the
 	// stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 	// instance has no theme.
 	Theme *InstanceTheme `json:"theme,omitempty"`
@@ -9081,7 +9165,7 @@ type Instance struct {
 	// variant of the media file. Omitted when there is none, or while the file is processing.
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
-	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
+	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
@@ -9130,7 +9214,7 @@ type InstanceBrandImage struct {
 	Width int `json:"width"`
 }
 
-// InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+// InstanceClosure The closure of the service, present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the
 // way to export the data and to move the account.
 type InstanceClosure struct {
@@ -9143,7 +9227,7 @@ type InstanceClosure struct {
 	// Message The operator's message to the users, as plain text; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -9205,7 +9289,7 @@ type InstanceDocument struct {
 // (`terms`, `privacy_policy`, `commerce_disclosure`).
 type InstanceDocumentKind string
 
-// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718).
+// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly.
 type InstanceDomainAction struct {
 	// Comment The public reason for the action; omitted when there is none or the viewer may not read it.
 	Comment *string `json:"comment,omitempty"`
@@ -9234,7 +9318,7 @@ type InstanceDomainActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// InstanceFederation How the instance federates with other servers (FR-413), so that clients offer only the
+// InstanceFederation How the instance federates with other servers, so that clients offer only the
 // operations on remote accounts and posts that can work.
 type InstanceFederation struct {
 	// Mode The direction the instance federates in (the instance setting `federation_mode`):
@@ -9274,7 +9358,7 @@ type InstanceLimits struct {
 	MaxPostCharacters int `json:"max_post_characters"`
 
 	// RequireMediaDescription Whether every media file attached to a post needs an alternative text (the instance
-	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
+	// setting `require_media_description`). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
 }
@@ -9304,7 +9388,7 @@ type InstanceRegistrations struct {
 // none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
-// InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
+// InstanceRule A rule of the instance. Its text and hint hold one value each, written in any
 // language and the same in every locale. Reports cite it by `id`.
 type InstanceRule struct {
 	// Hint An explanation of the rule, as plain text; omitted when there is none.
@@ -9329,7 +9413,7 @@ type InstanceRuleInput struct {
 	Text string `json:"text"`
 }
 
-// InstanceSettingKey The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+// InstanceSettingKey The key of an instance setting. New keys may be
 // added; clients show the ones they know.
 type InstanceSettingKey string
 
@@ -9348,7 +9432,7 @@ type InstanceSettingKind string
 // (Markdown, shown at `/about/commerce`; the server does not vouch for what they say).
 type InstanceTextKey string
 
-// InstanceTheme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+// InstanceTheme The instance's theme, for clients that do not load the server's HTML shell: the
 // stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 // instance has no theme.
 type InstanceTheme struct {
@@ -9367,7 +9451,7 @@ type InstanceThumbnail struct {
 	Width  int     `json:"width"`
 }
 
-// InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
+// InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 // setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
 // timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
@@ -9403,7 +9487,7 @@ type LiftAccountActionRequest struct {
 	Reason *string `json:"reason,omitempty"`
 }
 
-// LinkCard The card of the first link in a status (ADR-0062): the title, description, and image
+// LinkCard The card of the first link in a status: the title, description, and image
 // that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
@@ -9712,7 +9796,7 @@ type MediaAnimatedVariants struct {
 // attachment has none.
 //
 // A file of a remote status is always `ready`: the instance does not process it, so it has
-// no `variants`; `url` and `preview_url` are its media proxy URLs (federation.md §9),
+// no `variants`; `url` and `preview_url` are its media proxy URLs,
 // `remote_url` its URL on the remote server, and `meta`, `blurhash`, and `type` what the
 // remote server declared.
 type MediaAttachment struct {
@@ -9891,7 +9975,7 @@ type MemberInviteLimits struct {
 	MaxUses int `json:"max_uses"`
 }
 
-// ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
+// ModerationAction A moderation action on the authenticated user's own account, as the
 // user sees it. It never carries the moderators' private note, the report the action
 // follows from, or who filed the report or issued the action.
 type ModerationAction struct {
@@ -9986,7 +10070,7 @@ type ModerationAppeal struct {
 // `overturned` lifted it.
 type ModerationAppealState string
 
-// Money An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+// Money An amount of money: a decimal string in the major unit with the digits of
 // its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 type Money struct {
 	Amount   string `json:"amount"`
@@ -10043,7 +10127,7 @@ type MutePage struct {
 
 // MutedAccount An account that the viewer mutes, with the mute's settings.
 type MutedAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// ExpiresAt When the mute ends; left out for a mute until unmuted.
@@ -10061,7 +10145,7 @@ type NewCustomEmojiRequest struct {
 	// EmojiId For `image`, the emoji whose image the request replaces.
 	EmojiId *Id `json:"emoji_id,omitempty"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -10076,11 +10160,11 @@ type NewCustomEmojiRequest struct {
 
 // Notification A notification of something that happened to the authenticated user.
 type Notification struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account *Account `json:"account,omitempty"`
 
 	// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-	// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+	// `account` moved to `target`. Only the user's follows of the moved account move;
 	// its posts stay where they are.
 	AccountMove *AccountMove `json:"account_move,omitempty"`
 
@@ -10126,7 +10210,7 @@ type Notification struct {
 	ReportId *Id `json:"report_id,omitempty"`
 
 	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-	// tells of the closure of the service (ADR-0088). `change` is what the event of a
+	// tells of the closure of the service. `change` is what the event of a
 	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 	// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 	// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -10431,7 +10515,7 @@ type NotificationSettingsUpdateChangesChannel string
 // announcement is withdrawn or its window ends.
 type NotificationType string
 
-// OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+// OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
 // it gets no first-party-only scope and calls no account security operation.
 type OAuthApp struct {
 	// ClientId The public identifier that the app sends as `client_id`.
@@ -10477,7 +10561,7 @@ type OAuthAppClientType string
 
 // OAuthAppCreated A new OAuth app, with the secret of a confidential app.
 type OAuthAppCreated struct {
-	// App An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+	// App An OAuth app that the authenticated user registered. Like every third-party app,
 	// it gets no first-party-only scope and calls no account security operation.
 	App OAuthApp `json:"app"`
 
@@ -10516,13 +10600,13 @@ type OAuthAppToken struct {
 // OAuthAppTokenTokenType defines model for OAuthAppToken.TokenType.
 type OAuthAppTokenTokenType string
 
-// OAuthClientRegistration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+// OAuthClientRegistration The route by which an OAuth client was registered: `first_party` is one of the
 // server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 // client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 // that registered itself (RFC 7591).
 type OAuthClientRegistration string
 
-// OwnCustomEmoji A local custom emoji that the user made (ADR-0070 §3).
+// OwnCustomEmoji A local custom emoji that the user made.
 type OwnCustomEmoji struct {
 	// Aliases The other names that the picker finds the emoji by.
 	Aliases []string `json:"aliases"`
@@ -10558,8 +10642,7 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
-// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit: `used` counts the requests to create an emoji that the user submitted this UTC
 // calendar month and that are approved or pending (deleting an emoji does not lower it),
 // `pending` is the part of `used` that the pending requests take, `limit` is how many they may
 // submit in a month, absent for no limit, and `resets_at` is when the count resets.
@@ -10636,7 +10719,7 @@ type OwnInvitePage struct {
 
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
-	// IneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+	// IneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 	// of this server; `email_unverified`, the primary email address is not verified;
 	// `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 	// the user may subscribe.
@@ -10769,7 +10852,7 @@ type PaymentReconcileRunErrorKind string
 // continuation takes over; `failed` when the provider failed.
 type PaymentReconcileRunOutcome string
 
-// PaymentStatus The state of the payment provider (ADR-0074 §4).
+// PaymentStatus The state of the payment provider.
 type PaymentStatus struct {
 	// LastReconcile The last attempt of the reconciliation with the payment provider; omitted before the first.
 	LastReconcile *PaymentReconcileRun `json:"last_reconcile,omitempty"`
@@ -10813,27 +10896,27 @@ type PaymentStatusWarnings string
 // server's announcements to every local user. `manage_finance`: the instance's costs and
 // the state of the billing imports (only the built-in admin role by default). `view_finance`:
 // reading the totals of the instance's costs on `GET /finance/cost_totals`, a member
-// permission outside the staff's areas (ADR-0070). `manage_supporters`: the supporter program, its plans, and their
+// permission outside the staff's areas. `manage_supporters`: the supporter program, its plans, and their
 // subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
 // new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-// member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+// member permission. `manage_oauth_apps`: all the OAuth clients, disabling them,
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-// `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+// `/admin/oauth_client_host_denials`. `manage_service_closure`: announcing the closure
 // of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-// admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+// admin role by default). `start_voice_rooms`: opening voice chat rooms while the
 // instance setting `voice_room_starters` is `permitted`, a member permission (only the
-// built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+// built-in admin role by default). `manage_errors`: the error groups of the server
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+// the webhook events `error_group.*` (only the built-in admin role by default).
 // `manage_login_providers`: the external identity providers that users sign in with (only the
-// built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+// built-in admin role by default). `create_invites`: creating, listing, and revoking
 // invites of one's own on `/invites` while the instance setting `invite_creators` is
-// `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+// `permitted`, a member permission (only the built-in admin role by default). The
 // others guard no client API operation yet.
 type Permission string
 
-// PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
+// PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
 // `:shortcode:` into the text.
 type PickerCustomEmoji struct {
 	// Aliases Other names that a search of the picker finds the emoji by.
@@ -10857,7 +10940,7 @@ type PickerCustomEmojiList struct {
 	Items []PickerCustomEmoji `json:"items"`
 }
 
-// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 // another server are those its server last reported. A poll whose author hides the votes of
 // each option until it ends leaves out `votes_count` of its options until then. `voted` and
 // `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -10893,7 +10976,7 @@ type Poll struct {
 	VotesCount int `json:"votes_count"`
 }
 
-// PollInput A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+// PollInput A poll of a new status. It ends `expires_in` seconds after the status is
 // posted; the author and the users who voted are notified then.
 type PollInput struct {
 	// ExpiresIn How long the poll takes votes, in seconds (5 minutes to 30 days).
@@ -10919,7 +11002,7 @@ type PollOption struct {
 	VotesCount *int `json:"votes_count,omitempty"`
 }
 
-// PostingLimits What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+// PostingLimits What the account's current moderation restrictions let it post. The
 // server applies the same policy when it posts: a status asked for with a visibility that is
 // not in `visibilities` gets `visibility_ceiling` instead.
 type PostingLimits struct {
@@ -10927,7 +11010,7 @@ type PostingLimits struct {
 	// narrowest; every visibility while the account is not restricted.
 	Visibilities []Visibility `json:"visibilities"`
 
-	// VisibilityCeiling Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// VisibilityCeiling Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -10942,7 +11025,7 @@ type Preferences struct {
 	// DefaultQuotePolicy Who may quote the user's new statuses that name no `quote_policy`.
 	DefaultQuotePolicy QuotePolicy `json:"default_quote_policy"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -10980,7 +11063,7 @@ type Preferences struct {
 	TimeZoneFollowsBrowser bool `json:"time_zone_follows_browser"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking, instead of offering them
-	// behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
+	// behind a "show new posts" button. On for a new user; the same on every device.
 	TimelineAutoInsert bool `json:"timeline_auto_insert"`
 
 	// TimelineLanguages The languages that timelines show, sorted; empty shows every language.
@@ -11040,6 +11123,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
 //   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
 //     not the user's current password.
+//   - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+//     now; the detail says why.
 //   - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
 //     built. Wait for it to end.
 //   - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -11096,10 +11181,10 @@ type PreviewDomainBlockImportRequest struct {
 //     server whose closure is not announced or whose `closes_at` has not come
 //     (`POST /admin/closure/close`).
 //   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-//     stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+//     stops new registrations and supporter subscriptions: approving a pending
 //     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
 //     (`POST /supporter/checkout`).
-//   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+//   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
@@ -11174,8 +11259,7 @@ type PreviewDomainBlockImportRequest struct {
 //     account.
 //   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
 //     an administrator. Make another user an administrator first.
-//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
 //   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
 //     `DELETE /sessions/{id}`; signing out ends it.
@@ -11188,7 +11272,7 @@ type PreviewDomainBlockImportRequest struct {
 //     own, is not found, cannot be fetched from its server, or is suspended here.
 //   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
 //     or moved to that account before.
-//   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+//   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
 //     each present only when the operator set it: `message`, the administrators' notice in
@@ -11288,13 +11372,13 @@ type QrCode struct {
 	Size int `json:"size"`
 }
 
-// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 // the author's followers, `nobody` the author alone. A followers-only status is quoted only
 // by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 // its policy.
 type QuotePolicy string
 
-// QuoteState The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+// QuoteState The state of a quote as the viewer sees it, with the values of Mastodon's
 // `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 // behind the reason for `muted_account` and `blocked_domain`:
 //
@@ -11463,7 +11547,7 @@ type RelayProblem struct {
 // `accepted` relay, leaving or deleting one that is not).
 type RelayProblemReason string
 
-// RelayProtocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+// RelayProtocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 // collection. `litepub`: at its actor, by a `Follow` of the actor.
 type RelayProtocol string
 
@@ -11559,11 +11643,11 @@ type ResolveReportRequest struct {
 // such a path.
 type ReturnTo = string
 
-// RoleBadge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
+// RoleBadge The badge of a role, which its holders may show on their profile. The label is
 // the staff's own text, the same in every locale: clients show it as user content
 // (`dir="auto"`), never translated.
 type RoleBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -11632,28 +11716,28 @@ type SanitizeBrandRequest struct {
 }
 
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+// `search_indexing`). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 // the reverse.
 type SearchIndexing string
 
-// ServerHealth The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+// ServerHealth The health of the server. The values are fixed, machine-readable words, never
 // localized.
 type ServerHealth struct {
 	// CheckedAt When this process last checked the database; absent during the maintenance mode.
 	CheckedAt *time.Time `json:"checked_at,omitempty"`
 
 	// Status `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-	// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+	// schema is not applied, `maintenance` during the maintenance mode.
 	Status ServerHealthStatus `json:"status"`
 }
 
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+// schema is not applied, `maintenance` during the maintenance mode.
 type ServerHealthStatus string
 
 // ServiceClosureNotice What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-// tells of the closure of the service (ADR-0088). `change` is what the event of a
+// tells of the closure of the service. `change` is what the event of a
 // `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 // changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 // for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -11671,7 +11755,7 @@ type ServiceClosureNotice struct {
 // ServiceClosureNoticeChange defines model for ServiceClosureNotice.Change.
 type ServiceClosureNoticeChange string
 
-// ServiceClosureState Where the server is in its closure (ADR-0088 §1):
+// ServiceClosureState Where the server is in its closure:
 //
 //   - `none`: no closure is announced.
 //   - `announced`: the closure is announced; the server runs as before until it closes.
@@ -11722,7 +11806,7 @@ type SetLinkCardDomainRuleRequest struct {
 
 // SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
 type SetQuotePolicyRequest struct {
-	// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
@@ -11776,7 +11860,7 @@ type SpoilerText = string
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
 type Status struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
@@ -11799,7 +11883,7 @@ type Status struct {
 	// BoostsCount The number of boosts.
 	BoostsCount int `json:"boosts_count"`
 
-	// Card The card of the first link in a status (ADR-0062): the title, description, and image
+	// Card The card of the first link in a status: the title, description, and image
 	// that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
@@ -11813,7 +11897,7 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document (ADR-0019 §2).
+	// remote status is what the server's sanitizer kept of the received document.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -11822,8 +11906,7 @@ type Status struct {
 	// EditedAt When the status was last edited; omitted when it never was.
 	EditedAt *time.Time `json:"edited_at,omitempty"`
 
-	// Emojis The custom emoji of the text, the content warning, and the poll's choices
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -11865,7 +11948,7 @@ type Status struct {
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
-	// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+	// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 	// another server are those its server last reported. A poll whose author hides the votes of
 	// each option until it ends leaves out `votes_count` of its options until then. `voted` and
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -11906,7 +11989,7 @@ type Status struct {
 	// when it has none.
 	Url *string `json:"url,omitempty"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -11994,7 +12077,7 @@ type StatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// StatusQuote The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
+// StatusQuote The status that a status quotes. Quotes are shown one level deep:
 // `quoted_status` has no `quote` of its own, and clients link to it instead.
 type StatusQuote struct {
 	// QuotedStatus A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -12008,7 +12091,7 @@ type StatusQuote struct {
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
-	// State The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+	// State The state of a quote as the viewer sees it, with the values of Mastodon's
 	// `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 	// behind the reason for `muted_account` and `blocked_domain`:
 	//
@@ -12061,7 +12144,7 @@ type StatusReactionPage struct {
 
 // StatusReactor One emoji reaction to a status, with the account that reacted.
 type StatusReactor struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// CreatedAt When the account reacted.
@@ -12120,7 +12203,7 @@ type SupporterCheckout struct {
 // it. `canceled`: it was canceled, or it ended at the payment provider.
 type SupporterEndReason string
 
-// SupporterIneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+// SupporterIneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 // of this server; `email_unverified`, the primary email address is not verified;
 // `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 // the user may subscribe.
@@ -12131,7 +12214,7 @@ type SupporterInterval string
 
 // SupporterListEntry A member on the supporter list.
 type SupporterListEntry struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// PlanId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12177,7 +12260,7 @@ type SupporterPlan struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -12185,7 +12268,7 @@ type SupporterPlan struct {
 	// Rank A higher rank is a higher plan, which includes everything of the lower ones.
 	Rank int `json:"rank"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -12281,7 +12364,7 @@ type SupporterScheduledChange struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
@@ -12320,7 +12403,7 @@ type SupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -12328,7 +12411,7 @@ type SupporterSubscription struct {
 	ScheduledChange *SupporterScheduledChange `json:"scheduled_change,omitempty"`
 	StartedAt       time.Time                 `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -12336,14 +12419,14 @@ type SupporterSubscription struct {
 	State SupporterSubscriptionState `json:"state"`
 }
 
-// SupporterSubscriptionState The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+// SupporterSubscriptionState The state of a subscription. `pending`: started, not paid yet. `active`:
 // paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 // than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 // paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
 // before its first payment. The role is held while `active`, `canceling`, or `past_due`.
 type SupporterSubscriptionState string
 
-// TagSuggestion A hashtag that the prefix search of hashtags found (ADR-0092).
+// TagSuggestion A hashtag that the prefix search of hashtags found.
 type TagSuggestion struct {
 	// Name The hashtag as first written on this server, without `#`.
 	Name string `json:"name"`
@@ -12453,7 +12536,7 @@ type UpdateBadgeChoiceRequest struct {
 
 // UpdateCredentialsRequest A change of the profile; properties left out keep their current values.
 type UpdateCredentialsRequest struct {
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them (FR-412).
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them.
 	AiOptOut *bool `json:"ai_opt_out,omitempty"`
 
 	// AvatarMediaId The ID of a processed image that the user uploaded, to become the avatar; empty
@@ -12464,7 +12547,7 @@ type UpdateCredentialsRequest struct {
 	Bot *bool `json:"bot,omitempty"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
-	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// account search; when `false`, the search finds it only by its whole
 	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
@@ -12478,7 +12561,7 @@ type UpdateCredentialsRequest struct {
 	// empty removes the header image.
 	HeaderMediaId *string `json:"header_media_id,omitempty"`
 
-	// Indexable Whether the account's profile and public posts may be indexed for search (FR-412).
+	// Indexable Whether the account's profile and public posts may be indexed for search.
 	Indexable *bool `json:"indexable,omitempty"`
 
 	// Locked Whether follow requests need the user's approval.
@@ -12575,13 +12658,13 @@ type UpdatePreferencesRequest struct {
 	// DefaultPostLanguage The language of new posts that name none; `und` for undetermined.
 	DefaultPostLanguage *string `json:"default_post_language,omitempty"`
 
-	// DefaultQuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// DefaultQuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
 	DefaultQuotePolicy *QuotePolicy `json:"default_quote_policy,omitempty"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -12614,7 +12697,7 @@ type UpdatePreferencesRequest struct {
 
 // UpdateRoleRequest The changes to a role; what is omitted stays.
 type UpdateRoleRequest struct {
-	// Badge The new badge of the role (ADR-0071). Its holders keep their choice to show it.
+	// Badge The new badge of the role. Its holders keep their choice to show it.
 	Badge *RoleBadge `json:"badge,omitempty"`
 
 	// Permissions The new permissions of the role, each once; empty removes them all.
@@ -12636,7 +12719,7 @@ type UpdateWebhookRequest struct {
 	Url         *string             `json:"url,omitempty"`
 }
 
-// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+// Visibility Who may see a status: `public` everyone, listed on public timelines;
 // `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 // public timelines; `private` followers and mentioned accounts; `direct` mentioned
 // accounts.
@@ -12716,7 +12799,7 @@ type VoiceRoom struct {
 	// Hashtags The hashtags of the room, without the `#`, as the host typed them.
 	Hashtags []string `json:"hashtags"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host Account `json:"host"`
 
 	// Icon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
@@ -12819,7 +12902,7 @@ type VoiceRoomIcon struct {
 // VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
 // revoked; an invitation as a speaker also lets the user speak without asking.
 type VoiceRoomInvitation struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12884,7 +12967,7 @@ type VoiceRoomPage struct {
 
 // VoiceRoomParticipant A participant of a voice chat room.
 type VoiceRoomParticipant struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Blocked Whether the user blocks the participant or the participant blocks the user.
@@ -12952,7 +13035,7 @@ type VoiceRoomSummary struct {
 	// Description The description of the room, empty for none.
 	Description *string `json:"description,omitempty"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host *Account `json:"host,omitempty"`
 
 	// Icon The icon of the room; present only with `name`, and omitted when the room has none.
@@ -13135,7 +13218,7 @@ type WebhookCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -13184,7 +13267,7 @@ type WebhookCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// WebhookEventType An event that a webhook subscribes to (ADR-0060). Subscribing needs, besides
+// WebhookEventType An event that a webhook subscribes to. Subscribing needs, besides
 // `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
 // `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
 // `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
@@ -13203,7 +13286,7 @@ type WebhookCustomEmoji struct {
 // seen is sent when a report with one comes, unless it is muted by then.
 type WebhookEventType string
 
-// WebhookMessage The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
+// WebhookMessage The body of a message that a webhook receives (Standard Webhooks), posted as
 // `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
 // `webhook-signature`. `data` is what the admin API answers for the object of the event,
 // presented in the transaction of the event: `AdminReport` for `report.*`,
@@ -13212,8 +13295,7 @@ type WebhookEventType string
 // for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
 // `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
 // `WebhookStatus` for `status.created`, and
-// `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
-// describes it.
+// `WebhookTest` for `webhook.test`. No operation returns it.
 type WebhookMessage struct {
 	Data map[string]interface{} `json:"data"`
 
@@ -13453,7 +13535,7 @@ type VoiceRoomId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type WebhookId = Id
 
-// AccountProfile An account, as clients show it (FR-006).
+// AccountProfile An account, as clients show it.
 type AccountProfile = Account
 
 // StatusAfterAction A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -13488,7 +13570,7 @@ type SearchAccountsParams struct {
 	// characters after a leading `@`, which is ignored. Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -14139,7 +14221,7 @@ type SearchTagsParams struct {
 	// Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -14232,6 +14314,9 @@ type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 
 // RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
 type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
+
+// DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
+type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
 
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
@@ -14550,6 +14635,12 @@ type ServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(w http.ResponseWriter, r *http.Request)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(w http.ResponseWriter, r *http.Request)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(w http.ResponseWriter, r *http.Request)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
@@ -15647,6 +15738,34 @@ func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveAccountAlias(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeactivationPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeactivationPreview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeactivateOwnAccount operation middleware
+func (siw *ServerInterfaceWrapper) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeactivateOwnAccount(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25845,6 +25964,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notifications", wrapper.UpdateNotificationSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/deactivation", wrapper.DeactivateOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/delete", wrapper.DeleteOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move", wrapper.MoveOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move/cancel", wrapper.CancelOwnAccountMove)
@@ -26764,6 +26885,119 @@ type RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeactivationPreviewRequestObject struct {
+}
+
+type GetDeactivationPreviewResponseObject interface {
+	VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error
+}
+
+type GetDeactivationPreview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetDeactivationPreview200JSONResponse struct {
+	Body    DeactivationPreview
+	Headers GetDeactivationPreview200ResponseHeaders
+}
+
+func (response GetDeactivationPreview200JSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountRequestObject struct {
+	Body *DeactivateOwnAccountJSONRequestBody
+}
+
+type DeactivateOwnAccountResponseObject interface {
+	VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error
+}
+
+type DeactivateOwnAccount200JSONResponse Deactivation
+
+func (response DeactivateOwnAccount200JSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47569,6 +47803,12 @@ type StrictServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(ctx context.Context, request GetDeactivationPreviewRequestObject) (GetDeactivationPreviewResponseObject, error)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(ctx context.Context, request DeactivateOwnAccountRequestObject) (DeactivateOwnAccountResponseObject, error)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
@@ -48742,6 +48982,61 @@ func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
 		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeactivationPreview operation middleware
+func (sh *strictHandler) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+	var request GetDeactivationPreviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDeactivationPreview(ctx, request.(GetDeactivationPreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeactivationPreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeactivationPreviewResponseObject); ok {
+		if err := validResponse.VisitGetDeactivationPreviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeactivateOwnAccount operation middleware
+func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+	var request DeactivateOwnAccountRequestObject
+
+	var body DeactivateOwnAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeactivateOwnAccount(ctx, request.(DeactivateOwnAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeactivateOwnAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeactivateOwnAccountResponseObject); ok {
+		if err := validResponse.VisitDeactivateOwnAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

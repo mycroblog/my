@@ -3,7 +3,7 @@ post:
   operationId: changeOwnSupporterSubscription
   summary: Change the plan or the interval of the authenticated user's subscription
   description: |
-    Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+    Changes an `active` subscription to another plan or interval: to a higher
     plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
     or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
     current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the

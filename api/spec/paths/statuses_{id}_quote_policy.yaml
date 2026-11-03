@@ -5,7 +5,7 @@ put:
   operationId: setStatusQuotePolicy
   summary: Change who may quote the authenticated user's status
   description: |
-    Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+    Changes the `quote_policy` of a status of the user; the approvals given
     before stay, and each is revoked on its own. Another account's status is a 403 when the
     user may see it and a 404 otherwise.
   tags: [statuses]

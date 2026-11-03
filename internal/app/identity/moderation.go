@@ -118,13 +118,19 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 // RegisterLifecycleProjectors subscribes the end of a user's sessions and tokens to the account
 // module's lifecycle: when a local account is deleted, every session and token of its user is
 // revoked with the reason account_deleted in the transaction of the deletion (data-model §4.1),
-// so that a user who signed in while the deletion was scheduled (a ban) is signed out by it.
-// Every token of the clients the user registered is revoked with client_disabled (ADR-0090 §1).
+// so that a user who signed in while the deletion was scheduled (a ban) is signed out by it. When
+// its owner deactivates it, they end with logout and user, the reasons of what a user does to
+// their own sessions and tokens (ADR-0145 §1). Either way, every token of the clients the user
+// registered is revoked with client_disabled (ADR-0090 §1).
 func RegisterLifecycleProjectors(r *uow.Projectors, repo Repository, accounts Accounts, clock kernel.Clock) {
 	r.Register(account.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(account.LifecycleEventRecorded)
-		if !ev.Deletes() {
+		if !ev.Deletes() && !ev.Deactivates() {
 			return nil
+		}
+		sessions, tokens := identity.RevokedAccountDeleted, identity.TokenRevokedAccountDeleted
+		if ev.Deactivates() {
+			sessions, tokens = identity.RevokedLogout, identity.TokenRevokedUser
 		}
 		a, err := accounts.FindByIDTx(ctx, tx, ev.Event.AccountID)
 		switch {
@@ -139,10 +145,10 @@ func RegisterLifecycleProjectors(r *uow.Projectors, repo Repository, accounts Ac
 		if err := repo.LockTokenGrants(ctx, tx, a.Local.UserID); err != nil {
 			return err
 		}
-		if err := repo.RevokeSessionsOfUser(ctx, tx, a.Local.UserID, identity.RevokedAccountDeleted, now); err != nil {
+		if err := repo.RevokeSessionsOfUser(ctx, tx, a.Local.UserID, sessions, now); err != nil {
 			return err
 		}
-		if err := repo.RevokeTokensOfUser(ctx, tx, a.Local.UserID, identity.TokenRevokedAccountDeleted, now); err != nil {
+		if err := repo.RevokeTokensOfUser(ctx, tx, a.Local.UserID, tokens, now); err != nil {
 			return err
 		}
 		return revokeTokensOfOwnedClients(ctx, tx, repo, a.Local.UserID, now)

@@ -3,8 +3,7 @@ post:
   operationId: runPaymentReconcile
   summary: Reconcile with the payment provider now
   description: |
-    Queues a reconciliation with the payment provider now, besides the periodic one
-    (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+    Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
     others. One per UTC hour: another request in the hour after its reconciliation ran is a
     429. A deployment without a payment provider is a 404. The request is recorded in the
     audit log. Needs the `manage_supporters` permission.

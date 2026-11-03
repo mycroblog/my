@@ -158,7 +158,7 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Name: "feed_restrictions", Module: "timeline",
 				Tables: []string{"feed_author_restrictions", "feed_domain_restrictions"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
-					return timeline.RebuildRestrictions(ctx, u, r.feeds, a.Accounts, a.Clock,
+					return timeline.RebuildRestrictions(ctx, u, r.feeds, a.Accounts, moderatedEffects{a}, a.Clock,
 						timeline.ModerationSource(r.moderation, a.Clock), timeline.AccountSource(r.accounts))
 				},
 			},

@@ -9,7 +9,7 @@ get:
     deactivated, or is deleted is a 404, the same as an unknown one.
 
     With `resolve=true`, a remote account that the instance does not know yet is fetched
-    from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+    from its server: a handle through WebFinger, a URL directly. Only accounts
     whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
     is a 404. Resolving needs an access token (anonymous requests get the 401 of
     `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every

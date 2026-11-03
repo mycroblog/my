@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: An account, as clients show it (FR-006).
+description: An account, as clients show it.
 type: object
 required: [id, username, acct, domain, uri, display_name, note, fields, emojis, badges, url, locked, bot, created_at]
 properties:
@@ -52,15 +52,14 @@ properties:
       $ref: ./ProfileField.yaml
   emojis:
     description: |
-      The custom emoji of the display name, the note, and the fields' names and values
-      (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+      The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
       image, and the rest as text.
     type: array
     items:
       $ref: ./CustomEmoji.yaml
   badges:
     description: |
-      The role badges that the account shows on its profile, highest role first (ADR-0071).
+      The role badges that the account shows on its profile, highest role first.
       Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
       `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
       notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -89,7 +88,7 @@ properties:
     minimum: 0
   moved:
     description: |
-      The account that the account moved to (ADR-0089), when it moved: clients show that it
+      The account that the account moved to, when it moved: clients show that it
       moved, with a link to this one. Present on the account's own endpoints, where
       `followers_count` is, and without a `moved` of its own (moves are not followed in
       chains).

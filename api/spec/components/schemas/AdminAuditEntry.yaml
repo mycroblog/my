@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: One operation of a moderator or an administrator (FR-704).
+description: One operation of a moderator or an administrator.
 type: object
 required: [id, actor_kind, action, target_kind, target_id, target_label, target_exists, occurred_at]
 properties:

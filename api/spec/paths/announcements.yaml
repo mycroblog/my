@@ -3,7 +3,7 @@ get:
   operationId: listAnnouncements
   summary: List the announcements
   description: |
-    The server's announcements that every local user sees now (FR-726): published, and
+    The server's announcements that every local user sees now: published, and
     within their window. The ones whose `published_at` is the latest come first, each with
     whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
     through the past ones too.

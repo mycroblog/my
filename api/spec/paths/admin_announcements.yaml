@@ -3,7 +3,7 @@ get:
   operationId: listAdminAnnouncements
   summary: List the announcements
   description: |
-    Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+    Every announcement, drafts and withdrawn ones included, newest first. The
     list is not paginated. Needs the `manage_announcements` permission.
   tags: [admin-server]
   security:

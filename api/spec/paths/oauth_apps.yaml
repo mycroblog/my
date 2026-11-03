@@ -25,7 +25,7 @@ post:
   summary: Register an OAuth app
   description: |
     Registers a public or confidential app of the user for a bot, a script, or a client of
-    their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+    their own. A confidential app's `client_secret` is in this response only.
     Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
     may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
     stops working while the user cannot use the server (suspended or deleted).

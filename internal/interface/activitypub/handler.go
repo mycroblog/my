@@ -321,6 +321,12 @@ func visible(a appaccount.Actor) bool {
 	return a.Account.IsLocal() && a.Lifecycle.Active()
 }
 
+// answers reports whether an actor answers for itself to the remote servers: a visible one, or a
+// local one that its owner deactivated, which comes back (ADR-0145 §6, §7).
+func answers(a appaccount.Actor) bool {
+	return visible(a) || (a.Account.IsLocal() && a.Lifecycle.Deactivated())
+}
+
 // findVisible looks up an actor and hides the ones that may not be presented as missing.
 func findVisible(a appaccount.Actor, err error) (appaccount.Actor, error) {
 	if err != nil {

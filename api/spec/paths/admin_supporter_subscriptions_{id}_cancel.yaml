@@ -3,7 +3,7 @@ post:
   operationId: cancelSupporterSubscription
   summary: Cancel a subscription at once
   description: |
-    Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+    Ends a subscription at once, without a refund: the role goes now, and the
     payment provider stops billing. A refund is the operator's to make at the provider. A
     subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
     unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.

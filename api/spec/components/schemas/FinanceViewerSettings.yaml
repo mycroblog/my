@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   What the holders of `view_finance` read of the instance's finances beyond the totals and
-  their breakdown (the instance settings of ADR-0070 §5): `item_names`
+  their breakdown, by instance settings: `item_names`
   (`finance_viewer_item_names`) shows the names of the cost items and the services of the
   imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
   `income` (`finance_viewer_income`) the income as totals only or with the number of members

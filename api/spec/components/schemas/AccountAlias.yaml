@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+  An account that the user moves from: the user's actor names it in
   `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
 type: object
 required: [uri, created_at]

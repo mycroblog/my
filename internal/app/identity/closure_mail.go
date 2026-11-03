@@ -236,6 +236,12 @@ func (s *Service) sendClosureEmail(ctx context.Context, run queue.Job, job closu
 	case err != nil:
 		return err
 	}
+	// A deactivated account gets no email but the one of its deactivation (ADR-0145 §3).
+	if st, err := s.d.Accounts.UserLifecycle(ctx, job.UserID); err == nil && st.Deactivated() {
+		return nil
+	} else if err != nil {
+		return err
+	}
 	email, verified, err := s.d.Repository.FindPrimaryEmail(ctx, job.UserID)
 	if errors.Is(err, ErrNotFound) {
 		return nil

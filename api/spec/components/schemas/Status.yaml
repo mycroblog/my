@@ -46,7 +46,7 @@ properties:
   content:
     description: |
       The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-      remote status is what the server's sanitizer kept of the received document (ADR-0019 §2).
+      remote status is what the server's sanitizer kept of the received document.
     type: string
   spoiler_text:
     description: The content warning; empty when there is none.
@@ -97,8 +97,7 @@ properties:
       $ref: ./StatusTag.yaml
   emojis:
     description: |
-      The custom emoji of the text, the content warning, and the poll's choices
-      (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+      The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
       image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
     type: array
     items:

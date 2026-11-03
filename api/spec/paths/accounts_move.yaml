@@ -4,7 +4,7 @@ post:
   x-first-party-only: true
   summary: Move the authenticated user's account to another account
   description: |
-    Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+    Moves the user's account to the account `target_account_id`, after
     checking the user's current `password` or a `passkey` of the user; a user without a
     password confirms with a passkey. Find the target's ID with
     `GET /accounts/lookup?resolve=true`; it may be an account of this server.

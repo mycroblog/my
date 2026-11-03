@@ -4,7 +4,7 @@ post:
   summary: Cancel the authenticated user's subscription at the end of its period
   description: |
     Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-    stays until then (`canceling`, ADR-0072 §7). A 409
+    stays until then (`canceling`). A 409
     `/api/v1/problems/supporter-subscription-state` in another state.
   tags: [supporters]
   security:

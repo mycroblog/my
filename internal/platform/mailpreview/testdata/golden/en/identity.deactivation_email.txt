@@ -1,0 +1,13 @@
+Your account on Example Social is deactivated. It will be deleted on 2026-12-03 09:00 (UTC) unless you reactivate it before then.
+
+To reactivate it, sign in. We will not email you about this again before the deletion. If you did not do this, sign in, reactivate the account, and change your password.
+
+Sign in
+https://social.example/auth/sign_in
+
+-- 
+Example Social
+https://social.example
+Contact: admin@social.example
+
+You get this email because this address belongs to your account on Example Social.
