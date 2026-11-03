@@ -574,7 +574,7 @@ func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error)
 }
 
 // moveSubject loads the move of a Move, its local actor, and the actor it moves to. The Move of
-// an actor that is no longer active has nothing to send; a cancelled move is still sent, since
+// an actor that is no longer active has nothing to send; a canceled move is still sent, since
 // its Update came first and the cancellation's Update follows it.
 func (f *FanOut) moveSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act

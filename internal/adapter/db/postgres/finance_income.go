@@ -48,7 +48,7 @@ func (r *FinanceRepository) InsertIncome(ctx context.Context, tx uow.Tx, rec app
 	}
 	starts, ends := toNullRange(rec.Covers)
 	n, err := q.InsertIncomeMovement(ctx, postgresgen.InsertIncomeMovementParams{
-		ID: rec.ID, Provider: rec.Provider, ProviderID: rec.ProviderID, Kind: string(rec.Kind),
+		ID: rec.ID, Provider: rec.Provider, ProviderMovementID: rec.ProviderID, Kind: string(rec.Kind),
 		ParentMovementID: toNullString(rec.ParentMovementID), SubscriptionID: toNullString(rec.SubscriptionID),
 		OccurredAt: rec.OccurredAt, OccurredOn: toDate(rec.OccurredOn), CoversStartsOn: starts, CoversEndsOn: ends,
 		GrossMinor: rec.Gross.Minor, FeeMinor: rec.Fee.Minor, NetMinor: rec.Net.Minor, Currency: string(rec.Net.Currency),
@@ -63,7 +63,7 @@ func (r *FinanceRepository) FindIncomeID(ctx context.Context, tx uow.Tx, provide
 	if err != nil {
 		return "", err
 	}
-	id, err := q.FindIncomeMovementID(ctx, postgresgen.FindIncomeMovementIDParams{Provider: provider, ProviderID: providerID})
+	id, err := q.FindIncomeMovementID(ctx, postgresgen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
 	if err != nil {
 		return "", notFound(err, appfinance.ErrNotFound, "income movement "+providerID)
 	}
@@ -132,8 +132,8 @@ func (r *FinanceRepository) ListIncome(ctx context.Context, f appfinance.IncomeF
 		}
 		gross, fee, net := incomeMoney(row.GrossMinor, row.FeeMinor, row.NetMinor, row.Currency)
 		out[i] = appfinance.IncomeRecord{
-			ID: row.ID, Provider: row.Provider, ProviderID: row.ProviderID, Kind: finance.IncomeKind(row.Kind),
-			ParentProviderID: fromNullString(row.ParentProviderID), SubscriptionID: fromNullString(row.SubscriptionID),
+			ID: row.ID, Provider: row.Provider, ProviderID: row.ProviderMovementID, Kind: finance.IncomeKind(row.Kind),
+			ParentProviderID: fromNullString(row.ParentProviderMovementID), SubscriptionID: fromNullString(row.SubscriptionID),
 			OccurredAt: row.OccurredAt, OccurredOn: on, Covers: covers, Gross: gross, Fee: fee, Net: net,
 			RecordedAt: row.RecordedAt,
 		}

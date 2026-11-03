@@ -294,7 +294,7 @@ func deactivationYieldsToABan(t *testing.T, e *accountEnv) {
 		t.Fatalf("CancelDeletionByModeration = %v", err)
 	}
 	if s := e.lifecycleOf(t, reg.AccountID); !s.Active() {
-		t.Errorf("state after the cancelled ban = %+v, want active", s)
+		t.Errorf("state after the canceled ban = %+v, want active", s)
 	}
 }
 

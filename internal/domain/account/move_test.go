@@ -47,13 +47,13 @@ func TestFollowsRemote(t *testing.T) {
 	}
 }
 
-func TestMoveStatesTakeTheNewestMoveUnlessCancelled(t *testing.T) {
+func TestMoveStatesTakeTheNewestMoveUnlessCanceled(t *testing.T) {
 	at := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	records := []MoveRecord{
 		{Move: Move{ID: "m2", AccountID: "b", TargetAccountID: "x", OccurredAt: at}},
 		{Move: Move{ID: "m1", AccountID: "a", TargetAccountID: "x", OccurredAt: at}},
 		{Move: Move{ID: "m3", AccountID: "a", TargetAccountID: "y", OccurredAt: at.Add(time.Hour)}},
-		{Move: Move{ID: "m4", AccountID: "c", TargetAccountID: "x", OccurredAt: at}, Cancelled: true},
+		{Move: Move{ID: "m4", AccountID: "c", TargetAccountID: "x", OccurredAt: at}, Canceled: true},
 	}
 	got := MoveStates(records)
 	want := []MoveState{

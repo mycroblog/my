@@ -24,7 +24,7 @@ import (
 // names the account among its aliases records the move, makes the actor carry movedTo, queues the
 // Update of the actor and the Move to the remote followers' shared inbox, and moves the local
 // followers; a target without the alias, the account itself, a target that moved, and a move
-// within 30 days of the last one, cancelled or not, are refused; the cancellation queues the
+// within 30 days of the last one, canceled or not, are refused; the cancellation queues the
 // Update without movedTo; a moved account answers a Follow with a Reject; and a move to a local
 // account moves the local followers to it.
 
@@ -222,7 +222,7 @@ func movesRefuseAndCancelLocal(t *testing.T, e *moveEnv) {
 	}
 
 	// The cancellation sends the Update without movedTo, and the wait still counts from the
-	// cancelled move.
+	// canceled move.
 	if err := moves.Cancel(ctx, alice); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}

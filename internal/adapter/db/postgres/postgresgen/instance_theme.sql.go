@@ -83,19 +83,19 @@ func (q *Queries) InsertInstanceThemeRevision(ctx context.Context, arg InsertIns
 }
 
 const insertInstanceThemeToken = `-- name: InsertInstanceThemeToken :exec
-INSERT INTO instance_theme_tokens (theme_revision_id, token, scheme, value) VALUES ($1, $2, $3, $4)
+INSERT INTO instance_theme_tokens (revision_id, token, scheme, value) VALUES ($1, $2, $3, $4)
 `
 
 type InsertInstanceThemeTokenParams struct {
-	ThemeRevisionID string
-	Token           string
-	Scheme          string
-	Value           string
+	RevisionID string
+	Token      string
+	Scheme     string
+	Value      string
 }
 
 func (q *Queries) InsertInstanceThemeToken(ctx context.Context, arg InsertInstanceThemeTokenParams) error {
 	_, err := q.db.Exec(ctx, insertInstanceThemeToken,
-		arg.ThemeRevisionID,
+		arg.RevisionID,
 		arg.Token,
 		arg.Scheme,
 		arg.Value,
@@ -104,7 +104,7 @@ func (q *Queries) InsertInstanceThemeToken(ctx context.Context, arg InsertInstan
 }
 
 const listInstanceThemeTokens = `-- name: ListInstanceThemeTokens :many
-SELECT token, scheme, value FROM instance_theme_tokens WHERE theme_revision_id = $1 ORDER BY token, scheme
+SELECT token, scheme, value FROM instance_theme_tokens WHERE revision_id = $1 ORDER BY token, scheme
 `
 
 type ListInstanceThemeTokensRow struct {
@@ -113,8 +113,8 @@ type ListInstanceThemeTokensRow struct {
 	Value  string
 }
 
-func (q *Queries) ListInstanceThemeTokens(ctx context.Context, themeRevisionID string) ([]ListInstanceThemeTokensRow, error) {
-	rows, err := q.db.Query(ctx, listInstanceThemeTokens, themeRevisionID)
+func (q *Queries) ListInstanceThemeTokens(ctx context.Context, revisionID string) ([]ListInstanceThemeTokensRow, error) {
+	rows, err := q.db.Query(ctx, listInstanceThemeTokens, revisionID)
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,7 @@ func (r *InstanceRepository) InsertClosureEvent(ctx context.Context, tx uow.Tx, 
 		return err
 	}
 	err = q.InsertServiceClosureEvent(ctx, sqlitegen.InsertServiceClosureEventParams{
-		ID: e.ID, Kind: string(e.Kind), ByUserID: toNullString(e.ByUserID), OccurredAt: toMillis(e.OccurredAt),
+		ID: e.ID, Kind: string(e.Kind), ChangedByUserID: toNullString(e.ByUserID), OccurredAt: toMillis(e.OccurredAt),
 	})
 	if err != nil {
 		return wrap(err, "insert service closure event")
@@ -78,7 +78,7 @@ func (r *InstanceRepository) ListClosureEvents(ctx context.Context, tx uow.Tx) (
 	out := make([]instance.ClosureEvent, len(rows))
 	for i, row := range rows {
 		out[i] = instance.ClosureEvent{
-			ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ByUserID.String, OccurredAt: fromMillis(row.OccurredAt),
+			ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ChangedByUserID.String, OccurredAt: fromMillis(row.OccurredAt),
 			Schedule: instance.ClosureSchedule{
 				ClosesAt: fromNullTime(row.ClosesAt), ExportUntil: fromNullTime(row.ExportUntil), Message: row.Message.String,
 			},
@@ -120,7 +120,7 @@ func (r *InstanceRepository) FindClosureEvent(ctx context.Context, id string) (i
 		return instance.ClosureEvent{}, notFound(err, appinstance.ErrNotFound, "service closure event")
 	}
 	return instance.ClosureEvent{
-		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ByUserID.String, OccurredAt: fromMillis(row.OccurredAt),
+		ID: row.ID, Kind: instance.ClosureEventKind(row.Kind), ByUserID: row.ChangedByUserID.String, OccurredAt: fromMillis(row.OccurredAt),
 		Schedule: instance.ClosureSchedule{
 			ClosesAt: fromNullTime(row.ClosesAt), ExportUntil: fromNullTime(row.ExportUntil), Message: row.Message.String,
 		},

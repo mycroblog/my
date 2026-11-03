@@ -16,7 +16,7 @@ post:
     `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
     cannot be fetched, or is suspended here (it or its server), and
     `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-    move was cancelled, or for a target the account moved to before. An account that may not
+    move was canceled, or for a target the account moved to before. An account that may not
     move (under a moderation action that stops it, say) is a 403
     `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
     hour for the user, past which the answer is 429.

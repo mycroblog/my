@@ -269,7 +269,7 @@ func (e AdminAnnouncementState) Valid() bool {
 const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -372,7 +372,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountActionLifted:
 		return true
-	case AdminAuditActionAccountDeletionCancelled:
+	case AdminAuditActionAccountDeletionCanceled:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -4856,7 +4856,7 @@ type AdminAppealPage struct {
 }
 
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
-// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4876,7 +4876,7 @@ type AdminAppealPage struct {
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
-// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -4931,7 +4931,7 @@ type AdminAuditActorKind string
 // AdminAuditEntry One operation of a moderator or an administrator.
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
-	// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4951,7 +4951,7 @@ type AdminAuditEntry struct {
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
-	// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),

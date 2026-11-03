@@ -62,7 +62,7 @@ func TestLifecycleApply(t *testing.T) {
 		{ev(account.LifecycleDeactivated, 1, nil), account.StateDeactivated},
 		{ev(account.LifecycleReactivated, 2, nil), account.StateActive},
 		{ev(account.LifecycleDeletionScheduled, 3, &due), account.StateDeletionScheduled},
-		{ev(account.LifecycleDeletionCancelled, 4, nil), account.StateActive},
+		{ev(account.LifecycleDeletionCanceled, 4, nil), account.StateActive},
 		{ev(account.LifecycleDeleted, 5, nil), account.StateDeleted},
 		{ev(account.LifecycleReactivated, 6, nil), account.StateDeleted}, // deletion is final
 	}

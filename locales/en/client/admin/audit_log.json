@@ -7,7 +7,7 @@
     "defaultMessage": "Account action lifted",
     "description": "Heading of an audit log entry: a moderator lifted an action on an account."
   },
-  "admin.audit_log.action.account_deletion_cancelled": {
+  "admin.audit_log.action.account_deletion_canceled": {
     "defaultMessage": "Account deletion cancelled",
     "description": "Heading of an audit log entry: overturning a user's appeal of a ban cancelled the scheduled deletion of their account."
   },

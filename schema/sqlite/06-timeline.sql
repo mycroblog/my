@@ -104,7 +104,7 @@ CREATE TABLE feed_author_restrictions (
 -- timelines.
 CREATE TABLE feed_domain_restrictions (
   domain TEXT NOT NULL,
-  restriction TEXT NOT NULL CHECK (restriction IN ('profile_view', 'visibility_ceiling_private', 'public_discovery')),
+  restriction TEXT NOT NULL CHECK (restriction IN ('profile_view', 'public_discovery')),
   effective_until INTEGER,
   PRIMARY KEY (domain, restriction)
 ) STRICT;

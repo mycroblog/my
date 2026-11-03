@@ -113,7 +113,7 @@ func (r *PaymentRepository) ClaimCheckout(ctx context.Context, tx uow.Tx, c supp
 		return false, err
 	}
 	n, err := q.ClaimPaymentCheckout(ctx, postgresgen.ClaimPaymentCheckoutParams{
-		Provider: c.Provider, CheckoutID: c.CheckoutID, Holder: c.Holder, ClaimedAt: c.ClaimedAt, ExpiresAt: c.ExpiresAt,
+		Provider: c.Provider, ProviderCheckoutID: c.CheckoutID, Holder: c.Holder, ClaimedAt: c.ClaimedAt, ExpiresAt: c.ExpiresAt,
 	})
 	return n > 0, wrap(err, "claim payment checkout")
 }
@@ -124,7 +124,7 @@ func (r *PaymentRepository) ReleaseCheckout(ctx context.Context, tx uow.Tx, prov
 	if err != nil {
 		return err
 	}
-	return wrap(q.ReleasePaymentCheckout(ctx, postgresgen.ReleasePaymentCheckoutParams{Provider: provider, CheckoutID: checkoutID, Holder: holder}),
+	return wrap(q.ReleasePaymentCheckout(ctx, postgresgen.ReleasePaymentCheckoutParams{Provider: provider, ProviderCheckoutID: checkoutID, Holder: holder}),
 		"release payment checkout")
 }
 

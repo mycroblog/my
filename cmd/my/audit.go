@@ -112,7 +112,7 @@ and notes. The target's name is the one it had at the time, so entries stay
 readable after the target is gone. The audit log cannot be changed or deleted.
 
 Actions: account_action_issued, account_action_lifted,
-account_deletion_cancelled, revealed_private_data, two_factor_disabled,
+account_deletion_canceled, revealed_private_data, two_factor_disabled,
 password_reset_link_issued, email_suppression_lifted, account_moved (target kind account); domain_action_issued, domain_action_lifted, instance_marked_available (domain);
 report_assigned, report_unassigned, report_resolved, report_reopened,
 report_note_added (report); registration_approved, registration_rejected

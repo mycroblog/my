@@ -1207,7 +1207,7 @@ paths:
         `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
         cannot be fetched, or is suspended here (it or its server), and
         `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-        move was cancelled, or for a target the account moved to before. An account that may not
+        move was canceled, or for a target the account moved to before. An account that may not
         move (under a moderation action that stops it, say) is a 403
         `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
         hour for the user, past which the answer is 429.
@@ -1250,7 +1250,7 @@ paths:
         Cancels the move of the user's account: the account no longer names the target,
         can post, boost, react, follow, and vote again, and the other servers get an `Update` of
         its actor without `movedTo`. The followers that moved stay with the target, and the next
-        move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+        move still waits 30 days from the canceled one. An account that has not moved gets a 409
         `/api/v1/problems/account-not-moved`.
       tags:
         - accounts
@@ -1259,7 +1259,7 @@ paths:
             - write:accounts
       responses:
         '204':
-          description: The move is cancelled.
+          description: The move is canceled.
         default:
           $ref: '#/components/responses/Problem'
   /accounts/password:
@@ -12487,7 +12487,7 @@ components:
     AdminAuditAction:
       description: |
         The kind of an audited operation, each on one kind of target. On an `account`:
-        `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+        `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
         `revealed_private_data` (a moderator was shown the account's email address and IP
         addresses), `two_factor_disabled` (an administrator removed the account's two-factor
         authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -12507,7 +12507,7 @@ components:
         `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
         an `appeal`:
         `appeal_upheld`, `appeal_overturned` (which also records the action's
-        `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+        `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
         `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
         `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
         `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -12578,7 +12578,7 @@ components:
         - role_deleted
         - appeal_upheld
         - appeal_overturned
-        - account_deletion_cancelled
+        - account_deletion_canceled
         - revealed_private_data
         - signup_block_added
         - signup_block_lifted

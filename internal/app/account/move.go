@@ -38,12 +38,12 @@ type MoveRepository interface {
 	// FindMoveStateTx is FindMoveState inside tx.
 	FindMoveStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.MoveState, error)
 	// InsertMoveCancellation inserts the cancellation of a move and reports false, writing
-	// nothing, when the move is cancelled already.
+	// nothing, when the move is canceled already.
 	InsertMoveCancellation(ctx context.Context, tx uow.Tx, c account.MoveCancellation) (bool, error)
 	// DeleteMoveState deletes the row of account_move_states of an account, for this module's
 	// projector only.
 	DeleteMoveState(ctx context.Context, tx uow.Tx, accountID string) error
-	// ListMoveRecords returns every move with whether it is cancelled, ordered by account,
+	// ListMoveRecords returns every move with whether it is canceled, ordered by account,
 	// time, and ID, for rebuilding account_move_states.
 	ListMoveRecords(ctx context.Context, tx uow.Tx) ([]account.MoveRecord, error)
 	// ListMoveStates returns every row of account_move_states, ordered by account ID.
@@ -127,18 +127,18 @@ func (s *Service) RecordRemoteMove(ctx context.Context, in RemoteMoveInput) (acc
 	return m, recorded, nil
 }
 
-// EventMoveCancelled is emitted when a local account cancels its move.
-const EventMoveCancelled = "account.move_cancelled"
+// EventMoveCanceled is emitted when a local account cancels its move.
+const EventMoveCanceled = "account.move_canceled"
 
-// MoveCancelled is emitted when a local account cancels its move in force, in the transaction
+// MoveCanceled is emitted when a local account cancels its move in force, in the transaction
 // that records the cancellation.
-type MoveCancelled struct {
+type MoveCanceled struct {
 	Move         account.Move
 	Cancellation account.MoveCancellation
 }
 
 // EventType implements uow.Event.
-func (MoveCancelled) EventType() string { return EventMoveCancelled }
+func (MoveCanceled) EventType() string { return EventMoveCanceled }
 
 // ErrNotMoved reports a cancellation of the move of an account that has no move in force.
 var ErrNotMoved = errors.New("account: the account has not moved")
@@ -164,7 +164,7 @@ type LocalMoveInput struct {
 // that its actor carries movedTo from the commit on; the federation module sends the Move and
 // the Update of the actor, and the graph module moves the local followers. It fails with
 // account.ErrMoveTooSoon within account.LocalMoveInterval after the account's newest move,
-// cancelled or not, with ErrMovedBefore for a target that the account moved to before, and
+// canceled or not, with ErrMovedBefore for a target that the account moved to before, and
 // with ErrNotLocal for an account that is not a local user's.
 func (s *Service) RecordLocalMove(ctx context.Context, in LocalMoveInput) (account.Move, error) {
 	m := account.Move{
@@ -218,10 +218,10 @@ func (s *Service) RecordLocalMove(ctx context.Context, in LocalMoveInput) (accou
 }
 
 // CancelMove cancels the move in force of local account accountID (ADR-0089): it records the
-// cancellation and emits MoveCancelled, which deletes the account's move state, so that the
+// cancellation and emits MoveCanceled, which deletes the account's move state, so that the
 // account can post again and its actor no longer carries movedTo; the federation module sends
 // the Update of the actor. The followers that moved stay with the target, and the wait before
-// the next move still counts from the cancelled move. It fails with ErrNotMoved when the
+// the next move still counts from the canceled move. It fails with ErrNotMoved when the
 // account has no move in force.
 func (s *Service) CancelMove(ctx context.Context, accountID string) error {
 	now := kernel.Normalize(s.d.Clock.Now())
@@ -245,14 +245,14 @@ func (s *Service) CancelMove(ctx context.Context, accountID string) error {
 		if err != nil {
 			return err
 		}
-		c := account.MoveCancellation{MoveID: st.MoveID, CancelledAt: now}
+		c := account.MoveCancellation{MoveID: st.MoveID, CanceledAt: now}
 		switch ok, err := repo.InsertMoveCancellation(ctx, tx, c); {
 		case err != nil:
 			return err
 		case !ok:
 			return ErrNotMoved
 		}
-		return tx.Emit(ctx, MoveCancelled{Move: m, Cancellation: c})
+		return tx.Emit(ctx, MoveCanceled{Move: m, Cancellation: c})
 	})
 }
 
@@ -268,13 +268,13 @@ func (s *Service) FindMove(ctx context.Context, id string) (account.Move, error)
 }
 
 // registerMoveProjector makes account_move_states follow the moves: a new move is the account's
-// move in force, and a cancelled one leaves the account without one.
+// move in force, and a canceled one leaves the account without one.
 func registerMoveProjector(r *uow.Projectors, repo Repository) {
 	r.Register(EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.UpsertMoveState(ctx, tx, account.StateOf(e.(Moved).Move))
 	})
-	r.Register(EventMoveCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.DeleteMoveState(ctx, tx, e.(MoveCancelled).Move.AccountID)
+	r.Register(EventMoveCanceled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return repo.DeleteMoveState(ctx, tx, e.(MoveCanceled).Move.AccountID)
 	})
 }
 

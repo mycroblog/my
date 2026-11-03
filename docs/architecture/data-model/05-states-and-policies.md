@@ -108,4 +108,4 @@
 - **サインイン**: 二要素認証まで通常どおりで、サーバーが返す状態の画面にだけ入れます。アクセストークンは出しません（`Access.Allowed` が偽）。パスワードの再設定は使えます。
 - **再有効化**: 状態の画面のボタンで `reactivated`（`initiated_by = self`）を記録します。削除の日付を過ぎていれば、ジョブが記録する前でも断り、ログインもできません。効いている処分はそのままで、`feed_author_restrictions` はそのときの処分の制限に置き換えます。
 - **削除**: 1 時間ごとの `account.execute_deletions` が、`since` が 30 日より前の `deactivated` を行ロックのもとで読み直して `deleted`（`initiated_by = system`）を記録します。以後は本人の削除と同じ経路です。ログインできるほかの管理者がいなければ、admin ロールのロックのもとで確かめて記録せず、次の実行でもう一度確かめます（`account.Service.SetDeletionHold`、`identity.Service.IsLastAdministratorTx`）。無効化中の管理者は、ログインできる管理者に数えません。
-- **`ban` との順序**: `ban` は `deletion_scheduled` に移るので、その時点から再有効化できず、`ban` の期日に従います。`deletion_cancelled` は `active` に戻します。`retention_holds` は消去を止めるだけで、削除は止めません。
+- **`ban` との順序**: `ban` は `deletion_scheduled` に移るので、その時点から再有効化できず、`ban` の期日に従います。`deletion_canceled` は `active` に戻します。`retention_holds` は消去を止めるだけで、削除は止めません。
