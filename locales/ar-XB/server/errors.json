@@ -199,6 +199,10 @@
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ nsɐqʅǝ ıuʌıʇǝs ɐs ɐʅʅoʍǝp. ᴚǝʌoʞǝ ouǝ, oɹ ʍɐıʇ nuʇıʅ ouǝ ǝxdıɹǝs oɹ ıs nsǝp nd.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.last_administrator": {
+    "defaultMessage": "‮⊥ɥıs ıs ʇɥǝ ouʅʎ ɐpɯıuısʇɹɐʇoɹ oɟ ʇɥıs sǝɹʌǝɹ. Wɐʞǝ ɐuoʇɥǝɹ nsǝɹ ɐu ɐpɯıuısʇɹɐʇoɹ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "‮Ouʅʎ ɐɔɔonuʇs ʎon ɟoʅʅoʍ ɔɐu qǝ ɐppǝp ʇo ɐ ʅısʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -605,6 +609,10 @@
   },
   "errors.supporters.unavailable_detail": {
     "defaultMessage": "‮{reason,select,no_email{⊥ɥǝ sǝɹʌǝɹ ɯnsʇ sǝup ǝɯɐıʅ, so ʇɥɐʇ snqsɔɹıqǝɹs ɔɐu ʌǝɹıɟʎ ʇɥǝıɹ ɐppɹǝss.} no_provider{Ↄouɟıƃnɹǝ ɐ dɐʎɯǝuʇ dɹoʌıpǝɹ ıu ʇɥǝ sǝɹʌǝɹ's ɔouɟıƃnɹɐʇıou ɟıɹsʇ.} other{⊥ɥǝ snddoɹʇǝɹ dɹoƃɹɐɯ ɔɐuuoʇ qǝ nsǝp uoʍ.} provider_mismatch{⊥ɥǝ ɔouɟıƃnɹǝp dɐʎɯǝuʇ dɹoʌıpǝɹ ıs uoʇ ʇɥǝ ouǝ ʇɥǝ dɹoƃɹɐɯ ʍɐs ǝuɐqʅǝp ʍıʇɥ. ᗡısɐqʅǝ ʇɥǝ dɹoƃɹɐɯ ɐup ǝuɐqʅǝ ıʇ ɐƃɐıu.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ's ɹoʅǝ poǝs uoʇ ɹɐuʞ qǝʅoʍ ʎonɹs, so ʎon ɔɐuuoʇ po ʇɥıs ʇo ıʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.too_long": {

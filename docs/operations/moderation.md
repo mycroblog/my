@@ -144,6 +144,10 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 
 Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
 
+Staff act only on lower ranks: issuing or lifting an action, deciding an appeal, lifting an email suppression, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
+A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
+An action that keeps the only administrator who can sign in from signing in (`disable_login`, `suspend`, `ban`) is refused whoever issues it, and that administrator cannot delete their own account (`409` with `/api/v1/problems/last-administrator`). See [admin-cli.md](admin-cli.md) for the roles.
+
 - `GET /api/v1/admin/accounts` returns local and remote accounts, newest first (the instance Actor is excluded).
   You can filter by username prefix (`username`), domain (`domain`), local or remote (`origin`), state (`state`), and, for local accounts, email address (`email`), email domain (`email_domain`) and the IP address used to register or sign in (`ip`).
   You can give only one of `email`, `email_domain` and `ip`. The list does not include IP addresses or email addresses.
@@ -299,6 +303,7 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
 - The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
 - Assignments, resolutions, reopenings and notes are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`), and `report_states` holds the current state.
+- A reporter sees of the target only what they would see of the account otherwise: while it is suspended or blocks them, their report stays listed without the account. Moderators always see the whole target.
 - A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
   A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
 

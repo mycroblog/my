@@ -4,8 +4,7 @@ get:
   summary: List the voice chat rooms the user hosted
   description: |
     The rooms that the user hosted at some time, from opening them or from taking them over,
-    newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-    is off on the server.
+    newest first, with when each opened and ended and why it ended.
   tags: [voice]
   security:
     - oauth2: ["read:voice"]

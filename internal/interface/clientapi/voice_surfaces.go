@@ -90,7 +90,7 @@ func (s *Server) ListVoiceHistory(ctx context.Context, req ListVoiceHistoryReque
 	for _, r := range recs {
 		e := VoiceRoomHistoryEntry{Id: r.ID, Name: r.Revision.Settings.Name, OpenedAt: r.OpenedAt.UTC()}
 		if r.Ending != nil {
-			at, reason := r.Ending.EndedAt.UTC(), string(r.Ending.Reason)
+			at, reason := r.Ending.EndedAt.UTC(), VoiceEndReason(r.Ending.Reason)
 			e.EndedAt, e.EndReason = &at, &reason
 		}
 		out.Items = append(out.Items, e)

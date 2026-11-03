@@ -234,12 +234,18 @@ export async function voiceParticipantOperation(
   const params = { params: { path: { id, account_id: accountId } } };
   switch (operation) {
     case "grant": {
-      const { data, error } = await api.fetch.POST("/voice/rooms/{id}/participants/{account_id}/grant", params);
+      const { data, error } = await api.fetch.POST(
+        "/voice/rooms/{id}/participants/{account_id}/speaking_permission",
+        params,
+      );
       if (data === undefined) throw new ApiError(error);
       return data;
     }
     case "revoke": {
-      const { data, error } = await api.fetch.DELETE("/voice/rooms/{id}/participants/{account_id}/grant", params);
+      const { data, error } = await api.fetch.DELETE(
+        "/voice/rooms/{id}/participants/{account_id}/speaking_permission",
+        params,
+      );
       if (data === undefined) throw new ApiError(error);
       return data;
     }
@@ -269,9 +275,11 @@ export async function voiceParticipantOperation(
     case "mute":
       await api.fetch.POST("/voice/rooms/{id}/participants/{account_id}/mute", params);
       return undefined;
-    case "remove":
-      await api.fetch.DELETE("/voice/rooms/{id}/participants/{account_id}", params);
-      return undefined;
+    case "remove": {
+      const { data, error } = await api.fetch.DELETE("/voice/rooms/{id}/participants/{account_id}", params);
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    }
   }
 }
 

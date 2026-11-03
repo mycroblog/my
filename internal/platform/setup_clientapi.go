@@ -34,7 +34,7 @@ func clientLimits(caps map[string]int64) func(string) (kernel.Limit, bool) {
 // messages the admin API's representation (ADR-0060). It comes after every module it serves.
 func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit kernel.Limit) {
 	api := clientapi.New(clientapi.Options{
-		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: cfg.SourceURL, StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
+		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: config.VersionedSourceURL(cfg.SourceURL, version), StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
 		// The health endpoint of the uptime monitors (ADR-0085 §1).
 		ServerHealth: newHealthCache(a.readyCheck, a.Clock),
 		// The counts and the operators of the landing page, read again every few minutes.

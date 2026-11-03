@@ -299,13 +299,14 @@ func emailSuppressionEqualsRebuild(t *testing.T, e *accountEnv) {
 // details and lifts it for a moderator, which the audit log records.
 func adminAccountLiftsEmailSuppressions(t *testing.T, e *adminAccountEnv) {
 	ctx := t.Context()
-	if err := e.admin.LiftEmailSuppression(ctx, e.alice, NamedID("mod-user")); !errors.Is(err, appidentity.ErrNotSuppressed) {
+	staff := e.staff(t)
+	if err := e.admin.LiftEmailSuppression(ctx, e.alice, staff); !errors.Is(err, appidentity.ErrNotSuppressed) {
 		t.Errorf("LiftEmailSuppression(not suppressed) = %v, want ErrNotSuppressed", err)
 	}
-	if err := e.admin.LiftEmailSuppression(ctx, e.alfred, NamedID("mod-user")); !errors.Is(err, appidentity.ErrNotLocalAccount) {
+	if err := e.admin.LiftEmailSuppression(ctx, e.alfred, staff); !errors.Is(err, appidentity.ErrNotLocalAccount) {
 		t.Errorf("LiftEmailSuppression(remote) = %v, want ErrNotLocalAccount", err)
 	}
-	if err := e.admin.LiftEmailSuppression(ctx, e.ids.NewID(), NamedID("mod-user")); !errors.Is(err, appaccount.ErrNotFound) {
+	if err := e.admin.LiftEmailSuppression(ctx, e.ids.NewID(), staff); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("LiftEmailSuppression(unknown) = %v, want ErrNotFound", err)
 	}
 	addressID := e.primaryEmailID(t, e.aliceUser)
@@ -321,7 +322,7 @@ func adminAccountLiftsEmailSuppressions(t *testing.T, e *adminAccountEnv) {
 	}
 
 	e.clock.Advance(time.Second)
-	if err := e.admin.LiftEmailSuppression(ctx, e.alice, NamedID("mod-user")); err != nil {
+	if err := e.admin.LiftEmailSuppression(ctx, e.alice, staff); err != nil {
 		t.Fatalf("LiftEmailSuppression = %v", err)
 	}
 	if d, err := e.admin.Detail(ctx, e.alice); err != nil || d.EmailSuppression != nil {
@@ -331,7 +332,7 @@ func adminAccountLiftsEmailSuppressions(t *testing.T, e *adminAccountEnv) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0].ActorUserID != NamedID("mod-user") || got[0].TargetKind != moderation.AuditTargetAccount ||
+	if len(got) != 1 || got[0].ActorUserID != staff || got[0].TargetKind != moderation.AuditTargetAccount ||
 		got[0].TargetID != e.alice || got[0].TargetLabel != "@alice" || got[0].SourceEventID == "" || !got[0].OccurredAt.Equal(e.clock.Now()) {
 		t.Errorf("audit log = %+v, want one email_suppression_lifted entry on @alice", got)
 	}

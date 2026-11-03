@@ -545,8 +545,8 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 // other accounts that used the same IP addresses, for byUserID ("" for the CLI). The call is
 // recorded in the audit log (revealed_private_data) in a transaction of its own before anything
 // is returned: when the entry cannot be written, nothing is shown. It fails with
-// account.ErrNotFound for an unknown account and ErrNotLocalAccount for an account without a
-// user.
+// account.ErrNotFound for an unknown account, ErrNotLocalAccount for an account without a user,
+// and ErrTargetOutranksActor when byUserID does not rank above the account's user.
 func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (PrivateData, error) {
 	actor, err := s.d.Accounts.FindByID(ctx, accountID)
 	if err != nil {
@@ -554,6 +554,9 @@ func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (
 	}
 	if actor.Local == nil || actor.Local.UserID == "" {
 		return PrivateData{}, ErrNotLocalAccount
+	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return PrivateData{}, err
 	}
 	userID, repo := actor.Local.UserID, s.d.Repository
 	out := PrivateData{SignIns: []identity.SessionOrigin{}, SameIP: []SameIPAccounts{}}

@@ -1,26 +1,25 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Container images for cmd/my (ADR-0010): multi-arch (linux/amd64, linux/arm64), static, non-root, distroless.
 #
 #   docker build -t my .    # the server (default target "app"), which also applies the schema (my schema apply, ADR-0126)
 #
-# Base images are pinned by tag and multi-arch index digest. The Go, Node.js, and Bun tags must match .tool-versions.
-
-ARG GO_IMAGE=golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
-ARG NODE_IMAGE=node:26.12.1-trixie-slim@sha256:1653c74b30c27b26f68c2d21279be12139d2ba723e3a682c425ec4bfb6070422
-ARG BUN_IMAGE=oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4
-ARG RUNTIME_IMAGE=gcr.io/distroless/static-debian13:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3
+# Base images are pinned by tag and multi-arch index digest, written in the FROM lines themselves so that Dependabot can
+# update them. The Go, Node.js, and Bun tags must match .tool-versions (docker:dockerfile-check), so they are raised by
+# hand; Dependabot raises the digests.
 
 # The bun binary for the web stage, which runs on the build host's platform.
-FROM --platform=$BUILDPLATFORM ${BUN_IMAGE} AS bun
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS bun
 
 # The web client (app/web), built as `scripts/task.sh web:build` does: Bun installs the packages and runs the
 # scripts, Vite runs on Node.js (ADR-0025). The output is the same for every platform, so it is built
 # once on the build host's platform. The build reads generated files that are not committed (ADR-0081):
 # the client pseudo-locales from tools/i18n and the theme token list of @my/ui are generated first, and
 # the Vite plugin generates the route tree.
-FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS web
+FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:1653c74b30c27b26f68c2d21279be12139d2ba723e3a682c425ec4bfb6070422 AS web
+# The SBOM of a released image covers this stage too: its npm packages reach the image only through the Go embed.
+ARG BUILDKIT_SBOM_SCAN_STAGE=true
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /src
 COPY app/package.json app/bun.lock app/bunfig.toml app/
@@ -48,7 +47,7 @@ FROM scratch AS web-dist
 COPY --from=web /src/app/web/dist /
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
-FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c AS build
 ARG TARGETOS TARGETARCH
 # Version stamped into `my version` and NodeInfo.
 ARG VERSION=dev
@@ -73,7 +72,7 @@ RUN --mount=type=bind,target=. \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
 
-FROM ${RUNTIME_IMAGE} AS app
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3 AS app
 COPY --from=build /out/my /usr/local/bin/my
 COPY --from=build --chown=nonroot:nonroot /out/data /data
 WORKDIR /data

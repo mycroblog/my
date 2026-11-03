@@ -151,6 +151,9 @@ func (s *Service) ReplaceRole(ctx context.Context, in ReplaceRoleInput) (bool, e
 		return false, err
 	}
 	to.at = from.at
+	if err := s.refuseLastAdministrator(ctx, in.FromRoleKey, in.UserID); err != nil {
+		return false, err
+	}
 	changed := false
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		changed = false

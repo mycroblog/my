@@ -169,12 +169,16 @@ func TestVoiceHistoryAndStartPost(t *testing.T) {
 		t.Errorf("history without a token = %d, want 401", res.StatusCode)
 	}
 
-	res = e.send(t, http.MethodPost, "/voice/rooms", "voice", `{"name":"Talk","post":{"text":"Come"}}`)
+	if res := e.send(t, http.MethodPost, "/voice/rooms", "voice", `{"name":"Talk","post":{"text":"Come"}}`); res.StatusCode != http.StatusForbidden || len(f.opened) != 0 {
+		t.Fatalf("open with a start post with write:voice alone = %d, %+v; want 403", res.StatusCode, f.opened)
+	}
+	e.auth.tokens["voice-post"] = bearer("write:voice write:statuses", aliceAccountID)
+	res = e.send(t, http.MethodPost, "/voice/rooms", "voice-post", `{"name":"Talk","post":{"text":"Come"}}`)
 	if res.StatusCode != http.StatusCreated || len(f.opened) != 1 || f.opened[0].Post == nil || f.opened[0].Post.Text != "Come" {
 		t.Fatalf("open with a start post = %d, %+v", res.StatusCode, f.opened)
 	}
 	f.err = appvoice.ErrNoStartPost
-	if res := e.send(t, http.MethodPost, "/voice/rooms", "voice", `{"name":"Talk","visibility":"mutuals","post":{}}`); res.StatusCode != http.StatusUnprocessableEntity {
+	if res := e.send(t, http.MethodPost, "/voice/rooms", "voice-post", `{"name":"Talk","visibility":"mutuals","post":{}}`); res.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("open a room of the mutuals with a start post = %d, want 422", res.StatusCode)
 	}
 }

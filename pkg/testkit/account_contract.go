@@ -87,6 +87,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"DeactivationSendsOneEmail", deactivationSendsOneEmail},
 		{"DeactivationStatusPageDeletes", deactivationStatusPageDelete},
 		{"DeletesAccountsAtTheOwnersRequest", accountDeletesAtTheOwnersRequest},
+		{"KeepsOneAdministratorInConcurrentDeletions", accountKeepsOneAdministratorInConcurrentDeletions},
 		{"BuildsAndExpiresDataExports", exportsBuildAndExpireArchives},
 		{"ErasesDataExportsWithTheAccount", exportsAreErasedWithTheAccount},
 		{"RequestsOneDataExportAtATime", exportsAreRequestedOneAtATime},
