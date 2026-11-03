@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // AccountErasureHarness is one database under test for the erasure of deleted accounts: the
@@ -60,6 +61,8 @@ func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 		{"ErasesDeletedRemoteActors", erasureErasesRemoteActors},
 		{"RemoteActorsWaitForTheDelayAndHolds", erasureRemoteActorsWait},
 		{"ErasedRemoteActorsDoNotComeBack", erasureRemoteActorsStayErased},
+		{"DisablesAndBlanksOwnedOAuthClients", erasureBlanksOwnedOAuthClients},
+		{"PurgesSensitivityOverrides", erasurePurgesSensitivityOverrides},
 		{"ErasesTheLastUseOfTokenFamilies", erasureErasesTokenFamilyLastUse},
 		{"PurgesExpiredAuthRecords", authRecordsPurged},
 		{"PurgesExpiredUserTokensInBatches", authRecordsPurgedInBatches},
@@ -138,7 +141,7 @@ func (e *erasureEnv) eraser(evidence appcontent.RetainedStatuses, holds appaccou
 			apptimeline.NewEraser(u, e.eh.TimelineErasure),
 			notifications,
 			appcontent.NewMediaEraser(appcontent.MediaErasureDeps{UnitOfWork: u, Repository: e.eh.Media, Blobs: e.blobs}),
-			appidentity.NewEraser(u, e.eh.IdentityErasure),
+			appidentity.NewEraser(u, e.eh.IdentityErasure, e.clock, e.ids),
 		},
 	})
 }
@@ -648,4 +651,50 @@ func erasureRemoteActorsStayErased(t *testing.T, e *erasureEnv) {
 	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
 		t.Errorf("AccountErased = %v, %v; want true", erased, err)
 	}
+}
+
+// erasureBlanksOwnedOAuthClients checks that the erasure of a client's owner removes its name and
+// website, with those of its revisions, and disables it, which stops the tokens other users gave it.
+func erasureBlanksOwnedOAuthClients(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	client := e.thirdPartyApp(t)
+	tokens := e.appTokensFor(t, e.register(t, "user").User.ID)
+	revision := identity.OAuthClientRevision{
+		ID: e.ids.NewID(), ClientID: client.ID, Name: "Renamed", Website: "https://renamed.example/", Scope: client.Scope, RevisedAt: e.clock.Now(),
+	}
+	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.accountEnv.h.Identity.InsertOAuthClientRevision(ctx, tx, revision) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	eraser := appidentity.NewEraser(e.eh.UnitOfWork, e.eh.IdentityErasure, e.clock, e.ids)
+	for range 2 { // safe to repeat
+		if _, err := eraser.EraseAccountData(ctx, appaccount.ErasureTarget{UserID: client.OwnerUserID}, "", 0); err != nil {
+			t.Fatalf("EraseAccountData = %v", err)
+		}
+	}
+	got, err := e.accountEnv.h.Identity.FindOAuthClientByID(ctx, client.ID)
+	if err != nil || got.Name != "" || got.Website != "" {
+		t.Errorf("the erased owner's client = %+v, %v; want no name or website", got, err)
+	}
+	e.rows(t, "oauth_client_revisions", "name", "Renamed", 0)
+	e.rows(t, "oauth_client_revisions", "website", "https://renamed.example/", 0)
+	e.rows(t, "oauth_client_revisions", "oauth_client_id", client.ID, 1)
+	e.rows(t, "oauth_client_disablements", "oauth_client_id", client.ID, 1)
+	e.wantAccess(t, tokens.AccessToken, false, "a token given to the client of an erased owner")
+}
+
+// erasurePurgesSensitivityOverrides checks that a purged status leaves no sensitivity override.
+func erasurePurgesSensitivityOverrides(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	st := e.postAs(t, e.user(t, "author"), "marked")
+	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.eh.Statuses.InsertSensitivityOverride(ctx, tx, st.ID, e.ids.NewID()); err != nil {
+			return err
+		}
+		return e.rh.Retention.PurgeStatuses(ctx, tx, []string{st.ID})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.rows(t, "status_sensitivity_overrides", "status_id", st.ID, 0)
 }

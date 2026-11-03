@@ -101,6 +101,7 @@ func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
 		Aliases:    a.Accounts,
 		Quotes:     federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
+		Boosts:     a.Interactions,
 		Signatures: federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
 		Domains:    a.ModerationPolicy,
 		// Authorized fetch (FR-408) is the instance setting, read per request.

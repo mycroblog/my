@@ -135,7 +135,7 @@ func TestAppVoice(t *testing.T) {
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	want := platform.Voice{Method: platform.VoiceP2P, P2PMaxParticipants: 6, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
+	want := platform.Voice{Method: platform.VoiceP2P, P2PMaxParticipants: 6, MaxParticipants: 50, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
 	if app.Voice != want || !app.Voice.Enabled() || app.Voice.RoomCapacity() != 6 {
 		t.Errorf("Voice = %+v, want %+v, enabled, rooms of 6", app.Voice, want)
 	}

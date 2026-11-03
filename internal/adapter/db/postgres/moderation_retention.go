@@ -271,3 +271,39 @@ func (r *ModerationRepository) ReportHistory(ctx context.Context, reportID strin
 	}
 	return h, nil
 }
+
+// ListRetentionHoldsToPurge implements moderation.RetentionRepository.
+func (r *ModerationRepository) ListRetentionHoldsToPurge(ctx context.Context, tx uow.Tx, releasedBefore time.Time, limit int) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListRetentionHoldsToPurge(ctx, postgresgen.ListRetentionHoldsToPurgeParams{ReleasedBefore: releasedBefore, BatchLimit: batch})
+	return ids, wrap(err, "list retention holds to purge")
+}
+
+// PurgeRetentionHolds implements moderation.RetentionRepository.
+func (r *ModerationRepository) PurgeRetentionHolds(ctx context.Context, tx uow.Tx, holdIDs []string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	ids := textArray(holdIDs)
+	if err := q.PurgeRetentionHoldReleases(ctx, ids); err != nil {
+		return wrap(err, "purge retention hold releases")
+	}
+	return wrap(q.PurgeRetentionHolds(ctx, ids), "purge retention holds")
+}
+
+// EraseSeverancesOf implements moderation.Repository.
+func (r *ModerationRepository) EraseSeverancesOf(ctx context.Context, tx uow.Tx, accountID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.EraseRelationshipSeverances(ctx, accountID), "erase relationship severances")
+}

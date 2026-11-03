@@ -583,7 +583,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
-		return mailnone.New(logger), nil
+		return mailnone.New(logger, mailnone.Options{LogMessages: cfg.Profile == "development"}), nil
 	case "smtp":
 		return mailsmtp.New(mailsmtp.Options{
 			Host: cfg.SMTPHost, Port: cfg.SMTPPort, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword,

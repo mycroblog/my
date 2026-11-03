@@ -22,6 +22,24 @@ func soraSelfHosted() map[string]string {
 
 // TestLoadVoice checks the voice settings that start (ADR-0101 §1, ADR-0102 §5).
 func TestLoadVoice(t *testing.T) {
+	t.Run("the limits have defaults", func(t *testing.T) {
+		cfg, _, err := Load(source(minimal(), nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.VoiceMaxRoomDuration != 4*time.Hour || cfg.VoiceMaxParticipants != 50 || cfg.VoiceMaxOpenRooms != 10 {
+			t.Errorf("limits = %v, %d, %d; want 4h, 50, 10", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxParticipants, cfg.VoiceMaxOpenRooms)
+		}
+	})
+	t.Run("a limit of 0 removes it", func(t *testing.T) {
+		cfg, _, err := Load(source(with(minimal(), "MY_VOICE_MAX_ROOM_DURATION", "0", "MY_VOICE_MAX_PARTICIPANTS", "0", "MY_VOICE_MAX_OPEN_ROOMS", "0"), nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.VoiceMaxRoomDuration != 0 || cfg.VoiceMaxParticipants != 0 || cfg.VoiceMaxOpenRooms != 0 {
+			t.Errorf("limits = %v, %d, %d; want none", cfg.VoiceMaxRoomDuration, cfg.VoiceMaxParticipants, cfg.VoiceMaxOpenRooms)
+		}
+	})
 	t.Run("off checks nothing else", func(t *testing.T) {
 		cfg, _, err := Load(source(with(minimal(), "MY_VOICE_ICE_TRANSPORT_POLICY", "relay", "MY_VOICE_TURN", "coturn"), nil))
 		if err != nil {

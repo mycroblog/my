@@ -83,3 +83,12 @@ FROM custom_emoji_requests r
 LEFT JOIN custom_emoji_request_outcomes o ON o.request_id = r.id
 WHERE r.id = ANY(sqlc.arg(ids)::uuid[])
 ORDER BY r.id;
+
+-- ListPendingCustomEmojiRequestsOfUser returns the pending requests of a user, for its erasure.
+-- name: ListPendingCustomEmojiRequestsOfUser :many
+SELECT request_id FROM custom_emoji_pending_requests
+WHERE requester_user_id = sqlc.arg(user_id)::uuid ORDER BY request_id;
+
+-- BlankCustomEmojiRequester takes an erased user out of its requests, which stay for the audit log.
+-- name: BlankCustomEmojiRequester :exec
+UPDATE custom_emoji_requests SET requester_user_id = NULL WHERE requester_user_id = sqlc.arg(user_id)::uuid;

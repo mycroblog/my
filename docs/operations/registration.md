@@ -69,11 +69,11 @@ SMTP examples, DNS setup and how to read delivery failures are in [sending email
   Opening the link shows a page with a confirm button, and the address is confirmed when the user presses it (so that scanners that prefetch links in mail do not consume the token).
   After signing in, the user can have the mail sent again up to 3 times an hour.
   The connection to the SMTP server is always encrypted with STARTTLS, and the server verifies the certificate before authenticating and sending. It never sends to a server that does not offer STARTTLS.
-- `mail = none` (default): the server sends no mail and writes the body (including the confirmation link) to the server log as `mail not sent (mail = none)`.
+- `mail = none` (default): the server sends no mail and writes `mail not sent (mail = none)` with the category of the message to the server log. Only with `profile = development` does the line also hold the address and the body, including the confirmation link.
   Because mail never reaches the user, the server asks for a moderator's approval instead of email confirmation.
   So a registration in `open` mode also starts as waiting for approval, and an unconfirmed email address does not block use of the app.
 
-The confirmation token is recorded nowhere except this log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
+The confirmation token is recorded nowhere except this development log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
 
 ## Registration limited to login providers
 

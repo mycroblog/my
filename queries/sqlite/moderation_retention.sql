@@ -194,3 +194,16 @@ WHERE report_id = ? ORDER BY id;
 -- name: ListReportReopenings :many
 SELECT id, report_id, reopened_by_user_id, reopened_at FROM report_reopenings
 WHERE report_id = ? ORDER BY id;
+
+-- ListRetentionHoldsToPurge returns the holds released before @released_before, the oldest first.
+-- name: ListRetentionHoldsToPurge :many
+SELECT r.hold_id FROM retention_hold_releases r
+WHERE r.released_at < sqlc.arg(released_before)
+ORDER BY r.released_at, r.hold_id
+LIMIT @batch_limit;
+
+-- name: PurgeRetentionHoldReleases :exec
+DELETE FROM retention_hold_releases WHERE hold_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
+-- name: PurgeRetentionHolds :exec
+DELETE FROM retention_holds WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));

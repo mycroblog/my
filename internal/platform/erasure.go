@@ -48,6 +48,10 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			graph.NewEraser(a.UnitOfWork, follows, edges, a.Clock),
 			timeline.NewEraser(a.UnitOfWork, entries),
 			notifications,
+			// The follows it lost to suspensions.
+			a.Moderation,
+			// Its pending custom emoji requests, before its uploads go.
+			a.CustomEmojis,
 			// The user's reads of the announcements (FR-726).
 			a.Instance,
 			// The instance settings' images stay; the profile's go with the account.
@@ -63,7 +67,7 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			a.Supporters,
 			// The names and descriptions of the revisions of the rooms it wrote (ADR-0100 §13).
 			appvoice.NewEraser(a.UnitOfWork, rooms),
-			identity.NewEraser(a.UnitOfWork, identities),
+			identity.NewEraser(a.UnitOfWork, identities, a.Clock, a.IDs),
 		},
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	return nil

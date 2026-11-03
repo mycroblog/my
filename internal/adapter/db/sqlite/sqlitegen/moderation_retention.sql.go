@@ -411,6 +411,42 @@ func (q *Queries) ListRetentionHolds(ctx context.Context, accountID string) ([]L
 	return items, nil
 }
 
+const listRetentionHoldsToPurge = `-- name: ListRetentionHoldsToPurge :many
+SELECT r.hold_id FROM retention_hold_releases r
+WHERE r.released_at < ?1
+ORDER BY r.released_at, r.hold_id
+LIMIT ?2
+`
+
+type ListRetentionHoldsToPurgeParams struct {
+	ReleasedBefore int64
+	BatchLimit     int64
+}
+
+// ListRetentionHoldsToPurge returns the holds released before @released_before, the oldest first.
+func (q *Queries) ListRetentionHoldsToPurge(ctx context.Context, arg ListRetentionHoldsToPurgeParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listRetentionHoldsToPurge, arg.ReleasedBefore, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var hold_id string
+		if err := rows.Scan(&hold_id); err != nil {
+			return nil, err
+		}
+		items = append(items, hold_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSignupBlocksToPurge = `-- name: ListSignupBlocksToPurge :many
 SELECT b.id FROM signup_blocks b
 LEFT JOIN signup_block_lifts l ON l.block_id = b.id
@@ -608,6 +644,24 @@ DELETE FROM reports WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 
 func (q *Queries) PurgeReports(ctx context.Context, ids string) error {
 	_, err := q.db.ExecContext(ctx, purgeReports, ids)
+	return err
+}
+
+const purgeRetentionHoldReleases = `-- name: PurgeRetentionHoldReleases :exec
+DELETE FROM retention_hold_releases WHERE hold_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeRetentionHoldReleases(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeRetentionHoldReleases, ids)
+	return err
+}
+
+const purgeRetentionHolds = `-- name: PurgeRetentionHolds :exec
+DELETE FROM retention_holds WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeRetentionHolds(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeRetentionHolds, ids)
 	return err
 }
 

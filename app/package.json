@@ -21,7 +21,7 @@
     "eslint-plugin-boundaries": "7.4.0",
     "eslint-plugin-formatjs": "8.1.2",
     "eslint-plugin-testing-library": "7.16.2",
-    "knip": "6.44.0",
+    "knip": "6.44.1",
     "oxlint": "1.90.0",
     "oxlint-tsgolint": "7.0.2005",
     "tailwindcss": "4.3.3",
