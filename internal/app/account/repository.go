@@ -20,6 +20,9 @@ var (
 	// ErrInstanceActorExists reports a second instance actor: there is only one local
 	// Application actor.
 	ErrInstanceActorExists = errors.New("account: the instance actor already exists")
+	// ErrActorDeleted reports a remote actor's document whose actor is deleted: deletion is final,
+	// and what the erasure removed does not come back.
+	ErrActorDeleted = errors.New("account: the remote actor is deleted")
 	// ErrNotRemote reports a remote actor's document whose id is a local account's.
 	ErrNotRemote = errors.New("account: not a remote account")
 )

@@ -350,6 +350,11 @@ func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federat
 	if in.Actor.Account.IsLocal() {
 		return p.dropped(ctx, in, fmt.Errorf("%w: %s is a local actor", ErrDropActivity, act.Actor))
 	}
+	// A deleted actor's data goes with the erasure: nothing of it is stored again, and what it
+	// would undo goes anyway.
+	if in.Actor.Deleted() {
+		return p.dropped(ctx, in, fmt.Errorf("%w: %s is deleted", ErrDropActivity, act.Actor))
+	}
 	if err := p.restricted(ctx, in); err != nil {
 		return p.dropped(ctx, in, err)
 	}

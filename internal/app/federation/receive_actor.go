@@ -62,7 +62,7 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 		return err
 	}
 	in := r.input(ctx, actor, doc)
-	return r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		stored, err := r.d.Accounts.UpsertRemoteActor(ctx, tx, in)
 		if err != nil {
 			return err
@@ -72,11 +72,15 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 		}
 		return r.seeInstance(ctx, tx, in.Domain)
 	})
+	if errors.Is(err, appaccount.ErrActorDeleted) {
+		return nil
+	}
+	return err
 }
 
 // ReceiveActorDelete handles the Delete of a remote actor by itself (federation.md §3.4): the
 // account becomes remote_deleted (account.MarkRemoteDeleted), which hides its profile and posts
-// at once; the purge removes them later. The Delete of an actor that is unknown or local, and a
+// at once; the erasure removes its data after the delay of a local account's (account.Eraser). The Delete of an actor that is unknown or local, and a
 // Delete handled again, are no-ops. The caller has checked the signer as for ReceiveActorUpdate.
 func (r *RemoteActors) ReceiveActorDelete(ctx context.Context, act *federation.Activity) error {
 	if !IsOwnActorActivity(act) || act.Type != federation.ActivityDelete {
