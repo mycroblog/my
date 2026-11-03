@@ -342,7 +342,8 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   registration: "user",
   confidential: false,
   scope: "read write",
-  owner_id: moderator.id,
+  owner: target,
+  owner_deleted: false,
   disabled: false,
   created_at: "2026-10-22T00:00:00Z",
 };
