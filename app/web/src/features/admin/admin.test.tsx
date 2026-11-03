@@ -316,10 +316,10 @@ describe("the queue dashboard", () => {
     await waitFor(() => {
       expect(within(jobs).queryByRole("heading", { level: 3, name: "federation.deliver" })).not.toBeInTheDocument();
     });
-    expect(within(jobs).getByRole("button", { name: /^Run again: kv\.cleanup/ })).toHaveFocus();
+    expect(within(jobs).getByRole("button", { name: /^Run again: kv\.purge_expired/ })).toHaveFocus();
     expect(await screen.findByText("The job federation.deliver is queued to run again.")).toBeInTheDocument();
 
-    await user.click(within(jobs).getByRole("button", { name: /^Run again: kv\.cleanup/ }));
+    await user.click(within(jobs).getByRole("button", { name: /^Run again: kv\.purge_expired/ }));
     expect(await screen.findByRole("heading", { level: 3, name: "No failed jobs" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     expect(retried).toEqual([deliver.id, cleanup.id]);
