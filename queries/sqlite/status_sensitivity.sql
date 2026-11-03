@@ -12,3 +12,6 @@ DELETE FROM status_sensitivity_overrides WHERE source_action_id = ?;
 
 -- name: StatusSensitivityOverridden :one
 SELECT EXISTS (SELECT 1 FROM status_sensitivity_overrides WHERE status_id = ?);
+
+-- name: PurgeStatusSensitivityOverrides :exec
+DELETE FROM status_sensitivity_overrides WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));

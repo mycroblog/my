@@ -580,11 +580,12 @@ CREATE TABLE custom_emoji_aliases (
 -- Resource: a request of a holder of create_custom_emojis (ADR-0070 §2, §3): to create a local
 -- custom emoji (kind create, emoji_id NULL) or to replace the image of one the requester made
 -- (kind image, emoji_id the emoji, shortcode a copy of its own). media_id is an upload of the
--- requester's local account. Kept after it ends, for the requester's history and the audit log.
+-- requester's local account. Kept after it ends, for the requester's history and the audit log;
+-- requester_user_id is NULL once the requester's account has been erased.
 CREATE TABLE custom_emoji_requests (
   id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('create', 'image')),
-  requester_user_id TEXT NOT NULL,
+  requester_user_id TEXT,
   emoji_id TEXT,
   shortcode TEXT NOT NULL,
   media_id TEXT NOT NULL,
@@ -597,8 +598,8 @@ CREATE INDEX custom_emoji_requests_media_id ON custom_emoji_requests (media_id);
 
 -- Event: the end of a custom emoji request, at most one per request; a request without one is
 -- pending. decided_by_user_id is NULL for the CLI and for lapsed (a request to replace the image
--- of an emoji that was deleted); reason is the optional reason of a rejection; emoji_id is the
--- emoji that an approval made or changed.
+-- of an emoji that was deleted, or a pending request of an erased account); reason is the optional
+-- reason of a rejection; emoji_id is the emoji that an approval made or changed.
 CREATE TABLE custom_emoji_request_outcomes (
   id TEXT NOT NULL PRIMARY KEY,
   request_id TEXT NOT NULL,
