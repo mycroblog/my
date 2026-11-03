@@ -18,11 +18,11 @@
 | `user_email_addresses` | リソース | `id`, `user_id`, `address`（`string(320)`）, `address_normalized`, `added_at` | インデックス `(user_id, id)` |
 | `user_email_verifications` | イベント | `email_address_id`（PK）, `verified_at` | 確認は 1 アドレスにつき 1 回 |
 | `user_primary_emails` | 投影 | `user_id`（PK）, `email_address_id`, `address_normalized` | **一意 `(address_normalized)`**。ログイン時の照合とアドレスの重複防止 |
-| `email_delivery_failures` | イベント | `id`, `email_address_id`, `kind`（`hard_bounce` / `complaint`）, `source`（`rejection` / `ses`）, `feedback_key`, `enhanced_status`（任意。`5.1.1` など）, `occurred_at` | **一意 `(feedback_key)`**、インデックス `(email_address_id, occurred_at)` |
+| `email_delivery_failures` | イベント | `id`, `email_address_id`, `kind`（`hard_bounce` / `complaint`）, `source`（`rejection` / `ses`）, `feedback_key`, `enhanced_status`（NULL 可。任意。`5.1.1` など）, `occurred_at` | **一意 `(feedback_key)`**、インデックス `(email_address_id, occurred_at)` |
 | `email_suppression_lifts` | イベント | `id`, `email_address_id`, `reason`（`reverified` / `moderator`）, `lifted_at` | インデックス `(email_address_id, lifted_at)` |
 | `email_suppressions` | 投影 | `email_address_id`（PK）, `kind`, `failure_id` | 送信を止めているアドレス |
 
-- メールアドレスの変更は、新しいアドレスの追加 → 確認 → 主アドレスの切り替え（投影の更新）で表します。古いアドレスは消去ジョブの対象です。
+- メールアドレスは登録と管理者の作成で 1 つだけ追加します。変更する操作はありません（§9 の `user_primary_emails`）。
 - 届かないアドレスと苦情を受けたアドレスへの送信を止めます（ADR-0086 §5）。`email_delivery_failures` は、送信時の宛先の拒否（`kernel.ErrRecipientRejected`。`feedback_key` は `job:<ジョブの ID>:<試行>`）と SES の通知（`feedback_key` は `feedbackId`）を記録し、一意制約で同じ事実は 1 行にします。イベントはアドレスの文字列を持たず、`user_email_addresses` を参照します。
   - `email_suppressions` は、各アドレスの最後の解除（`lifted_at`）より後の失敗から導きます。そのうちハードバウンスがあれば最も早いハードバウンス、なければ最も早い苦情を `failure_id` にします。失敗と解除を記録するトランザクションで、そのアドレスの行を同じ規則で導き直し、`my projection rebuild identity` が全体を再構築します。
   - ハードバウンスは利用者が求めた確認のメールを除くすべてのメールを、苦情は通知と告知のメールだけを止めます（`identity.EmailSuppression.Stops`）。パスワードのリセットのメールも送らず、応答は変えません。確認済みのアドレスでもハードバウンスで止まっていれば確認のメールを再送でき、失敗より後に発行したトークンで確認すると `reverified` の解除を記録します。モデレーターの解除（`moderator`）は監査ログに `email_suppression_lifted` を残し、その `source_event_id` は解除の `id` です。
@@ -131,7 +131,7 @@
 | `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `creator_kind`（`enum(staff, member)`、既定 `staff`）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)`、インデックス `(created_by_user_id, id)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
-| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。インデックス `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去）。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
+| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（NULL 可。`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。インデックス `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去）。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
 - 招待の作成の経路は `creator_kind` に記録します（[ADR-0108](../../../adr/0108-member-invites.md) §3）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。

@@ -1,5 +1,7 @@
 ### 4.10 基盤（アダプタ所有）
 
+ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_attempts`・`data_upgrade_runs` がイベントです。
+
 | テーブル | カラム | 一意 | インデックス |
 | --- | --- | --- | --- |
 | `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(type, run_at, id)`（種類を選ぶワーカーの claim、ADR-0138）, `(ordering_key, run_at)` |

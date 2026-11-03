@@ -279,7 +279,7 @@ CREATE UNIQUE INDEX favourites_uri ON favourites (uri);
 CREATE INDEX favourites_account_id_id ON favourites (account_id, id);
 CREATE INDEX favourites_status_id_id ON favourites (status_id, id);
 
--- Resource: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
+-- Current value: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
 -- back (content.unreacted). emoji_key is the Unicode emoji, fully qualified, or the
 -- custom_emojis.id of custom_emoji_id, NULL for a Unicode emoji. uri is the IRI of the Like or
 -- EmojiReact.
