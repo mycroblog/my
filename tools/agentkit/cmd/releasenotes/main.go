@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Command releasenotes writes the starting draft of the release notes' sections (docs/operations/releasing.md) from
+// Command releasenotes writes the starting draft of the release notes' sections (docs/agents/releasing.md) from
 // the files of the release and of the previous one. scripts/release-notes.sh runs it with the files it took from git,
 // and scripts/release-notes-test.sh tests the two together. It has a main of its own, outside agentkit, so that the
 // release job compiles only this and its YAML parser.

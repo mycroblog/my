@@ -290,6 +290,142 @@ which `kernel.MailComposer` completes with the common frame: the HTML layout com
 - A new email needs a draft function, a job type named `Job...Email`, and its entries in the catalog: a test fails
   until the catalog has them. `scripts/task.sh mail:golden` then writes its golden files
   (`internal/platform/mailpreview/testdata/golden`), so that a change to any email shows in the pull request's diff.
+- If the committed layout is stale, `scripts/task.sh mail:gen-check` (`server-static` of the merge queue) fails.
+
+With `mail = none` (the default) and `profile = development`, nothing is sent and the email goes to the log, so you can take the
+confirmation link from the log.
+
+To see the email that would really be sent (headers, the HTML version, links), send it with `mail = smtp` to the development SMTP
+server [Mailpit](https://mailpit.axllent.org/) (MIT). Mailpit keeps the email it receives without delivering it to anyone and
+shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.
+
+- `mail = smtp` never skips STARTTLS or certificate verification, so Mailpit requires STARTTLS with a certificate of a development
+  CA (for `mailpit`, `localhost`, and `127.0.0.1`, in `.tmp/mailpit`) that `scripts/mailpit-cert.sh` creates, and `my serve` trusts
+  that CA through `SSL_CERT_FILE`.
+  `SSL_CERT_FILE` replaces the system root certificates, so that `my serve` cannot make HTTPS requests to outside servers
+  (federation and the like). Use it only for development checks.
+- The image (`axllent/mailpit`) is pinned by tag and digest, the same as in the integration tests
+  (`deploy/docker/mailpit/compose.yaml`).
+
+To add it to the Docker Compose setup ([`deploy/docker/compose.yaml`](deploy/docker/compose.yaml)), layer the override
+[`compose.mailpit.yaml`](deploy/docker/compose.mailpit.yaml) on top. It sets `mail` of `my` to `smtp` and points it at
+Mailpit.
+
+```sh
+scripts/mailpit-cert.sh
+cd deploy/docker
+docker compose -f compose.yaml -f compose.mailpit.yaml up -d
+```
+
+To send from a `my serve` running on your machine, start only Mailpit (`scripts/task.sh docker:mailpit`; stop it with
+`docker compose -f deploy/docker/mailpit/compose.yaml down`) and start with these settings.
+
+```sh
+MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025 \
+  SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
+```
+
+In both setups, ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
+Mailpit UI. Open the link of the email you opened in the UI in your browser.
+
+The integration tests check the headers, encoding, and body of the email the adapter sent and the combinations of STARTTLS
+and authentication, and run registration confirmation and password reset through the links of the email Mailpit received.
+Pull requests and the merge queue check the same adapter against a stand-in SMTP server inside the tests.
+
+## Build tags
+
+[The reference](docs/reference/build-tags.md) lists the tags. The test build adds the fakes for the end-to-end tests and the local demonstration:
+
+```sh
+scripts/task.sh go:bin GO_TAGS=e2e_fakes
+MY_PROFILE=development MY_PAYMENTS=fake bin/my serve
+```
+
+Four checks keep the fakes out of production; each one stops them on its own when another one is bypassed. The first is at start, and [the reference](docs/reference/build-tags.md#test-builds) describes it. The others:
+
+- **The build check.** `scripts/task.sh go:build-tags` fails when `cmd/my` without the tag (with no tags, or with any
+  representative set of `no_*` tags) depends on a fake. Only files with the constraint `//go:build e2e_fakes` import
+  them outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider, and
+  `cmd/my/dev_push_service.go` the fake push service.
+- **The container image.** The `Dockerfile` stops when `GO_TAGS` has `e2e_fakes`, before it compiles anything, and
+  checks the binary it built as the release check does.
+- **The release.** `scripts/check-release-build.sh BINARY...` fails when the Go build info of a binary
+  (`go version -m`, its `build -tags=` line) has `e2e_fakes`, or cannot be read. Every job that publishes a binary or an
+  image runs it on what it publishes.
+
+### The fake push service
+
+A browser's Web Push subscription points at its vendor's push service, which the browsers of the end-to-end tests
+cannot reach. `my dev push-service` stands in for it: it serves HTTPS on this machine, issues subscriptions, and receives
+the server's push messages the way a push service does. It verifies each message's VAPID authorization, decrypts its
+`aes128gcm` body with the keys it issued, and keeps what it received in memory for the tests to read.
+
+```sh
+scripts/mailpit-cert.sh   # the development CA and .tmp/mailpit/push-service.pem
+MY_PROFILE=development bin/my dev push-service   # https://localhost:8930
+```
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `-listen` | `127.0.0.1:8930` | The address to listen on |
+| `-origin` | `https://localhost:<port of -listen>` | The origin of the endpoints, which the VAPID token's `aud` must name |
+| `-cert`, `-key` | `.tmp/mailpit/push-service.pem`, `.tmp/mailpit/push-service.key` | The TLS certificate and its key, for `localhost` and `127.0.0.1`, signed by the development CA |
+| `-config` | `$MY_CONFIG` | The configuration file; it reads only `profile`, which must be `development` |
+
+`my serve` sends to it only when it trusts the development CA (`SSL_CERT_FILE=.tmp/mailpit/ca.pem`, as for the
+development Mailpit in [Emails](#emails)) and its SSRF guard lets the Web Push sends reach
+`localhost` ([`push_allowed_destinations`](docs/reference/configuration.md#push_allowed_destinations) set to `localhost`, with
+`profile = development`). Its HTTP API, in JSON:
+
+| Request | Answer |
+| --- | --- |
+| `POST /subscriptions` with `{"applicationServerKey": "<base64url>"}` | `201` and a new subscription in the shape of the browser's `PushSubscription.toJSON()`: `endpoint` and `keys` (`p256dh`, `auth`) |
+| `POST /push/<id>`, a push message to the endpoint | `201` with `Location` when it is accepted; `401` without a `vapid` `Authorization`; `403` when the token's signature, its `k` (other than the subscription's `applicationServerKey`), its `aud` (other than the origin), its `exp` (past, or more than 24 hours ahead), or its `sub` (missing) fails; `400` without `TTL`, with a `Content-Encoding` other than `aes128gcm`, a bad `Urgency` or `Topic`, or a body that does not decrypt; `413` over 4096 bytes; `404` for an unknown subscription; `410` once it has expired |
+| `POST /subscriptions/<id>/expire` | `204`; later push messages to it answer `410` |
+| `GET /subscriptions/<id>/messages` | `200` and `{"messages": [...]}`: every push message to it, oldest first, with `status`, `error` (why it was refused), `plaintext`, `ttl`, `urgency`, `topic`, `subject`, and `received_at` |
+
+### The check of the sets
+
+`scripts/task.sh go:build-tags` (part of `scripts/task.sh go:check` and, in CI, of the slow suite that gates releases)
+runs, for each representative set of tags, `CGO_ENABLED=0 go build` and `go vet` on every package,
+and fails when `cmd/my` still depends on a package that a tag of the set leaves out.
+
+The sets are in [the reference](docs/reference/build-tags.md#sets-of-tags-that-are-checked), together with `e2e_fakes`, which also runs the tests that only this build has (named `*E2EFakes*`).
+
+It also fails when `cmd/my` without `e2e_fakes`, the build with no tags among them, depends on a fake, or when the set
+with `e2e_fakes` does not link the fakes.
+`scripts/go-build-tags.sh SET...` checks other sets. The tests (`scripts/task.sh go:test`) run without tags, on every adapter.
+
+### Adding a tag
+
+An adapter that brings a dependency of its own gets the tag `no_<name>`:
+
+- The platform wires it in `internal/platform/adapters_<name>.go` with the constraint `//go:build !no_<name>`, and
+  `internal/platform/adapters_no_<name>.go` (`//go:build no_<name>`) puts in its place a function of the same signature
+  that returns `config.ExcludedError`. Nothing else in `cmd/` and `internal/platform` imports the adapter.
+- `internal/platform/config/adapters_no_<name>.go` calls `exclude` for the settings that select it, so that `Load`
+  rejects them; a check of a setting that only this adapter reads goes in `adapters_<name>.go` likewise.
+- An adapter package shared by several dialects (such as `internal/adapter/kv/db`) puts the code of each dialect,
+  its constructor, and its tests in files with the dialect's constraint.
+- Add the tag to the tables of [the reference](docs/reference/build-tags.md), to the choice documentation in `internal/platform/config/schema.go`
+  (`scripts/task.sh go:config-docs`), and to `excluded_packages` in `scripts/go-build-tags.sh`, and use it in one of the representative sets.
+
+## Settings
+
+To decide whether a new value is configuration or an instance setting, ask whether an operator changes it without a restart. A
+value that is fixed per deployment and changes the structure of the process is configuration; a value that changes while the
+instance is running is an instance setting. `TestConfigAndInstanceSettingsShareNoKey` fails when the two sets of keys overlap.
+
+## The AI crawler list
+
+The AI crawlers that `/robots.txt` names are generated from `robots.json` of
+[ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt) (MIT) and bundled in
+`internal/interface/web/ai_crawlers.gen.go`. About once a month, open an update pull request as follows.
+
+1. In `tasks/go.yml`, change `AI_ROBOTS_COMMIT` to the new commit and `AI_ROBOTS_SHA256` to the SHA-256 of that commit's `robots.json`.
+2. Run `scripts/task.sh go:ai-crawlers`.
+3. Review the diff. The classification (training or AI use) is derived from the `function` text in `robots.json`, so if a newly added crawler is classified wrongly,
+   fix it with `overrides` in `scripts/ai-crawlers/main.go`. Link-preview fetchers and general-purpose search engines are left out of the list with `excluded`.
 
 ## Design decisions
 

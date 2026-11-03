@@ -44,7 +44,13 @@ scrape_configs:
 - During the maintenance mode the server serves no metrics and answers `503`, so `MyTargetDown` and the HTTP alerts fire.
   Silence the alerts in Alertmanager for the window before you start ([Maintenance](maintenance.md#steps)).
 
-`scripts/task.sh docker:alert-rules` checks the file and runs its unit tests (`alerts.test.yml`) with `promtool`. Run it after you change the rules.
+After you change the rules, check the file and run its unit tests (`alerts.test.yml`) with `promtool`, which comes with Prometheus:
+
+```sh
+cd deploy/monitoring/prometheus
+promtool check rules alerts.yml
+promtool test rules alerts.test.yml
+```
 
 ### Google Cloud (Cloud Run)
 
